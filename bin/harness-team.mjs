@@ -44,7 +44,7 @@ function parseArgs(argv) {
       if (v !== undefined) out.flags[k] = v;
       else if (argv[i + 1] && !argv[i + 1].startsWith('--') && !['init','apply','sync','doctor','task','help','new','list','switch','done'].includes(argv[i+1])) {
         // flags that take values: stack, member, target
-        if (['stack', 'member', 'target'].includes(k)) { out.flags[k] = argv[++i]; }
+        if (['stack', 'member', 'target', 'backup-parent', 'backup-dir'].includes(k)) { out.flags[k] = argv[++i]; }
         else out.flags[k] = true;
       } else out.flags[k] = true;
     } else out.positional.push(a);

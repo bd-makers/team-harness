@@ -23,15 +23,21 @@ export async function runInit(ctx) {
   let backupDir = await loadBackupDir(ctx.targetDir);
   let backupParent = null;
   if (!backupDir) {
+    const dirFromFlag = ctx.flags['backup-dir'];
     const parentFromFlag = ctx.flags['backup-parent'];
-    const answered = ctx.flags.yes
-      ? (parentFromFlag || DEFAULT_BACKUP_PARENT)
-      : await ask(
-          `\nBackup clone parent folder (sibling of project, holds clone.sh/symlink.sh/delete.sh)?`,
-          { defaultValue: parentFromFlag || DEFAULT_BACKUP_PARENT },
-        );
-    backupParent = answered;
-    backupDir = resolve(ctx.targetDir, '..', answered, projectName);
+    if (dirFromFlag) {
+      // Option 2: full path provided directly
+      backupDir = resolve(dirFromFlag.replace(/^~/, process.env.HOME || '~'));
+    } else {
+      const answered = ctx.flags.yes
+        ? (parentFromFlag || DEFAULT_BACKUP_PARENT)
+        : await ask(
+            `\nBackup clone parent folder (sibling of project, holds clone.sh/symlink.sh/delete.sh)?`,
+            { defaultValue: parentFromFlag || DEFAULT_BACKUP_PARENT },
+          );
+      backupParent = answered;
+      backupDir = resolve(ctx.targetDir, '..', answered, projectName);
+    }
   }
   ctx.backupDir = backupDir;
   console.log(`  backup clone dir: ${backupDir}`);
