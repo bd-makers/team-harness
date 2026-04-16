@@ -54,7 +54,7 @@ export async function planChanges(ctx, { stack }) {
   // can copy the current project into that backup clone.
   const backupDir = ctx.backupDir;
   if (backupDir) {
-    for (const f of ['clone.sh', 'symlink.sh', 'delete.sh']) {
+    for (const f of ['clone.sh', 'symlink.sh', 'delete.sh', 'sync.sh']) {
       if (!(await exists(join(backupDir, f)))) {
         const tpl = await readTextSafe(join(tplDir, f));
         if (tpl) changes.push({ kind: 'script', path: join(backupDir, f), after: tpl });
