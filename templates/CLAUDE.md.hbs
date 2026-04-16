@@ -1,0 +1,73 @@
+# {{projectName}} — AI Team Contract
+
+<!-- harness:section="stack" begin -->
+## 기술 스택
+- **Runtime**: {{stackLabel}}
+- **Package Manager**: {{packageManager}}
+- **Language**: {{language}}
+
+## 명령
+- install: `{{cmdInstall}}`
+- dev: `{{cmdDev}}`
+- test: `{{cmdTest}}`
+- lint: `{{cmdLint}}`
+- typecheck: `{{cmdTypecheck}}`
+<!-- harness:section="stack" end -->
+
+<!-- harness:section="roles" begin -->
+## AI 팀 역할 분담
+
+이 프로젝트에서 각 AI 에이전트가 맡는 역할과 호출 방식입니다.
+필요에 따라 재정의하세요 — 단, 이 섹션은 `harness-team sync` 실행 시 갱신 대상이므로
+마커(`<!-- harness:section="roles" -->`)는 유지해 주세요.
+
+| 에이전트 | 역할 | 호출 방식 |
+|---|---|---|
+| **Claude Code** | 리드 프로그래머 | 주 세션 |
+| **Codex** | 리뷰어 (read-only) | Bash: `codex exec --sandbox read-only` |
+| **Gemini** | 리뷰어 (read-only) | Bash: `gemini --approval-mode default -p` |
+| **Cursor** | 보조 에디터 (IDE) | `.cursor/rules/*.mdc` 자동 적용 |
+| **OpenCode** | 보조 CLI (병렬 세션) | `opencode.json` 설정 |
+
+### 리뷰 프로토콜
+중요한 변경(새 기능, 아키텍처, 복잡한 리팩토링, 보안, 스키마/API) 시
+`/harness-review` 또는 `.claude/skills/review/SKILL.md` 절차를 따릅니다.
+<!-- harness:section="roles" end -->
+
+<!-- harness:section="protocol" begin -->
+## 작업 프로토콜
+
+### task 단위 관리
+모든 feature/fix 작업은 `docs/<member>/<feature|fix>/<name>/` 아래에서 관리됩니다.
+각 task 디렉토리는 네 파일로 구성:
+- `spec.md` — 요구사항/설계
+- `plan.md` — 단계별 체크리스트
+- `handoff.md` — 세션 인수인계
+- `artifact.md` — 실행 결과 (`harness-team task done` 시 자동 수집)
+
+활성 task는 `.harness/active.json`에 저장되며, `harness-team task switch <name>`으로 전환.
+
+### 세션 시작 시
+1. `harness-team task list` 로 현재 active task 확인 (또는 `.harness/active.json`)
+2. 활성 task의 `handoff.md` 읽기 — 이전 세션 인수인계
+3. 활성 task의 `plan.md` 읽기 — 현재 단계
+4. 필요시 `spec.md`에서 맥락 보강
+
+### 세션 종료 시
+1. 활성 task의 `handoff.md` 갱신
+2. `plan.md` 체크리스트 업데이트
+3. task 완료 시 `harness-team task done` → `artifact.md`에 결과 append
+
+### 컨텍스트 파일
+| 파일 | 용도 |
+|---|---|
+| `CLAUDE.md` | 이 파일 — 프로젝트 규칙 (SSOT) |
+| `AGENTS.md`, `GEMINI.md`, `.cursorrules` | symlink → `CLAUDE.md` |
+| `docs/<member>/<category>/<name>/` | task별 작업 문서 4종 |
+| `.harness/active.json` | 현재 활성 task 포인터 |
+| `.claude/rules/*.md` | 영역별 코딩 규칙 |
+<!-- harness:section="protocol" end -->
+
+<!-- harness:user:begin -->
+<!-- 이 마커 아래 작성한 내용은 harness가 절대 수정하지 않습니다. -->
+<!-- harness:user:end -->

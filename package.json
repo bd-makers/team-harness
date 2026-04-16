@@ -1,0 +1,26 @@
+{
+  "name": "harness-aijient-team",
+  "version": "0.1.0",
+  "description": "Team harness plugin: Claude-led multi-agent (Codex/Gemini/Cursor/OpenCode) scaffold & apply",
+  "type": "module",
+  "bin": {
+    "harness-team": "./bin/harness-team.mjs"
+  },
+  "files": [
+    "bin",
+    "src",
+    "templates",
+    "commands",
+    "skills",
+    ".claude-plugin",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  },
+  "keywords": ["claude-code", "plugin", "harness", "codex", "gemini", "cursor", "opencode"],
+  "license": "MIT"
+}
