@@ -1,0 +1,25 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "harness-aijient-team-marketplace",
+  "description": "Team harness marketplace for scaffolding multi-agent config across Codex, Gemini, Cursor, and OpenCode.",
+  "owner": {
+    "name": "bd-makers"
+  },
+  "metadata": {
+    "homepage": "https://github.com/bd-makers/team-harness"
+  },
+  "plugins": [
+    {
+      "name": "harness-aijient-team",
+      "source": ".",
+      "description": "Claude-led team harness: scaffold/apply multi-agent config (Codex, Gemini, Cursor, OpenCode) from a single source of truth.",
+      "version": "0.1.0",
+      "category": "workflow",
+      "keywords": ["harness", "team", "multi-agent", "codex", "gemini", "cursor", "opencode"],
+      "homepage": "https://github.com/bd-makers/team-harness",
+      "author": {
+        "name": "bd-makers"
+      }
+    }
+  ]
+}
