@@ -3,7 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { detectStack } from '../detect-stack.mjs';
 import {
   planChanges, applyChanges, copyStaticAssets, setupSymlinks, formatDiff,
-  loadBackupDir, saveBackupConfig, DEFAULT_BACKUP_PARENT,
+  loadBackupDir, saveBackupConfig, DEFAULT_BACKUP_PARENT, AI_GITIGNORE_PREVIEW,
 } from '../harness.mjs';
 import { confirm, ask } from '../prompt.mjs';
 
@@ -41,6 +41,17 @@ export async function runInit(ctx) {
   }
   ctx.backupDir = backupDir;
   console.log(`  backup clone dir: ${backupDir}`);
+
+  // Ask whether to add AI-tool gitignore entries.
+  if (ctx.flags['gitignore-ai'] !== undefined) {
+    ctx.addAiGitignore = ctx.flags['gitignore-ai'] === true || ctx.flags['gitignore-ai'] === 'true';
+  } else if (!ctx.flags.yes) {
+    console.log(`\nAI tool .gitignore entries to add:\n`);
+    console.log(AI_GITIGNORE_PREVIEW.split('\n').map(l => `  ${l}`).join('\n'));
+    ctx.addAiGitignore = await confirm('\nAdd these AI tool entries to .gitignore?', { defaultYes: false });
+  } else {
+    ctx.addAiGitignore = false;
+  }
 
   const { changes } = await planChanges(ctx, { stack });
 

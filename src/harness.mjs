@@ -123,25 +123,76 @@ export async function copyStaticAssets(ctx) {
     out.push({ path: activePath, action: 'write' });
   }
   // .gitignore tweaks
-  await appendGitignore(ctx.targetDir);
+  await appendGitignore(ctx.targetDir, { addAiEntries: !!ctx.addAiGitignore });
   // cursor rules — mirrored from .claude/rules
   await mirrorCursorRules(ctx);
   return out;
 }
 
-async function appendGitignore(targetDir) {
+const AI_GITIGNORE_ENTRIES = [
+  '# AI',
+  'CLAUDE.md',
+  'AGENTS.md',
+  'GEMINI.md',
+  '',
+  'oh-my-openagent.json',
+  'opencode.json',
+  '',
+  'handoff.md',
+  'plan.md',
+  '',
+  '.claude',
+  '.claude/',
+  '.cursor',
+  '.cursor/',
+  '.omc',
+  '.omc/',
+  '.omx',
+  '.omx/',
+  '.ai',
+  '.ai/',
+  '.sisyphus',
+  '.sisyphus/',
+  '.agents',
+  '.agents/',
+  '.cursorrules',
+  '',
+  '# build',
+  'output/',
+  '',
+  '*.log',
+  'docs/',
+];
+
+async function appendGitignore(targetDir, { addAiEntries = false } = {}) {
   const { readTextSafe, writeText } = await import('./fsx.mjs');
   const path = join(targetDir, '.gitignore');
   const existing = (await readTextSafe(path)) ?? '';
-  const needed = [
+  const lines = existing.split('\n');
+  const has = (line) => lines.some(l => l.trim() === line);
+
+  const harnessNeeded = [
     '.claude/settings.local.json',
     '.harness/active.json',
   ];
-  const missing = needed.filter(line => !existing.split('\n').some(l => l.trim() === line));
-  if (missing.length === 0) return;
-  const block = `\n# harness-aijient-team\n${missing.join('\n')}\n`;
-  await writeText(path, existing + block);
+  const harnessMissing = harnessNeeded.filter(line => !has(line));
+
+  let out = existing;
+  if (harnessMissing.length > 0) {
+    out += `\n# harness-aijient-team\n${harnessMissing.join('\n')}\n`;
+  }
+
+  if (addAiEntries) {
+    const aiMissing = AI_GITIGNORE_ENTRIES.filter(line => line === '' || !has(line));
+    if (aiMissing.length > 0) {
+      out += `\n${aiMissing.join('\n')}\n`;
+    }
+  }
+
+  if (out !== existing) await writeText(path, out);
 }
+
+export const AI_GITIGNORE_PREVIEW = AI_GITIGNORE_ENTRIES.join('\n');
 
 export async function mirrorCursorRules(ctx) {
   const srcDir = join(ctx.targetDir, '.claude/rules');

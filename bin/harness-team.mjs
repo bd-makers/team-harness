@@ -32,6 +32,8 @@ Options:
   --member <name>      Override member (default: git config user.name, else $USER)
   --no-symlinks        Copy files instead of symlinking (Windows)
   --target <dir>       Target directory (default: cwd)
+  --gitignore-ai       Add AI tool entries to .gitignore without prompting
+  --no-gitignore-ai    Skip AI gitignore entries without prompting
 `;
 
 function parseArgs(argv) {
@@ -45,6 +47,7 @@ function parseArgs(argv) {
       else if (argv[i + 1] && !argv[i + 1].startsWith('--') && !['init','apply','sync','doctor','task','help','new','list','switch','done'].includes(argv[i+1])) {
         // flags that take values: stack, member, target
         if (['stack', 'member', 'target', 'backup-parent', 'backup-dir'].includes(k)) { out.flags[k] = argv[++i]; }
+        else if (k === 'no-gitignore-ai') out.flags['gitignore-ai'] = false;
         else out.flags[k] = true;
       } else out.flags[k] = true;
     } else out.positional.push(a);
