@@ -14,15 +14,17 @@ export async function loadBackupDir(targetDir) {
   const cfg = await readTextSafe(join(targetDir, '.harness/backup.json'));
   if (!cfg) return null;
   try {
-    const { parent, name } = JSON.parse(cfg);
+    const data = JSON.parse(cfg);
+    if (data.dir) return data.dir;
+    const { parent, name } = data;
     if (!parent || !name) return null;
     return join(targetDir, '..', parent, name);
   } catch { return null; }
 }
 
-export async function saveBackupConfig(targetDir, { parent, name }) {
+export async function saveBackupConfig(targetDir, config) {
   await writeText(join(targetDir, '.harness/backup.json'),
-    JSON.stringify({ parent, name }, null, 2) + '\n');
+    JSON.stringify(config, null, 2) + '\n');
 }
 
 export async function planChanges(ctx, { stack }) {
@@ -54,7 +56,7 @@ export async function planChanges(ctx, { stack }) {
   // can copy the current project into that backup clone.
   const backupDir = ctx.backupDir;
   if (backupDir) {
-    for (const f of ['clone.sh', 'symlink.sh', 'delete.sh', 'sync.sh']) {
+    for (const f of ['clone.sh', 'symlink.sh', 'delete.sh']) {
       if (!(await exists(join(backupDir, f)))) {
         const tpl = await readTextSafe(join(tplDir, f));
         if (tpl) changes.push({ kind: 'script', path: join(backupDir, f), after: tpl });
@@ -173,7 +175,7 @@ async function appendGitignore(targetDir, { addAiEntries = false } = {}) {
 
   const harnessNeeded = [
     '.claude/settings.local.json',
-    '.harness/active.json',
+    '.harness/',
   ];
   const harnessMissing = harnessNeeded.filter(line => !has(line));
 

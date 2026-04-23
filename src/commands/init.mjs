@@ -20,27 +20,33 @@ export async function runInit(ctx) {
   // running `../<parent>/<project>/clone.sh` from the project root clones CWD
   // into that backup clone directory.
   const projectName = basename(ctx.targetDir);
-  let backupDir = await loadBackupDir(ctx.targetDir);
-  let backupParent = null;
-  if (!backupDir) {
-    const dirFromFlag = ctx.flags['backup-dir'];
-    const parentFromFlag = ctx.flags['backup-parent'];
-    if (dirFromFlag) {
-      // Option 2: full path provided directly
-      backupDir = resolve(dirFromFlag.replace(/^~/, process.env.HOME || '~'));
-    } else {
-      const answered = ctx.flags.yes
-        ? (parentFromFlag || DEFAULT_BACKUP_PARENT)
-        : await ask(
-            `\nBackup clone parent folder (sibling of project, holds clone.sh/symlink.sh/delete.sh)?`,
-            { defaultValue: parentFromFlag || DEFAULT_BACKUP_PARENT },
-          );
-      backupParent = answered;
-      backupDir = resolve(ctx.targetDir, '..', answered, projectName);
+  let saveConfig = null;
+
+  if (ctx.flags['no-backup']) {
+    ctx.backupDir = null;
+    console.log('  backup: disabled');
+  } else {
+    let backupDir = await loadBackupDir(ctx.targetDir);
+    if (!backupDir) {
+      const dirFromFlag = ctx.flags['backup-dir'];
+      const parentFromFlag = ctx.flags['backup-parent'];
+      if (dirFromFlag) {
+        backupDir = resolve(dirFromFlag.replace(/^~/, process.env.HOME || '~'));
+        saveConfig = { dir: backupDir };
+      } else {
+        const answered = ctx.flags.yes
+          ? (parentFromFlag || DEFAULT_BACKUP_PARENT)
+          : await ask(
+              `\nBackup clone parent folder (sibling of project, holds clone.sh/symlink.sh/delete.sh)?`,
+              { defaultValue: parentFromFlag || DEFAULT_BACKUP_PARENT },
+            );
+        backupDir = resolve(ctx.targetDir, '..', answered, projectName);
+        saveConfig = { parent: answered, name: projectName };
+      }
     }
+    ctx.backupDir = backupDir;
+    console.log(`  backup clone dir: ${backupDir}`);
   }
-  ctx.backupDir = backupDir;
-  console.log(`  backup clone dir: ${backupDir}`);
 
   // Ask whether to add AI-tool gitignore entries.
   if (ctx.flags['gitignore-ai'] !== undefined) {
@@ -64,22 +70,22 @@ export async function runInit(ctx) {
   const ok = ctx.flags.yes || await confirm('\nApply these changes + scaffold the rest?', { defaultYes: true });
   if (!ok) { console.log('Aborted.'); return; }
 
-  await mkdir(backupDir, { recursive: true });
+  if (ctx.backupDir) await mkdir(ctx.backupDir, { recursive: true });
   await applyChanges(changes);
-  if (backupParent) {
-    await saveBackupConfig(ctx.targetDir, { parent: backupParent, name: projectName });
-  }
+  if (saveConfig) await saveBackupConfig(ctx.targetDir, saveConfig);
   const copied = await copyStaticAssets(ctx);
   const links = await setupSymlinks(ctx);
 
   console.log(`\n✓ Wrote ${changes.length} merged file(s)`);
-  console.log(`✓ Backup clone dir ready: ${backupDir}`);
+  if (ctx.backupDir) {
+    console.log(`✓ Backup clone dir ready: ${ctx.backupDir}`);
+    const parentSeg = saveConfig?.parent ?? basename(dirname(ctx.backupDir));
+    const relBackup = `../${parentSeg}/${projectName}`;
+    console.log(`\nDone. From the project root, run the backup scripts like:`);
+    console.log(`  ${relBackup}/clone.sh   # clone this project into the backup dir`);
+    console.log(`  ${relBackup}/symlink.sh # set up harness symlinks`);
+    console.log(`  ${relBackup}/delete.sh  # tear down`);
+  }
   console.log(`✓ Copied ${copied.filter(c => c.action === 'write').length} asset(s) (${copied.filter(c => c.action === 'skip').length} skipped as existing)`);
   for (const l of links) console.log(`  ${l.action.padEnd(5)} ${l.link} → CLAUDE.md  [${l.reason}]`);
-  const parentName = backupParent ?? basename(dirname(backupDir));
-  const relBackup = `../${parentName}/${projectName}`;
-  console.log(`\nDone. From the project root, run the backup scripts like:`);
-  console.log(`  ${relBackup}/clone.sh   # clone this project into the backup dir`);
-  console.log(`  ${relBackup}/symlink.sh # set up harness symlinks`);
-  console.log(`  ${relBackup}/delete.sh  # tear down`);
 }

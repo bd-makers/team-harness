@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { runInit } from '../src/commands/init.mjs';
 import { runApply } from '../src/commands/apply.mjs';
+import { runBackup } from '../src/commands/backup.mjs';
 import { runSync } from '../src/commands/sync.mjs';
 import { runDoctor } from '../src/commands/doctor.mjs';
 import { runTask } from '../src/commands/task.mjs';
@@ -18,6 +19,7 @@ Usage:
 Commands:
   init [dir]                        Scaffold a new project with the full harness
   apply [dir]                       Apply the harness to an existing project (non-destructive)
+  backup [dir]                      Move harness items to backup dir and replace with symlinks
   sync [dir]                        Re-sync symlinks, cursor rules, opencode config
   doctor [dir]                      Diagnose harness integrity
   task new <feature|fix> <name>     Create a per-member per-task doc folder + set active
@@ -31,6 +33,7 @@ Options:
   --yes                Non-interactive
   --member <name>      Override member (default: git config user.name, else $USER)
   --no-symlinks        Copy files instead of symlinking (Windows)
+  --no-backup          Skip backup dir setup entirely (init/apply only)
   --target <dir>       Target directory (default: cwd)
   --gitignore-ai       Add AI tool entries to .gitignore without prompting
   --no-gitignore-ai    Skip AI gitignore entries without prompting
@@ -47,6 +50,7 @@ function parseArgs(argv) {
       else if (argv[i + 1] && !argv[i + 1].startsWith('--') && !['init','apply','sync','doctor','task','help','new','list','switch','done'].includes(argv[i+1])) {
         // flags that take values: stack, member, target
         if (['stack', 'member', 'target', 'backup-parent', 'backup-dir'].includes(k)) { out.flags[k] = argv[++i]; }
+        else if (k === 'no-backup') out.flags['no-backup'] = true;
         else if (k === 'no-gitignore-ai') out.flags['gitignore-ai'] = false;
         else out.flags[k] = true;
       } else out.flags[k] = true;
@@ -71,6 +75,7 @@ async function main() {
   switch (cmd) {
     case 'init': return runInit(ctx);
     case 'apply': return runApply(ctx);
+    case 'backup': return runBackup(ctx);
     case 'sync': return runSync(ctx);
     case 'doctor': return runDoctor(ctx);
     case 'task': return runTask(ctx);
