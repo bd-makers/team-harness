@@ -158,6 +158,8 @@ const AI_GITIGNORE_ENTRIES = [
   '.agents',
   '.agents/',
   '.cursorrules',
+  '.opencode',
+  '.opencode/',
   '',
   '# build',
   'output/',
