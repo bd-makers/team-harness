@@ -3,7 +3,8 @@
 # Run this from your project root (e.g., lab-blog/)
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ITEMS=("CLAUDE.md" "AGENTS.md" "GEMINI.md" ".claude" ".cursor" ".opencode" ".cursorrules" "docs" ".harness" "clone.sh" "delete.sh")
+ITEMS=("CLAUDE.md" ".claude" ".cursor" ".opencode" "docs" ".harness" "clone.sh" "delete.sh")
+ALIAS_ITEMS=("AGENTS.md" "GEMINI.md" ".cursorrules")
 
 for item in "${ITEMS[@]}"; do
   if [ -L "$item" ]; then
@@ -19,5 +20,14 @@ for item in "${ITEMS[@]}"; do
     echo "removed: $item"
   else
     echo "skip: $item (not found)"
+  fi
+done
+
+for item in "${ALIAS_ITEMS[@]}"; do
+  if [ -L "$item" ]; then
+    rm "$item"
+    echo "removed: $item (alias symlink)"
+  elif [ -e "$item" ]; then
+    echo "skip: $item (not a symlink, leaving untouched)"
   fi
 done

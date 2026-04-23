@@ -51,16 +51,16 @@ export async function planChanges(ctx, { stack }) {
     });
   }
 
-  // Scripts at the sibling backup directory (../<parent>/<projectName>/*.sh) — only if missing.
+  // Scripts at the sibling backup directory (../<parent>/<projectName>/*.sh) — always sync from template.
   // The scripts are meant to live OUTSIDE the project so `../harness-backup/<project>/clone.sh`
   // can copy the current project into that backup clone.
   const backupDir = ctx.backupDir;
   if (backupDir) {
     for (const f of ['clone.sh', 'symlink.sh', 'delete.sh']) {
-      if (!(await exists(join(backupDir, f)))) {
-        const tpl = await readTextSafe(join(tplDir, f));
-        if (tpl) changes.push({ kind: 'script', path: join(backupDir, f), after: tpl });
-      }
+      const tpl = await readTextSafe(join(tplDir, f));
+      if (!tpl) continue;
+      const existing = await readTextSafe(join(backupDir, f));
+      if (existing !== tpl) changes.push({ kind: 'script', path: join(backupDir, f), after: tpl });
     }
   }
 
