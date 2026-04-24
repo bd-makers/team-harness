@@ -1,4 +1,5 @@
 #!/bin/bash
+# DEPRECATED: Use `harness-team symlink` or /harness-symlink instead.
 # Creates symlinks in the current directory pointing to ../frontchapter-harness/lab-blog/
 # Run this from your project root (e.g., lab-blog/)
 

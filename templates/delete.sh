@@ -1,4 +1,5 @@
 #!/bin/bash
+# DEPRECATED: Use `harness-team delete` or /harness-delete instead.
 # Removes symlinks created by link.sh
 # Run this from your project root (e.g., lab-blog/)
 

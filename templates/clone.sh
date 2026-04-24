@@ -1,4 +1,5 @@
 #!/bin/bash
+# DEPRECATED: Use `harness-team clone` or /harness-clone instead.
 # Syncs non-symlink items from current project to harness directory.
 # Merge semantics: only files newer than harness are copied; harness-only files are preserved.
 # Run this from your project root (e.g. bodoc4, bodoc4-2, ...).
