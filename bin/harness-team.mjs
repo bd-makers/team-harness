@@ -7,6 +7,9 @@ import { runBackup } from '../src/commands/backup.mjs';
 import { runSync } from '../src/commands/sync.mjs';
 import { runDoctor } from '../src/commands/doctor.mjs';
 import { runTask } from '../src/commands/task.mjs';
+import { runClone } from '../src/commands/clone.mjs';
+import { runSymlink } from '../src/commands/symlink.mjs';
+import { runDelete } from '../src/commands/delete.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -20,6 +23,9 @@ Commands:
   init [dir]                        Scaffold a new project with the full harness
   apply [dir]                       Apply the harness to an existing project (non-destructive)
   backup [dir]                      Move harness items to backup dir and replace with symlinks
+  clone [dir]                       Sync project items to backup dir (merge, newer-wins)
+  symlink [dir]                     Create backup→project symlinks
+  delete [dir]                      Remove harness symlinks from project
   sync [dir]                        Re-sync symlinks, cursor rules, opencode config
   doctor [dir]                      Diagnose harness integrity
   task new <feature|fix> <name>     Create a per-member per-task doc folder + set active
@@ -76,6 +82,9 @@ async function main() {
     case 'init': return runInit(ctx);
     case 'apply': return runApply(ctx);
     case 'backup': return runBackup(ctx);
+    case 'clone': return runClone(ctx);
+    case 'symlink': return runSymlink(ctx);
+    case 'delete': return runDelete(ctx);
     case 'sync': return runSync(ctx);
     case 'doctor': return runDoctor(ctx);
     case 'task': return runTask(ctx);
