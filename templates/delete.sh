@@ -1,18 +1,18 @@
 #!/bin/bash
-# DEPRECATED: Use `harness-team delete` or /harness-delete instead.
-# Removes symlinks created by link.sh
-# Run this from your project root (e.g., lab-blog/)
+# Removes symlinks in this project that point to the harness backup directory.
+# Run from the project root.
+set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ITEMS=("CLAUDE.md" ".claude" ".cursor" ".opencode" "docs" ".harness" "clone.sh" "delete.sh")
+BACKUP_DIR="{{BACKUP_DIR}}"
+ITEMS=("CLAUDE.md" ".claude" ".cursor" ".opencode" "docs" ".harness")
 ALIAS_ITEMS=("AGENTS.md" "GEMINI.md" ".cursorrules")
 
 for item in "${ITEMS[@]}"; do
   if [ -L "$item" ]; then
     target="$(readlink "$item")"
-    if [[ "$target" == "$SCRIPT_DIR"* ]]; then
+    if [[ "$target" == "$BACKUP_DIR"* ]]; then
       rm "$item"
-      echo "removed: $item (harness symlink)"
+      echo "removed: $item (backup symlink)"
     else
       echo "skip: $item (local symlink -> $target)"
     fi

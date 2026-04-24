@@ -1,4 +1,4 @@
-import { basename, dirname, resolve } from 'node:path';
+import { basename, resolve } from 'node:path';
 import { mkdir } from 'node:fs/promises';
 import { detectStack } from '../detect-stack.mjs';
 import {
@@ -79,12 +79,10 @@ export async function runInit(ctx) {
   console.log(`\n✓ Wrote ${changes.length} merged file(s)`);
   if (ctx.backupDir) {
     console.log(`✓ Backup clone dir ready: ${ctx.backupDir}`);
-    const parentSeg = saveConfig?.parent ?? basename(dirname(ctx.backupDir));
-    const relBackup = `../${parentSeg}/${projectName}`;
-    console.log(`\nDone. From the project root, run the backup scripts like:`);
-    console.log(`  ${relBackup}/clone.sh   # clone this project into the backup dir`);
-    console.log(`  ${relBackup}/symlink.sh # set up harness symlinks`);
-    console.log(`  ${relBackup}/delete.sh  # tear down`);
+    console.log(`\nDone. From the project root, run the backup scripts:`);
+    console.log(`  ./clone.sh   # sync this project into the backup dir`);
+    console.log(`  ./symlink.sh # create backup → project symlinks`);
+    console.log(`  ./delete.sh  # tear down symlinks`);
   }
   console.log(`✓ Copied ${copied.filter(c => c.action === 'write').length} asset(s) (${copied.filter(c => c.action === 'skip').length} skipped as existing)`);
   for (const l of links) console.log(`  ${l.action.padEnd(5)} ${l.link} → CLAUDE.md  [${l.reason}]`);

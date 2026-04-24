@@ -1,13 +1,18 @@
 #!/bin/bash
-# DEPRECATED: Use `harness-team symlink` or /harness-symlink instead.
-# Creates symlinks in the current directory pointing to ../frontchapter-harness/lab-blog/
-# Run this from your project root (e.g., lab-blog/)
+# Creates symlinks in this project pointing to items in the harness backup directory.
+# Run from the project root.
+set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ITEMS=("CLAUDE.md" "AGENTS.md" "GEMINI.md" ".claude" ".cursor" ".opencode" ".cursorrules" "docs" ".harness" "clone.sh" "delete.sh")
+BACKUP_DIR="{{BACKUP_DIR}}"
+ITEMS=("CLAUDE.md" "AGENTS.md" "GEMINI.md" ".claude" ".cursor" ".opencode" ".cursorrules" "docs" ".harness")
+
+if [ ! -d "$BACKUP_DIR" ]; then
+  echo "error: backup dir not found: $BACKUP_DIR" >&2
+  exit 1
+fi
 
 for item in "${ITEMS[@]}"; do
-  backup="$SCRIPT_DIR/$item"
+  backup="$BACKUP_DIR/$item"
   if [ ! -e "$backup" ]; then
     echo "skip: $item (not found in backup)"
     continue
