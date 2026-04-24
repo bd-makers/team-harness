@@ -3,7 +3,7 @@ import { lstat, readlink, mkdir, copyFile, readdir, symlink as makeSymlink } fro
 import { resolveBackupDir } from '../backup-dir.mjs';
 import { confirm } from '../prompt.mjs';
 
-const ITEMS = ['CLAUDE.md', 'AGENTS.md', 'GEMINI.md', '.claude', '.cursor', '.opencode', '.cursorrules', 'docs', '.harness'];
+const ITEMS = ['CLAUDE.md', '.claude', '.cursor', '.opencode', 'docs', '.harness'];
 
 async function mergeDirNewer(src, dst) {
   await mkdir(dst, { recursive: true });
@@ -70,8 +70,13 @@ export async function runClone(ctx) {
 
   for (const op of toProcess) {
     if (op.kind === 'symlink') {
-      if (!await lstat(op.dst).catch(() => null)) await makeSymlink(op.target, op.dst);
-      console.log(`  ✓ synced symlink: ${op.item} → ${op.target}`);
+      const dstSt = await lstat(op.dst).catch(() => null);
+      if (!dstSt) {
+        await makeSymlink(op.target, op.dst);
+        console.log(`  ✓ synced symlink: ${op.item} → ${op.target}`);
+      } else {
+        console.log(`  skip: ${op.item} (symlink already exists in backup)`);
+      }
     } else if (op.kind === 'dir') {
       await mergeDirNewer(op.src, op.dst);
       console.log(`  ✓ merged dir: ${op.item}`);
