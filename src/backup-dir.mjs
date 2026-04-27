@@ -15,7 +15,7 @@ export async function resolveBackupDir(targetDir, { backupDir } = {}) {
       const data = JSON.parse(cfg);
       if (data.dir) return data.dir;
       const { parent, name } = data;
-      if (parent && name) return join(targetDir, '..', parent, name);
+      if (parent && name) return resolve(join(targetDir, '..', parent, name));
     } catch {}
   }
 
