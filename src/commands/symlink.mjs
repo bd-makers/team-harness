@@ -8,7 +8,7 @@ const ALIAS_ITEMS = ['AGENTS.md', 'GEMINI.md', '.cursorrules'];
 const SCRIPT_ITEMS = ['clone.sh', 'delete.sh'];
 
 export async function runSymlink(ctx) {
-  const backupDir = await resolveBackupDir(ctx.targetDir);
+  const backupDir = await resolveBackupDir(ctx.targetDir, { backupDir: ctx.flags['backup-dir'] });
   if (!backupDir) {
     console.error('No backup dir found. Run `harness-team init` or `harness-team backup` first.');
     process.exit(1);
