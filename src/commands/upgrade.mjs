@@ -8,7 +8,7 @@ import { runClone } from './clone.mjs';
 import { runDelete } from './delete.mjs';
 import { runSymlink } from './symlink.mjs';
 
-const MOVE_ITEMS = ['CLAUDE.md', '.claude', '.cursor', '.opencode', 'docs', '.harness', 'clone.sh', 'delete.sh'];
+const MOVE_ITEMS = ['CLAUDE.md', '.claude', '.cursor', '.opencode', 'docs', '.harness'];
 
 export async function runUpgrade(ctx) {
   console.log(`harness-team upgrade → ${ctx.targetDir}`);
@@ -30,7 +30,7 @@ export async function runUpgrade(ctx) {
 
   // 2. Clone project → backup (creates backup if missing, merges if exists)
   console.log('\n[1/3] Syncing project files to backup dir...');
-  await runClone({ ...ctx, flags: { ...ctx.flags, yes: true }, targetDir: ctx.targetDir });
+  await runClone({ ...ctx, flags: { ...ctx.flags, yes: true, 'backup-dir': backupDir }, targetDir: ctx.targetDir });
 
   // 3. Detect real (non-symlink) items in project root
   const realItems = [];
