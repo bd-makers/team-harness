@@ -17,6 +17,7 @@
 - [설치 결과물](#설치-결과물)
 - [CLAUDE.md 섹션 마커](#claudemd-섹션-마커)
 - [개발 / 기여](#개발--기여)
+  - [버전 범프 체크리스트](#버전-범프-체크리스트)
 
 ---
 
@@ -82,7 +83,20 @@ cd my-project
 ```
 
 설치 후 다음 슬래시 명령 사용 가능:
-`/harness-init`, `/harness-apply`, `/harness-sync`, `/harness-doctor`, `/harness-review`, `/harness-task`
+
+| 명령 | 용도 |
+|---|---|
+| `/harness-init` | 신규 프로젝트 scaffold |
+| `/harness-apply` | 기존 프로젝트에 비파괴 적용 |
+| `/harness-sync` | 내부 symlink/mirror 재동기화 |
+| `/harness-doctor` | 무결성 점검 |
+| `/harness-review` | Codex + Gemini 병렬 리뷰 |
+| `/harness-task` | task 관리 (new/list/switch/done) |
+| `/harness-clone` | project → backup dir 동기화 |
+| `/harness-symlink` | backup dir → project symlink 생성 |
+| `/harness-delete` | project에서 harness symlink/파일 제거 |
+| `/harness-migrate` | v0.2.x 스크립트 → v0.3+ 위치 이전 |
+| `/harness-upgrade` | v0.3.x 실제 파일 → v0.4+ symlink 원스텝 전환 |
 
 ### 방법 B: 독립 CLI
 
@@ -171,6 +185,62 @@ symlink · JSON 유효성 · 실행 권한 체크.
 ### `/harness-task` — task 관리
 
 아래 [task 관리](#task-관리-팀원기능별) 섹션 참조.
+
+### `/harness-clone` — project → backup dir 동기화
+
+프로젝트 파일을 백업 디렉토리로 복사(merge, newer-wins). 이미 harness symlink인 항목은 건너뜁니다.
+
+```bash
+/harness-clone
+/harness-clone --backup-dir ~/my-backups/project-a
+```
+
+### `/harness-symlink` — backup dir → project symlink 생성
+
+백업 디렉토리의 harness 아티팩트를 프로젝트 루트로 symlink합니다.
+
+```bash
+/harness-symlink
+/harness-symlink --backup-dir ~/my-backups/project-a
+```
+
+### `/harness-delete` — harness symlink/파일 제거
+
+프로젝트 루트에서 harness 항목을 제거합니다.
+
+```bash
+/harness-delete                      # symlink만 제거 (기본)
+/harness-delete --include-real       # 실제 파일/디렉토리도 삭제 (구버전 마이그레이션용)
+/harness-delete --yes                # 비대화식
+```
+
+`--include-real`은 구버전(파일이 symlink가 아닌 실제 파일로 존재)에서 신버전으로 전환할 때 사용합니다.
+
+### `/harness-migrate` — v0.2.x → v0.3+ 스크립트 위치 이전
+
+v0.2.x에서 backup dir에 있던 `clone.sh`, `symlink.sh`, `delete.sh`를 프로젝트 루트로 이전합니다.
+
+```bash
+/harness-migrate
+```
+
+### `/harness-upgrade` — v0.3.x → v0.4+ 원스텝 전환
+
+실제 파일로 존재하는 harness 아티팩트를 symlink 구조로 일괄 전환합니다.
+
+```bash
+/harness-upgrade                            # backup dir 자동 탐지
+/harness-upgrade --backup-dir ~/backups/p   # 경로 명시 (tilde 지원)
+/harness-upgrade --yes                      # 비대화식
+```
+
+내부 동작 순서:
+1. backup dir 확인 (없으면 clone 먼저 실행)
+2. project → backup 동기화 (`/harness-clone`)
+3. 실제 파일/디렉토리 목록 표시 + 확인
+4. 실제 항목 삭제 (`.harness/backup.json` 내용 보존)
+5. `.harness/backup.json` 복원
+6. symlink 생성 (`/harness-symlink`)
 
 ---
 
@@ -465,11 +535,15 @@ node /path/to/plugin/bin/harness-team.mjs doctor
 
 ```
 harness-aijient-team-plugin/
-├── .claude-plugin/plugin.json   # Claude Code 플러그인 메타
-├── marketplace.json             # 마켓 등록
+├── .claude-plugin/
+│   ├── plugin.json              # Claude Code 플러그인 메타 (버전 포함)
+│   └── marketplace.json         # 마켓 등록 (버전 포함 — 범프 시 반드시 갱신)
 ├── bin/harness-team.mjs         # CLI 엔트리
 ├── commands/                    # 슬래시 명령 래퍼 (CLI 호출)
+│   └── harness-{init,apply,sync,doctor,review,task,
+│           clone,symlink,delete,migrate,upgrade}.md
 ├── src/
+│   ├── backup-dir.mjs           # backup dir 탐색 (opts override + auto-detect)
 │   ├── detect-stack.mjs         # 스택 탐지
 │   ├── render.mjs               # 템플릿 치환
 │   ├── merge.mjs                # 비파괴 섹션 병합 + JSON deep-merge
@@ -477,7 +551,16 @@ harness-aijient-team-plugin/
 │   ├── member.mjs               # git config user.name 감지
 │   ├── fsx.mjs, prompt.mjs      # 유틸
 │   ├── harness.mjs              # init/apply 공통 오케스트레이션
-│   └── commands/{init,apply,sync,doctor,task}.mjs
+│   └── commands/
+│       ├── init.mjs, apply.mjs, sync.mjs, doctor.mjs, task.mjs
+│       ├── clone.mjs            # project → backup 동기화
+│       ├── symlink.mjs          # backup → project symlink
+│       ├── delete.mjs           # symlink/실제파일 제거 (--include-real)
+│       ├── migrate.mjs          # v0.2.x 스크립트 이전
+│       └── upgrade.mjs          # v0.3.x → v0.4+ 원스텝 전환
+├── tests/
+│   ├── backup-dir.test.mjs
+│   └── delete.test.mjs
 └── templates/                   # 프로젝트에 복사되는 원본
     ├── CLAUDE.md.hbs
     ├── clone.sh, symlink.sh, delete.sh
@@ -485,6 +568,55 @@ harness-aijient-team-plugin/
     ├── .opencode/opencode.json
     └── docs/README.md
 ```
+
+### 버전 범프 체크리스트
+
+버전을 올릴 때 반드시 **4개 파일** 모두 갱신하고, 로컬 캐시까지 동기화해야 합니다.
+
+```bash
+VERSION="0.x.0"
+
+# 1. package.json
+sed -i '' "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" package.json
+
+# 2. .claude-plugin/plugin.json  (플러그인 메타)
+sed -i '' "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" .claude-plugin/plugin.json
+
+# 3. .claude-plugin/marketplace.json  ← 자주 누락! /plugin 목록에 표시되는 버전
+sed -i '' "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" .claude-plugin/marketplace.json
+
+# 4. 커밋
+git add package.json .claude-plugin/plugin.json .claude-plugin/marketplace.json
+git commit -m "chore(plugin): plugin.json 버전 $VERSION + 신규 커맨드 추가"
+git commit -m "chore(release): 버전 $VERSION으로 범프"  # 또는 한 커밋으로 합치기
+
+# 5. 로컬 플러그인 캐시 동기화
+CACHE=~/.claude/plugins/cache/harness-aijient-team-marketplace/harness-aijient-team/$VERSION
+mkdir -p "$CACHE"
+rsync -a \
+  --exclude='.git' --exclude='.claude-plugin' --exclude='docs/superpowers' \
+  --exclude='node_modules' --exclude='.harness' \
+  ./ "$CACHE/"
+
+# 6. marketplace 경로에도 반영
+cp .claude-plugin/marketplace.json \
+   ~/.claude/plugins/marketplaces/harness-aijient-team-marketplace/.claude-plugin/marketplace.json
+rsync -a \
+  --exclude='.git' --exclude='.claude-plugin' --exclude='docs/superpowers' \
+  --exclude='node_modules' --exclude='.harness' \
+  ./ ~/.claude/plugins/marketplaces/harness-aijient-team-marketplace/
+```
+
+**확인 포인트:**
+
+| 파일 | 역할 | 누락 시 증상 |
+|---|---|---|
+| `package.json` | npm 버전 | `npm info`에서 구버전 |
+| `.claude-plugin/plugin.json` | 플러그인 로드 메타 | 슬래시 명령 누락 가능 |
+| `.claude-plugin/marketplace.json` | `/plugin` 목록 표시 버전 | **`/plugin`에서 구버전 표시** |
+| 로컬 캐시 rsync | 실행 코드 반영 | 새 명령어가 실제 구버전 코드로 실행됨 |
+
+> `/reload-plugins` 후에도 구버전이 보이면 `marketplace.json`의 `plugins[0].version` 확인.
 
 ### 요구사항
 
