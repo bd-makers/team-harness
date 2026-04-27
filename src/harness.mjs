@@ -1,5 +1,5 @@
 // Shared harness ops used by init & apply.
-import { join, basename } from 'node:path';
+import { join, basename, resolve } from 'node:path';
 import { writeText, readTextSafe, copyTree, exists } from './fsx.mjs';
 import { render } from './render.mjs';
 import { mergeMarkdown, deepMergeJson, simpleDiff } from './merge.mjs';
@@ -18,7 +18,7 @@ export async function loadBackupDir(targetDir) {
     if (data.dir) return data.dir;
     const { parent, name } = data;
     if (!parent || !name) return null;
-    return join(targetDir, '..', parent, name);
+    return resolve(join(targetDir, '..', parent, name));
   } catch { return null; }
 }
 

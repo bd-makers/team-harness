@@ -1,6 +1,5 @@
-import { join, resolve } from 'node:path';
+import { join } from 'node:path';
 import { lstat } from 'node:fs/promises';
-import { homedir } from 'node:os';
 import { resolveBackupDir } from '../backup-dir.mjs';
 import { writeText } from '../fsx.mjs';
 import { confirm } from '../prompt.mjs';
@@ -9,15 +8,13 @@ import { runDelete } from './delete.mjs';
 import { runSymlink } from './symlink.mjs';
 
 const MOVE_ITEMS = ['CLAUDE.md', '.claude', '.cursor', '.opencode', 'docs', '.harness'];
+const ALIAS_ITEMS = ['AGENTS.md', 'GEMINI.md', '.cursorrules'];
 
 export async function runUpgrade(ctx) {
   console.log(`harness-team upgrade → ${ctx.targetDir}`);
 
-  // 1. Resolve backup dir
-  const rawBackupDir = ctx.flags['backup-dir']
-    ? resolve((ctx.flags['backup-dir']).replace(/^~/, homedir()))
-    : null;
-  const backupDir = rawBackupDir || await resolveBackupDir(ctx.targetDir);
+  // 1. Resolve backup dir (tilde expansion handled inside resolveBackupDir)
+  const backupDir = await resolveBackupDir(ctx.targetDir, { backupDir: ctx.flags['backup-dir'] });
   if (!backupDir) {
     console.error(
       'No backup dir found.\n' +
@@ -35,7 +32,7 @@ export async function runUpgrade(ctx) {
   // 3. Detect real (non-symlink) items in project root
   const realItems = [];
 
-  for (const item of MOVE_ITEMS) {
+  for (const item of [...MOVE_ITEMS, ...ALIAS_ITEMS]) {
     const p = join(ctx.targetDir, item);
     const st = await lstat(p).catch(() => null);
     if (!st) continue;

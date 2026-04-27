@@ -1,4 +1,5 @@
 import { join, resolve, dirname, basename } from 'node:path';
+import { homedir } from 'node:os';
 import { lstat, readlink } from 'node:fs/promises';
 import { readTextSafe, exists } from './fsx.mjs';
 
@@ -6,7 +7,7 @@ const PROBE_ITEMS = ['CLAUDE.md', '.claude'];
 const DEFAULT_BACKUP_PARENT = 'harness-backup';
 
 export async function resolveBackupDir(targetDir, { backupDir } = {}) {
-  if (backupDir) return backupDir;
+  if (backupDir) return resolve(backupDir.replace(/^~/, homedir()));
 
   // 1. Try .harness/backup.json
   const cfg = await readTextSafe(join(targetDir, '.harness/backup.json'));
