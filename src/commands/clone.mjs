@@ -23,7 +23,7 @@ async function mergeDirNewer(src, dst) {
 }
 
 export async function runClone(ctx) {
-  const backupDir = await resolveBackupDir(ctx.targetDir);
+  const backupDir = await resolveBackupDir(ctx.targetDir, { backupDir: ctx.flags['backup-dir'] });
   if (!backupDir) {
     console.error('No backup dir found. Run `harness-team init` or `harness-team backup` first.');
     process.exit(1);
