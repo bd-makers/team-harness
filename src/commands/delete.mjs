@@ -71,7 +71,7 @@ export async function runDelete(ctx) {
     : '\nProceed?';
 
   const ok = ctx.flags.yes || await confirm(question, { defaultYes: !hasReal });
-  if (!ok) { console.log('Aborted.'); return { savedBackupConfig: null }; }
+  if (!ok) { console.log('Aborted.'); return { savedBackupConfig }; }
 
   for (const op of toRemove) {
     if (op.kind === 'real') {
