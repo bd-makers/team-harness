@@ -11,6 +11,7 @@ import { runClone } from '../src/commands/clone.mjs';
 import { runSymlink } from '../src/commands/symlink.mjs';
 import { runDelete } from '../src/commands/delete.mjs';
 import { runMigrate } from '../src/commands/migrate.mjs';
+import { runUpgrade } from '../src/commands/upgrade.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -28,6 +29,7 @@ Commands:
   symlink [dir]                     Create backup→project symlinks
   delete [dir]                      Remove harness symlinks from project
   migrate [dir]                     Move scripts from backup dir to project root (v0.2.x → v0.3+)
+  upgrade [dir]                     Migrate real files → symlinks in one step (v0.3.x → v0.4+)
   sync [dir]                        Re-sync symlinks, cursor rules, opencode config
   doctor [dir]                      Diagnose harness integrity
   task new <feature|fix> <name>     Create a per-member per-task doc folder + set active
@@ -88,6 +90,7 @@ async function main() {
     case 'symlink': return runSymlink(ctx);
     case 'delete': return runDelete(ctx);
     case 'migrate': return runMigrate(ctx);
+    case 'upgrade': return runUpgrade(ctx);
     case 'sync': return runSync(ctx);
     case 'doctor': return runDoctor(ctx);
     case 'task': return runTask(ctx);
