@@ -1,6 +1,6 @@
 {
   "name": "harness-aijient-team",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Team harness plugin: Claude-led multi-agent (Codex/Gemini/Cursor/OpenCode) scaffold & apply",
   "type": "module",
   "bin": {
