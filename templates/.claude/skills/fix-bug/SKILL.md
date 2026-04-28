@@ -26,7 +26,7 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash
 ### Phase 3: 검증
 1. typecheck / lint / test
 2. 재현 시나리오로 수동 확인
-3. 중요한 수정은 `/review`
+3. 중요한 수정은 `CLAUDE.md`의 **코드 리뷰 기준** 체크리스트 확인 후 결과 보고
 
 ### Phase 4: 마무리
 1. `/handoff` — handoff.md 갱신
