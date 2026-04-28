@@ -29,7 +29,7 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash
 ### Phase 3: 구현
 1. feature는 `src/features/<name>/` 하위에 co-locate (프로젝트 구조에 맞게)
 2. 단계별로 구현 + `plan.md` 체크리스트 갱신
-3. 중요한 변경은 `/harness-review`로 Codex+Gemini 리뷰
+3. 중요한 변경은 `/review`
 
 ### Phase 4: 검증 및 마무리
 1. typecheck / lint / test

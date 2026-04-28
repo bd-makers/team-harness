@@ -63,10 +63,7 @@ cd my-project
 # → docs/<your-name>/feature/user-auth/{spec,plan,handoff,artifact}.md 생성
 # → .harness/active.json이 이 task를 가리킴
 
-# 4. 작업하다가 중요한 변경 있으면 리뷰
-/harness-review
-
-# 5. 세션 종료 전
+# 4. 세션 종료 전
 /handoff              # 활성 task의 handoff.md 갱신
 /harness-task done    # artifact.md에 git log/diff 자동 수집
 ```
@@ -90,7 +87,6 @@ cd my-project
 | `/harness-apply` | 기존 프로젝트에 비파괴 적용 |
 | `/harness-sync` | 내부 symlink/mirror 재동기화 |
 | `/harness-doctor` | 무결성 점검 |
-| `/harness-review` | Codex + Gemini 병렬 리뷰 |
 | `/harness-task` | task 관리 (new/list/switch/done) |
 | `/harness-clone` | project → backup dir 동기화 |
 | `/harness-symlink` | backup dir → project symlink 생성 |
@@ -168,19 +164,6 @@ symlink · JSON 유효성 · 실행 권한 체크.
 ```
 
 문제가 있으면 exit 1 + 문제 항목 리포트.
-
-### `/harness-review` — Codex + Gemini 병렬 리뷰
-
-현재 diff를 두 read-only 리뷰어에게 병렬로 보내 피드백 수집.
-
-```bash
-/harness-review                    # unstaged 변경
-/harness-review staged             # 스테이징된 변경
-/harness-review main..HEAD         # 브랜치 비교
-/harness-review src/auth.ts        # 특정 파일
-```
-
-전제: `.claude/skills/review/SKILL.md` 설치 + `settings.json`에 `Bash(gemini:*)`, `Bash(codex:*)` 허용(둘 다 `init/apply`가 자동 주입).
 
 ### `/harness-task` — task 관리
 
@@ -319,9 +302,6 @@ $ /plan OAuth 2.0 PKCE 흐름으로 전환
 
 # 코드 작성 + 체크리스트 갱신
 # ...
-
-# 중요한 변경이라 리뷰
-$ /harness-review main..HEAD
 
 # 세션 종료
 $ /handoff

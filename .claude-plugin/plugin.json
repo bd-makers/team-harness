@@ -9,7 +9,6 @@
     "./commands/harness-init.md",
     "./commands/harness-apply.md",
     "./commands/harness-sync.md",
-    "./commands/harness-review.md",
     "./commands/harness-doctor.md",
     "./commands/harness-task.md",
     "./commands/harness-clone.md",
