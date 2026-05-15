@@ -85,25 +85,24 @@
 ## 작업 프로토콜
 
 ### task 단위 관리
-모든 feature/fix 작업은 `docs/<member>/<feature|fix>/<name>/` 아래에서 관리됩니다.
-각 task 디렉토리는 네 파일로 구성:
-- `spec.md` — 요구사항/설계
-- `plan.md` — 단계별 체크리스트
-- `handoff.md` — 세션 인수인계
-- `artifact.md` — 실행 결과 (`harness-team task done` 시 자동 수집)
+모든 작업은 `docs/<user>/<name>/` 아래에서 관리됩니다.
+각 task 디렉토리는 세 파일로 구성:
+- `<name>-spec.md` — 요구사항/설계
+- `<name>-plan.md` — 단계별 체크리스트 (완료 시 `- [x]`로 체크)
+- `<name>-handoff.md` — 세션 인수인계 (post-commit hook 자동 갱신)
 
-활성 task는 `.harness/active.json`에 저장되며, `harness-team task switch <name>`으로 전환.
+활성 task는 `.harness/active.json`에 저장.
 
-### 세션 시작 시
-1. `harness-team task list` 로 현재 active task 확인 (또는 `.harness/active.json`)
-2. 활성 task의 `handoff.md` 읽기 — 이전 세션 인수인계
-3. 활성 task의 `plan.md` 읽기 — 현재 단계
-4. 필요시 `spec.md`에서 맥락 보강
+### 세션 시작 시 (반드시 수행)
+1. `docs/<user>/<user>-handoff.md` 읽기 — 현재 active task 확인
+2. 활성 task의 `<name>-plan.md` 읽기 — 현재 단계 파악
+3. 필요시 `<name>-spec.md`에서 맥락 보강
 
-### 세션 종료 시
-1. 활성 task의 `handoff.md` 갱신
-2. `plan.md` 체크리스트 업데이트
-3. task 완료 시 `harness-team task done` → `artifact.md`에 결과 append
+### task 워크플로우
+- **시작**: `harness-team task <name>` — 생성 또는 활성화
+- **진행**: `<name>-plan.md` 체크리스트 항목 완료 시 `- [x]`로 갱신
+- **commit 시**: post-commit hook이 `<name>-handoff.md`와 `<user>-handoff.md` 자동 갱신
+- **완료**: plan 전체 완료 감지 또는 사용자 신호 → AskUserQuestion → `harness-team done`
 
 ### 코드 리뷰 기준
 중요한 변경 완료 시 아래 항목을 순서대로 확인하고 결과를 사용자에게 보고합니다:
@@ -122,8 +121,9 @@
 |---|---|
 | `CLAUDE.md` | 이 파일 — 프로젝트 규칙 (SSOT) |
 | `AGENTS.md`, `GEMINI.md`, `.cursorrules` | symlink → `CLAUDE.md` |
-| `docs/<member>/<category>/<name>/` | task별 작업 문서 4종 |
+| `docs/<user>/<name>/` | task별 작업 문서 3종 |
 | `.harness/active.json` | 현재 활성 task 포인터 |
+| `docs/<user>/<user>-handoff.md` | 세션 시작 진입점 |
 | `.claude/rules/*.md` | 영역별 코딩 규칙 |
 <!-- harness:section="protocol" end -->
 

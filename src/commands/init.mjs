@@ -6,6 +6,8 @@ import {
   loadBackupDir, saveBackupConfig, DEFAULT_BACKUP_PARENT, AI_GITIGNORE_PREVIEW,
 } from '../harness.mjs';
 import { confirm, ask } from '../prompt.mjs';
+import { ensureUsername } from '../user-config.mjs';
+import { installPostCommitHook } from '../git-hooks.mjs';
 
 export async function runInit(ctx) {
   console.log(`harness-team init → ${ctx.targetDir}`);
@@ -14,6 +16,8 @@ export async function runInit(ctx) {
         cmdInstall: '(configure)', cmdDev: '(configure)', cmdTest: '(configure)', cmdLint: '(configure)', cmdTypecheck: '(configure)' }
     : await detectStack(ctx.targetDir);
   console.log(`  stack: ${stack.stackLabel} (${stack.id})`);
+
+  await ensureUsername(ctx.targetDir, ctx.flags);
 
   // Resolve the sibling backup directory: ../<parent>/<projectName>.
   // The 3 scripts (clone.sh, symlink.sh, delete.sh) live OUTSIDE the project so
@@ -75,6 +79,7 @@ export async function runInit(ctx) {
   if (saveConfig) await saveBackupConfig(ctx.targetDir, saveConfig);
   const copied = await copyStaticAssets(ctx);
   const links = await setupSymlinks(ctx);
+  await installPostCommitHook(ctx.targetDir);
 
   console.log(`\n✓ Wrote ${changes.length} merged file(s)`);
   if (ctx.backupDir) {
