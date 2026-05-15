@@ -1,4 +1,4 @@
-import { join, relative } from 'node:path';
+import { join } from 'node:path';
 import { readdir, readFile, writeFile, mkdir, appendFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -106,7 +106,7 @@ async function ensureTaskSummary(targetDir) {
   return p;
 }
 
-async function addToUserTaskIndex(indexPath, user, name, date) {
+async function addToUserTaskIndex(indexPath, name, date) {
   let content = await readFile(indexPath, 'utf8');
   if (content.includes(`- ${name}`)) return;
   content = content.replace('## Active\n', `## Active\n- ${name} (created ${date})\n`);
@@ -120,16 +120,6 @@ async function addToTaskSummary(summaryPath, user, name, date) {
   await writeFile(summaryPath, content);
 }
 
-async function markDoneInUserTaskIndex(indexPath, name) {
-  let content = await readFile(indexPath, 'utf8');
-  const activeEntry = `- ${name}`;
-  if (!content.includes(activeEntry)) return;
-  content = content.replace(`${activeEntry} (created `, `~~${activeEntry}~~ (created `);
-  content = content.replace('## Completed\n', `## Completed\n- ✅ ${name}\n`);
-  const lines = content.split('\n');
-  const filtered = lines.filter(l => !l.startsWith(`- ${name} (`) && !l.startsWith(`~~- ${name}~~`));
-  await writeFile(indexPath, filtered.join('\n'));
-}
 
 async function markDoneInTaskSummary(summaryPath, user, name) {
   let content = await readFile(summaryPath, 'utf8');
@@ -173,7 +163,7 @@ export async function runTask(ctx) {
   });
 
   const indexPath = await ensureUserTaskIndex(ctx.targetDir, user);
-  await addToUserTaskIndex(indexPath, user, name, date);
+  await addToUserTaskIndex(indexPath, name, date);
 
   const summaryPath = await ensureTaskSummary(ctx.targetDir);
   await addToTaskSummary(summaryPath, user, name, date);
@@ -230,7 +220,7 @@ export async function runDone(ctx) {
     await markDoneInTaskSummary(summaryPath, user, task);
   }
 
-  await writeActive(ctx.targetDir, {});
+  await writeActive(ctx.targetDir, null);
   console.log(`done: ${user}/${task}`);
   console.log(`handoff updated: docs/${user}/${task}/${task}-handoff.md`);
 }
