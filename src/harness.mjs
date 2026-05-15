@@ -164,7 +164,6 @@ const AI_GITIGNORE_ENTRIES = [
   'output/',
   '',
   '*.log',
-  'docs/',
 ];
 
 async function appendGitignore(targetDir, { addAiEntries = false } = {}) {
