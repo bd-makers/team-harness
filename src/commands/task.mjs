@@ -7,6 +7,10 @@ import { exists, writeText } from '../fsx.mjs';
 
 const pexec = promisify(execFile);
 
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 async function readConfig(targetDir) {
   const p = join(targetDir, '.harness/config.json');
   try { return JSON.parse(await readFile(p, 'utf8')); } catch { return {}; }
@@ -108,7 +112,7 @@ async function ensureTaskSummary(targetDir) {
 
 async function addToUserTaskIndex(indexPath, name, date) {
   let content = await readFile(indexPath, 'utf8');
-  if (content.includes(`- ${name}`)) return;
+  if (content.split('\n').some(l => l === `- ${name}` || l.startsWith(`- ${name} (`))) return;
   content = content.replace('## Active\n', `## Active\n- ${name} (created ${date})\n`);
   await writeFile(indexPath, content);
 }
@@ -124,7 +128,7 @@ async function addToTaskSummary(summaryPath, user, name, date) {
 async function markDoneInTaskSummary(summaryPath, user, name) {
   let content = await readFile(summaryPath, 'utf8');
   content = content.replace(
-    new RegExp(`\\| ${user} \\| ${name} \\| 🔄 active \\|`),
+    new RegExp(`\\| ${escapeRegex(user)} \\| ${escapeRegex(name)} \\| 🔄 active \\|`),
     `| ${user} | ${name} | ✅ done |`
   );
   await writeFile(summaryPath, content);
@@ -207,7 +211,7 @@ export async function runDone(ctx) {
   const indexPath = join(ctx.targetDir, 'docs', user, `${user}-task.md`);
   if (await exists(indexPath)) {
     let content = await readFile(indexPath, 'utf8');
-    const line = content.split('\n').find(l => l.includes(`- ${task}`));
+    const line = content.split('\n').find(l => l === `- ${task}` || l.startsWith(`- ${task} (`) || l.startsWith(`- ✅ ${task}`));
     if (line) {
       content = content.replace(line, '');
       content = content.replace('## Completed\n', `## Completed\n- ✅ ${task}\n`);
@@ -238,7 +242,7 @@ export async function runHandoffAuto(ctx) {
   try {
     const { stdout } = await pexec('git', ['-C', ctx.targetDir, 'log', '-1', '--oneline'], { maxBuffer: 1024 * 1024 });
     commitMsg = stdout.trim();
-  } catch { return; }
+  } catch { /* continue with empty commitMsg */ }
 
   try {
     const { stdout } = await pexec('git', ['-C', ctx.targetDir, 'diff', 'HEAD~1', '--stat'], { maxBuffer: 1024 * 1024 });
