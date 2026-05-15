@@ -16,6 +16,7 @@
 - [스크립트 3종 사용법](#스크립트-3종-사용법)
 - [설치 결과물](#설치-결과물)
 - [CLAUDE.md 섹션 마커](#claudemd-섹션-마커)
+- [문서 (HTML)](#문서-html)
 - [개발 / 기여](#개발--기여)
   - [버전 범프 체크리스트](#버전-범프-체크리스트)
 - [변경 이력](#변경-이력)
@@ -50,7 +51,7 @@
 
 ```bash
 # 1. 플러그인 설치 (Claude Code)
-/plugin marketplace add https://github.com/<user>/harness-aijient-team-plugin
+/plugin marketplace add https://github.com/bd-makers/team-harness
 /plugin install harness-aijient-team
 
 # 2. 프로젝트에 적용
@@ -76,7 +77,7 @@ cd my-project
 ### 방법 A: Claude Code 플러그인 (권장)
 
 ```
-/plugin marketplace add <이 repo의 git-url>
+/plugin marketplace add https://github.com/bd-makers/team-harness
 /plugin install harness-aijient-team
 ```
 
@@ -498,6 +499,23 @@ my-project/
 
 ---
 
+## 문서 (HTML)
+
+아키텍처·워크플로우를 시각적으로 확인할 수 있는 HTML 문서입니다.  
+로컬 클론 후 브라우저에서 바로 열 수 있습니다.
+
+| 문서 | 설명 |
+|---|---|
+| [harness-overview.html](docs/harness-overview.html) | 플러그인 전체 아키텍처 다이어그램 — 에이전트 연결, symlink 구조, 명령 흐름 |
+| [harness-workflow-simulation.html](docs/harness-workflow-simulation.html) | task 워크플로우 시나리오 시뮬레이션 — new → done 흐름 단계별 인터랙티브 |
+
+```bash
+open docs/harness-overview.html
+open docs/harness-workflow-simulation.html
+```
+
+---
+
 ## 개발 / 기여
 
 ```bash
@@ -521,7 +539,7 @@ harness-aijient-team-plugin/
 │   └── marketplace.json         # 마켓 등록 (버전 포함 — 범프 시 반드시 갱신)
 ├── bin/harness-team.mjs         # CLI 엔트리
 ├── commands/                    # 슬래시 명령 래퍼 (CLI 호출)
-│   └── harness-{init,apply,sync,doctor,review,task,
+│   └── harness-{init,apply,sync,doctor,task,
 │           clone,symlink,delete,migrate,upgrade}.md
 ├── src/
 │   ├── backup-dir.mjs           # backup dir 탐색 (opts override + auto-detect)
@@ -530,10 +548,13 @@ harness-aijient-team-plugin/
 │   ├── merge.mjs                # 비파괴 섹션 병합 + JSON deep-merge
 │   ├── symlink.mjs              # 크로스플랫폼 symlink
 │   ├── member.mjs               # git config user.name 감지
+│   ├── git-hooks.mjs            # post-commit hook 설치
+│   ├── user-config.mjs          # username 영속 저장
 │   ├── fsx.mjs, prompt.mjs      # 유틸
 │   ├── harness.mjs              # init/apply 공통 오케스트레이션
 │   └── commands/
 │       ├── init.mjs, apply.mjs, sync.mjs, doctor.mjs, task.mjs
+│       ├── backup.mjs           # backup dir 이동 + symlink 교체 (upgrade 내부용)
 │       ├── clone.mjs            # project → backup 동기화
 │       ├── symlink.mjs          # backup → project symlink
 │       ├── delete.mjs           # symlink/실제파일 제거 (--include-real)
