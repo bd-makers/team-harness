@@ -6,7 +6,7 @@ import { runApply } from '../src/commands/apply.mjs';
 import { runBackup } from '../src/commands/backup.mjs';
 import { runSync } from '../src/commands/sync.mjs';
 import { runDoctor } from '../src/commands/doctor.mjs';
-import { runTask } from '../src/commands/task.mjs';
+import { runTask, runList, runDone, runHandoffAuto } from '../src/commands/task.mjs';
 import { runClone } from '../src/commands/clone.mjs';
 import { runSymlink } from '../src/commands/symlink.mjs';
 import { runDelete } from '../src/commands/delete.mjs';
@@ -32,10 +32,10 @@ Commands:
   upgrade [dir]                     Migrate real files → symlinks in one step (v0.3.x → v0.4+)
   sync [dir]                        Re-sync symlinks, cursor rules, opencode config
   doctor [dir]                      Diagnose harness integrity
-  task new <feature|fix> <name>     Create a per-member per-task doc folder + set active
-  task list                         List all tasks
-  task switch <id>                  Switch active task
-  task done                         Auto-collect git/test results into artifact.md
+  task <name>                       Create or activate a task
+  list                              List all tasks
+  done                              Complete the active task
+  handoff                           Update handoff from latest commit (post-commit hook)
   help                              Show this help
 
 Options:
@@ -57,7 +57,7 @@ function parseArgs(argv) {
     if (a.startsWith('--')) {
       const [k, v] = a.slice(2).split('=');
       if (v !== undefined) out.flags[k] = v;
-      else if (argv[i + 1] && !argv[i + 1].startsWith('--') && !['init','apply','sync','doctor','task','help','new','list','switch','done'].includes(argv[i+1])) {
+      else if (argv[i + 1] && !argv[i + 1].startsWith('--') && !['init','apply','sync','doctor','task','list','done','handoff','help'].includes(argv[i+1])) {
         // flags that take values: stack, member, target
         if (['stack', 'member', 'target', 'backup-parent', 'backup-dir'].includes(k)) { out.flags[k] = argv[++i]; }
         else if (k === 'no-backup') out.flags['no-backup'] = true;
@@ -74,7 +74,8 @@ async function main() {
   const parsed = parseArgs(argv);
   const { cmd, positional, flags } = parsed;
 
-  const target = flags.target || (cmd === 'task' ? process.cwd() : positional[0]) || process.cwd();
+  const taskCmds = new Set(['task', 'list', 'done', 'handoff']);
+  const target = flags.target || (taskCmds.has(cmd) ? process.cwd() : positional[0]) || process.cwd();
   const ctx = {
     root: ROOT,
     targetDir: resolve(process.cwd(), target),
@@ -94,6 +95,9 @@ async function main() {
     case 'sync': return runSync(ctx);
     case 'doctor': return runDoctor(ctx);
     case 'task': return runTask(ctx);
+    case 'list': return runList(ctx);
+    case 'done': return runDone(ctx);
+    case 'handoff': return runHandoffAuto(ctx);
     case 'help':
     case '--help':
     case '-h':

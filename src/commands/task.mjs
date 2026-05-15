@@ -7,60 +7,10 @@ import { exists, writeText } from '../fsx.mjs';
 
 const pexec = promisify(execFile);
 
-const CATEGORIES = new Set(['feature', 'fix']);
-
-const TEMPLATES = {
-  'spec.md': ({ name, category }) => `# ${category}: ${name}
-
-## 목적 / 요구사항
-
-
-## 설계 / 접근
-
-
-## 참고
--
-`,
-  'plan.md': () => `# Plan
-
-## 목표
-
-
-## 단계
-- [ ]
-
-## 참고
--
-`,
-  'handoff.md': () => `# Handoff
-
-## 마지막 세션 요약
-
-
-## 변경된 파일
--
-
-## 검증 상태
-- [ ] typecheck
-- [ ] lint
-- [ ] test
-
-## 막힌 점 / 의사결정 필요
-
-
-## 다음 단계
-1.
-`,
-  'artifact.md': ({ name, category }) => `# Artifact: ${category}/${name}
-
-완료 시 \`harness-team task done\` 실행 → 아래에 git log / diff / test 결과가 append됩니다.
-
-## 수동 기록 (flow / sequence / test 설계 등)
-
-
-## 자동 수집
-`,
-};
+async function readConfig(targetDir) {
+  const p = join(targetDir, '.harness/config.json');
+  try { return JSON.parse(await readFile(p, 'utf8')); } catch { return {}; }
+}
 
 async function readActive(targetDir) {
   const p = join(targetDir, '.harness/active.json');
@@ -73,137 +23,264 @@ async function writeActive(targetDir, data) {
   await writeFile(p, JSON.stringify(data, null, 2) + '\n');
 }
 
-function taskPath(targetDir, member, category, name) {
-  return join(targetDir, 'docs', member, category, name);
+async function resolveUser(targetDir, flags) {
+  const cfg = await readConfig(targetDir);
+  return cfg.user || await detectMember(targetDir, flags);
 }
 
-async function createTask(ctx, category, name) {
-  if (!CATEGORIES.has(category)) {
-    throw new Error(`category must be one of: ${[...CATEGORIES].join(', ')}`);
-  }
-  if (!name || !/^[\w.-]+$/.test(name)) {
-    throw new Error('name must be [word chars/dots/dashes], no spaces');
-  }
-  const member = await detectMember(ctx.targetDir, ctx.flags);
-  const dir = taskPath(ctx.targetDir, member, category, name);
-  if (await exists(dir)) {
-    console.log(`task exists: ${relative(ctx.targetDir, dir)}`);
-  } else {
-    for (const [file, tpl] of Object.entries(TEMPLATES)) {
-      await writeText(join(dir, file), tpl({ name, category, member }));
-    }
-    console.log(`created: ${relative(ctx.targetDir, dir)}/`);
-  }
-  await writeActive(ctx.targetDir, {
-    member, category, name,
-    path: relative(ctx.targetDir, dir),
-    switchedAt: new Date().toISOString(),
-  });
-  console.log(`active: ${member}/${category}/${name}`);
+function taskDir(targetDir, user, name) {
+  return join(targetDir, 'docs', user, name);
 }
 
-async function listTasks(ctx) {
-  const docs = join(ctx.targetDir, 'docs');
-  if (!(await exists(docs))) { console.log('(no docs/)'); return; }
-  const active = await readActive(ctx.targetDir);
-  const members = (await readdir(docs, { withFileTypes: true }))
-    .filter(e => e.isDirectory()).map(e => e.name);
-  for (const m of members) {
-    for (const cat of CATEGORIES) {
-      const p = join(docs, m, cat);
-      if (!(await exists(p))) continue;
-      const names = (await readdir(p, { withFileTypes: true }))
-        .filter(e => e.isDirectory()).map(e => e.name);
-      for (const n of names) {
-        const isActive = active && active.member === m && active.category === cat && active.name === n;
-        console.log(`${isActive ? '*' : ' '} ${m}/${cat}/${n}`);
-      }
-    }
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function taskSpecTemplate(name) {
+  return `# ${name} — Spec
+
+## 목적 / 요구사항
+
+
+## 설계 / 접근
+
+
+## 참고
+-
+`;
+}
+
+function taskPlanTemplate(name) {
+  return `# ${name} — Plan
+
+## 목표
+
+
+## 단계
+- [ ]
+
+## 참고
+-
+`;
+}
+
+function taskHandoffTemplate(name) {
+  return `# ${name} — Handoff
+
+(세션 종료 시 post-commit hook이 자동 갱신합니다)
+`;
+}
+
+function userTaskIndexTemplate(user) {
+  return `# ${user} — Tasks
+
+## Active
+
+## Completed
+`;
+}
+
+function taskSummaryTemplate() {
+  return `# Task Summary
+
+| User | Task | Status | Created |
+|------|------|--------|---------|
+`;
+}
+
+async function ensureUserTaskIndex(targetDir, user) {
+  const p = join(targetDir, 'docs', user, `${user}-task.md`);
+  if (!(await exists(p))) {
+    await mkdir(join(targetDir, 'docs', user), { recursive: true });
+    await writeFile(p, userTaskIndexTemplate(user));
   }
+  return p;
 }
 
-async function switchTask(ctx, identifier) {
-  // identifier: "<member>/<category>/<name>" or just "<name>" (searches current member)
-  const parts = identifier.split('/');
-  let member, category, name;
-  if (parts.length === 3) {
-    [member, category, name] = parts;
-  } else if (parts.length === 2) {
-    [category, name] = parts;
-    member = await detectMember(ctx.targetDir, ctx.flags);
-  } else if (parts.length === 1) {
-    member = await detectMember(ctx.targetDir, ctx.flags);
-    name = parts[0];
-    // find category
-    for (const cat of CATEGORIES) {
-      if (await exists(taskPath(ctx.targetDir, member, cat, name))) { category = cat; break; }
-    }
-    if (!category) throw new Error(`task not found: ${member}/*/${name}`);
-  } else throw new Error('invalid task identifier');
-
-  const dir = taskPath(ctx.targetDir, member, category, name);
-  if (!(await exists(dir))) throw new Error(`task not found: ${relative(ctx.targetDir, dir)}`);
-  await writeActive(ctx.targetDir, {
-    member, category, name,
-    path: relative(ctx.targetDir, dir),
-    switchedAt: new Date().toISOString(),
-  });
-  console.log(`active: ${member}/${category}/${name}`);
+async function ensureTaskSummary(targetDir) {
+  const p = join(targetDir, 'docs', 'task_summary.md');
+  if (!(await exists(p))) {
+    await mkdir(join(targetDir, 'docs'), { recursive: true });
+    await writeFile(p, taskSummaryTemplate());
+  }
+  return p;
 }
 
-async function doneTask(ctx) {
-  const active = await readActive(ctx.targetDir);
-  if (!active) { console.log('no active task'); return; }
-  const artifactPath = join(ctx.targetDir, active.path, 'artifact.md');
+async function addToUserTaskIndex(indexPath, user, name, date) {
+  let content = await readFile(indexPath, 'utf8');
+  if (content.includes(`- ${name}`)) return;
+  content = content.replace('## Active\n', `## Active\n- ${name} (created ${date})\n`);
+  await writeFile(indexPath, content);
+}
 
-  const sections = [];
-  sections.push(`\n---\n\n## ${new Date().toISOString()} — 자동 수집\n`);
+async function addToTaskSummary(summaryPath, user, name, date) {
+  let content = await readFile(summaryPath, 'utf8');
+  if (content.includes(`| ${user} | ${name} |`)) return;
+  content = content.trimEnd() + `\n| ${user} | ${name} | 🔄 active | ${date} |\n`;
+  await writeFile(summaryPath, content);
+}
 
-  try {
-    const { stdout } = await pexec('git', ['-C', ctx.targetDir, 'log', '--oneline', '-n', '20'], { maxBuffer: 1024 * 1024 });
-    sections.push('### git log (최근 20)\n```\n' + stdout.trim() + '\n```\n');
-  } catch { sections.push('### git log\n(git 저장소 아님 또는 실행 실패)\n'); }
+async function markDoneInUserTaskIndex(indexPath, name) {
+  let content = await readFile(indexPath, 'utf8');
+  const activeEntry = `- ${name}`;
+  if (!content.includes(activeEntry)) return;
+  content = content.replace(`${activeEntry} (created `, `~~${activeEntry}~~ (created `);
+  content = content.replace('## Completed\n', `## Completed\n- ✅ ${name}\n`);
+  const lines = content.split('\n');
+  const filtered = lines.filter(l => !l.startsWith(`- ${name} (`) && !l.startsWith(`~~- ${name}~~`));
+  await writeFile(indexPath, filtered.join('\n'));
+}
 
-  try {
-    const { stdout } = await pexec('git', ['-C', ctx.targetDir, 'diff', '--stat', 'HEAD~5...HEAD'], { maxBuffer: 1024 * 1024 });
-    if (stdout.trim()) sections.push('### diff --stat HEAD~5...HEAD\n```\n' + stdout.trim() + '\n```\n');
-  } catch {}
-
-  try {
-    const { stdout } = await pexec('git', ['-C', ctx.targetDir, 'status', '--short'], { maxBuffer: 1024 * 1024 });
-    if (stdout.trim()) sections.push('### 작업트리 상태\n```\n' + stdout.trim() + '\n```\n');
-  } catch {}
-
-  sections.push('### 테스트 결과\n(수동 입력 또는 CI 링크)\n');
-
-  await appendFile(artifactPath, sections.join('\n'));
-  console.log(`appended to: ${relative(ctx.targetDir, artifactPath)}`);
+async function markDoneInTaskSummary(summaryPath, user, name) {
+  let content = await readFile(summaryPath, 'utf8');
+  content = content.replace(
+    new RegExp(`\\| ${user} \\| ${name} \\| 🔄 active \\|`),
+    `| ${user} | ${name} | ✅ done |`
+  );
+  await writeFile(summaryPath, content);
 }
 
 export async function runTask(ctx) {
-  const remainingArgs = ctx.taskArgs || [];
-  const [subcmd, ...rest] = remainingArgs;
-  switch (subcmd) {
-    case 'new': {
-      const [category, name] = rest;
-      if (!category || !name) throw new Error('usage: task new <feature|fix> <name>');
-      return createTask(ctx, category, name);
-    }
-    case 'list': return listTasks(ctx);
-    case 'switch': {
-      const [id] = rest;
-      if (!id) throw new Error('usage: task switch <member>/<category>/<name> | <category>/<name> | <name>');
-      return switchTask(ctx, id);
-    }
-    case 'done': return doneTask(ctx);
-    default:
-      console.log(`usage:
-  harness-team task new <feature|fix> <name>      # create + set active
-  harness-team task list                          # list all tasks
-  harness-team task switch <id>                   # set active
-  harness-team task done                          # auto-collect git/test into artifact.md
-
-Options:
-  --member <name>     override member (default: git config user.name, else $USER)`);
+  const name = (ctx.taskArgs || [])[0];
+  if (!name || !/^[\w.-]+$/.test(name)) {
+    console.log(`usage: harness-team task <name>`);
+    return;
   }
+
+  const user = await resolveUser(ctx.targetDir, ctx.flags);
+  const dir = taskDir(ctx.targetDir, user, name);
+  const date = today();
+
+  if (await exists(dir)) {
+    await writeActive(ctx.targetDir, {
+      user, task: name,
+      path: `docs/${user}/${name}`,
+      switchedAt: new Date().toISOString(),
+    });
+    console.log(`activated: ${user}/${name}`);
+    return;
+  }
+
+  await mkdir(dir, { recursive: true });
+  await writeText(join(dir, `${name}-spec.md`), taskSpecTemplate(name));
+  await writeText(join(dir, `${name}-plan.md`), taskPlanTemplate(name));
+  await writeText(join(dir, `${name}-handoff.md`), taskHandoffTemplate(name));
+
+  await writeActive(ctx.targetDir, {
+    user, task: name,
+    path: `docs/${user}/${name}`,
+    switchedAt: new Date().toISOString(),
+  });
+
+  const indexPath = await ensureUserTaskIndex(ctx.targetDir, user);
+  await addToUserTaskIndex(indexPath, user, name, date);
+
+  const summaryPath = await ensureTaskSummary(ctx.targetDir);
+  await addToTaskSummary(summaryPath, user, name, date);
+
+  console.log(`created: docs/${user}/${name}/`);
+  console.log(`active: ${user}/${name}`);
+}
+
+export async function runList(ctx) {
+  const docs = join(ctx.targetDir, 'docs');
+  if (!(await exists(docs))) { console.log('(no docs/)'); return; }
+
+  const active = await readActive(ctx.targetDir);
+  const entries = await readdir(docs, { withFileTypes: true });
+  const userDirs = entries.filter(e => e.isDirectory()).map(e => e.name);
+
+  let found = false;
+  for (const user of userDirs) {
+    const userPath = join(docs, user);
+    const userEntries = await readdir(userPath, { withFileTypes: true });
+    const taskDirs = userEntries.filter(e => e.isDirectory()).map(e => e.name);
+    for (const task of taskDirs) {
+      const isActive = active && active.user === user && active.task === task;
+      console.log(`${isActive ? '*' : ' '} ${user}/${task}`);
+      found = true;
+    }
+  }
+  if (!found) console.log('(no tasks)');
+}
+
+export async function runDone(ctx) {
+  const active = await readActive(ctx.targetDir);
+  if (!active || !active.task) { console.log('no active task'); return; }
+
+  const { user, task } = active;
+  const handoffPath = join(ctx.targetDir, 'docs', user, task, `${task}-handoff.md`);
+  const ts = new Date().toISOString();
+
+  await appendFile(handoffPath, `\n## ${ts} — 완료\n\n태스크 종료.\n`);
+
+  const indexPath = join(ctx.targetDir, 'docs', user, `${user}-task.md`);
+  if (await exists(indexPath)) {
+    let content = await readFile(indexPath, 'utf8');
+    const line = content.split('\n').find(l => l.includes(`- ${task}`));
+    if (line) {
+      content = content.replace(line, '');
+      content = content.replace('## Completed\n', `## Completed\n- ✅ ${task}\n`);
+      await writeFile(indexPath, content);
+    }
+  }
+
+  const summaryPath = join(ctx.targetDir, 'docs', 'task_summary.md');
+  if (await exists(summaryPath)) {
+    await markDoneInTaskSummary(summaryPath, user, task);
+  }
+
+  await writeActive(ctx.targetDir, {});
+  console.log(`done: ${user}/${task}`);
+  console.log(`handoff updated: docs/${user}/${task}/${task}-handoff.md`);
+}
+
+export async function runHandoffAuto(ctx) {
+  const active = await readActive(ctx.targetDir);
+  if (!active || !active.task) return;
+
+  const { user, task } = active;
+  const ts = new Date().toISOString();
+
+  let commitMsg = '';
+  let diffStat = '';
+
+  try {
+    const { stdout } = await pexec('git', ['-C', ctx.targetDir, 'log', '-1', '--oneline'], { maxBuffer: 1024 * 1024 });
+    commitMsg = stdout.trim();
+  } catch { return; }
+
+  try {
+    const { stdout } = await pexec('git', ['-C', ctx.targetDir, 'diff', 'HEAD~1', '--stat'], { maxBuffer: 1024 * 1024 });
+    diffStat = stdout.trim();
+  } catch {}
+
+  const taskHandoffPath = join(ctx.targetDir, 'docs', user, task, `${task}-handoff.md`);
+  const taskEntry = `\n## ${ts} — ${commitMsg}\n${diffStat ? diffStat + '\n' : ''}\n`;
+  await appendFile(taskHandoffPath, taskEntry);
+
+  const userHandoffPath = join(ctx.targetDir, 'docs', user, `${user}-handoff.md`);
+  const date = ts.slice(0, 10);
+  const userHandoffContent = `# Session Handoff
+
+## Active Task
+${task}
+
+## Last Commit (${date})
+${commitMsg}
+
+## Full Context
+→ docs/${user}/${task}/${task}-handoff.md
+`;
+  await writeFile(userHandoffPath, userHandoffContent);
+
+  try {
+    const planPath = join(ctx.targetDir, 'docs', user, task, `${task}-plan.md`);
+    const planContent = await readFile(planPath, 'utf8');
+    const hasUnchecked = planContent.includes('- [ ]');
+    const hasChecked = planContent.includes('- [x]');
+    if (!hasUnchecked && hasChecked) {
+      process.stdout.write('PLAN_COMPLETE\n');
+    }
+  } catch {}
 }
