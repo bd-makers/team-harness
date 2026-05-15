@@ -18,6 +18,7 @@
 - [CLAUDE.md 섹션 마커](#claudemd-섹션-마커)
 - [개발 / 기여](#개발--기여)
   - [버전 범프 체크리스트](#버전-범프-체크리스트)
+- [변경 이력](#변경-이력)
 
 ---
 
@@ -601,6 +602,26 @@ rsync -a \
 ### 요구사항
 
 Node.js 18+. 외부 의존성 없음 (표준 라이브러리만).
+
+---
+
+## 변경 이력
+
+### v0.6.1
+- **fix**: `harness-init` AI gitignore 옵션에서 `docs/` 제거 — 팀 공유 문서가 gitignore에 등록되던 버그 수정
+
+### v0.6.0
+- **feat**: task workflow flat path 구조 (`docs/<member>/<type>/<name>/`)
+- **feat**: post-commit hook으로 handoff 자동 갱신
+- **feat**: username 자동 감지 (`git config user.name` → `$USER`)
+- **feat**: pre-0.6.0 → v0.6.0 task 구조 마이그레이션 지원
+
+### v0.5.x
+- **feat**: `harness-init` / `harness-apply` / `harness-migrate` — CLAUDE.md 마커 외부 커스텀 감지 시 AskUserQuestion 추가
+- **feat**: `harness-doctor` — CLAUDE.md 미반영 진단 결과 표시
+
+### v0.4.0
+- **feat**: `harness-upgrade` — v0.3.x 실제 파일 → v0.4+ symlink 원스텝 전환
 
 ---
 
