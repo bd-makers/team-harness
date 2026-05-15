@@ -1,4 +1,4 @@
-import { basename, resolve, join } from 'node:path';
+import { basename, resolve } from 'node:path';
 import { mkdir } from 'node:fs/promises';
 import { detectStack } from '../detect-stack.mjs';
 import {
