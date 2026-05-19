@@ -20,9 +20,9 @@ export async function runInit(ctx) {
   await ensureUsername(ctx.targetDir, ctx.flags);
 
   // Resolve the sibling backup directory: ../<parent>/<projectName>.
-  // The 3 scripts (clone.sh, symlink.sh, delete.sh) live OUTSIDE the project so
-  // running `../<parent>/<project>/clone.sh` from the project root clones CWD
-  // into that backup clone directory.
+  // The 3 scripts (clone.sh, symlink.sh, delete.sh) are written INTO the project
+  // root with BACKUP_DIR embedded at generation time, so running `./clone.sh`
+  // from the project root syncs CWD into that backup clone directory.
   const projectName = basename(ctx.targetDir);
   let saveConfig = null;
 

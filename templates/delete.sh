@@ -1,5 +1,7 @@
 #!/bin/bash
-# Removes symlinks in this project that point to the harness backup directory.
+# Removes only symlinks in this project that point into the harness backup directory.
+# Never deletes real files/directories — neither in the project nor in the backup.
+# To remove real files too, use `harness-team delete --include-real` (interactive).
 # Run from the project root.
 set -euo pipefail
 
@@ -7,7 +9,7 @@ BACKUP_DIR="{{BACKUP_DIR}}"
 ITEMS=("CLAUDE.md" ".claude" ".cursor" ".opencode" "docs" ".harness")
 ALIAS_ITEMS=("AGENTS.md" "GEMINI.md" ".cursorrules")
 
-for item in "${ITEMS[@]}"; do
+for item in "${ITEMS[@]}" "${ALIAS_ITEMS[@]}"; do
   if [ -L "$item" ]; then
     target="$(readlink "$item")"
     if [[ "$target" == "$BACKUP_DIR"* ]]; then
@@ -17,18 +19,8 @@ for item in "${ITEMS[@]}"; do
       echo "skip: $item (local symlink -> $target)"
     fi
   elif [ -e "$item" ]; then
-    rm -rf "$item"
-    echo "removed: $item"
+    echo "skip: $item (real file/dir — use 'harness-team delete --include-real' to remove)"
   else
     echo "skip: $item (not found)"
-  fi
-done
-
-for item in "${ALIAS_ITEMS[@]}"; do
-  if [ -L "$item" ]; then
-    rm "$item"
-    echo "removed: $item (alias symlink)"
-  elif [ -e "$item" ]; then
-    echo "skip: $item (not a symlink, leaving untouched)"
   fi
 done

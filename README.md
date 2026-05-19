@@ -302,35 +302,38 @@ $ /harness-task list
 
 ## 스크립트 3종 사용법
 
-`harness-team init/apply` 실행 시, **프로젝트 루트가 아니라** 프로젝트와 **같은 레벨의 형제(sibling) 폴더** 아래에 설치되는 세 스크립트입니다.
+`harness-team init/apply` 실행 시 **프로젝트 루트에** 설치되는 세 스크립트입니다. 백업 클론 폴더(`BACKUP_DIR`)는 프로젝트와 같은 레벨의 형제 폴더 아래에 위치하며, 그 경로는 생성 시점에 각 스크립트에 박혀 들어갑니다.
 
-### 설치 위치 — 중요
-
-스크립트들은 반드시 프로젝트 디렉토리의 **바깥**에, 프로젝트와 같은 레벨의 상위 폴더 아래에 위치해야 합니다:
+### 설치 구조
 
 ```
 ~/work/
   ├── project-a/                  ← 실제 작업 디렉토리 (CWD)
   │   ├── CLAUDE.md
   │   ├── .claude/
+  │   ├── clone.sh                ← 스크립트는 프로젝트 루트에 위치
+  │   ├── symlink.sh
+  │   ├── delete.sh
   │   └── .harness/backup.json    ← 백업 경로 기억
   │
   └── harness-backup/             ← 형제 레벨 상위 폴더 (이름 사용자 지정)
-      └── project-a/              ← 프로젝트명과 동일한 클론 폴더
-          ├── clone.sh            ← 여기 위치
-          ├── symlink.sh
-          ├── delete.sh
-          └── (clone.sh 실행 시 project-a의 내용이 여기에 복사됨)
+      └── project-a/              ← BACKUP_DIR (clone.sh가 여기에 복사)
 ```
 
-실제 사용 방식:
+실제 사용 방식 (프로젝트 루트에서 실행):
 
 ```bash
 cd ~/work/project-a
-../harness-backup/project-a/clone.sh     # project-a → 클론 폴더로 복사
-../harness-backup/project-a/symlink.sh   # 클론 폴더의 자산을 project-a로 symlink
-../harness-backup/project-a/delete.sh    # symlink 제거
+./clone.sh     # project-a → BACKUP_DIR 로 병합 복사 (newer-wins, 백업 파일 삭제 없음)
+./symlink.sh   # BACKUP_DIR 의 자산을 project-a 로 symlink
+./delete.sh    # BACKUP_DIR 을 가리키는 symlink만 제거
 ```
+
+### 안전 원칙 — 어느 스크립트도 파괴적이지 않음
+
+- **백업 디렉토리는 어떤 스크립트도 삭제하지 않습니다.** 원본 파일들(CLAUDE.md, docs 등)은 항상 보존됩니다.
+- **프로젝트 쪽 실파일도 함부로 지우지 않습니다.** symlink만 다룹니다.
+- 실파일을 정말 제거하려면 인터랙티브 CLI(`harness-team delete --include-real`)를 사용하세요.
 
 ### init 시 설정
 
@@ -358,11 +361,9 @@ Backup clone parent folder (sibling of project, holds clone.sh/symlink.sh/delete
 - 프로젝트 스냅샷/백업을 별도 디렉토리로 주기적으로 떠두고 싶음
 - 여러 프로젝트가 공통 harness 내용을 공유하고 한쪽의 개선을 다른 쪽으로 역동기화
 
-### `symlink.sh` — 백업 클론 → 프로젝트로 심볼릭 링크
+### `symlink.sh` — BACKUP_DIR → 프로젝트로 심볼릭 링크
 
-**용도**: 프로젝트를 형제 레벨의 백업 클론 디렉토리에 **연결**. 백업 클론의 파일을 프로젝트에서 그대로 쓰게 만듭니다.
-
-**동작**: 스크립트가 있는 위치(`$SCRIPT_DIR` = `../<parent>/<project>/`)를 원본으로 간주하고, 프로젝트 루트(CWD)에 symlink 생성.
+**용도**: BACKUP_DIR의 자산을 프로젝트 루트에 symlink로 연결.
 
 링크 대상(ITEMS):
 `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.claude`, `.cursor`, `.opencode`, `.cursorrules`, `docs`, `.harness`
@@ -370,7 +371,7 @@ Backup clone parent folder (sibling of project, holds clone.sh/symlink.sh/delete
 **사용 예**:
 ```bash
 cd ~/work/project-a
-../harness-backup/project-a/symlink.sh
+./symlink.sh
 # 출력:
 #   linked: CLAUDE.md -> /Users/chad/work/harness-backup/project-a/CLAUDE.md
 #   linked: .claude -> /Users/chad/work/harness-backup/project-a/.claude
@@ -378,44 +379,44 @@ cd ~/work/project-a
 ```
 
 **안전장치**:
-- 파일이 이미 존재하면 건너뜀 (`skip: <file> (already exists)`)
-- 이미 중앙에 링크되어 있으면 건너뜀 (`skip: <file> (already linked to harness)`)
-- 다른 곳에 링크된 symlink면 건드리지 않음
+- 이미 BACKUP_DIR로 링크된 항목은 건너뜀
+- 다른 곳을 가리키는 symlink는 즉시 교체 (실파일 손실 없음)
+- 프로젝트 쪽 실파일이 있을 때:
+  - 백업본과 **byte-identical** 이면 symlink로 교체
+  - **다르면 건드리지 않고 skip** — `./clone.sh`로 백업에 병합 후 재실행하라고 안내
 
-### `clone.sh` — 프로젝트 → 백업 클론 폴더로 복사
+### `clone.sh` — 프로젝트 → BACKUP_DIR 병합 복사
 
-**용도**: 프로젝트 현재 내용을 형제 레벨의 백업 클론 폴더에 **복사**. 링크가 아닌 실제 파일 복사(`rsync --update`, newer-only).
+**용도**: 프로젝트 현재 내용을 BACKUP_DIR에 **병합 복사**. `rsync -a --update` 기반(newer-wins, **`--delete` 없음**), 백업에만 있는 파일은 보존됩니다.
 
 **사용 예**:
 ```bash
 cd ~/work/project-a
-../harness-backup/project-a/clone.sh
+./clone.sh
 # 출력:
 #   merged dir: .claude -> /Users/chad/work/harness-backup/project-a/.claude
 #   copied (newer): CLAUDE.md -> /Users/chad/work/harness-backup/project-a/CLAUDE.md
 #   ...
 ```
 
-**주의**: `clone.sh`를 자기 자신이 있는 디렉토리(백업 클론 폴더)에서 실행하면 거부됩니다 (`error: run clone.sh from a project root`). 반드시 프로젝트 루트를 CWD로 해서 실행하세요.
+### `delete.sh` — 링크 제거 (init의 정반대)
 
-### `delete.sh` — 링크 제거
-
-**용도**: `symlink.sh`가 만든 링크를 안전하게 제거. 백업 클론 폴더 자체는 건드리지 않습니다.
-
-**동작**: 프로젝트 루트(CWD)의 ITEMS 중 `$SCRIPT_DIR`(= 백업 클론 폴더)을 가리키는 symlink만 제거.
+**용도**: `symlink.sh`가 만든 링크만 제거. 백업 디렉토리와 프로젝트의 실파일은 모두 보존합니다.
 
 **사용 예**:
 ```bash
 cd ~/work/project-a
-../harness-backup/project-a/delete.sh
+./delete.sh
 # 출력:
-#   removed: CLAUDE.md (harness symlink)
-#   removed: .claude (harness symlink)
+#   removed: CLAUDE.md (backup symlink)
+#   removed: .claude (backup symlink)
+#   skip: docs (real file/dir — use 'harness-team delete --include-real' to remove)
 ```
 
 **안전장치**:
+- BACKUP_DIR을 가리키는 symlink만 제거 (`[[ "$target" == "$BACKUP_DIR"* ]]` 체크)
 - 다른 곳을 가리키는 symlink는 건드리지 않음
-- 백업 클론 폴더를 가리키는 symlink만 제거 (`[[ "$target" == "$SCRIPT_DIR"* ]]` 체크)
+- 실파일/디렉터리는 skip + 안내. 실제로 지우려면 인터랙티브 CLI(`harness-team delete --include-real`) 사용
 
 ### `/harness-sync` vs `./symlink.sh` — 한 줄 요약
 

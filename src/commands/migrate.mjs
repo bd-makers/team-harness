@@ -195,19 +195,64 @@ async function migrateBackupScripts(ctx) {
   return true;
 }
 
+// --- Refresh stale project-root scripts (any → current template) ---
+
+async function refreshProjectScripts(ctx) {
+  const { root, targetDir } = ctx;
+
+  const backupDir = await loadBackupDir(targetDir);
+  if (!backupDir) {
+    console.log('  script refresh: no backup dir configured — skipping');
+    return false;
+  }
+
+  const tplDir = join(root, 'templates');
+  const stale = [];
+  for (const f of SCRIPT_FILES) {
+    const existing = await readTextSafe(join(targetDir, f));
+    if (existing === null) continue;
+    const tpl = await readTextSafe(join(tplDir, f));
+    if (!tpl) continue;
+    const rendered = tpl.replace(/\{\{BACKUP_DIR\}\}/g, backupDir);
+    if (existing !== rendered) stale.push({ f, rendered });
+  }
+
+  if (stale.length === 0) {
+    console.log('  script refresh: scripts are up to date');
+    return false;
+  }
+
+  console.log(`\nFound ${stale.length} stale script(s) in project root (old destructive 'rm -rf' versions):`);
+  for (const { f } of stale) console.log(`  ${f}`);
+  console.log('\nRefresh will replace them with the current safe templates:');
+  console.log('  - delete.sh: backup symlink만 제거, 실파일은 skip');
+  console.log('  - symlink.sh: 실파일이 백업과 동일할 때만 교체, 다르면 skip');
+  console.log('  - clone.sh: rsync --update (백업 파일 삭제 없음)');
+
+  const ok = ctx.flags.yes || await confirm('\nRefresh scripts to current safe templates?', { defaultYes: true });
+  if (!ok) { console.log('Skipped script refresh.'); return false; }
+
+  for (const { f, rendered } of stale) {
+    await writeText(join(targetDir, f), rendered, { mode: 0o755 });
+    console.log(`  ✓ refreshed: ${f}`);
+  }
+  return true;
+}
+
 export async function runMigrate(ctx) {
   console.log(`harness-team migrate → ${ctx.targetDir}`);
 
   const taskMigrated = await migrateTaskStructure(ctx);
-  const scriptMigrated = await migrateBackupScripts(ctx);
+  const scriptMoved = await migrateBackupScripts(ctx);
+  const scriptRefreshed = await refreshProjectScripts(ctx);
 
-  if (!taskMigrated && !scriptMigrated) {
+  if (!taskMigrated && !scriptMoved && !scriptRefreshed) {
     console.log('\nNothing to migrate — project is already up to date.');
     return;
   }
 
   console.log('\n✓ Migration complete.');
-  if (scriptMigrated) {
+  if (scriptMoved || scriptRefreshed) {
     console.log('  Run ./clone.sh, ./symlink.sh, ./delete.sh from the project root.');
   }
 }
