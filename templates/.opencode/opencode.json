@@ -4,18 +4,6 @@
     ".claude/rules/*.md"
   ],
   "command": {
-    "plan": {
-      "template": "{file:.claude/skills/plan/SKILL.md}",
-      "description": "새 작업 계획 수립, plan.md 갱신"
-    },
-    "handoff": {
-      "template": "{file:.claude/skills/handoff/SKILL.md}",
-      "description": "세션 종료 인수인계, handoff.md 갱신"
-    },
-    "verify": {
-      "template": "{file:.claude/skills/verify/SKILL.md}",
-      "description": "typecheck + lint + test 전체 검증"
-    },
     "new-feature": {
       "template": "{file:.claude/skills/new-feature/SKILL.md}",
       "description": "새 기능 구현 워크플로우"
@@ -24,9 +12,9 @@
       "template": "{file:.claude/skills/fix-bug/SKILL.md}",
       "description": "버그 수정 워크플로우"
     },
-    "review": {
-      "template": "{file:.claude/skills/review/SKILL.md}",
-      "description": "Codex + Gemini 병렬 리뷰"
+    "verify": {
+      "template": "{file:.claude/skills/verify/SKILL.md}",
+      "description": "typecheck + lint + test 전체 검증"
     }
   }
 }

@@ -52,17 +52,19 @@ export async function runDoctor(ctx) {
     }
     console.log(`✓ ${c.path}`);
   }
-  // Backup-dir scripts: check they live in the sibling ../<parent>/<project>/ directory.
+  // Harness scripts live in the project root since v0.3+.
+  console.log('');
+  for (const name of BACKUP_SCRIPTS) {
+    const p = join(ctx.targetDir, name);
+    if (!(await exists(p))) { console.log(`✗ ${name}  (missing in project root)`); fail++; continue; }
+    const st = await lstat(p);
+    if (!(st.mode & 0o100)) { console.log(`✗ ${name}  (not executable)`); fail++; continue; }
+    console.log(`✓ ${name}  (exec)`);
+  }
+
   const backupDir = await loadBackupDir(ctx.targetDir);
   if (backupDir) {
     console.log(`\nbackup clone dir: ${backupDir}`);
-    for (const name of BACKUP_SCRIPTS) {
-      const p = join(backupDir, name);
-      if (!(await exists(p))) { console.log(`✗ ${name}  (missing in backup dir)`); fail++; continue; }
-      const st = await lstat(p);
-      if (!(st.mode & 0o100)) { console.log(`✗ ${name}  (not executable)`); fail++; continue; }
-      console.log(`✓ ${name}  (exec)`);
-    }
   } else {
     console.log(`\n✗ backup clone dir is not configured (missing .harness/backup.json)`);
     fail++;

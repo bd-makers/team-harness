@@ -41,7 +41,7 @@
 - `.claude/rules/*.md`를 원본으로 `.cursor/rules/*.mdc`를 자동 미러링
 - `opencode.json`은 `.claude/skills/*/SKILL.md`를 **참조**(복사 아님)
 - Codex/Gemini는 read-only 리뷰어로 Bash를 통해 호출 (first-token 매칭 규칙 준수)
-- 작업은 `docs/<member>/<feature|fix>/<name>/` 구조로 팀원·기능별 격리
+- 작업은 `docs/<member>/<name>/` 구조로 팀원·task별 격리
 
 결과: 규칙·스킬을 한 곳에서 편집하면 모든 에이전트가 같은 내용을 읽고, 팀원이 서로의 작업에 간섭하지 않습니다.
 
@@ -61,13 +61,12 @@ cd my-project
 /harness-init         # 빈 디렉토리면
 
 # 3. 첫 작업 시작
-/harness-task new feature user-auth
-# → docs/<your-name>/feature/user-auth/{spec,plan,handoff,artifact}.md 생성
+/harness-task user-auth
+# → docs/<your-name>/user-auth/{user-auth-spec.md, user-auth-plan.md, user-auth-handoff.md} 생성
 # → .harness/active.json이 이 task를 가리킴
 
 # 4. 세션 종료 전
-/handoff              # 활성 task의 handoff.md 갱신
-/harness-task done    # artifact.md에 git log/diff 자동 수집
+/harness-task done    # 활성 task 완료 처리 (handoff.md 갱신, task_summary 반영)
 ```
 
 ---
@@ -89,7 +88,7 @@ cd my-project
 | `/harness-apply` | 기존 프로젝트에 비파괴 적용 |
 | `/harness-sync` | 내부 symlink/mirror 재동기화 |
 | `/harness-doctor` | 무결성 점검 |
-| `/harness-task` | task 관리 (new/list/switch/done) |
+| `/harness-task` | task 관리 (task/list/done/handoff) |
 | `/harness-clone` | project → backup dir 동기화 |
 | `/harness-symlink` | backup dir → project symlink 생성 |
 | `/harness-delete` | project에서 harness symlink/파일 제거 |
@@ -229,24 +228,21 @@ v0.2.x에서 backup dir에 있던 `clone.sh`, `symlink.sh`, `delete.sh`를 프�
 
 ---
 
-## task 관리 (팀원·기능별)
+## task 관리 (팀원·task별)
 
-모든 feature/fix 작업은 팀원별·task별로 격리된 디렉토리에서 관리됩니다.
+모든 작업은 팀원별·task별로 격리된 디렉토리에서 관리됩니다.
 
 ### 디렉토리 구조
 
 ```
 docs/
+├── task_summary.md                # 전체 task 요약 (User | Task | Status | Created)
 └── <member>/                      # git config user.name → $USER → --member
-    ├── feature/
-    │   └── <task-name>/
-    │       ├── spec.md            # 요구사항 / 설계 (사람이 먼저 작성)
-    │       ├── plan.md            # 단계별 체크리스트
-    │       ├── handoff.md         # 세션 인수인계
-    │       └── artifact.md        # 실행 결과 (task done으로 자동 수집)
-    └── fix/
-        └── <task-name>/
-            └── (동일 4개 파일)
+    ├── <member>-task.md           # 이 멤버의 Active / Completed 인덱스
+    └── <task-name>/
+        ├── <task-name>-spec.md    # 요구사항 / 설계 (사람이 먼저 작성)
+        ├── <task-name>-plan.md    # 단계별 체크리스트
+        └── <task-name>-handoff.md # 세션 인수인계 (post-commit hook으로 갱신)
 ```
 
 활성 task 포인터: `.harness/active.json` (gitignored).
@@ -263,57 +259,43 @@ docs/
 ### 명령어
 
 ```bash
-# 생성 + active 설정
-/harness-task new feature <name>       # ex: user-auth
-/harness-task new fix <name>           # ex: null-crash
+# 생성 또는 활성화 (동일 이름이 이미 있으면 그 task를 active로 전환)
+/harness-task <name>                   # ex: user-auth
 
 # 목록 (* = active)
 /harness-task list
 
-# 전환 — 세 가지 형식 모두 가능
-/harness-task switch feature/user-auth     # 같은 member 내
-/harness-task switch chad/feature/user-auth   # 다른 member도 지정
-/harness-task switch user-auth             # 이름만 (같은 member, 카테고리 자동 탐색)
-
-# 완료 시 — artifact.md에 자동 수집
+# 활성 task 완료 — task_summary.md / <member>-task.md 상태 갱신
 /harness-task done
+
+# 활성 task의 handoff.md를 최신 커밋 정보로 갱신 (post-commit hook이 자동 호출)
+/harness-task handoff
 ```
 
-### `task done`이 수집하는 정보
-
-- `git log --oneline -n 20` (최근 커밋)
-- `git diff --stat HEAD~5...HEAD` (파일별 변경량)
-- `git status --short` (작업트리 상태)
-- 타임스탬프 (ISO 8601)
-
-수동 기록(flow 다이어그램, sequence 다이어그램, 테스트 시나리오 등)은 `task done` 전에 artifact.md 상단 "수동 기록" 섹션에 직접 추가하세요.
+> `feature/` · `fix/` 같은 중간 카테고리는 사용하지 않는다 — 모든 task는 `docs/<member>/<name>/` 평탄 구조로 관리한다.
 
 ### 실전 예제
 
 ```bash
 # 팀원 A: 인증 리디자인 시작
-$ /harness-task new feature auth-redesign
-created: docs/chad/feature/auth-redesign/
-active: chad/feature/auth-redesign
+$ /harness-task auth-redesign
+created: docs/chad/auth-redesign/
+active: chad/auth-redesign
 
 # spec.md에 요구사항 작성 (에디터로)
-$ vim docs/chad/feature/auth-redesign/spec.md
+$ vim docs/chad/auth-redesign/auth-redesign-spec.md
 
-# /plan 으로 plan.md 채움
-$ /plan OAuth 2.0 PKCE 흐름으로 전환
-
-# 코드 작성 + 체크리스트 갱신
+# 코드 작성 + plan.md 체크리스트 갱신
 # ...
 
 # 세션 종료
-$ /handoff
 $ /harness-task done
 
-# 다음 날 다른 task로 전환
-$ /harness-task new fix token-refresh-race
+# 다음 날 다른 task로 전환 (같은 명령으로 생성 또는 활성화)
+$ /harness-task token-refresh-race
 $ /harness-task list
-  chad/feature/auth-redesign
-* chad/fix/token-refresh-race
+  chad/auth-redesign
+* chad/token-refresh-race
 ```
 
 ---
@@ -456,7 +438,7 @@ my-project/
 ├── .cursorrules  -> CLAUDE.md
 ├── docs/
 │   ├── README.md
-│   └── <member>/<feature|fix>/<name>/{spec,plan,handoff,artifact}.md
+│   └── <member>/<name>/{<name>-spec.md, <name>-plan.md, <name>-handoff.md}
 ├── .harness/
 │   ├── active.json           # 활성 task 포인터 (gitignored)
 │   └── backup.json           # 형제 백업 클론 폴더 경로 (commit 권장)
@@ -628,11 +610,16 @@ Node.js 18+. 외부 의존성 없음 (표준 라이브러리만).
 
 ## 변경 이력
 
+### v0.6.2
+- **fix**: `harness-doctor` — clone/symlink/delete.sh를 프로젝트 루트에서 점검 (init 직후 doctor가 실패하던 문제 해결)
+- **fix**: `templates/.opencode/opencode.json` — 존재하지 않는 plan/handoff/review skill 참조 제거, fix-bug/new-feature/verify만 노출
+- **docs**: README task 구조를 실제 구현(`docs/<member>/<name>/` 평탄 구조)에 맞춰 정정 — `feature/`·`fix/` 중간 카테고리 표기 제거, 명령 인터페이스(`/harness-task <name>`, `list`, `done`, `handoff`)로 통일
+
 ### v0.6.1
 - **fix**: `harness-init` AI gitignore 옵션에서 `docs/` 제거 — 팀 공유 문서가 gitignore에 등록되던 버그 수정
 
 ### v0.6.0
-- **feat**: task workflow flat path 구조 (`docs/<member>/<type>/<name>/`)
+- **feat**: task workflow flat path 구조 (`docs/<member>/<name>/`)
 - **feat**: post-commit hook으로 handoff 자동 갱신
 - **feat**: username 자동 감지 (`git config user.name` → `$USER`)
 - **feat**: pre-0.6.0 → v0.6.0 task 구조 마이그레이션 지원
