@@ -1,7 +1,30 @@
 import { join, resolve } from 'node:path';
-import { lstat, readlink, rm, symlink as makeSymlink } from 'node:fs/promises';
+import { lstat, readlink, readdir, readFile, rm, symlink as makeSymlink } from 'node:fs/promises';
 import { resolveBackupDir } from '../backup-dir.mjs';
 import { confirm } from '../prompt.mjs';
+
+async function sameTree(a, b) {
+  const sa = await lstat(a).catch(() => null);
+  const sb = await lstat(b).catch(() => null);
+  if (!sa || !sb) return false;
+  if (sa.isDirectory() && sb.isDirectory()) {
+    const [ea, eb] = await Promise.all([readdir(a), readdir(b)]);
+    const ah = [...ea].sort();
+    const bh = [...eb].sort();
+    if (ah.length !== bh.length) return false;
+    for (let i = 0; i < ah.length; i++) {
+      if (ah[i] !== bh[i]) return false;
+      if (!await sameTree(join(a, ah[i]), join(b, bh[i]))) return false;
+    }
+    return true;
+  }
+  if (sa.isFile() && sb.isFile()) {
+    if (sa.size !== sb.size) return false;
+    const [ca, cb] = await Promise.all([readFile(a), readFile(b)]);
+    return ca.equals(cb);
+  }
+  return false;
+}
 
 const MOVE_ITEMS = ['CLAUDE.md', '.claude', '.cursor', '.opencode', 'docs', '.harness'];
 const ALIAS_ITEMS = ['AGENTS.md', 'GEMINI.md', '.cursorrules'];
@@ -44,18 +67,35 @@ export async function runSymlink(ctx) {
         ops.push({ item, kind: 'replace', link, backup });
       }
     } else {
-      ops.push({ item, kind: 'replace', link, backup });
+      if (await sameTree(link, backup)) {
+        ops.push({ item, kind: 'replace', link, backup, identical: true });
+      } else {
+        ops.push({
+          item,
+          kind: 'skip',
+          reason: 'real file differs from backup — run `harness-team clone` first, then re-run',
+        });
+      }
     }
+  }
+
+  const skipped = ops.filter(o => o.kind === 'skip' && o.reason && o.reason !== 'not in backup' && o.reason !== 'already linked');
+  if (skipped.length > 0) {
+    console.log('\nSkipped (needs manual action):');
+    for (const op of skipped) console.log(`  ! ${op.item}: ${op.reason}`);
   }
 
   const toProcess = ops.filter(o => o.kind !== 'skip');
   if (toProcess.length === 0) {
-    console.log('Nothing to symlink — all already linked.');
+    console.log('Nothing to symlink — all already linked or skipped.');
     return;
   }
 
   console.log('\nItems to link:');
-  for (const op of toProcess) console.log(`  ${op.kind}: ${op.item} → ${op.backup}`);
+  for (const op of toProcess) {
+    const note = op.identical ? ' (identical → safe replace)' : '';
+    console.log(`  ${op.kind}: ${op.item} → ${op.backup}${note}`);
+  }
 
   const ok = ctx.flags.yes || await confirm('\nProceed?', { defaultYes: true });
   if (!ok) { console.log('Aborted.'); return; }
