@@ -15,14 +15,6 @@ function tagged(kind, msg) {
   return Object.assign(new Error(msg), { kind });
 }
 
-async function readJson(p) {
-  return JSON.parse(await readFile(p, 'utf8'));
-}
-
-async function writeJson(p, data) {
-  await writeFile(p, JSON.stringify(data, null, 2) + '\n');
-}
-
 // Surgically replace the single `"version": "<old>"` field in raw manifest text,
 // preserving all other formatting (inline arrays, indentation, trailing newline).
 // Throws (kind: 'manifest-format') if the exact substring does not occur exactly once.
