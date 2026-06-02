@@ -19,7 +19,8 @@
     "./commands/harness-interview.md",
     "./commands/harness-contrarian.md",
     "./commands/harness-simplifier.md",
-    "./commands/harness-retro.md"
+    "./commands/harness-retro.md",
+    "./commands/harness-release.md"
   ],
   "skills": [
     "./skills"

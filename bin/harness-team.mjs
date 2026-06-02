@@ -12,6 +12,7 @@ import { runSymlink } from '../src/commands/symlink.mjs';
 import { runDelete } from '../src/commands/delete.mjs';
 import { runMigrate } from '../src/commands/migrate.mjs';
 import { runUpgrade } from '../src/commands/upgrade.mjs';
+import { runRelease } from '../src/commands/release.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -37,6 +38,7 @@ Commands:
   done                              Complete the active task
   handoff                           Update handoff from latest commit (post-commit hook)
   retro [text]                      Append a dated Learnings entry to the active task's artifact.md
+  release [patch|minor|major|x.y.z] [--dry-run] [--skip-cache]   Bump 3 manifests + sync plugin cache/marketplace/installed_plugins.json
   help                              Show this help
 
 Options:
@@ -58,7 +60,7 @@ function parseArgs(argv) {
     if (a.startsWith('--')) {
       const [k, v] = a.slice(2).split('=');
       if (v !== undefined) out.flags[k] = v;
-      else if (argv[i + 1] && !argv[i + 1].startsWith('--') && !['init','apply','sync','doctor','task','list','done','handoff','help'].includes(argv[i+1])) {
+      else if (argv[i + 1] && !argv[i + 1].startsWith('--') && !['init','apply','sync','doctor','task','list','done','handoff','retro','release','help'].includes(argv[i+1])) {
         // flags that take values: stack, member, target
         if (['stack', 'member', 'target', 'backup-parent', 'backup-dir'].includes(k)) { out.flags[k] = argv[++i]; }
         else if (k === 'no-backup') out.flags['no-backup'] = true;
@@ -75,13 +77,13 @@ async function main() {
   const parsed = parseArgs(argv);
   const { cmd, positional, flags } = parsed;
 
-  const taskCmds = new Set(['task', 'list', 'done', 'handoff', 'retro']);
+  const taskCmds = new Set(['task', 'list', 'done', 'handoff', 'retro', 'release']);
   const target = flags.target || (taskCmds.has(cmd) ? process.cwd() : positional[0]) || process.cwd();
   const ctx = {
     root: ROOT,
     targetDir: resolve(process.cwd(), target),
     flags,
-    taskArgs: (cmd === 'task' || cmd === 'retro') ? positional : [],
+    taskArgs: (cmd === 'task' || cmd === 'retro' || cmd === 'release') ? positional : [],
   };
 
   switch (cmd) {
@@ -100,6 +102,7 @@ async function main() {
     case 'done': return runDone(ctx);
     case 'handoff': return runHandoffAuto(ctx);
     case 'retro': return runRetro(ctx);
+    case 'release': return runRelease(ctx);
     case 'help':
     case '--help':
     case '-h':
