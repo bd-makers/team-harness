@@ -278,7 +278,6 @@ export async function runRetro(ctx) {
   const artifactPath = join(ctx.targetDir, 'docs', user, task, `${task}-artifact.md`);
 
   if (!(await exists(artifactPath))) {
-    await mkdir(join(ctx.targetDir, 'docs', user, task), { recursive: true });
     await writeText(artifactPath, taskArtifactTemplate(task));
   }
 
@@ -286,7 +285,7 @@ export async function runRetro(ctx) {
   const text = (ctx.taskArgs || []).join(' ');
   const section = text
     ? `\n## Learnings (${date})\n\n- ${text}\n`
-    : `\n## Learnings (${date})\n\n- \n`;
+    : `\n## Learnings (${date})\n\n-\n`;
 
   await appendFile(artifactPath, section);
 

@@ -50,13 +50,21 @@ test('B: artifact.md가 없으면 생성 후 Learnings 섹션을 append', async 
 });
 
 // Test C: no active task → does NOT throw, sets process.exitCode = 1
-test('C: 활성 task 없으면 throw 없이 process.exitCode=1 설정', async () => {
+test('C: 활성 task 없으면 throw 없이 process.exitCode=1 + 에러 계약 출력', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'harness-retro-noactive-'));
   const prevExitCode = process.exitCode;
+  const logs = [];
+  const origLog = console.log;
+  console.log = (...args) => logs.push(args.join(' '));
   try {
     await runRetro({ targetDir: dir, flags: {}, taskArgs: [] });
     assert.equal(process.exitCode, 1, 'exitCode should be 1');
+    assert.ok(logs.some(l => l.includes('✗ retro:')), 'prints status line');
+    assert.ok(logs.some(l => l.startsWith('cause:')), 'prints cause hint');
+    assert.ok(logs.some(l => l.startsWith('retry:')), 'prints retry hint');
+    assert.ok(logs.some(l => l.startsWith('stop:')), 'prints stop condition');
   } finally {
+    console.log = origLog;
     process.exitCode = prevExitCode;
     await rm(dir, { recursive: true, force: true });
   }
