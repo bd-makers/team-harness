@@ -29,7 +29,7 @@ Commands:
   clone [dir]                       Sync project items to backup dir (merge, newer-wins)
   symlink [dir]                     Create backup→project symlinks
   delete [dir]                      Remove harness symlinks from project
-  migrate [dir]                     Move scripts from backup dir to project root (v0.2.x → v0.3+)
+  migrate [dir]                     Migrate to latest: backup scripts → root, task structure (→0.6, →0.7 artifact.md split)
   upgrade [dir]                     Migrate real files → symlinks in one step (v0.3.x → v0.4+)
   sync [dir]                        Re-sync symlinks, cursor rules, opencode config
   doctor [dir]                      Diagnose harness integrity

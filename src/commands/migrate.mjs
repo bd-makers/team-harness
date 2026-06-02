@@ -4,6 +4,7 @@ import { readTextSafe, writeText, exists } from '../fsx.mjs';
 import { loadBackupDir } from '../harness.mjs';
 import { confirm } from '../prompt.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
+import { taskArtifactTemplate } from './task.mjs';
 
 const SCRIPT_FILES = ['clone.sh', 'symlink.sh', 'delete.sh'];
 const OLD_CATEGORIES = ['feature', 'fix'];
@@ -147,6 +148,87 @@ async function migrateTaskStructure(ctx) {
   return true;
 }
 
+// --- Task structure migration (0.6.0 → 0.7.x: split artifact.md) ---
+//
+// 0.6.0 task = <name>-{spec,plan,handoff}.md, where handoff.md folds in an
+// optional "## Artifact" section. 0.7.x splits artifact into its own file.
+// We ONLY restructure files — spec/plan bodies are user-authored and are never
+// touched (no Ambiguity/Ontology section injection: it would be a dead post-hoc
+// gate and risk corrupting hand-written docs).
+
+async function find06Tasks(targetDir) {
+  const docs = join(targetDir, 'docs');
+  if (!(await exists(docs))) return [];
+
+  const found = [];
+  const userDirs = (await readdir(docs, { withFileTypes: true }))
+    .filter(e => e.isDirectory()).map(e => e.name);
+
+  for (const user of userDirs) {
+    const userPath = join(docs, user);
+    const taskDirs = (await readdir(userPath, { withFileTypes: true }).catch(() => []))
+      .filter(e => e.isDirectory()).map(e => e.name);
+    for (const name of taskDirs) {
+      const taskPath = join(userPath, name);
+      const hasHandoff = await exists(join(taskPath, `${name}-handoff.md`));
+      const hasArtifact = await exists(join(taskPath, `${name}-artifact.md`));
+      if (hasHandoff && !hasArtifact) found.push({ user, name, taskPath });
+    }
+  }
+  return found;
+}
+
+function splitArtifactFromHandoff(handoff) {
+  const m = handoff.match(/\n##\s+Artifact\s*\n+/);
+  if (!m) return { newHandoff: null, artifactBody: '' };
+  const newHandoff = handoff.slice(0, m.index).trimEnd() + '\n';
+  const artifactBody = handoff.slice(m.index + m[0].length).trim();
+  return { newHandoff, artifactBody };
+}
+
+export async function migrateTaskTo07(ctx) {
+  const { targetDir } = ctx;
+  const tasks = await find06Tasks(targetDir);
+
+  if (tasks.length === 0) {
+    console.log('  task structure: up to date (no 0.6.0 tasks to split artifact.md)');
+    return false;
+  }
+
+  console.log(`\nFound ${tasks.length} task(s) to upgrade to 0.7.x (4-file structure):`);
+  for (const { user, name } of tasks) {
+    console.log(`  docs/${user}/${name}/ → + ${name}-artifact.md`);
+  }
+  console.log('\nChanges per task:');
+  console.log('  handoff.md "## Artifact" 섹션 → 별도 <name>-artifact.md 로 분리');
+  console.log('  (없으면 빈 artifact.md scaffold 생성)');
+  console.log('  spec.md / plan.md 는 건드리지 않음');
+
+  const ok = ctx.flags.yes || await confirm('\nUpgrade task structure to 0.7.x?', { defaultYes: true });
+  if (!ok) { console.log('Skipped 0.7.x task upgrade.'); return false; }
+
+  for (const { user, name, taskPath } of tasks) {
+    const handoffPath = join(taskPath, `${name}-handoff.md`);
+    const artifactPath = join(taskPath, `${name}-artifact.md`);
+
+    const handoff = await readTextSafe(handoffPath);
+    const { newHandoff, artifactBody } = handoff !== null
+      ? splitArtifactFromHandoff(handoff)
+      : { newHandoff: null, artifactBody: '' };
+
+    const artifactContent = artifactBody
+      ? `# ${name} — Artifact\n\n${artifactBody}\n`
+      : taskArtifactTemplate(name);
+    await writeText(artifactPath, artifactContent);
+
+    if (newHandoff !== null) await writeText(handoffPath, newHandoff);
+
+    console.log(`  ✓ upgraded: docs/${user}/${name}/`);
+  }
+
+  return true;
+}
+
 // --- Backup dir script migration (pre-v0.3 → v0.3+) ---
 
 async function migrateBackupScripts(ctx) {
@@ -243,10 +325,11 @@ export async function runMigrate(ctx) {
   console.log(`harness-team migrate → ${ctx.targetDir}`);
 
   const taskMigrated = await migrateTaskStructure(ctx);
+  const taskUpgraded = await migrateTaskTo07(ctx);
   const scriptMoved = await migrateBackupScripts(ctx);
   const scriptRefreshed = await refreshProjectScripts(ctx);
 
-  if (!taskMigrated && !scriptMoved && !scriptRefreshed) {
+  if (!taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed) {
     console.log('\nNothing to migrate — project is already up to date.');
     return;
   }

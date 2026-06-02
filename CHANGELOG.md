@@ -11,6 +11,13 @@
 
 ---
 
+## [0.7.3] - 2026-06-02
+
+### Added
+- `harness-team migrate`에 **0.6.0 → 0.7.x task 구조 업그레이드** 경로 추가 — 기존 task의 `handoff.md`에 접혀 있던 `## Artifact` 섹션을 별도 `<name>-artifact.md`(4번째 파일)로 분리한다. Artifact 섹션이 없으면 빈 scaffold를 생성. 멱등(이미 artifact.md가 있으면 skip). **spec.md / plan.md는 건드리지 않는다** — Ambiguity·Ontology 섹션을 사후 주입하지 않는다(이미 진입 시점이 지난 task에는 죽은 게이트일 뿐이고, 손으로 쓴 문서를 훼손할 위험이 있음). 신규 task는 생성 시점부터 두 섹션을 포함한다.
+
+---
+
 ## [0.7.2] - 2026-06-02
 
 ### Changed

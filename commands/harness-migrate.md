@@ -1,5 +1,5 @@
 ---
-description: 구버전 구조(backup dir의 스크립트)를 신버전(project root의 스크립트)으로 마이그레이션
+description: 구버전 구조를 최신으로 마이그레이션 — backup dir 스크립트 → project root, task 구조(pre-0.6→0.6, 0.6→0.7 artifact.md 분리)
 argument-hint: [--yes] [--target <dir>]
 ---
 
