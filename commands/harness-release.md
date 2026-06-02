@@ -14,6 +14,9 @@ bump/검증/복사 로직은 모두 CLI(`harness-team release`)가 소유한다 
   쓰기가 라이브 세션과 경쟁(race)할 수 있다. 가능하면 **Claude Code를 종료한 뒤** 실행한다.
 - CLI는 top-level `installed_plugins.json`의 `version` 정수(파일 스키마 버전)를 **절대 건드리지 않는다**.
   플러그인 버전은 `plugins[key][].version`에만 기록된다.
+- **부분 실패 복구**: 매니페스트는 bump됐는데 캐시/installed 동기화 전에 중단됐다면,
+  **명시적 새 버전으로 재실행**(`harness-team release <x.y.z>`)해 resync한다 — 매니페스트가 이미
+  새 버전이라 버전 일치 가드가 다시 patch/minor bump을 막기 때문이다.
 
 ## 실행 절차
 

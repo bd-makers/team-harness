@@ -6,10 +6,14 @@ import { promisify } from 'node:util';
 
 const pexec = promisify(execFile);
 
-const SEMVER_RE = /^\d+\.\d+\.\d+$/;
+const SEMVER_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
 
 // Path segments that must never be copied into the plugin cache.
 const EXCLUDE_SEGMENTS = new Set(['.git', 'node_modules', 'tests', 'scripts']);
+
+function tagged(kind, msg) {
+  return Object.assign(new Error(msg), { kind });
+}
 
 async function readJson(p) {
   return JSON.parse(await readFile(p, 'utf8'));
@@ -19,6 +23,26 @@ async function writeJson(p, data) {
   await writeFile(p, JSON.stringify(data, null, 2) + '\n');
 }
 
+// Surgically replace the single `"version": "<old>"` field in raw manifest text,
+// preserving all other formatting (inline arrays, indentation, trailing newline).
+// Throws (kind: 'manifest-format') if the exact substring does not occur exactly once.
+function surgicalVersionReplace(text, oldVersion, newVersion, label) {
+  const needle = `"version": "${oldVersion}"`;
+  let count = 0;
+  let idx = text.indexOf(needle);
+  while (idx !== -1) {
+    count += 1;
+    idx = text.indexOf(needle, idx + needle.length);
+  }
+  if (count !== 1) {
+    throw tagged(
+      'manifest-format',
+      `release: ${label} 의 \`"version": "${oldVersion}"\` 출현 횟수가 1이 아님 (${count}) — 형식이 예상과 달라 안전하게 치환 불가`,
+    );
+  }
+  return text.replace(needle, `"version": "${newVersion}"`);
+}
+
 async function exists(p) {
   try { await stat(p); return true; } catch { return false; }
 }
@@ -26,12 +50,12 @@ async function exists(p) {
 function computeNewVersion(bump, current) {
   if (SEMVER_RE.test(bump)) return bump;
   const m = /^(\d+)\.(\d+)\.(\d+)$/.exec(current);
-  if (!m) throw new Error(`release: 현재 버전이 semver 형식이 아님 — ${current}`);
+  if (!m) throw tagged('bad-bump', `release: 현재 버전이 semver 형식이 아님 — ${current}`);
   let [maj, min, pat] = m.slice(1).map(Number);
   if (bump === 'major') { maj += 1; min = 0; pat = 0; }
   else if (bump === 'minor') { min += 1; pat = 0; }
   else if (bump === 'patch') { pat += 1; }
-  else throw new Error(`release: 알 수 없는 bump — "${bump}" (major|minor|patch|x.y.z 중 하나여야 함)`);
+  else throw tagged('bad-bump', `release: 알 수 없는 bump — "${bump}" (major|minor|patch|x.y.z 중 하나여야 함)`);
   return `${maj}.${min}.${pat}`;
 }
 
@@ -87,18 +111,25 @@ export async function release({
   const pluginPath = path.join(root, '.claude-plugin/plugin.json');
   const marketplacePath = path.join(root, '.claude-plugin/marketplace.json');
 
-  const pkg = await readJson(pkgPath);
-  const plugin = await readJson(pluginPath);
-  const marketplace = await readJson(marketplacePath);
+  // Read raw text once; parse from that same text. Raw text feeds the surgical
+  // write (FIX 1); the parsed objects feed the agreement/schema checks.
+  const pkgText = await readFile(pkgPath, 'utf8');
+  const pluginText = await readFile(pluginPath, 'utf8');
+  const marketplaceText = await readFile(marketplacePath, 'utf8');
+  const pkg = JSON.parse(pkgText);
+  const plugin = JSON.parse(pluginText);
+  const marketplace = JSON.parse(marketplaceText);
 
   // 1. Marketplace schema guard (run first so the version check can safely read plugins[0]).
   if (!Array.isArray(marketplace.plugins) || marketplace.plugins.length !== 1) {
-    throw new Error(
+    throw tagged(
+      'schema',
       `release: marketplace.json.plugins 길이는 정확히 1이어야 함 — 현재 ${marketplace.plugins?.length ?? 0}`,
     );
   }
   if (marketplace.plugins[0].name !== plugin.name) {
-    throw new Error(
+    throw tagged(
+      'schema',
       `release: 플러그인 이름 불일치 — plugin.json.name=${plugin.name}, marketplace.json.plugins[0].name=${marketplace.plugins[0].name}`,
     );
   }
@@ -108,7 +139,8 @@ export async function release({
   const pluginV = plugin.version;
   const mktV = marketplace.plugins[0].version;
   if (!(pkgV === pluginV && pluginV === mktV)) {
-    throw new Error(
+    throw tagged(
+      'version-mismatch',
       `release: 매니페스트 버전 불일치 — package.json=${pkgV}, plugin.json=${pluginV}, marketplace.json=${mktV}`,
     );
   }
@@ -117,7 +149,7 @@ export async function release({
   const oldVersion = pkgV;
   const newVersion = computeNewVersion(bump, oldVersion);
   if (!SEMVER_RE.test(newVersion)) {
-    throw new Error(`release: 계산된 버전이 semver 형식이 아님 — ${newVersion}`);
+    throw tagged('bad-bump', `release: 계산된 버전이 semver 형식이 아님 — ${newVersion}`);
   }
 
   const marketplaceName = marketplace.name;
@@ -140,13 +172,16 @@ export async function release({
   // 4. Dry run: write nothing.
   if (dryRun) return result;
 
-  // 5. Write the 3 manifests.
-  pkg.version = newVersion;
-  plugin.version = newVersion;
-  marketplace.plugins[0].version = newVersion;
-  await writeJson(pkgPath, pkg);
-  await writeJson(pluginPath, plugin);
-  await writeJson(marketplacePath, marketplace);
+  // 5. Write the 3 manifests via SURGICAL string replacement of only the version
+  // field on the raw text — never re-serialize, so inline arrays/indentation/
+  // trailing newline survive byte-for-byte. The single-occurrence guard throws
+  // (kind: 'manifest-format') rather than risk silent corruption.
+  const newPkgText = surgicalVersionReplace(pkgText, oldVersion, newVersion, 'package.json');
+  const newPluginText = surgicalVersionReplace(pluginText, oldVersion, newVersion, '.claude-plugin/plugin.json');
+  const newMarketplaceText = surgicalVersionReplace(marketplaceText, oldVersion, newVersion, '.claude-plugin/marketplace.json');
+  await writeFile(pkgPath, newPkgText);
+  await writeFile(pluginPath, newPluginText);
+  await writeFile(marketplacePath, newMarketplaceText);
 
   // 6. skipCache short-circuits cache, marketplace sync, and installed_plugins.
   if (skipCache) return result;
@@ -166,7 +201,12 @@ export async function release({
   // 9. installed_plugins.json.
   const installedPath = path.join(pluginsRoot, 'installed_plugins.json');
   if (await exists(installedPath)) {
-    const installed = await readJson(installedPath);
+    // Preserve the file's trailing-newline convention: the live
+    // ~/.claude/plugins/installed_plugins.json (owned by Claude Code) has NO
+    // trailing newline, so match whatever the original used.
+    const installedText = await readFile(installedPath, 'utf8');
+    const installed = JSON.parse(installedText);
+    const hadTrailingNewline = installedText.endsWith('\n');
     const records = installed.plugins?.[key];
     if (Array.isArray(records) && records.length > 0) {
       let rec = records.find(r => r.scope === 'user');
@@ -175,7 +215,7 @@ export async function release({
       rec.installPath = cacheDir;
       rec.lastUpdated = new Date().toISOString();
       rec.gitCommitSha = gitSha === undefined ? await deriveGitSha(root) : gitSha;
-      await writeJson(installedPath, installed);
+      await writeFile(installedPath, JSON.stringify(installed, null, 2) + (hadTrailingNewline ? '\n' : ''));
       result.installedUpdated = true;
     } else {
       result.installedNote = `installed_plugins.json 에 "${key}" 키 없음 — 스킵`;
@@ -224,9 +264,39 @@ export async function runRelease(ctx) {
     return res;
   } catch (err) {
     process.exitCode = 1;
+    const advice = ERROR_ADVICE[err.kind] || ERROR_ADVICE.generic;
     console.log(`✗ release: ${err.message}`);
-    console.log(`cause: 3개 매니페스트(package.json/plugin.json/marketplace.json) 버전 불일치 또는 marketplace 스키마 위반일 가능성이 높음`);
-    console.log(`retry: 세 파일의 version을 동일하게 맞추고 marketplace.json.plugins[0].name이 plugin.json.name과 같은지 확인한 뒤 재실행`);
-    console.log(`stop: Claude Code가 실행 중이면 installed_plugins.json 경쟁이 발생할 수 있으니 종료 후 실행하라`);
+    console.log(`cause: ${advice.cause}`);
+    console.log(`retry: ${advice.retry}`);
+    console.log(`stop: ${advice.stop}`);
   }
 }
+
+// Per-kind cause/retry/stop advice so the catch block never misdirects the user.
+const ERROR_ADVICE = {
+  'version-mismatch': {
+    cause: '3개 매니페스트(package.json/plugin.json/marketplace.json)의 version이 서로 다름',
+    retry: '세 파일의 version을 동일한 현재 버전으로 맞춘 뒤 재실행',
+    stop: '어느 값이 옳은지 모호하면 git history로 마지막 합의된 버전을 확인하라',
+  },
+  'bad-bump': {
+    cause: 'bump 인자가 major|minor|patch 또는 유효한 x.y.z(선행 0 불가)가 아님',
+    retry: 'major|minor|patch 또는 올바른 semver를 인자로 주고 재실행',
+    stop: '명시적 버전은 선행 0 없는 정수 3개여야 한다 (예: 1.2.3, not 01.02.03)',
+  },
+  schema: {
+    cause: 'marketplace.json 스키마 위반 — plugins 길이가 1이 아니거나 plugins[0].name이 plugin.json.name과 불일치',
+    retry: 'marketplace.json.plugins를 정확히 1개로 만들고 name을 plugin.json.name과 일치시킨 뒤 재실행',
+    stop: '스키마는 수동 점검이 필요하다 — 자동 수정하지 말 것',
+  },
+  'manifest-format': {
+    cause: '매니페스트의 `"version": "x"` 필드가 정확히 1회 나타나지 않음 — 형식이 예상과 다름',
+    retry: '해당 파일에서 version 필드를 표준 형식(`"version": "x.y.z"`, 공백 1개)으로 정규화한 뒤 재실행',
+    stop: '안전을 위해 자동 치환을 중단했다 — 파일 포맷을 직접 확인하라',
+  },
+  generic: {
+    cause: '파일 시스템 오류 또는 예기치 못한 오류 가능 — 경로/권한 확인',
+    retry: '원인 메시지를 확인하고 수정 후 재실행',
+    stop: '반복 실패 시 수동 점검',
+  },
+};

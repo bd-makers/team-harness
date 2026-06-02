@@ -249,3 +249,113 @@ test('schema guard: plugin name mismatch throws', async () => {
     await rm(pr, { recursive: true, force: true });
   }
 });
+
+test('surgical bump does NOT reflow inline arrays (JSON fidelity)', async () => {
+  const root = await makeRoot();
+  const pr = await makePluginsRoot();
+  try {
+    // Hand-written raw text with an INLINE keywords array on one line. We must NOT
+    // use JSON.stringify(..., null, 2) here — that would expand the array.
+    const rawPkg =
+      '{\n' +
+      '  "name": "' + PLUGIN + '",\n' +
+      '  "version": "1.2.3",\n' +
+      '  "keywords": ["a", "b"],\n' +
+      '  "description": "x"\n' +
+      '}\n';
+    await writeFile(join(root, 'package.json'), rawPkg);
+
+    await release({ bump: 'patch', root, pluginsRoot: pr, skipCache: true, gitSha: 'x' });
+
+    const text = await readFile(join(root, 'package.json'), 'utf8');
+    assert.match(text, /"version": "1\.2\.4"/, 'version field must be surgically bumped');
+    assert.match(text, /"keywords": \["a", "b"\]/, 'inline keywords array must stay on one line (no reflow)');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(pr, { recursive: true, force: true });
+  }
+});
+
+test('manifest-format guard: version substring count !== 1 throws naming the file', async () => {
+  const root = await makeRoot();
+  const pr = await makePluginsRoot();
+  try {
+    // Valid JSON that parses to version 1.2.3 (so agreement check passes), but the
+    // exact spaced substring `"version": "1.2.3"` appears 0 times (no space here).
+    const rawPkg = '{\n  "name": "' + PLUGIN + '",\n  "version":"1.2.3"\n}\n';
+    await writeFile(join(root, 'package.json'), rawPkg);
+
+    await assert.rejects(
+      () => release({ bump: 'patch', root, pluginsRoot: pr, skipCache: true, gitSha: 'x' }),
+      err => {
+        assert.match(err.message, /package\.json/);
+        assert.equal(err.kind, 'manifest-format');
+        return true;
+      },
+    );
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(pr, { recursive: true, force: true });
+  }
+});
+
+test('error kinds: bad bump arg differs from version mismatch', async () => {
+  const root = await makeRoot();
+  const pr = await makePluginsRoot();
+  try {
+    let badBumpErr;
+    await assert.rejects(
+      () => release({ bump: 'nope', root, pluginsRoot: pr, gitSha: 'x' }),
+      err => { badBumpErr = err; return true; },
+    );
+    assert.equal(badBumpErr.kind, 'bad-bump');
+
+    // FIX 4: a leading-zero "semver" is rejected as bad-bump (not treated as explicit version).
+    await assert.rejects(
+      () => release({ bump: '01.02.03', root, pluginsRoot: pr, gitSha: 'x' }),
+      err => err.kind === 'bad-bump',
+    );
+
+    // Now force a version mismatch and confirm a DIFFERENT kind/message.
+    await writeFile(
+      join(root, '.claude-plugin/plugin.json'),
+      JSON.stringify({ name: PLUGIN, version: '9.9.9', commands: [] }, null, 2) + '\n',
+    );
+    let mismatchErr;
+    await assert.rejects(
+      () => release({ bump: 'patch', root, pluginsRoot: pr, gitSha: 'x' }),
+      err => { mismatchErr = err; return true; },
+    );
+    assert.equal(mismatchErr.kind, 'version-mismatch');
+    assert.notEqual(badBumpErr.kind, mismatchErr.kind);
+    assert.notEqual(badBumpErr.message, mismatchErr.message);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(pr, { recursive: true, force: true });
+  }
+});
+
+test('safety: stale dest symlink is not followed to delete its target outside commands/', async () => {
+  const root = await makeRoot();
+  const pr = await makePluginsRoot();
+  try {
+    const mktDir = join(pr, 'marketplaces', MARKET);
+    await mkdir(join(mktDir, 'commands'), { recursive: true });
+
+    // A real target file OUTSIDE commands/, and a symlink inside dest commands/
+    // pointing to it, whose name is NOT in source commands/.
+    const targetFile = join(mktDir, 'real-target.md');
+    await writeFile(targetFile, 'precious\n');
+    const { symlink } = await import('node:fs/promises');
+    await symlink(targetFile, join(mktDir, 'commands', 'harness-STALE.md'));
+
+    await release({ bump: 'minor', root, pluginsRoot: pr, skipCache: false, gitSha: 'x' });
+
+    // The stale symlink may or may not be removed, but its target MUST survive.
+    assert.ok(await fileExists(targetFile), 'symlink target outside commands/ must not be deleted');
+    assert.equal(await readFile(targetFile, 'utf8'), 'precious\n', 'target content must be intact');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(pr, { recursive: true, force: true });
+  }
+});
