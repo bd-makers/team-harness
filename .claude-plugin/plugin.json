@@ -15,7 +15,10 @@
     "./commands/harness-symlink.md",
     "./commands/harness-delete.md",
     "./commands/harness-migrate.md",
-    "./commands/harness-upgrade.md"
+    "./commands/harness-upgrade.md",
+    "./commands/harness-interview.md",
+    "./commands/harness-contrarian.md",
+    "./commands/harness-simplifier.md"
   ],
   "skills": [
     "./skills"
