@@ -1,7 +1,37 @@
 import { lstat, readlink, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { exists } from '../fsx.mjs';
 import { loadBackupDir } from '../harness.mjs';
+
+const pexec = promisify(execFile);
+
+const EXTERNAL_TOOLS = [
+  { cmd: 'gh', label: 'gh (GitHub CLI)' },
+  { cmd: 'codex', label: 'codex (Codex CLI)' },
+  { cmd: 'gemini', label: 'gemini (Gemini CLI)' },
+  { cmd: 'opencode', label: 'opencode (OpenCode CLI)' },
+  { cmd: 'jq', label: 'jq (JSON processor)' },
+];
+
+export async function checkCommand(cmd, args = ['--version'], env = process.env) {
+  try {
+    await pexec(cmd, args, { timeout: 3000, env });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export async function checkSelfCli(root, env = process.env) {
+  try {
+    const { stdout } = await pexec('node', [`${root}/bin/harness-team.mjs`, '--help'], { timeout: 5000, env });
+    return stdout.includes('harness-team');
+  } catch {
+    return false;
+  }
+}
 
 const CHECKS = [
   { path: 'CLAUDE.md', required: true },
@@ -67,6 +97,22 @@ export async function runDoctor(ctx) {
     console.log(`\nbackup clone dir: ${backupDir}`);
   } else {
     console.log(`\n✗ backup clone dir is not configured (missing .harness/backup.json)`);
+    fail++;
+  }
+
+  // External tool healthchecks (all optional — missing → -, present → ✓, never fail++)
+  console.log('\nexternal tools:');
+  for (const { cmd, label } of EXTERNAL_TOOLS) {
+    const ok = await checkCommand(cmd);
+    console.log(ok ? `✓ ${label}` : `- ${label}  (not found, optional)`);
+  }
+
+  // Self-CLI executability (required — failure increments fail)
+  const selfOk = await checkSelfCli(ctx.root);
+  if (selfOk) {
+    console.log('✓ harness-team CLI  (--help OK)');
+  } else {
+    console.log('✗ harness-team CLI  (--help failed)');
     fail++;
   }
 

@@ -160,13 +160,29 @@ harness-team --help
 
 ### `/harness-doctor` — 무결성 점검
 
-symlink · JSON 유효성 · 실행 권한 체크.
+symlink · JSON 유효성 · 실행 권한 · 외부 도구 존재 여부 체크.
 
 ```bash
 /harness-doctor
 ```
 
 문제가 있으면 exit 1 + 문제 항목 리포트.
+
+출력 예시 (외부 도구 + 자체 CLI 섹션):
+
+```
+external tools:
+✓ gh (GitHub CLI)
+- codex (Codex CLI)  (not found, optional)
+✓ gemini (Gemini CLI)
+- opencode (OpenCode CLI)  (not found, optional)
+✓ jq (JSON processor)
+✓ harness-team CLI  (--help OK)
+
+All checks passed.
+```
+
+심볼: `✓` 정상, `✗` 실패(exit 1), `-` 선택 항목 없음(정상).
 
 ### `/harness-task` — task 관리
 
