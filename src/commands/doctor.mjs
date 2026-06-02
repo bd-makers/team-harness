@@ -100,10 +100,13 @@ export async function runDoctor(ctx) {
     fail++;
   }
 
-  // External tool healthchecks (all optional — missing → -, present → ✓, never fail++)
+  // External tool healthchecks (all optional — missing → -, present → ✓, never fail++).
+  // Run concurrently so a slow/hung tool doesn't serialize the worst-case wait.
   console.log('\nexternal tools:');
-  for (const { cmd, label } of EXTERNAL_TOOLS) {
-    const ok = await checkCommand(cmd);
+  const toolResults = await Promise.all(
+    EXTERNAL_TOOLS.map(({ cmd, label }) => checkCommand(cmd).then(ok => ({ ok, label }))),
+  );
+  for (const { ok, label } of toolResults) {
     console.log(ok ? `✓ ${label}` : `- ${label}  (not found, optional)`);
   }
 
