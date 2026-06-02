@@ -11,6 +11,21 @@
 
 ---
 
+## [0.7.0] - 2026-06-02
+
+### Added
+- spec/plan 템플릿에 4차원 Ambiguity 자가진단 + Ontology 섹션, task 생성 시 `artifact.md` 4번째 파일 scaffold
+- 페르소나 3종 슬래시 커맨드: `/harness-interview`(Socratic), `/harness-contrarian`, `/harness-simplifier`
+- `/harness-retro` + `harness-team retro` 서브커맨드 — 활성 task의 `artifact.md`에 학습/교정 내용 append (자기개선 루프)
+- `/harness-release` + `src/commands/release.mjs` — 3개 매니페스트 동시 bump + 캐시/마켓플레이스/`installed_plugins.json` 동기화 자동화 (휴먼 에러 차단)
+- `CHANGELOG.md`(0.4.0~0.6.4 복원) + `MAINTAINING.md`(릴리스 절차 명문화) 도입
+
+### Changed
+- `templates/CLAUDE.md.hbs`: Ambiguity 게이트(1-A) 룰 + 페르소나 호출 가이드 추가
+- `src/commands/doctor.mjs`: 외부 도구(gh/codex/gemini/opencode/jq) healthcheck + 자체 CLI 실행성 검사 추가 (동시 실행)
+
+---
+
 ## [0.6.4] - 2026-05-20
 
 ### Fixed
