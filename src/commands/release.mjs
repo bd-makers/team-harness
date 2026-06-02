@@ -182,9 +182,12 @@ export async function release({
   await mkdir(cacheDir, { recursive: true });
   await cp(root, cacheDir, { recursive: true, filter: cacheFilter(root) });
 
-  // 8. Marketplace sync.
-  await mkdir(marketplaceDir, { recursive: true });
-  await cp(marketplacePath, path.join(marketplaceDir, 'marketplace.json'));
+  // 8. Marketplace sync. The authoritative marketplace manifest lives at
+  // <marketplaceDir>/.claude-plugin/marketplace.json (matching every other
+  // installed marketplace) — NOT the marketplace root.
+  const destMarketplaceJson = path.join(marketplaceDir, '.claude-plugin', 'marketplace.json');
+  await mkdir(path.dirname(destMarketplaceJson), { recursive: true });
+  await cp(marketplacePath, destMarketplaceJson);
   const srcCommands = path.join(root, 'commands');
   if (await exists(srcCommands)) {
     await syncCommandsDir(srcCommands, path.join(marketplaceDir, 'commands'));

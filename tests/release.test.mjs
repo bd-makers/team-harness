@@ -161,9 +161,17 @@ test('marketplace sync: copies marketplace.json + commands, removes stale dest c
 
     await release({ bump: 'minor', root, pluginsRoot: pr, skipCache: false, gitSha: 'x' });
 
-    // marketplace.json copied with bumped version
-    assert.ok(await fileExists(join(mktDir, 'marketplace.json')), 'marketplace.json should be synced');
-    assert.equal((await readJson(join(mktDir, 'marketplace.json'))).plugins[0].version, '1.3.0');
+    // marketplace.json copied with bumped version to the authoritative
+    // .claude-plugin/ location (NOT the marketplace root — that is where every
+    // other installed marketplace keeps it and where Claude Code reads it).
+    const destMktJson = join(mktDir, '.claude-plugin', 'marketplace.json');
+    assert.ok(await fileExists(destMktJson), 'marketplace.json should be synced to .claude-plugin/');
+    assert.equal((await readJson(destMktJson)).plugins[0].version, '1.3.0');
+    assert.equal(
+      await fileExists(join(mktDir, 'marketplace.json')),
+      false,
+      'must NOT write a stray marketplace.json at the marketplace root',
+    );
 
     // a real source command was copied
     assert.ok(

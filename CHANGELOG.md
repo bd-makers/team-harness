@@ -11,6 +11,13 @@
 
 ---
 
+## [0.7.1] - 2026-06-02
+
+### Fixed
+- `harness-team release`가 마켓플레이스 `marketplace.json`을 마켓플레이스 **루트**에 잘못 기록하던 버그 수정 — Claude Code가 실제로 읽는 권위 경로인 `.claude-plugin/marketplace.json`에 동기화하도록 변경 (다른 모든 설치 마켓플레이스와 동일). 0.7.0에서는 루트에 stray 파일이 생기고 `.claude-plugin/marketplace.json`이 stale 상태로 남았음. 회귀 방지 테스트 추가.
+
+---
+
 ## [0.7.0] - 2026-06-02
 
 ### Added
