@@ -40,7 +40,7 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
-function taskSpecTemplate(name) {
+export function taskSpecTemplate(name) {
   return `# ${name} — Spec
 
 ## 목적 / 요구사항
@@ -49,12 +49,27 @@ function taskSpecTemplate(name) {
 ## 설계 / 접근
 
 
+## Ontology
+*이 task가 다루는 핵심 개념의 정의. "X가 정확히 뭔가?"에 답한다.*
+
+- **개념 A**:
+- **개념 B**:
+
+## Ambiguity 자가진단
+*각 항목이 명확하면 체크. 3개 이상 미체크면 진입 금지(브레인스토밍으로 복귀).*
+
+- [ ] **Goal 명확도** (40%) — 목표가 한 문장으로 구체화되었는가?
+- [ ] **Constraint 명확도** (30%) — 기술/시간/범위 제약이 명시되었는가?
+- [ ] **Success 기준** (30%) — 완료를 어떻게 측정하는가?
+- [ ] **Context 명확도** (brownfield 한정) — 영향 받는 기존 코드/파일을 식별했는가?
+- [ ] **Ambiguity ≤ 0.2** — 위 항목 가중합 ≥ 0.8
+
 ## 참고
 -
 `;
 }
 
-function taskPlanTemplate(name) {
+export function taskPlanTemplate(name) {
   return `# ${name} — Plan
 
 ## 목표
@@ -72,6 +87,19 @@ function taskHandoffTemplate(name) {
   return `# ${name} — Handoff
 
 (세션 종료 시 post-commit hook이 자동 갱신합니다)
+`;
+}
+
+export function taskArtifactTemplate(name) {
+  return `# ${name} — Artifact
+
+*최종 결과물과 학습 내용을 기록한다.*
+
+## 결과
+
+
+## Learnings
+
 `;
 }
 
@@ -159,6 +187,7 @@ export async function runTask(ctx) {
   await writeText(join(dir, `${name}-spec.md`), taskSpecTemplate(name));
   await writeText(join(dir, `${name}-plan.md`), taskPlanTemplate(name));
   await writeText(join(dir, `${name}-handoff.md`), taskHandoffTemplate(name));
+  await writeText(join(dir, `${name}-artifact.md`), taskArtifactTemplate(name));
 
   await writeActive(ctx.targetDir, {
     user, task: name,
