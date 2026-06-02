@@ -96,6 +96,9 @@ cd my-project
 | `/harness-delete` | project에서 harness symlink/파일 제거 |
 | `/harness-migrate` | v0.2.x 스크립트 → v0.3+ 위치 이전 |
 | `/harness-upgrade` | v0.3.x 실제 파일 → v0.4+ symlink 원스텝 전환 |
+| `/harness-interview` | 활성 task의 spec.md를 소크라테스식 질문으로 검증해 숨겨진 가정 드러냄 |
+| `/harness-contrarian` | 활성 task의 spec.md / plan.md 가정에 전면 의문 제기 |
+| `/harness-simplifier` | 활성 task의 plan.md에서 제거 가능한 단계·추상화 탐지 |
 | `/harness-retro` | 활성 task의 artifact.md에 학습/교정 내용 append (자기개선 루프) |
 | `/harness-release` | 3개 매니페스트 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화 (항상 `--dry-run` 먼저) |
 
