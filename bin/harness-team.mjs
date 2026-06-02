@@ -6,7 +6,7 @@ import { runApply } from '../src/commands/apply.mjs';
 import { runBackup } from '../src/commands/backup.mjs';
 import { runSync } from '../src/commands/sync.mjs';
 import { runDoctor } from '../src/commands/doctor.mjs';
-import { runTask, runList, runDone, runHandoffAuto } from '../src/commands/task.mjs';
+import { runTask, runList, runDone, runHandoffAuto, runRetro } from '../src/commands/task.mjs';
 import { runClone } from '../src/commands/clone.mjs';
 import { runSymlink } from '../src/commands/symlink.mjs';
 import { runDelete } from '../src/commands/delete.mjs';
@@ -36,6 +36,7 @@ Commands:
   list                              List all tasks
   done                              Complete the active task
   handoff                           Update handoff from latest commit (post-commit hook)
+  retro [text]                      Append a dated Learnings entry to the active task's artifact.md
   help                              Show this help
 
 Options:
@@ -74,13 +75,13 @@ async function main() {
   const parsed = parseArgs(argv);
   const { cmd, positional, flags } = parsed;
 
-  const taskCmds = new Set(['task', 'list', 'done', 'handoff']);
+  const taskCmds = new Set(['task', 'list', 'done', 'handoff', 'retro']);
   const target = flags.target || (taskCmds.has(cmd) ? process.cwd() : positional[0]) || process.cwd();
   const ctx = {
     root: ROOT,
     targetDir: resolve(process.cwd(), target),
     flags,
-    taskArgs: cmd === 'task' ? positional : [],
+    taskArgs: (cmd === 'task' || cmd === 'retro') ? positional : [],
   };
 
   switch (cmd) {
@@ -98,6 +99,7 @@ async function main() {
     case 'list': return runList(ctx);
     case 'done': return runDone(ctx);
     case 'handoff': return runHandoffAuto(ctx);
+    case 'retro': return runRetro(ctx);
     case 'help':
     case '--help':
     case '-h':

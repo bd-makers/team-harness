@@ -263,6 +263,38 @@ export async function runDone(ctx) {
   console.log(`handoff updated: docs/${user}/${task}/${task}-handoff.md`);
 }
 
+export async function runRetro(ctx) {
+  const active = await readActive(ctx.targetDir);
+  if (!active || !active.task) {
+    process.exitCode = 1;
+    console.log(`✗ retro: 활성 task 없음`);
+    console.log(`cause: .harness/active.json 에 활성 task가 없어 append 대상 artifact.md를 찾을 수 없음`);
+    console.log(`retry: \`harness-team task <name>\` 로 task를 활성화한 뒤 다시 실행`);
+    console.log(`stop: task가 하나도 없으면 먼저 task를 생성하라`);
+    return;
+  }
+
+  const { user, task } = active;
+  const artifactPath = join(ctx.targetDir, 'docs', user, task, `${task}-artifact.md`);
+
+  if (!(await exists(artifactPath))) {
+    await mkdir(join(ctx.targetDir, 'docs', user, task), { recursive: true });
+    await writeText(artifactPath, taskArtifactTemplate(task));
+  }
+
+  const date = today();
+  const text = (ctx.taskArgs || []).join(' ');
+  const section = text
+    ? `\n## Learnings (${date})\n\n- ${text}\n`
+    : `\n## Learnings (${date})\n\n- \n`;
+
+  await appendFile(artifactPath, section);
+
+  const relPath = `docs/${user}/${task}/${task}-artifact.md`;
+  console.log(`✓ retro: ${relPath} 에 ## Learnings (${date}) 추가`);
+  console.log(`next: artifact.md를 열어 학습 내용을 채우거나, 추가 메모는 \`harness-team retro "<메모>"\` 재실행`);
+}
+
 export async function runHandoffAuto(ctx) {
   const active = await readActive(ctx.targetDir);
   if (!active || !active.task) return;

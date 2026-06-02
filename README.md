@@ -94,6 +94,7 @@ cd my-project
 | `/harness-delete` | project에서 harness symlink/파일 제거 |
 | `/harness-migrate` | v0.2.x 스크립트 → v0.3+ 위치 이전 |
 | `/harness-upgrade` | v0.3.x 실제 파일 → v0.4+ symlink 원스텝 전환 |
+| `/harness-retro` | 활성 task의 artifact.md에 학습/교정 내용 append (자기개선 루프) |
 
 ### 방법 B: 독립 CLI
 
