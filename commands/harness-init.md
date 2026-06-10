@@ -1,6 +1,12 @@
 ---
 description: 현재 프로젝트에 팀 하네스를 신규 scaffold합니다 (Claude 메인 + Codex/Gemini/Cursor/OpenCode)
 argument-hint: [--stack react-native|next|node|python|generic] [--yes]
+tags:
+  - react
+  - project
+  - ai
+created: 2026-04-28
+modified: 2026-04-28
 ---
 
 현재 작업 디렉토리에 팀용 하네스를 설치합니다.

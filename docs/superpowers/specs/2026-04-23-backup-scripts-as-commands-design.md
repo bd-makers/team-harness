@@ -1,3 +1,12 @@
+---
+tags:
+  - project
+  - ai
+  - obsidian
+created: 2026-04-23
+modified: 2026-04-23
+---
+
 # Design: clone/symlink/delete as Harness CLI Commands
 
 Date: 2026-04-23

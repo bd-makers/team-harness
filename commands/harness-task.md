@@ -1,6 +1,12 @@
 ---
 description: task 관리 (task/list/done/handoff) — docs/<user>/<name>/ 구조
 argument-hint: <name> | list | done
+tags:
+  - project
+  - ai
+  - obsidian
+created: 2026-05-15
+modified: 2026-05-15
 ---
 
 ```bash

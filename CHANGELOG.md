@@ -1,3 +1,12 @@
+---
+tags:
+  - project
+  - ai
+  - obsidian
+created: 2026-06-02
+modified: 2026-06-02
+---
+
 # Changelog
 
 <!--

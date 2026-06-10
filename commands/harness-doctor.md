@@ -1,5 +1,11 @@
 ---
 description: 하네스 무결성 점검 (symlink, hooks, settings)
+tags:
+  - project
+  - ai
+  - obsidian
+created: 2026-04-28
+modified: 2026-04-28
 ---
 
 ```bash

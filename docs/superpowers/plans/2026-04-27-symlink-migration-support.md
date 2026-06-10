@@ -1,3 +1,12 @@
+---
+tags:
+  - project
+  - ai
+  - obsidian
+created: 2026-04-27
+modified: 2026-04-27
+---
+
 # Symlink Migration Support Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
