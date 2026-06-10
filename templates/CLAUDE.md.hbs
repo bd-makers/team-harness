@@ -118,6 +118,11 @@
 - `<name>-handoff.md` — 세션 인수인계 (post-commit hook 자동 갱신)
 - `<name>-artifact.md` — 실행 결과·학습 (`task done`·`retro` 시 append)
 
+이 네 파일이 task의 **SSOT**다. 상세 설계를 외부 문서(docs 루트·`superpowers/plans` 등)로
+분리하더라도 `<name>-spec.md`를 외부를 가리키는 포인터 껍데기로 두지 말 것 —
+요구사항·자가진단·Ontology는 spec.md에 직접 쓰고, 외부 문서는 보조 참조로만 둔다.
+(doctor가 자가진단 없는 포인터 껍데기 spec을 경고한다.)
+
 활성 task는 `.harness/active.json`에 저장.
 
 ### 세션 시작 시 (반드시 수행)

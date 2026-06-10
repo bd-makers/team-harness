@@ -22,9 +22,9 @@ enforcement 갭을 메운다.
 - [~] **⑥ 플러그인 레포 자기 dogfooding** (in progress) — 이 task 자체. 플러그인 레포에
   `.harness/active.json` + 실제 task 디렉토리를 운용해 강제 갭을 상시 노출. 본 task 생성·
   채움으로 착수, P0 잔여 항목이 끝날 때까지 active 유지.
-- [ ] **⑤ spec 경로 단일화** — docs 루트·`superpowers/plans`에 spec/plan을 만들면 게이트
-  템플릿이 우회된다. `task <name>` 생성 spec을 정본으로 하고 외부 본문은 링크가 아니라 흡수.
-  (대상: 워크플로우 규약 + 필요 시 `migrate` 보강)
+- [x] **⑤ spec 경로 단일화 (규약)** — task 4파일이 SSOT임을 protocol에 명문화, spec을 외부
+  포인터 껍데기로 두는 것을 금지. doctor 게이트(②)가 위반을 강제 탐지.
+  (기존 외부 본문 `migrate` 흡수는 "필요 시"라 별도 항목으로 남김)
 - [x] **③ 리뷰 산출물 규약** — Codex/Gemini 리뷰 결과를 활성 task `<name>-artifact.md`
   `## Reviews` 섹션에 남기는 규약. artifact 템플릿에 섹션 추가 + CLAUDE.md.hbs 리뷰 프로토콜 명시.
 
