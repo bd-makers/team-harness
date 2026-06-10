@@ -224,6 +224,9 @@ export async function runList(ctx) {
     const userEntries = await readdir(userPath, { withFileTypes: true });
     const taskDirs = userEntries.filter(e => e.isDirectory()).map(e => e.name);
     for (const task of taskDirs) {
+      // Only list dirs carrying a task marker (<name>-spec.md); this skips non-task
+      // dirs like docs/superpowers/{plans,specs} that are not user/task at all.
+      if (!(await exists(join(userPath, task, `${task}-spec.md`)))) continue;
       const isActive = active && active.user === user && active.task === task;
       console.log(`${isActive ? '*' : ' '} ${user}/${task}`);
       found = true;
