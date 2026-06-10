@@ -1,3 +1,12 @@
+---
+tags:
+  - project
+  - ai
+  - obsidian
+created: 2026-06-02
+modified: 2026-06-02
+---
+
 # harness-aijient-team
 
 > **Claude 메인 + Codex · Gemini · Cursor · OpenCode** — 다섯 AI 에이전트를 하나의 프로젝트에서 협업시키는 팀용 하네스 플러그인.
@@ -532,7 +541,7 @@ cd harness-aijient-team-plugin
 rm -rf /tmp/test && mkdir /tmp/test && cd /tmp/test
 git init && git config user.name "test-user"
 node /path/to/plugin/bin/harness-team.mjs init --yes
-node /path/to/plugin/bin/harness-team.mjs task new feature demo
+node /path/to/plugin/bin/harness-team.mjs task demo
 node /path/to/plugin/bin/harness-team.mjs doctor
 ```
 

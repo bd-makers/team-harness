@@ -110,10 +110,11 @@
 
 ### task 단위 관리
 모든 작업은 `docs/<user>/<name>/` 아래에서 관리됩니다.
-각 task 디렉토리는 세 파일로 구성:
-- `<name>-spec.md` — 요구사항/설계
+각 task 디렉토리는 네 파일로 구성:
+- `<name>-spec.md` — 요구사항/설계 (Ambiguity 자가진단·Ontology 포함)
 - `<name>-plan.md` — 단계별 체크리스트 (완료 시 `- [x]`로 체크)
 - `<name>-handoff.md` — 세션 인수인계 (post-commit hook 자동 갱신)
+- `<name>-artifact.md` — 실행 결과·학습 (`task done`·`retro` 시 append)
 
 활성 task는 `.harness/active.json`에 저장.
 
@@ -145,7 +146,7 @@
 |---|---|
 | `CLAUDE.md` | 이 파일 — 프로젝트 규칙 (SSOT) |
 | `AGENTS.md`, `GEMINI.md`, `.cursorrules` | symlink → `CLAUDE.md` |
-| `docs/<user>/<name>/` | task별 작업 문서 3종 |
+| `docs/<user>/<name>/` | task별 작업 문서 4종 (spec·plan·handoff·artifact) |
 | `.harness/active.json` | 현재 활성 task 포인터 |
 | `docs/<user>/<user>-handoff.md` | 세션 시작 진입점 |
 | `.claude/rules/*.md` | 영역별 코딩 규칙 |
