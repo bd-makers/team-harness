@@ -25,8 +25,8 @@ enforcement 갭을 메운다.
 - [ ] **⑤ spec 경로 단일화** — docs 루트·`superpowers/plans`에 spec/plan을 만들면 게이트
   템플릿이 우회된다. `task <name>` 생성 spec을 정본으로 하고 외부 본문은 링크가 아니라 흡수.
   (대상: 워크플로우 규약 + 필요 시 `migrate` 보강)
-- [ ] **③ 리뷰 산출물 규약** — Codex/Gemini 리뷰 결과를 task 디렉토리에 남기는 규약 문서화.
-  없으면 "리뷰함"이 영구 미검증. (P3와 연계)
+- [x] **③ 리뷰 산출물 규약** — Codex/Gemini 리뷰 결과를 활성 task `<name>-artifact.md`
+  `## Reviews` 섹션에 남기는 규약. artifact 템플릿에 섹션 추가 + CLAUDE.md.hbs 리뷰 프로토콜 명시.
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

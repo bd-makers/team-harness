@@ -25,6 +25,11 @@ test('artifact 템플릿은 Learnings 섹션을 포함한다', () => {
   assert.match(out, /## Learnings/);
 });
 
+test('artifact 템플릿은 Reviews 섹션을 포함한다 (리뷰 산출물 규약)', () => {
+  const out = taskArtifactTemplate('demo');
+  assert.match(out, /## Reviews/);
+});
+
 test('runTask는 artifact.md를 실제로 생성한다', async () => {
   const tmpDir = await mkdtemp(join(tmpdir(), 'harness-task-'));
   try {
