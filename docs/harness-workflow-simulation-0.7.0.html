@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Harness Task Workflow — 시나리오 시뮬레이션 (v0.7.0)</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3350;
+      --accent: #7c6af5;
+      --accent2: #50c8f5;
+      --accent3: #4df0aa;
+      --text: #e2e6f0;
+      --muted: #7a82a0;
+      --tag-blue: #1e3a5f;
+      --tag-green: #0e3d30;
+      --tag-purple: #2a1f5c;
+      --tag-orange: #3d2700;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(15,17,23,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 54px;
+      display: flex;
+      align-items: center;
+    }
+    .nav-logo {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--accent);
+      margin-right: 2rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .nav-links {
+      display: flex;
+      gap: 0;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .nav-links::-webkit-scrollbar { display: none; }
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      padding: 0 0.8rem;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .nav-links a:hover { color: var(--text); border-bottom-color: var(--accent); }
+
+    main { max-width: 1160px; margin: 0 auto; padding: 72px 2rem 6rem; }
+
+    .hero { text-align: center; padding: 4rem 0 2.5rem; }
+    .hero h1 {
+      font-size: 2.4rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 0.75rem;
+    }
+    .hero p { color: var(--muted); font-size: 1.05rem; max-width: 680px; margin: 0 auto 1.5rem; }
+    .hero-tags { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+    .tag { padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+    .tag-blue { background: var(--tag-blue); color: var(--accent2); }
+    .tag-green { background: var(--tag-green); color: var(--accent3); }
+    .tag-purple { background: var(--tag-purple); color: var(--accent); }
+    .tag-orange { background: var(--tag-orange); color: #f5a623; }
+
+    section { margin-bottom: 5rem; }
+    .section-title {
+      font-size: 1.45rem; font-weight: 700; color: var(--text);
+      margin-bottom: 0.4rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .section-title::before {
+      content: ''; display: inline-block; width: 4px; height: 1.45rem;
+      background: var(--accent); border-radius: 2px;
+    }
+    .section-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.4rem; margin-bottom: 1rem;
+    }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+    .card h3 { font-size: 0.95rem; font-weight: 600; color: var(--accent2); margin-bottom: 0.6rem; }
+    .card p, .card li { font-size: 0.85rem; color: var(--muted); }
+    .card ul { padding-left: 1rem; }
+    .card li { margin-bottom: 0.3rem; }
+    .card-accent-green { border-color: #4df0aa44; }
+    .card-accent-purple { border-color: #7c6af544; }
+    .card-accent-blue { border-color: #50c8f544; }
+    .card-accent-orange { border-color: #f5a62344; }
+
+    .diagram-wrap {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 2.5rem 1.5rem;
+      overflow-x: auto; margin-bottom: 0.75rem;
+    }
+    .diagram-wrap .mermaid { display: flex; justify-content: center; min-width: 600px; }
+    .diagram-label { font-size: 0.78rem; color: var(--muted); text-align: center; margin-top: 0.5rem; margin-bottom: 1.5rem; }
+
+    code {
+      background: var(--surface2); color: var(--accent2); padding: 2px 7px;
+      border-radius: 4px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.83em;
+    }
+    .cmd { color: var(--accent3); font-weight: 700; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.9em; }
+
+    .infobox {
+      background: #1a2535; border-left: 3px solid var(--accent2);
+      border-radius: 0 8px 8px 0; padding: 0.9rem 1.2rem;
+      font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem;
+    }
+    .infobox strong { color: var(--text); }
+    .infobox.warn { background: #2a1f10; border-left-color: #f5a623; }
+    .infobox.new { background: #102a20; border-left-color: var(--accent3); }
+
+    /* SCENARIO STEPS */
+    .steps { display: flex; flex-direction: column; gap: 0; margin-bottom: 1.5rem; }
+    .step {
+      display: flex;
+      gap: 1.2rem;
+      padding: 1.2rem 0;
+      border-left: 2px solid var(--border);
+      padding-left: 1.5rem;
+      position: relative;
+    }
+    .step:last-child { border-left-color: transparent; }
+    .step-num {
+      position: absolute;
+      left: -14px;
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .step-num-purple { background: var(--accent); color: #fff; }
+    .step-num-blue { background: #1e3a5f; color: var(--accent2); border: 1px solid var(--accent2); }
+    .step-num-green { background: #0e3d30; color: var(--accent3); border: 1px solid var(--accent3); }
+    .step-num-orange { background: var(--tag-orange); color: #f5a623; border: 1px solid #f5a623; }
+    .step-body { flex: 1; padding-top: 2px; }
+    .step-actor { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.3rem; }
+    .actor-user { color: var(--accent); }
+    .actor-claude { color: var(--accent2); }
+    .actor-agent { color: #f0a0f5; }
+    .actor-system { color: var(--accent3); }
+    .actor-hook { color: #f5a623; }
+    .step-content { font-size: 0.88rem; color: var(--text); }
+    .step-content p { margin-bottom: 0.25rem; }
+    .step-detail { font-size: 0.8rem; color: var(--muted); margin-top: 0.4rem; }
+    .step-file {
+      display: inline-block;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 6px; padding: 0.6rem 0.8rem;
+      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.78rem;
+      color: var(--accent3); margin-top: 0.5rem; width: 100%;
+      white-space: pre-wrap;
+    }
+    .ask-badge {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: #2a1f5c; border: 1px solid var(--accent);
+      border-radius: 6px; padding: 0.4rem 0.8rem;
+      font-size: 0.8rem; color: var(--accent); margin-top: 0.4rem;
+    }
+    .auto-badge {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: #0e3d30; border: 1px solid var(--accent3);
+      border-radius: 6px; padding: 0.4rem 0.8rem;
+      font-size: 0.8rem; color: var(--accent3); margin-top: 0.4rem;
+    }
+    .gate-badge {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: #2a1f10; border: 1px solid #f5a623;
+      border-radius: 6px; padding: 0.4rem 0.8rem;
+      font-size: 0.8rem; color: #f5a623; margin-top: 0.4rem;
+    }
+    .hook-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 0.72rem; font-weight: 700; margin-right: 4px;
+    }
+    .hook-post { background: #0e3d30; color: #4df0aa; }
+
+    /* SCENARIO HEADER */
+    .scenario-header {
+      display: flex; align-items: center; gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .scenario-num {
+      width: 40px; height: 40px; border-radius: 10px;
+      background: var(--tag-purple); border: 1px solid var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; font-weight: 800; color: var(--accent);
+      flex-shrink: 0;
+    }
+    .scenario-num.new { background: #102a20; border-color: var(--accent3); color: var(--accent3); }
+    .scenario-title { font-size: 1.2rem; font-weight: 700; color: var(--text); }
+    .scenario-desc { font-size: 0.85rem; color: var(--muted); margin-top: 0.15rem; }
+    .badge-new { font-size: 0.68rem; font-weight: 700; color: var(--accent3); background: #0e3d30; border: 1px solid var(--accent3); border-radius: 10px; padding: 1px 8px; margin-left: 0.5rem; vertical-align: middle; }
+
+    /* DOCS TREE */
+    .tree {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem 1.2rem;
+      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82rem;
+      line-height: 2;
+      white-space: pre-wrap;
+    }
+    .tree-dir { color: var(--accent2); }
+    .tree-file { color: var(--muted); }
+    .tree-new { color: var(--accent3); }
+    .tree-active { color: var(--accent); }
+
+    hr { border: none; border-top: 1px solid var(--border); margin: 3rem 0; }
+    footer { text-align: center; padding: 2rem; color: var(--muted); font-size: 0.8rem; border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">⚙ Harness <span style="color:var(--accent3);font-size:0.75rem">v0.7.0</span></div>
+  <div class="nav-links">
+    <a href="#overview">개요</a>
+    <a href="#structure">구조</a>
+    <a href="#s1">1. Init</a>
+    <a href="#s2">2. Task 시작</a>
+    <a href="#s3">3. Spec 게이트</a>
+    <a href="#s4">4. 작업 → Commit</a>
+    <a href="#s5">5. 완료</a>
+    <a href="#s6">6. Retro</a>
+    <a href="#s7">7. 세션 재개</a>
+    <a href="#s8">8. Task 전환</a>
+    <a href="#s9">9. Release</a>
+    <a href="#commands">명령어</a>
+  </div>
+</nav>
+
+<main>
+
+  <!-- HERO -->
+  <div class="hero" id="overview">
+    <h1>Task Workflow Simulation</h1>
+    <p>v0.7.0 — 멀티 에이전트(Claude · Codex · OpenCode · 향후 hermess-agent)가 <strong>모두 운전</strong>하는 spec-first 워크플로우. init부터 spec 게이트, retro 자기개선, release 자동화까지 시나리오별 시뮬레이션.</p>
+    <div class="hero-tags">
+      <span class="tag tag-purple">v0.7.0 타겟</span>
+      <span class="tag tag-green">Spec-First 게이트</span>
+      <span class="tag tag-blue">Multi-Agent Drive</span>
+      <span class="tag tag-orange">Release 자동화</span>
+    </div>
+  </div>
+
+  <!-- WHAT'S NEW -->
+  <section>
+    <div class="section-title">v0.6.x → v0.7.0 — 무엇이 바뀌나</div>
+    <p class="section-sub">메커닉 계층 위에 <strong>워크플로우 계층</strong>을 얹고, 모든 로직을 에이전트 중립 원시 자산(CLI + 계약 산문)으로 배치</p>
+    <div class="card-grid">
+      <div class="card card-accent-green">
+        <h3>① Spec-First 게이트</h3>
+        <p>spec.md에 <strong>4차원 Ambiguity 자가진단 + Ontology</strong> 섹션 추가. 3개 이상 미체크면 코드 작성 금지 — <code>/harness-interview</code>로 복귀.</p>
+      </div>
+      <div class="card card-accent-purple">
+        <h3>② 페르소나 3종</h3>
+        <p><code>/harness-interview</code>(소크라테스) · <code>/harness-contrarian</code>(반론) · <code>/harness-simplifier</code>(단순화). 기법은 계약 산문에도 기술 → 모든 에이전트가 적용.</p>
+      </div>
+      <div class="card card-accent-blue">
+        <h3>③ 자기개선 + 릴리스 CLI</h3>
+        <p><code>harness-team retro</code> — artifact.md에 학습 append. <code>harness-team release</code> — 3-매니페스트 bump + 캐시/마켓플레이스/installed_plugins 동기화.</p>
+      </div>
+      <div class="card card-accent-orange">
+        <h3>④ 운영 위생</h3>
+        <p><code>CHANGELOG.md</code> + <code>MAINTAINING.md</code> 도입. <code>/harness-doctor</code>가 외부 도구(gh/codex/gemini/opencode/jq) healthcheck 추가.</p>
+      </div>
+    </div>
+
+    <div class="infobox new" style="margin-top:1rem">
+      <strong>핵심 설계 원칙 (multi-agent drive 결정):</strong> 워크플로우 <strong>로직은 CLI 서브커맨드</strong>(Bash로 모든 쓰기 가능 에이전트가 호출), <strong>규율/기법은 계약 산문</strong>(<code>CLAUDE.md</code> ↔ <code>AGENTS.md</code>/<code>GEMINI.md</code>/<code>.cursorrules</code> symlink로 전 에이전트가 읽음). 슬래시 커맨드는 Claude 전용 얇은 래퍼. → superpowers(Claude 전용 플러그인)에 <strong>의존하지 않음</strong>. Claude에 설치돼 있으면 매핑을 참고만 하는 best-effort.
+    </div>
+    <div class="infobox warn">
+      <strong>미해결 항목:</strong> 현재 role 표는 Codex/Gemini를 <code>--sandbox read-only</code> 리뷰어로 둠. "모든 에이전트 drive"를 완성하려면 쓰기 권한 부여(Codex sandbox 상향) 또는 drive 주체를 Claude·OpenCode·hermess로 한정하는 role 표 개정이 별도로 필요.
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- STRUCTURE -->
+  <section id="structure">
+    <div class="section-title">docs/ 구조 및 파일 네이밍</div>
+    <p class="section-sub">task 디렉토리가 <strong>4파일</strong>로 확장 — spec/plan/handoff + <span style="color:var(--accent3)">artifact.md(신규)</span></p>
+
+    <div class="infobox">
+      <strong>네이밍 원칙:</strong> 모든 파일은 <strong>상위 디렉토리명을 prefix</strong>로 사용합니다.
+      <code>docs/chad/auth-redesign/auth-redesign-spec.md</code> 처럼 경로와 파일명이 중복되는 것이 의도적입니다 —
+      파일만 열어도 어느 task의 것인지 즉시 알 수 있습니다.
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem">
+      <div>
+        <div style="font-size:0.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem">docs/ 전체 레이아웃 (v0.7.0)</div>
+        <div class="tree"><span class="tree-dir">docs/</span>
+├── <span class="tree-file">task_summary.md</span>          <span style="color:var(--border)"># 프로젝트 전체 task 목록</span>
+│
+<span class="tree-dir">docs/chad/</span>                    <span style="color:var(--border)"># 사용자별 영역</span>
+├── <span class="tree-file">chad-task.md</span>              <span style="color:var(--border)"># task 인덱스</span>
+├── <span class="tree-file">chad-handoff.md</span>           <span style="color:var(--border)"># 세션 포인터</span>
+│
+<span class="tree-dir">docs/chad/auth-redesign/</span>      <span style="color:var(--border)"># task 디렉토리</span>
+├── <span class="tree-file">auth-redesign-spec.md</span>     <span style="color:var(--border)"># + Ambiguity + Ontology</span>
+├── <span class="tree-file">auth-redesign-plan.md</span>     <span style="color:var(--border)"># + Ontology 변경 로그</span>
+├── <span class="tree-file">auth-redesign-handoff.md</span>
+└── <span class="tree-new">auth-redesign-artifact.md</span>  <span style="color:var(--border)"># 🆕 retro 학습 누적</span></div>
+      </div>
+      <div>
+        <div style="font-size:0.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem">spec.md 신규 섹션</div>
+        <div class="card" style="margin-bottom:0.5rem">
+          <h3 style="color:var(--accent3)">## Ontology</h3>
+          <p>이 task가 다루는 핵심 개념의 정의. "X가 정확히 뭔가?"에 답함. 게이트 통과 근거를 한 줄로 남기는 위치.</p>
+        </div>
+        <div class="card" style="margin-bottom:0.5rem">
+          <h3 style="color:#f5a623">## Ambiguity 자가진단</h3>
+          <p>Goal(40%) · Constraint(30%) · Success(30%) · Context(brownfield) 4차원 체크박스. 3개 이상 미체크면 진입 금지.</p>
+        </div>
+        <div class="card">
+          <h3 style="color:var(--accent)">artifact.md (신규 4번째 파일)</h3>
+          <p>task 생성 시 함께 scaffold. <code>harness-team retro</code>가 <code>## Learnings (날짜)</code> 섹션을 append하는 대상.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="diagram-wrap">
+      <div class="mermaid">
+graph LR
+    subgraph TASK_A["docs/chad/auth-redesign/"]
+        SPEC_A["auth-redesign-spec.md\n+ Ambiguity + Ontology"]
+        PLAN_A["auth-redesign-plan.md\n+ Ontology 변경 로그"]
+        HO_A["auth-redesign-handoff.md\n← auto (post-commit)"]
+        ART_A["auth-redesign-artifact.md\n← retro append 🆕"]
+    end
+    SESSION["chad-handoff.md\n세션 포인터 ← auto"] -->|"active 포인터"| TASK_A
+
+    style TASK_A fill:#1a2035,stroke:#4df0aa
+    style SESSION fill:#0e3d30,stroke:#4df0aa
+    style ART_A fill:#102a20,stroke:#4df0aa
+    style SPEC_A fill:#1e2810,stroke:#f5a623
+      </div>
+    </div>
+    <p class="diagram-label">v0.7.0 task 디렉토리 — spec에 게이트, plan에 Ontology 로그, artifact에 학습 누적</p>
+  </section>
+
+  <hr />
+
+  <!-- S1: INIT -->
+  <section id="s1">
+    <div class="scenario-header">
+      <div class="scenario-num">1</div>
+      <div>
+        <div class="scenario-title">최초 Init</div>
+        <div class="scenario-desc">harness-init 시 사용자 확인 + post-commit hook 설치 + CHANGELOG/MAINTAINING 안내</div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num step-num-purple">1</div>
+        <div class="step-body">
+          <div class="step-actor actor-user">사용자</div>
+          <div class="step-content"><code>/harness-init</code> 실행</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-blue">2</div>
+        <div class="step-body">
+          <div class="step-actor actor-claude">Claude</div>
+          <div class="step-content">
+            <p><code>.git/config</code>에서 <code>user.name</code> 탐색 → AskUserQuestion으로 확인</p>
+          </div>
+          <div class="ask-badge">❓ docs/ 경로에 "chad"를 사용합니다. 맞나요?</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-green">3</div>
+        <div class="step-body">
+          <div class="step-actor actor-system">System</div>
+          <div class="step-content">
+            <p>스택 자동 감지 + 설정 저장 + post-commit hook 설치</p>
+            <div class="step-file">.harness/config.json → { "user": "chad" }
+.git/hooks/post-commit → harness-team handoff 2>/dev/null || true</div>
+          </div>
+          <div class="auto-badge">⚡ 이후 모든 git commit에서 자동 실행</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-green">4</div>
+        <div class="step-body">
+          <div class="step-actor actor-system">System</div>
+          <div class="step-content">
+            <p>CLAUDE.md 렌더 (Ambiguity 게이트 룰 + 페르소나 가이드 포함), symlink 설정, rules/hooks 배포</p>
+            <div class="step-file">CLAUDE.md ← Ambiguity 게이트(1-A) + 페르소나 호출 가이드(섹션 5)
+AGENTS.md · GEMINI.md · .cursorrules → CLAUDE.md (symlink)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="infobox new">
+      <strong>v0.7.0 추가:</strong> 레포 자체에는 <code>CHANGELOG.md</code>(Keep a Changelog)와 <code>MAINTAINING.md</code>(릴리스 절차 명문화)가 함께 관리됩니다. <code>MAINTAINING.md</code>는 과거 계획의 <code>AGENTS.md</code>를 <strong>개명</strong>한 것 — 스캐폴드 프로젝트의 <code>AGENTS.md</code>(=CLAUDE.md symlink, Codex/OpenCode 지침)와 이름이 충돌하기 때문.
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- S2: NEW TASK -->
+  <section id="s2">
+    <div class="scenario-header">
+      <div class="scenario-num">2</div>
+      <div>
+        <div class="scenario-title">새 Task 시작</div>
+        <div class="scenario-desc">task 생성 → 4파일 자동 초안 (spec에 Ambiguity·Ontology 섹션 포함)</div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num step-num-purple">1</div>
+        <div class="step-body">
+          <div class="step-actor actor-user">사용자</div>
+          <div class="step-content">
+            <p>"로그인 버그 고쳐줘" <span style="color:var(--muted)">또는</span> <code>harness-team task login-bug</code></p>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-green">2</div>
+        <div class="step-body">
+          <div class="step-actor actor-system">System</div>
+          <div class="step-content">
+            <p>task 디렉토리 + <strong>4파일</strong> 생성 + active 설정</p>
+            <div class="tree" style="margin-top:0.5rem"><span class="tree-new">docs/chad/login-bug/</span>
+├── <span class="tree-new">login-bug-spec.md</span>      <span style="color:var(--border)"># 목적/Ontology/Ambiguity 자가진단 템플릿</span>
+├── <span class="tree-new">login-bug-plan.md</span>      <span style="color:var(--border)"># 단계 + Ontology 변경 로그</span>
+├── <span class="tree-new">login-bug-handoff.md</span>   <span style="color:var(--border)"># 빈 파일</span>
+└── <span class="tree-new">login-bug-artifact.md</span>  <span style="color:var(--border)"># 🆕 빈 학습 파일</span>
+
+<span class="tree-new">.harness/active.json</span> → { "user": "chad", "task": "login-bug" }</div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-blue">3</div>
+        <div class="step-body">
+          <div class="step-actor actor-claude">Claude / 운전 에이전트</div>
+          <div class="step-content">
+            <p>사용자 설명을 바탕으로 <code>spec.md</code> 초안 작성 — 목적, Ontology(핵심 개념 정의), Ambiguity 4차원 체크</p>
+          </div>
+          <div class="gate-badge">⛔ 다음 단계는 Spec-First 게이트 (시나리오 3)</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- S3: SPEC GATE (NEW) -->
+  <section id="s3">
+    <div class="scenario-header">
+      <div class="scenario-num new">3</div>
+      <div>
+        <div class="scenario-title">Spec-First 게이트 <span class="badge-new">v0.7.0 NEW</span></div>
+        <div class="scenario-desc">코드 작성 전 Ambiguity ≤ 0.2 확인 — 모호하면 페르소나로 복귀</div>
+      </div>
+    </div>
+
+    <div class="infobox warn">
+      <strong>게이트 룰 (CLAUDE.md 1-A):</strong> 새 task 진입 시 spec.md "Ambiguity 자가진단" 4개 체크박스를 먼저 확인.
+      <strong>3개 이상 미체크면 코드 작성 금지</strong> — <code>/harness-interview</code>로 모호성 제거 후 재진입. 작은 버그 수정엔 생략.
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num step-num-orange">1</div>
+        <div class="step-body">
+          <div class="step-actor actor-agent">운전 에이전트 (Claude/Codex/OpenCode)</div>
+          <div class="step-content">
+            <p>spec.md의 Ambiguity 자가진단 4차원 평가</p>
+            <div class="step-file">- [x] Goal 명확도 (40%)
+- [ ] Constraint 명확도 (30%)   ← 미체크
+- [ ] Success 기준 (30%)         ← 미체크
+- [x] Context 명확도 (brownfield)
+→ 2/4 미체크 → 게이트 차단</div>
+          </div>
+          <div class="gate-badge">⛔ Ambiguity > 0.2 — 진입 금지</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-purple">2</div>
+        <div class="step-body">
+          <div class="step-actor actor-agent">/harness-interview (Socratic 페르소나)</div>
+          <div class="step-content">
+            <p>4차원 각 2~3개 질문을 <strong>한 번에 하나씩</strong>. 코드/해결책 제안 금지 — 사용자가 스스로 답하게.</p>
+            <div class="step-detail">"Constraint: 어떤 시간/환경 제약이 있나요?" → "Success: 무엇으로 완료를 측정하나요?"</div>
+          </div>
+          <div class="ask-badge">❓ 답이 안정되면 해당 체크박스를 <code>- [x]</code>로 갱신</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-green">3</div>
+        <div class="step-body">
+          <div class="step-actor actor-agent">게이트 통과</div>
+          <div class="step-content">
+            <p>4차원 모두 체크 → "Ambiguity ≤ 0.2 통과" 선언 → 통과 근거를 spec.md Ontology에 한 줄 기록 → 구현 인계</p>
+          </div>
+          <div class="auto-badge">✅ 이제 plan.md 작성 + 구현 시작 허용</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="diagram-wrap">
+      <div class="mermaid">
+flowchart TD
+    START([task spec 초안 완료]) --> CHECK{"Ambiguity\n자가진단\n4차원"}
+    CHECK -->|"3개+ 미체크"| INT["/harness-interview\nSocratic 질문 루프"]
+    INT --> CHECK
+    CHECK -->|"≤ 0.2 통과"| OPT{"가정·범위\n점검 필요?"}
+    OPT -->|"가정 의심"| CON["/harness-contrarian\n4각도 반론"]
+    OPT -->|"과설계 의심"| SIM["/harness-simplifier\nYAGNI 체크리스트"]
+    CON --> IMPL
+    SIM --> IMPL
+    OPT -->|"명확"| IMPL["plan.md 작성 + 구현"]
+
+    style CHECK fill:#2a1f10,stroke:#f5a623
+    style INT fill:#2a1f5c,stroke:#7c6af5
+    style CON fill:#2a1f5c,stroke:#7c6af5
+    style SIM fill:#2a1f5c,stroke:#7c6af5
+    style IMPL fill:#0e3d30,stroke:#4df0aa
+      </div>
+    </div>
+    <p class="diagram-label">Spec-First 게이트 — interview(모호성) → contrarian(가정) → simplifier(과설계) 순</p>
+  </section>
+
+  <hr />
+
+  <!-- S4: WORKING + COMMIT -->
+  <section id="s4">
+    <div class="scenario-header">
+      <div class="scenario-num">4</div>
+      <div>
+        <div class="scenario-title">작업 중 → Commit</div>
+        <div class="scenario-desc">commit 시 post-commit hook이 자동으로 handoff 갱신 (v0.6.x와 동일)</div>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num step-num-blue">1</div>
+        <div class="step-body">
+          <div class="step-actor actor-agent">운전 에이전트</div>
+          <div class="step-content">
+            <p>코드 수정 진행, <code>plan.md</code> 체크리스트 완료 항목 <code>- [x]</code> 갱신. 개념 변경 시 <code>plan.md</code> Ontology 변경 로그에 한 줄 기록.</p>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-purple">2</div>
+        <div class="step-body">
+          <div class="step-actor actor-user">사용자 / 에이전트</div>
+          <div class="step-content"><code>git commit -m "fix: 로그인 토큰 검증 로직 수정"</code></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-orange">3</div>
+        <div class="step-body">
+          <div class="step-actor actor-hook">post-commit hook 자동 실행</div>
+          <div class="step-content">
+            <p><code>harness-team handoff</code> — git log/diff 읽어 handoff 갱신</p>
+            <div class="step-file"><span class="tree-new">login-bug-handoff.md</span> — append (커밋 메시지 + 변경 파일)
+<span class="tree-new">chad-handoff.md</span> — Active/Last commit 갱신</div>
+          </div>
+          <div class="auto-badge">⚡ 사용자 개입 없이 자동 완료</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-orange">4</div>
+        <div class="step-body">
+          <div class="step-actor actor-hook">hook — plan 완료 여부 확인</div>
+          <div class="step-content">
+            <p>미완료 항목 존재 → 조용히 종료. 전체 완료 → <code>PLAN_COMPLETE</code> 신호 출력 → Claude가 감지</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- S5: DONE -->
+  <section id="s5">
+    <div class="scenario-header">
+      <div class="scenario-num">5</div>
+      <div>
+        <div class="scenario-title">완료 감지 → Task Done</div>
+        <div class="scenario-desc">plan 100% 또는 완료 신호 → AskUserQuestion → done 처리</div>
+      </div>
+    </div>
+
+    <div class="infobox">
+      <strong>트리거 3가지:</strong> (1) post-commit hook이 plan 전체 완료 감지, (2) 사용자 완료 발화, (3) <code>harness-team done</code>. 셋 모두 AskUserQuestion을 거침.
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num step-num-blue">1</div>
+        <div class="step-body">
+          <div class="step-actor actor-claude">Claude</div>
+          <div class="step-content"></div>
+          <div class="ask-badge">❓ login-bug의 모든 항목이 완료됐습니다. 완료 처리할까요?</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-green">2</div>
+        <div class="step-body">
+          <div class="step-actor actor-system">완료 처리 시</div>
+          <div class="step-content">
+            <div class="tree"><span class="tree-new">login-bug-handoff.md</span>  ## ✅ DONE — 2026-05-29
+<span class="tree-new">chad-task.md</span>          login-bug → ✅ 완료
+<span class="tree-new">task_summary.md</span>       chad / login-bug → ✅ 갱신
+<span class="tree-new">.harness/active.json</span> → null</div>
+          </div>
+          <div class="gate-badge" style="background:#102a20;border-color:var(--accent3);color:var(--accent3)">💡 완료 직후 시나리오 6(retro) 권장</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- S6: RETRO (NEW) -->
+  <section id="s6">
+    <div class="scenario-header">
+      <div class="scenario-num new">6</div>
+      <div>
+        <div class="scenario-title">Retro — 자기개선 루프 <span class="badge-new">v0.7.0 NEW</span></div>
+        <div class="scenario-desc">교정/학습 내용을 artifact.md에 누적 — CLAUDE.md "자기개선 루프" 정책의 실행</div>
+      </div>
+    </div>
+
+    <div class="infobox new">
+      <strong>하이브리드 구조:</strong> <code>harness-team retro</code> CLI가 <strong>파일 메커닉</strong>(artifact.md에 <code>## Learnings (날짜)</code> 헤더 append)을 담당하고, <strong>내용</strong>은 에이전트가 작성합니다 (task가 파일을 scaffold하고 spec은 에이전트가 쓰는 것과 동일 구조). CLI라 Codex/OpenCode도 Bash로 직접 호출 가능.
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num step-num-purple">1</div>
+        <div class="step-body">
+          <div class="step-actor actor-user">사용자 / 에이전트</div>
+          <div class="step-content">"이번에 배운 거 기록해줘" <span style="color:var(--muted)">또는</span> <code>harness-team retro</code> <span style="color:var(--muted)">또는</span> <code>/harness-retro</code> (Claude 래퍼)</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-green">2</div>
+        <div class="step-body">
+          <div class="step-actor actor-system">retro.mjs (CLI)</div>
+          <div class="step-content">
+            <p>활성 task(<code>.harness/active.json</code>) 또는 인자 경로 확인 → <code>artifact.md</code>에 날짜 섹션 append (없으면 생성)</p>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-blue">3</div>
+        <div class="step-body">
+          <div class="step-actor actor-agent">운전 에이전트</div>
+          <div class="step-content">
+            <p>이번 세션 교정/학습 항목을 사용자에게 묻고 기록</p>
+            <div class="step-file"><span class="tree-new">docs/chad/login-bug/login-bug-artifact.md</span>
+
+## Learnings (2026-05-29)
+- 토큰 만료 검증은 서버 시간 기준으로 — 클라이언트 시간 신뢰 금지
+- 같은 실수 방지 규칙: 인증 변경 시 .cursor/rules 갱신 확인</div>
+          </div>
+          <div class="auto-badge">⚡ 추가된 라인 diff 표시</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- S7: SESSION RESUME -->
+  <section id="s7">
+    <div class="scenario-header">
+      <div class="scenario-num">7</div>
+      <div>
+        <div class="scenario-title">세션 재개</div>
+        <div class="scenario-desc">새 세션 시작 시 CLAUDE.md rule에 의해 컨텍스트 자동 복원 (v0.6.x와 동일)</div>
+      </div>
+    </div>
+
+    <div class="infobox">
+      <strong>rule 기반 강제:</strong> 세션 시작 시 <code>chad-handoff.md</code> → 활성 task의 <code>plan.md</code>/<code>spec.md</code>를 읽도록 CLAUDE.md(protocol 섹션)가 강제. v0.7.0에선 <code>artifact.md</code>의 과거 Learnings도 함께 읽어 같은 실수를 회피.
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num step-num-purple">1</div>
+        <div class="step-body">
+          <div class="step-actor actor-user">사용자</div>
+          <div class="step-content">새 세션 시작 (Claude / Codex / OpenCode 무관)</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-blue">2</div>
+        <div class="step-body">
+          <div class="step-actor actor-agent">운전 에이전트 — 계약 rule 자동 적용</div>
+          <div class="step-content">
+            <p><code>chad-handoff.md</code> → <code>login-bug-plan.md</code> → <code>login-bug-spec.md</code> → <code>login-bug-artifact.md</code> 순 읽기</p>
+            <div class="step-file">Active: login-bug · [3/5] 단계 완료 · 다음: 엣지 케이스 처리
+과거 Learnings: 서버 시간 기준 검증</div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-blue">3</div>
+        <div class="step-body">
+          <div class="step-actor actor-agent">운전 에이전트</div>
+          <div class="step-content">
+            <p>"login-bug 재개합니다. [3/5]까지 완료, 다음은 엣지 케이스 처리입니다."</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr />
+
+  <!-- S8: SWITCH -->
+  <section id="s8">
+    <div class="scenario-header">
+      <div class="scenario-num">8</div>
+      <div>
+        <div class="scenario-title">Task 전환</div>
+        <div class="scenario-desc">A 작업 중 B로 전환 — 각 task의 컨텍스트는 독립 보존 (v0.6.x와 동일)</div>
+      </div>
+    </div>
+
+    <div class="diagram-wrap">
+      <div class="mermaid">
+stateDiagram-v2
+    [*] --> login_bug_active : harness-team task login-bug
+
+    state login_bug_active {
+        [*] --> gate : Spec-First 게이트
+        gate --> working : Ambiguity ≤ 0.2
+        working --> committed : git commit
+        committed --> working : 계속 작업
+        committed --> retro : harness-team retro
+    }
+
+    login_bug_active --> auth_redesign_active : task 전환 (AskUserQuestion)
+    login_bug_active --> login_bug_suspended : task 전환
+
+    state login_bug_suspended {
+        [*] --> preserved : 컨텍스트 보존
+        note right of preserved
+            spec/plan/handoff/artifact
+            모두 유지
+        end note
+    }
+
+    auth_redesign_active --> login_bug_active : 재전환
+    login_bug_suspended --> login_bug_active : 재활성화
+      </div>
+    </div>
+    <p class="diagram-label">task 전환 상태도 — 게이트·retro가 active 루프에 통합, 4파일 컨텍스트 독립 보존</p>
+  </section>
+
+  <hr />
+
+  <!-- S9: RELEASE (NEW) -->
+  <section id="s9">
+    <div class="scenario-header">
+      <div class="scenario-num new">9</div>
+      <div>
+        <div class="scenario-title">Release 자동화 <span class="badge-new">v0.7.0 NEW</span></div>
+        <div class="scenario-desc">단일 명령으로 3-매니페스트 bump + 캐시/마켓플레이스/installed_plugins 동기화 (maintainer 액션)</div>
+      </div>
+    </div>
+
+    <div class="infobox warn">
+      <strong>왜:</strong> 0.6.x 시리즈에서 실제 발생한 휴먼 에러(marketplace.json 누락)를 제거. release는 <code>~/.claude/plugins</code>를 변경하는 <strong>maintainer 액션</strong>이며 Codex read-only sandbox로는 실행 불가 — 정상. <code>--dry-run</code> 기본 권장.
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-num step-num-purple">1</div>
+        <div class="step-body">
+          <div class="step-actor actor-user">maintainer</div>
+          <div class="step-content"><code>harness-team release minor --dry-run</code> <span style="color:var(--muted)">또는</span> <code>/harness-release</code></div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-green">2</div>
+        <div class="step-body">
+          <div class="step-actor actor-system">release.mjs — 검증</div>
+          <div class="step-content">
+            <p>3-매니페스트 현재 버전 일치 검증 (mismatch면 어떤 파일이 어떤 값인지 throw) + marketplace.json schema 가드(<code>.plugins</code> 1개·plugin명 일치)</p>
+            <div class="step-file">package.json: 0.6.4 · plugin.json: 0.6.4 · marketplace.json[0]: 0.6.4 ✓
+→ minor → 0.7.0 계산</div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-green">3</div>
+        <div class="step-body">
+          <div class="step-actor actor-system">release.mjs — 동기화 (dry-run 아닐 때)</div>
+          <div class="step-content">
+            <div class="step-file">① 3-file 동시 0.7.0 수정
+② cache/&lt;marketplace&gt;/&lt;plugin&gt;/0.7.0/ 생성 + fs.cp (.git/node_modules/tests/docs·superpowers/scripts 제외)
+③ marketplaces/&lt;marketplace&gt;/ — marketplace.json + commands/ 동기화 (commands는 stale 제거)
+④ installed_plugins.json version2[key] — version/installPath/lastUpdated/gitCommitSha 갱신</div>
+          </div>
+          <div class="auto-badge">⚡ 수동 단계 0 — 휴먼 에러 차단</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-blue">4</div>
+        <div class="step-body">
+          <div class="step-actor actor-user">maintainer</div>
+          <div class="step-content">
+            <p>CHANGELOG.md 0.7.0 항목 확인 → commit → <code>git tag v0.7.0 && git push --follow-tags</code></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="diagram-wrap">
+      <div class="mermaid">
+flowchart LR
+    R["harness-team release minor"] --> V{"3-매니페스트\n버전 일치?"}
+    V -->|"불일치"| ERR[/"throw: 어떤 파일이 어떤 값인지"/]
+    V -->|"일치"| BUMP["0.6.4 → 0.7.0\n3-file 동시 수정"]
+    BUMP --> CACHE["cache/.../0.7.0/\nfs.cp"]
+    BUMP --> MKT["marketplaces/...\nmarketplace.json + commands/"]
+    BUMP --> INST["installed_plugins.json\nversion2[key] 갱신"]
+    CACHE & MKT & INST --> OUT["✓ synced 0.7.0\n요약 출력"]
+
+    style V fill:#2a1f10,stroke:#f5a623
+    style ERR fill:#3d1a1a,stroke:#f05050
+    style OUT fill:#0e3d30,stroke:#4df0aa
+      </div>
+    </div>
+    <p class="diagram-label">release.mjs — 검증 → 3-file bump → 3곳 동기화 (rsync 대신 Node fs로 일원화)</p>
+  </section>
+
+  <hr />
+
+  <!-- COMMANDS -->
+  <section id="commands">
+    <div class="section-title">명령어 인터페이스 — 2-tier (v0.7.0)</div>
+    <p class="section-sub">메커닉(설치·백업·유지보수) + 워크플로우(의도·자기개선·릴리스) 두 계층</p>
+
+    <div style="font-size:0.8rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin:0.5rem 0 0.75rem">메커닉 계층 (기존)</div>
+    <div class="card-grid">
+      <div class="card card-accent-blue">
+        <h3>harness-team task / list / done</h3>
+        <p>task 생성·활성화 / 목록 / 완료. 사용자가 기억할 핵심 3개.</p>
+      </div>
+      <div class="card card-accent-orange">
+        <h3>handoff · init · apply · sync · doctor</h3>
+        <p>handoff(post-commit 전용), 설치·적용·동기화·진단.</p>
+      </div>
+      <div class="card card-accent-orange">
+        <h3>clone · symlink · delete · migrate · upgrade</h3>
+        <p>백업 디렉토리 운영 + 버전 마이그레이션.</p>
+      </div>
+    </div>
+
+    <div style="font-size:0.8rem;color:var(--accent3);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin:1.5rem 0 0.75rem">워크플로우 계층 🆕 (v0.7.0 신규)</div>
+    <div class="card-grid">
+      <div class="card card-accent-green">
+        <h3>harness-team retro</h3>
+        <p>artifact.md에 학습 append (CLI — 모든 에이전트 호출). <code>/harness-retro</code>는 Claude 래퍼.</p>
+      </div>
+      <div class="card card-accent-green">
+        <h3>harness-team release</h3>
+        <p>3-file bump + 캐시/마켓플레이스/installed_plugins 동기화 (maintainer). <code>/harness-release</code> 래퍼.</p>
+      </div>
+      <div class="card card-accent-purple">
+        <h3>/harness-interview · contrarian · simplifier</h3>
+        <p>페르소나 3종 (Claude 슬래시 + 기법은 계약 산문). 모호성·가정·과설계 점검.</p>
+      </div>
+    </div>
+
+    <div class="infobox new" style="margin-top:1.5rem">
+      <strong>에이전트 중립 배치:</strong> 결정론적 로직(<code>release</code>)과 하이브리드(<code>retro</code>)는 <strong>CLI</strong>(Bash로 모든 쓰기 가능 에이전트가 호출), 대화형(<code>personas</code>)은 <strong>계약 산문 + Claude 슬래시 래퍼</strong>. 어떤 기능도 "Claude 슬래시 전용"으로 갇히지 않음.
+    </div>
+
+    <div class="diagram-wrap">
+      <div class="mermaid">
+graph TB
+    subgraph CLI["Node CLI — 이식 핵심 (Bash 호출)"]
+        TASK["task/list/done"]
+        RETRO["retro 🆕"]
+        REL["release 🆕"]
+    end
+    subgraph CONTRACT["계약 산문 — 전 에이전트 (symlink)"]
+        GATE["Ambiguity 게이트 1-A"]
+        PERSONA["페르소나 기법"]
+        SPECG["spec/impl/debug 절차"]
+    end
+    subgraph SUGAR["Claude 슬래시 래퍼"]
+        SL["/harness-retro · release\n/harness-interview · contrarian · simplifier"]
+    end
+
+    CLAUDE["Claude Code"] --> CLI & CONTRACT & SUGAR
+    CODEX["Codex"] --> CLI & CONTRACT
+    OPENCODE["OpenCode"] --> CLI & CONTRACT
+    HERMESS["hermess-agent (향후)"] --> CLI & CONTRACT
+    SUPER["superpowers (Claude, best-effort)"] -. "선택적 매핑" .-> CLAUDE
+
+    style CLI fill:#0e3d30,stroke:#4df0aa
+    style CONTRACT fill:#1e3a5f,stroke:#50c8f5
+    style SUGAR fill:#2a1f5c,stroke:#7c6af5
+    style SUPER fill:#22263a,stroke:#2e3350
+      </div>
+    </div>
+    <p class="diagram-label">멀티 에이전트 drive — CLI + 계약 산문이 공통 핵심, 슬래시/superpowers는 Claude 보너스</p>
+  </section>
+
+</main>
+
+<footer>
+  harness-aijient-team-plugin v0.7.0 (타겟) — Task Workflow Simulation &nbsp;·&nbsp; 2026-05-29
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      fontSize: '18px',
+      background: '#1a1d27',
+      primaryColor: '#2a1f5c',
+      primaryTextColor: '#e2e6f0',
+      primaryBorderColor: '#7c6af5',
+      lineColor: '#7a82a0',
+      secondaryColor: '#1e3a5f',
+      tertiaryColor: '#0e3d30',
+      edgeLabelBackground: '#1a1d27',
+      clusterBkg: '#22263a',
+      clusterBorder: '#2e3350',
+      titleColor: '#e2e6f0',
+      nodeTextColor: '#e2e6f0',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    },
+    flowchart: { curve: 'basis', htmlLabels: true, nodeSpacing: 60, rankSpacing: 80 },
+    sequence: { actorMargin: 80, messageMargin: 40, boxTextMargin: 12, noteMargin: 12 },
+    stateDiagram: { dividerMargin: 20 },
+  });
+</script>
+
+</body>
+</html>

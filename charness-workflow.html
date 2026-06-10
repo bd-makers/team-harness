@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>charness — Workflow Map</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2128;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --dim: #484f58;
+
+    --shape-border: #7c3aed;
+    --shape-accent: #a78bfa;
+    --shape-bg: #1a1040;
+    --shape-tag: #2d1b69;
+
+    --build-border: #1d6fa4;
+    --build-accent: #60a5fa;
+    --build-bg: #0c2038;
+    --build-tag: #0c2d4a;
+
+    --quality-border: #15803d;
+    --quality-accent: #4ade80;
+    --quality-bg: #0a2218;
+    --quality-tag: #052e16;
+
+    --comm-border: #c2410c;
+    --comm-accent: #fb923c;
+    --comm-bg: #231008;
+    --comm-tag: #3b1209;
+
+    --operate-border: #52525b;
+    --operate-accent: #a1a1aa;
+    --operate-bg: #1a1a1a;
+    --operate-tag: #27272a;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    line-height: 1.6;
+  }
+
+  a { color: inherit; text-decoration: none; }
+
+  /* ─── NAV ─── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(13,17,23,.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 48px;
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    height: 48px;
+    font-size: 13px;
+  }
+  .nav-brand {
+    font-family: 'SF Mono', monospace;
+    font-weight: 700;
+    color: var(--shape-accent);
+    font-size: 15px;
+    margin-right: 8px;
+  }
+  nav a { color: var(--muted); transition: color .15s; }
+  nav a:hover { color: var(--text); }
+
+  /* ─── HEADER ─── */
+  .hero {
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    padding: 56px 48px 48px;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--shape-tag);
+    border: 1px solid var(--shape-border);
+    border-radius: 20px;
+    padding: 3px 12px;
+    font-size: 11px;
+    color: var(--shape-accent);
+    margin-bottom: 20px;
+    font-weight: 600;
+    letter-spacing: .5px;
+  }
+  .hero h1 {
+    font-size: 40px;
+    font-weight: 800;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    letter-spacing: -1px;
+    line-height: 1.1;
+  }
+  .hero h1 em { color: var(--shape-accent); font-style: normal; }
+  .hero .sub {
+    margin-top: 12px;
+    font-size: 16px;
+    color: var(--muted);
+    max-width: 640px;
+    line-height: 1.6;
+  }
+  .install-block {
+    margin-top: 28px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 100%;
+  }
+  .install-label {
+    color: var(--dim);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .install-cmd {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px;
+    color: #4ade80;
+    overflow: auto;
+    white-space: nowrap;
+  }
+  .copy-btn {
+    flex-shrink: 0;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    border-radius: 5px;
+    padding: 4px 10px;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .copy-btn:hover { border-color: var(--shape-accent); color: var(--shape-accent); }
+  .copy-btn.copied { border-color: #4ade80; color: #4ade80; }
+
+  .hero-meta {
+    margin-top: 20px;
+    display: flex;
+    gap: 20px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .hero-meta span { display: flex; align-items: center; gap: 5px; }
+
+  /* ─── SECTION WRAPPER ─── */
+  .section { padding: 52px 48px 0; }
+  .section:last-child { padding-bottom: 80px; }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-header h2 {
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .section-header .section-desc {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* ─── PIPELINE (compact overview) ─── */
+  .pipeline {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  .phase-pill {
+    flex: 1;
+    min-width: 130px;
+    border: 1px solid;
+    border-radius: 10px;
+    padding: 14px 14px 16px;
+  }
+  .phase-pill-header {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 10px;
+  }
+  .phase-num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .phase-title { font-size: 11px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; }
+  .skill-chips { display: flex; flex-direction: column; gap: 4px; }
+  .chip {
+    font-family: 'SF Mono', monospace;
+    font-size: 10px;
+    border-radius: 4px;
+    padding: 3px 7px;
+  }
+  .pipe-arrow {
+    display: flex; align-items: center;
+    padding: 0 8px;
+    flex-shrink: 0;
+    color: var(--dim);
+    font-size: 18px;
+  }
+
+  /* phase colors */
+  .p-shape { border-color: var(--shape-border); background: #130d30; }
+  .p-shape .phase-num { background: var(--shape-border); color: #fff; }
+  .p-shape .phase-title { color: var(--shape-accent); }
+  .p-shape .chip { background: var(--shape-tag); color: var(--shape-accent); }
+
+  .p-build { border-color: var(--build-border); background: #081826; }
+  .p-build .phase-num { background: var(--build-border); color: #fff; }
+  .p-build .phase-title { color: var(--build-accent); }
+  .p-build .chip { background: var(--build-tag); color: var(--build-accent); }
+
+  .p-quality { border-color: var(--quality-border); background: #071a10; }
+  .p-quality .phase-num { background: var(--quality-border); color: #fff; }
+  .p-quality .phase-title { color: var(--quality-accent); }
+  .p-quality .chip { background: var(--quality-tag); color: var(--quality-accent); }
+
+  .p-comm { border-color: var(--comm-border); background: #1c0b04; }
+  .p-comm .phase-num { background: var(--comm-border); color: #fff; }
+  .p-comm .phase-title { color: var(--comm-accent); }
+  .p-comm .chip { background: var(--comm-tag); color: var(--comm-accent); }
+
+  .p-operate { border-color: var(--operate-border); background: #141414; }
+  .p-operate .phase-num { background: var(--operate-border); color: #fff; }
+  .p-operate .phase-title { color: var(--operate-accent); }
+  .p-operate .chip { background: var(--operate-tag); color: var(--operate-accent); }
+
+  /* ─── SKILL CARDS (expanded) ─── */
+  .phase-group { margin-bottom: 48px; }
+  .phase-group-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+  .phase-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    border: 1px solid;
+    border-radius: 20px;
+    padding: 4px 14px 4px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .6px;
+  }
+  .phase-badge .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+  }
+  .phase-group-desc { font-size: 13px; color: var(--muted); }
+
+  .skill-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+
+  .skill-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+    transition: border-color .15s, transform .12s;
+    cursor: default;
+  }
+  .skill-card:hover { border-color: var(--dim); transform: translateY(-1px); }
+  .skill-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .skill-name {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .skill-tag {
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    letter-spacing: .5px;
+  }
+  .skill-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .skill-when {
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--dim);
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+    display: flex;
+    gap: 6px;
+  }
+  .skill-when strong { color: var(--muted); white-space: nowrap; }
+
+  /* ─── WORKFLOW ROUTES ─── */
+  .routes-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+  .route-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .route-card-header {
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .route-card-header h3 { font-size: 15px; font-weight: 700; }
+  .route-card-header .route-icon { font-size: 18px; }
+  .route-steps { padding: 16px 20px; display: flex; flex-direction: column; gap: 0; }
+  .route-step {
+    display: flex;
+    gap: 14px;
+    position: relative;
+  }
+  .route-step:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 26px;
+    bottom: 0;
+    width: 1px;
+    background: var(--border);
+  }
+  .step-num {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 2px;
+    position: relative;
+    z-index: 1;
+  }
+  .step-body { padding-bottom: 18px; }
+  .step-body p { font-size: 13px; color: var(--muted); line-height: 1.6; margin-top: 3px; }
+  .step-skill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'SF Mono', monospace;
+    font-size: 11px;
+    padding: 1px 7px;
+    border-radius: 4px;
+    border: 1px solid;
+    font-weight: 600;
+    vertical-align: middle;
+    margin: 0 2px;
+  }
+
+  /* ─── CLI REFERENCE ─── */
+  .cli-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .cli-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .cli-cmd {
+    font-family: 'SF Mono', monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: #4ade80;
+    margin-bottom: 8px;
+  }
+  .cli-desc { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 12px; }
+  .cli-tip {
+    font-size: 11px;
+    color: var(--dim);
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+
+  /* ─── CORE CONCEPTS ─── */
+  .concepts-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .concept-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .concept-num {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--shape-accent);
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+  }
+  .concept-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+  .concept-card p { font-size: 13px; color: var(--muted); line-height: 1.65; }
+
+  /* ─── FOOTER ─── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 48px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  footer a:hover { color: var(--text); }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 860px) {
+    nav, .hero, .section, footer { padding-left: 20px; padding-right: 20px; }
+    nav { gap: 16px; font-size: 12px; overflow-x: auto; }
+    .hero h1 { font-size: 28px; }
+    .pipeline { flex-direction: column; }
+    .pipe-arrow { display: none; }
+    .routes-grid { grid-template-columns: 1fr; }
+    footer { flex-direction: column; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <span class="nav-brand">charness</span>
+  <a href="#pipeline">Pipeline</a>
+  <a href="#skills">Skills</a>
+  <a href="#routes">Routes</a>
+  <a href="#cli">CLI</a>
+  <a href="#concepts">Concepts</a>
+</nav>
+
+<!-- HERO -->
+<header class="hero">
+  <div class="hero-badge">⚙ Corca AI · Claude Code &amp; Codex Plugin</div>
+  <h1><em>charness</em></h1>
+  <p class="sub">
+    레포 지시사항, 스킬, 스크립트, 검사를 반복 가능한 제품 개발 워크플로우로 전환하는 AI 에이전트 harness.
+    Claude Code와 Codex에서 자연어 프롬프트만으로 ideation부터 release까지 전 단계를 자동 라우팅합니다.
+  </p>
+  <div class="install-block">
+    <span class="install-label">Install</span>
+    <span class="install-cmd">curl -fsSLo /tmp/charness-init.sh https://raw.githubusercontent.com/corca-ai/charness/main/init.sh &amp;&amp; bash /tmp/charness-init.sh</span>
+    <button class="copy-btn" onclick="copyInstall(this)">copy</button>
+  </div>
+  <div class="hero-meta">
+    <span>🐍 Python 3+</span>
+    <span>⭐ Claude Code / Codex</span>
+    <span>📦 <a href="https://github.com/corca-ai/charness" target="_blank" style="color:var(--shape-accent);">github.com/corca-ai/charness</a></span>
+  </div>
+</header>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  SECTION 1 · PIPELINE                  -->
+<!-- ═══════════════════════════════════════ -->
+<section class="section" id="pipeline">
+  <div class="section-header">
+    <h2>📊 Workflow Pipeline</h2>
+    <span class="section-desc">제품 개발 사이클 전체를 5개 단계로 라우팅합니다</span>
+  </div>
+
+  <div class="pipeline">
+    <div class="phase-pill p-shape">
+      <div class="phase-pill-header">
+        <div class="phase-num">1</div>
+        <div class="phase-title">Shape</div>
+      </div>
+      <div class="skill-chips">
+        <span class="chip">gather</span>
+        <span class="chip">ideation</span>
+        <span class="chip">spec</span>
+      </div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="phase-pill p-build">
+      <div class="phase-pill-header">
+        <div class="phase-num">2</div>
+        <div class="phase-title">Build</div>
+      </div>
+      <div class="skill-chips">
+        <span class="chip">impl</span>
+        <span class="chip">debug</span>
+        <span class="chip">critique</span>
+      </div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="phase-pill p-quality">
+      <div class="phase-pill-header">
+        <div class="phase-num">3</div>
+        <div class="phase-title">Quality</div>
+      </div>
+      <div class="skill-chips">
+        <span class="chip">quality</span>
+        <span class="chip">retro</span>
+      </div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="phase-pill p-comm">
+      <div class="phase-pill-header">
+        <div class="phase-num">4</div>
+        <div class="phase-title">Communicate</div>
+      </div>
+      <div class="skill-chips">
+        <span class="chip">narrative</span>
+        <span class="chip">announcement</span>
+        <span class="chip">handoff</span>
+        <span class="chip">hitl</span>
+        <span class="chip">issue</span>
+      </div>
+    </div>
+    <div class="pipe-arrow">→</div>
+    <div class="phase-pill p-operate">
+      <div class="phase-pill-header">
+        <div class="phase-num">5</div>
+        <div class="phase-title">Operate</div>
+      </div>
+      <div class="skill-chips">
+        <span class="chip">setup</span>
+        <span class="chip">find-skills</span>
+        <span class="chip">create-skill</span>
+        <span class="chip">create-cli</span>
+        <span class="chip">release</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  SECTION 2 · SKILLS                    -->
+<!-- ═══════════════════════════════════════ -->
+<section class="section" id="skills">
+  <div class="section-header">
+    <h2>🛠 Public Skills</h2>
+    <span class="section-desc">Claude Code: <code style="font-family:monospace;background:var(--surface2);padding:1px 6px;border-radius:4px;font-size:11px;">/charness:&lt;skill&gt;</code> &nbsp;|&nbsp; Codex: <code style="font-family:monospace;background:var(--surface2);padding:1px 6px;border-radius:4px;font-size:11px;">$charness:&lt;skill&gt;</code></span>
+  </div>
+
+  <!-- Phase 1: Shape -->
+  <div class="phase-group">
+    <div class="phase-group-header">
+      <div class="phase-badge" style="border-color:var(--shape-border);color:var(--shape-accent);background:var(--shape-bg);">
+        <div class="dot" style="background:var(--shape-accent);"></div>
+        1 · Shape the Work
+      </div>
+      <span class="phase-group-desc">아이디어를 구체적인 구현 계약으로 발전시키는 단계</span>
+    </div>
+    <div class="skill-cards">
+      <div class="skill-card">
+        <div class="skill-card-top">
+          <span class="skill-name" style="color:var(--shape-accent);">gather</span>
+          <span class="skill-tag" style="background:var(--shape-tag);color:var(--shape-accent);">SHAPE</span>
+        </div>
+        <p class="skill-desc">
+          Slack 스레드, Notion 페이지, Google Docs, GitHub 콘텐츠, 임의 URL 등
+          외부 소스를 일회성 요약이 아닌 <strong>영속적인 로컬 지식 자산</strong>으로 변환합니다.
+          이미 존재하는 자산은 새로 만들지 않고 소스 ID가 일치하면 인플레이스 업데이트합니다.
+          결과 범위는 실제 요청에 맞게 한정됩니다.
+        </p>
+        <div class="skill-when">
+          <strong>언제:</strong> 외부 정보를 세션 간에 유지되는 지식으로 보존하고 싶을 때
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-card-top">
+          <span class="skill-name" style="color:var(--shape-accent);">ideation</span>
+          <span class="skill-tag" style="background:var(--shape-tag);color:var(--shape-accent);">SHAPE</span>
+        </div>
+        <p class="skill-desc">
+          제품·시스템·워크플로우 개념이 아직 형성 중일 때, <strong>대화를 통해 아이디어를 발전</strong>시킵니다.
+          검증된 사실과 가정을 분리하고, 수요·현상 유지·wedge·moat를 초기에 검증합니다.
+          에이전트·API·CLI·인터페이스 선택을 1급 설계 제약으로 다룹니다.
+          외부 맥락이 필요하면 <code style="font-size:11px;">gather</code>로 자동 라우팅됩니다.
+        </p>
+        <div class="skill-when">
+          <strong>언제:</strong> 요청이 아직 형태가 없고 목표는 모호한 개념을 구체화하는 것일 때
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-card-top">
+          <span class="skill-name" style="color:var(--shape-accent);">spec</span>
+          <span class="skill-tag" style="background:var(--shape-tag);color:var(--shape-accent);">SHAPE</span>
+        </div>
+        <p class="skill-desc">
+          개념을 <strong>살아있는 구현 계약서</strong>로 전환합니다.
+          ideation 아티팩트나 기존 설계 문서를 현재 빌드 계약으로 정제하고,
+          지금 고정할 사항과 구현 중에 탐색할 사항을 결정합니다.
+          테스트 가능한 성공 기준을 정의하며, <code style="font-size:11px;">impl</code>이 새로운 사실을 발견하면 계약을 동기화합니다.
+        </p>
+        <div class="skill-when">
+          <strong>언제:</strong> 재발견 없이 구현이 진행될 수 있을 만큼 빌드 계약을 명확히 해야 할 때
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 2: Build -->
+  <div class="phase-group">
+    <div class="phase-group-header">
+      <div class="phase-badge" style="border-color:var(--build-border);color:var(--build-accent);background:var(--build-bg);">
+        <div class="dot" style="background:var(--build-accent);"></div>
+        2 · Build &amp; Repair
+      </div>
+      <span class="phase-group-desc">계약서를 코드로 전환하고, 버그를 제거하며, 변경 전 위험을 검토하는 단계</span>
+    </div>
+    <div class="skill-cards">
+      <div class="skill-card">
+        <div class="skill-card-top">
+          <span class="skill-name" style="color:var(--build-accent);">impl</span>
+          <span class="skill-tag" style="background:var(--build-tag);color:var(--build-accent);">BUILD</span>
+        </div>
+        <p class="skill-desc">
+          작업을 코드·설정·테스트·운영자 대상 아티팩트로 전환합니다.
+          현재 구현 계약이 있으면 소비하고, 없으면 인라인으로 작은 정직한 계약을 자동으로 만듭니다.
+          <strong>가장 작은 의미있는 슬라이스</strong>를 구현하고 공격적으로 검증합니다.
+          현실이 계약을 바꾸면 계약을 동기화합니다.
+        </p>
+        <div class="skill-when">
+          <strong>언제:</strong> 계약서를 실제 코드로 옮기는 작업을 시작할 때
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-card-top">
+          <span class="skill-name" style="color:var(--build-accent);">debug</span>
+          <span class="skill-tag" style="background:var(--build-tag);color:var(--build-accent);">BUILD</span>
+        </div>
+        <p class="skill-desc">
+          버그·오류·예상치 못한 동작을 조사합니다.
+          <strong>반증 가능한 가설 없이 수정으로 건너뛰지 않는</strong> 훈련된 근본 원인 워크플로우를 따릅니다.
+          향후 세션이 학습 내용을 상속할 수 있도록 영속적인 디버그 아티팩트를 보존합니다.
+        </p>
+        <div class="skill-when">
+          <strong>언제:</strong> 잘못된 동작을 이해하고 해결하는 것이 목표일 때
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-card-top">
+          <span class="skill-name" style="color:var(--build-accent);">critique</span>
+          <span class="skill-tag" style="background:var(--build-tag);color:var(--build-accent);">BUILD</span>
+        </div>
+        <p class="skill-desc">
+          비자명한 설계 결정, 코드 변경, 릴리즈, 이름 변경, 삭제, 스펙, 워크플로우 변경에 대해
+          <strong>변경이 확정되기 전에 사전 비판</strong>을 수행합니다.
+          다양한 실패 각도를 탐색한 후, 실제 blocker와 과도한 걱정을 분리하는 반론 패스를 실행합니다.
+        </p>
+        <div class="skill-when">
+          <strong>언제:</strong> 중요한 변경 전에 독립적인 검토가 필요할 때
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 3: Quality -->
+  <div class="phase-group">
+    <div class="phase-group-header">
+      <div class="phase-badge" style="border-color:var(--quality-border);color:var(--quality-accent);background:var(--quality-bg);">
+        <div class="dot" style="background:var(--quality-accent);"></div>
+        3 · Raise Quality
+      </div>
+      <span class="phase-group-desc">레포의 품질 수준을 높이고 작업 패턴을 개선하는 단계</span>
+    </div>
+    <div class="skill-cards">
+      <div class="skill-card">
+        <div class="skill-card-top">
+          <span class="skill-name" style="color:var(--quality-accent);">quality</span>
+          <span class="skill-tag" style="background:var(--quality-tag);color:var(--quality-accent);">QUALITY</span>
+        </div>
+        <p class="skill-desc">
+          레포의 현재 품질 수준을 이해하고 개선합니다.
+          기존 게이트를 감지하고 실행하며, <strong>개념 무결성·테스트 신뢰도·보안 상태</strong>를 점검합니다.
+          단순히 누락된 것을 불평하는 대신 구체적인 다음 게이트를 제안합니다.
+          하나의 버그나 고립된 테스트가 아닌, 전반적인 품질 자세를 다룹니다.
+        </p>
+        <div class="skill-when">
+          <strong>언제:</strong> 레포 전체 품질 상태를 점검하거나 다음 품질 기준을 설정할 때
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-card-top">
+          <span class="skill-name" style="color:var(--quality-accent);">retro</span>
+          <span class="skill-tag" style="background:var(--quality-tag);color:var(--quality-accent);">QUALITY</span>
+        </div>
+        <p class="skill-desc">
+          의미있는 작업 단위 완료 후 회고를 수행합니다.
+          무슨 일이 있었는지, 어떤 낭비가 발생했는지, 어떤 결정이 중요했는지,
+          어떤 전문가 관점이나 직접적 반사실이 다음 행동을 바꿨을지,
+          <strong>어떤 워크플로우·기능·메모리 개선이 다음 세션을 더 낫게 만들지</strong>를 검토합니다.
+          컨텍스트에서 자동으로 session 또는 weekly 모드를 선택합니다.
+        </p>
+        <div class="skill-when">
+          <strong>언제:</strong> 의미있는 작업 단위가 완료됐거나 사용자가 명시적으로 회고를 요청할 때
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 4: Communicate -->
+  <div class="phase-group">
+    <div class="phase-group-header">
+      <div class="phase-badge" style="border-color:var(--comm-border);color:var(--comm-accent);background:var(--comm-bg);">
+        <div class="dot" style="background:var(--comm-accent);"></div>
+        4 · Communicate Across Boundaries
+      </div>
+      <span class="phase-group-desc">인간과 에이전트 경계를 넘어 맥락과 작업을 전달하는 단계</span>
+    </div>
+    <div class="skill-cards">
+      <div class="skill-card">
+        <div class="skill-card-top">
+          <span class="skill-name" style="color:var(--comm-accent);">narrative</span>
+          <span class="skill-tag" style="background:var(--comm-tag);color:var(--comm-accent);">COMMUNICATE</span>
+        </div>
+        <p class="skill-desc">
+          레포의 소스 오브 트루스 문서와 현재 제품·프로젝트 스토리를 함께 정렬합니다.
+          먼저 영속적인 narrative를 다듬은 뒤, 압축된 handoff 아티팩트가 도움이 될 때
+          <strong>청중 중립적인 brief 스켈레톤</strong>을 도출합니다.
+        </p>
+        <div class="skill-when">
+          <strong>언제:</strong> 레포 문서와 실제 제품 스토리를 다시 정렬할 때
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-card-top">
+          <span class="skill-name" style="color:var(--comm-accent);">announcement</span>
+          <span class="skill-tag" style="background:var(--comm-tag);color:var(--comm-accent);">COMMUNICATE</span>
+        </div>
+        <p class="skill-desc">
+          릴리즈 노트 스타일 요약이나 채팅용 업데이트 등
+          <strong>인간 대상 레포 변경 커뮤니케이션</strong>을 작성하고 전달합니다.
+          초안 가치가 먼저이며, 전달 방식·청중·생략 정책은 어댑터가 담당합니다.
+        </p>
+        <div class="skill-when">
+          <strong>언제:</strong> 최근 작업에 대한 외부 공개용 커뮤니케이션이 필요할 때
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-card-top">
+          <span class="skill-name" style="color:var(--comm-accent);">handoff</span>
+          <span class="skill-tag" style="background:var(--comm-tag);color:var(--comm-accent);">COMMUNICATE</span>
+        </div>
+        <p class="skill-desc">
+          <strong>다음 세션이 컨텍스트를 재파생하지 않고 바로 이어받을 수 있도록</strong>
+          준비합니다. handoff를 짧고, 최신 상태이며, 운영적으로 유용하게 유지합니다.
+          handoff 트리거에 언급된 워크플로우를 계속하라는 지시로 pickup을 처리합니다.
+        </p>
+        <div class="skill-when">
+          <strong>언제:</strong> 다음 세션을 준비하거나 handoff 아티팩트를 업데이트할 때
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-card-top">
+          <span class="skill-name" style="color:var(--comm-accent);">hitl</span>
+          <span class="skill-tag" style="background:var(--comm-tag);color:var(--comm-accent);">COMMUNICATE</span>
+        </div>
+        <p class="skill-desc">
+          자동 검토로 충분하지 않을 때, <strong>의도적인 인간 판단을 제한된 검토 루프에 삽입</strong>합니다.
+          검토 상태를 재개 가능하고, 청크 단위로 유지하며, 하나의 런타임을 하드코딩하지 않고 어댑터로 처리합니다.
+          Human-In-The-Loop 패턴의 구조화된 구현입니다.
+        </p>
+        <div class="skill-when">
+          <strong>언제:</strong> 인터랙티브 검토, 승인 기반 변경, 단계별 인간 확인이 필요할 때
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-card-top">
+          <span class="skill-name" style="color:var(--comm-accent);">issue</span>
+          <span class="skill-tag" style="background:var(--comm-tag);color:var(--comm-accent);">COMMUNICATE</span>
+        </div>
+        <p class="skill-desc">
+          현재 컨텍스트에서 GitHub 이슈를 파일링하거나 종단간 해결합니다.
+          이슈 생성 시 해결책 제안 전에 <strong>관찰된 문제를 먼저 보고</strong>합니다.
+          이슈 해결은 GitHub를 진실의 소스로 취급하고, 버그 클래스 이슈의 경우 수정 설계 전에 인과 관계 검토를 실행합니다.
+        </p>
+        <div class="skill-when">
+          <strong>언제:</strong> 에이전트가 GitHub 이슈를 파일링하거나 해결하게 하고 싶을 때
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Phase 5: Operate -->
+  <div class="phase-group">
+    <div class="phase-group-header">
+      <div class="phase-badge" style="border-color:var(--operate-border);color:var(--operate-accent);background:var(--operate-bg);">
+        <div class="dot" style="background:var(--operate-accent);"></div>
+        5 · Operate the Harness
+      </div>
+      <span class="phase-group-desc">charness 자체를 설치·확장·관리하는 메타 단계</span>
+    </div>
+    <div class="skill-cards">
+      <div class="skill-card">
+        <div class="skill-card-top">
+          <span class="skill-name" style="color:var(--operate-accent);">setup</span>
+          <span class="skill-tag" style="background:var(--operate-tag);color:var(--operate-accent);">OPERATE</span>
+        </div>
+        <p class="skill-desc">
+          레포의 초기 운영 표면을 생성하거나 정규화합니다.
+          그린필드 레포에는 최소한의 ideation에서 <strong>README, AGENTS.md, CLAUDE.md 심링크 정책, 로드맵, 운영자 수용 문서</strong>를 부트스트랩합니다.
+          부분적으로 초기화된 레포는 품질 검토나 깊은 제품 ideation이 이미 완료됐다고 가장하지 않고 동일한 표면을 재정렬합니다.
+        </p>
+        <div class="skill-when">
+          <strong>언제:</strong> 레포에 처음 charness를 도입하거나 운영 표면을 수리·정규화할 때
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-card-top">
+          <span class="skill-name" style="color:var(--operate-accent);">find-skills</span>
+          <span class="skill-tag" style="background:var(--operate-tag);color:var(--operate-accent);">OPERATE</span>
+        </div>
+        <p class="skill-desc">
+          어떤 스킬, 지원 기능, 통합이 특정 태스크를 처리해야 하는지 찾습니다.
+          <code style="font-size:11px;">X skill</code>, <code style="font-size:11px;">X 스킬</code>, <code style="font-size:11px;">support/X</code>, <code style="font-size:11px;">X integration</code>과 같이 이름을 언급할 때 사용합니다.
+          <strong>파일 시스템 검색 전에 이 스킬을 먼저 호출</strong>합니다. 지원 스킬은 기본 목록에 의도적으로 숨겨져 있습니다.
+        </p>
+        <div class="skill-when">
+          <strong>언제:</strong> 특정 작업에 어떤 스킬을 써야 할지 모를 때
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-card-top">
+          <span class="skill-name" style="color:var(--operate-accent);">create-skill</span>
+          <span class="skill-tag" style="background:var(--operate-tag);color:var(--operate-accent);">OPERATE</span>
+        </div>
+        <p class="skill-desc">
+          새로운 charness 스킬을 만들거나 마이그레이션된 스킬을 개선합니다.
+          <strong>public/support/profile/integration 경계를 정의</strong>하고, 실패 모드를 시뮬레이션합니다.
+          호스트별 동작은 어댑터와 프리셋에, 외부 도구 의존성은 매니페스트에 표현합니다.
+        </p>
+        <div class="skill-when">
+          <strong>언제:</strong> 새로운 charness 스킬을 생성, 마이그레이션, 분리, 정규화할 때
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-card-top">
+          <span class="skill-name" style="color:var(--operate-accent);">create-cli</span>
+          <span class="skill-tag" style="background:var(--operate-tag);color:var(--operate-accent);">OPERATE</span>
+        </div>
+        <p class="skill-desc">
+          레포 소유 CLI를 생성합니다. charness CLI 패턴과 컨벤션을 따르는 명령어 인터페이스를 구축합니다.
+          <strong>에이전트와 인간 모두 사용 가능한 CLI</strong>를 목표로 하며,
+          에이전트가 로컬 harness 상태를 추측 대신 직접 검사할 수 있게 합니다.
+        </p>
+        <div class="skill-when">
+          <strong>언제:</strong> 프로젝트에 charness 패턴을 따르는 새 CLI를 추가할 때
+        </div>
+      </div>
+      <div class="skill-card">
+        <div class="skill-card-top">
+          <span class="skill-name" style="color:var(--operate-accent);">release</span>
+          <span class="skill-tag" style="background:var(--operate-tag);color:var(--operate-accent);">OPERATE</span>
+        </div>
+        <p class="skill-desc">
+          플러그인 버전, 생성된 설치 매니페스트, 운영자 업데이트 지침 등
+          <strong>레포 소유 릴리즈 표면을 컷·범프·검증</strong>합니다.
+          릴리즈 표면을 진전시키거나 검증하는 작업에 사용합니다.
+        </p>
+        <div class="skill-when">
+          <strong>언제:</strong> 버전 범프, 릴리즈 노트 생성, 배포 매니페스트 검증이 필요할 때
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  SECTION 3 · WORKFLOW ROUTES           -->
+<!-- ═══════════════════════════════════════ -->
+<section class="section" id="routes">
+  <div class="section-header">
+    <h2>🗺 Workflow Routes</h2>
+    <span class="section-desc">내 상황에 맞는 경로를 따라가세요</span>
+  </div>
+
+  <div class="routes-grid">
+    <!-- New Project -->
+    <div class="route-card">
+      <div class="route-card-header">
+        <span class="route-icon">🌱</span>
+        <h3>신규 프로젝트</h3>
+      </div>
+      <div class="route-steps">
+        <div class="route-step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <span class="step-skill" style="border-color:var(--shape-border);color:var(--shape-accent);background:var(--shape-tag);">ideation</span>
+            <p>거친 아이디어를 설명하고 에이전트가 브레인스토밍, 도전, 명확화를 돕게 합니다. 외부 컨텍스트가 필요하면 <code style="font-size:10px;">gather</code>로 자동 라우팅됩니다.</p>
+          </div>
+        </div>
+        <div class="route-step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <span class="step-skill" style="border-color:var(--operate-border);color:var(--operate-accent);background:var(--operate-tag);">setup</span>
+            <p>디렉토리를 만들고 첫 번째 레포 표면을 제안받습니다. AGENTS.md를 포함해 이후 세션이 charness를 자연스럽게 사용할 수 있게 됩니다.</p>
+          </div>
+        </div>
+        <div class="route-step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <span class="step-skill" style="border-color:var(--shape-border);color:var(--shape-accent);background:var(--shape-tag);">spec</span>
+            <p>새 세션에서 방향을 구현 가능한 계약서로 변환합니다. 결정이 위험할 경우 critique 스타일 검토를 병행합니다.</p>
+          </div>
+        </div>
+        <div class="route-step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <span class="step-skill" style="border-color:var(--build-border);color:var(--build-accent);background:var(--build-tag);">impl</span>
+            <p>첫 번째 구현 슬라이스를 요청합니다. 필요에 따라 debug, critique가 자동으로 인입됩니다.</p>
+          </div>
+        </div>
+        <div class="route-step">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <span class="step-skill" style="border-color:var(--quality-border);color:var(--quality-accent);background:var(--quality-tag);">quality</span> +
+            <span class="step-skill" style="border-color:var(--quality-border);color:var(--quality-accent);background:var(--quality-tag);">retro</span>
+            <p>충분한 코드가 쌓이면 품질 검사를 요청합니다. 에이전트가 잘못된 방향으로 갔거나 반복할 패턴이 있으면 retro를 요청합니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Existing Repo -->
+    <div class="route-card">
+      <div class="route-card-header">
+        <span class="route-icon">🔧</span>
+        <h3>기존 레포</h3>
+      </div>
+      <div class="route-steps">
+        <div class="route-step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <span class="step-skill" style="border-color:var(--operate-border);color:var(--operate-accent);background:var(--operate-tag);">setup</span>
+            <p>charness로 초기화되지 않은 레포라면 먼저 setup을 실행합니다. AGENTS.md와 운영 표면을 제네릭 템플릿으로 바꾸지 않고 정규화합니다.</p>
+          </div>
+        </div>
+        <div class="route-step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <span class="step-skill" style="border-color:var(--build-border);color:var(--build-accent);background:var(--build-tag);">impl</span> /
+            <span class="step-skill" style="border-color:var(--build-border);color:var(--build-accent);background:var(--build-tag);">debug</span>
+            <p>바로 구체적인 작업을 요청합니다: "이것을 구현해", "실패하는 테스트를 고쳐", "이 동작을 디버그해".</p>
+          </div>
+        </div>
+        <div class="route-step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <span class="step-skill" style="border-color:var(--shape-border);color:var(--shape-accent);background:var(--shape-tag);">spec</span>
+            <p>작업이 구체적이지 않으면 코딩 전에 계약서를 먼저 작성합니다. 변경이 위험하면 critique를 병행합니다.</p>
+          </div>
+        </div>
+        <div class="route-step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <span class="step-skill" style="border-color:var(--comm-border);color:var(--comm-accent);background:var(--comm-tag);">narrative</span> /
+            <span class="step-skill" style="border-color:var(--comm-border);color:var(--comm-accent);background:var(--comm-tag);">announcement</span>
+            <p>진행 상황을 설명하거나, 레포 스토리를 다시 쓰거나, 인간 대상 업데이트를 준비할 때 사용합니다.</p>
+          </div>
+        </div>
+        <div class="route-step">
+          <div class="step-num">5</div>
+          <div class="step-body">
+            <span class="step-skill" style="border-color:var(--comm-border);color:var(--comm-accent);background:var(--comm-tag);">handoff</span> /
+            <span class="step-skill" style="border-color:var(--comm-border);color:var(--comm-accent);background:var(--comm-tag);">hitl</span>
+            <p>다음 세션에 컨텍스트를 전달하거나, 에이전트가 한 작업을 검토하고 승인하는 루프가 필요할 때 사용합니다.</p>
+          </div>
+        </div>
+        <div class="route-step">
+          <div class="step-num">6</div>
+          <div class="step-body">
+            <span class="step-skill" style="border-color:var(--quality-border);color:var(--quality-accent);background:var(--quality-tag);">quality</span> +
+            <span class="step-skill" style="border-color:var(--operate-border);color:var(--operate-accent);background:var(--operate-tag);">release</span>
+            <p>품질 기준을 높이고, 교훈은 retro로 기록합니다. 준비가 됐으면 release로 버전 및 배포 표면을 정리합니다.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Direct Invocation tip -->
+  <div style="margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;font-size:13px;color:var(--muted);">
+    <strong style="color:var(--text);">💡 Direct Invocation</strong> — setup 이후에는 자연어 프롬프트만으로 충분합니다. 특정 스킬을 명시적으로 호출할 때는:
+    &nbsp;<code style="font-family:monospace;background:var(--surface2);padding:2px 7px;border-radius:4px;color:#4ade80;">/charness:quality</code>
+    &nbsp;<code style="font-family:monospace;background:var(--surface2);padding:2px 7px;border-radius:4px;color:#4ade80;">/charness:narrative</code>
+    &nbsp;(Claude Code) &nbsp;|&nbsp;
+    &nbsp;<code style="font-family:monospace;background:var(--surface2);padding:2px 7px;border-radius:4px;color:#60a5fa;">$charness:quality</code>
+    &nbsp;(Codex)
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  SECTION 4 · CLI REFERENCE             -->
+<!-- ═══════════════════════════════════════ -->
+<section class="section" id="cli">
+  <div class="section-header">
+    <h2>⌨ CLI Reference</h2>
+    <span class="section-desc">에이전트와 인간 모두 로컬 harness 상태를 직접 검사할 수 있는 CLI</span>
+  </div>
+
+  <div class="cli-grid">
+    <div class="cli-card">
+      <div class="cli-cmd">charness --help</div>
+      <p class="cli-desc">사용 가능한 모든 서브커맨드를 확인합니다. 처음 시작할 때 가장 먼저 실행해보세요.</p>
+      <div class="cli-tip">서브커맨드: init, update, doctor, version, uninstall, reset, task, capability, tool, session-capture, worktree</div>
+    </div>
+    <div class="cli-card">
+      <div class="cli-cmd">charness init</div>
+      <p class="cli-desc">관리형 로컬 설치 표면을 부트스트랩하거나 갱신합니다. 관리형 체크아웃이 없으면 먼저 클론합니다.</p>
+      <div class="cli-tip">설치 스크립트가 내부적으로 호출함. 직접 재실행도 가능.</div>
+    </div>
+    <div class="cli-card">
+      <div class="cli-cmd">charness update [all]</div>
+      <p class="cli-desc">설치된 표면을 갱신하고 기본적으로 관리형 체크아웃을 먼저 pull합니다. <code>all</code>을 추가하면 추적된 모든 외부 통합도 함께 업데이트합니다.</p>
+      <div class="cli-tip">--no-pull: git pull 생략 / 이미 원하는 소스가 있을 때</div>
+    </div>
+    <div class="cli-card">
+      <div class="cli-cmd">charness doctor</div>
+      <p class="cli-desc">관리형 설치 표면과 호스트 대상 래퍼를 검사합니다. 설치 상태, 버전 불일치, 통합 상태를 진단합니다.</p>
+      <div class="cli-tip">문제가 생기면 이 명령으로 먼저 진단하세요.</div>
+    </div>
+    <div class="cli-card">
+      <div class="cli-cmd">charness version</div>
+      <p class="cli-desc">현재 charness 버전과 기록된 설치 출처를 보고합니다.</p>
+      <div class="cli-tip">버전 확인 및 설치 provenance 추적용</div>
+    </div>
+    <div class="cli-card">
+      <div class="cli-cmd">charness task</div>
+      <p class="cli-desc">레포 로컬 에이전트 태스크 봉투를 클레임·제출·중단·검사합니다. 에이전트 태스크 상태를 구조적으로 관리합니다.</p>
+      <div class="cli-tip">에이전트 간 태스크 위임 및 결과 추적에 사용</div>
+    </div>
+    <div class="cli-card">
+      <div class="cli-cmd">charness capability</div>
+      <p class="cli-desc"><code>.charness/local/capability.json</code>을 통해 레포 로컬 논리 기능을 해결하고 프로바이더 준비 상태를 검사합니다.</p>
+      <div class="cli-tip">지원 스킬이 어떤 기능 프로바이더를 사용하는지 확인할 때</div>
+    </div>
+    <div class="cli-card">
+      <div class="cli-cmd">charness tool</div>
+      <p class="cli-desc">charness 관리형 스킬이 의존하는 외부 도구 통합을 검사·설치·업데이트·동기화합니다.</p>
+      <div class="cli-tip">외부 통합 도구(Cautilus 등) 라이프사이클 관리</div>
+    </div>
+    <div class="cli-card">
+      <div class="cli-cmd">charness worktree</div>
+      <p class="cli-desc">git worktree를 생성·검사·준비·정리합니다. 뮤테이션 단계 작업이 설치된 의존성과 라이브 훅에 대해 실행되도록 보장합니다.</p>
+      <div class="cli-tip">병렬 에이전트 작업에서 파일 충돌 방지용</div>
+    </div>
+    <div class="cli-card">
+      <div class="cli-cmd">charness reset</div>
+      <p class="cli-desc">관리형 체크아웃과 CLI는 보존하면서 Codex와 Claude의 호스트 플러그인 상태를 제거합니다.</p>
+      <div class="cli-tip">플러그인 상태가 꼬였을 때 초기화. 소스는 유지됨.</div>
+    </div>
+    <div class="cli-card">
+      <div class="cli-cmd">charness uninstall</div>
+      <p class="cli-desc">관리형 로컬 설치 표면을 완전히 제거합니다.</p>
+      <div class="cli-tip">charness를 완전히 제거할 때 사용</div>
+    </div>
+    <div class="cli-card">
+      <div class="cli-cmd">charness session-capture</div>
+      <p class="cli-desc">charness가 Claude/Codex에 설치한 SessionStart 훅을 검사하고 사용 에피소드 캡처를 조정합니다.</p>
+      <div class="cli-tip">세션 데이터 수집 상태 확인 및 조정</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════ -->
+<!--  SECTION 5 · CORE CONCEPTS             -->
+<!-- ═══════════════════════════════════════ -->
+<section class="section" id="concepts">
+  <div class="section-header">
+    <h2>💡 Core Concepts</h2>
+    <span class="section-desc">Corca AX 팀이 제품 개발 루프에서 발전시킨 핵심 철학</span>
+  </div>
+
+  <div class="concepts-grid">
+    <div class="concept-card">
+      <div class="concept-num">PRINCIPLE 01</div>
+      <h4>Less Is More</h4>
+      <p>강력한 기본값과 점진적 공개가 긴 프롬프트 메뉴보다 낫습니다. 사용자는 스킬 이름을 알 필요 없이 자연어로 요청하고, charness가 적절한 스킬로 라우팅합니다.</p>
+    </div>
+    <div class="concept-card">
+      <div class="concept-num">PRINCIPLE 02</div>
+      <h4>Agents Are First-Class Users</h4>
+      <p>CLI, 스크립트, 아티팩트, 문서는 에이전트와 인간 모두 사용 가능해야 합니다. 에이전트가 추측이 아닌 직접 검사로 상태를 파악할 수 있어야 합니다.</p>
+    </div>
+    <div class="concept-card">
+      <div class="concept-num">PRINCIPLE 03</div>
+      <h4>Reveal Intent, Hide Detail</h4>
+      <p>Public 스킬은 사용자 의도를 이름으로 표현하고, Support 스킬과 통합은 도구별 세부사항을 아래에서 처리합니다. 추상화 계층이 복잡성을 숨깁니다.</p>
+    </div>
+    <div class="concept-card">
+      <div class="concept-num">PRINCIPLE 04</div>
+      <h4>Human-Code-AI Symbiosis</h4>
+      <p>인간은 판단을, 코드는 반복 가능한 증명을, AI는 탐색·합성·구현을 담당합니다. 세 주체가 각자의 강점을 살리는 분업 구조입니다.</p>
+    </div>
+    <div class="concept-card">
+      <div class="concept-num">PRINCIPLE 05</div>
+      <h4>Quality as Trust Surface</h4>
+      <p>장기 실행 에이전트에는 고품질 소프트웨어가 필요합니다. 품질은 스타일 패스가 아니라 신뢰 표면입니다. 에이전트를 믿을 수 있으려면 코드도 믿을 수 있어야 합니다.</p>
+    </div>
+    <div class="concept-card">
+      <div class="concept-num">PRINCIPLE 06</div>
+      <h4>Tacit Knowledge Becomes Workflow</h4>
+      <p>디버깅, 검토, 제품 판단, 커뮤니케이션 패턴이 재사용 가능한 스킬이 됩니다. 개인의 암묵지가 팀의 명시지로 전환됩니다.</p>
+    </div>
+    <div class="concept-card">
+      <div class="concept-num">PRINCIPLE 07</div>
+      <h4>The System Gets Smarter With Use</h4>
+      <p>회고·어댑터·검증기·아티팩트가 세션 간 교훈을 보존합니다. 사용할수록 시스템이 발전하며, 같은 실수를 반복하지 않습니다.</p>
+    </div>
+    <div class="concept-card">
+      <div class="concept-num">PRINCIPLE 08</div>
+      <h4>Context Must Keep Flowing</h4>
+      <p>Narrative, 릴리즈 노트, handoff, 검토 루프가 인간과 에이전트 경계를 넘어 작업을 이동시킵니다. 컨텍스트 단절은 생산성의 가장 큰 적입니다.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <span>charness by <a href="https://www.corca.ai/" target="_blank">Corca AI</a></span>
+  <a href="https://github.com/corca-ai/charness" target="_blank">github.com/corca-ai/charness →</a>
+</footer>
+
+<script>
+  function copyInstall(btn) {
+    const cmd = 'curl -fsSLo /tmp/charness-init.sh https://raw.githubusercontent.com/corca-ai/charness/main/init.sh && bash /tmp/charness-init.sh';
+    navigator.clipboard.writeText(cmd).then(() => {
+      btn.textContent = 'copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'copy'; btn.classList.remove('copied'); }, 2000);
+    });
+  }
+
+  // Smooth scroll for nav links
+  document.querySelectorAll('nav a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelector(a.getAttribute('href')).scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>
+</body>
+</html>
