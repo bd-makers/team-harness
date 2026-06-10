@@ -35,7 +35,7 @@ Commands:
   doctor [dir]                      Diagnose harness integrity
   task <name>                       Create or activate a task
   list                              List all tasks
-  done                              Complete the active task
+  done [--force]                    Complete the active task (--force bypasses the completion guard)
   handoff                           Update handoff from latest commit (post-commit hook)
   retro [text]                      Append a dated Learnings entry to the active task's artifact.md
   release [patch|minor|major|x.y.z] [--dry-run] [--skip-cache]   Bump 3 manifests + sync plugin cache/marketplace/installed_plugins.json

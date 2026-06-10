@@ -232,9 +232,78 @@ export async function runList(ctx) {
   if (!found) console.log('(no tasks)');
 }
 
+async function collectDoneIssues(targetDir, active) {
+  const { user, task, switchedAt } = active;
+  const issues = [];
+
+  // plan.md: unchecked boxes remaining
+  try {
+    const planPath = join(targetDir, 'docs', user, task, `${task}-plan.md`);
+    const planContent = await readFile(planPath, 'utf8');
+    if (planContent.includes('- [ ]')) {
+      issues.push('plan.md에 미완 체크박스(`- [ ]`)가 남아 있음');
+    }
+  } catch { /* no plan.md → not a positive signal, skip */ }
+
+  // artifact.md: missing or still the untouched template
+  const artifactPath = join(targetDir, 'docs', user, task, `${task}-artifact.md`);
+  if (!(await exists(artifactPath))) {
+    issues.push('artifact.md가 없음 (결과/학습 미기록)');
+  } else {
+    const artifactContent = await readFile(artifactPath, 'utf8');
+    if (artifactContent.trim() === taskArtifactTemplate(task).trim()) {
+      issues.push('artifact.md가 템플릿 그대로임 (내용 없음)');
+    }
+  }
+
+  // git signals — degrade gracefully when this isn't a git repo (or git is absent):
+  // skip the git checks entirely. Inside a real repo, an empty/HEAD-less log means
+  // zero commits (which IS the problem we want to catch), not a reason to skip.
+  let isGitRepo = false;
+  try {
+    await pexec('git', ['-C', targetDir, 'rev-parse', '--is-inside-work-tree'], { maxBuffer: 1024 * 1024 });
+    isGitRepo = true;
+  } catch { /* not a git repo / git absent → leave isGitRepo=false, skip all git checks */ }
+
+  if (isGitRepo) {
+    try {
+      const { stdout } = await pexec('git', ['-C', targetDir, 'status', '--porcelain'], { maxBuffer: 1024 * 1024 });
+      if (stdout.trim()) issues.push('커밋되지 않은 변경이 있음');
+    } catch { /* transient git error → don't fabricate a problem */ }
+
+    if (switchedAt) {
+      try {
+        const { stdout } = await pexec('git', ['-C', targetDir, 'log', `--since=${switchedAt}`, '--oneline'], { maxBuffer: 1024 * 1024 });
+        if (!stdout.trim()) issues.push('task 활성화 이후 커밋이 0개임');
+      } catch {
+        // HEAD-less repo (no commits at all) → git log throws → that IS zero commits.
+        issues.push('task 활성화 이후 커밋이 0개임');
+      }
+    }
+  }
+
+  return issues;
+}
+
 export async function runDone(ctx) {
   const active = await readActive(ctx.targetDir);
   if (!active || !active.task) { console.log('no active task'); return; }
+
+  const force = !!(ctx.flags && ctx.flags.force);
+  const issues = await collectDoneIssues(ctx.targetDir, active);
+
+  if (issues.length && !force) {
+    process.exitCode = 1;
+    console.log(`✗ done: 종결 가드에 걸림 (${issues.length}개)`);
+    for (const i of issues) console.log(`cause: ${i}`);
+    console.log(`retry: 위 항목을 해소한 뒤 다시 \`harness-team done\` 실행`);
+    console.log(`stop: 의도적으로 무시하려면 \`harness-team done --force\``);
+    return;
+  }
+  if (issues.length && force) {
+    for (const i of issues) console.log(`⚠️ ${i}`);
+    console.log(`(--force: 경고만 하고 진행)`);
+  }
 
   const { user, task } = active;
   const handoffPath = join(ctx.targetDir, 'docs', user, task, `${task}-handoff.md`);

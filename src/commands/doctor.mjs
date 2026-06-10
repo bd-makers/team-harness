@@ -33,6 +33,27 @@ export async function checkSelfCli(root, env = process.env) {
   }
 }
 
+// Detect gate bypass: an active task whose spec.md lacks the Ambiguity self-check
+// section (a "pointer shell" spec authored outside the task tool). Returns a warning
+// string, or null when there is no active task / the spec is intact.
+export async function checkActiveSpecGate(targetDir) {
+  let active;
+  try { active = JSON.parse(await readFile(join(targetDir, '.harness/active.json'), 'utf8')); }
+  catch { return null; }
+  if (!active || !active.task) return null;
+
+  const { user, task } = active;
+  const specPath = join(targetDir, 'docs', user, task, `${task}-spec.md`);
+  if (!(await exists(specPath))) {
+    return `active task ${user}/${task}: spec.md 없음 (task 도구 우회 의심)`;
+  }
+  const content = await readFile(specPath, 'utf8');
+  if (!content.includes('Ambiguity 자가진단')) {
+    return `active task ${user}/${task}: spec.md에 Ambiguity 자가진단 섹션 없음 (게이트 우회 — 포인터 껍데기 spec 의심)`;
+  }
+  return null;
+}
+
 const CHECKS = [
   { path: 'CLAUDE.md', required: true },
   { path: 'AGENTS.md', symlink: 'CLAUDE.md' },
@@ -117,6 +138,13 @@ export async function runDoctor(ctx) {
   } else {
     console.log('✗ harness-team CLI  (--help failed)');
     fail++;
+  }
+
+  // Active task gate-bypass warning (⚠️, does not count toward fail / exit code).
+  const specGateWarning = await checkActiveSpecGate(ctx.targetDir);
+  if (specGateWarning) {
+    console.log(`\n⚠️ ${specGateWarning}`);
+    console.log(`hint: spec은 \`harness-team task <name>\`로 생성해 자가진단 게이트를 포함시켜라`);
   }
 
   console.log(fail ? `\n${fail} problem(s). Run: harness-team sync` : '\nAll checks passed.');
