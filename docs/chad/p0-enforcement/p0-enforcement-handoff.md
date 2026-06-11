@@ -8,3 +8,7 @@
 task 워크플로우 dogfooding 적용(⑥ in progress). doctor로 게이트 우회 경고 부재 확인.
 다음: ⑤ spec 경로 단일화, ③ 리뷰 산출물 규약 착수. P0 미완이라 active 유지(done 금지).
 
+
+## 2026-06-11T02:33:55.930Z — 완료
+
+태스크 종료.
