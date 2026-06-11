@@ -185,3 +185,22 @@ test('no active task → 기존 동작 유지 (조기 return, 차단 아님)', a
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('plan 본문 인라인/설명 텍스트의 `- [ ]`는 미완으로 카운트하지 않는다 (줄 시작만 검사)', async () => {
+  const { dir } = await makeFixture({
+    // 실제 체크박스는 [x]. 인라인 코드 안의 `- [ ]` 리터럴은 미완이 아니다.
+    plan: '# demo — Plan\n\n## 단계\n- [x] 가드는 인라인 `- [ ]` 를 미완으로 오인하면 안 된다\n',
+    artifact: taskArtifactTemplate('demo') + '\n- 실제 결과\n',
+  });
+  const prevExit = process.exitCode;
+  const { logs, restore } = captureLogs();
+  try {
+    await runDone({ targetDir: dir, flags: {} });
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds — inline `- [ ]` not counted');
+    assert.ok(!logs.some(l => l.includes('미완 체크박스')), 'no false positive on prose mention');
+  } finally {
+    restore();
+    process.exitCode = prevExit;
+    await rm(dir, { recursive: true, force: true });
+  }
+});

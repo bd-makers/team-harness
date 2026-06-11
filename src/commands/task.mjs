@@ -247,7 +247,9 @@ async function collectDoneIssues(targetDir, active) {
   try {
     const planPath = join(targetDir, 'docs', user, task, `${task}-plan.md`);
     const planContent = await readFile(planPath, 'utf8');
-    if (planContent.includes('- [ ]')) {
+    // Match only line-leading checkboxes, so inline/prose mentions of `- [ ]`
+    // (e.g. text describing the guard itself) don't trigger a false positive.
+    if (/^\s*- \[ \]/m.test(planContent)) {
       issues.push('plan.md에 미완 체크박스(`- [ ]`)가 남아 있음');
     }
   } catch { /* no plan.md → not a positive signal, skip */ }
