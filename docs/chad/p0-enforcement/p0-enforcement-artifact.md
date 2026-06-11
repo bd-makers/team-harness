@@ -26,8 +26,19 @@ P0 6개 항목 중 3개를 강제 장치로 전환 완료(2026-06-10). 각 항�
 **검증(이 task):** 본 task의 spec.md를 `task` 도구로 생성해 "Ambiguity 자가진단" 섹션을
 포함시켰고, `doctor` 실행 시 ②③가 의도대로 동작 — 게이트 우회 경고가 **뜨지 않음**을 확인.
 
-**미완:** ⑤ spec 경로 단일화, ③(번호 재정렬상 리뷰 산출물 규약)은 미착수. ⑥ 자기 dogfooding은
-본 task로 진행 중. P0 미완 항목이 남아 이 task는 active 유지(done 처리 안 함).
+**추가 완료(2026-06-10 후속):**
+- **리뷰 산출물 규약** — commit `8feacb7`. artifact 템플릿 `## Reviews` 섹션 + CLAUDE.md.hbs 리뷰 프로토콜 규약.
+- **spec 경로 단일화 (규약)** — commit `85a64cd`. task 4파일 SSOT·포인터 껍데기 금지 protocol 명문화.
+- **list 오인식 버그 수정** — commit `995647a`. `runList`이 `<name>-spec.md` 마커 있는 디렉토리만 task로 인정. dogfooding 즉시 발견. 테스트 54개 통과.
+
+**P0 6개 핵심 enforcement 전부 완료.** migrate 흡수(⑤b)는 "필요 시" 옵션이라 별도. ⑥ 자기 dogfooding은 본 task 운용으로 달성 → done.
+
+## Reviews
+*Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다.*
+
+- 2026-06-10: 외부 Codex/Gemini 코드리뷰는 미실행. 대신 P0 구현 시 advisor(상위 모델) 검토로
+  종결 가드의 dead code(커밋 0개 신호 미발동)를 발견·수정했고, 서브에이전트 자체 테스트(54개 통과)로
+  회귀를 검증함. 외부 리뷰는 후속 과제.
 
 ## Learnings
 

@@ -19,9 +19,8 @@ enforcement 갭을 메운다.
   (commit `b18eeb9`, `README.md`·`templates/CLAUDE.md.hbs`·`templates/docs/README.md`)
 
 ### 미완 / 진행 중
-- [~] **⑥ 플러그인 레포 자기 dogfooding** (in progress) — 이 task 자체. 플러그인 레포에
-  `.harness/active.json` + 실제 task 디렉토리를 운용해 강제 갭을 상시 노출. 본 task 생성·
-  채움으로 착수, P0 잔여 항목이 끝날 때까지 active 유지.
+- [x] **⑥ 플러그인 레포 자기 dogfooding** — 이 task 자체. 플러그인 레포에 `.harness/active.json`
+  + 실제 task 디렉토리를 운용해 강제 갭을 상시 노출. P0 핵심 6개 완료로 달성, done 처리.
 - [x] **⑤ spec 경로 단일화 (규약)** — task 4파일이 SSOT임을 protocol에 명문화, spec을 외부
   포인터 껍데기로 두는 것을 금지. doctor 게이트(②)가 위반을 강제 탐지.
   (기존 외부 본문 `migrate` 흡수는 "필요 시"라 별도 항목으로 남김)
