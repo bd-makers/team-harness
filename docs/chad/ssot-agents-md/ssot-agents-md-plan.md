@@ -41,9 +41,9 @@
 **Files:**
 - 기록: `docs/chad/ssot-agents-md/ssot-agents-md-artifact.md` (## Verification 섹션)
 
-- [ ] **Step 1: Claude `@import` 확정** — 위 표대로 `@AGENTS.md` 사용. (계획 중 claude-code-guide가 공식 문서로 확정, 추가 작업 불필요.)
+- [x] **Step 1: Claude `@import` 확정** — 위 표대로 `@AGENTS.md` 사용. (계획 중 claude-code-guide가 공식 문서로 확정, 추가 작업 불필요.)
 
-- [ ] **Step 2: Gemini CLI 실측 (gemini가 PATH에 있을 때)**
+- [~] **Step 2: Gemini CLI 실측 (gemini가 PATH에 있을 때)** — 이 환경에 바이너리 미발견 → 실행 단계로 이연(artifact에 기록). 폴백 설계로 구조 불변.
 
 ```bash
 D="$(mktemp -d)"; cd "$D"
@@ -53,9 +53,9 @@ timeout 60 gemini --approval-mode default -p "canary?" 2>&1 | tail -5
 ```
 Expected: 출력에 `CANARY-ZQ7731` 포함 → PASS(import 동작). `command not found`/미포함 → GEMINI.md 풀렌더 폴백 결정.
 
-- [ ] **Step 3: 결과를 artifact.md `## Verification`에 표로 기록** (도구별 import 방식/확정 문자열/폴백 여부). 미기록 = "안 한 것".
+- [x] **Step 3: 결과를 artifact.md `## Verification`에 표로 기록** (도구별 import 방식/확정 문자열/폴백 여부). 미기록 = "안 한 것".
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add docs/chad/ssot-agents-md/ssot-agents-md-artifact.md
