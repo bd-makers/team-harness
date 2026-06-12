@@ -4,6 +4,10 @@ import { readFile } from 'node:fs/promises';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { render } from '../src/render.mjs';
+import { planChanges } from '../src/harness.mjs';
+import { mergeMarkdown } from '../src/merge.mjs';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const tpl = (f) => readFile(join(ROOT, 'templates', f), 'utf8');
@@ -52,4 +56,24 @@ test('AGENTS.md(core) stack 명령이 vars로 렌더된다', async () => {
   const out = render(await tpl('AGENTS.md.hbs'), VARS);
   assert.match(out, /npm test/, 'cmdTest 치환');
   assert.doesNotMatch(out, /\{\{cmdTest\}\}/, '미치환 토큰 없음');
+});
+
+test('planChanges: 신규 프로젝트에 AGENTS/CLAUDE/GEMINI 3개 markdown change 생성', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-af-'));
+  try {
+    const ctx = { root: ROOT, targetDir: dir, backupDir: null, flags: {} };
+    const { changes } = await planChanges(ctx, { stack: VARS });
+    const md = changes.filter(c => c.kind === 'markdown').map(c => c.path);
+    assert.ok(md.some(p => p.endsWith('AGENTS.md')), 'AGENTS.md');
+    assert.ok(md.some(p => p.endsWith('CLAUDE.md')), 'CLAUDE.md');
+    assert.ok(md.some(p => p.endsWith('GEMINI.md')), 'GEMINI.md');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('mergeMarkdown: 기존 thin CLAUDE.md 재머지 시 @AGENTS.md 최상단 라인 생존', async () => {
+  const incoming = render(await tpl('CLAUDE.md.hbs'), VARS);
+  const existing = '@AGENTS.md\n\n# demo — Claude Code\n\n<!-- harness:user:begin -->\n내 메모\n<!-- harness:user:end -->\n';
+  const merged = mergeMarkdown(existing, incoming);
+  assert.match(merged, /^@AGENTS\.md/m, 'import 라인 보존');
+  assert.match(merged, /내 메모/, '사용자 텍스트 보존');
 });

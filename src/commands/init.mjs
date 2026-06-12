@@ -2,7 +2,7 @@ import { basename, resolve } from 'node:path';
 import { mkdir } from 'node:fs/promises';
 import { detectStack } from '../detect-stack.mjs';
 import {
-  planChanges, applyChanges, copyStaticAssets, setupSymlinks, formatDiff,
+  planChanges, applyChanges, copyStaticAssets, formatDiff,
   loadBackupDir, saveBackupConfig, DEFAULT_BACKUP_PARENT, AI_GITIGNORE_PREVIEW,
 } from '../harness.mjs';
 import { confirm, ask } from '../prompt.mjs';
@@ -78,7 +78,6 @@ export async function runInit(ctx) {
   await applyChanges(changes);
   if (saveConfig) await saveBackupConfig(ctx.targetDir, saveConfig);
   const copied = await copyStaticAssets(ctx);
-  const links = await setupSymlinks(ctx);
   await installPostCommitHook(ctx.targetDir);
 
   console.log(`\n✓ Wrote ${changes.length} merged file(s)`);
@@ -90,5 +89,5 @@ export async function runInit(ctx) {
     console.log(`  ./delete.sh  # tear down symlinks`);
   }
   console.log(`✓ Copied ${copied.filter(c => c.action === 'write').length} asset(s) (${copied.filter(c => c.action === 'skip').length} skipped as existing)`);
-  for (const l of links) console.log(`  ${l.action.padEnd(5)} ${l.link} → CLAUDE.md  [${l.reason}]`);
+  console.log(`✓ Agent files: AGENTS.md (core) + CLAUDE.md / GEMINI.md (@AGENTS.md import)`);
 }

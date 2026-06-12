@@ -3,9 +3,6 @@ import { join, basename, resolve } from 'node:path';
 import { writeText, readTextSafe, copyTree, exists } from './fsx.mjs';
 import { render } from './render.mjs';
 import { mergeMarkdown, deepMergeJson, simpleDiff } from './merge.mjs';
-import { ensureSymlink } from './symlink.mjs';
-
-const AGENT_SYMLINKS = ['AGENTS.md', 'GEMINI.md', '.cursorrules'];
 
 export const DEFAULT_BACKUP_PARENT = 'harness-backup';
 
@@ -37,18 +34,21 @@ export async function planChanges(ctx, { stack }) {
 
   const changes = [];
 
-  // CLAUDE.md
-  const claudeTpl = await readTextSafe(join(tplDir, 'CLAUDE.md.hbs'));
-  const rendered = render(claudeTpl, vars);
-  const existingClaude = await readTextSafe(join(targetDir, 'CLAUDE.md'));
-  const mergedClaude = mergeMarkdown(existingClaude, rendered);
-  if (existingClaude !== mergedClaude) {
-    changes.push({
-      kind: 'markdown',
-      path: join(targetDir, 'CLAUDE.md'),
-      before: existingClaude,
-      after: mergedClaude,
-    });
+  // AGENTS.md (shared core) + CLAUDE.md / GEMINI.md (thin, @AGENTS.md import).
+  // Each is marker-merged independently: managed sections updated, user text preserved.
+  for (const [file, tplName] of [
+    ['AGENTS.md', 'AGENTS.md.hbs'],
+    ['CLAUDE.md', 'CLAUDE.md.hbs'],
+    ['GEMINI.md', 'GEMINI.md.hbs'],
+  ]) {
+    const t = await readTextSafe(join(tplDir, tplName));
+    if (!t) continue;
+    const rendered = render(t, vars);
+    const existing = await readTextSafe(join(targetDir, file));
+    const merged = mergeMarkdown(existing, rendered);
+    if (existing !== merged) {
+      changes.push({ kind: 'markdown', path: join(targetDir, file), before: existing, after: merged });
+    }
   }
 
   // Scripts live in the project root with the backup dir path embedded at generation time.
@@ -210,18 +210,6 @@ export async function mirrorCursorRules(ctx) {
     const mdc = `---\ndescription: ${name.replace('.md', '')} rules\nalwaysApply: true\n---\n\n${content}`;
     await writeText(join(dstDir, mdcName), mdc);
     out.push({ path: join(dstDir, mdcName), action: 'mirror' });
-  }
-  return out;
-}
-
-export async function setupSymlinks(ctx) {
-  const out = [];
-  const target = 'CLAUDE.md';
-  for (const link of AGENT_SYMLINKS) {
-    const res = await ensureSymlink(target, join(ctx.targetDir, link), {
-      copyFallback: ctx.flags['no-symlinks'],
-    });
-    out.push({ link, ...res });
   }
   return out;
 }
