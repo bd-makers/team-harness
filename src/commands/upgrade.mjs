@@ -7,8 +7,8 @@ import { runClone } from './clone.mjs';
 import { runDelete } from './delete.mjs';
 import { runSymlink } from './symlink.mjs';
 
-const MOVE_ITEMS = ['CLAUDE.md', '.claude', '.cursor', '.opencode', 'docs', '.harness'];
-const ALIAS_ITEMS = ['AGENTS.md', 'GEMINI.md', '.cursorrules'];
+const MOVE_ITEMS = ['CLAUDE.md', 'AGENTS.md', 'GEMINI.md', '.claude', '.cursor', '.opencode', 'docs', '.harness'];
+const ALIAS_ITEMS = [];
 
 export async function runUpgrade(ctx) {
   console.log(`harness-team upgrade → ${ctx.targetDir}`);

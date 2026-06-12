@@ -4,7 +4,7 @@
 set -euo pipefail
 
 BACKUP_DIR="{{BACKUP_DIR}}"
-ITEMS=("CLAUDE.md" "AGENTS.md" "GEMINI.md" ".claude" ".cursor" ".opencode" ".cursorrules" "docs" ".harness")
+ITEMS=("CLAUDE.md" "AGENTS.md" "GEMINI.md" ".claude" ".cursor" ".opencode" "docs" ".harness")
 
 if [ ! -d "$BACKUP_DIR" ]; then
   echo "error: backup dir not found: $BACKUP_DIR" >&2

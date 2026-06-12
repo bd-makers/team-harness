@@ -6,10 +6,10 @@
 set -euo pipefail
 
 BACKUP_DIR="{{BACKUP_DIR}}"
-ITEMS=("CLAUDE.md" ".claude" ".cursor" ".opencode" "docs" ".harness")
-ALIAS_ITEMS=("AGENTS.md" "GEMINI.md" ".cursorrules")
+# AGENTS.md / GEMINI.md are real files now (not CLAUDE.md aliases); .cursorrules retired.
+ITEMS=("CLAUDE.md" "AGENTS.md" "GEMINI.md" ".claude" ".cursor" ".opencode" "docs" ".harness")
 
-for item in "${ITEMS[@]}" "${ALIAS_ITEMS[@]}"; do
+for item in "${ITEMS[@]}"; do
   if [ -L "$item" ]; then
     target="$(readlink "$item")"
     if [[ "$target" == "$BACKUP_DIR"* ]]; then

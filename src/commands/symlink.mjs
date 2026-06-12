@@ -26,8 +26,8 @@ async function sameTree(a, b) {
   return false;
 }
 
-const MOVE_ITEMS = ['CLAUDE.md', '.claude', '.cursor', '.opencode', 'docs', '.harness'];
-const ALIAS_ITEMS = ['AGENTS.md', 'GEMINI.md', '.cursorrules'];
+const MOVE_ITEMS = ['CLAUDE.md', 'AGENTS.md', 'GEMINI.md', '.claude', '.cursor', '.opencode', 'docs', '.harness'];
+const ALIAS_ITEMS = [];
 const SCRIPT_ITEMS = ['clone.sh', 'delete.sh'];
 
 export async function runSymlink(ctx) {

@@ -4,11 +4,13 @@ import { loadBackupDir } from '../harness.mjs';
 import { confirm } from '../prompt.mjs';
 
 // Items moved from project into backupDir, then replaced with absolute symlinks.
-const MOVE_ITEMS = ['CLAUDE.md', '.claude', '.cursor', '.opencode', 'docs', '.harness'];
+// AGENTS.md / GEMINI.md are now real canonical files (not CLAUDE.md aliases), so they
+// are moved like any other real file — never recreated as aliases.
+const MOVE_ITEMS = ['CLAUDE.md', 'AGENTS.md', 'GEMINI.md', '.claude', '.cursor', '.opencode', 'docs', '.harness'];
 
-// Items that stay as CLAUDE.md aliases: created in backupDir as relative symlinks,
-// then project versions become absolute symlinks → backupDir/$item.
-const ALIAS_ITEMS = ['AGENTS.md', 'GEMINI.md', '.cursorrules'];
+// Alias machinery retired: the only former alias (.cursorrules) is dropped, AGENTS.md/
+// GEMINI.md became real files. Kept as an empty list to leave the wiring loop inert.
+const ALIAS_ITEMS = [];
 
 export async function runBackup(ctx) {
   const backupDir = await loadBackupDir(ctx.targetDir);

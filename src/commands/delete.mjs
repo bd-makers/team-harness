@@ -4,8 +4,10 @@ import { resolveBackupDir } from '../backup-dir.mjs';
 import { readTextSafe } from '../fsx.mjs';
 import { confirm } from '../prompt.mjs';
 
-const MOVE_ITEMS = ['CLAUDE.md', '.claude', '.cursor', '.opencode', 'docs', '.harness', 'clone.sh', 'delete.sh'];
-const ALIAS_ITEMS = ['AGENTS.md', 'GEMINI.md', '.cursorrules'];
+// AGENTS.md / GEMINI.md are real files now → treated as MOVE items so --include-real
+// teardown removes them. The alias list is retired (.cursorrules dropped).
+const MOVE_ITEMS = ['CLAUDE.md', 'AGENTS.md', 'GEMINI.md', '.claude', '.cursor', '.opencode', 'docs', '.harness', 'clone.sh', 'delete.sh'];
+const ALIAS_ITEMS = [];
 
 export async function runDelete(ctx) {
   const includeReal = !!ctx.flags['include-real'];
