@@ -2,9 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { checkCommand, checkSelfCli, checkActiveSpecGate } from '../src/commands/doctor.mjs';
+import { checkCommand, checkSelfCli, checkActiveSpecGate, detectLegacyStructure } from '../src/commands/doctor.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -75,4 +75,34 @@ test('checkActiveSpecGate: spec.md 부재 → 경고 문자열', async () => {
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test('detectLegacyStructure: AGENTS.md가 CLAUDE.md로의 symlink면 레거시 경고', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-legacy-'));
+  try {
+    await writeFile(join(dir, 'CLAUDE.md'), '# old master\n');
+    await symlink('CLAUDE.md', join(dir, 'AGENTS.md'));
+    const w = await detectLegacyStructure(dir);
+    assert.ok(typeof w === 'string' && /migrate/.test(w), '레거시→migrate 안내');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('detectLegacyStructure: .cursorrules 존재만으로도 레거시 경고', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-legacy2-'));
+  try {
+    await writeFile(join(dir, 'AGENTS.md'), '# core\n');
+    await writeFile(join(dir, 'CLAUDE.md'), '@AGENTS.md\n');
+    await writeFile(join(dir, '.cursorrules'), 'x\n');
+    const w = await detectLegacyStructure(dir);
+    assert.ok(typeof w === 'string' && /migrate/.test(w));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('detectLegacyStructure: AGENTS.md 실파일 + .cursorrules 없으면 null(신구조)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-new-'));
+  try {
+    await writeFile(join(dir, 'AGENTS.md'), '# core\n');
+    await writeFile(join(dir, 'CLAUDE.md'), '@AGENTS.md\n');
+    assert.equal(await detectLegacyStructure(dir), null);
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });

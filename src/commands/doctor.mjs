@@ -1,4 +1,4 @@
-import { lstat, readlink, readFile } from 'node:fs/promises';
+import { lstat, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -54,11 +54,26 @@ export async function checkActiveSpecGate(targetDir) {
   return null;
 }
 
+// Detect the legacy structure (0.7.x): CLAUDE.md was the master and AGENTS.md/
+// GEMINI.md/.cursorrules were symlinks to it. Returns a warning string steering the
+// user to `migrate`, or null when the project is on the new AGENTS.md-core structure.
+export async function detectLegacyStructure(targetDir) {
+  for (const alias of ['AGENTS.md', 'GEMINI.md']) {
+    const st = await lstat(join(targetDir, alias)).catch(() => null);
+    if (st && st.isSymbolicLink()) {
+      return `레거시 구조 감지 (${alias} symlink) — run: harness-team migrate`;
+    }
+  }
+  if (await exists(join(targetDir, '.cursorrules'))) {
+    return `레거시 구조 감지 (.cursorrules 잔존) — run: harness-team migrate`;
+  }
+  return null;
+}
+
 const CHECKS = [
-  { path: 'CLAUDE.md', required: true },
-  { path: 'AGENTS.md', symlink: 'CLAUDE.md' },
-  { path: 'GEMINI.md', symlink: 'CLAUDE.md' },
-  { path: '.cursorrules', symlink: 'CLAUDE.md' },
+  { path: 'AGENTS.md', required: true, realFile: true, contains: 'harness:section="protocol"' },
+  { path: 'CLAUDE.md', required: true, realFile: true, contains: '@AGENTS.md' },
+  { path: 'GEMINI.md', required: false, realFile: true, contains: '@AGENTS.md' },
   { path: '.claude/settings.json', required: true, json: true },
   { path: '.claude/hooks/protect-files.sh', executable: true },
   { path: '.claude/hooks/auto-format.sh', executable: true },
@@ -82,12 +97,20 @@ export async function runDoctor(ctx) {
       else console.log(`- ${c.path}  (not present, optional)`);
       continue;
     }
-    if (c.symlink) {
+    if (c.realFile) {
       const st = await lstat(p);
-      if (!st.isSymbolicLink()) { console.log(`✗ ${c.path}  (not a symlink)`); fail++; continue; }
-      const tgt = await readlink(p);
-      if (tgt !== c.symlink) { console.log(`✗ ${c.path}  (→ ${tgt}, expected ${c.symlink})`); fail++; continue; }
-      console.log(`✓ ${c.path}  → ${tgt}`);
+      if (st.isSymbolicLink()) {
+        console.log(`✗ ${c.path}  (symlink — 신구조는 실파일이어야 함, run: harness-team migrate)`);
+        fail++; continue;
+      }
+      if (c.contains) {
+        const body = await readFile(p, 'utf8');
+        if (!body.includes(c.contains)) {
+          console.log(`✗ ${c.path}  ("${c.contains}" 없음 — 손상/레거시 의심)`);
+          fail++; continue;
+        }
+      }
+      console.log(`✓ ${c.path}`);
       continue;
     }
     if (c.json) {
@@ -139,6 +162,11 @@ export async function runDoctor(ctx) {
     console.log('✗ harness-team CLI  (--help failed)');
     fail++;
   }
+
+  // Legacy structure warning (symlink case already fails via CHECKS.realFile;
+  // a lone .cursorrules remnant only warns and steers to migrate).
+  const legacyWarning = await detectLegacyStructure(ctx.targetDir);
+  if (legacyWarning) console.log(`\n⚠️ ${legacyWarning}`);
 
   // Active task gate-bypass warning (⚠️, does not count toward fail / exit code).
   const specGateWarning = await checkActiveSpecGate(ctx.targetDir);
