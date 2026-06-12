@@ -1,10 +1,15 @@
-import { join } from 'node:path';
-import { unlink, rmdir, readdir, mkdir } from 'node:fs/promises';
+import { join, basename } from 'node:path';
+import { unlink, rmdir, readdir, mkdir, lstat } from 'node:fs/promises';
 import { readTextSafe, writeText, exists } from '../fsx.mjs';
 import { loadBackupDir } from '../harness.mjs';
+import { extractSections } from '../merge.mjs';
+import { render } from '../render.mjs';
 import { confirm } from '../prompt.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
 import { taskArtifactTemplate } from './task.mjs';
+
+const USER_REGION_RE = /<!--\s*harness:user:begin\s*-->[\s\S]*?<!--\s*harness:user:end\s*-->/;
+const EMPTY_USER_REGION = '<!-- harness:user:begin -->\n<!-- 이 마커 아래 작성한 내용은 harness가 절대 수정하지 않습니다. -->\n<!-- harness:user:end -->';
 
 const SCRIPT_FILES = ['clone.sh', 'symlink.sh', 'delete.sh'];
 const OLD_CATEGORIES = ['feature', 'fix'];
@@ -321,15 +326,106 @@ async function refreshProjectScripts(ctx) {
   return true;
 }
 
+// --- SSOT inversion (0.7.x legacy → AGENTS.md core) ---
+//
+// Legacy = CLAUDE.md real file holds all sections (principles/stack/roles/protocol +
+// workflow) and AGENTS.md/GEMINI.md/.cursorrules are symlinks to it.
+// New = AGENTS.md is the canonical core real file; CLAUDE.md/GEMINI.md are thin files
+// that `@AGENTS.md` import + carry only their own section. We reassemble from the
+// existing marker blocks (no text heuristics) so user-rendered content (real stack
+// commands, customizations) and the user region are preserved verbatim.
+
+export async function migrateToAgentsMd(ctx) {
+  const { targetDir } = ctx;
+  const claudePath = join(targetDir, 'CLAUDE.md');
+  const claude = await readTextSafe(claudePath);
+  if (!claude) return false;
+
+  // Already on the new structure? (AGENTS.md is a real file carrying the core)
+  const agentsPath = join(targetDir, 'AGENTS.md');
+  const agentsSt = await lstat(agentsPath).catch(() => null);
+  if (agentsSt && !agentsSt.isSymbolicLink()) {
+    const body = await readTextSafe(agentsPath);
+    if (body && body.includes('harness:section="protocol"')) return false;
+  }
+
+  // Only migrate a harness-managed CLAUDE.md (has at least one core marker).
+  const sections = extractSections(claude);
+  const hasCore = ['protocol', 'principles', 'roles', 'stack'].some(s => sections[s]);
+  if (!hasCore) return false;
+
+  console.log('\nFound legacy CLAUDE.md master → migrating to AGENTS.md core structure:');
+  console.log('  CLAUDE.md (master)        → AGENTS.md (core) + thin CLAUDE.md');
+  console.log('  AGENTS.md/GEMINI.md links → real thin files');
+  console.log('  .cursorrules              → removed (Cursor reads AGENTS.md natively)');
+  console.log('  backup                    → CLAUDE.md.bak');
+
+  const ok = ctx.flags.yes || await confirm('\nMigrate to AGENTS.md core structure?', { defaultYes: true });
+  if (!ok) { console.log('Skipped AGENTS.md migration.'); return false; }
+
+  const name = basename(targetDir);
+
+  // 1. Back up the legacy master conservatively.
+  const bakPath = join(targetDir, 'CLAUDE.md.bak');
+  if (!(await exists(bakPath))) {
+    await writeText(bakPath, claude);
+    console.log('  ✓ backed up CLAUDE.md → CLAUDE.md.bak');
+  }
+
+  // 2. AGENTS.md (core) — reassemble from the existing core blocks (preserve rendered content).
+  const coreBlocks = ['principles', 'stack', 'roles', 'protocol']
+    .map(s => sections[s]).filter(Boolean).join('\n\n');
+  const agents =
+    `# ${name} — AI Team Contract (Core)\n\n` +
+    '> 이 파일(`AGENTS.md`)이 모든 에이전트가 공유하는 단일 소스(SSOT)입니다 — agents.md 오픈 표준.\n' +
+    '> `CLAUDE.md` / `GEMINI.md` 는 `@AGENTS.md` 를 import 하는 얇은 파일이며, 이 코어를 복제하지 않습니다.\n\n' +
+    coreBlocks + '\n';
+
+  // 3. thin CLAUDE.md — @AGENTS.md import + workflow block + preserved user region.
+  const userMatch = claude.match(USER_REGION_RE);
+  const userBlock = userMatch ? userMatch[0] : EMPTY_USER_REGION;
+  const claudeThin =
+    `@AGENTS.md\n\n# ${name} — Claude Code\n\n` +
+    (sections.workflow ? sections.workflow + '\n\n' : '') +
+    userBlock + '\n';
+
+  // 4. thin GEMINI.md — rendered from the template (no legacy content to preserve).
+  const geminiTpl = await readTextSafe(join(ctx.root, 'templates', 'GEMINI.md.hbs'));
+  const gemini = geminiTpl
+    ? render(geminiTpl, { projectName: name })
+    : `@AGENTS.md\n\n# ${name} — Gemini (Reviewer)\n\n` +
+      '<!-- harness:section="reviewer" begin -->\n## 리뷰어 운영 지침\n- 역할: 독립 리뷰어(read-only).\n<!-- harness:section="reviewer" end -->\n\n' +
+      EMPTY_USER_REGION + '\n';
+
+  // 5. Write files, replacing any alias symlinks with real files.
+  if (agentsSt && agentsSt.isSymbolicLink()) await unlink(agentsPath);
+  await writeText(agentsPath, agents);
+
+  await writeText(claudePath, claudeThin);
+
+  const geminiPath = join(targetDir, 'GEMINI.md');
+  const geminiSt = await lstat(geminiPath).catch(() => null);
+  if (geminiSt && geminiSt.isSymbolicLink()) await unlink(geminiPath);
+  await writeText(geminiPath, gemini);
+
+  const cursorPath = join(targetDir, '.cursorrules');
+  if (await exists(cursorPath)) await unlink(cursorPath);
+
+  console.log('  ✓ AGENTS.md (core) + thin CLAUDE.md/GEMINI.md written, .cursorrules removed');
+  return true;
+}
+
 export async function runMigrate(ctx) {
   console.log(`harness-team migrate → ${ctx.targetDir}`);
+
+  const agentsMigrated = await migrateToAgentsMd(ctx);
 
   const taskMigrated = await migrateTaskStructure(ctx);
   const taskUpgraded = await migrateTaskTo07(ctx);
   const scriptMoved = await migrateBackupScripts(ctx);
   const scriptRefreshed = await refreshProjectScripts(ctx);
 
-  if (!taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed) {
+  if (!agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed) {
     console.log('\nNothing to migrate — project is already up to date.');
     return;
   }
