@@ -1,4 +1,9 @@
-# {{projectName}} — AI Team Contract
+@AGENTS.md
+
+# {{projectName}} — Claude Code
+
+> 공유 코어는 위 `@AGENTS.md` 에서 import 합니다 (역할·프로토콜·원칙·스택).
+> 이 파일은 Claude Code 전용 워크플로우 레버만 담습니다.
 
 <!-- harness:section="workflow" begin -->
 ## 워크플로우 오케스트레이션
@@ -62,102 +67,6 @@
 - 사용자의 컨텍스트 전환이 필요 없도록 한다
 - 어떻게 하라는 말 없이도 실패하는 CI 테스트를 수정한다
 <!-- harness:section="workflow" end -->
-
-<!-- harness:section="principles" begin -->
-## 핵심 원칙
-
-- **단순함 우선**: 모든 변경을 최대한 단순하게. 최소한의 코드에만 영향을 준다.
-- **게으름 금지**: 근본 원인을 찾는다. 임시 수정은 없다. 시니어 개발자 기준을 적용한다.
-- **최소 영향**: 필요한 것만 건드린다. 버그 유입을 피한다.
-<!-- harness:section="principles" end -->
-
-<!-- harness:section="stack" begin -->
-## 기술 스택
-- **Runtime**: {{stackLabel}}
-- **Package Manager**: {{packageManager}}
-- **Language**: {{language}}
-
-## 명령
-- install: `{{cmdInstall}}`
-- dev: `{{cmdDev}}`
-- test: `{{cmdTest}}`
-- lint: `{{cmdLint}}`
-- typecheck: `{{cmdTypecheck}}`
-<!-- harness:section="stack" end -->
-
-<!-- harness:section="roles" begin -->
-## AI 팀 역할 분담
-
-이 프로젝트에서 각 AI 에이전트가 맡는 역할과 호출 방식입니다.
-필요에 따라 재정의하세요 — 단, 이 섹션은 `harness-team sync` 실행 시 갱신 대상이므로
-마커(`<!-- harness:section="roles" -->`)는 유지해 주세요.
-
-| 에이전트 | 역할 | 호출 방식 |
-|---|---|---|
-| **Claude Code** | 리드 프로그래머 | 주 세션 |
-| **Codex** | 리뷰어 (read-only) | Bash: `codex exec --sandbox read-only` |
-| **Gemini** | 리뷰어 (read-only) | Bash: `gemini --approval-mode default -p` |
-| **Cursor** | 보조 에디터 (IDE) | `.cursor/rules/*.mdc` 자동 적용 |
-| **OpenCode** | 보조 CLI (병렬 세션) | `opencode.json` 설정 |
-
-### 리뷰 프로토콜
-중요한 변경(새 기능, 아키텍처, 복잡한 리팩토링, 보안, 스키마/API) 완료 후
-아래 **코드 리뷰 기준**을 따릅니다.
-리뷰 결과(요약·발견·조치)는 활성 task의 `<name>-artifact.md` **## Reviews** 섹션에
-날짜와 함께 남깁니다 — 남기지 않은 리뷰는 "안 한 것"으로 간주합니다.
-<!-- harness:section="roles" end -->
-
-<!-- harness:section="protocol" begin -->
-## 작업 프로토콜
-
-### task 단위 관리
-모든 작업은 `docs/<user>/<name>/` 아래에서 관리됩니다.
-각 task 디렉토리는 네 파일로 구성:
-- `<name>-spec.md` — 요구사항/설계 (Ambiguity 자가진단·Ontology 포함)
-- `<name>-plan.md` — 단계별 체크리스트 (완료 시 `- [x]`로 체크)
-- `<name>-handoff.md` — 세션 인수인계 (post-commit hook 자동 갱신)
-- `<name>-artifact.md` — 실행 결과·학습 (`task done`·`retro` 시 append)
-
-이 네 파일이 task의 **SSOT**다. 상세 설계를 외부 문서(docs 루트·`superpowers/plans` 등)로
-분리하더라도 `<name>-spec.md`를 외부를 가리키는 포인터 껍데기로 두지 말 것 —
-요구사항·자가진단·Ontology는 spec.md에 직접 쓰고, 외부 문서는 보조 참조로만 둔다.
-(doctor가 자가진단 없는 포인터 껍데기 spec을 경고한다.)
-
-활성 task는 `.harness/active.json`에 저장.
-
-### 세션 시작 시 (반드시 수행)
-1. `docs/<user>/<user>-handoff.md` 읽기 — 현재 active task 확인
-2. 활성 task의 `<name>-plan.md` 읽기 — 현재 단계 파악
-3. 필요시 `<name>-spec.md`에서 맥락 보강
-
-### task 워크플로우
-- **시작**: `harness-team task <name>` — 생성 또는 활성화
-- **진행**: `<name>-plan.md` 체크리스트 항목 완료 시 `- [x]`로 갱신
-- **commit 시**: post-commit hook이 `<name>-handoff.md`와 `<user>-handoff.md` 자동 갱신
-- **완료**: plan 전체 완료 감지 또는 사용자 신호 → AskUserQuestion → `harness-team done`
-
-### 코드 리뷰 기준
-중요한 변경 완료 시 아래 항목을 순서대로 확인하고 결과를 사용자에게 보고합니다:
-
-- **정확성**: 의도한 동작과 실제 구현이 일치하는가
-- **엣지 케이스**: 경계 조건과 오류 경로가 처리됐는가
-- **회귀**: 기존 기능에 영향이 없는가 (관련 테스트 통과)
-- **보안**: 입력 검증, 인증/인가, 민감 데이터 노출 없는가
-- **단순성**: 더 간단한 구현이 가능한가, 불필요한 추상화가 없는가
-- **테스트**: 핵심 동작과 실패 케이스가 테스트로 커버됐는가
-
-사소한 변경(포맷, 문서, 의존성 업데이트)에는 생략해도 됩니다.
-
-### 컨텍스트 파일
-| 파일 | 용도 |
-|---|---|
-| `CLAUDE.md` | 이 파일 — 프로젝트 규칙 (SSOT) |
-| `AGENTS.md`, `GEMINI.md`, `.cursorrules` | symlink → `CLAUDE.md` |
-| `docs/<user>/<name>/` | task별 작업 문서 4종 (spec·plan·handoff·artifact) |
-| `.harness/active.json` | 현재 활성 task 포인터 |
-| `docs/<user>/<user>-handoff.md` | 세션 시작 진입점 |
-| `.claude/rules/*.md` | 영역별 코딩 규칙 |
-<!-- harness:section="protocol" end -->
 
 <!-- harness:user:begin -->
 <!-- 이 마커 아래 작성한 내용은 harness가 절대 수정하지 않습니다. -->
