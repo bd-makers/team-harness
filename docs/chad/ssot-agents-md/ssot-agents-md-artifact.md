@@ -28,6 +28,11 @@ SSOT를 `CLAUDE.md`(master+symlink)에서 `AGENTS.md`(오픈 표준 공유 코�
 
 **테스트:** baseline 55 → **71 pass, 0 fail** (신규 16: agent-files 10, doctor +3, migrate-agents 3).
 
+### 2026-06-15 추가 (done 이후, 재개 세션)
+- **overview/simulation HTML 전면 0.8 리프레시** — `0be1730`이 "follow-up"으로 미룬 다이어그램 전체 갱신 완료. overview: subagents·core(SSOT) mermaid를 `@import`/네이티브 모델로 재작성, architecture(`setupSymlinks`→3파일 렌더), template 표(섹션→파일 매핑), agent config 표(D2 drive/review), init 시퀀스, 배너·footer. simulation: scaffold 스텝·세션재개 프로토콜 참조·버전. 라이브 갱신 + `-0.8.0.html` 스냅샷 2종 생성.
+- **데드코드 제거** — `src/symlink.mjs`(`ensureSymlink`)는 Task 3에서 `setupSymlinks` 제거로 importer 0이 됨 → 파일·overview 행 삭제. (`upgrade.mjs`는 `commands/symlink.mjs`의 `runSymlink`를 import — 무관.)
+- **미결:** Gemini `@import` sentinel 실측은 이 환경에 `gemini` 바이너리 부재로 여전히 보류 — 폴백 설계상 구조 불변, gemini 사용 환경에서 1회 확인 권장.
+
 ## Reviews
 
 ### 2026-06-15 — feature-dev:code-reviewer (브랜치 diff 전수)
