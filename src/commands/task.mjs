@@ -4,6 +4,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { detectMember } from '../member.mjs';
 import { exists, writeText } from '../fsx.mjs';
+import { buildEnvelope, emitObservation } from '../observation.mjs';
 
 const pexec = promisify(execFile);
 
@@ -342,13 +343,27 @@ export async function runDone(ctx) {
 }
 
 export async function runRetro(ctx) {
+  const json = !!(ctx.flags && ctx.flags.json);
   const active = await readActive(ctx.targetDir);
   if (!active || !active.task) {
     process.exitCode = 1;
-    console.log(`✗ retro: 활성 task 없음`);
-    console.log(`cause: .harness/active.json 에 활성 task가 없어 append 대상 artifact.md를 찾을 수 없음`);
-    console.log(`retry: \`harness-team task <name>\` 로 task를 활성화한 뒤 다시 실행`);
-    console.log(`stop: task가 하나도 없으면 먼저 task를 생성하라`);
+    if (json) {
+      emitObservation(buildEnvelope({
+        command: 'retro',
+        status: 'error',
+        summary: 'retro 실패: 활성 task 없음',
+        error: {
+          root_cause: '.harness/active.json 에 활성 task가 없어 append 대상 artifact.md를 찾을 수 없음',
+          safe_retry: '`harness-team task <name>` 로 task를 활성화한 뒤 다시 실행',
+          stop_condition: 'task가 하나도 없으면 먼저 task를 생성하라',
+        },
+      }));
+    } else {
+      console.log(`✗ retro: 활성 task 없음`);
+      console.log(`cause: .harness/active.json 에 활성 task가 없어 append 대상 artifact.md를 찾을 수 없음`);
+      console.log(`retry: \`harness-team task <name>\` 로 task를 활성화한 뒤 다시 실행`);
+      console.log(`stop: task가 하나도 없으면 먼저 task를 생성하라`);
+    }
     return;
   }
 
@@ -368,8 +383,18 @@ export async function runRetro(ctx) {
   await appendFile(artifactPath, section);
 
   const relPath = `docs/${user}/${task}/${task}-artifact.md`;
-  console.log(`✓ retro: ${relPath} 에 ## Learnings (${date}) 추가`);
-  console.log(`next: artifact.md를 열어 학습 내용을 채우거나, 추가 메모는 \`harness-team retro "<메모>"\` 재실행`);
+  if (json) {
+    emitObservation(buildEnvelope({
+      command: 'retro',
+      status: 'success',
+      summary: `${relPath} 에 ## Learnings (${date}) 추가`,
+      nextActions: ['artifact.md를 열어 학습 내용을 채우거나, 추가 메모는 `harness-team retro "<메모>"` 재실행'],
+      artifacts: [relPath],
+    }));
+  } else {
+    console.log(`✓ retro: ${relPath} 에 ## Learnings (${date}) 추가`);
+    console.log(`next: artifact.md를 열어 학습 내용을 채우거나, 추가 메모는 \`harness-team retro "<메모>"\` 재실행`);
+  }
 }
 
 export async function runHandoffAuto(ctx) {
