@@ -1,5 +1,6 @@
 // Shared harness ops used by init & apply.
 import { join, basename, resolve } from 'node:path';
+import { lstat, unlink } from 'node:fs/promises';
 import { writeText, readTextSafe, copyTree, exists } from './fsx.mjs';
 import { render } from './render.mjs';
 import { mergeMarkdown, deepMergeJson, simpleDiff } from './merge.mjs';
@@ -33,6 +34,7 @@ export async function planChanges(ctx, { stack }) {
   };
 
   const changes = [];
+  const legacyAgentFiles = [];
 
   // AGENTS.md (shared core) + CLAUDE.md / GEMINI.md (thin, @AGENTS.md import).
   // Each is marker-merged independently: managed sections updated, user text preserved.
@@ -43,11 +45,17 @@ export async function planChanges(ctx, { stack }) {
   ]) {
     const t = await readTextSafe(join(tplDir, tplName));
     if (!t) continue;
+    const filePath = join(targetDir, file);
+    // Legacy guard: an alias symlink (0.7.x AGENTS.md/GEMINI.md → CLAUDE.md) must NOT be
+    // read or written through — fs.writeFile follows symlinks and would clobber CLAUDE.md.
+    // Skip it and surface a migrate hint; `migrate` converts these to real files.
+    const st = await lstat(filePath).catch(() => null);
+    if (st?.isSymbolicLink()) { legacyAgentFiles.push(file); continue; }
     const rendered = render(t, vars);
-    const existing = await readTextSafe(join(targetDir, file));
+    const existing = await readTextSafe(filePath);
     const merged = mergeMarkdown(existing, rendered);
     if (existing !== merged) {
-      changes.push({ kind: 'markdown', path: join(targetDir, file), before: existing, after: merged });
+      changes.push({ kind: 'markdown', path: filePath, before: existing, after: merged });
     }
   }
 
@@ -93,12 +101,16 @@ export async function planChanges(ctx, { stack }) {
     });
   }
 
-  return { changes, vars };
+  return { changes, vars, legacyAgentFiles };
 }
 
 export async function applyChanges(changes) {
   const results = [];
   for (const c of changes) {
+    // fs.writeFile follows symlinks; unlink any symlink first so we replace it with a
+    // real file instead of clobbering its target (e.g. a legacy alias → CLAUDE.md).
+    const st = await lstat(c.path).catch(() => null);
+    if (st?.isSymbolicLink()) await unlink(c.path);
     await writeText(c.path, c.after, c.kind === 'script' ? { mode: 0o755 } : undefined);
     results.push({ path: c.path, kind: c.kind, written: true });
   }

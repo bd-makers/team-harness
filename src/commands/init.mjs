@@ -63,7 +63,12 @@ export async function runInit(ctx) {
     ctx.addAiGitignore = false;
   }
 
-  const { changes } = await planChanges(ctx, { stack });
+  const { changes, legacyAgentFiles } = await planChanges(ctx, { stack });
+
+  if (legacyAgentFiles && legacyAgentFiles.length) {
+    console.log(`\n⚠️ 레거시 alias symlink 감지: ${legacyAgentFiles.join(', ')} → CLAUDE.md`);
+    console.log(`   이 파일들은 건너뜁니다(CLAUDE.md 오염 방지). 신구조 전환: harness-team migrate`);
+  }
 
   if (changes.length === 0) {
     console.log('  (no changes needed for text/JSON files)');

@@ -15,6 +15,29 @@
 
 ## 결과
 
+SSOT를 `CLAUDE.md`(master+symlink)에서 `AGENTS.md`(오픈 표준 공유 코어 실파일)로 역전. `CLAUDE.md`/`GEMINI.md`는 `@AGENTS.md` import 얇은 파일. alias symlink 폐기.
+
+**구현 (11 task, 브랜치 `chad/ssot-agents-md`):**
+- 템플릿 3분할: `AGENTS.md.hbs`(core: principles/stack/roles/protocol) + thin `CLAUDE.md.hbs`(workflow) + `GEMINI.md.hbs`(reviewer). roles 표에 D2(OpenCode=drive, Codex/Gemini=리뷰어) 명문화.
+- `harness.mjs`: `planChanges` 3파일 마커-머지 렌더, `setupSymlinks`/`AGENT_SYMLINKS` 제거.
+- `doctor.mjs`: `realFile`+`contains` CHECKS + `detectLegacyStructure`(레거시→migrate 안내).
+- `migrate.mjs`: `migrateToAgentsMd` — 마커 기반(extractSections) 레거시→신구조 원스텝, `CLAUDE.md.bak` 백업, 사용자 텍스트 보존, 멱등.
+- backup/symlink 시스템: AGENTS.md/GEMINI.md를 MOVE_ITEMS로 재분류(실파일), `.cursorrules` 폐기 — backup 손상 경로 차단.
+- 문서: README 신구조 반영, overview HTML 0.8.0 배너, 0.8.0 파킹 문서 D1/D2/D3 기록.
+- dogfooding: 플러그인 레포 self-apply(fresh) → AGENTS.md core + thin 생성, doctor ✓.
+
+**테스트:** baseline 55 → **71 pass, 0 fail** (신규 16: agent-files 10, doctor +3, migrate-agents 3).
+
+## Reviews
+
+### 2026-06-15 — feature-dev:code-reviewer (브랜치 diff 전수)
+
+- **🔴 CRITICAL (confidence 95) — `apply`/`init`가 레거시 alias symlink를 통해 CLAUDE.md를 덮어씀.** 레거시(AGENTS.md/GEMINI.md → CLAUDE.md symlink)에서 `apply` 시 `fs.writeFile`이 symlink를 따라가 사용자 CLAUDE.md를 무경고 손실. migrate는 unlink 후 쓰지만 apply엔 가드 없음.
+  - **조치(수정 완료):** `planChanges`가 symlink 에이전트 파일을 건너뛰고 `legacyAgentFiles`로 보고(읽기/쓰기 둘 다 차단), `applyChanges`가 쓰기 전 symlink를 unlink(방어), `runInit`이 "migrate 실행" 경고 출력. 회귀 테스트 2개 추가(레거시 apply가 CLAUDE.md 보존, applyChanges가 symlink 타깃 비오염). commit `<fix>`.
+- **🟡 Important (confidence 82) — doctor의 json 분기가 symlink 인지 못 함.** backup-relocation 모드(전 항목 backup으로 symlink)와 doctor의 realFile 요구 간 **기존 긴장**. 이 task가 새로 깨뜨린 게 아니며(구 doctor도 backup 후 AGENTS.md symlink를 flag) backup 모드 인지는 별개 기능 범위 → **범위 외로 보류**(후속).
+- **✅ Verified clean:** removed-export 잔존 참조 0, backup.mjs 손상 경로 차단 확인, `@AGENTS.md` 머지 생존 확인, migrate 멱등·user-region 보존 확인, 섹션 분할 중복 0, 셸 스크립트 갱신 확인.
 
 ## Learnings
 
+- **symlink write-through는 조용한 데이터 손실 경로다.** 실파일↔symlink 전환 작업에서 `fs.writeFile`은 symlink를 따라가므로, 쓰기 전 반드시 `lstat`→`unlink` 가드. 한 곳(migrate)에서 처리했다고 모든 경로(apply)가 안전한 게 아니다 — 동일 불변식을 공유 함수(applyChanges)에 둬야 한다.
+- **adversarial 리뷰가 self-test 통과를 보완한다.** 71개 테스트가 green이어도 레거시 apply 경로는 테스트가 없어 손실 버그가 숨어 있었다. 리뷰어 dispatch로 발견 → 회귀 테스트로 고정.

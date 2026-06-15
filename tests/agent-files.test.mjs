@@ -1,12 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, mkdtemp, rm, writeFile, symlink, lstat } from 'node:fs/promises';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { render } from '../src/render.mjs';
-import { planChanges } from '../src/harness.mjs';
+import { planChanges, applyChanges } from '../src/harness.mjs';
 import { mergeMarkdown } from '../src/merge.mjs';
-import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -76,4 +75,32 @@ test('mergeMarkdown: 기존 thin CLAUDE.md 재머지 시 @AGENTS.md 최상단 �
   const merged = mergeMarkdown(existing, incoming);
   assert.match(merged, /^@AGENTS\.md/m, 'import 라인 보존');
   assert.match(merged, /내 메모/, '사용자 텍스트 보존');
+});
+
+test('planChanges: 레거시 alias symlink 에이전트 파일은 건너뛰고 legacyAgentFiles로 보고 (CLAUDE.md 보호)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-legacy-apply-'));
+  try {
+    await writeFile(join(dir, 'CLAUDE.md'), '# legacy master\nLEGACY_SENTINEL\n');
+    await symlink('CLAUDE.md', join(dir, 'AGENTS.md'));
+    await symlink('CLAUDE.md', join(dir, 'GEMINI.md'));
+    const ctx = { root: ROOT, targetDir: dir, backupDir: null, flags: {} };
+    const { changes, legacyAgentFiles } = await planChanges(ctx, { stack: VARS });
+    assert.ok(!changes.some(c => c.path.endsWith('AGENTS.md')), 'AGENTS.md symlink 건너뜀');
+    assert.ok(!changes.some(c => c.path.endsWith('GEMINI.md')), 'GEMINI.md symlink 건너뜀');
+    assert.deepEqual([...legacyAgentFiles].sort(), ['AGENTS.md', 'GEMINI.md']);
+    // CLAUDE.md change은 정상 생성되더라도, apply가 symlink 타깃을 오염시키지 않아야(아래 applyChanges 테스트)
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('applyChanges: 심볼릭 링크 경로는 unlink 후 실파일로 써서 타깃을 오염시키지 않는다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-apply-symlink-'));
+  try {
+    await writeFile(join(dir, 'target.txt'), 'ORIGINAL');
+    await symlink('target.txt', join(dir, 'link.txt'));
+    await applyChanges([{ path: join(dir, 'link.txt'), kind: 'markdown', after: 'NEW' }]);
+    assert.equal(await readFile(join(dir, 'target.txt'), 'utf8'), 'ORIGINAL', 'symlink 타깃 보존');
+    const st = await lstat(join(dir, 'link.txt'));
+    assert.equal(st.isSymbolicLink(), false, 'link은 실파일로 교체');
+    assert.equal(await readFile(join(dir, 'link.txt'), 'utf8'), 'NEW');
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });
