@@ -35,7 +35,7 @@
 - Create: `src/observation.mjs`
 - Test: `tests/observation.test.mjs`
 
-- [ ] **Step 1: 실패 테스트 작성** — `tests/observation.test.mjs`
+- [x] **Step 1: 실패 테스트 작성** — `tests/observation.test.mjs`
 
 ```js
 import { test } from 'node:test';
@@ -84,9 +84,9 @@ test('emitObservation: stdout에 단일 유효 JSON 객체만', () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인** — Run: `node --test tests/observation.test.mjs` · Expected: FAIL (`Cannot find module ../src/observation.mjs`)
+- [x] **Step 2: 실패 확인** — Run: `node --test tests/observation.test.mjs` · Expected: FAIL (`Cannot find module ../src/observation.mjs`)
 
-- [ ] **Step 3: 구현** — `src/observation.mjs`
+- [x] **Step 3: 구현** — `src/observation.mjs`
 
 ```js
 // Structured observation envelope for agent-facing --json output.
@@ -119,9 +119,9 @@ export function emitObservation(env) {
 }
 ```
 
-- [ ] **Step 4: 통과 확인** — Run: `node --test tests/observation.test.mjs` · Expected: PASS (4 tests)
+- [x] **Step 4: 통과 확인** — Run: `node --test tests/observation.test.mjs` · Expected: PASS (4 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/observation.mjs tests/observation.test.mjs
@@ -135,15 +135,15 @@ git commit -m "feat(observation): add --json envelope builder + emitter (harness
 **Files:**
 - Modify: `bin/harness-team.mjs:44-52` (Options 블록)
 
-- [ ] **Step 1: 구현** — Options 블록 끝(`--no-gitignore-ai` 줄 다음)에 추가:
+- [x] **Step 1: 구현** — Options 블록 끝(`--no-gitignore-ai` 줄 다음)에 추가:
 
 ```
   --json               drive 커맨드(task/retro/release/doctor) 출력을 구조화 JSON 엔벨로프로
 ```
 
-- [ ] **Step 2: 확인** — Run: `node bin/harness-team.mjs --help | grep -- --json` · Expected: 위 줄 출력.
+- [x] **Step 2: 확인** — Run: `node bin/harness-team.mjs --help | grep -- --json` · Expected: 위 줄 출력.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add bin/harness-team.mjs
@@ -158,7 +158,7 @@ git commit -m "docs(help): document --json structured output flag"
 - Modify: `src/commands/release.mjs` (`runRelease` 237-268, `fmtTargets` 위에 `releaseArtifacts` 추가)
 - Test: `tests/observation-commands.test.mjs` (생성)
 
-- [ ] **Step 1: 실패 테스트 작성** — `tests/observation-commands.test.mjs` (release 블록)
+- [x] **Step 1: 실패 테스트 작성** — `tests/observation-commands.test.mjs` (release 블록)
 
 ```js
 import { test } from 'node:test';
@@ -206,9 +206,9 @@ test('release --json: 에러(version-mismatch) → status error + error 계약',
 
 > NOTE: 빈 temp dir에서 `release()`는 매니페스트 부재로 throw → catch 경로(error 엔벨로프) 검증. 성공 경로는 실제 매니페스트 fixture가 필요해 무겁다 → 성공 경로는 `buildEnvelope` 단위테스트(Task 1)로 커버되며, 여기선 **error 엔벨로프 구조**만 통합 검증한다(범위 한정, 로그로 명시).
 
-- [ ] **Step 2: 실패 확인** — Run: `node --test tests/observation-commands.test.mjs` · Expected: FAIL (json 분기 미구현 → 사람용 prose가 여러 줄 출력되어 `soleEnvelope` 어서션 실패).
+- [x] **Step 2: 실패 확인** — Run: `node --test tests/observation-commands.test.mjs` · Expected: FAIL (json 분기 미구현 → 사람용 prose가 여러 줄 출력되어 `soleEnvelope` 어서션 실패).
 
-- [ ] **Step 3: 구현** — `src/commands/release.mjs`
+- [x] **Step 3: 구현** — `src/commands/release.mjs`
 
 `fmtTargets` 함수 위에 추가:
 
@@ -292,9 +292,9 @@ export async function runRelease(ctx) {
 }
 ```
 
-- [ ] **Step 4: 통과 확인** — Run: `node --test tests/observation-commands.test.mjs` · Expected: PASS. 그리고 전체 회귀: `npm test` · Expected: 기존 release 테스트 green.
+- [x] **Step 4: 통과 확인** — Run: `node --test tests/observation-commands.test.mjs` · Expected: PASS. 그리고 전체 회귀: `npm test` · Expected: 기존 release 테스트 green.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/commands/release.mjs tests/observation-commands.test.mjs
@@ -309,7 +309,7 @@ git commit -m "feat(release): --json observation envelope (success/dry-run/error
 - Modify: `src/commands/task.mjs` (`runRetro` 344-373, 상단 import)
 - Test: `tests/observation-commands.test.mjs` (retro 블록 추가)
 
-- [ ] **Step 1: 실패 테스트 작성** — `tests/observation-commands.test.mjs`에 추가
+- [x] **Step 1: 실패 테스트 작성** — `tests/observation-commands.test.mjs`에 추가
 
 ```js
 import { runRetro } from '../src/commands/task.mjs';
@@ -344,9 +344,9 @@ test('retro --json: 활성 task 없음 → status error + 에러 계약 + exitCo
 });
 ```
 
-- [ ] **Step 2: 실패 확인** — Run: `node --test tests/observation-commands.test.mjs` · Expected: FAIL (retro json 분기 미구현).
+- [x] **Step 2: 실패 확인** — Run: `node --test tests/observation-commands.test.mjs` · Expected: FAIL (retro json 분기 미구현).
 
-- [ ] **Step 3: 구현** — `src/commands/task.mjs`
+- [x] **Step 3: 구현** — `src/commands/task.mjs`
 
 상단 import에 추가:
 
@@ -413,9 +413,9 @@ export async function runRetro(ctx) {
 }
 ```
 
-- [ ] **Step 4: 통과 확인** — Run: `node --test tests/observation-commands.test.mjs` · 그리고 `npm test` · Expected: PASS, 기존 `tests/retro.test.mjs` green.
+- [x] **Step 4: 통과 확인** — Run: `node --test tests/observation-commands.test.mjs` · 그리고 `npm test` · Expected: PASS, 기존 `tests/retro.test.mjs` green.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/commands/task.mjs tests/observation-commands.test.mjs
@@ -430,7 +430,7 @@ git commit -m "feat(retro): --json observation envelope (success/no-active error
 - Modify: `src/commands/task.mjs` (`runTask` 174-215)
 - Test: `tests/observation-commands.test.mjs` (task 블록 추가)
 
-- [ ] **Step 1: 실패 테스트 작성** — `tests/observation-commands.test.mjs`에 추가
+- [x] **Step 1: 실패 테스트 작성** — `tests/observation-commands.test.mjs`에 추가
 
 ```js
 import { runTask } from '../src/commands/task.mjs';
@@ -476,9 +476,9 @@ test('task (human): 잘못된 이름 → cause/retry/stop + exitCode 1', async (
 });
 ```
 
-- [ ] **Step 2: 실패 확인** — Run: `node --test tests/observation-commands.test.mjs` · Expected: FAIL (task json/에러계약 미구현; 기존은 `usage:` 한 줄 + exitCode 미설정).
+- [x] **Step 2: 실패 확인** — Run: `node --test tests/observation-commands.test.mjs` · Expected: FAIL (task json/에러계약 미구현; 기존은 `usage:` 한 줄 + exitCode 미설정).
 
-- [ ] **Step 3: 구현** — `src/commands/task.mjs` `runTask`의 (a) bad-name 가드, (b) 활성화 분기, (c) 생성 분기 교체
+- [x] **Step 3: 구현** — `src/commands/task.mjs` `runTask`의 (a) bad-name 가드, (b) 활성화 분기, (c) 생성 분기 교체
 
 bad-name 가드(176-179) 교체:
 
@@ -557,9 +557,9 @@ bad-name 가드(176-179) 교체:
   }
 ```
 
-- [ ] **Step 4: 통과 확인** — Run: `node --test tests/observation-commands.test.mjs` · 그리고 `npm test` · Expected: PASS, `tests/task-templates.test.mjs` green(유효 이름 경로 무영향).
+- [x] **Step 4: 통과 확인** — Run: `node --test tests/observation-commands.test.mjs` · 그리고 `npm test` · Expected: PASS, `tests/task-templates.test.mjs` green(유효 이름 경로 무영향).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/commands/task.mjs tests/observation-commands.test.mjs
@@ -574,7 +574,7 @@ git commit -m "feat(task): --json envelope + cause/retry/stop error contract for
 - Modify: `src/commands/doctor.mjs` (`runDoctor` 89-180, 상단 import)
 - Test: `tests/observation-commands.test.mjs` (doctor 블록 추가)
 
-- [ ] **Step 1: 실패 테스트 작성** — `tests/observation-commands.test.mjs`에 추가
+- [x] **Step 1: 실패 테스트 작성** — `tests/observation-commands.test.mjs`에 추가
 
 ```js
 import { runDoctor } from '../src/commands/doctor.mjs';
@@ -602,9 +602,9 @@ test('doctor --json: 단일 envelope + checks 배열 + status error(빈 dir)', a
 
 > NOTE: `captureJson().soleEnvelope()`는 stdout에 객체 1개만 나오는지(=human 라인 누출 0)도 함께 검증한다 → 수용기준 #4.
 
-- [ ] **Step 2: 실패 확인** — Run: `node --test tests/observation-commands.test.mjs` · Expected: FAIL (doctor가 human 멀티라인 출력 → soleEnvelope 실패).
+- [x] **Step 2: 실패 확인** — Run: `node --test tests/observation-commands.test.mjs` · Expected: FAIL (doctor가 human 멀티라인 출력 → soleEnvelope 실패).
 
-- [ ] **Step 3: 구현** — `src/commands/doctor.mjs`
+- [x] **Step 3: 구현** — `src/commands/doctor.mjs`
 
 상단 import에 추가:
 
@@ -728,9 +728,9 @@ export async function runDoctor(ctx) {
 }
 ```
 
-- [ ] **Step 4: 통과 확인** — Run: `node --test tests/observation-commands.test.mjs` · 그리고 `npm test` · Expected: PASS, `tests/doctor.test.mjs`(헬퍼 단위) green. 추가 수동 확인: `node bin/harness-team.mjs doctor` (human 출력 기존과 동일) + `node bin/harness-team.mjs doctor --json | head` (단일 JSON).
+- [x] **Step 4: 통과 확인** — Run: `node --test tests/observation-commands.test.mjs` · 그리고 `npm test` · Expected: PASS, `tests/doctor.test.mjs`(헬퍼 단위) green. 추가 수동 확인: `node bin/harness-team.mjs doctor` (human 출력 기존과 동일) + `node bin/harness-team.mjs doctor --json | head` (단일 JSON).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/commands/doctor.mjs tests/observation-commands.test.mjs
@@ -741,19 +741,19 @@ git commit -m "feat(doctor): --json per-check machine-readable envelope (reporte
 
 ### Task 7: 전체 검증 + dogfood + 산출물 기록
 
-- [ ] **Step 1: 전체 테스트** — Run: `npm test` · Expected: 기존 71 + 신규(observation ~4, observation-commands ~7) = **~82 pass, 0 fail**.
+- [x] **Step 1: 전체 테스트** — Run: `npm test` · Expected: 기존 71 + 신규(observation ~4, observation-commands ~7) = **~82 pass, 0 fail**.
 
-- [ ] **Step 2: dogfood 수동 확인** — 실제 레포에서:
+- [x] **Step 2: dogfood 수동 확인** — 실제 레포에서:
   - `node bin/harness-team.mjs doctor --json` → 단일 JSON, checks 배열, status.
   - `node bin/harness-team.mjs release patch --dry-run --json` → success 엔벨로프(artifacts=[]).
   - `node bin/harness-team.mjs task '' --json` → error 엔벨로프 + exitCode 1.
   각 출력이 `python3 -c "import sys,json; json.load(sys.stdin)"` 또는 `jq .` 로 파싱되는지 확인(stdout 단일 객체 증명).
 
-- [ ] **Step 3: artifact.md 기록** — `## 결과`에 구현 요약, 변경 파일, 테스트 수치(before/after) 기록.
+- [x] **Step 3: artifact.md 기록** — `## 결과`에 구현 요약, 변경 파일, 테스트 수치(before/after) 기록.
 
-- [ ] **Step 4: 리뷰** — 중요 변경(새 계약·다파일)이므로 코드 리뷰(feature-dev:code-reviewer 또는 Codex/Gemini) 실행 → 결과를 artifact.md `## Reviews`에 날짜와 함께 기록.
+- [x] **Step 4: 리뷰** — 중요 변경(새 계약·다파일)이므로 코드 리뷰(feature-dev:code-reviewer 또는 Codex/Gemini) 실행 → 결과를 artifact.md `## Reviews`에 날짜와 함께 기록.
 
-- [ ] **Step 5: plan 전체 체크 확인 후 done** — plan `- [ ]` 0개 확인 → `node bin/harness-team.mjs done` (종결 가드 통과).
+- [x] **Step 5: plan 전체 체크 확인 후 done** — plan `- [ ]` 0개 확인 → `node bin/harness-team.mjs done` (종결 가드 통과).
 
 ---
 
