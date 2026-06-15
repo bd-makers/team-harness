@@ -198,13 +198,21 @@
   <!-- HERO -->
   <div class="hero" id="overview">
     <h1>Harness Aijient Team</h1>
-    <p>멀티 에이전트 협업을 위한 Claude Code 플러그인 — 단일 소스(CLAUDE.md)로 Claude, Codex, Gemini, Cursor, OpenCode를 통합 관리</p>
+    <p>멀티 에이전트 협업을 위한 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Gemini, Cursor, OpenCode를 통합 관리</p>
     <div class="hero-tags">
       <span class="tag tag-purple">v0.6.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥18</span>
       <span class="tag tag-orange">Multi-Agent SSOT</span>
     </div>
+  </div>
+
+  <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f59e0b;background:rgba(245,158,11,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>⚠️ 0.8.0 아키텍처 변경:</strong> SSOT가 <code>CLAUDE.md</code>(master + symlink)에서
+    <code>AGENTS.md</code>(Linux Foundation 오픈 표준 · 공유 코어 실파일)로 역전되었습니다.
+    <code>CLAUDE.md</code> / <code>GEMINI.md</code>는 <code>@AGENTS.md</code> import 얇은 파일이며 alias symlink는 폐기됐습니다.
+    아래 일부 다이어그램은 구(0.7.x) 모델을 보여줍니다 — 최신 구조는 <a href="../README.md">README</a> 참조.
+    (0.7.0 스냅샷: <code>harness-overview-0.7.0.html</code>)
   </div>
 
   <!-- ARCHITECTURE -->

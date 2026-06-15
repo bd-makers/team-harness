@@ -12,7 +12,7 @@ modified: 2026-06-02
 > **Claude 메인 + Codex · Gemini · Cursor · OpenCode** — 다섯 AI 에이전트를 하나의 프로젝트에서 협업시키는 팀용 하네스 플러그인.
 
 프로젝트에 통일된 멀티 에이전트 설정을 **새로 scaffold**하거나 **기존 repo에 비파괴적으로 적용**합니다.
-`CLAUDE.md`를 단일 진실의 원천(SSOT)으로 삼고, 나머지 에이전트 설정 파일은 모두 symlink 또는 참조로 연결되어 drift가 없습니다.
+`AGENTS.md`(Linux Foundation 오픈 표준)를 공유 코어 단일 진실의 원천(SSOT)으로 삼고, `CLAUDE.md` / `GEMINI.md`는 `@AGENTS.md`를 import하는 얇은 파일로 두어 drift가 없습니다.
 
 > 이 레포를 수정하는 에이전트/메인테이너는 [MAINTAINING.md](./MAINTAINING.md)를 먼저 확인하세요 (릴리스 절차·작업 규칙).
 
@@ -43,12 +43,12 @@ modified: 2026-06-02
 | Claude Code | `CLAUDE.md`, `.claude/` |
 | Codex | `AGENTS.md` |
 | Gemini CLI | `GEMINI.md` |
-| Cursor | `.cursorrules`, `.cursor/rules/*.mdc` |
+| Cursor | `AGENTS.md`, `.cursor/rules/*.mdc` |
 | OpenCode | `AGENTS.md`, `opencode.json` |
 
 각각 관리하면 동기화 지옥이 됩니다. 이 플러그인은:
 
-- `CLAUDE.md`를 원본으로 두고 `AGENTS.md` / `GEMINI.md` / `.cursorrules`는 symlink
+- `AGENTS.md`를 공유 코어 실파일(오픈 표준)로 두고 `CLAUDE.md` / `GEMINI.md`는 `@AGENTS.md` import 얇은 파일 (Cursor·OpenCode는 `AGENTS.md` 네이티브 인식)
 - `.claude/rules/*.md`를 원본으로 `.cursor/rules/*.mdc`를 자동 미러링
 - `opencode.json`은 `.claude/skills/*/SKILL.md`를 **참조**(복사 아님)
 - Codex/Gemini는 read-only 리뷰어로 Bash를 통해 호출 (first-token 매칭 규칙 준수)
@@ -160,14 +160,13 @@ harness-team --help
 
 ### `/harness-sync` — 내부 정합성 동기화
 
-프로젝트 **내부** symlink/mirror를 재생성. symlink가 깨졌거나 rules를 수정했을 때 실행.
+`.cursor/rules` 미러를 재생성. rules를 수정했을 때 실행. (에이전트 파일은 실파일이라 symlink 재생성 없음 — `AGENTS.md`/`CLAUDE.md`/`GEMINI.md` 갱신은 `apply`.)
 
 ```bash
 /harness-sync
 ```
 
 수행:
-- `AGENTS.md`, `GEMINI.md`, `.cursorrules` → `CLAUDE.md` symlink 재확인/재생성
 - `.claude/rules/*.md` → `.cursor/rules/*.mdc` 미러링 갱신
 
 > ⚠️ `symlink.sh` 와는 **다른 기능**입니다. 아래 [스크립트 3종](#스크립트-3종-사용법) 참조.
@@ -398,7 +397,7 @@ Backup clone parent folder (sibling of project, holds clone.sh/symlink.sh/delete
 **용도**: BACKUP_DIR의 자산을 프로젝트 루트에 symlink로 연결.
 
 링크 대상(ITEMS):
-`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.claude`, `.cursor`, `.opencode`, `.cursorrules`, `docs`, `.harness`
+`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.claude`, `.cursor`, `.opencode`, `docs`, `.harness`
 
 **사용 예**:
 ```bash
@@ -454,10 +453,10 @@ cd ~/work/project-a
 
 | | `/harness-sync` | `./symlink.sh` |
 |---|---|---|
-| 대상 | 같은 프로젝트 내부 (`CLAUDE.md` 등 SSOT) | 외부 중앙 harness repo |
+| 대상 | 같은 프로젝트 내부 (`.cursor/rules` 미러) | 외부 중앙 harness repo |
 | 목적 | 플러그인이 설치한 구조의 무결성 유지 | 여러 프로젝트가 하나의 harness를 공유 |
-| 주요 작업 | `AGENTS.md → CLAUDE.md` (같은 폴더), `.cursor/rules` 미러링 | 중앙의 `CLAUDE.md`, `.claude`, `docs` 등을 현재 프로젝트로 심볼릭 링크 |
-| 언제 | symlink이 깨졌을 때, rules 수정 후 | 중앙 harness를 새 프로젝트에 적용할 때 |
+| 주요 작업 | `.cursor/rules` 미러링 (에이전트 파일 갱신은 `apply`) | 중앙의 `AGENTS.md`, `CLAUDE.md`, `.claude`, `docs` 등을 현재 프로젝트로 심볼릭 링크 |
+| 언제 | rules 수정 후 | 중앙 harness를 새 프로젝트에 적용할 때 |
 
 ---
 
@@ -465,10 +464,9 @@ cd ~/work/project-a
 
 ```
 my-project/
-├── CLAUDE.md                 # 단일 진실의 원천 (stack/roles/protocol 섹션)
-├── AGENTS.md     -> CLAUDE.md
-├── GEMINI.md     -> CLAUDE.md
-├── .cursorrules  -> CLAUDE.md
+├── AGENTS.md                 # 공유 코어 SSOT — principles/stack/roles/protocol (오픈 표준, 실파일)
+├── CLAUDE.md                 # @AGENTS.md import + Claude 전용 (workflow 섹션)
+├── GEMINI.md                 # @AGENTS.md import + Gemini 리뷰어 지침 (reviewer 섹션)
 ├── docs/
 │   ├── README.md
 │   └── <member>/<name>/{<name>-spec.md, <name>-plan.md, <name>-handoff.md}
@@ -493,9 +491,9 @@ my-project/
 
 ---
 
-## CLAUDE.md 섹션 마커
+## 에이전트 파일 섹션 마커
 
-하네스는 HTML 주석 마커로 관리 영역을 구분합니다:
+하네스는 HTML 주석 마커로 관리 영역을 구분하며, 각 파일을 독립적으로 마커-머지합니다:
 
 ```markdown
 <!-- harness:section="roles" begin -->
@@ -508,7 +506,11 @@ my-project/
 <!-- harness:user:end -->
 ```
 
-관리되는 섹션: `stack`, `roles`, `protocol`.
+관리되는 섹션:
+- `AGENTS.md` (공유 코어): `principles`, `stack`, `roles`, `protocol`
+- `CLAUDE.md` (얇음): 최상단 `@AGENTS.md` import + `workflow`
+- `GEMINI.md` (얇음): 최상단 `@AGENTS.md` import + `reviewer`
+
 이 섹션들을 직접 수정해도 `/harness-apply` 재실행 시 템플릿으로 덮어쓰여집니다.
 영구 커스터마이즈는 `<!-- harness:user -->` 블록 또는 마커 밖에 작성하세요.
 
