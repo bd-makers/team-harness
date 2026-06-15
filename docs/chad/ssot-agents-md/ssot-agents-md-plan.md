@@ -72,7 +72,7 @@ git commit -m "docs(task): ssot-agents-md import 실측 결과 기록"
 - Create: `templates/GEMINI.md.hbs` (thin: `@AGENTS.md` + reviewer + user)
 - Test: `tests/agent-files.test.mjs`
 
-- [ ] **Step 1: 실패 테스트 작성** — 렌더 산출물 구조 검증
+- [x] **Step 1: 실패 테스트 작성** — 렌더 산출물 구조 검증
 
 ```javascript
 // tests/agent-files.test.mjs
@@ -118,14 +118,14 @@ test('어느 thin 파일도 core 본문을 복제하지 않는다 (중복 0)', a
 });
 ```
 
-- [ ] **Step 2: 실패 확인**
+- [x] **Step 2: 실패 확인**
 
 Run: `node --test tests/agent-files.test.mjs`
 Expected: FAIL (AGENTS.md.hbs/GEMINI.md.hbs 없음)
 
-- [ ] **Step 3: `templates/AGENTS.md.hbs` 작성** — 현 `CLAUDE.md.hbs`에서 `principles`+`stack`+`roles`+`protocol` 4개 마커 블록을 그대로 이동. 헤더 `# {{projectName}} — AI Team Contract (Core)`. 표 안의 컨텍스트 파일 행 갱신: `CLAUDE.md`/`GEMINI.md`가 symlink가 아니라 "`@AGENTS.md` import 얇은 파일"임을 명시, `.cursorrules` 행 제거. roles 섹션 안내문의 "`harness-team sync` 실행 시 갱신 대상" → "`harness-team apply` 실행 시 갱신 대상"으로 수정(sync는 더 이상 렌더 안 함).
+- [x] **Step 3: `templates/AGENTS.md.hbs` 작성** — 현 `CLAUDE.md.hbs`에서 `principles`+`stack`+`roles`+`protocol` 4개 마커 블록을 그대로 이동. 헤더 `# {{projectName}} — AI Team Contract (Core)`. 표 안의 컨텍스트 파일 행 갱신: `CLAUDE.md`/`GEMINI.md`가 symlink가 아니라 "`@AGENTS.md` import 얇은 파일"임을 명시, `.cursorrules` 행 제거. roles 섹션 안내문의 "`harness-team sync` 실행 시 갱신 대상" → "`harness-team apply` 실행 시 갱신 대상"으로 수정(sync는 더 이상 렌더 안 함).
 
-- [ ] **Step 4: `templates/CLAUDE.md.hbs` 재작성 (thin)**
+- [x] **Step 4: `templates/CLAUDE.md.hbs` 재작성 (thin)**
 
 ```handlebars
 @AGENTS.md
@@ -142,7 +142,7 @@ Expected: FAIL (AGENTS.md.hbs/GEMINI.md.hbs 없음)
 <!-- harness:user:end -->
 ```
 
-- [ ] **Step 5: `templates/GEMINI.md.hbs` 작성 (thin)**
+- [x] **Step 5: `templates/GEMINI.md.hbs` 작성 (thin)**
 
 ```handlebars
 @AGENTS.md
@@ -161,12 +161,12 @@ Expected: FAIL (AGENTS.md.hbs/GEMINI.md.hbs 없음)
 <!-- harness:user:end -->
 ```
 
-- [ ] **Step 6: 테스트 통과 확인**
+- [x] **Step 6: 테스트 통과 확인**
 
 Run: `node --test tests/agent-files.test.mjs`
 Expected: PASS (4개)
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add templates/AGENTS.md.hbs templates/CLAUDE.md.hbs templates/GEMINI.md.hbs tests/agent-files.test.mjs
@@ -183,7 +183,7 @@ git commit -m "feat(templates): split AI contract into AGENTS.md core + thin CLA
 - Modify: `src/commands/sync.mjs:1,9` (import/호출)
 - Test: `tests/agent-files.test.mjs` (append)
 
-- [ ] **Step 1: 실패 테스트 추가** — planChanges가 3개 markdown change를 만들고, 기존 thin CLAUDE.md 재머지 시 `@AGENTS.md` 최상단 라인이 생존하는지
+- [x] **Step 1: 실패 테스트 추가** — planChanges가 3개 markdown change를 만들고, 기존 thin CLAUDE.md 재머지 시 `@AGENTS.md` 최상단 라인이 생존하는지
 
 ```javascript
 // append to tests/agent-files.test.mjs
@@ -211,9 +211,9 @@ test('mergeMarkdown: 기존 thin CLAUDE.md 재머지 시 @AGENTS.md 최상단 �
 });
 ```
 
-- [ ] **Step 2: 실패 확인** — Run: `node --test tests/agent-files.test.mjs` → FAIL (planChanges가 CLAUDE.md만 렌더)
+- [x] **Step 2: 실패 확인** — Run: `node --test tests/agent-files.test.mjs` → FAIL (planChanges가 CLAUDE.md만 렌더)
 
-- [ ] **Step 3: `planChanges` 확장** — CLAUDE.md 렌더 블록(`src/harness.mjs:40-52`)을 3파일 루프로 일반화:
+- [x] **Step 3: `planChanges` 확장** — CLAUDE.md 렌더 블록(`src/harness.mjs:40-52`)을 3파일 루프로 일반화:
 
 ```javascript
   // AGENTS.md (core) + CLAUDE.md/GEMINI.md (thin) — marker-merge each
@@ -233,17 +233,17 @@ test('mergeMarkdown: 기존 thin CLAUDE.md 재머지 시 @AGENTS.md 최상단 �
   }
 ```
 
-- [ ] **Step 4: `AGENT_SYMLINKS` 제거 + `setupSymlinks` → `setupAgentFiles`** — alias symlink 생성을 폐기. 세 에이전트 파일은 `planChanges`/`applyChanges`가 실파일로 렌더하므로 별도 후처리 불필요. `setupSymlinks`(harness.mjs:217-227)와 import(line 6 `ensureSymlink`) 제거하고, 호출부 호환을 위해 no-op `export async function setupAgentFiles() { return []; }`로 교체(또는 호출부에서 제거).
+- [x] **Step 4: `AGENT_SYMLINKS` 제거 + `setupSymlinks` → `setupAgentFiles`** — alias symlink 생성을 폐기. 세 에이전트 파일은 `planChanges`/`applyChanges`가 실파일로 렌더하므로 별도 후처리 불필요. `setupSymlinks`(harness.mjs:217-227)와 import(line 6 `ensureSymlink`) 제거하고, 호출부 호환을 위해 no-op `export async function setupAgentFiles() { return []; }`로 교체(또는 호출부에서 제거).
 
-- [ ] **Step 5: 호출부 갱신**
+- [x] **Step 5: 호출부 갱신**
   - `src/commands/init.mjs`: line 81 `const links = await setupSymlinks(ctx);` 제거, line 93 `for (const l of links) ... → CLAUDE.md` 로그 제거.
   - `src/commands/sync.mjs`: line 1 import에서 `setupSymlinks` 제거, line 9 호출 제거, line 12 로그 제거. (cursor rules 미러링·post-commit hook은 유지.)
 
-- [ ] **Step 6: 테스트 통과** — Run: `node --test tests/agent-files.test.mjs` → PASS
+- [x] **Step 6: 테스트 통과** — Run: `node --test tests/agent-files.test.mjs` → PASS
 
-- [ ] **Step 7: 전체 회귀** — Run: `npm test` → 55 + 신규 통과, 0 fail
+- [x] **Step 7: 전체 회귀** — Run: `npm test` → 55 + 신규 통과, 0 fail
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/harness.mjs src/commands/init.mjs src/commands/sync.mjs tests/agent-files.test.mjs
@@ -258,7 +258,7 @@ git commit -m "feat(harness): render AGENTS/CLAUDE/GEMINI as real files, drop al
 - Modify: `src/commands/doctor.mjs:57-70` (CHECKS) + 신규 레거시 감지 함수
 - Test: `tests/doctor.test.mjs` (append)
 
-- [ ] **Step 1: 실패 테스트 추가** — 신구조 통과 / 레거시 symlink 감지
+- [x] **Step 1: 실패 테스트 추가** — 신구조 통과 / 레거시 symlink 감지
 
 ```javascript
 // append to tests/doctor.test.mjs — import { detectLegacyStructure } from '../src/commands/doctor.mjs';
@@ -284,9 +284,9 @@ test('detectLegacyStructure: AGENTS.md 실파일이면 null(신구조)', async (
 });
 ```
 
-- [ ] **Step 2: 실패 확인** — Run: `node --test tests/doctor.test.mjs` → FAIL (`detectLegacyStructure` 없음)
+- [x] **Step 2: 실패 확인** — Run: `node --test tests/doctor.test.mjs` → FAIL (`detectLegacyStructure` 없음)
 
-- [ ] **Step 3: CHECKS 개정** (`doctor.mjs:57-70`)
+- [x] **Step 3: CHECKS 개정** (`doctor.mjs:57-70`)
 
 ```javascript
 const CHECKS = [
@@ -305,11 +305,11 @@ const CHECKS = [
 ```
 `runDoctor` 루프에 `realFile`(symlink면 ✗ "신구조는 실파일이어야") + `contains`(파일에 정확 문자열 grep, 없으면 ✗) 분기 추가.
 
-- [ ] **Step 4: `detectLegacyStructure` 추가** — `AGENTS.md`/`GEMINI.md`/`.cursorrules` 중 하나라도 symlink거나 `.cursorrules` 존재 시 경고 문자열 반환(아니면 null). `runDoctor` 끝에서 호출해 `⚠️ 레거시 구조 감지 — harness-team migrate 실행` 출력(fail++는 CHECKS의 realFile이 담당).
+- [x] **Step 4: `detectLegacyStructure` 추가** — `AGENTS.md`/`GEMINI.md`/`.cursorrules` 중 하나라도 symlink거나 `.cursorrules` 존재 시 경고 문자열 반환(아니면 null). `runDoctor` 끝에서 호출해 `⚠️ 레거시 구조 감지 — harness-team migrate 실행` 출력(fail++는 CHECKS의 realFile이 담당).
 
-- [ ] **Step 5: 테스트 통과** — Run: `node --test tests/doctor.test.mjs` → PASS
+- [x] **Step 5: 테스트 통과** — Run: `node --test tests/doctor.test.mjs` → PASS
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/commands/doctor.mjs tests/doctor.test.mjs
@@ -324,7 +324,7 @@ git commit -m "feat(doctor): enforce AGENTS.md core + import lines, detect legac
 - Modify: `src/commands/migrate.mjs` (신규 `migrateToAgentsMd` 추가 + `runMigrate`에 연결)
 - Test: `tests/migrate-agents.test.mjs`
 
-- [ ] **Step 1: 실패 테스트 작성** — 레거시 fixture(CLAUDE.md master + AGENTS/GEMINI/.cursorrules symlink) → 신구조
+- [x] **Step 1: 실패 테스트 작성** — 레거시 fixture(CLAUDE.md master + AGENTS/GEMINI/.cursorrules symlink) → 신구조
 
 ```javascript
 // tests/migrate-agents.test.mjs
@@ -382,9 +382,9 @@ test('멱등 — 이미 신구조면 변경 없음(false 반환)', async () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인** — Run: `node --test tests/migrate-agents.test.mjs` → FAIL (`migrateToAgentsMd` 없음)
+- [x] **Step 2: 실패 확인** — Run: `node --test tests/migrate-agents.test.mjs` → FAIL (`migrateToAgentsMd` 없음)
 
-- [ ] **Step 3: `migrateToAgentsMd` 구현** — 마커 기반, 텍스트 휴리스틱 금지:
+- [x] **Step 3: `migrateToAgentsMd` 구현** — 마커 기반, 텍스트 휴리스틱 금지:
   1. `AGENTS.md`가 실파일이고 core 마커 포함 → 이미 신구조, return false.
   2. `lstat`으로 `AGENTS.md`/`GEMINI.md`/`.cursorrules` symlink 여부 판정. 레거시(symlink 존재 또는 `.cursorrules` 존재)가 아니면 return false.
   3. 사전 백업: `CLAUDE.md`를 `CLAUDE.md.bak`로 복사(이미 있으면 skip) — 파괴 방지.
@@ -394,13 +394,13 @@ test('멱등 — 이미 신구조면 변경 없음(false 반환)', async () => {
   7. alias symlink 제거: `AGENTS.md`(symlink였으면 unlink 후 실파일로 교체), `.cursorrules` unlink.
   8. console 리포트 + return true.
 
-- [ ] **Step 4: `runMigrate`에 연결** (`migrate.mjs:324-340`) — `const agentsMigrated = await migrateToAgentsMd(ctx);`를 추가하고 종합 판정/메시지에 포함. 기존 task/script 마이그레이션보다 **먼저** 실행(구조 전환이 선행).
+- [x] **Step 4: `runMigrate`에 연결** (`migrate.mjs:324-340`) — `const agentsMigrated = await migrateToAgentsMd(ctx);`를 추가하고 종합 판정/메시지에 포함. 기존 task/script 마이그레이션보다 **먼저** 실행(구조 전환이 선행).
 
-- [ ] **Step 5: 테스트 통과** — Run: `node --test tests/migrate-agents.test.mjs` → PASS (2개)
+- [x] **Step 5: 테스트 통과** — Run: `node --test tests/migrate-agents.test.mjs` → PASS (2개)
 
-- [ ] **Step 6: 전체 회귀** — Run: `npm test` → 0 fail
+- [x] **Step 6: 전체 회귀** — Run: `npm test` → 0 fail
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/commands/migrate.mjs tests/migrate-agents.test.mjs
@@ -414,7 +414,7 @@ git commit -m "feat(migrate): one-step legacy CLAUDE.md+symlinks → AGENTS.md c
 **Files:**
 - Modify: `templates/AGENTS.md.hbs` (roles 섹션 — Task 2에서 이동된 표)
 
-- [ ] **Step 1: roles 표 갱신** — OpenCode 행을 "보조 CLI"에서 **drive 주체(병렬 작성 세션)**로 격상, Codex/Gemini는 리뷰어(read-only) 유지. 표 아래 1줄 결정 기록: "D2(2026-06-11): drive=Claude·OpenCode, 리뷰어=Codex·Gemini. 독립 리뷰어 가치는 작성자 분리에서 나옴."
+- [x] **Step 1: roles 표 갱신** — OpenCode 행을 "보조 CLI"에서 **drive 주체(병렬 작성 세션)**로 격상, Codex/Gemini는 리뷰어(read-only) 유지. 표 아래 1줄 결정 기록: "D2(2026-06-11): drive=Claude·OpenCode, 리뷰어=Codex·Gemini. 독립 리뷰어 가치는 작성자 분리에서 나옴."
 
 ```markdown
 | 에이전트 | 역할 | 호출 방식 |
@@ -426,11 +426,11 @@ git commit -m "feat(migrate): one-step legacy CLAUDE.md+symlinks → AGENTS.md c
 | **Cursor** | 보조 에디터 (IDE) | `.cursor/rules/*.mdc` 자동 적용 |
 ```
 
-- [ ] **Step 2: 렌더 테스트 보강** — `tests/agent-files.test.mjs`에 AGENTS.md 렌더에 `drive`·`리뷰어` 문자열 + OpenCode 행 존재 assert 추가.
+- [x] **Step 2: 렌더 테스트 보강** — `tests/agent-files.test.mjs`에 AGENTS.md 렌더에 `drive`·`리뷰어` 문자열 + OpenCode 행 존재 assert 추가.
 
-- [ ] **Step 3: 테스트 통과** — Run: `node --test tests/agent-files.test.mjs` → PASS
+- [x] **Step 3: 테스트 통과** — Run: `node --test tests/agent-files.test.mjs` → PASS
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add templates/AGENTS.md.hbs tests/agent-files.test.mjs
@@ -448,11 +448,11 @@ git commit -m "docs(roles): record D2 — OpenCode drives, Codex/Gemini review"
 
 > **범위 경계:** 이 backup→project symlink 시스템은 본 task 핵심(에이전트 alias)과 **별개 기능**(하네스를 sibling 백업 디렉토리로 재배치). symlink.mjs는 MOVE/ALIAS를 concat해 동일 취급하므로 AGENTS.md/GEMINI.md가 실파일이 돼도 기능 변화 0. 유일한 위생 항목 = `.cursorrules` 참조 제거. **확장 금지.**
 
-- [ ] **Step 1: `.cursorrules` 제거** — 세 곳의 리스트에서 `.cursorrules` 항목 삭제. (AGENTS.md/GEMINI.md는 그대로 둠 — 이제 실파일이지만 백업 미러링 대상으로 유효.)
+- [x] **Step 1: `.cursorrules` 제거** — 세 곳의 리스트에서 `.cursorrules` 항목 삭제. (AGENTS.md/GEMINI.md는 그대로 둠 — 이제 실파일이지만 백업 미러링 대상으로 유효.)
 
-- [ ] **Step 2: 회귀 확인** — Run: `npm test` → `tests/symlink.test.mjs`/`delete.test.mjs` 등 0 fail
+- [x] **Step 2: 회귀 확인** — Run: `npm test` → `tests/symlink.test.mjs`/`delete.test.mjs` 등 0 fail
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/commands/symlink.mjs src/commands/upgrade.mjs templates/symlink.sh
@@ -467,13 +467,13 @@ git commit -m "chore(symlink): drop .cursorrules from backup relocation lists"
 - Modify: `README.md` (구조 설명·symlink 언급 → AGENTS.md 코어 + thin import)
 - Modify: `docs/harness-overview.html` (최신 구조 반영; 0.7.0 스냅샷 HTML은 보존)
 
-- [ ] **Step 1: README 구조 섹션 갱신** — "AGENTS.md/GEMINI.md/.cursorrules symlink → CLAUDE.md" 서술을 "AGENTS.md(오픈 표준 코어 실파일) + CLAUDE.md/GEMINI.md(@AGENTS.md import 얇은 파일)"로 교체. 컨텍스트 파일 표·명령 설명 동기화. `grep -n "symlink\|\.cursorrules\|CLAUDE.md (SSOT)" README.md`로 잔존 표현 점검.
+- [x] **Step 1: README 구조 섹션 갱신** — "AGENTS.md/GEMINI.md/.cursorrules symlink → CLAUDE.md" 서술을 "AGENTS.md(오픈 표준 코어 실파일) + CLAUDE.md/GEMINI.md(@AGENTS.md import 얇은 파일)"로 교체. 컨텍스트 파일 표·명령 설명 동기화. `grep -n "symlink\|\.cursorrules\|CLAUDE.md (SSOT)" README.md`로 잔존 표현 점검.
 
-- [ ] **Step 2: overview HTML 갱신** — `docs/harness-overview.html`의 구조 다이어그램/설명을 신구조로. (`-0.7.0.html` 스냅샷은 건드리지 않음.)
+- [x] **Step 2: overview HTML 갱신** — `docs/harness-overview.html`의 구조 다이어그램/설명을 신구조로. (`-0.7.0.html` 스냅샷은 건드리지 않음.)
 
-- [ ] **Step 3: 육안 확인** — `grep -rn "symlink → CLAUDE\|\.cursorrules" README.md docs/harness-overview.html` 잔존 0.
+- [x] **Step 3: 육안 확인** — `grep -rn "symlink → CLAUDE\|\.cursorrules" README.md docs/harness-overview.html` 잔존 0.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add README.md docs/harness-overview.html
@@ -487,9 +487,9 @@ git commit -m "docs: describe AGENTS.md core + thin import structure"
 **Files:**
 - Modify: `docs/superpowers/plans/2026-05-29-0.8.0-improvements.md`
 
-- [ ] **Step 1: Open Decisions 섹션에 결정 확정 기록** — D1=(C) 단일 소스→렌더(AGENTS.md canonical), D2=(b) Codex/Gemini 리뷰어·drive=Claude·OpenCode, D3=연기(2026-08-말 측정). 각 근거 1줄 + 결정일(2026-06-11) + 구현 task(`chad/ssot-agents-md`) 링크.
+- [x] **Step 1: Open Decisions 섹션에 결정 확정 기록** — D1=(C) 단일 소스→렌더(AGENTS.md canonical), D2=(b) Codex/Gemini 리뷰어·drive=Claude·OpenCode, D3=연기(2026-08-말 측정). 각 근거 1줄 + 결정일(2026-06-11) + 구현 task(`chad/ssot-agents-md`) 링크.
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add docs/superpowers/plans/2026-05-29-0.8.0-improvements.md
@@ -505,7 +505,7 @@ git commit -m "docs(0.8.0): record D1/D2/D3 decisions for SSOT inversion"
 
 > **2-갈래 검증 (advisor):** 레포에 에이전트 파일이 없으므로 self-apply는 **fresh init/apply 경로**를 태운다(신규 렌더 커버리지). migrate 경로는 dogfooding으로 **안 태워짐** → Task 5의 레거시 fixture unit test가 그 보증을 담당. dogfooding 통과 ≠ migrate 동작 보증.
 
-- [ ] **Step 1: 자기 적용 실행** (`apply = runInit`. `--no-backup`로 백업 디렉토리 생성 회피 — dogfooding 목적은 에이전트 3파일 검증)
+- [x] **Step 1: 자기 적용 실행** (`apply = runInit`. `--no-backup`로 백업 디렉토리 생성 회피 — dogfooding 목적은 에이전트 3파일 검증)
 
 ```bash
 node bin/harness-team.mjs apply . --yes --no-backup
@@ -513,16 +513,16 @@ git status --short   # 의도치 않은 settings/hooks 변경 점검
 ```
 Expected: `AGENTS.md`(core 실파일) + `CLAUDE.md`/`GEMINI.md`(thin @import) 생성. (apply가 stack 자동감지 → Node.) settings/opencode/hooks가 머지로 바뀌면 diff 확인 후 의도한 것만 스테이징.
 
-- [ ] **Step 2: doctor로 신구조 검증**
+- [x] **Step 2: doctor로 신구조 검증**
 
 ```bash
 node bin/harness-team.mjs doctor .
 ```
 Expected: AGENTS.md/CLAUDE.md realFile+contains ✓, 레거시 경고 없음, `All checks passed` (또는 무관한 기존 항목만).
 
-- [ ] **Step 3: 생성물 육안 확인** — `AGENTS.md`에 protocol/roles 코어 존재, `CLAUDE.md` 최상단 `@AGENTS.md` + workflow, 중복 0.
+- [x] **Step 3: 생성물 육안 확인** — `AGENTS.md`에 protocol/roles 코어 존재, `CLAUDE.md` 최상단 `@AGENTS.md` + workflow, 중복 0.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add AGENTS.md CLAUDE.md GEMINI.md
@@ -533,13 +533,13 @@ git commit -m "chore(dogfood): self-apply AGENTS.md core structure to plugin rep
 
 ## Task 11: 종결 — 전체 회귀 + 리뷰 + done
 
-- [ ] **Step 1: 전체 테스트** — Run: `npm test` → baseline 55 + 신규 전부 통과, **0 fail** (Acceptance "전체 테스트 통과" 입증, 로그 기록).
+- [x] **Step 1: 전체 테스트** — Run: `npm test` → baseline 55 + 신규 전부 통과, **0 fail** (Acceptance "전체 테스트 통과" 입증, 로그 기록).
 
-- [ ] **Step 2: 코드 리뷰** — `/review`(Codex+Gemini 병렬) 또는 `codex:rescue`로 핵심 변경(harness.mjs·migrate.mjs·doctor.mjs) 검증. 결과(요약·발견·조치)를 `ssot-agents-md-artifact.md` **## Reviews**에 날짜와 함께 기록 — 미기록 = "안 한 것".
+- [x] **Step 2: 코드 리뷰** — `/review`(Codex+Gemini 병렬) 또는 `codex:rescue`로 핵심 변경(harness.mjs·migrate.mjs·doctor.mjs) 검증. 결과(요약·발견·조치)를 `ssot-agents-md-artifact.md` **## Reviews**에 날짜와 함께 기록 — 미기록 = "안 한 것".
 
-- [ ] **Step 3: Acceptance 대조** — spec의 Acceptance 8항목을 plan 산출물과 1:1 대조해 artifact에 체크.
+- [x] **Step 3: Acceptance 대조** — spec의 Acceptance 8항목을 plan 산출물과 1:1 대조해 artifact에 체크.
 
-- [ ] **Step 4: `harness-team done`** — 종결 가드 통과(커밋 완료·테스트 로그·plan 미완 0·artifact 작성). 미통과 항목 있으면 멈추고 보고.
+- [x] **Step 4: `harness-team done`** — 종결 가드 통과(커밋 완료·테스트 로그·plan 미완 0·artifact 작성). 미통과 항목 있으면 멈추고 보고.
 
 ---
 

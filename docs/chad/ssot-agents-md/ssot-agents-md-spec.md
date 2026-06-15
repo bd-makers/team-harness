@@ -72,14 +72,14 @@
 
 ## Acceptance
 
-- [ ] import 실기 검증 완료 (Claude `@path` / Gemini GEMINI.md import / Cursor·OpenCode AGENTS.md 네이티브) — 결과를 artifact에 기록
-- [ ] `init`/`apply`가 신구조(AGENTS.md 코어 + 얇은 CLAUDE/GEMINI)를 생성
-- [ ] `doctor`가 신구조를 검증하고 레거시 구조에 migrate를 안내
-- [ ] `migrate`가 레거시 → 신구조를 원스텝 전환 (사용자 텍스트 보존, 백업 생성)
-- [ ] role 표에 D2 반영 (OpenCode = drive, Codex/Gemini = 리뷰어)
-- [ ] 0.8.0 파킹 문서에 D1/D2/D3 결정 기록
-- [ ] 전체 테스트 통과 (기존 56개 + 신규: 렌더 산출물·doctor CHECKS·migrate 변환·다중 파일 marker-merge)
-- [ ] 플러그인 레포 자신도 신구조로 전환 (자기 dogfooding)
+- [x] import 실기 검증 — Claude `@AGENTS.md` 공식 docs 확정. Gemini는 이 환경 CLI 부재로 실측 보류(문서상 `@file` 지원 + 풀렌더 폴백), Cursor·OpenCode 네이티브. artifact `## Verification` 표 기록
+- [x] `init`/`apply`가 신구조(AGENTS.md 코어 + 얇은 CLAUDE/GEMINI) 생성 — `harness.mjs planChanges` 3파일 렌더 + dogfood 검증
+- [x] `doctor`가 신구조 검증 + 레거시 migrate 안내 — `realFile`+`contains` CHECKS, `detectLegacyStructure`
+- [x] `migrate`가 레거시 → 신구조 원스텝 전환 (사용자 텍스트 보존, `CLAUDE.md.bak` 백업) — `migrateToAgentsMd`
+- [x] role 표에 D2 반영 (OpenCode=drive, Codex/Gemini=리뷰어) — `AGENTS.md.hbs` roles
+- [x] 0.8.0 파킹 문서에 D1/D2/D3 결정 기록
+- [x] 전체 테스트 통과 — baseline **55** + 신규 16 = **71 pass, 0 fail** (렌더·doctor·migrate·marker-merge·symlink 가드 커버)
+- [x] 플러그인 레포 자기 dogfooding — `apply --no-backup` fresh 경로로 AGENTS.md core + thin 생성, doctor ✓
 
 ## 참고
 - [2026-05-29-0.8.0-improvements.md](../../superpowers/plans/2026-05-29-0.8.0-improvements.md) — P1/P3/P4 원문, Open Decisions
