@@ -4,6 +4,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { exists } from '../fsx.mjs';
 import { loadBackupDir } from '../harness.mjs';
+import { buildEnvelope, emitObservation } from '../observation.mjs';
 
 const pexec = promisify(execFile);
 
@@ -87,94 +88,120 @@ const CHECKS = [
 const BACKUP_SCRIPTS = ['clone.sh', 'symlink.sh', 'delete.sh'];
 
 export async function runDoctor(ctx) {
-  console.log(`harness-team doctor → ${ctx.targetDir}\n`);
+  const json = !!(ctx.flags && ctx.flags.json);
+  const checks = [];
+  const add = (label, status, detail, humanLine) => {
+    if (json) checks.push(detail ? { label, status, detail } : { label, status });
+    else console.log(humanLine);
+  };
+  const line = (humanLine) => { if (!json) console.log(humanLine); };
+
+  line(`harness-team doctor → ${ctx.targetDir}\n`);
   let fail = 0;
   for (const c of CHECKS) {
     const p = join(ctx.targetDir, c.path);
     const ok = await exists(p);
     if (!ok) {
-      if (c.required) { console.log(`✗ ${c.path}  (missing)`); fail++; }
-      else console.log(`- ${c.path}  (not present, optional)`);
+      if (c.required) { add(c.path, 'fail', 'missing', `✗ ${c.path}  (missing)`); fail++; }
+      else add(c.path, 'optional', 'not present, optional', `- ${c.path}  (not present, optional)`);
       continue;
     }
     if (c.realFile) {
       const st = await lstat(p);
       if (st.isSymbolicLink()) {
-        console.log(`✗ ${c.path}  (symlink — 신구조는 실파일이어야 함, run: harness-team migrate)`);
+        add(c.path, 'fail', 'symlink — 신구조는 실파일이어야 함, run: harness-team migrate',
+          `✗ ${c.path}  (symlink — 신구조는 실파일이어야 함, run: harness-team migrate)`);
         fail++; continue;
       }
       if (c.contains) {
         const body = await readFile(p, 'utf8');
         if (!body.includes(c.contains)) {
-          console.log(`✗ ${c.path}  ("${c.contains}" 없음 — 손상/레거시 의심)`);
+          add(c.path, 'fail', `"${c.contains}" 없음 — 손상/레거시 의심`,
+            `✗ ${c.path}  ("${c.contains}" 없음 — 손상/레거시 의심)`);
           fail++; continue;
         }
       }
-      console.log(`✓ ${c.path}`);
+      add(c.path, 'pass', undefined, `✓ ${c.path}`);
       continue;
     }
     if (c.json) {
-      try { JSON.parse(await readFile(p, 'utf8')); console.log(`✓ ${c.path}  (valid JSON)`); }
-      catch (e) { console.log(`✗ ${c.path}  (invalid JSON: ${e.message})`); fail++; }
+      try {
+        JSON.parse(await readFile(p, 'utf8'));
+        add(c.path, 'pass', 'valid JSON', `✓ ${c.path}  (valid JSON)`);
+      } catch (e) {
+        add(c.path, 'fail', `invalid JSON: ${e.message}`, `✗ ${c.path}  (invalid JSON: ${e.message})`);
+        fail++;
+      }
       continue;
     }
     if (c.executable) {
       const st = await lstat(p);
-      if (!(st.mode & 0o100)) { console.log(`✗ ${c.path}  (not executable)`); fail++; continue; }
-      console.log(`✓ ${c.path}  (exec)`);
+      if (!(st.mode & 0o100)) { add(c.path, 'fail', 'not executable', `✗ ${c.path}  (not executable)`); fail++; continue; }
+      add(c.path, 'pass', 'exec', `✓ ${c.path}  (exec)`);
       continue;
     }
-    console.log(`✓ ${c.path}`);
+    add(c.path, 'pass', undefined, `✓ ${c.path}`);
   }
+
   // Harness scripts live in the project root since v0.3+.
-  console.log('');
+  line('');
   for (const name of BACKUP_SCRIPTS) {
     const p = join(ctx.targetDir, name);
-    if (!(await exists(p))) { console.log(`✗ ${name}  (missing in project root)`); fail++; continue; }
+    if (!(await exists(p))) { add(name, 'fail', 'missing in project root', `✗ ${name}  (missing in project root)`); fail++; continue; }
     const st = await lstat(p);
-    if (!(st.mode & 0o100)) { console.log(`✗ ${name}  (not executable)`); fail++; continue; }
-    console.log(`✓ ${name}  (exec)`);
+    if (!(st.mode & 0o100)) { add(name, 'fail', 'not executable', `✗ ${name}  (not executable)`); fail++; continue; }
+    add(name, 'pass', 'exec', `✓ ${name}  (exec)`);
   }
 
   const backupDir = await loadBackupDir(ctx.targetDir);
   if (backupDir) {
-    console.log(`\nbackup clone dir: ${backupDir}`);
+    add('backup clone dir', 'pass', backupDir, `\nbackup clone dir: ${backupDir}`);
   } else {
-    console.log(`\n✗ backup clone dir is not configured (missing .harness/backup.json)`);
+    add('backup clone dir', 'fail', 'missing .harness/backup.json',
+      `\n✗ backup clone dir is not configured (missing .harness/backup.json)`);
     fail++;
   }
 
   // External tool healthchecks (all optional — missing → -, present → ✓, never fail++).
   // Run concurrently so a slow/hung tool doesn't serialize the worst-case wait.
-  console.log('\nexternal tools:');
+  line('\nexternal tools:');
   const toolResults = await Promise.all(
     EXTERNAL_TOOLS.map(({ cmd, label }) => checkCommand(cmd).then(ok => ({ ok, label }))),
   );
   for (const { ok, label } of toolResults) {
-    console.log(ok ? `✓ ${label}` : `- ${label}  (not found, optional)`);
+    if (ok) add(label, 'pass', undefined, `✓ ${label}`);
+    else add(label, 'optional', 'not found, optional', `- ${label}  (not found, optional)`);
   }
 
   // Self-CLI executability (required — failure increments fail)
   const selfOk = await checkSelfCli(ctx.root);
-  if (selfOk) {
-    console.log('✓ harness-team CLI  (--help OK)');
-  } else {
-    console.log('✗ harness-team CLI  (--help failed)');
-    fail++;
-  }
+  if (selfOk) add('harness-team CLI', 'pass', '--help OK', '✓ harness-team CLI  (--help OK)');
+  else { add('harness-team CLI', 'fail', '--help failed', '✗ harness-team CLI  (--help failed)'); fail++; }
 
   // Legacy structure warning (symlink case already fails via CHECKS.realFile;
   // a lone .cursorrules remnant only warns and steers to migrate).
   const legacyWarning = await detectLegacyStructure(ctx.targetDir);
-  if (legacyWarning) console.log(`\n⚠️ ${legacyWarning}`);
+  if (legacyWarning) add('legacy structure', 'warning', legacyWarning, `\n⚠️ ${legacyWarning}`);
 
   // Active task gate-bypass warning (⚠️, does not count toward fail / exit code).
   const specGateWarning = await checkActiveSpecGate(ctx.targetDir);
   if (specGateWarning) {
-    console.log(`\n⚠️ ${specGateWarning}`);
-    console.log(`hint: spec은 \`harness-team task <name>\`로 생성해 자가진단 게이트를 포함시켜라`);
+    add('spec gate', 'warning', specGateWarning, `\n⚠️ ${specGateWarning}`);
+    line(`hint: spec은 \`harness-team task <name>\`로 생성해 자가진단 게이트를 포함시켜라`);
   }
 
-  console.log(fail ? `\n${fail} problem(s). Run: harness-team sync` : '\nAll checks passed.');
+  if (json) {
+    const warnCount = checks.filter(c => c.status === 'warning').length;
+    const status = fail ? 'error' : (warnCount ? 'warning' : 'success');
+    emitObservation(buildEnvelope({
+      command: 'doctor',
+      status,
+      summary: fail ? `${fail} problem(s)` : (warnCount ? `${warnCount} warning(s)` : 'All checks passed'),
+      nextActions: fail ? ['harness-team sync'] : (warnCount ? ['harness-team migrate'] : []),
+      extra: { checks },
+    }));
+  } else {
+    console.log(fail ? `\n${fail} problem(s). Run: harness-team sync` : '\nAll checks passed.');
+  }
   if (fail) process.exitCode = 1;
 }

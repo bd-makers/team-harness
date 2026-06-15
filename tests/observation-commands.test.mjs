@@ -1,11 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { runRelease } from '../src/commands/release.mjs';
 import { runRetro, runTask } from '../src/commands/task.mjs';
+import { runDoctor } from '../src/commands/doctor.mjs';
 import { OBSERVATION_SCHEMA } from '../src/observation.mjs';
+
+const ROOT_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 function captureJson() {
   const logs = [];
@@ -107,4 +111,20 @@ test('task (human): 잘못된 이름 → cause/retry/stop + exitCode 1', async (
     assert.ok(logs.some(l => l.startsWith('retry:')));
     assert.ok(logs.some(l => l.startsWith('stop:')));
   } finally { console.log = orig; process.exitCode = prev; await rm(dir, { recursive: true, force: true }); }
+});
+
+test('doctor --json: 단일 envelope + checks 배열 + status error(빈 dir)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-json-'));
+  const cap = captureJson();
+  const prev = process.exitCode;
+  try {
+    await runDoctor({ targetDir: dir, root: ROOT_DIR, flags: { json: true } });
+    const env = cap.soleEnvelope();
+    assert.equal(env.command, 'doctor');
+    assert.equal(env.status, 'error'); // 빈 dir → 필수 파일 missing
+    assert.ok(Array.isArray(env.checks) && env.checks.length > 0);
+    assert.ok(env.checks.some(c => c.status === 'fail'));
+    assert.ok(env.checks.every(c => typeof c.label === 'string' && typeof c.status === 'string'));
+    assert.equal(process.exitCode, 1);
+  } finally { cap.restore(); process.exitCode = prev; await rm(dir, { recursive: true, force: true }); }
 });
