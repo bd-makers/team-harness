@@ -3,5 +3,6 @@ node_modules/
 *.log
 .harness-backup/
 .harness/active.json
+.harness/config.json
 .superpowers/
 tests/fixtures/**/actual/
