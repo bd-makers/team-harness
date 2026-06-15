@@ -170,7 +170,7 @@ export async function runDoctor(ctx) {
   );
   for (const { ok, label } of toolResults) {
     if (ok) add(label, 'pass', undefined, `✓ ${label}`);
-    else add(label, 'optional', 'not found, optional', `- ${label}  (not found, optional)`);
+    else add(label, 'missing', 'not found, optional', `- ${label}  (not found, optional)`);
   }
 
   // Self-CLI executability (required — failure increments fail)
@@ -193,11 +193,17 @@ export async function runDoctor(ctx) {
   if (json) {
     const warnCount = checks.filter(c => c.status === 'warning').length;
     const status = fail ? 'error' : (warnCount ? 'warning' : 'success');
+    // Route each warning to its own remedy — legacy structure → migrate,
+    // spec-gate bypass → create the task properly. A blanket 'migrate' would
+    // misdirect an agent whose only warning is a pointer-shell spec.
+    const warnActions = [];
+    if (legacyWarning) warnActions.push('harness-team migrate');
+    if (specGateWarning) warnActions.push('harness-team task <name>');
     emitObservation(buildEnvelope({
       command: 'doctor',
       status,
       summary: fail ? `${fail} problem(s)` : (warnCount ? `${warnCount} warning(s)` : 'All checks passed'),
-      nextActions: fail ? ['harness-team sync'] : (warnCount ? ['harness-team migrate'] : []),
+      nextActions: fail ? ['harness-team sync'] : warnActions,
       extra: { checks },
     }));
   } else {
