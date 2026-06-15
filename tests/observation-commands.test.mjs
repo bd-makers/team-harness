@@ -125,6 +125,53 @@ test('doctor --json: 단일 envelope + checks 배열 + status error(빈 dir)', a
     assert.ok(Array.isArray(env.checks) && env.checks.length > 0);
     assert.ok(env.checks.some(c => c.status === 'fail'));
     assert.ok(env.checks.every(c => typeof c.label === 'string' && typeof c.status === 'string'));
+    // invariant: status==='error' ⟺ error!=null (uniform with release/retro/task)
+    assert.ok(env.error && env.error.root_cause && env.error.safe_retry && env.error.stop_condition,
+      'status:error envelope must carry a non-null error contract');
     assert.equal(process.exitCode, 1);
   } finally { cap.restore(); process.exitCode = prev; await rm(dir, { recursive: true, force: true }); }
+});
+
+// Build a valid 3-manifest fixture so release() succeeds (mirrors release.test.mjs makeRoot).
+async function makeReleaseRoot(version = '1.2.3') {
+  const root = await mkdtemp(join(tmpdir(), 'harness-rel-ok-'));
+  const name = 'harness-aijient-team';
+  await mkdir(join(root, '.claude-plugin'), { recursive: true });
+  await mkdir(join(root, 'commands'), { recursive: true });
+  await writeFile(join(root, 'package.json'), JSON.stringify({ name, version }, null, 2) + '\n');
+  await writeFile(join(root, '.claude-plugin/plugin.json'),
+    JSON.stringify({ name, version, commands: ['./commands/harness-release.md'] }, null, 2) + '\n');
+  await writeFile(join(root, '.claude-plugin/marketplace.json'),
+    JSON.stringify({ name: 'harness-aijient-team-marketplace', plugins: [{ name, version }] }, null, 2) + '\n');
+  await writeFile(join(root, 'commands/harness-release.md'), '# release\n');
+  return root;
+}
+
+test('release --json: dry-run 성공 → status success + error null + artifacts []', async () => {
+  const root = await makeReleaseRoot('1.2.3');
+  const cap = captureJson();
+  try {
+    await runRelease({ targetDir: root, flags: { json: true, 'dry-run': true, 'skip-cache': true }, taskArgs: ['patch'] });
+    const env = cap.soleEnvelope();
+    assert.equal(env.command, 'release');
+    assert.equal(env.status, 'success');
+    assert.equal(env.error, null);
+    assert.match(env.summary, /1\.2\.3 → 1\.2\.4/);
+    assert.deepEqual(env.artifacts, []); // dry-run writes nothing
+  } finally { cap.restore(); await rm(root, { recursive: true, force: true }); }
+});
+
+test('task --json: 기존 task 재활성화 → status success + summary activated:', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-task-json-act-'));
+  // First create the task (human mode), then re-activate it with --json.
+  await runTask({ targetDir: dir, flags: { member: 'tester' }, taskArgs: ['demo'] });
+  const cap = captureJson();
+  try {
+    await runTask({ targetDir: dir, flags: { json: true, member: 'tester' }, taskArgs: ['demo'] });
+    const env = cap.soleEnvelope();
+    assert.equal(env.command, 'task');
+    assert.equal(env.status, 'success');
+    assert.match(env.summary, /^activated:/);
+    assert.ok(env.artifacts.some(a => a.endsWith('tester/demo')));
+  } finally { cap.restore(); await rm(dir, { recursive: true, force: true }); }
 });

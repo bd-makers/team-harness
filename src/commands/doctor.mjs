@@ -204,6 +204,13 @@ export async function runDoctor(ctx) {
       status,
       summary: fail ? `${fail} problem(s)` : (warnCount ? `${warnCount} warning(s)` : 'All checks passed'),
       nextActions: fail ? ['harness-team sync'] : warnActions,
+      // Keep the invariant status==='error' ⟺ error!=null uniform across commands.
+      // Per-check detail still lives in checks[]; error is the top-level summary of it.
+      error: fail ? {
+        root_cause: `${fail}개 필수 점검 항목 실패 (checks[]의 status:"fail" 참조)`,
+        safe_retry: 'checks[]의 fail 항목을 해소한 뒤 harness-team sync 실행 후 재점검',
+        stop_condition: '필수 파일/스크립트 누락이면 harness-team init 또는 migrate로 복구',
+      } : null,
       extra: { checks },
     }));
   } else {
