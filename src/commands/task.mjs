@@ -173,9 +173,30 @@ async function markDoneInTaskSummary(summaryPath, user, name) {
 }
 
 export async function runTask(ctx) {
+  const json = !!(ctx.flags && ctx.flags.json);
   const name = (ctx.taskArgs || [])[0];
   if (!name || !/^[\w.-]+$/.test(name)) {
-    console.log(`usage: harness-team task <name>`);
+    process.exitCode = 1;
+    const rootCause = name
+      ? `task 이름 "${name}"에 허용되지 않는 문자가 있음 (허용: 영숫자·_·.·-)`
+      : 'task 이름 인자가 없음';
+    if (json) {
+      emitObservation(buildEnvelope({
+        command: 'task',
+        status: 'error',
+        summary: 'task 생성/활성화 실패: 잘못된 task 이름',
+        error: {
+          root_cause: rootCause,
+          safe_retry: '`harness-team task <name>` 형식으로 영숫자·_·.·- 만 사용한 이름을 주고 재실행',
+          stop_condition: '이름 규칙(^[\\w.-]+$)을 만족하지 못하면 생성하지 말 것',
+        },
+      }));
+    } else {
+      console.log(`✗ task: 잘못된 task 이름`);
+      console.log(`cause: ${rootCause}`);
+      console.log(`retry: \`harness-team task <name>\` 형식으로 유효한 이름을 주고 재실행`);
+      console.log(`stop: 이름 규칙(^[\\w.-]+$) 위반 시 생성 금지`);
+    }
     return;
   }
 
@@ -189,7 +210,17 @@ export async function runTask(ctx) {
       path: `docs/${user}/${name}`,
       switchedAt: new Date().toISOString(),
     });
-    console.log(`activated: ${user}/${name}`);
+    if (json) {
+      emitObservation(buildEnvelope({
+        command: 'task',
+        status: 'success',
+        summary: `activated: ${user}/${name}`,
+        nextActions: [`docs/${user}/${name}/${name}-plan.md 의 현재 단계 확인`],
+        artifacts: [`docs/${user}/${name}`],
+      }));
+    } else {
+      console.log(`activated: ${user}/${name}`);
+    }
     return;
   }
 
@@ -211,8 +242,23 @@ export async function runTask(ctx) {
   const summaryPath = await ensureTaskSummary(ctx.targetDir);
   await addToTaskSummary(summaryPath, user, name, date);
 
-  console.log(`created: docs/${user}/${name}/`);
-  console.log(`active: ${user}/${name}`);
+  if (json) {
+    emitObservation(buildEnvelope({
+      command: 'task',
+      status: 'success',
+      summary: `created: docs/${user}/${name}/`,
+      nextActions: [`docs/${user}/${name}/${name}-spec.md 작성 (Ambiguity 자가진단 포함)`],
+      artifacts: [
+        `docs/${user}/${name}/${name}-spec.md`,
+        `docs/${user}/${name}/${name}-plan.md`,
+        `docs/${user}/${name}/${name}-handoff.md`,
+        `docs/${user}/${name}/${name}-artifact.md`,
+      ],
+    }));
+  } else {
+    console.log(`created: docs/${user}/${name}/`);
+    console.log(`active: ${user}/${name}`);
+  }
 }
 
 export async function runList(ctx) {

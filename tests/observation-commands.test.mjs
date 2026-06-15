@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { runRelease } from '../src/commands/release.mjs';
-import { runRetro } from '../src/commands/task.mjs';
+import { runRetro, runTask } from '../src/commands/task.mjs';
 import { OBSERVATION_SCHEMA } from '../src/observation.mjs';
 
 function captureJson() {
@@ -67,4 +67,44 @@ test('release --json: 에러(빈 dir → manifest 부재) → status error + err
     cap.restore(); process.exitCode = prev;
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+test('task --json: 생성 → status success + 4파일 artifacts', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-task-json-'));
+  const cap = captureJson();
+  try {
+    await runTask({ targetDir: dir, flags: { json: true, member: 'tester' }, taskArgs: ['demo'] });
+    const env = cap.soleEnvelope();
+    assert.equal(env.command, 'task');
+    assert.equal(env.status, 'success');
+    assert.equal(env.artifacts.length, 4);
+    assert.ok(env.artifacts.some(a => a.endsWith('demo-spec.md')));
+  } finally { cap.restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('task --json: 잘못된 이름 → status error + 에러 계약 + exitCode 1', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-task-json-bad-'));
+  const cap = captureJson();
+  const prev = process.exitCode;
+  try {
+    await runTask({ targetDir: dir, flags: { json: true, member: 'tester' }, taskArgs: ['bad name!'] });
+    const env = cap.soleEnvelope();
+    assert.equal(env.status, 'error');
+    assert.ok(env.error.root_cause && env.error.safe_retry && env.error.stop_condition);
+    assert.equal(process.exitCode, 1);
+  } finally { cap.restore(); process.exitCode = prev; await rm(dir, { recursive: true, force: true }); }
+});
+
+test('task (human): 잘못된 이름 → cause/retry/stop + exitCode 1', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-task-human-bad-'));
+  const logs = [];
+  const orig = console.log; console.log = (...a) => logs.push(a.join(' '));
+  const prev = process.exitCode;
+  try {
+    await runTask({ targetDir: dir, flags: { member: 'tester' }, taskArgs: [''] });
+    assert.equal(process.exitCode, 1);
+    assert.ok(logs.some(l => l.startsWith('cause:')));
+    assert.ok(logs.some(l => l.startsWith('retry:')));
+    assert.ok(logs.some(l => l.startsWith('stop:')));
+  } finally { console.log = orig; process.exitCode = prev; await rm(dir, { recursive: true, force: true }); }
 });
