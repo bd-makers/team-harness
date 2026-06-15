@@ -3,6 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { buildEnvelope, emitObservation } from '../observation.mjs';
 
 const pexec = promisify(execFile);
 
@@ -222,6 +223,16 @@ export async function release({
   return result;
 }
 
+function releaseArtifacts(res) {
+  if (res.dryRun) return [];
+  const a = ['package.json', 'plugin.json', 'marketplace.json'];
+  if (!res.skipCache) {
+    a.push(res.cacheDir, res.marketplaceDir);
+    if (res.installedUpdated) a.push('installed_plugins.json');
+  }
+  return a;
+}
+
 function fmtTargets(res) {
   const lines = [`  manifests: package.json, plugin.json, marketplace.json (→ ${res.newVersion})`];
   if (!res.skipCache) {
@@ -236,6 +247,7 @@ function fmtTargets(res) {
 
 export async function runRelease(ctx) {
   const bump = (ctx.taskArgs || [])[0] || 'patch';
+  const json = !!(ctx.flags && ctx.flags.json);
   try {
     const res = await release({
       bump,
@@ -243,6 +255,21 @@ export async function runRelease(ctx) {
       dryRun: !!ctx.flags['dry-run'],
       skipCache: !!ctx.flags['skip-cache'],
     });
+
+    if (json) {
+      emitObservation(buildEnvelope({
+        command: 'release',
+        status: 'success',
+        summary: res.dryRun
+          ? `release dry-run: ${res.oldVersion} → ${res.newVersion} (변경 없음)`
+          : `release: ${res.oldVersion} → ${res.newVersion}`,
+        nextActions: res.dryRun
+          ? [`harness-team release ${bump}`]
+          : [`git add -A && git commit -m "chore(release): 버전 ${res.newVersion}으로 범프" && git tag v${res.newVersion} && git push && git push --tags`],
+        artifacts: releaseArtifacts(res),
+      }));
+      return res;
+    }
 
     if (res.dryRun) {
       console.log(`ⓘ release (dry-run): ${res.oldVersion} → ${res.newVersion} — 변경 없음`);
@@ -260,10 +287,19 @@ export async function runRelease(ctx) {
   } catch (err) {
     process.exitCode = 1;
     const advice = ERROR_ADVICE[err.kind] || ERROR_ADVICE.generic;
-    console.log(`✗ release: ${err.message}`);
-    console.log(`cause: ${advice.cause}`);
-    console.log(`retry: ${advice.retry}`);
-    console.log(`stop: ${advice.stop}`);
+    if (json) {
+      emitObservation(buildEnvelope({
+        command: 'release',
+        status: 'error',
+        summary: `release 실패: ${err.message}`,
+        error: { root_cause: advice.cause, safe_retry: advice.retry, stop_condition: advice.stop },
+      }));
+    } else {
+      console.log(`✗ release: ${err.message}`);
+      console.log(`cause: ${advice.cause}`);
+      console.log(`retry: ${advice.retry}`);
+      console.log(`stop: ${advice.stop}`);
+    }
   }
 }
 
