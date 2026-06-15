@@ -50,6 +50,7 @@ Options:
   --target <dir>       Target directory (default: cwd)
   --gitignore-ai       Add AI tool entries to .gitignore without prompting
   --no-gitignore-ai    Skip AI gitignore entries without prompting
+  --json               Structured JSON envelope output for drive commands (task/retro/release/doctor)
 `;
 
 function parseArgs(argv) {
