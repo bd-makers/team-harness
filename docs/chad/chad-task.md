@@ -1,8 +1,9 @@
 # chad — Tasks
 
 ## Active
-- ssot-agents-md (created 2026-06-11)
+
 
 
 ## Completed
+- ✅ ssot-agents-md
 - ✅ p0-enforcement
