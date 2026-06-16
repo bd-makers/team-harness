@@ -1,6 +1,7 @@
 # chad — Tasks
 
 ## Active
+- session-task-gate (created 2026-06-16)
 
 
 
