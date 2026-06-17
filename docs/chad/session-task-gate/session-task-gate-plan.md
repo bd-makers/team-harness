@@ -20,7 +20,7 @@ Claude가 AskUserQuestion(재개/새 task/진행)을 띄우도록 context를 inj
 **Files:**
 - Modify: `src/commands/task.mjs` (헬퍼 export + `collectDoneIssues` 내부 치환 + `readActive` export)
 
-- [ ] **Step 1: `task.mjs`에 헬퍼 export 추가** (`escapeRegex` 근처, 파일 상단 유틸 구역)
+- [x] **Step 1: `task.mjs`에 헬퍼 export 추가** (`escapeRegex` 근처, 파일 상단 유틸 구역)
 
 ```js
 // "미완"의 단일 정의 — done-guard와 session-task-gate가 공유.
@@ -30,7 +30,7 @@ export function planHasOpenBoxes(content) {
 }
 ```
 
-- [ ] **Step 2: `collectDoneIssues`의 인라인 정규식을 헬퍼로 치환**
+- [x] **Step 2: `collectDoneIssues`의 인라인 정규식을 헬퍼로 치환**
 
 `src/commands/task.mjs` 내 다음 줄:
 ```js
@@ -41,16 +41,16 @@ export function planHasOpenBoxes(content) {
     if (planHasOpenBoxes(planContent)) {
 ```
 
-- [ ] **Step 3: `readActive`를 export** (session-context가 재사용)
+- [x] **Step 3: `readActive`를 export** (session-context가 재사용)
 
 `async function readActive(targetDir) {` → `export async function readActive(targetDir) {`
 
-- [ ] **Step 4: 기존 done-guard 테스트로 회귀 없음 확인**
+- [x] **Step 4: 기존 done-guard 테스트로 회귀 없음 확인**
 
 Run: `node --test tests/done-guard.test.mjs`
 Expected: PASS (8 tests). 특히 "인라인 `- [ ]`는 미완으로 카운트하지 않는다" 통과.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/commands/task.mjs
@@ -65,7 +65,7 @@ git commit -m "refactor(task): extract planHasOpenBoxes + export readActive"
 - Create: `src/commands/session-context.mjs`
 - Create: `tests/session-context.test.mjs`
 
-- [ ] **Step 1: 실패하는 테스트 작성** (`tests/session-context.test.mjs`)
+- [x] **Step 1: 실패하는 테스트 작성** (`tests/session-context.test.mjs`)
 
 ```js
 import { test } from 'node:test';
@@ -145,12 +145,12 @@ test('인라인 산문의 `- [ ]`는 미완으로 오탐하지 않음', async ()
 });
 ```
 
-- [ ] **Step 2: 테스트 실행 → 실패 확인**
+- [x] **Step 2: 테스트 실행 → 실패 확인**
 
 Run: `node --test tests/session-context.test.mjs`
 Expected: FAIL — `Cannot find module '../src/commands/session-context.mjs'`.
 
-- [ ] **Step 3: `src/commands/session-context.mjs` 구현**
+- [x] **Step 3: `src/commands/session-context.mjs` 구현**
 
 ```js
 import { join } from 'node:path';
@@ -205,12 +205,12 @@ export async function runSessionContext(ctx) {
 }
 ```
 
-- [ ] **Step 4: 테스트 실행 → 통과 확인**
+- [x] **Step 4: 테스트 실행 → 통과 확인**
 
 Run: `node --test tests/session-context.test.mjs`
 Expected: PASS (5 tests).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/commands/session-context.mjs tests/session-context.test.mjs
@@ -224,36 +224,36 @@ git commit -m "feat(session-context): buildSessionContext + incomplete-task nudg
 **Files:**
 - Modify: `bin/harness-team.mjs`
 
-- [ ] **Step 1: import 추가** (다른 command import 옆)
+- [x] **Step 1: import 추가** (다른 command import 옆)
 
 ```js
 import { runSessionContext } from '../src/commands/session-context.mjs';
 ```
 
-- [ ] **Step 2: `taskCmds` Set에 `'session-context'` 추가** (cwd를 targetDir로 쓰도록)
+- [x] **Step 2: `taskCmds` Set에 `'session-context'` 추가** (cwd를 targetDir로 쓰도록)
 
 ```js
   const taskCmds = new Set(['task', 'list', 'done', 'handoff', 'retro', 'release', 'session-context']);
 ```
 
-- [ ] **Step 3: switch에 case 추가** (`case 'list':` 근처)
+- [x] **Step 3: switch에 case 추가** (`case 'list':` 근처)
 
 ```js
     case 'session-context': return runSessionContext(ctx);
 ```
 
-- [ ] **Step 4: HELP 텍스트에 한 줄 추가** (`handoff` 줄 아래)
+- [x] **Step 4: HELP 텍스트에 한 줄 추가** (`handoff` 줄 아래)
 
 ```
   session-context                   Emit SessionStart context (active-task breadcrumb or no-task nudge)
 ```
 
-- [ ] **Step 5: 수동 검증** — 현재 이 repo는 active task(session-task-gate)가 있으므로 breadcrumb이 나와야 함
+- [x] **Step 5: 수동 검증** — 현재 이 repo는 active task(session-task-gate)가 있으므로 breadcrumb이 나와야 함
 
 Run: `node bin/harness-team.mjs session-context`
 Expected: `[harness] 활성 task: chad/session-task-gate — 세션 시작 프로토콜대로 session-task-gate-plan.md 확인.`
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add bin/harness-team.mjs
@@ -268,7 +268,7 @@ git commit -m "feat(cli): wire session-context subcommand"
 - Modify: `templates/.claude/settings.json`
 - Create: `.claude/settings.json` (이 repo, dogfood)
 
-- [ ] **Step 1: `templates/.claude/settings.json`의 `hooks`에 `SessionStart` 추가**
+- [x] **Step 1: `templates/.claude/settings.json`의 `hooks`에 `SessionStart` 추가**
 
 기존 `hooks` 객체 안, `PostToolUse` 다음에 추가:
 ```json
@@ -285,7 +285,7 @@ git commit -m "feat(cli): wire session-context subcommand"
     ]
 ```
 
-- [ ] **Step 2: 이 repo `.claude/settings.json` 생성** (dogfood — 전역 미설치라 node 직접 호출)
+- [x] **Step 2: 이 repo `.claude/settings.json` 생성** (dogfood — 전역 미설치라 node 직접 호출)
 
 ```json
 {
@@ -306,12 +306,12 @@ git commit -m "feat(cli): wire session-context subcommand"
 }
 ```
 
-- [ ] **Step 3: JSON 유효성 확인**
+- [x] **Step 3: JSON 유효성 확인**
 
 Run: `node -e "JSON.parse(require('fs').readFileSync('templates/.claude/settings.json','utf8')); JSON.parse(require('fs').readFileSync('.claude/settings.json','utf8')); console.log('ok')"`
 Expected: `ok`
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add templates/.claude/settings.json .claude/settings.json
@@ -326,7 +326,7 @@ git commit -m "feat(hooks): register SessionStart task-gate (template + dogfood)
 - Modify: `templates/AGENTS.md.hbs`
 - Modify: `AGENTS.md`
 
-- [ ] **Step 1: 두 파일의 "작업 프로토콜 > 세션 시작 시" 구역에 task-gate 문단 추가**
+- [x] **Step 1: 두 파일의 "작업 프로토콜 > 세션 시작 시" 구역에 task-gate 문단 추가**
 
 (템플릿/실파일 양쪽 동일 텍스트. `세션 시작 시 (반드시 수행)` 목록 직후에 삽입.)
 ```markdown
@@ -335,7 +335,7 @@ git commit -m "feat(hooks): register SessionStart task-gate (template + dogfood)
 > **재개 / 새 task / task 없이 진행**을 확인하라 — 이는 block이 아닌 nudge이며 판단은 Claude 몫.
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add templates/AGENTS.md.hbs AGENTS.md
@@ -346,12 +346,12 @@ git commit -m "docs(agents): document SessionStart task-gate behavior"
 
 ### Task 6: 전체 검증 + artifact 기록
 
-- [ ] **Step 1: 전체 테스트**
+- [x] **Step 1: 전체 테스트**
 
 Run: `npm test`
 Expected: 전체 PASS (기존 + session-context 5건), 0 실패.
 
-- [ ] **Step 2: dogfood nudge 경로 실증** (임시 fixture로 active 없음 케이스)
+- [x] **Step 2: dogfood nudge 경로 실증** (임시 fixture로 active 없음 케이스)
 
 Run:
 ```bash
@@ -359,7 +359,7 @@ node -e "import('./src/commands/session-context.mjs').then(async m => { console.
 ```
 Expected: `<system-reminder>` nudge 출력 (재개 줄 없음, "새 task 생성"·"task 없이 진행" 포함).
 
-- [ ] **Step 3: artifact.md에 결과·학습 기록**, 필요 시 `## Reviews` 섹션에 리뷰 결과 추가.
+- [x] **Step 3: artifact.md에 결과·학습 기록**, 필요 시 `## Reviews` 섹션에 리뷰 결과 추가.
 
 - [ ] **Step 4: 완료 신호 → AskUserQuestion → `harness-team done`** (사용자 게이트)
 
