@@ -12,12 +12,18 @@ function escapeRegex(s) {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+// "미완"의 단일 정의 — done-guard와 session-task-gate가 공유.
+// 줄 시작 체크박스만 매칭(인라인/산문 `- [ ]`는 미완 아님).
+export function planHasOpenBoxes(content) {
+  return /^\s*- \[ \]/m.test(content);
+}
+
 async function readConfig(targetDir) {
   const p = join(targetDir, '.harness/config.json');
   try { return JSON.parse(await readFile(p, 'utf8')); } catch { return {}; }
 }
 
-async function readActive(targetDir) {
+export async function readActive(targetDir) {
   const p = join(targetDir, '.harness/active.json');
   try { return JSON.parse(await readFile(p, 'utf8')); } catch { return null; }
 }
@@ -296,7 +302,7 @@ async function collectDoneIssues(targetDir, active) {
     const planContent = await readFile(planPath, 'utf8');
     // Match only line-leading checkboxes, so inline/prose mentions of `- [ ]`
     // (e.g. text describing the guard itself) don't trigger a false positive.
-    if (/^\s*- \[ \]/m.test(planContent)) {
+    if (planHasOpenBoxes(planContent)) {
       issues.push('plan.md에 미완 체크박스(`- [ ]`)가 남아 있음');
     }
   } catch { /* no plan.md → not a positive signal, skip */ }
