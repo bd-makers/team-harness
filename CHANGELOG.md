@@ -20,6 +20,22 @@ modified: 2026-06-02
 
 ---
 
+## [0.9.0] - 2026-06-17
+
+> **세션 시작 task-gate** — "task로 시작" 규율을 강제가 아닌 nudge로 상기. (0.8.0 "선언→강제" 라인의 연장: 활성 task 없이 프롬프트로 작업을 시작하는 우회를 세션 시작 시점에 잡는다.)
+
+### Added
+- **SessionStart task-gate:** 세션 시작 시 `harness-team session-context`를 호출하는 `SessionStart` 훅 추가(`templates/.claude/settings.json`). 활성 task가 있으면 plan 확인 breadcrumb을, 없으면 미완 task를 나열해 `AskUserQuestion`(재개 / 새 task / task 없이 진행)을 유도하는 nudge를 context로 주입. block이 아닌 inject — 판단은 Claude. apply의 deep-merge로 기존 harness 프로젝트에도 비파괴 배포.
+- **`harness-team session-context` 서브커맨드:** 활성 task 유무에 따라 breadcrumb 또는 nudge를 stdout으로 출력(SessionStart 훅 전용). 재개 후보 = `<name>-plan.md`에 미완 체크박스(`- [ ]`)가 남은 task.
+
+### Changed
+- **`planHasOpenBoxes` 공유 헬퍼 추출:** done-guard와 task-gate가 "미완"의 단일 정의(줄 시작 `- [ ]`)를 공유하도록 `task.mjs`에서 추출하고 `readActive`를 export.
+
+### Notes
+- 한계(의도됨): nudge는 inject(non-block)라 최종적으로 Claude가 따라야 동작 — hard gate 아님. 첫 작업 프롬프트를 실제로 놓치면 `UserPromptSubmit` per-prompt 게이트(B안)로 승격 예정. doctor의 SessionStart 훅 점검은 후속.
+
+---
+
 ## [0.8.0] - 2026-06-15
 
 > 세 축: **P0 — 선언→강제 전환** · **P1 — SSOT 역전(AGENTS.md 오픈 표준)** · **P2 — CLI `--json` 계약**. (배경: 2026-06-10 dogfooding 실증 — 강제되는 scaffold는 100%, 권장되는 process는 채택 ~0%. 0.8.0은 "선언을 강제로 옮긴다".)

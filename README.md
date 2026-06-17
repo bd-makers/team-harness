@@ -80,6 +80,11 @@ cd my-project
 /harness-task done    # 활성 task 완료 처리 (handoff.md 갱신, task_summary 반영)
 ```
 
+> **task-gate (자동):** 3번을 건너뛰고 그냥 프롬프트로 작업을 시작해도, 세션 시작 시
+> `SessionStart` 훅이 활성 task 유무를 감지해 **재개 / 새 task / task 없이 진행** 중 하나를
+> 물어봅니다(block이 아닌 nudge — 판단은 Claude). "task로 시작" 규율을 강제가 아니라
+> 부드럽게 상기시킵니다.
+
 ---
 
 ## 설치
@@ -474,11 +479,12 @@ my-project/
 │   ├── active.json           # 활성 task 포인터 (gitignored)
 │   └── backup.json           # 형제 백업 클론 폴더 경로 (commit 권장)
 ├── .claude/
-│   ├── settings.json         # permissions + hooks (Bash(gemini:*), Bash(codex:*))
+│   ├── settings.json         # permissions + hooks (PreToolUse/PostToolUse, SessionStart task-gate)
 │   ├── hooks/
 │   │   ├── protect-files.sh        # .env, node_modules 수정 차단
 │   │   ├── auto-format.sh          # 저장 후 Prettier
 │   │   └── pre-commit-check.sh     # 커밋 전 typecheck + test
+│   │   # SessionStart task-gate은 별도 파일 없이 settings.json에서 `harness-team session-context` 호출
 │   ├── rules/                # 영역별 코딩 규칙 (navigation, state-mgmt, styling, testing)
 │   └── skills/               # 슬래시 명령 (plan, handoff, verify, new-feature, fix-bug, review)
 ├── .cursor/rules/*.mdc       # .claude/rules에서 자동 미러링
