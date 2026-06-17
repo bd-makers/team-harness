@@ -250,7 +250,7 @@
     <div class="hero-tags">
       <span class="tag tag-purple">v0.8.0</span>
       <span class="tag tag-blue">post-commit 자동화</span>
-      <span class="tag tag-green">AskUserQuestion 기반 완료</span>
+      <span class="tag tag-green">종결 가드 (done guard)</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
     </div>
   </div>
@@ -277,10 +277,11 @@
 ├── <span class="tree-new">chad-task.md</span>             <span style="color:var(--border)"># task 인덱스</span>
 ├── <span class="tree-new">chad-handoff.md</span>          <span style="color:var(--border)"># 세션 포인터</span>
 │
-<span class="tree-dir">docs/chad/auth-redesign/</span>     <span style="color:var(--border)"># task 디렉토리</span>
+<span class="tree-dir">docs/chad/auth-redesign/</span>     <span style="color:var(--border)"># task 디렉토리 (4파일 SSOT)</span>
 ├── <span class="tree-file">auth-redesign-spec.md</span>
 ├── <span class="tree-file">auth-redesign-plan.md</span>
-└── <span class="tree-file">auth-redesign-handoff.md</span>
+├── <span class="tree-file">auth-redesign-handoff.md</span>
+└── <span class="tree-file">auth-redesign-artifact.md</span>
         </div>
       </div>
       <div>
@@ -293,9 +294,13 @@
           <h3 style="color:var(--accent3)">[task]-handoff.md — task 컨텍스트</h3>
           <p>해당 task의 누적 작업 기록. commit마다 git diff 기반으로 자동 append. task 전환 후 재개 시 이 파일로 컨텍스트 복원.</p>
         </div>
-        <div class="card">
+        <div class="card" style="margin-bottom:0.5rem">
           <h3 style="color:var(--accent)">[task]-plan.md — 체크리스트</h3>
           <p>단계별 완료 체크. post-commit hook이 완료 여부를 감지해 done 처리 여부를 Claude에게 알림.</p>
+        </div>
+        <div class="card">
+          <h3 style="color:#f5a623">[task]-artifact.md — 결과·학습</h3>
+          <p>실행 결과와 학습/교정을 기록. <code>done</code>·<code>retro</code> 시 append. <strong>종결 가드</strong>가 이 파일 작성 여부를 done의 전제 조건으로 검사.</p>
         </div>
       </div>
     </div>
@@ -314,11 +319,13 @@ graph LR
         SPEC_A["auth-redesign-spec.md"]
         PLAN_A["auth-redesign-plan.md"]
         HO_A["auth-redesign-handoff.md\n← auto (post-commit)"]
+        ART_A["auth-redesign-artifact.md\n← done/retro append"]
     end
     subgraph TASK_B["docs/chad/login-bug/"]
         SPEC_B["login-bug-spec.md"]
         PLAN_B["login-bug-plan.md"]
         HO_B["login-bug-handoff.md\n← auto (post-commit)"]
+        ART_B["login-bug-artifact.md\n← done/retro append"]
     end
 
     SESSION -->|"active 포인터"| TASK_A
@@ -441,9 +448,10 @@ graph LR
             <p>task 디렉토리 생성 + active 설정</p>
             <div class="tree" style="margin-top:0.5rem">
 <span class="tree-new">docs/chad/login-bug/</span>
-├── <span class="tree-new">login-bug-spec.md</span>     <span style="color:var(--border)"># Claude가 초안 작성</span>
-├── <span class="tree-new">login-bug-plan.md</span>     <span style="color:var(--border)"># Claude가 초안 작성</span>
-└── <span class="tree-new">login-bug-handoff.md</span>  <span style="color:var(--border)"># 빈 파일</span>
+├── <span class="tree-new">login-bug-spec.md</span>      <span style="color:var(--border)"># 초안 (Ambiguity 자가진단 포함)</span>
+├── <span class="tree-new">login-bug-plan.md</span>      <span style="color:var(--border)"># 초안 작성</span>
+├── <span class="tree-new">login-bug-handoff.md</span>   <span style="color:var(--border)"># 빈 파일 (post-commit 자동 갱신)</span>
+└── <span class="tree-new">login-bug-artifact.md</span>  <span style="color:var(--border)"># 빈 scaffold (done/retro 시 기록)</span>
 
 <span class="tree-new">.harness/active.json</span> → { "user": "chad", "task": "login-bug" }
 <span class="tree-new">docs/chad/chad-task.md</span> → login-bug 항목 추가
@@ -567,7 +575,7 @@ sequenceDiagram
       <strong>트리거 3가지:</strong> (1) post-commit hook이 plan 전체 완료 감지,
       (2) 사용자가 "다 됐어", "완료했어", "PR 올릴게" 등 완료 신호 발화,
       (3) 사용자가 직접 <code>harness-team done</code> 실행.
-      셋 모두 AskUserQuestion을 거쳐 실수 완료를 방지합니다.
+      셋 모두 <strong>종결 가드</strong>를 통과한 뒤 AskUserQuestion을 거쳐 실수 완료를 방지합니다 (P0 — 선언이 아니라 강제).
     </div>
 
     <div class="steps">
@@ -581,7 +589,24 @@ sequenceDiagram
         </div>
       </div>
       <div class="step">
-        <div class="step-num step-num-blue">2</div>
+        <div class="step-num step-num-orange">2</div>
+        <div class="step-body">
+          <div class="step-actor actor-system">종결 가드 (collectDoneIssues)</div>
+          <div class="step-content">
+            <p><code>harness-team done</code>이 완료 전제 조건을 검사 — 하나라도 걸리면 <strong>done 차단</strong></p>
+            <div class="step-file" style="color:#f5a623">
+✗ done: 종결 가드에 걸림
+  • plan.md에 미완 체크박스(- [ ]) 남음
+  • artifact.md 미작성 / 템플릿 그대로
+  • task 활성화 이후 커밋 0개
+  • 미커밋 변경 존재
+            </div>
+            <div class="step-detail">"결과를 증명하지 않은 done"을 코드가 거부 — dogfooding이 입증한 강제 갭을 메움 (P0)</div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-blue">3</div>
         <div class="step-body">
           <div class="step-actor actor-claude">Claude</div>
           <div class="step-content"></div>
@@ -594,7 +619,7 @@ sequenceDiagram
         </div>
       </div>
       <div class="step">
-        <div class="step-num step-num-green">3</div>
+        <div class="step-num step-num-green">4</div>
         <div class="step-body">
           <div class="step-actor actor-system">완료 처리 시</div>
           <div class="step-content">
@@ -791,7 +816,7 @@ stateDiagram-v2
       </div>
       <div class="card card-accent-green">
         <h3>harness-team done</h3>
-        <p>수동 완료 트리거. AskUserQuestion 확인 후 완료 처리. plan 완료 감지나 발화로도 트리거됨.</p>
+        <p>수동 완료 트리거. <strong>종결 가드</strong>(plan·artifact·커밋 검사) 통과 후 AskUserQuestion 확인 → 완료 처리. plan 완료 감지나 발화로도 트리거됨.</p>
       </div>
       <div class="card card-accent-orange">
         <h3>harness-team handoff</h3>
@@ -803,6 +828,9 @@ stateDiagram-v2
       <div class="infobox">
         <strong>제거된 명령어:</strong> <code>new</code>, <code>feature</code>/<code>fix</code> 구분, <code>spec</code>, <code>plan</code>, <code>handoff</code>(수동), <code>switch</code> — 모두 자동화 또는 자연어 인터페이스로 대체.
         사용자가 기억해야 할 명령어는 <strong>task, list, done</strong> 세 가지뿐.
+      </div>
+      <div class="infobox" style="margin-top:1rem;border-left-color:var(--accent3)">
+        <strong>에이전트 구동 (<code>--json</code>, 0.8.0):</strong> Codex·OpenCode가 <code>harness-team</code>를 Bash로 호출할 때 <code>--json</code>을 주면 stdout이 구조화 observation 엔벨로프(<code>{status, summary, next_actions, artifacts, error}</code>) 1개로 나와 다음 행동을 파싱할 수 있습니다. 사람용 출력은 그대로 — 상세는 overview 문서의 "CLI Observation 계약" 참조.
       </div>
     </div>
 

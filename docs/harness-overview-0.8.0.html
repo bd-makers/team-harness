@@ -180,6 +180,7 @@
     <a href="#architecture">Architecture</a>
     <a href="#subagents">Subagents</a>
     <a href="#commands">Commands</a>
+    <a href="#observation">--json</a>
     <a href="#hooks">Hooks</a>
     <a href="#rules">Rules</a>
     <a href="#skills">Skills</a>
@@ -208,7 +209,12 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #4df0aa;background:rgba(77,240,170,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
-    <strong>✅ 0.8.0 SSOT 역전:</strong> 단일 진실의 원천이 <code>CLAUDE.md</code>(벤더 master + alias symlink)에서
+    <strong>✅ 0.8.0 — 세 축:</strong>
+    <strong>P0 강제 전환</strong>(선언→강제: <code>done</code> 종결 가드 · <code>doctor</code> spec-gate) ·
+    <strong>P1 SSOT 역전</strong>(<code>CLAUDE.md</code> → <code>AGENTS.md</code> 오픈 표준 코어) ·
+    <strong>P2 <code>--json</code> 계약</strong>(에이전트 구동용 observation 엔벨로프).
+    <br/><br/>
+    <strong>SSOT 역전 상세:</strong> 단일 진실의 원천이 <code>CLAUDE.md</code>(벤더 master + alias symlink)에서
     <code>AGENTS.md</code>(Linux Foundation 오픈 표준 · 공유 코어 <em>실파일</em>)로 역전되었습니다.
     <code>CLAUDE.md</code> / <code>GEMINI.md</code>는 <code>@AGENTS.md</code>를 import하는 얇은 파일이고, Cursor·OpenCode는 <code>AGENTS.md</code>를 네이티브로 읽습니다.
     alias symlink(<code>.cursorrules</code> 포함)는 폐기됐습니다. 아래 다이어그램은 이 신구조를 반영합니다.
@@ -397,13 +403,13 @@ graph LR
           <tr>
             <td><span class="cmd">/harness-doctor</span></td>
             <td><code>commands/doctor.mjs</code></td>
-            <td>심볼릭 링크 유효성 · JSON 형식 · 실행 권한 · CLAUDE.md 마커 무결성 진단 — ✅/⚠️ 결과 출력</td>
+            <td>무결성 진단 — symlink · JSON · 실행 권한 · <code>@AGENTS.md</code> import 마커, <strong>spec-gate</strong>(자가진단 없는 포인터 껍데기 spec 감지), 외부 도구(gh/codex/gemini) healthcheck. <code>--json</code> 시 per-check <code>checks[]</code> 출력</td>
             <td><span class="tag tag-purple" style="font-size:0.72rem;padding:2px 8px;">Validation</span></td>
           </tr>
           <tr>
             <td><span class="cmd">/harness-task</span></td>
             <td><code>commands/task.mjs</code></td>
-            <td>태스크 라이프사이클 — <code>task &lt;name&gt;</code> / <code>list</code> / <code>done</code> / <code>handoff</code> (post-commit hook 전용). 사용자별 flat path <code>docs/&lt;user&gt;/&lt;name&gt;/</code> 구조, prefix 기반 파일명</td>
+            <td>태스크 라이프사이클 — <code>task &lt;name&gt;</code> / <code>list</code> / <code>done</code> / <code>retro</code> / <code>handoff</code> (post-commit hook 전용). flat path <code>docs/&lt;user&gt;/&lt;name&gt;/</code> 4파일(spec·plan·handoff·artifact). <strong>종결 가드:</strong> <code>done</code>이 plan 미완(<code>- [ ]</code>)·artifact 미작성·커밋 0개·미커밋 변경을 감지하면 차단. <code>--json</code> 지원</td>
             <td><span class="tag tag-green" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
           </tr>
           <tr>
@@ -438,6 +444,53 @@ graph LR
           </tr>
         </tbody>
       </table>
+    </div>
+  </section>
+
+  <!-- OBSERVATION / --json -->
+  <section id="observation">
+    <div class="section-title">CLI Observation 계약 (<code>--json</code>)</div>
+    <p class="section-sub">P2 (0.8.0) — drive 에이전트(Codex·OpenCode)가 <code>harness-team</code> CLI를 Bash로 호출하면 stdout이 곧 observation이 된다. 사람용 출력은 그대로 두고, <code>--json</code>으로 구조화 엔벨로프를 opt-in</p>
+
+    <div class="infobox">
+      <strong>동작 방식:</strong> drive 4커맨드(<code>task</code> · <code>retro</code> · <code>release</code> · <code>doctor</code>)에 <code>--json</code>을 주면 stdout에 단일 JSON 엔벨로프 1개만 출력하고 <code>process.exitCode</code>로 신호한다. 사람용 산문 출력은 <strong>바이트 동일</strong>하게 보존(기본). 헬퍼는 <code>src/observation.mjs</code>의 <code>buildEnvelope</code> · <code>emitObservation</code>.
+    </div>
+
+    <div class="card">
+      <h3>엔벨로프 스키마 — <code>harness/observation/v1</code></h3>
+      <pre style="margin-top:0.75rem;font-family:'SF Mono','Fira Code',monospace;font-size:0.82rem;color:#e2e6f0;line-height:1.7;overflow-x:auto;">
+{
+  <span style="color:#50c8f5">"schema"</span>: <span style="color:#4df0aa">"harness/observation/v1"</span>,
+  <span style="color:#50c8f5">"command"</span>: <span style="color:#4df0aa">"doctor"</span>,
+  <span style="color:#50c8f5">"status"</span>: <span style="color:#4df0aa">"success | warning | error"</span>,
+  <span style="color:#50c8f5">"summary"</span>: <span style="color:#4df0aa">"사람이 읽는 한 줄 요약"</span>,
+  <span style="color:#50c8f5">"next_actions"</span>: [<span style="color:#4df0aa">"에이전트가 다음에 할 행동"</span>],
+  <span style="color:#50c8f5">"artifacts"</span>: [<span style="color:#4df0aa">"생성·변경된 경로"</span>],
+  <span style="color:#50c8f5">"error"</span>: <span style="color:#7a82a0">null</span> | { <span style="color:#50c8f5">"root_cause"</span>, <span style="color:#50c8f5">"safe_retry"</span>, <span style="color:#50c8f5">"stop_condition"</span> }
+}</pre>
+      <p style="margin-top:0.8rem;font-size:0.83rem;color:var(--muted)">
+        <strong style="color:var(--text)">불변식:</strong> <code>status === "error" ⟺ error !== null</code> — 4커맨드 공통.
+        에이전트는 커맨드별 분기 없이 <code>if (env.error) …</code> 한 패턴으로 파싱한다. 계약은 "가장 약한 커맨드"만큼만 강하다.
+      </p>
+    </div>
+
+    <div class="card-grid" style="margin-top:1rem">
+      <div class="card card-accent-blue">
+        <h3>doctor --json</h3>
+        <p>표준 엔벨로프 + per-check <code>checks:[{label, status, detail}]</code>. status는 <code>pass | fail | missing | optional</code>. 에이전트가 누락 도구·파일을 직접 판단.</p>
+      </div>
+      <div class="card card-accent-green">
+        <h3>task / retro --json</h3>
+        <p>created / activated / no-active / bad-name 분기마다 엔벨로프. 에러 경로도 <code>root_cause</code> + <code>safe_retry</code> + <code>stop_condition</code>로 정합.</p>
+      </div>
+      <div class="card card-accent-purple">
+        <h3>release --json</h3>
+        <p>success / dry-run / error 분기. <code>artifacts</code>에 bump된 매니페스트·캐시 경로. (release는 maintainer 액션 — 에이전트 비운전.)</p>
+      </div>
+    </div>
+
+    <div class="infobox" style="margin-top:1rem">
+      <strong>범위:</strong> drive 4커맨드만 (파킹 문서 결정). <code>src/observation.mjs</code> 헬퍼가 제네릭이라 나머지 커맨드는 후속 opt-in 가능 (YAGNI). 파서 · human 포맷 무변경. baseline 71 → 84 테스트 pass.
     </div>
   </section>
 
@@ -1128,6 +1181,11 @@ graph LR
             <td><code>installPostCommitHook</code> — <code>.git/hooks/post-commit</code>에 <code>harness-team handoff</code> 자동 추가. 이미 있으면 skip. init/sync에서 공통 호출</td>
           </tr>
           <tr>
+            <td><code>src/observation.mjs</code></td>
+            <td><span class="tag tag-green" style="font-size:0.7rem;padding:1px 7px;">Utility</span></td>
+            <td><code>OBSERVATION_SCHEMA</code> · <code>buildEnvelope</code> · <code>emitObservation</code> — <code>--json</code> 통합 엔벨로프 생성/출력 (P2, drive 4커맨드 공통)</td>
+          </tr>
+          <tr>
             <td><code>src/fsx.mjs · prompt.mjs</code></td>
             <td><span class="tag tag-green" style="font-size:0.7rem;padding:1px 7px;">Utility</span></td>
             <td>파일 I/O 헬퍼 · 사용자 프롬프트 유틸</td>
@@ -1143,8 +1201,8 @@ graph LR
           <tr><td><code>src/commands/symlink.mjs</code></td><td><span class="tag tag-orange" style="font-size:0.7rem;padding:1px 7px;">Command</span></td><td>backup → project 심볼릭 링크 생성</td></tr>
           <tr><td><code>src/commands/delete.mjs</code></td><td><span class="tag tag-orange" style="font-size:0.7rem;padding:1px 7px;">Command</span></td><td>harness 심볼릭 링크 제거 (<code>--include-real</code>로 실제 파일도 제거)</td></tr>
           <tr><td><code>src/commands/sync.mjs</code></td><td><span class="tag tag-orange" style="font-size:0.7rem;padding:1px 7px;">Command</span></td><td>.cursor/rules 미러링 + post-commit hook (에이전트 파일은 실파일 → apply로 갱신)</td></tr>
-          <tr><td><code>src/commands/doctor.mjs</code></td><td><span class="tag tag-orange" style="font-size:0.7rem;padding:1px 7px;">Command</span></td><td>심볼릭 링크·JSON·실행 권한·마커 무결성 진단</td></tr>
-          <tr><td><code>src/commands/task.mjs</code></td><td><span class="tag tag-orange" style="font-size:0.7rem;padding:1px 7px;">Command</span></td><td>태스크 라이프사이클 — <code>runTask</code>(생성/활성화) · <code>runList</code> · <code>runDone</code> · <code>runHandoffAuto</code>(post-commit hook 전용). flat path + prefix 파일명, active.json, 사용자 인덱스 관리</td></tr>
+          <tr><td><code>src/commands/doctor.mjs</code></td><td><span class="tag tag-orange" style="font-size:0.7rem;padding:1px 7px;">Command</span></td><td>symlink·JSON·권한·import 마커·spec-gate·외부 도구 진단 (reporter 패턴, <code>--json</code> 시 <code>checks[]</code>)</td></tr>
+          <tr><td><code>src/commands/task.mjs</code></td><td><span class="tag tag-orange" style="font-size:0.7rem;padding:1px 7px;">Command</span></td><td>태스크 라이프사이클 — <code>runTask</code>(생성/활성화) · <code>runList</code> · <code>runDone</code>(종결 가드 <code>collectDoneIssues</code>) · <code>runRetro</code> · <code>runHandoffAuto</code>(post-commit). flat path + prefix 파일명, active.json, 사용자 인덱스, <code>--json</code> 엔벨로프</td></tr>
           <tr><td><code>src/commands/migrate.mjs</code></td><td><span class="tag tag-orange" style="font-size:0.7rem;padding:1px 7px;">Command</span></td><td>마이그레이션 — (0) 레거시 CLAUDE.md master+symlink → AGENTS.md 코어 구조(<code>migrateToAgentsMd</code>) (1) pre-0.6 task 구조→flat path (2) 0.6→0.7 artifact 분리 (3) 백업 스크립트</td></tr>
           <tr><td><code>src/commands/upgrade.mjs</code></td><td><span class="tag tag-orange" style="font-size:0.7rem;padding:1px 7px;">Command</span></td><td>v0.3→v0.4 업그레이드 — 실제 파일 → 심볼릭 링크 일괄 전환</td></tr>
           <tr>

@@ -20,6 +20,34 @@ modified: 2026-06-02
 
 ---
 
+## [0.8.0] - 2026-06-15
+
+> 세 축: **P0 — 선언→강제 전환** · **P1 — SSOT 역전(AGENTS.md 오픈 표준)** · **P2 — CLI `--json` 계약**. (배경: 2026-06-10 dogfooding 실증 — 강제되는 scaffold는 100%, 권장되는 process는 채택 ~0%. 0.8.0은 "선언을 강제로 옮긴다".)
+
+### Added
+- **P1 — `AGENTS.md` 공유 코어:** 단일 진실의 원천(SSOT)을 `CLAUDE.md`(벤더 master)에서 `AGENTS.md`(Linux Foundation 오픈 표준 · 공유 코어 *실파일*)로 역전. `templates/AGENTS.md.hbs`(코어: principles·stack·roles·protocol) 신설, `CLAUDE.md`/`GEMINI.md`는 `@AGENTS.md`를 import하는 thin 파일로 분리(코어 복제 0). Cursor·OpenCode는 `AGENTS.md`를 네이티브 소비.
+- **P0 — `task done` 종결 가드** (`collectDoneIssues`): plan 미완(`- [ ]`)·`artifact.md` 미작성 또는 템플릿 그대로·task 활성화 이후 커밋 0개·미커밋 변경을 감지하면 done을 차단. ("결과를 증명하지 않은 done"을 코드가 거부.)
+- **P0 — `doctor` spec-gate:** Ambiguity 자가진단 섹션이 없는 "포인터 껍데기" spec을 감지·경고.
+- **P0 — 리뷰 산출물 규약:** task `artifact.md`에 `## Reviews` 섹션 — 기록 없는 리뷰는 "안 한 것"으로 간주. spec 경로 단일화(task 4파일 SSOT·포인터 껍데기 금지)를 protocol에 명문화.
+- **P2 — CLI `--json` observation 계약:** drive 4커맨드(`task`/`retro`/`release`/`doctor`)에 opt-in `--json` 통합 엔벨로프(`harness/observation/v1`: `{schema, command, status, summary, next_actions, artifacts, error}`). `doctor`는 per-check `checks:[{label, status, detail}]` 추가. 불변식 `status === 'error' ⟺ error !== null` 전 커맨드 공통. 신규 `src/observation.mjs`(`buildEnvelope`·`emitObservation`). 사람용 출력은 바이트 동일하게 보존(기본). 테스트 71 → 84.
+- HTML 문서(`harness-overview`·`harness-workflow-simulation`)를 0.8.0(세 축)으로 갱신.
+
+### Changed
+- **결정 기록 (2026-06-11 brainstorming):** **D1** = (C) 단일 소스 → 렌더(`AGENTS.md` 코어 + thin `@import`). **D2** = drive 주체는 Claude·OpenCode, Codex·Gemini는 리뷰어 유지(role 표 명문화). **D3** = 실험 기능(Ambiguity 게이트·페르소나) enforced 승격은 2026-08-말 측정 후 재평가(연기).
+- `migrate`에 `migrateToAgentsMd` 경로 추가 — 레거시(`CLAUDE.md` master + alias symlink) → `AGENTS.md` 코어 구조 원스텝 마이그레이션. `CLAUDE.md.bak` 백업, 마커 기반 사용자 텍스트 보존, 멱등.
+- `doctor`를 reporter 패턴으로 리팩토링 — 사람용 출력은 바이트 동일하게 유지하며 `checks[]` 누적. `@AGENTS.md` import 마커 검증 + 레거시 alias symlink 감지.
+- 플러그인 레포 자기 dogfooding 적용 — `harness-team task` 워크플로우를 실제 운용(강제 갭 상시 노출).
+
+### Fixed
+- `harness` write-through 손상 가드 — 레거시 alias symlink 환경에서 `apply`/`init`이 symlink를 따라가 사용자 `CLAUDE.md`를 무경고 덮어쓰던 위험 차단 (리뷰 발견).
+- `task done` 종결 가드의 체크박스 탐지 false positive — 산문 속 인라인 `- [ ]` 리터럴을 줄 시작 앵커 regex로 수정 (dogfooding 발견, 회귀 테스트 추가).
+- `list`가 `docs/<user>/`가 아닌 디렉토리(`superpowers/` 등)를 task로 오인하던 버그 수정.
+
+### Removed
+- alias symlink(`AGENTS.md`/`GEMINI.md`/`.cursorrules` → `CLAUDE.md`) 폐기, orphan이 된 `src/symlink.mjs`(setupSymlinks 제거에 따른 dead code) 제거.
+
+---
+
 ## [0.7.3] - 2026-06-02
 
 ### Added
