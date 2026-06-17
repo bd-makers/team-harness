@@ -26,7 +26,7 @@ test('활성 task 있음 → breadcrumb에 user/task 포함', async () => {
     await writeActive(dir, { user: 'chad', task: 'demo', path: 'docs/chad/demo' });
     const out = await buildSessionContext(dir);
     assert.ok(out.includes('활성 task: chad/demo'), 'breadcrumb names the active task');
-    assert.ok(!out.includes('<system-reminder>'), 'no nudge when active');
+    assert.ok(!out.includes('활성 task가 없습니다'), 'no nudge when active');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
@@ -36,7 +36,7 @@ test('활성 task 없음 + 미완 task → nudge에 재개 후보로 나열', as
     await writeActive(dir, null);
     await writeTask(dir, 'chad', 'wip', '# wip — Plan\n- [ ] 미완\n');
     const out = await buildSessionContext(dir);
-    assert.ok(out.includes('<system-reminder>'), 'emits nudge');
+    assert.ok(out.includes('활성 task가 없습니다'), 'emits nudge');
     assert.ok(out.includes('재개: chad/wip'), 'lists incomplete task');
     assert.ok(out.includes('새 task 생성'), 'offers new task');
     assert.ok(out.includes('task 없이 진행'), 'offers escape hatch');
@@ -48,7 +48,7 @@ test('활성 task 없음 + docs 없음 → 재개 줄 없이 새 task만', async
   try {
     await writeActive(dir, null);
     const out = await buildSessionContext(dir);
-    assert.ok(out.includes('<system-reminder>'), 'emits nudge');
+    assert.ok(out.includes('활성 task가 없습니다'), 'emits nudge');
     assert.ok(!out.includes('재개:'), 'no resume line when zero tasks');
     assert.ok(out.includes('새 task 생성'), 'still offers new task');
   } finally { await rm(dir, { recursive: true, force: true }); }
