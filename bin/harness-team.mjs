@@ -13,6 +13,7 @@ import { runDelete } from '../src/commands/delete.mjs';
 import { runMigrate } from '../src/commands/migrate.mjs';
 import { runUpgrade } from '../src/commands/upgrade.mjs';
 import { runRelease } from '../src/commands/release.mjs';
+import { runSessionContext } from '../src/commands/session-context.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -37,6 +38,7 @@ Commands:
   list                              List all tasks
   done [--force]                    Complete the active task (--force bypasses the completion guard)
   handoff                           Update handoff from latest commit (post-commit hook)
+  session-context                   Emit SessionStart context (active-task breadcrumb or no-task nudge)
   retro [text]                      Append a dated Learnings entry to the active task's artifact.md
   release [patch|minor|major|x.y.z] [--dry-run] [--skip-cache]   Bump 3 manifests + sync plugin cache/marketplace/installed_plugins.json
   help                              Show this help
@@ -78,7 +80,7 @@ async function main() {
   const parsed = parseArgs(argv);
   const { cmd, positional, flags } = parsed;
 
-  const taskCmds = new Set(['task', 'list', 'done', 'handoff', 'retro', 'release']);
+  const taskCmds = new Set(['task', 'list', 'done', 'handoff', 'retro', 'release', 'session-context']);
   const target = flags.target || (taskCmds.has(cmd) ? process.cwd() : positional[0]) || process.cwd();
   const ctx = {
     root: ROOT,
@@ -102,6 +104,7 @@ async function main() {
     case 'list': return runList(ctx);
     case 'done': return runDone(ctx);
     case 'handoff': return runHandoffAuto(ctx);
+    case 'session-context': return runSessionContext(ctx);
     case 'retro': return runRetro(ctx);
     case 'release': return runRelease(ctx);
     case 'help':
