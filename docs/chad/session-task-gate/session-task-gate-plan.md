@@ -363,6 +363,24 @@ Expected: `<system-reminder>` nudge 출력 (재개 줄 없음, "새 task 생성"
 
 - [ ] **Step 4: 완료 신호 → AskUserQuestion → `harness-team done`** (사용자 게이트)
 
+---
+
+### Task 7: migrate 업그레이드 경로 (0.8 이전 프로젝트 → task-gate hook)
+
+**배경:** `migrate`는 구조 전용이라 settings.json hook을 안 건드린다. 기존 0.8 프로젝트가
+`migrate`만으로는 SessionStart task-gate를 못 받는다(=apply 필요). 사용자 결정(옵션 1):
+migrate에 "settings.json에 SessionStart 누락 시 감지·추가" 경로 추가.
+
+**Files:**
+- Modify: `src/commands/migrate.mjs` (`migrateSessionStartHook` 추가 + import + `runMigrate` 배선)
+- Create: `tests/migrate-session-hook.test.mjs`
+
+- [x] **Step 1: 실패 테스트 작성** — SessionStart 없는 settings.json → 추가, 기존 hook 보존, 멱등, settings.json 없으면 skip.
+- [x] **Step 2: 실패 확인** (`migrateSessionStartHook` 미존재).
+- [x] **Step 3: `migrateSessionStartHook` 구현** — 템플릿 `templates/.claude/settings.json`의 `hooks.SessionStart`를 단일 소스로 읽어, `session-context` 포함 hook이 없으면 `deepMergeJson`으로 주입. confirm 게이트. `runMigrate`에 배선 + nothing-to-migrate 집계.
+- [x] **Step 4: 통과 확인** + `npm test` 전체 (92/92).
+- [x] **Step 5: Commit** + README migrate 설명에 hook 갱신 추가.
+
 ## Ontology 변경 로그
 - (2026-06-16) **task-gate**, **재개 가능한(미완) task**, **inject vs block** 정의 — spec.md Ontology 반영 완료.
 

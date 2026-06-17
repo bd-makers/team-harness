@@ -244,6 +244,11 @@ v0.2.x에서 backup dir에 있던 `clone.sh`, `symlink.sh`, `delete.sh`를 프�
 /harness-migrate
 ```
 
+> migrate는 **구조 마이그레이션**도 함께 수행합니다 — task 디렉토리 레이아웃(→0.6/0.7),
+> 레거시 `CLAUDE.md` → `AGENTS.md` 코어, 그리고 `settings.json`에 **SessionStart task-gate
+> hook이 없으면 추가**(0.9+). 모두 멱등이라 이미 최신이면 `up to date`로 건너뜁니다.
+> (hook은 `apply`의 deep-merge로도 들어옵니다 — migrate는 구조 변경 없이 hook만 보강할 때 유용.)
+
 ### `/harness-upgrade` — v0.3.x → v0.4+ 원스텝 전환
 
 실제 파일로 존재하는 harness 아티팩트를 symlink 구조로 일괄 전환합니다.
