@@ -2,7 +2,7 @@ import { join, basename } from 'node:path';
 import { unlink, rmdir, readdir, mkdir, lstat } from 'node:fs/promises';
 import { readTextSafe, writeText, exists } from '../fsx.mjs';
 import { loadBackupDir } from '../harness.mjs';
-import { extractSections } from '../merge.mjs';
+import { extractSections, deepMergeJson } from '../merge.mjs';
 import { render } from '../render.mjs';
 import { confirm } from '../prompt.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
@@ -415,6 +415,54 @@ export async function migrateToAgentsMd(ctx) {
   return true;
 }
 
+// --- SessionStart task-gate hook (pre-0.9 settings.json → + SessionStart) ---
+//
+// `migrate` is structure-only and never touched .claude/settings.json, so projects
+// scaffolded before 0.9 don't get the SessionStart task-gate from migrate alone
+// (apply's deep-merge is the other path). This adds just the SessionStart hook,
+// pulled from the template as the single source so the command never drifts.
+
+export async function migrateSessionStartHook(ctx) {
+  const { root, targetDir } = ctx;
+  const settingsPath = join(targetDir, '.claude/settings.json');
+  const raw = await readTextSafe(settingsPath);
+  if (raw === null) {
+    console.log('  SessionStart task-gate: no .claude/settings.json — skipping (run apply/init)');
+    return false;
+  }
+  let settings;
+  try { settings = JSON.parse(raw); } catch {
+    console.log('  SessionStart task-gate: settings.json parse 실패 — 건너뜀');
+    return false;
+  }
+
+  const hasGate = (settings.hooks?.SessionStart || []).some(group =>
+    (group.hooks || []).some(h => typeof h.command === 'string' && h.command.includes('session-context')));
+  if (hasGate) {
+    console.log('  SessionStart task-gate: up to date');
+    return false;
+  }
+
+  const tplRaw = await readTextSafe(join(root, 'templates/.claude/settings.json'));
+  const tplSessionStart = tplRaw ? JSON.parse(tplRaw).hooks?.SessionStart : null;
+  if (!tplSessionStart) {
+    console.log('  SessionStart task-gate: 템플릿에 SessionStart 없음 — 건너뜀');
+    return false;
+  }
+
+  console.log('\nFound settings.json without SessionStart task-gate hook:');
+  console.log('  + hooks.SessionStart → harness-team session-context (활성 task 유무 주입)');
+
+  const ok = ctx.flags.yes || await confirm('\nAdd SessionStart task-gate hook?', { defaultYes: true });
+  if (!ok) { console.log('Skipped SessionStart task-gate migration.'); return false; }
+
+  settings.hooks = settings.hooks || {};
+  settings.hooks.SessionStart = deepMergeJson(settings.hooks.SessionStart, tplSessionStart);
+  await writeText(settingsPath, JSON.stringify(settings, null, 2) + '\n');
+  console.log('  ✓ added SessionStart task-gate to .claude/settings.json');
+  return true;
+}
+
 export async function runMigrate(ctx) {
   console.log(`harness-team migrate → ${ctx.targetDir}`);
 
@@ -424,8 +472,9 @@ export async function runMigrate(ctx) {
   const taskUpgraded = await migrateTaskTo07(ctx);
   const scriptMoved = await migrateBackupScripts(ctx);
   const scriptRefreshed = await refreshProjectScripts(ctx);
+  const hookMigrated = await migrateSessionStartHook(ctx);
 
-  if (!agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed) {
+  if (!agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !hookMigrated) {
     console.log('\nNothing to migrate — project is already up to date.');
     return;
   }
