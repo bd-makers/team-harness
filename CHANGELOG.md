@@ -18,8 +18,12 @@ modified: 2026-06-02
 
 ## [Unreleased]
 
+---
+
+## [0.9.1] - 2026-06-17
+
 ### Added
-- **migrate: SessionStart task-gate 보강** (`migrateSessionStartHook`) — `migrate`가 `.claude/settings.json`에 SessionStart task-gate hook이 없으면 템플릿(`templates/.claude/settings.json`)을 단일 소스로 읽어 `deepMergeJson`으로 추가. 0.9 이전 프로젝트가 구조 변경 없이 hook만 보강받는 경로(`apply`의 전체 deep-merge 대안). 멱등 — 이미 있으면 `up to date`.
+- **migrate: SessionStart task-gate 보강** (`migrateSessionStartHook`) — `migrate`가 `.claude/settings.json`에 SessionStart task-gate hook이 없으면 템플릿(`templates/.claude/settings.json`)을 단일 소스로 읽어 `deepMergeJson`으로 추가. 0.9 이전 프로젝트가 구조 변경 없이 hook만 보강받는 경로(`apply`의 전체 deep-merge 대안). 멱등 — 이미 있으면 `up to date`. (배경: "migrate가 0.8→0.9 갱신하나?" 질문에서 갭 발견.)
 
 ---
 
