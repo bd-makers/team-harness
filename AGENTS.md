@@ -75,6 +75,10 @@
 2. 활성 task의 `<name>-plan.md` 읽기 — 현재 단계 파악
 3. 필요시 `<name>-spec.md`에서 맥락 보강
 
+> **task-gate (자동):** SessionStart 훅이 `harness-team session-context`를 호출해
+> 활성 task 유무를 주입한다. 활성 task가 없으면 첫 작업 프롬프트에서 `AskUserQuestion`으로
+> **재개 / 새 task / task 없이 진행**을 확인하라 — 이는 block이 아닌 nudge이며 판단은 Claude 몫.
+
 ### task 워크플로우
 - **시작**: `harness-team task <name>` — 생성 또는 활성화
 - **진행**: `<name>-plan.md` 체크리스트 항목 완료 시 `- [x]`로 갱신
