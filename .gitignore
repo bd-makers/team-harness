@@ -4,5 +4,6 @@ node_modules/
 .harness-backup/
 .harness/active.json
 .harness/config.json
+.claude/launch.json
 .superpowers/
 tests/fixtures/**/actual/

@@ -361,7 +361,7 @@ Expected: `<system-reminder>` nudge 출력 (재개 줄 없음, "새 task 생성"
 
 - [x] **Step 3: artifact.md에 결과·학습 기록**, 필요 시 `## Reviews` 섹션에 리뷰 결과 추가.
 
-- [ ] **Step 4: 완료 신호 → AskUserQuestion → `harness-team done`** (사용자 게이트)
+- [x] **Step 4: 완료 신호 → AskUserQuestion → `harness-team done`** (사용자 게이트)
 
 ---
 
