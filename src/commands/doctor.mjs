@@ -5,6 +5,7 @@ import { promisify } from 'node:util';
 import { exists } from '../fsx.mjs';
 import { loadBackupDir } from '../harness.mjs';
 import { buildEnvelope, emitObservation } from '../observation.mjs';
+import { settingsHasSessionGate } from './session-context.mjs';
 
 const pexec = promisify(execFile);
 
@@ -69,6 +70,19 @@ export async function detectLegacyStructure(targetDir) {
     return `레거시 구조 감지 (.cursorrules 잔존) — run: harness-team migrate`;
   }
   return null;
+}
+
+// Detect a settings.json that predates the SessionStart task-gate (0.9+). apply
+// (deep-merge) / migrate deliver the hook; a missing one means the project is
+// outdated. Soft warning steering to apply — does NOT count toward fail (a pre-0.9
+// project is legitimate; a hard fail would break its CI). Missing/invalid
+// settings.json is already covered by CHECKS, so we stay silent there (no double-fail).
+export async function checkSessionStartHook(targetDir) {
+  let settings;
+  try { settings = JSON.parse(await readFile(join(targetDir, '.claude/settings.json'), 'utf8')); }
+  catch { return null; }
+  if (settingsHasSessionGate(settings)) return null;
+  return 'SessionStart task-gate hook 없음 (0.9+) — run: harness-team apply (또는 migrate)';
 }
 
 const CHECKS = [
@@ -190,6 +204,10 @@ export async function runDoctor(ctx) {
     line(`hint: spec은 \`harness-team task <name>\`로 생성해 자가진단 게이트를 포함시켜라`);
   }
 
+  // SessionStart task-gate hook presence (⚠️, advisory — does not count toward fail).
+  const hookWarning = await checkSessionStartHook(ctx.targetDir);
+  if (hookWarning) add('SessionStart task-gate', 'warning', hookWarning, `\n⚠️ ${hookWarning}`);
+
   if (json) {
     const warnCount = checks.filter(c => c.status === 'warning').length;
     const status = fail ? 'error' : (warnCount ? 'warning' : 'success');
@@ -199,6 +217,7 @@ export async function runDoctor(ctx) {
     const warnActions = [];
     if (legacyWarning) warnActions.push('harness-team migrate');
     if (specGateWarning) warnActions.push('harness-team task <name>');
+    if (hookWarning) warnActions.push('harness-team apply');
     emitObservation(buildEnvelope({
       command: 'doctor',
       status,

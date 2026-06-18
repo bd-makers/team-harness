@@ -4,7 +4,7 @@ import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mkdtemp, mkdir, writeFile, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { checkCommand, checkSelfCli, checkActiveSpecGate, detectLegacyStructure } from '../src/commands/doctor.mjs';
+import { checkCommand, checkSelfCli, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook } from '../src/commands/doctor.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -95,6 +95,42 @@ test('detectLegacyStructure: .cursorrules 존재만으로도 레거시 경고', 
     await writeFile(join(dir, '.cursorrules'), 'x\n');
     const w = await detectLegacyStructure(dir);
     assert.ok(typeof w === 'string' && /migrate/.test(w));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+async function makeSettingsFixture(settings) {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-hook-'));
+  if (settings !== undefined) {
+    await mkdir(join(dir, '.claude'), { recursive: true });
+    await writeFile(join(dir, '.claude/settings.json'), JSON.stringify(settings, null, 2));
+  }
+  return dir;
+}
+
+test('checkSessionStartHook: SessionStart task-gate 없음 → 경고(apply 유도)', async () => {
+  const dir = await makeSettingsFixture({
+    hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [{ type: 'command', command: './x.sh' }] }] },
+  });
+  try {
+    const w = await checkSessionStartHook(dir);
+    assert.ok(typeof w === 'string', 'returns a warning string');
+    assert.match(w, /apply/, 'apply로 유도');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkSessionStartHook: task-gate 있음 → null', async () => {
+  const dir = await makeSettingsFixture({
+    hooks: { SessionStart: [{ hooks: [{ type: 'command', command: 'harness-team session-context 2>/dev/null || true' }] }] },
+  });
+  try {
+    assert.equal(await checkSessionStartHook(dir), null);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkSessionStartHook: settings.json 부재 → null (CHECKS가 담당, 중복 fail 금지)', async () => {
+  const dir = await makeSettingsFixture(undefined);
+  try {
+    assert.equal(await checkSessionStartHook(dir), null);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
