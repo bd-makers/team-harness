@@ -3,6 +3,13 @@ import { readdir, readFile } from 'node:fs/promises';
 import { exists } from '../fsx.mjs';
 import { readActive, planHasOpenBoxes } from './task.mjs';
 
+// "task-gate가 있다"의 단일 정의 — migrate(보강)와 doctor(감지)가 공유.
+// .claude/settings.json의 SessionStart hook 중 `session-context`를 호출하는 항목이 있으면 true.
+export function settingsHasSessionGate(settings) {
+  return (settings?.hooks?.SessionStart || []).some(group =>
+    (group.hooks || []).some(h => typeof h.command === 'string' && h.command.includes('session-context')));
+}
+
 // plan.md에 열린 체크박스가 남은 task = 재개 가능. (marker: <name>-spec.md, `list`와 동일 규약)
 export async function listIncompleteTasks(targetDir) {
   const docs = join(targetDir, 'docs');

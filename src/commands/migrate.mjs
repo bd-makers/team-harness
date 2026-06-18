@@ -7,6 +7,7 @@ import { render } from '../render.mjs';
 import { confirm } from '../prompt.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
 import { taskArtifactTemplate } from './task.mjs';
+import { settingsHasSessionGate } from './session-context.mjs';
 
 const USER_REGION_RE = /<!--\s*harness:user:begin\s*-->[\s\S]*?<!--\s*harness:user:end\s*-->/;
 const EMPTY_USER_REGION = '<!-- harness:user:begin -->\n<!-- 이 마커 아래 작성한 내용은 harness가 절대 수정하지 않습니다. -->\n<!-- harness:user:end -->';
@@ -436,9 +437,7 @@ export async function migrateSessionStartHook(ctx) {
     return false;
   }
 
-  const hasGate = (settings.hooks?.SessionStart || []).some(group =>
-    (group.hooks || []).some(h => typeof h.command === 'string' && h.command.includes('session-context')));
-  if (hasGate) {
+  if (settingsHasSessionGate(settings)) {
     console.log('  SessionStart task-gate: up to date');
     return false;
   }
