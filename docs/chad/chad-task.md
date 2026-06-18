@@ -1,6 +1,7 @@
 # chad — Tasks
 
 ## Active
+- doctor-sessionstart-check (created 2026-06-18)
 
 
 

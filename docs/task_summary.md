@@ -6,3 +6,4 @@
 | chad | ssot-agents-md | ✅ done | 2026-06-11 |
 | chad | cli-json-contract | ✅ done | 2026-06-15 |
 | chad | session-task-gate | ✅ done | 2026-06-16 |
+| chad | doctor-sessionstart-check | 🔄 active | 2026-06-18 |
