@@ -18,6 +18,9 @@ modified: 2026-06-02
 
 ## [Unreleased]
 
+### Added
+- **doctor: SessionStart task-gate 점검** (`checkSessionStartHook`) — `.claude/settings.json`에 task-gate hook이 없으면 ⚠️ 경고 + `harness-team apply` 유도(JSON `next_actions` 포함). 소프트 경고라 `fail`/exit code에 가산하지 않음(구버전 프로젝트 CI 비파괴). hook 감지식은 `settingsHasSessionGate`로 추출해 migrate·doctor가 공유. → enforcement 삼각 완성(apply/migrate 추가, doctor 감지).
+
 ---
 
 ## [0.9.1] - 2026-06-17
