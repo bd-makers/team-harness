@@ -24,7 +24,7 @@
 ### Task 3: 마무리
 - [x] **Step 1: artifact 기록** (결과·학습, advisor 리뷰 시 ## Reviews).
 - [x] **Step 2: CHANGELOG [Unreleased] 추가** (doctor 경고).
-- [ ] **Step 3: 완료 신호 → done (사용자 게이트).**
+- [x] **Step 3: 완료 신호 → done (사용자 게이트).**
 
 ## Ontology 변경 로그
 - (2026-06-18) **settingsHasSessionGate**, **소프트 경고 vs fail** — spec.md Ontology 반영.
