@@ -1,13 +1,14 @@
 # chad — Tasks
 
 ## Active
-- doctor-sessionstart-check (created 2026-06-18)
+
 
 
 
 
 
 ## Completed
+- ✅ doctor-sessionstart-check
 - ✅ session-task-gate
 - ✅ cli-json-contract
 - ✅ ssot-agents-md
