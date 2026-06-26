@@ -1,6 +1,7 @@
 # chad — Tasks
 
 ## Active
+- e2e-apply-verification (created 2026-06-26)
 
 
 
