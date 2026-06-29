@@ -19,6 +19,7 @@ modified: 2026-06-02
 ## [Unreleased]
 
 ### Added
+- **harness-sim 시뮬레이션 스킬** (`skills/harness-sim/`) — 영속 playground(`../harness-playground`)의 3개 프로젝트(bare-node/next/rn)에서 *설치된* 하네스 설정을 에이전트가 실제로 굴려 L4(살아있는 세션)를 시뮬레이션하고 날짜 박힌 리포트(`harness-playground/sim-reports/`)를 남긴다. e2e의 휘발성 tmpdir L1·L2·L3 재구현이 아니라 설치된 설정 + 리포트. 격리 브랜치(`harness-sim/<ts>`)·잔재 reclaim·더미 변경(`.sim-scratch`)·사후 무오염 검증(git clean + doctor green). 트리거류(slash/skill/SessionStart nudge)는 시뮬 중 관찰 불가라 `⚠️수동확인`으로 분류(위조 금지). 판정은 기존 `--json` 출력 호출로 요약. bare-node에서 전체 사이클 실검증 — done-guard 3조건(미완 박스·미커밋·artifact 템플릿)과 post-commit 훅이 handoff를 더럽혀 `done`이 항상 미커밋 가드를 발동하는 마찰을 확인.
 - **E2E 검증 하네스** (`tests/e2e/`) — 실제 `bin/harness-team.mjs`를 child_process로 spawn해 ephemeral sandbox에 하네스를 적용하고 L1(apply 스모크 + `doctor` green)·L2(task 라이프사이클 + post-commit 훅 handoff 갱신)·L3(AGENTS.md SSOT + CLAUDE/GEMINI `@AGENTS.md` import 일관성)을 bare-node/next/react-native 3스택 매트릭스로 검증. `npm test`에 통합, `test:unit`/`test:e2e` 분리 스크립트 추가. (배포 산출물에는 미포함 — `files`에 `tests` 없음)
 
 ---
