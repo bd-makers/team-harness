@@ -1,7 +1,7 @@
 # chad — Tasks
 
 ## Active
-- harness-sim (created 2026-06-29)
+
 
 
 
@@ -10,6 +10,7 @@
 
 
 ## Completed
+- ✅ harness-sim
 - ✅ e2e-apply-verification
 - ✅ doctor-sessionstart-check
 - ✅ session-task-gate
