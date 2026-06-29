@@ -247,9 +247,9 @@ graph TB
     subgraph CMDS["Commands Layer"]
         direction LR
         INIT["init"] & APPLY["apply"] & SYNC["sync"]
-        CLONE["clone"] & SYM["symlink"] & DEL["delete"]
-        DOCTOR["doctor"] & TASK["task"]
-        MIG["migrate"] & UPG["upgrade"]
+        CLONE["clone"] & SYM["symlink"] & DEL["delete"] & BACKUP["backup"]
+        DOCTOR["doctor"] & TASK["task · list · done\nhandoff · retro"] & SESS["session-context"]
+        MIG["migrate"] & UPG["upgrade"] & REL["release"]
     end
 
     subgraph ORCH["Orchestration"]
@@ -266,6 +266,7 @@ graph TB
         MEMBER["member.mjs\ndetectMember"]
         UCFG["user-config.mjs\nensureUsername"]
         GHOOKS["git-hooks.mjs\ninstallPostCommitHook"]
+        OBS["observation.mjs\nbuildEnvelope · emitObservation\n--json 엔벨로프 (P2 0.8.0)"]
     end
 
     subgraph TMPL["Templates"]
@@ -279,9 +280,12 @@ graph TB
 
     BIN --> CMDS
     INIT & APPLY & SYNC --> HARNESS
-    CLONE & SYM & DEL & MIG & UPG --> BACKUPDIR
+    CLONE & SYM & DEL & BACKUP & MIG & UPG --> BACKUPDIR
     DOCTOR --> BACKUPDIR
     TASK --> MEMBER
+    DOCTOR & TASK & REL --> OBS
+    DOCTOR --> SESS
+    SESS --> TASK
     INIT & SYNC --> UCFG & GHOOKS
     HARNESS --> MERGE & RENDER & DETECT
     HARNESS --> TMPL
