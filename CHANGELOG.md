@@ -18,6 +18,9 @@ modified: 2026-06-02
 
 ## [Unreleased]
 
+### Added
+- **E2E 검증 하네스** (`tests/e2e/`) — 실제 `bin/harness-team.mjs`를 child_process로 spawn해 ephemeral sandbox에 하네스를 적용하고 L1(apply 스모크 + `doctor` green)·L2(task 라이프사이클 + post-commit 훅 handoff 갱신)·L3(AGENTS.md SSOT + CLAUDE/GEMINI `@AGENTS.md` import 일관성)을 bare-node/next/react-native 3스택 매트릭스로 검증. `npm test`에 통합, `test:unit`/`test:e2e` 분리 스크립트 추가. (배포 산출물에는 미포함 — `files`에 `tests` 없음)
+
 ---
 
 ## [0.9.2] - 2026-06-18
