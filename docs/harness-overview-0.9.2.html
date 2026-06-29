@@ -393,7 +393,7 @@ graph LR
   <!-- COMMANDS -->
   <section id="commands">
     <div class="section-title">Commands</div>
-    <p class="section-sub">10개의 slash command — 설치·백업·유지보수·태스크 관리 전담</p>
+    <p class="section-sub">15개의 slash command — 설치·백업·유지보수·태스크 관리 + 페르소나(interview·contrarian·simplifier)·릴리스. <code>backup</code>·<code>session-context</code>는 CLI 전용 서브커맨드(slash 미노출)</p>
     <div class="table-wrap">
       <table>
         <thead>
@@ -459,6 +459,36 @@ graph LR
             <td><code>commands/upgrade.mjs</code></td>
             <td>v0.3.x → v0.4+ 업그레이드 — 실제 파일을 심볼릭 링크로 일괄 전환 (one-step)</td>
             <td><span class="tag tag-orange" style="font-size:0.72rem;padding:2px 8px;">Migration</span></td>
+          </tr>
+          <tr>
+            <td><span class="cmd">/harness-interview</span></td>
+            <td><code>commands/harness-interview.md</code></td>
+            <td>페르소나 — 입력(spec)이 모호할 때 Ambiguity 자가진단으로 복귀해 Goal·Constraint·Success 기준을 좁힌다 (prompt-only, CLI 미구현)</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Persona</span></td>
+          </tr>
+          <tr>
+            <td><span class="cmd">/harness-contrarian</span></td>
+            <td><code>commands/harness-contrarian.md</code></td>
+            <td>페르소나 — "가정이 옳은가?" 현재 접근의 전제를 반박해 검증한다 (prompt-only)</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Persona</span></td>
+          </tr>
+          <tr>
+            <td><span class="cmd">/harness-simplifier</span></td>
+            <td><code>commands/harness-simplifier.md</code></td>
+            <td>페르소나 — "더 적게 만들 수 있는가?" 불필요한 추상화·범위를 줄인다 (prompt-only)</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Persona</span></td>
+          </tr>
+          <tr>
+            <td><span class="cmd">/harness-retro</span></td>
+            <td><code>commands/task.mjs</code> (runRetro)</td>
+            <td>활성 task의 <code>artifact.md</code>에 날짜별 <strong>Learnings</strong> 항목 append — 교정·학습 포착. <code>--json</code> 지원</td>
+            <td><span class="tag tag-green" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
+          <tr>
+            <td><span class="cmd">/harness-release</span></td>
+            <td><code>commands/release.mjs</code></td>
+            <td>3개 매니페스트(<code>package.json</code>·<code>plugin.json</code>·<code>marketplace.json</code>) 버전 범프 + 플러그인 캐시·마켓플레이스·<code>installed_plugins.json</code> 동기화. <code>--dry-run</code>·<code>--skip-cache</code>·<code>--json</code> 지원</td>
+            <td><span class="tag tag-purple" style="font-size:0.72rem;padding:2px 8px;">Release</span></td>
           </tr>
         </tbody>
       </table>
