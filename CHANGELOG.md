@@ -20,6 +20,13 @@ modified: 2026-06-02
 
 ---
 
+## [0.9.4] - 2026-06-29
+
+### Added
+- **harness-sim 커맨드 래퍼** (`commands/harness-sim.md`) — `harness-sim` 스킬의 얇은 슬래시 래퍼. 스킬은 메뉴에 bare name(`harness-sim`)으로 뜨지만, 커맨드는 다른 harness-*와 동일하게 `harness-aijient-team:harness-sim` 프리픽스로 표시된다. 절차 SSOT는 스킬 본문(`skills/harness-sim/SKILL.md`)이며 래퍼는 위임만 한다(복제 없음). `plugin.json` `commands`에 등록.
+
+---
+
 ## [0.9.3] - 2026-06-29
 
 ### Added
