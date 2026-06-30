@@ -4,7 +4,7 @@
 done-guard-handoff
 
 ## Last Commit (2026-06-30)
-c7a7bad fix(done-guard): exclude post-commit handoff from uncommitted-change check
+03e81f3 chore(harness): commit task index + handoff for done-guard-handoff
 
 ## Full Context
 → docs/chad/done-guard-handoff/done-guard-handoff-handoff.md

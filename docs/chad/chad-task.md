@@ -1,7 +1,7 @@
 # chad — Tasks
 
 ## Active
-- done-guard-handoff (created 2026-06-30)
+
 
 
 
@@ -11,6 +11,7 @@
 
 
 ## Completed
+- ✅ done-guard-handoff
 - ✅ harness-sim
 - ✅ e2e-apply-verification
 - ✅ doctor-sessionstart-check
