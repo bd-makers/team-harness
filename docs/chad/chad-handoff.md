@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-harness-sim
+done-guard-handoff
 
-## Last Commit (2026-06-29)
-fe0abfd chore(harness): update handoff after harness-sim
+## Last Commit (2026-06-30)
+c7a7bad fix(done-guard): exclude post-commit handoff from uncommitted-change check
 
 ## Full Context
-→ docs/chad/harness-sim/harness-sim-handoff.md
+→ docs/chad/done-guard-handoff/done-guard-handoff-handoff.md

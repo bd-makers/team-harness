@@ -1,6 +1,7 @@
 # chad — Tasks
 
 ## Active
+- done-guard-handoff (created 2026-06-30)
 
 
 

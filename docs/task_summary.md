@@ -9,3 +9,4 @@
 | chad | doctor-sessionstart-check | ✅ done | 2026-06-18 |
 | chad | e2e-apply-verification | ✅ done | 2026-06-26 |
 | chad | harness-sim | ✅ done | 2026-06-29 |
+| chad | done-guard-handoff | 🔄 active | 2026-06-30 |
