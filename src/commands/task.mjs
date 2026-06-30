@@ -292,6 +292,21 @@ export async function runList(ctx) {
   if (!found) console.log('(no tasks)');
 }
 
+// Extract file paths from `git status --porcelain` output: strip the 2-char status +
+// space prefix, resolve rename arrows (`old -> new` → new), and unquote core.quotepath
+// paths. Used by the done-guard to tell real uncommitted work from hook-generated files.
+export function parsePorcelainPaths(stdout) {
+  return stdout.split('\n')
+    .filter(l => l.length > 3)
+    .map(l => {
+      let p = l.slice(3);
+      const arrow = p.indexOf(' -> ');
+      if (arrow !== -1) p = p.slice(arrow + 4);
+      if (p.startsWith('"') && p.endsWith('"')) p = p.slice(1, -1);
+      return p;
+    });
+}
+
 async function collectDoneIssues(targetDir, active) {
   const { user, task, switchedAt } = active;
   const issues = [];
@@ -330,7 +345,15 @@ async function collectDoneIssues(targetDir, active) {
   if (isGitRepo) {
     try {
       const { stdout } = await pexec('git', ['-C', targetDir, 'status', '--porcelain'], { maxBuffer: 1024 * 1024 });
-      if (stdout.trim()) issues.push('커밋되지 않은 변경이 있음');
+      // The post-commit hook (`harness-team handoff`) regenerates these handoff files
+      // after every commit, so they're ~always dirty at `done` time. Exclude them — the
+      // guard should block on real uncommitted work, not the hook's own auto-output.
+      const handoffRels = new Set([
+        `docs/${user}/${task}/${task}-handoff.md`,
+        `docs/${user}/${user}-handoff.md`,
+      ]);
+      const realDirty = parsePorcelainPaths(stdout).filter(p => !handoffRels.has(p));
+      if (realDirty.length) issues.push('커밋되지 않은 변경이 있음');
     } catch { /* transient git error → don't fabricate a problem */ }
 
     if (switchedAt) {
