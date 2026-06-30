@@ -18,6 +18,10 @@ modified: 2026-06-02
 
 ## [Unreleased]
 
+---
+
+## [0.9.5] - 2026-06-30
+
 ### Fixed
 - **done-guard: post-commit 훅 handoff 마찰 제거** (`task.mjs`) — `done`의 "커밋되지 않은 변경" 가드가 post-commit 훅이 자동 재생성하는 handoff 2개(`<task>-handoff.md`·`<user>-handoff.md`)를 제외하도록 좁힘. 커밋 직후 훅이 handoff를 더럽혀 `done`이 항상 `--force`를 요구하던 마찰을 해소 — 이제 handoff만 dirty면 통과하고, handoff 외 실제 미커밋 작업이 있을 때만 차단. `parsePorcelainPaths` 헬퍼 추출(상태접두/rename/quotepath 파싱). 훅 amend·재커밋(SHA 변형·무한루프 위험)은 배제하고 가드 측에서 해결. (harness-sim 리포트 2건이 실증한 발견 → playground `done` --force 없이 통과 재확인.)
 
