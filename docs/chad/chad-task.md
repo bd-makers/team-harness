@@ -1,6 +1,7 @@
 # chad — Tasks
 
 ## Active
+- sim-agentloop-redesign (created 2026-06-30)
 
 
 
