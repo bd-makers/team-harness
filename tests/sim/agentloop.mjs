@@ -18,6 +18,7 @@
 // Subcommands:
 //     node tests/sim/agentloop.mjs probe     # verify the headless contract (run first)
 //     node tests/sim/agentloop.mjs run        # full sim + dated report
+//     node tests/sim/agentloop.mjs sc6        # task-lifecycle only (CLI-driven, NO auth)
 //
 // HONESTY: signals unobservable even via transcript stay ⚠️manual. No prose PASS.
 
@@ -375,6 +376,91 @@ async function sc5Triggers(token, initDir, trials = 2) {
   return { signals, slashRate: rate(slashRuns), nlRate: rate(nlRuns) };
 }
 
+// ── SC6 full task lifecycle (CLI-driven, deterministic, own sandbox) ──────────
+// SC3 stops at "created + 4 SSOT + active pointer". SC6 drives the REST of the
+// lifecycle: plan checkbox → commit → done-guard BLOCK → done COMPLETE → active
+// released → handoff DONE marker. done/done-guard/handoff are CLI machinery, so
+// this is scored by direct `node BIN` calls + file/git evidence — NO agent, NO
+// auth needed (hand-proven auth-independent). It runs LAST and in its OWN applied
+// sandbox because it nulls active.json at the end (would pollute canon.dir which
+// SC3/4/5 share). The AskUserQuestion human gate ("done 처리할까요?") is NOT
+// reproducible headless → left ⚠️manual, never a false PASS.
+async function sc6Lifecycle() {
+  const { dir, env } = await makeSandbox('lifecycle', { pkg: CANONICAL_STACK.pkg });
+  const cli = (args) => run('node', [BIN, ...args], { cwd: dir, env });
+  const gitc = (args) => run('git', args, { cwd: dir, env });
+  const slug = `sim-life-${TS}`;
+
+  // setup: install the full harness via CLI (apply === init, --yes non-interactive).
+  await cli(['apply', '--yes']);
+  const setupGreen = await doctorGreen(dir, env);
+
+  // create task → active pointer set.
+  await cli(['task', slug]);
+  const activePath = join(dir, '.harness', 'active.json');
+  const readActiveRaw = async () => (await readFile(activePath, 'utf8').catch(() => ''));
+  const active0 = await readActiveRaw();
+  let user = 'simbot';
+  try { user = JSON.parse(active0).user || user; } catch { /* keep default */ }
+  const taskDir = join(dir, 'docs', user, slug);
+  const planPath = join(taskDir, `${slug}-plan.md`);
+  const artifactPath = join(taskDir, `${slug}-artifact.md`);
+  const handoffPath = join(taskDir, `${slug}-handoff.md`);
+  const activeSet = active0.includes(slug);
+
+  // done-guard BLOCK: fresh task = open box + template artifact + 0 commits +
+  // uncommitted scaffold → all four guard conditions fire at once. Verify the
+  // block (exit≠0 + message), that active is PRESERVED, and — the real value —
+  // that each of the four cause strings is actually detected.
+  const block = await cli(['done']);
+  const blocked = block.code !== 0 && block.stdout.includes('종결 가드에 걸림');
+  const CAUSES = ['미완 체크박스', '템플릿 그대로', '커밋이 0개', '커밋되지 않은 변경'];
+  const missingCauses = CAUSES.filter((c) => !block.stdout.includes(c));
+  const activePreserved = (await readActiveRaw()).includes(slug);
+
+  // plan checkbox progress: flip `- [ ]` → `- [x]`; planHasOpenBoxes goes open→closed.
+  const planBefore = await readFile(planPath, 'utf8').catch(() => '');
+  const openBefore = /^\s*- \[ \]/m.test(planBefore);
+  await writeFile(planPath, planBefore.replace(/^(\s*)- \[ \]/m, '$1- [x] sim lifecycle step'));
+  const openAfter = /^\s*- \[ \]/m.test(await readFile(planPath, 'utf8').catch(() => ''));
+  const planProgressed = openBefore && !openAfter;
+
+  // real artifact + commit. The post-commit hook then rewrites ONLY the two handoff
+  // files (verified), which the guard excludes from "uncommitted" → clean done passes.
+  await writeFile(artifactPath, `# ${slug} — Artifact\n\n## 결과\nSC6 lifecycle — real content.\n\n## Learnings\n- lifecycle verified\n`);
+  await gitc(['add', '-A']);
+  await gitc(['commit', '-q', '-m', 'sim(life): work']);
+
+  // done COMPLETE: try the clean path first (no --force). It SHOULD pass because
+  // the only dirty files are handoffs (guard-excluded). If it doesn't, fall back to
+  // --force and record that as a finding — never twist the lifecycle to force it.
+  const done = await cli(['done']);
+  let usedForce = false;
+  let activeAfter = await readActiveRaw();
+  if (done.code !== 0 || activeAfter.includes(slug)) {
+    await cli(['done', '--force']);
+    activeAfter = await readActiveRaw();
+    usedForce = true;
+  }
+  const releasedNull = activeAfter.trim() === 'null';
+
+  // handoff DONE marker written by runDone (not the post-commit hook).
+  const doneMarker = await fileHas(handoffPath, '완료');
+
+  const signals = [
+    sig('apply installs harness (doctor green)', setupGreen),
+    sig('task active.json set', activeSet),
+    sig('done-guard blocks (exit≠0 + 종결 가드 메시지)', blocked),
+    sig('done-guard detects all 4 conditions', missingCauses.length === 0, missingCauses.length ? `missing: ${missingCauses.join(', ')}` : ''),
+    sig('done-guard preserves active.json', activePreserved),
+    sig('plan 체크박스 진행 (open→closed)', planProgressed),
+    sig('done 완료 → active.json 해제(null)', releasedNull, usedForce ? '--force 필요' : '--force 불필요 (handoff 제외 로직)'),
+    sig('handoff done(완료) 마커 기록', doneMarker),
+    manual('AskUserQuestion done 휴먼 게이트', '헤드리스 재현 불가 — 머신러리만 검증'),
+  ];
+  return { signals, dir, usedForce };
+}
+
 // ── golden snapshot (P6b) — copy scaffold output for cross-version diff ────────
 async function snapshot(version, scenario, srcDir) {
   const dest = join(PG, 'sim-snapshots', version, scenario);
@@ -444,18 +530,22 @@ async function runFull() {
   const sc3 = await sc3Task(token, canon.dir, canon.env);
   const sc4 = await sc4Hooks(token, canon.dir, canon.env);
   const sc5 = await sc5Triggers(token, canon.dir);
+  // SC6 runs LAST + in its own applied sandbox (it nulls active.json → would pollute
+  // canon.dir). CLI-driven + auth-independent (hand-proven).
+  const sc6 = await sc6Lifecycle();
 
   const sections = [
     renderMatrix('SC1 — init (stack matrix)', sc1PerStack),
     renderMatrix('SC2 — apply / non-destructive (stack matrix)', sc2PerStack),
-    renderSignals(`SC3 — task (canonical: ${CANONICAL_STACK.id})`, sc3.signals),
+    renderSignals(`SC3 — task 생성 (canonical: ${CANONICAL_STACK.id})`, sc3.signals),
     renderSignals(`SC4 — installed-hook firing 2번 (canonical: ${CANONICAL_STACK.id})`, sc4.signals),
     renderSignals(`SC5 — slash/skill trigger reliability (canonical: ${CANONICAL_STACK.id})`, sc5.signals),
+    renderSignals(`SC6 — task 풀 라이프사이클 (CLI 결정적, 전용 샌드박스)`, sc6.signals),
   ];
   const allSig = [
     ...sc1PerStack.flatMap((p) => p.signals),
     ...sc2PerStack.flatMap((p) => p.signals),
-    ...sc3.signals, ...sc4.signals, ...sc5.signals,
+    ...sc3.signals, ...sc4.signals, ...sc5.signals, ...sc6.signals,
   ];
   const counts = allSig.reduce((m, s) => ((m[s.status] = (m[s.status] || 0) + 1), m), {});
 
@@ -471,7 +561,7 @@ async function runFull() {
     `| plugin 버전 | ${version} |`,
     `| plugin git SHA | ${sha} |`,
     `| 측정 레이어 | L5 agent-in-the-loop (설치된 하네스 = 2번) |`,
-    `| stack 매트릭스 | ${STACKS.map((s) => s.id).join(' · ')} (SC1/SC2) · canonical=${CANONICAL_STACK.id} (SC3/4/5) |`,
+    `| stack 매트릭스 | ${STACKS.map((s) => s.id).join(' · ')} (SC1/SC2) · canonical=${CANONICAL_STACK.id} (SC3/4/5) · CLI 결정적 (SC6) |`,
     `| 신호 집계 | PASS ${counts.PASS || 0} · FAIL ${counts.FAIL || 0} · MANUAL ${counts.MANUAL || 0} |`,
     '',
     '> 신호는 파일/git/transcript 증거 기반. 산문 응답은 신호가 아니다. ⚠️=관찰 불가(정직).',
@@ -499,7 +589,20 @@ async function runFull() {
 }
 
 // ── entry ─────────────────────────────────────────────────────────────────────
+// Standalone SC6: CLI-driven + auth-free → a fast deterministic smoke test of the
+// task lifecycle machinery, runnable without a token or any headless spawn.
+async function sc6Standalone() {
+  console.log(`# agentloop sc6 (lifecycle only) — ${TS}\n`);
+  const { signals, usedForce } = await sc6Lifecycle();
+  console.log(renderSignals('SC6 — task 풀 라이프사이클', signals));
+  console.log(`(--force ${usedForce ? '사용됨' : '불필요'})`);
+  await rm(join(PG, '.sim-tmp', TS), { recursive: true, force: true });
+  const failed = signals.filter((s) => s.status === 'FAIL');
+  if (failed.length) { console.error(`✗ ${failed.length} FAIL`); process.exit(1); }
+  console.log('\n✓ SC6 all PASS/MANUAL');
+}
+
 const cmd = process.argv[2] ?? 'probe';
-const dispatch = { probe, run: runFull };
-if (!dispatch[cmd]) { console.error(`unknown subcommand: ${cmd} (probe|run)`); process.exit(64); }
+const dispatch = { probe, run: runFull, sc6: sc6Standalone };
+if (!dispatch[cmd]) { console.error(`unknown subcommand: ${cmd} (probe|run|sc6)`); process.exit(64); }
 dispatch[cmd]().catch((e) => { console.error(`✗ ${e.message}`); process.exit(1); });

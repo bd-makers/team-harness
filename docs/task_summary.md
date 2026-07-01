@@ -12,3 +12,5 @@
 | chad | done-guard-handoff | ✅ done | 2026-06-30 |
 | chad | sim-agentloop-redesign | ✅ done | 2026-06-30 |
 | chad | sim-stack-matrix | ✅ done | 2026-07-01 |
+| chad | harness-sim-guide | 🔄 active | 2026-07-01 |
+| chad | sim-lifecycle-sc6 | 🔄 active | 2026-07-01 |
