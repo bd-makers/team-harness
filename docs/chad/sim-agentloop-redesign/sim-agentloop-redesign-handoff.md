@@ -14,3 +14,16 @@ commands/harness-sim.md                            |  18 +-
  tests/sim/agentloop.mjs                            | 456 +++++++++++++++++++++
  9 files changed, 752 insertions(+), 108 deletions(-)
 
+
+## 2026-07-01T01:20:24.188Z — ad1354e chore(harness): commit post-commit handoff for sim-agentloop-redesign
+docs/chad/chad-handoff.md                                   |  8 ++++----
+ .../sim-agentloop-redesign-handoff.md                       | 13 +++++++++++++
+ 2 files changed, 17 insertions(+), 4 deletions(-)
+
+
+## 2026-07-01T01:20:50.420Z — 6183574 docs(harness): plan 후속 task 항목을 비체크박스로 정리
+docs/chad/chad-handoff.md                                          | 2 +-
+ docs/chad/sim-agentloop-redesign/sim-agentloop-redesign-handoff.md | 6 ++++++
+ docs/chad/sim-agentloop-redesign/sim-agentloop-redesign-plan.md    | 4 ++--
+ 3 files changed, 9 insertions(+), 3 deletions(-)
+
