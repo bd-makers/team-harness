@@ -1,7 +1,7 @@
 # chad — Tasks
 
 ## Active
-- sim-lifecycle-sc6 (created 2026-07-01)
+
 - harness-sim-guide (created 2026-07-01)
 
 
@@ -15,6 +15,7 @@
 
 
 ## Completed
+- ✅ sim-lifecycle-sc6
 - ✅ sim-stack-matrix
 - ✅ sim-agentloop-redesign
 - ✅ done-guard-handoff
