@@ -27,8 +27,16 @@ import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { STACKS } from '../e2e/sandbox.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
+
+// Independent oracle: expected stackLabel per stack.id (literal, NOT detectStack()).
+// The AGENTS.md `## 기술 스택` label is the ONLY output that varies across stacks in
+// the current templates — rules/settings/permissions are stack-invariant, and the
+// STACKS pkgs carry no `scripts` so every cmd* renders `(configure)` uniformly.
+const EXPECTED_LABEL = { node: 'Node.js', next: 'Next.js', 'react-native': 'React Native (Expo)' };
+const CANONICAL_STACK = STACKS.find((s) => s.id === 'node');
 const BIN = join(ROOT, 'bin', 'harness-team.mjs');
 const PG = resolve(ROOT, '..', 'harness-playground');
 const TOKEN_FILE = join(homedir(), '.claude-sim-oauth-token');
@@ -139,7 +147,7 @@ async function transcriptContains(sessionId, needle) {
 }
 
 // ── throwaway sandbox under playground/.sim-tmp/<TS>/<name> ────────────────────
-async function makeSandbox(name, { seed = false } = {}) {
+async function makeSandbox(name, { seed = false, pkg = null } = {}) {
   const dir = join(PG, '.sim-tmp', TS, name);
   await rm(dir, { recursive: true, force: true });
   await mkdir(dir, { recursive: true });
@@ -157,7 +165,9 @@ async function makeSandbox(name, { seed = false } = {}) {
     await mkdir(join(dir, 'src'), { recursive: true });
     await writeFile(join(dir, 'src', 'index.js'), 'export const x = 1;\n');
   }
-  await writeFile(join(dir, 'package.json'), JSON.stringify({ name, version: '0.0.0' }, null, 2));
+  // Stack signature drives detect-stack → AGENTS.md stack section. Default keeps the
+  // legacy generic/node shape so callers that omit `pkg` behave unchanged.
+  await writeFile(join(dir, 'package.json'), JSON.stringify(pkg ?? { name, version: '0.0.0' }, null, 2));
   const env = { ...process.env, PATH: `${binDir}:${process.env.PATH}` };
   await run('git', ['init', '-q'], { cwd: dir, env });
   await run('git', ['config', 'user.email', 'sim@harness.io'], { cwd: dir, env });
@@ -251,9 +261,9 @@ async function doctorGreen(dir, env) {
   catch { return false; }
 }
 
-// ── SC1 init ──────────────────────────────────────────────────────────────────
-async function sc1Init(token) {
-  const { dir, env } = await makeSandbox('init');
+// ── SC1 init (per stack) ──────────────────────────────────────────────────────
+async function sc1Init(token, stack) {
+  const { dir, env } = await makeSandbox(`init-${stack.id}`, { pkg: stack.pkg });
   const a = await runHeadless(token, dir,
     `${NS}:harness-init — Run NON-INTERACTIVELY. This is an automated context with no human to answer prompts. Accept all defaults, pass --yes, and do NOT ask any questions.`);
   const signals = [
@@ -263,14 +273,17 @@ async function sc1Init(token) {
     sig('GEMINI.md @AGENTS.md import', await fileHas(join(dir, 'GEMINI.md'), '@AGENTS.md')),
     sig('.claude/settings.json hooks present', await fileHas(join(dir, '.claude', 'settings.json'), 'hooks')),
     sig('.claude/rules present', existsSync(join(dir, '.claude', 'rules'))),
+    // stack-discriminating: the expected stackLabel must land in AGENTS.md. This is
+    // the only cell that meaningfully differs across the matrix columns.
+    sig(`AGENTS.md stack label = "${EXPECTED_LABEL[stack.id]}"`, await fileHas(join(dir, 'AGENTS.md'), EXPECTED_LABEL[stack.id])),
     sig('doctor green', await doctorGreen(dir, env)),
   ];
   return { dir, env, signals, session: a.sessionId };
 }
 
-// ── SC2 apply (non-destructive) ───────────────────────────────────────────────
-async function sc2Apply(token) {
-  const { dir, env } = await makeSandbox('apply', { seed: true });
+// ── SC2 apply (non-destructive, per stack) ────────────────────────────────────
+async function sc2Apply(token, stack) {
+  const { dir, env } = await makeSandbox(`apply-${stack.id}`, { seed: true, pkg: stack.pkg });
   const readmeBefore = await sha(join(dir, 'README.md'));
   const srcBefore = await sha(join(dir, 'src', 'index.js'));
   const a = await runHeadless(token, dir, `${NS}:harness-apply`);
@@ -279,6 +292,7 @@ async function sc2Apply(token) {
     sig('README.md preserved (hash unchanged)', existsSync(join(dir, 'README.md')) && (await sha(join(dir, 'README.md'))) === readmeBefore),
     sig('src/index.js preserved (hash unchanged)', existsSync(join(dir, 'src', 'index.js')) && (await sha(join(dir, 'src', 'index.js'))) === srcBefore),
     sig('AGENTS.md core injected', existsSync(join(dir, 'AGENTS.md'))),
+    sig(`AGENTS.md stack label = "${EXPECTED_LABEL[stack.id]}"`, await fileHas(join(dir, 'AGENTS.md'), EXPECTED_LABEL[stack.id])),
     sig('doctor green', await doctorGreen(dir, env)),
   ];
   return { dir, env, signals };
@@ -372,10 +386,30 @@ async function snapshot(version, scenario, srcDir) {
 }
 
 // ── report ────────────────────────────────────────────────────────────────────
+const ICO = (s) => (s === 'PASS' ? '✅' : s === 'FAIL' ? '❌' : '⚠️');
 function renderSignals(title, signals) {
-  const ico = (s) => (s === 'PASS' ? '✅' : s === 'FAIL' ? '❌' : '⚠️');
-  const lines = signals.map((s) => `- ${ico(s.status)} ${s.label}${s.note ? ` — ${s.note}` : ''}`);
+  const lines = signals.map((s) => `- ${ICO(s.status)} ${s.label}${s.note ? ` — ${s.note}` : ''}`);
   return `### ${title}\n${lines.join('\n')}\n`;
+}
+
+// Matrix: rows = signal labels, columns = stacks. `perStack` is [{ stack, signals }]
+// where every entry carries the same signal labels in the same order (same fn).
+// The stack-discriminating label is per-stack literal, so its row shows the checked
+// value; strip the value to keep the row label shared across columns.
+function renderMatrix(title, perStack) {
+  const cols = perStack.map((p) => p.stack.id);
+  const rowLabel = (s) => s.label.replace(/ = ".*"$/, ' = <expected>');
+  const rows = perStack[0].signals.map((_, i) => rowLabel(perStack[0].signals[i]));
+  const header = `| signal | ${cols.join(' | ')} |`;
+  const sep = `|---|${cols.map(() => '---').join('|')}|`;
+  const body = rows.map((label, i) => {
+    const cells = perStack.map((p) => ICO(p.signals[i].status));
+    return `| ${label} | ${cells.join(' | ')} |`;
+  });
+  // Cells are icon-only; surface any diagnostic notes (AUTH FAILED, FLAKY, …) as
+  // footnotes so the matrix keeps the prior format's honesty (a ❌ never hides its why).
+  const notes = perStack.flatMap((p) => p.signals.filter((s) => s.note).map((s) => `> ${p.stack.id} · ${rowLabel(s)}: ${s.note}`));
+  return `### ${title}\n${[header, sep, ...body].join('\n')}\n${notes.length ? notes.join('\n') + '\n' : ''}`;
 }
 
 async function runFull() {
@@ -393,27 +427,36 @@ async function runFull() {
     process.exit(2);
   }
 
-  // SC1 measures init's headless-safety standalone. SC3/SC4/SC5 run on the
-  // APPLIED project (apply is headless-safe and installs the full harness), so
-  // installed-hook signals aren't confounded by init's interactivity.
-  const sc1 = await sc1Init(token);
-  const sc2 = await sc2Apply(token);
-  const sc3 = await sc3Task(token, sc2.dir, sc2.env);
-  const sc4 = await sc4Hooks(token, sc2.dir, sc2.env);
-  const sc5 = await sc5Triggers(token, sc2.dir);
-
-  // golden snapshots of init + apply scaffold output
-  await snapshot(version, 'init', sc1.dir);
-  await snapshot(version, 'apply', sc2.dir);
+  // SC1/SC2 are stack-sensitive → run the full matrix (node/next/react-native).
+  // SC3/SC4/SC5 are stack-invariant → run once on the CANONICAL (node) applied
+  // project. apply is headless-safe and installs the full harness, so installed-hook
+  // signals aren't confounded by init's interactivity.
+  const sc1PerStack = [];
+  const sc2PerStack = [];
+  for (const stack of STACKS) {
+    sc1PerStack.push({ stack, ...(await sc1Init(token, stack)) });
+    sc2PerStack.push({ stack, ...(await sc2Apply(token, stack)) });
+    // golden snapshots split per stack for cross-stack + cross-version diff.
+    await snapshot(version, `${stack.id}-init`, sc1PerStack.at(-1).dir);
+    await snapshot(version, `${stack.id}-apply`, sc2PerStack.at(-1).dir);
+  }
+  const canon = sc2PerStack.find((p) => p.stack.id === CANONICAL_STACK.id);
+  const sc3 = await sc3Task(token, canon.dir, canon.env);
+  const sc4 = await sc4Hooks(token, canon.dir, canon.env);
+  const sc5 = await sc5Triggers(token, canon.dir);
 
   const sections = [
-    renderSignals('SC1 — init', sc1.signals),
-    renderSignals('SC2 — apply (non-destructive)', sc2.signals),
-    renderSignals('SC3 — task', sc3.signals),
-    renderSignals('SC4 — installed-hook firing (2번)', sc4.signals),
-    renderSignals('SC5 — slash/skill trigger reliability', sc5.signals),
+    renderMatrix('SC1 — init (stack matrix)', sc1PerStack),
+    renderMatrix('SC2 — apply / non-destructive (stack matrix)', sc2PerStack),
+    renderSignals(`SC3 — task (canonical: ${CANONICAL_STACK.id})`, sc3.signals),
+    renderSignals(`SC4 — installed-hook firing 2번 (canonical: ${CANONICAL_STACK.id})`, sc4.signals),
+    renderSignals(`SC5 — slash/skill trigger reliability (canonical: ${CANONICAL_STACK.id})`, sc5.signals),
   ];
-  const allSig = [...sc1.signals, ...sc2.signals, ...sc3.signals, ...sc4.signals, ...sc5.signals];
+  const allSig = [
+    ...sc1PerStack.flatMap((p) => p.signals),
+    ...sc2PerStack.flatMap((p) => p.signals),
+    ...sc3.signals, ...sc4.signals, ...sc5.signals,
+  ];
   const counts = allSig.reduce((m, s) => ((m[s.status] = (m[s.status] || 0) + 1), m), {});
 
   const reportDir = join(PG, 'sim-reports');
@@ -428,13 +471,19 @@ async function runFull() {
     `| plugin 버전 | ${version} |`,
     `| plugin git SHA | ${sha} |`,
     `| 측정 레이어 | L5 agent-in-the-loop (설치된 하네스 = 2번) |`,
+    `| stack 매트릭스 | ${STACKS.map((s) => s.id).join(' · ')} (SC1/SC2) · canonical=${CANONICAL_STACK.id} (SC3/4/5) |`,
     `| 신호 집계 | PASS ${counts.PASS || 0} · FAIL ${counts.FAIL || 0} · MANUAL ${counts.MANUAL || 0} |`,
     '',
     '> 신호는 파일/git/transcript 증거 기반. 산문 응답은 신호가 아니다. ⚠️=관찰 불가(정직).',
+    '>',
+    '> **검증 범위(전제 정정):** 현재 코드에서 stack별로 갈리는 산출물은 AGENTS.md `## 기술 스택`',
+    '> 섹션의 stackLabel뿐이다(rules·settings·permissions는 stack 무관). 이 매트릭스는 ①init/apply',
+    '> 전 과정의 stack별 완주 ②stackLabel 렌더(stack-discriminating signal) ③스냅샷 stack delta를',
+    '> 검증하며, "stack별 rules·permissions"를 검증하지 **않는다**.',
     '',
     ...sections,
     '## 골든 스냅샷',
-    `- \`sim-snapshots/${version}/init\`, \`sim-snapshots/${version}/apply\` — 버전 간 \`git diff\`용.`,
+    `- stack별 \`sim-snapshots/${version}/<stack>-{init,apply}\` (${STACKS.map((s) => s.id).join('/')}) — stack 간·버전 간 \`git diff\`용.`,
     '',
     '## 정리',
     `- throwaway: \`.sim-tmp/${TS}\` 제거. 영속 playground 프로젝트는 미사용(무오염).`,

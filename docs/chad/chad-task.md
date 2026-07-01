@@ -1,6 +1,7 @@
 # chad — Tasks
 
 ## Active
+- sim-stack-matrix (created 2026-07-01)
 
 
 
