@@ -1,7 +1,7 @@
 # chad — Tasks
 
 ## Active
-- sim-stack-matrix (created 2026-07-01)
+
 
 
 
@@ -13,6 +13,7 @@
 
 
 ## Completed
+- ✅ sim-stack-matrix
 - ✅ sim-agentloop-redesign
 - ✅ done-guard-handoff
 - ✅ harness-sim
