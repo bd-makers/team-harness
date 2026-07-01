@@ -1,7 +1,7 @@
 # chad — Tasks
 
 ## Active
-- sim-agentloop-redesign (created 2026-06-30)
+
 
 
 
@@ -12,6 +12,7 @@
 
 
 ## Completed
+- ✅ sim-agentloop-redesign
 - ✅ done-guard-handoff
 - ✅ harness-sim
 - ✅ e2e-apply-verification

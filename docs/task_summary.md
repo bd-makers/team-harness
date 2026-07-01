@@ -10,4 +10,4 @@
 | chad | e2e-apply-verification | ✅ done | 2026-06-26 |
 | chad | harness-sim | ✅ done | 2026-06-29 |
 | chad | done-guard-handoff | ✅ done | 2026-06-30 |
-| chad | sim-agentloop-redesign | 🔄 active | 2026-06-30 |
+| chad | sim-agentloop-redesign | ✅ done | 2026-06-30 |
