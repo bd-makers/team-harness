@@ -18,8 +18,8 @@ init→apply→task 실세션을 사이드이펙트 신호 루브릭으로 측�
 - [x] **P10. authed 풀런 검증** — 3차 캐논 런(2026-06-30T1854) PASS 21·FAIL 0·MANUAL 1, 무오염 ✓.
 - [x] **P9. 스킬 본문 재작성** — `skills/harness-sim/SKILL.md`(L5 agentloop 중심) + `commands/harness-sim.md` 래퍼 갱신.
 
-## 후속 task (이번 범위 밖)
-- [ ] **테스트 시뮬레이션 가이드 HTML** — sim 사용법·결과 해석·버전 비교 워크플로우를 담은 가이드 문서(별도 task)
+## 후속 task (이번 범위 밖 — 별도 task로 진행)
+- **테스트 시뮬레이션 가이드 HTML** — sim 사용법·결과 해석·버전 비교 워크플로우 가이드 문서. (이 task 범위 아님)
 
 ## 결정 로그
 - 인증: **B(토큰 자동화)** — `claude setup-token` → `~/.claude-sim-oauth-token`(600), 스크립트가 nested claude env에만 주입.
