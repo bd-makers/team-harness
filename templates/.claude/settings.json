@@ -47,6 +47,11 @@
         "hooks": [
           {
             "type": "command",
+            "command": "./.claude/hooks/block-dangerous-git.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
             "command": "./.claude/hooks/pre-commit-check.sh",
             "timeout": 120
           }
