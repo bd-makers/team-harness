@@ -14,3 +14,4 @@
 | chad | sim-stack-matrix | ✅ done | 2026-07-01 |
 | chad | harness-sim-guide | 🔄 active | 2026-07-01 |
 | chad | sim-lifecycle-sc6 | ✅ done | 2026-07-01 |
+| chad | pocock-merge | 🔄 active | 2026-07-02 |
