@@ -96,8 +96,20 @@ const CHECKS = [
   { path: '.cursor/rules', required: false, dir: true },
   { path: '.opencode/opencode.json', required: false, json: true },
   { path: 'docs/README.md', required: false },
-  { path: '.harness/backup.json', required: true, json: true },
+  // Backup/symlink architecture is a consumer-project concern; the plugin source
+  // repo uses git instead, so this check is skipped in plugin-dev mode.
+  { path: '.harness/backup.json', required: true, json: true, skipInPluginDev: true },
 ];
+
+// The plugin *source* repo is not a consumer install: it ships templates/ and its
+// own manifest, and uses git rather than the backup/symlink workflow. Grading it as
+// a consumer produces false-positive failures (backup.json, clone/symlink/delete.sh,
+// backup clone dir). Detect it by structural markers a consumer project never has.
+export async function isPluginDevRepo(targetDir) {
+  return (await exists(join(targetDir, '.claude-plugin/plugin.json')))
+    && (await exists(join(targetDir, 'templates')))
+    && (await exists(join(targetDir, 'bin/harness-team.mjs')));
+}
 
 const BACKUP_SCRIPTS = ['clone.sh', 'symlink.sh', 'delete.sh'];
 
@@ -111,11 +123,25 @@ export async function runDoctor(ctx) {
   const line = (humanLine) => { if (!json) console.log(humanLine); };
 
   line(`harness-team doctor → ${ctx.targetDir}\n`);
+  const pluginDev = await isPluginDevRepo(ctx.targetDir);
+  if (pluginDev) line('  (plugin-dev repo detected — backup/symlink architecture checks are n/a)\n');
   let fail = 0;
   for (const c of CHECKS) {
+    if (pluginDev && c.skipInPluginDev) {
+      add(c.path, 'skip', 'plugin-dev repo — n/a', `- ${c.path}  (plugin-dev repo — n/a)`);
+      continue;
+    }
     const p = join(ctx.targetDir, c.path);
     const ok = await exists(p);
     if (!ok) {
+      // A dangling symlink (target deleted/evicted) reads as "missing" to access();
+      // call it out distinctly — the fix is `sync` (recreate), not `init`.
+      const lst = await lstat(p).catch(() => null);
+      if (lst && lst.isSymbolicLink()) {
+        add(c.path, 'fail', 'broken symlink — target 없음, run: harness-team sync',
+          `✗ ${c.path}  (broken symlink — target 없음, run: harness-team sync)`);
+        fail++; continue;
+      }
       if (c.required) { add(c.path, 'fail', 'missing', `✗ ${c.path}  (missing)`); fail++; }
       else add(c.path, 'optional', 'not present, optional', `- ${c.path}  (not present, optional)`);
       continue;
@@ -157,23 +183,43 @@ export async function runDoctor(ctx) {
     add(c.path, 'pass', undefined, `✓ ${c.path}`);
   }
 
-  // Harness scripts live in the project root since v0.3+.
+  // Harness scripts live in the project root since v0.3+ (consumer projects only).
   line('');
-  for (const name of BACKUP_SCRIPTS) {
-    const p = join(ctx.targetDir, name);
-    if (!(await exists(p))) { add(name, 'fail', 'missing in project root', `✗ ${name}  (missing in project root)`); fail++; continue; }
-    const st = await lstat(p);
-    if (!(st.mode & 0o100)) { add(name, 'fail', 'not executable', `✗ ${name}  (not executable)`); fail++; continue; }
-    add(name, 'pass', 'exec', `✓ ${name}  (exec)`);
-  }
-
-  const backupDir = await loadBackupDir(ctx.targetDir);
-  if (backupDir) {
-    add('backup clone dir', 'pass', backupDir, `\nbackup clone dir: ${backupDir}`);
+  if (pluginDev) {
+    for (const name of BACKUP_SCRIPTS) add(name, 'skip', 'plugin-dev repo — n/a', `- ${name}  (plugin-dev repo — n/a)`);
+    add('backup clone dir', 'skip', 'plugin-dev repo — n/a', `\nbackup clone dir: n/a (plugin-dev repo)`);
   } else {
-    add('backup clone dir', 'fail', 'missing .harness/backup.json',
-      `\n✗ backup clone dir is not configured (missing .harness/backup.json)`);
-    fail++;
+    for (const name of BACKUP_SCRIPTS) {
+      const p = join(ctx.targetDir, name);
+      if (!(await exists(p))) {
+        const lst = await lstat(p).catch(() => null);
+        if (lst && lst.isSymbolicLink()) {
+          add(name, 'fail', 'broken symlink — target 없음, run: harness-team sync',
+            `✗ ${name}  (broken symlink — target 없음, run: harness-team sync)`);
+          fail++; continue;
+        }
+        add(name, 'fail', 'missing in project root', `✗ ${name}  (missing in project root)`); fail++; continue;
+      }
+      const st = await lstat(p);
+      if (!(st.mode & 0o100)) { add(name, 'fail', 'not executable', `✗ ${name}  (not executable)`); fail++; continue; }
+      add(name, 'pass', 'exec', `✓ ${name}  (exec)`);
+    }
+
+    // Reuse loadBackupDir's resolution (~/{parent,name}/{dir}) so the existence
+    // probe hits the exact path the scripts target — no re-derivation mismatch.
+    const backupDir = await loadBackupDir(ctx.targetDir);
+    if (!backupDir) {
+      add('backup clone dir', 'fail', 'missing .harness/backup.json',
+        `\n✗ backup clone dir is not configured (missing .harness/backup.json)`);
+      fail++;
+    } else if (!(await exists(backupDir))) {
+      // Configured but gone — the classic iCloud/Dropbox eviction or a manual move.
+      add('backup clone dir', 'fail', `configured but missing on disk: ${backupDir} (iCloud/Dropbox eviction? moved?)`,
+        `\n✗ backup clone dir configured but missing on disk: ${backupDir}\n   (iCloud/Dropbox eviction? moved? — restore the folder or re-run harness-team init)`);
+      fail++;
+    } else {
+      add('backup clone dir', 'pass', backupDir, `\nbackup clone dir: ${backupDir}`);
+    }
   }
 
   // External tool healthchecks (all optional — missing → -, present → ✓, never fail++).
@@ -205,12 +251,21 @@ export async function runDoctor(ctx) {
   }
 
   // SessionStart task-gate hook presence (⚠️, advisory — does not count toward fail).
-  const hookWarning = await checkSessionStartHook(ctx.targetDir);
+  // The plugin source repo intentionally does not dogfood the gate on itself, so
+  // its absence there is expected, not a warning.
+  const hookWarning = pluginDev ? null : await checkSessionStartHook(ctx.targetDir);
   if (hookWarning) add('SessionStart task-gate', 'warning', hookWarning, `\n⚠️ ${hookWarning}`);
 
   if (json) {
     const warnCount = checks.filter(c => c.status === 'warning').length;
+    const skipCount = checks.filter(c => c.status === 'skip').length;
     const status = fail ? 'error' : (warnCount ? 'warning' : 'success');
+    // Make plugin-dev mode legible to an agent parsing the envelope: a green bill
+    // here means "healthy AND backup checks were intentionally skipped", not the
+    // same success a consumer project reports. Reflect it in summary + extra.mode.
+    const okSummary = pluginDev
+      ? `All checks passed (plugin-dev mode — ${skipCount} backup check(s) skipped)`
+      : 'All checks passed';
     // Route each warning to its own remedy — legacy structure → migrate,
     // spec-gate bypass → create the task properly. A blanket 'migrate' would
     // misdirect an agent whose only warning is a pointer-shell spec.
@@ -221,7 +276,7 @@ export async function runDoctor(ctx) {
     emitObservation(buildEnvelope({
       command: 'doctor',
       status,
-      summary: fail ? `${fail} problem(s)` : (warnCount ? `${warnCount} warning(s)` : 'All checks passed'),
+      summary: fail ? `${fail} problem(s)` : (warnCount ? `${warnCount} warning(s)` : okSummary),
       nextActions: fail ? ['harness-team sync'] : warnActions,
       // Keep the invariant status==='error' ⟺ error!=null uniform across commands.
       // Per-check detail still lives in checks[]; error is the top-level summary of it.
@@ -230,10 +285,11 @@ export async function runDoctor(ctx) {
         safe_retry: 'checks[]의 fail 항목을 해소한 뒤 harness-team sync 실행 후 재점검',
         stop_condition: '필수 파일/스크립트 누락이면 harness-team init 또는 migrate로 복구',
       } : null,
-      extra: { checks },
+      extra: { checks, mode: pluginDev ? 'plugin-dev' : 'project' },
     }));
   } else {
-    console.log(fail ? `\n${fail} problem(s). Run: harness-team sync` : '\nAll checks passed.');
+    console.log(fail ? `\n${fail} problem(s). Run: harness-team sync`
+      : (pluginDev ? '\nAll checks passed (plugin-dev mode).' : '\nAll checks passed.'));
   }
   if (fail) process.exitCode = 1;
 }

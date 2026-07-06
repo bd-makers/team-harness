@@ -9,8 +9,20 @@
 
 - **item 3 — manifest-sync 테스트**: `tests/manifest-sync.test.mjs` 신규(3 assertion). ①commands/*.md ⟺ plugin.json ②commands/*.md ⟺ README 표 ③commands가 참조하는 `harness-team <sub>` ⊆ bin 라우터 case. 작성 직후 **기존 드리프트 발견** — `commands/harness-sim.md`가 README 명령 표에 누락 → README 행 추가로 수정. 107→110 pass. spec Ontology의 "4-파일 동기화"를 그대로 불변식으로 인코딩(README 포함).
 
+- **item 5 — doctor 강화**: ①깨진(dangling) symlink을 "missing"이 아니라 "broken symlink — run sync"로 구분 감지. ②backup.json이 가리키는 backup dir이 디스크에 없으면(iCloud eviction/이동) fail + 힌트. `loadBackupDir` 반환 경로를 그대로 재사용해 해석 불일치 방지. ③`cloudSyncPathWarning`(harness.mjs) — iCloud/Dropbox/GDrive/OneDrive 경로면 init(=apply, 동일 함수)에서 ⚠️ 경고.
+- **item 6 — doctor plugin-dev 모드**: `isPluginDevRepo`(.claude-plugin/plugin.json + templates + bin/harness-team.mjs 3마커, 구조적 감지 — 경로 동일성 아님). 감지 시 backup.json·clone/symlink/delete.sh·backup clone dir·SessionStart 5+1건을 `status:"skip"`로 표시(생략 아님), summary·top-level `mode:"plugin-dev"`로 LOUD. 이 레포 `doctor --json` 5 problem → **0**(status success). advisor 지적 반영: skip을 checks[]에 명시해 소비자 오탐(templates/ 우연 보유)에도 silent green 방지. "active" 네이밍 = 검토 후 별도 task defer.
+
 ## Reviews
 *Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
+
+### 2026-07-06 — Claude self-review (item 5·6: doctor 강화 + plugin-dev 모드)
+- **정확성**: 양면 검증(advisor #3). 플러그인 레포 `doctor --json`→status success·fail 0·skip 5·mode "plugin-dev". 소비자 샌드박스 3-스택 e2e 여전히 success → plugin-dev 미누출 + 5b가 샌드박스 안 깸 입증. 5a/5b는 subprocess fixture로 실증(broken symlink·missing dir 각각 정확한 detail).
+- **엣지**: 마커 하나 빠지면 isPluginDevRepo=false(소비자 오탐 방지) 단위 테스트. cloudSyncPathWarning 4종 매칭 + 로컬/빈값/null→null. dangling symlink이 access()에 "missing"으로 보이는 함정을 lstat로 구분.
+- **회귀**: 110→114 pass(신규 4). e2e 포함 green. dogfood 훅 제거로 생긴 SessionStart 경고는 plugin-dev에서 억제(의도된 비-dogfood).
+- **보안**: 신규 입력 없음. cloudSyncPathWarning은 경로 substring만 검사(실행/네트워크 없음).
+- **단순성**: plugin-dev는 skipInPluginDev 플래그 1개 + 루프 3곳 분기. advisor #1(config.json) 확인 → 모드 플래그 없어 구조적 감지가 맞음.
+- **테스트**: isPluginDevRepo·cloudSyncPathWarning 단위 4개 추가. broken-symlink/missing-dir inline 경로는 subprocess 수동검증(runDoctor가 emitObservation로 출력해 단위화 부담 큼 — 향후 헬퍼 추출 시 자동화 후보).
+- **advisor 반영**: #1 config.json 무플래그 확인 / #2 skip을 checks[]+mode로 LOUD / #3 양면 e2e / #4 loadBackupDir 경로 재사용 + active 네이밍 defer 기록.
 
 ### 2026-07-06 — Claude self-review (item 2: pre-commit-check.sh + migrate)
 - **정확성**: 매니저별 실행 형태를 fake-bin 하네스로 실증 — npm→`npx tsc`/`npm test`, pnpm→`pnpm exec tsc`/`pnpm test`, yarn→`yarn tsc`/`yarn test`, bun→`bunx tsc`/`bun run test`. 단순 `$PM tsc`(npm 깨짐)·`bun test`(스크립트 무시) 함정 회피.

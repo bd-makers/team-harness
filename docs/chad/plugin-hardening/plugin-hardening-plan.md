@@ -10,8 +10,8 @@ v0.9.5 분석에서 식별된 보완 항목 7건 해소 — 팀/조직 도입 �
 - [x] pre-commit-check.sh 패키지 매니저 감지: lockfile 기반(pnpm-lock.yaml/package-lock.json/yarn.lock) 분기, 템플릿 + migrate phase 갱신
 - [x] 4-파일 동기화 자동 검증: commands/*.md ↔ plugin.json commands ↔ bin 라우팅 ↔ README 표 일치 테스트 추가 (tests/manifest-sync.test.mjs). 기존 harness-sim README 누락 드리프트 발견·수정.
 - [x] LICENSE 파일 추가 (MIT, package.json 선언과 일치)
-- [ ] doctor 강화: 깨진 symlink·백업 디렉토리 부재 감지, init 시 iCloud/Dropbox 경로 경고
-- [ ] doctor plugin-dev 모드: 플러그인 소스 레포에서 backup.json/스크립트 체크 완화 (현재 이 레포에서 5 problem false-positive — Codex 2026-07-02 발견). 인덱스 "Active"(=open) vs active.json(=포인터) 네이밍 정리도 함께 검토
+- [x] doctor 강화: 깨진 symlink·백업 디렉토리 부재 감지, init(=apply) 시 iCloud/Dropbox/GDrive/OneDrive 경로 경고
+- [x] doctor plugin-dev 모드: 플러그인 소스 레포에서 backup.json/스크립트/SessionStart 체크 skip (5 false-positive→0, mode:"plugin-dev" LOUD). 인덱스 "active"(=open set) vs active.json(=포인터) 네이밍: **검토 완료 — 별도 task로 defer** (naming refactor는 hardening 정의 밖, chip task_3e1bab70)
 - [ ] release 가드: installed_plugins.json 수정 전 Claude Code 프로세스 감지 시 경고 출력
 - [ ] 미확인 항목 조사: templates/.cursor 빈 디렉토리 의도, sim oauth token 권한 600 강제, bd-makers/team-harness 원격 실존 — 결과를 artifact.md에 기록 후 필요 시 단계 추가
 - [ ] 전체 회귀: `npm test` green + e2e 3-스택 매트릭스 통과 확인

@@ -4,6 +4,7 @@ import { detectStack } from '../detect-stack.mjs';
 import {
   planChanges, applyChanges, copyStaticAssets, formatDiff,
   loadBackupDir, saveBackupConfig, DEFAULT_BACKUP_PARENT, AI_GITIGNORE_PREVIEW,
+  cloudSyncPathWarning,
 } from '../harness.mjs';
 import { confirm, ask } from '../prompt.mjs';
 import { ensureUsername } from '../user-config.mjs';
@@ -50,6 +51,8 @@ export async function runInit(ctx) {
     }
     ctx.backupDir = backupDir;
     console.log(`  backup clone dir: ${backupDir}`);
+    const cloudWarn = cloudSyncPathWarning(ctx.targetDir) || cloudSyncPathWarning(backupDir);
+    if (cloudWarn) console.log(`  ⚠️ ${cloudWarn}`);
   }
 
   // Ask whether to add AI-tool gitignore entries.

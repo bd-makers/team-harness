@@ -7,6 +7,22 @@ import { mergeMarkdown, deepMergeJson, simpleDiff } from './merge.mjs';
 
 export const DEFAULT_BACKUP_PARENT = 'harness-backup';
 
+// The symlink-backup architecture breaks when a cloud sync service evicts files
+// (offloads to cloud-only). Warn when a target/backup path lives under a known
+// sync folder. Returns a warning string, or null. Best-effort by path substring.
+export function cloudSyncPathWarning(p) {
+  if (!p) return null;
+  const markers = [
+    { re: /\/Library\/Mobile Documents\//, name: 'iCloud Drive' },
+    { re: /\/Dropbox(\/|$)/, name: 'Dropbox' },
+    { re: /\/Google ?Drive(\/|$)/, name: 'Google Drive' },
+    { re: /\/OneDrive[^/]*(\/|$)/, name: 'OneDrive' },
+  ];
+  const hit = markers.find(m => m.re.test(p));
+  if (!hit) return null;
+  return `경로가 ${hit.name} 동기화 폴더 안에 있습니다 — 클라우드가 파일을 evict하면 symlink/백업이 깨질 수 있습니다. 로컬 경로 사용을 권장합니다.`;
+}
+
 // Resolve the backup directory from a stored config, else null.
 export async function loadBackupDir(targetDir) {
   const cfg = await readTextSafe(join(targetDir, '.harness/backup.json'));

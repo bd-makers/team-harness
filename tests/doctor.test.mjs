@@ -4,7 +4,8 @@ import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mkdtemp, mkdir, writeFile, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { checkCommand, checkSelfCli, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook } from '../src/commands/doctor.mjs';
+import { checkCommand, checkSelfCli, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, isPluginDevRepo } from '../src/commands/doctor.mjs';
+import { cloudSyncPathWarning } from '../src/harness.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -141,4 +142,39 @@ test('detectLegacyStructure: AGENTS.md 실파일 + .cursorrules 없으면 null(�
     await writeFile(join(dir, 'CLAUDE.md'), '@AGENTS.md\n');
     assert.equal(await detectLegacyStructure(dir), null);
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('isPluginDevRepo: 3개 마커(.claude-plugin/plugin.json·templates·bin) 모두 있으면 true', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-plugindev-'));
+  try {
+    await mkdir(join(dir, '.claude-plugin'), { recursive: true });
+    await writeFile(join(dir, '.claude-plugin/plugin.json'), '{}');
+    await mkdir(join(dir, 'templates'), { recursive: true });
+    await mkdir(join(dir, 'bin'), { recursive: true });
+    await writeFile(join(dir, 'bin/harness-team.mjs'), '// cli\n');
+    assert.equal(await isPluginDevRepo(dir), true);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('isPluginDevRepo: 마커 하나라도 빠지면 false (소비자 프로젝트 오탐 방지)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-consumer-'));
+  try {
+    // consumer has AGENTS.md/.claude but never .claude-plugin/plugin.json + templates + bin
+    await writeFile(join(dir, 'AGENTS.md'), '# core\n');
+    await mkdir(join(dir, 'templates'), { recursive: true });
+    assert.equal(await isPluginDevRepo(dir), false);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('cloudSyncPathWarning: iCloud/Dropbox/Google Drive/OneDrive 경로 → 경고', () => {
+  assert.match(cloudSyncPathWarning('/Users/x/Library/Mobile Documents/iCloud~md~obsidian/p'), /iCloud/);
+  assert.match(cloudSyncPathWarning('/Users/x/Dropbox/p'), /Dropbox/);
+  assert.match(cloudSyncPathWarning('/Users/x/Google Drive/p'), /Google Drive/);
+  assert.match(cloudSyncPathWarning('/Users/x/OneDrive-Corp/p'), /OneDrive/);
+});
+
+test('cloudSyncPathWarning: 로컬 경로/빈값 → null', () => {
+  assert.equal(cloudSyncPathWarning('/Users/x/projects/p'), null);
+  assert.equal(cloudSyncPathWarning(''), null);
+  assert.equal(cloudSyncPathWarning(null), null);
 });
