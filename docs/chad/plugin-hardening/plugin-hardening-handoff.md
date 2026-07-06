@@ -86,3 +86,18 @@ docs/chad/chad-handoff.md                          |   8 +-
  tests/doctor.test.mjs                              |  38 +-
  13 files changed, 302 insertions(+), 624 deletions(-)
 
+
+## 2026-07-06T10:06:24.144Z — 4e48c46 feat(release): warn when Claude Code is running before touching installed_plugins
+docs/chad/chad-handoff.md                          |   8 +-
+ docs/chad/chad-task.md                             |   4 +-
+ .../plugin-hardening/plugin-hardening-artifact.md  |  11 +
+ .../plugin-hardening/plugin-hardening-handoff.md   |  17 +
+ .../chad/plugin-hardening/plugin-hardening-plan.md |   2 +-
+ docs/chad/pocock-merge/pocock-merge-handoff.md     |  15 +
+ docs/harness-overview.html                         | 478 ++-------------------
+ docs/harness-workflow-simulation.html              | 193 ++-------
+ docs/task_summary.md                               |   3 +-
+ src/commands/release.mjs                           |  54 ++-
+ tests/release.test.mjs                             |  42 +-
+ 11 files changed, 221 insertions(+), 606 deletions(-)
+

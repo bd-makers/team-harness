@@ -77,6 +77,16 @@ async function loadTokenOptional() {
     console.error(`  \`umask 077; echo '<token>' > ${TOKEN_FILE}\`\n`);
     return null;
   }
+  // Enforce 600, don't just document it: a token created without `umask 077`
+  // lands world-readable. Warn + self-heal so the subscription OAuth token can't
+  // sit group/other-readable on disk.
+  try {
+    const { mode } = await stat(TOKEN_FILE);
+    if (mode & 0o077) {
+      console.error(`⚠ ${TOKEN_FILE} is group/other-readable (mode ${(mode & 0o777).toString(8)}) — tightening to 600.`);
+      await chmod(TOKEN_FILE, 0o600);
+    }
+  } catch { /* stat/chmod best-effort — never block on perms */ }
   const tok = (await readFile(TOKEN_FILE, 'utf8')).trim();
   if (!tok) { console.error(`✗ ${TOKEN_FILE} is empty — treating as no token.`); return null; }
   console.error(`✓ using OAuth token from ${TOKEN_FILE}\n`);

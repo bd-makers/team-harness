@@ -14,6 +14,12 @@
 
 - **item 7 — release race 가드**: `detectClaudeCodeProcs`(ps 기반, best-effort). Claude Code(CLI `claude-code`/바이너리 `claude`/데스크톱 `Claude.app`) 감지 시 release가 경고. **advisory·non-blocking** (MAINTAINING.md 톤 준수 — `/harness-release`가 세션 내부 실행이 흔하므로 block하면 정상 플로우 파괴). skipCache면 installed_plugins 미접근이라 감지도 skip. dry-run에도 노출(실 실행 전 "종료 권장" 힌트). win32/에러 시 [] 반환으로 절대 release 차단 안 함. human ⚠️ + json status:"warning"+claudeProcs.
 
+- **item 8 — 미확인 항목 조사**:
+  - ① `templates/.cursor/rules`: **미사용 빈 디렉토리**. apply는 `mirrorCursorRules`가 `.claude/rules/*.md`→ target `.cursor/rules`로 생성(harness.mjs), templates/.cursor는 읽지 않음. git untracked(빈 dir 미추적)·npm 미배포. → 로컬 제거(리포 변화 없음).
+  - ② sim OAuth token 600: **문서만, 코드 미강제**. SKILL.md/agentloop 주석이 `umask 077`을 안내하나 `loadTokenOptional`이 perm 체크 없이 read. umask 없이 만들면 world-readable 토큰 노출 위험. → `stat & 0o077`이면 warn+`chmod 600` self-heal 추가(agentloop은 npm test glob 밖·sim 전용, 회귀 없음). 644→600 실증·idempotent.
+  - ③ `bd-makers/team-harness` 원격: **실존**. `git ls-remote` exit 0, HEAD=b0ec907(로컬 최근 커밋 일치).
+- **최종 회귀**: `npm test` 119 pass(107→119, +12: manifest-sync 3 / doctor 4 / release 5) / 0 fail, e2e 3-스택 포함 green. 8개 plan 항목 전부 완료.
+
 ## Reviews
 *Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 

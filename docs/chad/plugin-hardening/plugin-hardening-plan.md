@@ -13,8 +13,8 @@ v0.9.5 분석에서 식별된 보완 항목 7건 해소 — 팀/조직 도입 �
 - [x] doctor 강화: 깨진 symlink·백업 디렉토리 부재 감지, init(=apply) 시 iCloud/Dropbox/GDrive/OneDrive 경로 경고
 - [x] doctor plugin-dev 모드: 플러그인 소스 레포에서 backup.json/스크립트/SessionStart 체크 skip (5 false-positive→0, mode:"plugin-dev" LOUD). 인덱스 "active"(=open set) vs active.json(=포인터) 네이밍: **검토 완료 — 별도 task로 defer** (naming refactor는 hardening 정의 밖, chip task_3e1bab70)
 - [x] release 가드: installed_plugins.json 수정 전 Claude Code 프로세스 감지 시 경고 출력 (advisory·non-blocking, dry-run에도 노출)
-- [ ] 미확인 항목 조사: templates/.cursor 빈 디렉토리 의도, sim oauth token 권한 600 강제, bd-makers/team-harness 원격 실존 — 결과를 artifact.md에 기록 후 필요 시 단계 추가
-- [ ] 전체 회귀: `npm test` green + e2e 3-스택 매트릭스 통과 확인
+- [x] 미확인 항목 조사: ①templates/.cursor = 미사용 빈 dir(untracked, mirrorCursorRules가 target에 생성) → 로컬 제거 ②sim oauth token 600 = 문서만, 미강제 → agentloop `loadTokenOptional`에 stat+chmod self-heal 추가 ③bd-makers/team-harness 원격 = **실존**(ls-remote exit 0). 상세 artifact.md 기록.
+- [x] 전체 회귀: `npm test` green (119 pass, 107→119) + e2e 3-스택 매트릭스 통과 확인
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
