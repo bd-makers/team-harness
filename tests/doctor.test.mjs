@@ -4,11 +4,22 @@ import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mkdtemp, mkdir, writeFile, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { checkCommand, checkSelfCli, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, isPluginDevRepo } from '../src/commands/doctor.mjs';
 import { cloudSyncPathWarning } from '../src/harness.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const pexec = promisify(execFile);
+
+// Run the real doctor CLI against a target dir and return the parsed --json envelope.
+async function doctorJson(targetDir) {
+  const { stdout } = await pexec('node', [join(ROOT, 'bin/harness-team.mjs'), 'doctor', '--json', '--target', targetDir], { timeout: 20000 })
+    .catch(e => ({ stdout: e.stdout || '' })); // doctor exits 1 on fail — keep the envelope
+  return JSON.parse(stdout);
+}
+const checkOf = (env, label) => (env.checks || []).find(c => c.label === label);
 
 async function makeActiveFixture(specContent) {
   const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-gate-'));
@@ -177,4 +188,41 @@ test('cloudSyncPathWarning: 로컬 경로/빈값 → null', () => {
   assert.equal(cloudSyncPathWarning('/Users/x/projects/p'), null);
   assert.equal(cloudSyncPathWarning(''), null);
   assert.equal(cloudSyncPathWarning(null), null);
+});
+
+// --- runDoctor integration (real CLI) — guards item 5/6 branching that the pure
+//     helper tests don't reach. Mirrors the manual --json checks used in dev. ---
+
+test('runDoctor: 플러그인 소스 레포 → plugin-dev 모드, backup 체크 skip, fail 0', async () => {
+  const env = await doctorJson(ROOT);
+  assert.equal(env.mode, 'plugin-dev', 'top-level mode must flag plugin-dev');
+  const failCount = (env.checks || []).filter(c => c.status === 'fail').length;
+  assert.equal(failCount, 0, `plugin-dev repo must have 0 fails, got ${failCount}`);
+  const skipCount = (env.checks || []).filter(c => c.status === 'skip').length;
+  assert.ok(skipCount >= 5, `expected ≥5 skipped backup checks, got ${skipCount}`);
+  assert.equal(checkOf(env, '.harness/backup.json')?.status, 'skip', 'backup.json check must be skipped, not failed');
+});
+
+test('runDoctor: 깨진(dangling) symlink → "broken symlink"로 구분 fail', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-broken-'));
+  try {
+    await symlink(join(dir, 'nope-target.md'), join(dir, 'AGENTS.md')); // dangling
+    const env = await doctorJson(dir);
+    assert.equal(env.mode, 'project', 'a bare consumer dir is not plugin-dev');
+    const c = checkOf(env, 'AGENTS.md');
+    assert.equal(c?.status, 'fail');
+    assert.match(c.detail, /broken symlink/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('runDoctor: backup dir이 설정됐지만 디스크에 없으면 fail (iCloud eviction)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-nobackup-'));
+  try {
+    await mkdir(join(dir, '.harness'), { recursive: true });
+    await writeFile(join(dir, '.harness/backup.json'), JSON.stringify({ dir: '/tmp/harness-definitely-absent-xyz' }));
+    const env = await doctorJson(dir);
+    const c = checkOf(env, 'backup clone dir');
+    assert.equal(c?.status, 'fail');
+    assert.match(c.detail, /missing on disk/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });

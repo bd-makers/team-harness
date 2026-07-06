@@ -18,7 +18,9 @@
   - ① `templates/.cursor/rules`: **미사용 빈 디렉토리**. apply는 `mirrorCursorRules`가 `.claude/rules/*.md`→ target `.cursor/rules`로 생성(harness.mjs), templates/.cursor는 읽지 않음. git untracked(빈 dir 미추적)·npm 미배포. → 로컬 제거(리포 변화 없음).
   - ② sim OAuth token 600: **문서만, 코드 미강제**. SKILL.md/agentloop 주석이 `umask 077`을 안내하나 `loadTokenOptional`이 perm 체크 없이 read. umask 없이 만들면 world-readable 토큰 노출 위험. → `stat & 0o077`이면 warn+`chmod 600` self-heal 추가(agentloop은 npm test glob 밖·sim 전용, 회귀 없음). 644→600 실증·idempotent.
   - ③ `bd-makers/team-harness` 원격: **실존**. `git ls-remote` exit 0, HEAD=b0ec907(로컬 최근 커밋 일치).
-- **최종 회귀**: `npm test` 119 pass(107→119, +12: manifest-sync 3 / doctor 4 / release 5) / 0 fail, e2e 3-스택 포함 green. 8개 plan 항목 전부 완료.
+- **최종 회귀**: `npm test` **122 pass**(107→122, +15) / 0 fail, e2e 3-스택 포함 green. 8개 plan 항목 전부 완료.
+  - 신규 테스트 내역: manifest-sync 3 / doctor pure-helper 4 / release 5 / **runDoctor 통합 3**.
+  - advisor 지적 반영: item 5/6의 핵심 `runDoctor` 분기(plugin-dev green+mode+skip / broken-symlink fail / missing-backup-dir fail)를 수동 검증→**커밋된 CLI 통합 테스트**로 승격. 미래 리팩토링이 plugin-dev 모드를 되돌리면 CI가 잡는다.
 
 ## Reviews
 *Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
