@@ -69,3 +69,20 @@ LICENSE                                            |  21 +
  docs/task_summary.md                               |   3 +-
  9 files changed, 165 insertions(+), 602 deletions(-)
 
+
+## 2026-07-06T10:00:24.816Z — eedbee8 feat(doctor): plugin-dev mode + broken-symlink/backup-dir/cloud-path checks
+docs/chad/chad-handoff.md                          |   8 +-
+ docs/chad/chad-task.md                             |   4 +-
+ .../plugin-hardening/plugin-hardening-artifact.md  |  12 +
+ .../plugin-hardening/plugin-hardening-handoff.md   |  56 +++
+ .../chad/plugin-hardening/plugin-hardening-plan.md |   4 +-
+ docs/chad/pocock-merge/pocock-merge-handoff.md     |  15 +
+ docs/harness-overview.html                         | 478 ++-------------------
+ docs/harness-workflow-simulation.html              | 193 ++-------
+ docs/task_summary.md                               |   3 +-
+ src/commands/doctor.mjs                            |  96 ++++-
+ src/commands/init.mjs                              |   3 +
+ src/harness.mjs                                    |  16 +
+ tests/doctor.test.mjs                              |  38 +-
+ 13 files changed, 302 insertions(+), 624 deletions(-)
+

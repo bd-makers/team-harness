@@ -12,8 +12,19 @@
 - **item 5 — doctor 강화**: ①깨진(dangling) symlink을 "missing"이 아니라 "broken symlink — run sync"로 구분 감지. ②backup.json이 가리키는 backup dir이 디스크에 없으면(iCloud eviction/이동) fail + 힌트. `loadBackupDir` 반환 경로를 그대로 재사용해 해석 불일치 방지. ③`cloudSyncPathWarning`(harness.mjs) — iCloud/Dropbox/GDrive/OneDrive 경로면 init(=apply, 동일 함수)에서 ⚠️ 경고.
 - **item 6 — doctor plugin-dev 모드**: `isPluginDevRepo`(.claude-plugin/plugin.json + templates + bin/harness-team.mjs 3마커, 구조적 감지 — 경로 동일성 아님). 감지 시 backup.json·clone/symlink/delete.sh·backup clone dir·SessionStart 5+1건을 `status:"skip"`로 표시(생략 아님), summary·top-level `mode:"plugin-dev"`로 LOUD. 이 레포 `doctor --json` 5 problem → **0**(status success). advisor 지적 반영: skip을 checks[]에 명시해 소비자 오탐(templates/ 우연 보유)에도 silent green 방지. "active" 네이밍 = 검토 후 별도 task defer.
 
+- **item 7 — release race 가드**: `detectClaudeCodeProcs`(ps 기반, best-effort). Claude Code(CLI `claude-code`/바이너리 `claude`/데스크톱 `Claude.app`) 감지 시 release가 경고. **advisory·non-blocking** (MAINTAINING.md 톤 준수 — `/harness-release`가 세션 내부 실행이 흔하므로 block하면 정상 플로우 파괴). skipCache면 installed_plugins 미접근이라 감지도 skip. dry-run에도 노출(실 실행 전 "종료 권장" 힌트). win32/에러 시 [] 반환으로 절대 release 차단 안 함. human ⚠️ + json status:"warning"+claudeProcs.
+
 ## Reviews
 *Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
+
+### 2026-07-06 — Claude self-review (item 7: release race 가드)
+- **정확성**: mock ps로 claude-code/Claude.app/`claude` 3종 감지, `claude-experiments`·vim 오탐 없음 검증. 라이브(이 세션)에서 실제 감지(12~13 hit). dry-run 실행 시 human ⚠️ + json status:"warning" 노출, git 변경 0(비파괴).
+- **엣지**: ps 실패→[](throw 안 함). win32→[](ps 없음). self pid 제외. skipCache→감지 자체 skip(installed_plugins 미접근이라 무의미). `claude-<other>` 정규식 오탐 방지.
+- **회귀**: 114→119 pass(신규 5). 기존 release 테스트(dry-run byte-identical 포함) 전부 green — 감지는 읽기 전용.
+- **보안**: ps 출력만 파싱, 실행/네트워크 없음. 프로세스 args를 그대로 출력하지 않고 pid만 envelope에 노출.
+- **단순성**: 함수 1개 + release()에 조기 감지 1블록 + runRelease 경고 1줄. block 아님 → 정상 세션-내 플로우 보존.
+- **테스트**: detectClaudeCodeProcs 4개 + skipCache-skip 1개. 주입형 exec로 결정론적.
+- **판단 근거**: MAINTAINING.md L65가 "가급적 종료 후 실행"(advisory)이라 block 대신 warn 선택. block은 `/harness-release`(세션 내부 실행)를 상시 차단해 오히려 harness 파괴.
 
 ### 2026-07-06 — Claude self-review (item 5·6: doctor 강화 + plugin-dev 모드)
 - **정확성**: 양면 검증(advisor #3). 플러그인 레포 `doctor --json`→status success·fail 0·skip 5·mode "plugin-dev". 소비자 샌드박스 3-스택 e2e 여전히 success → plugin-dev 미누출 + 5b가 샌드박스 안 깸 입증. 5a/5b는 subprocess fixture로 실증(broken symlink·missing dir 각각 정확한 detail).

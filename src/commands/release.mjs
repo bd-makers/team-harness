@@ -73,6 +73,35 @@ async function deriveGitSha(root) {
   }
 }
 
+// Best-effort detection of a running Claude Code process (CLI or desktop app).
+// release rewrites ~/.claude/plugins/installed_plugins.json, which Claude Code
+// owns; editing it live can race (see MAINTAINING.md). Advisory only — this NEVER
+// throws and returns [] on any unsupported platform or error, so release is never
+// blocked by detection. Own PID is excluded so the release process can't match.
+export async function detectClaudeCodeProcs(exec = pexec) {
+  if (process.platform === 'win32') return []; // no ps; skip silently
+  try {
+    const { stdout } = await exec('ps', ['-A', '-o', 'pid=,args='], { timeout: 3000, maxBuffer: 1 << 22 });
+    const self = String(process.pid);
+    const hits = [];
+    for (const raw of stdout.split('\n')) {
+      const line = raw.trim();
+      if (!line) continue;
+      const sp = line.indexOf(' ');
+      const pid = sp === -1 ? line : line.slice(0, sp);
+      const args = sp === -1 ? '' : line.slice(sp + 1);
+      if (pid === self) continue;
+      // Match the desktop app (Claude.app), the CLI package (claude-code), or the
+      // `claude` binary as a path/command token. `claude-<other>` won't match the
+      // last alternative, avoiding false hits on unrelated "claude*" paths.
+      if (/Claude\.app|claude-code|(^|\/|\s)claude(\s|$)/.test(args)) hits.push({ pid, args });
+    }
+    return hits;
+  } catch {
+    return [];
+  }
+}
+
 // In the destination commands/ dir ONLY, remove files absent from the source.
 async function syncCommandsDir(srcCommands, dstCommands) {
   await mkdir(dstCommands, { recursive: true });
@@ -97,6 +126,7 @@ export async function release({
   dryRun = false,
   skipCache = false,
   gitSha,
+  detectClaude = true,
 } = {}) {
   pluginsRoot = pluginsRoot ?? (process.env.CLAUDE_PLUGINS_ROOT ?? path.join(os.homedir(), '.claude/plugins'));
 
@@ -161,6 +191,17 @@ export async function release({
     dryRun,
     skipCache,
   };
+
+  // Advisory race guard: a live Claude Code process owns installed_plugins.json.
+  // Detect early so dry-run also surfaces the heads-up (quit before the real run).
+  // Only relevant when we'd touch installed_plugins.json (i.e. not --skip-cache).
+  if (detectClaude && !skipCache) {
+    const procs = await detectClaudeCodeProcs();
+    if (procs.length > 0) {
+      result.claudeRunning = true;
+      result.claudeProcs = procs.map(p => p.pid);
+    }
+  }
 
   // 4. Dry run: write nothing.
   if (dryRun) return result;
@@ -233,6 +274,10 @@ function releaseArtifacts(res) {
   return a;
 }
 
+const CLAUDE_RUNNING_WARNING =
+  'Claude Code 실행 중 감지 — release가 installed_plugins.json을 수정하면 경쟁 조건이 발생할 수 있습니다. ' +
+  '가급적 Claude Code 종료 후 실행하세요. 중단 시 복구: harness-team release <x.y.z> (명시적 버전 재실행).';
+
 function fmtTargets(res) {
   const lines = [`  manifests: package.json, plugin.json, marketplace.json (→ ${res.newVersion})`];
   if (!res.skipCache) {
@@ -259,17 +304,20 @@ export async function runRelease(ctx) {
     if (json) {
       emitObservation(buildEnvelope({
         command: 'release',
-        status: 'success',
-        summary: res.dryRun
+        status: res.claudeRunning ? 'warning' : 'success',
+        summary: (res.claudeRunning ? '⚠️ Claude Code 실행 중 — ' : '') + (res.dryRun
           ? `release dry-run: ${res.oldVersion} → ${res.newVersion} (변경 없음)`
-          : `release: ${res.oldVersion} → ${res.newVersion}`,
+          : `release: ${res.oldVersion} → ${res.newVersion}`),
         nextActions: res.dryRun
           ? [`harness-team release ${bump}`]
           : [`git add -A && git commit -m "chore(release): 버전 ${res.newVersion}으로 범프" && git tag v${res.newVersion} && git push && git push --tags`],
         artifacts: releaseArtifacts(res),
+        extra: res.claudeRunning ? { claudeRunning: true, claudeProcs: res.claudeProcs, warning: CLAUDE_RUNNING_WARNING } : undefined,
       }));
       return res;
     }
+
+    if (res.claudeRunning) console.log(`⚠️ ${CLAUDE_RUNNING_WARNING}\n`);
 
     if (res.dryRun) {
       console.log(`ⓘ release (dry-run): ${res.oldVersion} → ${res.newVersion} — 변경 없음`);

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, rm, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { release } from '../src/commands/release.mjs';
+import { release, detectClaudeCodeProcs } from '../src/commands/release.mjs';
 
 const PLUGIN = 'harness-aijient-team';
 const MARKET = 'harness-aijient-team-marketplace';
@@ -362,6 +362,46 @@ test('safety: stale dest symlink is not followed to delete its target outside co
     // The stale symlink may or may not be removed, but its target MUST survive.
     assert.ok(await fileExists(targetFile), 'symlink target outside commands/ must not be deleted');
     assert.equal(await readFile(targetFile, 'utf8'), 'precious\n', 'target content must be intact');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(pr, { recursive: true, force: true });
+  }
+});
+
+const mockPs = (stdout) => async () => ({ stdout });
+
+test('detectClaudeCodeProcs: claude-code CLI / Claude.app / claude 바이너리를 감지', async () => {
+  const hits = await detectClaudeCodeProcs(mockPs(
+    '  100 /usr/bin/node /x/@anthropic-ai/claude-code/cli.js\n' +
+    '  200 /Applications/Claude.app/Contents/MacOS/Claude\n' +
+    '  300 /usr/local/bin/claude\n' +
+    '  500 /usr/bin/vim notes.txt\n',
+  ));
+  assert.deepEqual(hits.map(h => h.pid), ['100', '200', '300']);
+});
+
+test('detectClaudeCodeProcs: claude-<other> 경로는 오탐하지 않음', async () => {
+  const hits = await detectClaudeCodeProcs(mockPs('  400 node /Users/x/claude-experiments/foo.js\n'));
+  assert.equal(hits.length, 0);
+});
+
+test('detectClaudeCodeProcs: claude 프로세스 없으면 빈 배열', async () => {
+  const hits = await detectClaudeCodeProcs(mockPs('  1 /sbin/launchd\n  2 /usr/bin/vim\n'));
+  assert.equal(hits.length, 0);
+});
+
+test('detectClaudeCodeProcs: ps 실패해도 throw 없이 [] (release 비차단)', async () => {
+  const hits = await detectClaudeCodeProcs(async () => { throw new Error('ps failed'); });
+  assert.deepEqual(hits, []);
+});
+
+test('release: skipCache면 claude 감지 자체를 건너뜀 (installed_plugins 미접근)', async () => {
+  const root = await makeRoot();
+  const pr = await makePluginsRoot();
+  try {
+    // detectClaude defaults true, but skipCache short-circuits the whole probe.
+    const res = await release({ bump: 'patch', root, pluginsRoot: pr, skipCache: true, gitSha: 'x' });
+    assert.equal(res.claudeRunning, undefined, 'skipCache일 때 claudeRunning 미설정');
   } finally {
     await rm(root, { recursive: true, force: true });
     await rm(pr, { recursive: true, force: true });

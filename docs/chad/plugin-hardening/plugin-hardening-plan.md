@@ -12,7 +12,7 @@ v0.9.5 분석에서 식별된 보완 항목 7건 해소 — 팀/조직 도입 �
 - [x] LICENSE 파일 추가 (MIT, package.json 선언과 일치)
 - [x] doctor 강화: 깨진 symlink·백업 디렉토리 부재 감지, init(=apply) 시 iCloud/Dropbox/GDrive/OneDrive 경로 경고
 - [x] doctor plugin-dev 모드: 플러그인 소스 레포에서 backup.json/스크립트/SessionStart 체크 skip (5 false-positive→0, mode:"plugin-dev" LOUD). 인덱스 "active"(=open set) vs active.json(=포인터) 네이밍: **검토 완료 — 별도 task로 defer** (naming refactor는 hardening 정의 밖, chip task_3e1bab70)
-- [ ] release 가드: installed_plugins.json 수정 전 Claude Code 프로세스 감지 시 경고 출력
+- [x] release 가드: installed_plugins.json 수정 전 Claude Code 프로세스 감지 시 경고 출력 (advisory·non-blocking, dry-run에도 노출)
 - [ ] 미확인 항목 조사: templates/.cursor 빈 디렉토리 의도, sim oauth token 권한 600 강제, bd-makers/team-harness 원격 실존 — 결과를 artifact.md에 기록 후 필요 시 단계 추가
 - [ ] 전체 회귀: `npm test` green + e2e 3-스택 매트릭스 통과 확인
 
