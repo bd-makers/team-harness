@@ -7,6 +7,8 @@
 - **item 1 — CI** (`9c8ed5e`): `.github/workflows/test.yml` 추가. push(main)/PR 시 `npm test`(unit+e2e), Node 18/20 매트릭스. deps 0·lockfile 없음 → install 단계 생략. e2e 샌드박스 외부에서 git 쓰는 테스트 위해 CI 전역 git identity 설정.
 - **item 2 — pre-commit-check.sh PM 감지**: pnpm 하드코딩 제거 → lockfile 기반 감지(pnpm-lock/yarn.lock/bun.lockb→없으면 npm, `src/detect-stack.mjs`와 동일 우선순위). exec/run 형태를 매니저별로 정확히 분기(npm=`npx`, bun=`bunx`+`bun run test`). package.json/tsconfig/test-script 부재 시 우아하게 skip. `migrate.mjs`에 `refreshClaudeHooks` 추가 — 기존 pnpm-하드코딩 설치본만 갱신, 커스터마이즈본은 skip.
 
+- **item 3 — manifest-sync 테스트**: `tests/manifest-sync.test.mjs` 신규(3 assertion). ①commands/*.md ⟺ plugin.json ②commands/*.md ⟺ README 표 ③commands가 참조하는 `harness-team <sub>` ⊆ bin 라우터 case. 작성 직후 **기존 드리프트 발견** — `commands/harness-sim.md`가 README 명령 표에 누락 → README 행 추가로 수정. 107→110 pass. spec Ontology의 "4-파일 동기화"를 그대로 불변식으로 인코딩(README 포함).
+
 ## Reviews
 *Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 

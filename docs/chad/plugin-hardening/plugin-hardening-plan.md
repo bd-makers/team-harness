@@ -8,7 +8,7 @@ v0.9.5 분석에서 식별된 보완 항목 7건 해소 — 팀/조직 도입 �
 ## 단계
 - [x] CI 추가: `.github/workflows/test.yml` — push/PR 시 `node --test` (unit + e2e), Node 18/20 매트릭스
 - [x] pre-commit-check.sh 패키지 매니저 감지: lockfile 기반(pnpm-lock.yaml/package-lock.json/yarn.lock) 분기, 템플릿 + migrate phase 갱신
-- [ ] 4-파일 동기화 자동 검증: commands/*.md ↔ plugin.json commands ↔ bin 라우팅 일치 테스트 추가 (tests/manifest-sync.test.mjs)
+- [x] 4-파일 동기화 자동 검증: commands/*.md ↔ plugin.json commands ↔ bin 라우팅 ↔ README 표 일치 테스트 추가 (tests/manifest-sync.test.mjs). 기존 harness-sim README 누락 드리프트 발견·수정.
 - [ ] LICENSE 파일 추가 (MIT, package.json 선언과 일치)
 - [ ] doctor 강화: 깨진 symlink·백업 디렉토리 부재 감지, init 시 iCloud/Dropbox 경로 경고
 - [ ] doctor plugin-dev 모드: 플러그인 소스 레포에서 backup.json/스크립트 체크 완화 (현재 이 레포에서 5 problem false-positive — Codex 2026-07-02 발견). 인덱스 "Active"(=open) vs active.json(=포인터) 네이밍 정리도 함께 검토
