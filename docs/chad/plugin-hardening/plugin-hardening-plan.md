@@ -7,7 +7,7 @@ v0.9.5 분석에서 식별된 보완 항목 7건 해소 — 팀/조직 도입 �
 
 ## 단계
 - [x] CI 추가: `.github/workflows/test.yml` — push/PR 시 `node --test` (unit + e2e), Node 18/20 매트릭스
-- [ ] pre-commit-check.sh 패키지 매니저 감지: lockfile 기반(pnpm-lock.yaml/package-lock.json/yarn.lock) 분기, 템플릿 + migrate phase 갱신
+- [x] pre-commit-check.sh 패키지 매니저 감지: lockfile 기반(pnpm-lock.yaml/package-lock.json/yarn.lock) 분기, 템플릿 + migrate phase 갱신
 - [ ] 4-파일 동기화 자동 검증: commands/*.md ↔ plugin.json commands ↔ bin 라우팅 일치 테스트 추가 (tests/manifest-sync.test.mjs)
 - [ ] LICENSE 파일 추가 (MIT, package.json 선언과 일치)
 - [ ] doctor 강화: 깨진 symlink·백업 디렉토리 부재 감지, init 시 iCloud/Dropbox 경로 경고

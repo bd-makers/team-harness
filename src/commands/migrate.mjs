@@ -327,6 +327,42 @@ async function refreshProjectScripts(ctx) {
   return true;
 }
 
+// --- Refresh installed .claude hooks (old pnpm-hardcoded → PM detection) ---
+//
+// The pre-commit-check.sh shipped before this change hardcoded `pnpm`. Installed
+// copies are byte-identical to that old template, so we can refresh them safely.
+// If the installed hook has been customized (no longer the old signature) we skip
+// it rather than clobber the user's edits.
+
+async function refreshClaudeHooks(ctx) {
+  const { root, targetDir } = ctx;
+  const rel = '.claude/hooks/pre-commit-check.sh';
+  const installed = await readTextSafe(join(targetDir, rel));
+  if (installed === null) return false; // no installed hook — nothing to do
+
+  const tpl = await readTextSafe(join(root, 'templates', rel));
+  if (!tpl) return false;
+  if (installed === tpl) return false; // already current
+
+  // Only refresh the known-old pnpm-hardcoded version; the new template defines
+  // detect_pm(), so its presence means already-new or a user's own PM logic.
+  const isOldHardcoded = installed.includes('pnpm tsc --noEmit') && !installed.includes('detect_pm');
+  if (!isOldHardcoded) {
+    console.log('  pre-commit hook: differs from template but looks customized — skipping (manual review)');
+    return false;
+  }
+
+  console.log('\nFound old pnpm-hardcoded pre-commit-check.sh:');
+  console.log('  → refresh to lockfile-based package-manager detection (npm/yarn/pnpm/bun)');
+
+  const ok = ctx.flags.yes || await confirm('\nRefresh pre-commit hook to current template?', { defaultYes: true });
+  if (!ok) { console.log('Skipped hook refresh.'); return false; }
+
+  await writeText(join(targetDir, rel), tpl, { mode: 0o755 });
+  console.log('  ✓ refreshed: .claude/hooks/pre-commit-check.sh');
+  return true;
+}
+
 // --- SSOT inversion (0.7.x legacy → AGENTS.md core) ---
 //
 // Legacy = CLAUDE.md real file holds all sections (principles/stack/roles/protocol +
@@ -471,9 +507,10 @@ export async function runMigrate(ctx) {
   const taskUpgraded = await migrateTaskTo07(ctx);
   const scriptMoved = await migrateBackupScripts(ctx);
   const scriptRefreshed = await refreshProjectScripts(ctx);
+  const claudeHooksRefreshed = await refreshClaudeHooks(ctx);
   const hookMigrated = await migrateSessionStartHook(ctx);
 
-  if (!agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !hookMigrated) {
+  if (!agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !claudeHooksRefreshed && !hookMigrated) {
     console.log('\nNothing to migrate — project is already up to date.');
     return;
   }
