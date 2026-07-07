@@ -1,7 +1,7 @@
 # chad — Tasks
 
 ## Open
-- task-index-open-naming (created 2026-07-07)
+
 
 
 
@@ -18,6 +18,7 @@
 
 
 ## Completed
+- ✅ task-index-open-naming
 - ✅ plugin-hardening
 - ✅ pocock-merge
 - ✅ sim-lifecycle-sc6

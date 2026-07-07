@@ -16,4 +16,4 @@
 | chad | sim-lifecycle-sc6 | ✅ done | 2026-07-01 |
 | chad | pocock-merge | ✅ done | 2026-07-02 |
 | chad | plugin-hardening | ✅ done | 2026-07-02 |
-| chad | task-index-open-naming | 🔄 open | 2026-07-07 |
+| chad | task-index-open-naming | ✅ done | 2026-07-07 |
