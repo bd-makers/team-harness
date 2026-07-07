@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, readFile, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { taskSpecTemplate, taskPlanTemplate, taskArtifactTemplate, runTask, runList } from '../src/commands/task.mjs';
+import { taskSpecTemplate, taskPlanTemplate, taskArtifactTemplate, runTask, runList, runDone } from '../src/commands/task.mjs';
+import { migrateTaskIndexLabels } from '../src/commands/migrate.mjs';
 
 test('spec 템플릿은 4차원 Ambiguity 자가진단 섹션을 포함한다', () => {
   const out = taskSpecTemplate('demo');
@@ -71,4 +72,66 @@ test('runList는 task 마커(spec.md) 없는 디렉토리(superpowers 등)를 ta
   } finally {
     await rm(tmpDir, { recursive: true, force: true });
   }
+});
+
+// --- task index "active" → "open" rename (+ backward-compat) ---
+
+test('runTask: 새 task는 인덱스에 "## Open" + summary에 "🔄 open"을 쓴다', async () => {
+  const tmpDir = await mkdtemp(join(tmpdir(), 'harness-open-'));
+  try {
+    await runTask({ targetDir: tmpDir, flags: { member: 'tester' }, taskArgs: ['demo'] });
+    const idx = await readFile(join(tmpDir, 'docs', 'tester', 'tester-task.md'), 'utf8');
+    const sum = await readFile(join(tmpDir, 'docs', 'task_summary.md'), 'utf8');
+    assert.match(idx, /## Open/);
+    assert.doesNotMatch(idx, /## Active/);
+    assert.match(sum, /\| tester \| demo \| 🔄 open \|/);
+  } finally { await rm(tmpDir, { recursive: true, force: true }); }
+});
+
+test('runTask: 기존 "## Active" 인덱스에도 새 task를 삽입한다 (backward-compat)', async () => {
+  const tmpDir = await mkdtemp(join(tmpdir(), 'harness-compat-'));
+  try {
+    // Simulate a pre-rename install: index already has the old header.
+    await mkdir(join(tmpDir, 'docs', 'tester'), { recursive: true });
+    await writeFile(join(tmpDir, 'docs', 'tester', 'tester-task.md'), '# tester — Tasks\n\n## Active\n- older (created 2026-07-01)\n\n## Completed\n');
+    await runTask({ targetDir: tmpDir, flags: { member: 'tester' }, taskArgs: ['fresh'] });
+    const idx = await readFile(join(tmpDir, 'docs', 'tester', 'tester-task.md'), 'utf8');
+    // inserted under the existing ## Active header — not lost
+    assert.match(idx, /## Active\n- fresh \(created/);
+    assert.match(idx, /- older/);
+  } finally { await rm(tmpDir, { recursive: true, force: true }); }
+});
+
+test('runDone: 기존 "🔄 active" summary 행도 "✅ done"으로 처리한다 (backward-compat)', async () => {
+  const tmpDir = await mkdtemp(join(tmpdir(), 'harness-donecompat-'));
+  try {
+    await runTask({ targetDir: tmpDir, flags: { member: 'tester' }, taskArgs: ['legacy'] });
+    // Rewrite the summary row to the pre-rename label, as an old install would have it.
+    const summaryPath = join(tmpDir, 'docs', 'task_summary.md');
+    const sum = (await readFile(summaryPath, 'utf8')).replace('🔄 open', '🔄 active');
+    await writeFile(summaryPath, sum);
+    await runDone({ targetDir: tmpDir, flags: { force: true } });
+    const after = await readFile(summaryPath, 'utf8');
+    assert.match(after, /\| tester \| legacy \| ✅ done \|/);
+    assert.doesNotMatch(after, /🔄 active/);
+  } finally { await rm(tmpDir, { recursive: true, force: true }); }
+});
+
+test('migrateTaskIndexLabels: 기존 active 라벨을 open으로 조화한다', async () => {
+  const tmpDir = await mkdtemp(join(tmpdir(), 'harness-mig-open-'));
+  try {
+    await mkdir(join(tmpDir, 'docs', 'tester'), { recursive: true });
+    await writeFile(join(tmpDir, 'docs', 'tester', 'tester-task.md'), '# tester — Tasks\n\n## Active\n- a\n\n## Completed\n');
+    await writeFile(join(tmpDir, 'docs', 'task_summary.md'), '# Task Summary\n\n| User | Task | Status | Created |\n|------|------|--------|---------|\n| tester | a | 🔄 active | 2026-07-01 |\n');
+    const changed = await migrateTaskIndexLabels({ targetDir: tmpDir });
+    assert.equal(changed, true);
+    const idx = await readFile(join(tmpDir, 'docs', 'tester', 'tester-task.md'), 'utf8');
+    const sum = await readFile(join(tmpDir, 'docs', 'task_summary.md'), 'utf8');
+    assert.match(idx, /## Open/);
+    assert.doesNotMatch(idx, /## Active/);
+    assert.match(sum, /🔄 open/);
+    assert.doesNotMatch(sum, /🔄 active/);
+    // idempotent: second run is a no-op
+    assert.equal(await migrateTaskIndexLabels({ targetDir: tmpDir }), false);
+  } finally { await rm(tmpDir, { recursive: true, force: true }); }
 });

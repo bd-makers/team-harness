@@ -129,7 +129,7 @@ async function migrateTaskStructure(ctx) {
     const indexPath = join(targetDir, 'docs', user, `${user}-task.md`);
     if (!(await exists(indexPath))) {
       const userTasks = oldTasks.filter(t => t.user === user).map(t => t.name);
-      let content = `# ${user} — Tasks\n\n## Active\n`;
+      let content = `# ${user} — Tasks\n\n## Open\n`;
       for (const t of userTasks) content += `- ${t}\n`;
       content += '\n## Completed\n';
       await writeText(indexPath, content);
@@ -142,7 +142,7 @@ async function migrateTaskStructure(ctx) {
   if (!(await exists(summaryPath))) {
     let content = '# Task Summary\n\n| User | Task | Status | Created |\n|------|------|--------|---------|\n';
     for (const { user, name } of oldTasks) {
-      content += `| ${user} | ${name} | 🔄 active | (migrated) |\n`;
+      content += `| ${user} | ${name} | 🔄 open | (migrated) |\n`;
     }
     await writeText(summaryPath, content);
     console.log('  ✓ created docs/task_summary.md');
@@ -363,6 +363,42 @@ async function refreshClaudeHooks(ctx) {
   return true;
 }
 
+// --- Task index label rename (active → open) ---
+//
+// The open-tasks index used "active" (## Active / 🔄 active), colliding with
+// .harness/active.json's pointer sense. Harmonize existing installs to "open".
+// task.mjs reads both labels, so this is cosmetic consistency, not correctness.
+
+export async function migrateTaskIndexLabels(ctx) {
+  const { targetDir } = ctx;
+  const docsDir = join(targetDir, 'docs');
+  let changed = false;
+
+  let entries = [];
+  try { entries = await readdir(docsDir, { withFileTypes: true }); } catch { entries = []; }
+  for (const ent of entries) {
+    if (!ent.isDirectory()) continue;
+    const idxPath = join(docsDir, ent.name, `${ent.name}-task.md`);
+    const body = await readTextSafe(idxPath);
+    if (body && body.includes('## Active\n')) {
+      await writeText(idxPath, body.replace('## Active\n', '## Open\n'));
+      console.log(`  ✓ ${ent.name}-task.md: '## Active' → '## Open'`);
+      changed = true;
+    }
+  }
+
+  const summaryPath = join(docsDir, 'task_summary.md');
+  const sum = await readTextSafe(summaryPath);
+  if (sum && sum.includes('🔄 active')) {
+    await writeText(summaryPath, sum.replaceAll('🔄 active', '🔄 open'));
+    console.log(`  ✓ task_summary.md: '🔄 active' → '🔄 open'`);
+    changed = true;
+  }
+
+  if (!changed) console.log('  task index labels: up to date');
+  return changed;
+}
+
 // --- SSOT inversion (0.7.x legacy → AGENTS.md core) ---
 //
 // Legacy = CLAUDE.md real file holds all sections (principles/stack/roles/protocol +
@@ -508,9 +544,10 @@ export async function runMigrate(ctx) {
   const scriptMoved = await migrateBackupScripts(ctx);
   const scriptRefreshed = await refreshProjectScripts(ctx);
   const claudeHooksRefreshed = await refreshClaudeHooks(ctx);
+  const taskLabelsRenamed = await migrateTaskIndexLabels(ctx);
   const hookMigrated = await migrateSessionStartHook(ctx);
 
-  if (!agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !claudeHooksRefreshed && !hookMigrated) {
+  if (!agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !claudeHooksRefreshed && !taskLabelsRenamed && !hookMigrated) {
     console.log('\nNothing to migrate — project is already up to date.');
     return;
   }

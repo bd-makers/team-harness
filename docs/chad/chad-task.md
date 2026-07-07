@@ -1,6 +1,7 @@
 # chad — Tasks
 
-## Active
+## Open
+- task-index-open-naming (created 2026-07-07)
 
 
 

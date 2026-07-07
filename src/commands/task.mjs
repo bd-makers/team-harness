@@ -122,7 +122,7 @@ export function taskArtifactTemplate(name) {
 function userTaskIndexTemplate(user) {
   return `# ${user} — Tasks
 
-## Active
+## Open
 
 ## Completed
 `;
@@ -157,22 +157,27 @@ async function ensureTaskSummary(targetDir) {
 async function addToUserTaskIndex(indexPath, name, date) {
   let content = await readFile(indexPath, 'utf8');
   if (content.split('\n').some(l => l === `- ${name}` || l.startsWith(`- ${name} (`))) return;
-  content = content.replace('## Active\n', `## Active\n- ${name} (created ${date})\n`);
+  // Insert under the open-tasks header. Prefer the new `## Open`; fall back to a
+  // pre-rename `## Active` so existing installs keep working without a migrate.
+  const header = content.includes('## Open\n') ? '## Open\n' : '## Active\n';
+  content = content.replace(header, `${header}- ${name} (created ${date})\n`);
   await writeFile(indexPath, content);
 }
 
 async function addToTaskSummary(summaryPath, user, name, date) {
   let content = await readFile(summaryPath, 'utf8');
   if (content.includes(`| ${user} | ${name} |`)) return;
-  content = content.trimEnd() + `\n| ${user} | ${name} | 🔄 active | ${date} |\n`;
+  content = content.trimEnd() + `\n| ${user} | ${name} | 🔄 open | ${date} |\n`;
   await writeFile(summaryPath, content);
 }
 
 
 async function markDoneInTaskSummary(summaryPath, user, name) {
   let content = await readFile(summaryPath, 'utf8');
+  // Match both the new `🔄 open` and the pre-rename `🔄 active` so `done` still
+  // resolves rows written by an older harness version.
   content = content.replace(
-    new RegExp(`\\| ${escapeRegex(user)} \\| ${escapeRegex(name)} \\| 🔄 active \\|`),
+    new RegExp(`\\| ${escapeRegex(user)} \\| ${escapeRegex(name)} \\| 🔄 (?:open|active) \\|`),
     `| ${user} | ${name} | ✅ done |`
   );
   await writeFile(summaryPath, content);
