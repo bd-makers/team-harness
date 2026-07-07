@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-pocock-merge
+plugin-hardening
 
-## Last Commit (2026-07-02)
-c12adc5 feat(harness): Matt Pocock git-guardrails hook + diagnosing-bugs 흡수
+## Last Commit (2026-07-06)
+313174c test(doctor): cover runDoctor plugin-dev + broken-symlink + missing-backup-dir
 
 ## Full Context
-→ docs/chad/pocock-merge/pocock-merge-handoff.md
+→ docs/chad/plugin-hardening/plugin-hardening-handoff.md

@@ -101,3 +101,30 @@ docs/chad/chad-handoff.md                          |   8 +-
  tests/release.test.mjs                             |  42 +-
  11 files changed, 221 insertions(+), 606 deletions(-)
 
+
+## 2026-07-06T10:09:25.724Z — 10cc1aa fix(sim): enforce 600 on the OAuth token file instead of only documenting it
+docs/chad/chad-handoff.md                          |   8 +-
+ docs/chad/chad-task.md                             |   4 +-
+ .../plugin-hardening/plugin-hardening-artifact.md  |   6 +
+ .../plugin-hardening/plugin-hardening-handoff.md   |  15 +
+ .../chad/plugin-hardening/plugin-hardening-plan.md |   4 +-
+ docs/chad/pocock-merge/pocock-merge-handoff.md     |  15 +
+ docs/harness-overview.html                         | 478 ++-------------------
+ docs/harness-workflow-simulation.html              | 193 ++-------
+ docs/task_summary.md                               |   3 +-
+ tests/sim/agentloop.mjs                            |  10 +
+ 10 files changed, 133 insertions(+), 603 deletions(-)
+
+
+## 2026-07-06T10:13:41.900Z — 313174c test(doctor): cover runDoctor plugin-dev + broken-symlink + missing-backup-dir
+docs/chad/chad-handoff.md                          |   8 +-
+ docs/chad/chad-task.md                             |   4 +-
+ .../plugin-hardening/plugin-hardening-artifact.md  |   4 +-
+ .../plugin-hardening/plugin-hardening-handoff.md   |  14 +
+ docs/chad/pocock-merge/pocock-merge-handoff.md     |  15 +
+ docs/harness-overview.html                         | 478 ++-------------------
+ docs/harness-workflow-simulation.html              | 193 ++-------
+ docs/task_summary.md                               |   3 +-
+ tests/doctor.test.mjs                              |  48 +++
+ 9 files changed, 165 insertions(+), 602 deletions(-)
+

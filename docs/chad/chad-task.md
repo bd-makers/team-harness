@@ -1,7 +1,8 @@
 # chad — Tasks
 
 ## Active
-- pocock-merge (created 2026-07-02)
+- plugin-hardening (created 2026-07-02)
+
 
 - harness-sim-guide (created 2026-07-01)
 
@@ -16,6 +17,7 @@
 
 
 ## Completed
+- ✅ pocock-merge
 - ✅ sim-lifecycle-sc6
 - ✅ sim-stack-matrix
 - ✅ sim-agentloop-redesign
