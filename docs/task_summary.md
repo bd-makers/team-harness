@@ -15,4 +15,4 @@
 | chad | harness-sim-guide | 🔄 active | 2026-07-01 |
 | chad | sim-lifecycle-sc6 | ✅ done | 2026-07-01 |
 | chad | pocock-merge | ✅ done | 2026-07-02 |
-| chad | plugin-hardening | 🔄 active | 2026-07-02 |
+| chad | plugin-hardening | ✅ done | 2026-07-02 |
