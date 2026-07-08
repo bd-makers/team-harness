@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>harness-aijient-team v0.9.5 — 플러그인 종합 분석 리포트</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3350;
+      --accent: #7c6af5;
+      --accent2: #50c8f5;
+      --accent3: #4df0aa;
+      --text: #e2e6f0;
+      --muted: #7a82a0;
+      --tag-blue: #1e3a5f;
+      --tag-green: #0e3d30;
+      --tag-purple: #2a1f5c;
+      --tag-orange: #3d2700;
+      --pass: #4df0aa;
+      --fail: #f5648a;
+      --manual: #f5a623;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.6;
+    }
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(15,17,23,0.95); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem; height: 54px; display: flex; align-items: center;
+    }
+    .nav-logo { font-weight: 700; font-size: 1rem; color: var(--accent); margin-right: 2rem; white-space: nowrap; flex-shrink: 0; }
+    .nav-links { display: flex; gap: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .nav-links::-webkit-scrollbar { display: none; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none; font-size: 0.85rem;
+      padding: 0 0.8rem; height: 54px; display: flex; align-items: center;
+      border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; white-space: nowrap;
+    }
+    .nav-links a:hover { color: var(--text); border-bottom-color: var(--accent); }
+    main { max-width: 1160px; margin: 0 auto; padding: 72px 2rem 6rem; }
+    .hero { text-align: center; padding: 4rem 0 2.5rem; }
+    .hero h1 {
+      font-size: 2.4rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 0.75rem;
+    }
+    .hero p { color: var(--muted); font-size: 1.05rem; max-width: 720px; margin: 0 auto 1.5rem; }
+    .hero-tags { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+    .tag { padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+    .tag-blue { background: var(--tag-blue); color: var(--accent2); }
+    .tag-green { background: var(--tag-green); color: var(--accent3); }
+    .tag-purple { background: var(--tag-purple); color: var(--accent); }
+    .tag-orange { background: var(--tag-orange); color: #f5a623; }
+    section { margin-bottom: 4.5rem; scroll-margin-top: 70px; }
+    .section-title {
+      font-size: 1.45rem; font-weight: 700; color: var(--text);
+      margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .section-title::before {
+      content: ''; display: inline-block; width: 4px; height: 1.45rem;
+      background: var(--accent); border-radius: 2px;
+    }
+    .section-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    h4 { font-size: 1rem; color: var(--accent2); margin: 1.6rem 0 0.6rem; }
+    p.body { color: var(--muted); font-size: 0.9rem; margin-bottom: 0.8rem; }
+    p.body strong { color: var(--text); }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.4rem; margin-bottom: 1rem; }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+    .card h3 { font-size: 0.95rem; font-weight: 600; color: var(--accent2); margin-bottom: 0.6rem; }
+    .card p, .card li { font-size: 0.85rem; color: var(--muted); }
+    .card ul { padding-left: 1.1rem; }
+    .card li { margin-bottom: 0.35rem; }
+    .card-accent-green { border-color: #4df0aa44; }
+    .card-accent-purple { border-color: #7c6af544; }
+    .card-accent-blue { border-color: #50c8f544; }
+    .card-accent-orange { border-color: #f5a62344; }
+    .card-accent-red { border-color: #f5648a44; }
+    .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    thead tr { background: var(--surface2); }
+    th {
+      padding: 0.7rem 1rem; text-align: left; color: var(--muted); font-weight: 600;
+      font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border);
+    }
+    td { padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(124,106,245,0.04); }
+    td.center, th.center { text-align: center; }
+    code {
+      background: var(--surface2); color: var(--accent2); padding: 2px 7px;
+      border-radius: 4px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82em; word-break: break-word;
+    }
+    pre {
+      background: #0b0d13; border: 1px solid var(--border); border-radius: 10px;
+      padding: 1rem 1.2rem; overflow-x: auto; margin-bottom: 1rem;
+    }
+    pre code { background: none; color: #cdd3e6; padding: 0; font-size: 0.82rem; line-height: 1.65; display: block; }
+    .verdict {
+      background: linear-gradient(135deg, rgba(124,106,245,0.12), rgba(80,200,245,0.08));
+      border: 1px solid var(--accent); border-radius: 12px; padding: 1.6rem; margin-bottom: 1rem;
+    }
+    .verdict h3 { color: var(--accent); font-size: 1.1rem; margin-bottom: 0.6rem; }
+    .verdict p { font-size: 0.92rem; color: var(--text); }
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; }
+    .badge-pass { background: var(--tag-green); color: var(--pass); }
+    .badge-fail { background: #3d0e1e; color: var(--fail); }
+    .badge-warn { background: var(--tag-orange); color: var(--manual); }
+    .checklist { list-style: none; padding: 0; }
+    .checklist li {
+      padding: 0.55rem 0.9rem; margin-bottom: 0.4rem; font-size: 0.87rem;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px; color: var(--muted);
+    }
+    .checklist li::before { content: '☐ '; color: var(--accent2); font-weight: 700; margin-right: 0.4rem; }
+    footer { text-align: center; color: var(--muted); font-size: 0.8rem; padding: 2rem 0; border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+  <nav>
+    <div class="nav-logo">harness 분석 v0.9.5</div>
+    <div class="nav-links">
+      <a href="#summary">요약</a>
+      <a href="#evidence">근거</a>
+      <a href="#overview">개요</a>
+      <a href="#integration">연동</a>
+      <a href="#pros">장점</a>
+      <a href="#risks">리스크</a>
+      <a href="#adoption">도입 작업</a>
+      <a href="#checklist">검증</a>
+      <a href="#verdict">최종 판단</a>
+      <a href="#unknown">미확인</a>
+    </div>
+  </nav>
+  <main>
+    <div class="hero">
+      <h1>harness-aijient-team 플러그인<br/>종합 분석 리포트</h1>
+      <p>도입 · 운영 · 유지보수 관점의 판단 자료 — v0.9.5 (2026-06-30 릴리즈) 기준, 2026-07-02 분석</p>
+      <div class="hero-tags">
+        <span class="tag tag-purple">Claude Code Plugin</span>
+        <span class="tag tag-blue">Multi-Agent Harness</span>
+        <span class="tag tag-green">의존성 0 · 테스트 18파일</span>
+        <span class="tag tag-orange">조건부 도입 권장</span>
+      </div>
+    </div>
+
+    <section id="summary">
+      <div class="section-title">1. 요약 결론</div>
+      <p class="section-sub">저장소 = 플러그인 자체 소스 (소비 프로젝트 아님)</p>
+      <div class="verdict">
+        <h3>조건부 도입 권장</h3>
+        <p>
+          v0.9.5 기준 구조가 명확하고, 외부 npm 의존성 0, 테스트 18개 파일(unit 13 + e2e 3 + sim),
+          파괴적 작업에 대한 가드가 체계적으로 구현된 <strong>성숙 단계의 플러그인</strong>이다.
+          개인/소규모 팀의 멀티 에이전트(Claude 주도 + Codex/Gemini 리뷰) 워크플로우 표준화 도구로 적합하다.
+          주요 조건: ① CI 부재 보완 ② symlink/백업 아키텍처 팀 합의 ③ 템플릿 훅의 pnpm 하드코딩 확인.
+        </p>
+      </div>
+    </section>
+
+    <section id="evidence">
+      <div class="section-title">2. 확인한 근거</div>
+      <p class="section-sub">모든 판단은 아래 파일의 실제 코드/문서에서 확인 — 추정 항목은 §10 미확인에 분리</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>영역</th><th>파일</th><th>확인 내용</th></tr></thead>
+          <tbody>
+            <tr><td>매니페스트</td><td><code>package.json</code> · <code>.claude-plugin/plugin.json</code> · <code>.claude-plugin/marketplace.json</code></td><td>v0.9.5 3중 동기화, 16개 커맨드, 의존성 0, Node ≥18</td></tr>
+            <tr><td>CLI 진입점</td><td><code>bin/harness-team.mjs:93-109</code></td><td>17개 서브커맨드 라우팅</td></tr>
+            <tr><td>코어 로직</td><td><code>src/commands/</code> (init·apply·doctor·task·symlink·delete·migrate·release·session-context)</td><td>실행 흐름 · done-guard · rm -rf 가드</td></tr>
+            <tr><td>훅</td><td><code>.claude/settings.json</code> · <code>templates/.claude/settings.json</code> · <code>src/git-hooks.mjs</code></td><td>SessionStart · PreToolUse ×2 · PostToolUse · post-commit</td></tr>
+            <tr><td>규약</td><td><code>AGENTS.md</code> · <code>CLAUDE.md</code> · <code>GEMINI.md</code></td><td>AGENTS.md SSOT + 얇은 @import 구조</td></tr>
+            <tr><td>문서</td><td><code>README.md</code>(684줄) · <code>CHANGELOG.md</code> · <code>MAINTAINING.md</code></td><td>설치법 · 릴리즈 절차 · 0.4.0→0.9.5 이력</td></tr>
+            <tr><td>테스트</td><td><code>tests/</code> 18개 · <code>tests/e2e/sandbox.mjs</code></td><td>tmpdir 격리, 실 바이너리 spawn, 3-스택 매트릭스</td></tr>
+            <tr><td>실사용</td><td><code>docs/task_summary.md</code> · <code>docs/chad/</code></td><td>완료 task 12개 + dogfooding 이력</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="overview">
+      <div class="section-title">3. 플러그인 개요</div>
+      <p class="section-sub">Claude 리드 + Codex/Gemini 리뷰어 + Cursor/OpenCode 보조 — 단일 소스(SSOT) 배선 도구</p>
+      <div class="card-grid">
+        <div class="card card-accent-purple">
+          <h3>축 1 — 설정 스캐폴딩</h3>
+          <ul>
+            <li><code>AGENTS.md</code>를 SSOT로, <code>CLAUDE.md</code>/<code>GEMINI.md</code>는 <code>@AGENTS.md</code> import 얇은 파일</li>
+            <li><code>.claude/rules</code> ↔ <code>.cursor/rules</code>(.mdc) 미러링</li>
+            <li><code>.opencode/opencode.json</code> — rules 자동 로드 + 스킬 3종 커맨드</li>
+            <li>마크다운은 <code>harness:section</code> 마커 구간만 교체(비파괴 merge), JSON은 deep-merge</li>
+          </ul>
+        </div>
+        <div class="card card-accent-blue">
+          <h3>축 2 — task 라이프사이클</h3>
+          <ul>
+            <li><code>docs/&lt;user&gt;/&lt;name&gt;/</code>에 spec·plan·handoff·artifact 4파일 SSOT</li>
+            <li>post-commit hook → handoff 자동 갱신 (<code>src/git-hooks.mjs</code>)</li>
+            <li>SessionStart hook → 활성 task 주입 (nudge, 비차단)</li>
+            <li>done-guard: 미완료 plan · 템플릿 artifact · 미커밋 변경 · 커밋 0건이면 완료 차단 (<code>task.mjs:310-371</code>)</li>
+          </ul>
+        </div>
+        <div class="card card-accent-green">
+          <h3>부가 자산</h3>
+          <ul>
+            <li>symlink 백업 아키텍처 (clone.sh / symlink.sh / delete.sh)</li>
+            <li>페르소나 커맨드: interview · contrarian · simplifier</li>
+            <li>릴리즈 자동화: 3-manifest 동시 bump + 캐시 동기화</li>
+            <li>L4/L5 시뮬레이션 스킬 (harness-sim, SC1~SC6)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="integration">
+      <div class="section-title">4. Claude Code 연동 방식</div>
+      <p class="section-sub">슬래시 커맨드 16개 — 전부 CLI 위임 또는 페르소나 지시</p>
+      <pre><code>node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" &lt;subcommand&gt; [args]</code></pre>
+      <h4>타겟 프로젝트에 설치되는 훅</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>훅</th><th>트리거</th><th>동작</th><th>리스크</th></tr></thead>
+          <tbody>
+            <tr><td><code>SessionStart</code></td><td>세션 시작</td><td><code>harness-team session-context 2&gt;/dev/null || true</code> — 활성 task 주입</td><td class="center"><span class="badge badge-pass">낮음</span></td></tr>
+            <tr><td><code>PreToolUse (Edit|Write)</code></td><td>파일 편집 전</td><td><code>protect-files.sh</code> — .env, node_modules, .git 등 편집 차단</td><td class="center"><span class="badge badge-pass">낮음</span></td></tr>
+            <tr><td><code>PreToolUse (Bash)</code></td><td>git commit 전</td><td><code>pre-commit-check.sh</code> — <strong>pnpm</strong> tsc + test 실패 시 커밋 차단 (timeout 120s)</td><td class="center"><span class="badge badge-warn">중간</span></td></tr>
+            <tr><td><code>PostToolUse (Edit|Write)</code></td><td>편집 후</td><td><code>auto-format.sh</code> — <code>npx prettier --write</code></td><td class="center"><span class="badge badge-pass">낮음</span></td></tr>
+            <tr><td><code>git post-commit</code></td><td>커밋 후</td><td><code>harness-team handoff 2&gt;/dev/null || true</code> — 마커 체크 후 append (멱등)</td><td class="center"><span class="badge badge-warn">중간</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <h4>멀티 에이전트 배선</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>에이전트</th><th>역할</th><th>호출 / 격리</th></tr></thead>
+          <tbody>
+            <tr><td>Claude Code</td><td>리드 드라이버</td><td>주 세션</td></tr>
+            <tr><td>OpenCode</td><td>병렬 보조 드라이버</td><td><code>opencode.json</code> — rules 자동 로드</td></tr>
+            <tr><td>Codex</td><td>리뷰어</td><td><code>codex exec --sandbox read-only</code> (코드 수준 격리)</td></tr>
+            <tr><td>Gemini</td><td>리뷰어</td><td><code>gemini --approval-mode default -p</code> (문서 규약으로만 read-only)</td></tr>
+            <tr><td>Cursor</td><td>IDE 보조</td><td><code>.cursor/rules/*.mdc</code> 자동 적용</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="body">리뷰 결과는 artifact.md <code>## Reviews</code>에 날짜와 함께 기록 — <strong>"기록 없는 리뷰 = 안 한 것"</strong> 규약.</p>
+    </section>
+
+    <section id="pros">
+      <div class="section-title">5. 장점</div>
+      <div class="card-grid">
+        <div class="card card-accent-green">
+          <h3>① 외부 의존성 0</h3>
+          <p>Node 18+ stdlib만 사용. package.json에 dependencies 없음, 소스에 network fetch 없음 — 공급망 리스크 부재 (확인됨).</p>
+        </div>
+        <div class="card card-accent-green">
+          <h3>② 파괴적 작업 가드 실재</h3>
+          <p><code>rm -rf</code>는 4곳뿐 — 전부 확인 프롬프트 + byte-identity 검사(<code>diff -rq</code>/<code>cmp -s</code>) 또는 <code>--include-real</code> 명시 opt-in 뒤에만 실행. release는 <code>--dry-run</code> + version 문자열 1회 등장 가드.</p>
+        </div>
+        <div class="card card-accent-green">
+          <h3>③ 테스트 충실도</h3>
+          <p>unit은 <code>mkdtemp</code> 격리, e2e는 실 바이너리 spawn으로 git repo·post-commit hook까지 3개 스택(bare-node/next/rn)에서 검증. 사용자 디렉토리 비접촉.</p>
+        </div>
+        <div class="card card-accent-green">
+          <h3>④ 자체 dogfooding</h3>
+          <p>플러그인이 자신의 task 워크플로우로 개발됨(완료 task 12개). 0.9.5의 done-guard 마찰 수정은 실사용에서 발견된 버그.</p>
+        </div>
+        <div class="card card-accent-green">
+          <h3>⑤ 비파괴 merge 설계</h3>
+          <p><code>harness:section</code> 마커 구간만 교체, <code>harness:user</code> 구간 보존, JSON deep-merge — 기존 프로젝트에 안전하게 적용 가능.</p>
+        </div>
+        <div class="card card-accent-green">
+          <h3>⑥ 마이그레이션 내장</h3>
+          <p>구버전 구조(0.2.x→0.6→0.8) 자동 감지, 멱등 마이그레이션 4단계.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="risks">
+      <div class="section-title">6. 단점 / 리스크</div>
+      <div class="card-grid">
+        <div class="card card-accent-orange">
+          <h3>보안 — 전반적으로 낮음</h3>
+          <ul>
+            <li>post-commit hook이 PATH 상의 <code>harness-team</code> 실행 — PATH 하이재킹 시 코드 실행 벡터 (일반 git hook 수준). 실패는 <code>|| true</code>로 silent</li>
+            <li><code>release</code>가 프로젝트 밖 <code>~/.claude/plugins/</code> 직접 수정 — Claude Code 실행 중 race condition 가능 (MAINTAINING.md도 경고)</li>
+            <li>repo의 <code>settings.local.json</code> 광범위 allowlist는 <code>.gitignore</code>로 배포 제외 — 소비자 비전파 (확인됨)</li>
+          </ul>
+        </div>
+        <div class="card card-accent-orange">
+          <h3>안정성 — 중간</h3>
+          <ul>
+            <li>symlink 아키텍처: 백업 디렉토리 삭제·이동 시(특히 iCloud) 프로젝트 설정 일괄 파손 — iCloud eviction 조합 미검증</li>
+            <li><code>pre-commit-check.sh</code>의 <strong>pnpm 하드코딩</strong> — npm/yarn 프로젝트에서 실패 또는 무의미</li>
+            <li>0.9.0→0.9.5 2주 내 5회 릴리즈 — 활발하지만 아직 수렴 중</li>
+          </ul>
+        </div>
+        <div class="card card-accent-red">
+          <h3>유지보수 — 중간</h3>
+          <ul>
+            <li><strong>버스 팩터 1</strong> (단일 개발자)</li>
+            <li>CI 없음 (<code>.github/workflows/</code> 부재), lint/typecheck 미설정</li>
+            <li>LICENSE 파일 없음 (package.json MIT 선언만)</li>
+            <li>새 커맨드 추가 시 4개 파일 수동 동기화 (commands/·bin·plugin.json·README)</li>
+            <li>marketplace의 <code>bd-makers/team-harness</code> 원격 실존 미확인</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="adoption">
+      <div class="section-title">7. 도입 시 필요한 작업</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th class="center">#</th><th>작업</th><th>비고</th></tr></thead>
+          <tbody>
+            <tr><td class="center">1</td><td>팀원별 사전 요건: Node ≥18 + <code>harness-team</code> 전역 등록(npm link) + 리뷰어 CLI(codex/gemini)</td><td><code>harness-doctor</code>가 점검</td></tr>
+            <tr><td class="center">2</td><td>백업 디렉토리 위치 정책 결정</td><td>iCloud/Dropbox 등 동기화 폴더 회피 권장</td></tr>
+            <tr><td class="center">3</td><td>타겟 스택에 맞게 훅 확인/수정</td><td>pnpm → npm/yarn</td></tr>
+            <tr><td class="center">4</td><td><code>docs/&lt;user&gt;/</code> task 문서 커밋 정책 합의</td><td>git 히스토리에 포함됨</td></tr>
+            <tr><td class="center">5</td><td>CI 추가 (플러그인 개선 시)</td><td><code>node --test</code> GitHub Actions</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="checklist">
+      <div class="section-title">8. 검증 체크리스트</div>
+      <ul class="checklist">
+        <li><code>npm test</code> 로컬 통과 확인 (unit + e2e)</li>
+        <li>버리는 디렉토리에서 <code>/harness-init</code> → <code>harness-team doctor</code> green 확인</li>
+        <li>기존 CLAUDE.md 있는 프로젝트에서 <code>/harness-apply</code> dry-run diff 검토 → 기존 내용 보존 확인</li>
+        <li>npm/yarn 프로젝트에서 pre-commit-check.sh 동작 확인 (pnpm 하드코딩 이슈)</li>
+        <li>post-commit hook 후 handoff.md 자동 갱신 확인 (<code>command -v harness-team</code> 선행)</li>
+        <li>symlink 상태에서 백업 디렉토리 이동 시 <code>harness-doctor</code> 감지 여부 확인</li>
+        <li><code>/harness-sim</code> — L5 시나리오 SC1~SC6 리포트 확인 (harness-playground 필요)</li>
+      </ul>
+    </section>
+
+    <section id="verdict">
+      <div class="section-title">9. 최종 추천</div>
+      <div class="verdict">
+        <h3>조건부 도입 권장</h3>
+        <p>
+          개인~소규모 팀에서 Claude 주도 멀티 에이전트 워크플로우를 표준화하려는 목적에는
+          설계 품질·가드·테스트가 충분히 성숙하다. 특히 <strong>task 4파일 SSOT + done-guard + handoff 자동화</strong>는
+          실사용으로 검증된 핵심 가치. 조직 단위 도입이라면 버스 팩터 1 · CI 부재 · symlink 아키텍처의
+          클라우드 동기화 폴더 리스크를 먼저 해소할 것. 실패 시 영향 범위는 프로젝트 설정 파일 +
+          <code>.git/hooks/post-commit</code>으로 제한적이며 <code>harness-delete</code> 복구 경로 존재.
+        </p>
+      </div>
+    </section>
+
+    <section id="unknown">
+      <div class="section-title">10. 미확인 사항 / 검증 방법</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>항목</th><th>검증 방법</th></tr></thead>
+          <tbody>
+            <tr><td><code>bd-makers/team-harness</code> 원격 저장소 실존·공개 여부</td><td><code>gh repo view bd-makers/team-harness</code></td></tr>
+            <tr><td>iCloud 폴더 내 백업 + symlink 장기 안정성</td><td>실사용 모니터링 또는 로컬 경로로 백업 이전</td></tr>
+            <tr><td>pre-commit-check.sh 스택별 패키지 매니저 치환 여부</td><td>npm 스택 playground init 후 훅 내용 diff</td></tr>
+            <tr><td><code>templates/.cursor/</code> 빈 디렉토리가 의도인지</td><td><code>harness-sync</code> 후 <code>.cursor/rules/*.mdc</code> 생성 확인</td></tr>
+            <tr><td><code>~/.claude-sim-oauth-token</code> 권한(600) 강제 여부</td><td>harness-sim 실행 후 <code>ls -l</code></td></tr>
+            <tr><td>멀티 유저 동시 사용 시 <code>.harness/active.json</code> 충돌</td><td>2인 브랜치 병행 시나리오 테스트</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      harness-aijient-team v0.9.5 종합 분석 · 2026-07-02 · 분석 도구: Claude Code (read-only 3-agent 병렬 탐색)<br/>
+      보완 backlog task: <code>docs/chad/plugin-hardening/</code>
+    </footer>
+  </main>
+</body>
+</html>
