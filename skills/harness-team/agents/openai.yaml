@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Team"
+  short_description: "Use the harness-team CLI workflow from Codex."
+  default_prompt: "Apply the team harness to this project."

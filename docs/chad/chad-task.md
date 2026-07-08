@@ -1,6 +1,7 @@
 # chad — Tasks
 
 ## Open
+- codex-plugin-support (created 2026-07-08)
 
 
 

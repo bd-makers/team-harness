@@ -41,7 +41,7 @@ modified: 2026-06-02
 | 에이전트 | 읽는 파일 |
 |---|---|
 | Claude Code | `CLAUDE.md`, `.claude/` |
-| Codex | `AGENTS.md` |
+| Codex | `AGENTS.md`, `.codex-plugin/`, `skills/` |
 | Gemini CLI | `GEMINI.md` |
 | Cursor | `AGENTS.md`, `.cursor/rules/*.mdc` |
 | OpenCode | `AGENTS.md`, `opencode.json` |
@@ -51,6 +51,7 @@ modified: 2026-06-02
 - `AGENTS.md`를 공유 코어 실파일(오픈 표준)로 두고 `CLAUDE.md` / `GEMINI.md`는 `@AGENTS.md` import 얇은 파일 (Cursor·OpenCode는 `AGENTS.md` 네이티브 인식)
 - `.claude/rules/*.md`를 원본으로 `.cursor/rules/*.mdc`를 자동 미러링
 - `opencode.json`은 `.claude/skills/*/SKILL.md`를 **참조**(복사 아님)
+- `.codex-plugin/plugin.json` + `skills/harness-team`으로 Codex에서도 같은 CLI/AGENTS.md 워크플로우를 사용
 - Codex/Gemini는 read-only 리뷰어로 Bash를 통해 호출 (first-token 매칭 규칙 준수)
 - 작업은 `docs/<member>/<name>/` 구조로 팀원·task별 격리
 
@@ -114,10 +115,19 @@ cd my-project
 | `/harness-contrarian` | 활성 task의 spec.md / plan.md 가정에 전면 의문 제기 |
 | `/harness-simplifier` | 활성 task의 plan.md에서 제거 가능한 단계·추상화 탐지 |
 | `/harness-retro` | 활성 task의 artifact.md에 학습/교정 내용 append (자기개선 루프) |
-| `/harness-release` | 3개 매니페스트 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화 (항상 `--dry-run` 먼저) |
+| `/harness-release` | Claude/Codex 매니페스트 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화 (항상 `--dry-run` 먼저) |
 | `/harness-sim` | playground 3-스택에서 설치된 하네스를 굴려 L4 시뮬레이션 + 날짜 리포트 |
 
-### 방법 B: 독립 CLI
+### 방법 B: Codex 플러그인
+
+이 레포는 Codex 플러그인 manifest도 함께 제공합니다:
+
+- `.codex-plugin/plugin.json` — Codex 플러그인 메타데이터
+- `skills/harness-team/SKILL.md` — Codex에서 `harness-team` CLI와 task workflow를 사용하는 진입점
+
+Codex 쪽 marketplace/설치 위치는 개인·팀 환경에 따라 다릅니다. 로컬 개발 중에는 이 레포를 Codex local plugin source로 등록한 뒤, 새 Codex thread에서 `harness-team` skill이 노출되는지 확인하세요.
+
+### 방법 C: 독립 CLI
 
 npm 배포 후:
 ```bash
@@ -566,10 +576,15 @@ harness-aijient-team-plugin/
 ├── .claude-plugin/
 │   ├── plugin.json              # Claude Code 플러그인 메타 (버전 포함)
 │   └── marketplace.json         # 마켓 등록 (버전 포함 — 범프 시 반드시 갱신)
+├── .codex-plugin/
+│   └── plugin.json              # Codex 플러그인 메타 (버전 포함)
 ├── bin/harness-team.mjs         # CLI 엔트리
 ├── commands/                    # 슬래시 명령 래퍼 (CLI 호출)
 │   └── harness-{init,apply,sync,doctor,task,
 │           clone,symlink,delete,migrate,upgrade}.md
+├── skills/
+│   ├── harness-team/            # Codex 진입 skill
+│   └── harness-sim/             # L5 시뮬레이션 skill
 ├── src/
 │   ├── backup-dir.mjs           # backup dir 탐색 (opts override + auto-detect)
 │   ├── detect-stack.mjs         # 스택 탐지
@@ -616,12 +631,15 @@ sed -i '' "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" .claude-plugin/plug
 # 3. .claude-plugin/marketplace.json  ← 자주 누락! /plugin 목록에 표시되는 버전
 sed -i '' "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" .claude-plugin/marketplace.json
 
-# 4. 커밋
-git add package.json .claude-plugin/plugin.json .claude-plugin/marketplace.json
+# 4. .codex-plugin/plugin.json  ← Codex 플러그인 목록에 표시되는 버전
+sed -i '' "s/\"version\": \".*\"/\"version\": \"$VERSION\"/" .codex-plugin/plugin.json
+
+# 5. 커밋
+git add package.json .claude-plugin/plugin.json .claude-plugin/marketplace.json .codex-plugin/plugin.json
 git commit -m "chore(plugin): plugin.json 버전 $VERSION + 신규 커맨드 추가"
 git commit -m "chore(release): 버전 $VERSION으로 범프"  # 또는 한 커밋으로 합치기
 
-# 5. 로컬 플러그인 캐시 동기화
+# 6. 로컬 플러그인 캐시 동기화
 CACHE=~/.claude/plugins/cache/harness-aijient-team-marketplace/harness-aijient-team/$VERSION
 mkdir -p "$CACHE"
 rsync -a \
@@ -629,7 +647,7 @@ rsync -a \
   --exclude='node_modules' --exclude='.harness' \
   ./ "$CACHE/"
 
-# 6. marketplace 경로에도 반영
+# 7. marketplace 경로에도 반영
 cp .claude-plugin/marketplace.json \
    ~/.claude/plugins/marketplaces/harness-aijient-team-marketplace/.claude-plugin/marketplace.json
 rsync -a \
@@ -645,6 +663,7 @@ rsync -a \
 | `package.json` | npm 버전 | `npm info`에서 구버전 |
 | `.claude-plugin/plugin.json` | 플러그인 로드 메타 | 슬래시 명령 누락 가능 |
 | `.claude-plugin/marketplace.json` | `/plugin` 목록 표시 버전 | **`/plugin`에서 구버전 표시** |
+| `.codex-plugin/plugin.json` | Codex 플러그인 로드 메타 | Codex에서 구버전/skill 누락 가능 |
 | 로컬 캐시 rsync | 실행 코드 반영 | 새 명령어가 실제 구버전 코드로 실행됨 |
 
 > `/reload-plugins` 후에도 구버전이 보이면 `marketplace.json`의 `plugins[0].version` 확인.

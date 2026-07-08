@@ -23,6 +23,62 @@ async function manifestNames() {
 
 const sorted = (set) => [...set].sort();
 
+test('manifest-sync: package/Claude/Codex manifest versions agree', async () => {
+  const pkg = JSON.parse(await readFile(join(ROOT, 'package.json'), 'utf8'));
+  const claude = JSON.parse(await readFile(join(ROOT, '.claude-plugin', 'plugin.json'), 'utf8'));
+  const marketplace = JSON.parse(await readFile(join(ROOT, '.claude-plugin', 'marketplace.json'), 'utf8'));
+  const codex = JSON.parse(await readFile(join(ROOT, '.codex-plugin', 'plugin.json'), 'utf8'));
+
+  assert.equal(claude.name, pkg.name);
+  assert.equal(codex.name, pkg.name);
+  assert.equal(marketplace.plugins[0].name, pkg.name);
+  assert.equal(claude.version, pkg.version);
+  assert.equal(marketplace.plugins[0].version, pkg.version);
+  assert.equal(codex.version, pkg.version);
+});
+
+test('manifest-sync: npm package includes Codex plugin manifest', async () => {
+  const pkg = JSON.parse(await readFile(join(ROOT, 'package.json'), 'utf8'));
+  assert.ok(pkg.files.includes('.codex-plugin'), 'package.json files must include .codex-plugin');
+});
+
+test('manifest-sync: Codex plugin points at shipped skills', async () => {
+  const codex = JSON.parse(await readFile(join(ROOT, '.codex-plugin', 'plugin.json'), 'utf8'));
+  assert.equal(codex.skills, './skills/');
+  const harnessSkill = await readFile(join(ROOT, 'skills', 'harness-team', 'SKILL.md'), 'utf8');
+  assert.match(harnessSkill, /^name: harness-team$/m);
+  assert.doesNotMatch(harnessSkill, /\[TODO:/);
+});
+
+test('manifest-sync: Codex-exposed skills use quick_validate-compatible frontmatter', async () => {
+  const allowedKeys = new Set(['name', 'description', 'license', 'allowed-tools', 'metadata']);
+  const skillsDir = join(ROOT, 'skills');
+  const entries = await readdir(skillsDir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    if (!entry.isDirectory() || entry.name.startsWith('.')) continue;
+    const skillPath = join(skillsDir, entry.name, 'SKILL.md');
+    const body = await readFile(skillPath, 'utf8');
+    assert.ok(body.startsWith('---\n'), `${entry.name}: SKILL.md must start with YAML frontmatter`);
+    const end = body.indexOf('\n---', 4);
+    assert.notEqual(end, -1, `${entry.name}: frontmatter must be closed`);
+
+    const frontmatter = body.slice(4, end);
+    const keys = [...frontmatter.matchAll(/^([A-Za-z0-9_-]+):/gm)].map(m => m[1]);
+    for (const key of keys) {
+      assert.ok(allowedKeys.has(key), `${entry.name}: unexpected Codex skill frontmatter key "${key}"`);
+    }
+
+    const name = frontmatter.match(/^name:\s*(.+)$/m)?.[1]?.trim();
+    const description = frontmatter.match(/^description:\s*(.+)$/m)?.[1]?.trim();
+    assert.match(name ?? '', /^[a-z0-9-]{1,64}$/, `${entry.name}: invalid skill name`);
+    assert.ok(description, `${entry.name}: description is required`);
+    assert.ok(!/[<>]/.test(description), `${entry.name}: description must not contain angle brackets`);
+    assert.ok(description.length <= 1024, `${entry.name}: description is too long`);
+    assert.doesNotMatch(body, /\[TODO:/, `${entry.name}: TODO placeholder must not ship`);
+  }
+});
+
 // commands/<name>.md ⟺ plugin.json.commands (both directions).
 test('manifest-sync: commands/*.md ⟺ plugin.json commands', async () => {
   const files = await commandNames();

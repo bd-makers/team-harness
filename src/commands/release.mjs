@@ -133,15 +133,18 @@ export async function release({
   const pkgPath = path.join(root, 'package.json');
   const pluginPath = path.join(root, '.claude-plugin/plugin.json');
   const marketplacePath = path.join(root, '.claude-plugin/marketplace.json');
+  const codexPluginPath = path.join(root, '.codex-plugin/plugin.json');
 
   // Read raw text once; parse from that same text. Raw text feeds the surgical
   // write (FIX 1); the parsed objects feed the agreement/schema checks.
   const pkgText = await readFile(pkgPath, 'utf8');
   const pluginText = await readFile(pluginPath, 'utf8');
   const marketplaceText = await readFile(marketplacePath, 'utf8');
+  const codexPluginText = await readFile(codexPluginPath, 'utf8');
   const pkg = JSON.parse(pkgText);
   const plugin = JSON.parse(pluginText);
   const marketplace = JSON.parse(marketplaceText);
+  const codexPlugin = JSON.parse(codexPluginText);
 
   // 1. Marketplace schema guard (run first so the version check can safely read plugins[0]).
   if (!Array.isArray(marketplace.plugins) || marketplace.plugins.length !== 1) {
@@ -156,15 +159,22 @@ export async function release({
       `release: 플러그인 이름 불일치 — plugin.json.name=${plugin.name}, marketplace.json.plugins[0].name=${marketplace.plugins[0].name}`,
     );
   }
+  if (codexPlugin.name !== plugin.name) {
+    throw tagged(
+      'schema',
+      `release: 플러그인 이름 불일치 — plugin.json.name=${plugin.name}, .codex-plugin/plugin.json.name=${codexPlugin.name}`,
+    );
+  }
 
-  // 2. All 3 manifests must agree on the current version.
+  // 2. All manifests must agree on the current version.
   const pkgV = pkg.version;
   const pluginV = plugin.version;
   const mktV = marketplace.plugins[0].version;
-  if (!(pkgV === pluginV && pluginV === mktV)) {
+  const codexPluginV = codexPlugin.version;
+  if (!(pkgV === pluginV && pluginV === mktV && mktV === codexPluginV)) {
     throw tagged(
       'version-mismatch',
-      `release: 매니페스트 버전 불일치 — package.json=${pkgV}, plugin.json=${pluginV}, marketplace.json=${mktV}`,
+      `release: 매니페스트 버전 불일치 — package.json=${pkgV}, .claude-plugin/plugin.json=${pluginV}, .claude-plugin/marketplace.json=${mktV}, .codex-plugin/plugin.json=${codexPluginV}`,
     );
   }
 
@@ -184,7 +194,7 @@ export async function release({
   const result = {
     oldVersion,
     newVersion,
-    manifests: [pkgPath, pluginPath, marketplacePath],
+    manifests: [pkgPath, pluginPath, marketplacePath, codexPluginPath],
     cacheDir,
     marketplaceDir,
     installedUpdated: false,
@@ -206,16 +216,18 @@ export async function release({
   // 4. Dry run: write nothing.
   if (dryRun) return result;
 
-  // 5. Write the 3 manifests via SURGICAL string replacement of only the version
+  // 5. Write manifests via SURGICAL string replacement of only the version
   // field on the raw text — never re-serialize, so inline arrays/indentation/
   // trailing newline survive byte-for-byte. The single-occurrence guard throws
   // (kind: 'manifest-format') rather than risk silent corruption.
   const newPkgText = surgicalVersionReplace(pkgText, oldVersion, newVersion, 'package.json');
   const newPluginText = surgicalVersionReplace(pluginText, oldVersion, newVersion, '.claude-plugin/plugin.json');
   const newMarketplaceText = surgicalVersionReplace(marketplaceText, oldVersion, newVersion, '.claude-plugin/marketplace.json');
+  const newCodexPluginText = surgicalVersionReplace(codexPluginText, oldVersion, newVersion, '.codex-plugin/plugin.json');
   await writeFile(pkgPath, newPkgText);
   await writeFile(pluginPath, newPluginText);
   await writeFile(marketplacePath, newMarketplaceText);
+  await writeFile(codexPluginPath, newCodexPluginText);
 
   // 6. skipCache short-circuits cache, marketplace sync, and installed_plugins.
   if (skipCache) return result;
@@ -266,7 +278,7 @@ export async function release({
 
 function releaseArtifacts(res) {
   if (res.dryRun) return [];
-  const a = ['package.json', 'plugin.json', 'marketplace.json'];
+  const a = ['package.json', '.claude-plugin/plugin.json', '.claude-plugin/marketplace.json', '.codex-plugin/plugin.json'];
   if (!res.skipCache) {
     a.push(res.cacheDir, res.marketplaceDir);
     if (res.installedUpdated) a.push('installed_plugins.json');
@@ -279,7 +291,7 @@ const CLAUDE_RUNNING_WARNING =
   '가급적 Claude Code 종료 후 실행하세요. 중단 시 복구: harness-team release <x.y.z> (명시적 버전 재실행).';
 
 function fmtTargets(res) {
-  const lines = [`  manifests: package.json, plugin.json, marketplace.json (→ ${res.newVersion})`];
+  const lines = [`  manifests: package.json, .claude-plugin/plugin.json, .claude-plugin/marketplace.json, .codex-plugin/plugin.json (→ ${res.newVersion})`];
   if (!res.skipCache) {
     lines.push(`  cache: ${res.cacheDir}`);
     lines.push(`  marketplace: ${res.marketplaceDir}`);
@@ -354,8 +366,8 @@ export async function runRelease(ctx) {
 // Per-kind cause/retry/stop advice so the catch block never misdirects the user.
 const ERROR_ADVICE = {
   'version-mismatch': {
-    cause: '3개 매니페스트(package.json/plugin.json/marketplace.json)의 version이 서로 다름',
-    retry: '세 파일의 version을 동일한 현재 버전으로 맞춘 뒤 재실행',
+    cause: '4개 매니페스트(package.json/.claude-plugin/plugin.json/.claude-plugin/marketplace.json/.codex-plugin/plugin.json)의 version이 서로 다름',
+    retry: '네 파일의 version을 동일한 현재 버전으로 맞춘 뒤 재실행',
     stop: '어느 값이 옳은지 모호하면 git history로 마지막 합의된 버전을 확인하라',
   },
   'bad-bump': {
@@ -364,8 +376,8 @@ const ERROR_ADVICE = {
     stop: '명시적 버전은 선행 0 없는 정수 3개여야 한다 (예: 1.2.3, not 01.02.03)',
   },
   schema: {
-    cause: 'marketplace.json 스키마 위반 — plugins 길이가 1이 아니거나 plugins[0].name이 plugin.json.name과 불일치',
-    retry: 'marketplace.json.plugins를 정확히 1개로 만들고 name을 plugin.json.name과 일치시킨 뒤 재실행',
+    cause: '플러그인 매니페스트 스키마 위반 — marketplace plugins 길이가 1이 아니거나 Claude/Codex plugin name이 불일치',
+    retry: 'marketplace.json.plugins를 정확히 1개로 만들고 .claude-plugin/plugin.json 및 .codex-plugin/plugin.json의 name을 일치시킨 뒤 재실행',
     stop: '스키마는 수동 점검이 필요하다 — 자동 수정하지 말 것',
   },
   'manifest-format': {

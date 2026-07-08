@@ -13,6 +13,7 @@
     "commands",
     "skills",
     ".claude-plugin",
+    ".codex-plugin",
     "README.md"
   ],
   "engines": {

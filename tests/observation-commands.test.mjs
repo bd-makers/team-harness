@@ -132,17 +132,20 @@ test('doctor --json: 단일 envelope + checks 배열 + status error(빈 dir)', a
   } finally { cap.restore(); process.exitCode = prev; await rm(dir, { recursive: true, force: true }); }
 });
 
-// Build a valid 3-manifest fixture so release() succeeds (mirrors release.test.mjs makeRoot).
+// Build a valid release fixture so release() succeeds (mirrors release.test.mjs makeRoot).
 async function makeReleaseRoot(version = '1.2.3') {
   const root = await mkdtemp(join(tmpdir(), 'harness-rel-ok-'));
   const name = 'harness-aijient-team';
   await mkdir(join(root, '.claude-plugin'), { recursive: true });
+  await mkdir(join(root, '.codex-plugin'), { recursive: true });
   await mkdir(join(root, 'commands'), { recursive: true });
   await writeFile(join(root, 'package.json'), JSON.stringify({ name, version }, null, 2) + '\n');
   await writeFile(join(root, '.claude-plugin/plugin.json'),
     JSON.stringify({ name, version, commands: ['./commands/harness-release.md'] }, null, 2) + '\n');
   await writeFile(join(root, '.claude-plugin/marketplace.json'),
     JSON.stringify({ name: 'harness-aijient-team-marketplace', plugins: [{ name, version }] }, null, 2) + '\n');
+  await writeFile(join(root, '.codex-plugin/plugin.json'),
+    JSON.stringify({ name, version, skills: './skills/' }, null, 2) + '\n');
   await writeFile(join(root, 'commands/harness-release.md'), '# release\n');
   return root;
 }

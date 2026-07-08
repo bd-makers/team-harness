@@ -12,6 +12,7 @@ const KEY = `${PLUGIN}@${MARKET}`;
 async function makeRoot(version = '1.2.3') {
   const root = await mkdtemp(join(tmpdir(), 'harness-rel-root-'));
   await mkdir(join(root, '.claude-plugin'), { recursive: true });
+  await mkdir(join(root, '.codex-plugin'), { recursive: true });
   await mkdir(join(root, 'commands'), { recursive: true });
   await writeFile(
     join(root, 'package.json'),
@@ -24,6 +25,10 @@ async function makeRoot(version = '1.2.3') {
   await writeFile(
     join(root, '.claude-plugin/marketplace.json'),
     JSON.stringify({ name: MARKET, plugins: [{ name: PLUGIN, version }] }, null, 2) + '\n',
+  );
+  await writeFile(
+    join(root, '.codex-plugin/plugin.json'),
+    JSON.stringify({ name: PLUGIN, version, skills: './skills/' }, null, 2) + '\n',
   );
   await writeFile(join(root, 'commands/harness-release.md'), '# release\n');
   return root;
@@ -64,7 +69,7 @@ async function fileExists(p) {
   try { await stat(p); return true; } catch { return false; }
 }
 
-test('dryRun is byte-for-byte non-mutating across all 3 manifests + installed_plugins.json', async () => {
+test('dryRun is byte-for-byte non-mutating across all manifests + installed_plugins.json', async () => {
   const root = await makeRoot();
   const pr = await makePluginsRoot();
   try {
@@ -72,6 +77,7 @@ test('dryRun is byte-for-byte non-mutating across all 3 manifests + installed_pl
       join(root, 'package.json'),
       join(root, '.claude-plugin/plugin.json'),
       join(root, '.claude-plugin/marketplace.json'),
+      join(root, '.codex-plugin/plugin.json'),
       join(pr, 'installed_plugins.json'),
     ];
     const before = await Promise.all(paths.map(p => readFile(p, 'utf8')));
@@ -127,6 +133,7 @@ test('real run updates installed_plugins record but NOT the schema version', asy
     assert.equal((await readJson(join(root, 'package.json'))).version, '1.3.0');
     assert.equal((await readJson(join(root, '.claude-plugin/plugin.json'))).version, '1.3.0');
     assert.equal((await readJson(join(root, '.claude-plugin/marketplace.json'))).plugins[0].version, '1.3.0');
+    assert.equal((await readJson(join(root, '.codex-plugin/plugin.json'))).version, '1.3.0');
 
     // installed_plugins record updated, schema version untouched
     const ip = await readJson(join(pr, 'installed_plugins.json'));
@@ -208,6 +215,7 @@ test('explicit version bump with skipCache skips cache + installed_plugins', asy
     assert.equal((await readJson(join(root, 'package.json'))).version, '2.0.0');
     assert.equal((await readJson(join(root, '.claude-plugin/plugin.json'))).version, '2.0.0');
     assert.equal((await readJson(join(root, '.claude-plugin/marketplace.json'))).plugins[0].version, '2.0.0');
+    assert.equal((await readJson(join(root, '.codex-plugin/plugin.json'))).version, '2.0.0');
 
     // installed_plugins NOT touched (record still old)
     const ip = await readJson(join(pr, 'installed_plugins.json'));

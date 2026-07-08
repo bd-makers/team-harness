@@ -18,6 +18,12 @@ modified: 2026-06-02
 
 ## [Unreleased]
 
+### Added
+- Codex 플러그인 어댑터 추가: `.codex-plugin/plugin.json`과 `skills/harness-team`을 통해 같은 레포를 Codex 플러그인으로도 사용할 수 있게 함. Claude Code 플러그인 구조는 유지하고 공통 코어(`bin/`, `src/`, `templates/`, `AGENTS.md`)를 공유.
+
+### Changed
+- `harness-team release`와 manifest-sync 테스트가 `.codex-plugin/plugin.json`까지 포함해 4개 매니페스트 버전 일치를 강제하도록 확장.
+
 ---
 
 ## [0.9.5] - 2026-06-30

@@ -1,0 +1,28 @@
+{
+  "name": "harness-aijient-team",
+  "version": "0.10.0",
+  "description": "Multi-agent team harness for applying AGENTS.md-centered project workflow from Codex and Claude Code.",
+  "author": {
+    "name": "bd-makers"
+  },
+  "homepage": "https://github.com/bd-makers/team-harness",
+  "repository": "https://github.com/bd-makers/team-harness",
+  "license": "MIT",
+  "keywords": ["harness", "team", "multi-agent", "codex", "claude-code", "gemini", "cursor", "opencode"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Harness AIjient Team",
+    "shortDescription": "Apply and operate the team harness from Codex.",
+    "longDescription": "Use the shared harness-team CLI and AGENTS.md workflow from Codex while preserving Claude Code plugin support.",
+    "developerName": "bd-makers",
+    "category": "Productivity",
+    "capabilities": ["Workflow", "Automation", "Write"],
+    "websiteURL": "https://github.com/bd-makers/team-harness",
+    "defaultPrompt": [
+      "Apply the team harness to this project.",
+      "Create a new harness task.",
+      "Run harness doctor and explain the result."
+    ],
+    "brandColor": "#2563EB"
+  }
+}

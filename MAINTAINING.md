@@ -19,8 +19,9 @@ modified: 2026-06-02
 
 - `~/.claude/plugins/cache/harness-aijient-team/` — 배포 캐시 복사본
 - `~/.claude/plugins/marketplaces/.../harness-aijient-team/` — 마켓플레이스 배포 복사본
+- Codex local marketplace/cache — Codex 설치 결과물
 
-위 두 경로는 릴리스 도구가 생성하는 **배포 결과물**입니다. **절대 직접 편집하지 마세요.** 수동 편집은 다음 릴리스에서 덮어씌워집니다.
+위 경로들은 릴리스/설치 도구가 생성하는 **배포 결과물**입니다. **절대 직접 편집하지 마세요.** 수동 편집은 다음 릴리스에서 덮어씌워집니다.
 
 ---
 
@@ -30,7 +31,8 @@ modified: 2026-06-02
 
 1. `README.md` — 플러그인 개요, 명령어 레퍼런스, 설치 방법
 2. `.claude-plugin/plugin.json` — 슬래시 커맨드 목록 및 메타데이터
-3. `node --test tests/` — 현재 테스트 스위트 통과 여부 확인
+3. `.codex-plugin/plugin.json` / `skills/harness-team/SKILL.md` — Codex 플러그인 진입점
+4. `node --test tests/` — 현재 테스트 스위트 통과 여부 확인
 
 ---
 
@@ -58,6 +60,8 @@ node --test tests/
 harness-team release --dry-run
 ```
 
+Codex manifest/skill을 수정했다면 Codex validator도 실행하세요. 로컬 Python에 `PyYAML`이 없으면 해당 validator는 실패할 수 있으므로, 먼저 Python 환경을 준비해야 합니다.
+
 ---
 
 ## 릴리스 절차
@@ -68,7 +72,7 @@ harness-team release --dry-run
 2. `CHANGELOG.md`의 `## [Unreleased]` 항목 채우기
 3. `harness-team release <minor|patch|major> --dry-run` 으로 결과 미리 확인
 4. `harness-team release <minor|patch|major>` 실행
-   - 3개 매니페스트(`package.json`, `.claude-plugin/plugin.json`, `marketplace.json`) 버전 일괄 bump
+   - 4개 매니페스트(`package.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`) 버전 일괄 bump
    - 캐시·마켓플레이스·`installed_plugins.json` 자동 동기화
 5. `CHANGELOG.md`의 `## [Unreleased]`를 새 버전 헤딩(`## [X.Y.Z] - YYYY-MM-DD`)으로 이동
 6. 커밋 및 태그:
