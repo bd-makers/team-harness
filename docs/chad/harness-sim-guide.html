@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>harness-sim — L5 Agent-in-the-Loop 시뮬레이션 가이드</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3350;
+      --accent: #7c6af5;
+      --accent2: #50c8f5;
+      --accent3: #4df0aa;
+      --text: #e2e6f0;
+      --muted: #7a82a0;
+      --tag-blue: #1e3a5f;
+      --tag-green: #0e3d30;
+      --tag-purple: #2a1f5c;
+      --tag-orange: #3d2700;
+      --pass: #4df0aa;
+      --fail: #f5648a;
+      --manual: #f5a623;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.6;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(15,17,23,0.95); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem; height: 54px; display: flex; align-items: center;
+    }
+    .nav-logo { font-weight: 700; font-size: 1rem; color: var(--accent); margin-right: 2rem; white-space: nowrap; flex-shrink: 0; }
+    .nav-links { display: flex; gap: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .nav-links::-webkit-scrollbar { display: none; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none; font-size: 0.85rem;
+      padding: 0 0.8rem; height: 54px; display: flex; align-items: center;
+      border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; white-space: nowrap;
+    }
+    .nav-links a:hover { color: var(--text); border-bottom-color: var(--accent); }
+
+    /* LAYOUT */
+    main { max-width: 1160px; margin: 0 auto; padding: 72px 2rem 6rem; }
+
+    /* HERO */
+    .hero { text-align: center; padding: 4rem 0 2.5rem; }
+    .hero h1 {
+      font-size: 2.6rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 0.75rem;
+    }
+    .hero p { color: var(--muted); font-size: 1.05rem; max-width: 680px; margin: 0 auto 1.5rem; }
+    .hero-tags { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+    .tag { padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+    .tag-blue { background: var(--tag-blue); color: var(--accent2); }
+    .tag-green { background: var(--tag-green); color: var(--accent3); }
+    .tag-purple { background: var(--tag-purple); color: var(--accent); }
+    .tag-orange { background: var(--tag-orange); color: #f5a623; }
+
+    /* SECTIONS */
+    section { margin-bottom: 4.5rem; scroll-margin-top: 70px; }
+    .section-title {
+      font-size: 1.45rem; font-weight: 700; color: var(--text);
+      margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .section-title::before {
+      content: ''; display: inline-block; width: 4px; height: 1.45rem;
+      background: var(--accent); border-radius: 2px;
+    }
+    .section-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    h4 { font-size: 1rem; color: var(--accent2); margin: 1.6rem 0 0.6rem; }
+    p.body { color: var(--muted); font-size: 0.9rem; margin-bottom: 0.8rem; }
+    p.body strong { color: var(--text); }
+
+    /* CARDS */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.4rem; margin-bottom: 1rem; }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem; }
+    .card h3 { font-size: 0.95rem; font-weight: 600; color: var(--accent2); margin-bottom: 0.6rem; }
+    .card p, .card li { font-size: 0.85rem; color: var(--muted); }
+    .card ul { padding-left: 1.1rem; }
+    .card li { margin-bottom: 0.35rem; }
+    .card-accent-green { border-color: #4df0aa44; }
+    .card-accent-purple { border-color: #7c6af544; }
+    .card-accent-blue { border-color: #50c8f544; }
+    .card-accent-orange { border-color: #f5a62344; }
+
+    /* TABLE */
+    .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 1rem; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    thead tr { background: var(--surface2); }
+    th {
+      padding: 0.7rem 1rem; text-align: left; color: var(--muted); font-weight: 600;
+      font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid var(--border);
+    }
+    td { padding: 0.65rem 1rem; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(124,106,245,0.04); }
+    td.center, th.center { text-align: center; }
+    code {
+      background: var(--surface2); color: var(--accent2); padding: 2px 7px;
+      border-radius: 4px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82em; word-break: break-word;
+    }
+
+    /* CODE BLOCK */
+    pre {
+      background: #0b0d13; border: 1px solid var(--border); border-radius: 10px;
+      padding: 1rem 1.2rem; overflow-x: auto; margin-bottom: 1rem;
+    }
+    pre code { background: none; color: #cdd3e6; padding: 0; font-size: 0.82rem; line-height: 1.65; display: block; }
+    pre code .c { color: var(--muted); }   /* comment */
+    pre code .k { color: var(--accent); }   /* keyword/cmd */
+    pre code .s { color: var(--accent3); }   /* string/path */
+
+    /* INFOBOX */
+    .infobox { background: #1a2535; border-left: 3px solid var(--accent2); border-radius: 0 8px 8px 0; padding: 0.9rem 1.2rem; font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem; }
+    .infobox strong { color: var(--text); }
+    .infobox.warn { background: #2a2312; border-left-color: var(--manual); }
+    .infobox.warn strong { color: #ffd591; }
+    .infobox.good { background: #12261e; border-left-color: var(--accent3); }
+    .infobox.good strong { color: #9ef5cf; }
+
+    /* STATUS PILL */
+    .pill { display: inline-block; padding: 1px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; }
+    .pill-pass { background: #0e3d30; color: var(--pass); }
+    .pill-fail { background: #3d1420; color: var(--fail); }
+    .pill-manual { background: #3d2700; color: var(--manual); }
+    .ico { font-size: 1rem; }
+
+    /* DIAGRAM */
+    .diagram-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1.8rem 1rem; overflow-x: auto; margin-bottom: 0.75rem; }
+    .diagram-wrap svg { display: block; margin: 0 auto; min-width: 720px; max-width: 100%; }
+    .diagram-label { font-size: 0.78rem; color: var(--muted); text-align: center; margin-top: 0.5rem; margin-bottom: 1.5rem; }
+
+    /* MISC */
+    hr { border: none; border-top: 1px solid var(--border); margin: 3rem 0; }
+    footer { text-align: center; padding: 2rem; color: var(--muted); font-size: 0.8rem; border-top: 1px solid var(--border); }
+    footer code { font-size: 0.85em; }
+    .legend { display: flex; gap: 1.2rem; flex-wrap: wrap; font-size: 0.8rem; color: var(--muted); margin: 0.6rem 0 1.2rem; }
+    .legend span { display: inline-flex; align-items: center; gap: 0.35rem; }
+    .kbd { font-family: 'SF Mono','Fira Code',monospace; font-size: 0.8em; color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">🧪 harness-sim</div>
+  <div class="nav-links">
+    <a href="#concept">개념</a>
+    <a href="#arch">아키텍처</a>
+    <a href="#scenarios">시나리오</a>
+    <a href="#run">실행법</a>
+    <a href="#report">리포트 해석</a>
+    <a href="#versioning">버전 비교</a>
+    <a href="#troubleshoot">트러블슈팅</a>
+  </div>
+</nav>
+
+<main>
+
+  <!-- HERO -->
+  <div class="hero" id="top">
+    <h1>harness-sim — L5 Agent-in-the-Loop</h1>
+    <p>설치된 하네스가 소비자 프로젝트에서 <strong>진짜 작동하는지</strong>를 실제 <code>claude -p</code>
+    에이전트 세션의 <strong>사이드이펙트</strong>로 채점하는 시뮬레이션 하네스. 산문은 믿지 않는다 —
+    파일·git·transcript·hook-stderr만 신호다.</p>
+    <div class="hero-tags">
+      <span class="tag tag-purple">v0.9.5</span>
+      <span class="tag tag-blue">tests/sim/agentloop.mjs</span>
+      <span class="tag tag-green">L5 · installed harness (2번)</span>
+      <span class="tag tag-orange">node · next · react-native</span>
+    </div>
+  </div>
+
+  <div class="infobox">
+    이 문서는 <code>tests/sim/agentloop.mjs</code> · <code>skills/harness-sim/SKILL.md</code> ·
+    <code>tests/e2e/sandbox.mjs</code> · <code>docs/chad/sim-agentloop-redesign/*</code> ·
+    실제 리포트 <code>../harness-playground/sim-reports/agentloop-*.md</code>의 사실만 반영합니다.
+    관찰 불가 항목(PreToolUse 등)은 정직하게 <span class="pill pill-manual">⚠️ 수동확인</span>으로 표기합니다.
+  </div>
+
+  <!-- ============ 1. 개념 ============ -->
+  <section id="concept">
+    <div class="section-title">1 · 개념 — 두 개의 검증 레이어</div>
+    <div class="section-sub">L4는 CLI 배관을, L5는 <em>설치된 하네스</em>를 측정한다. 둘은 겹치지 않는다.</div>
+
+    <div class="card-grid">
+      <div class="card card-accent-blue">
+        <h3>L4 — CLI 배관 (빠름)</h3>
+        <ul>
+          <li><strong>무엇:</strong> <code>tests/e2e/*</code> + <code>doctor --json</code></li>
+          <li>휘발성 tmpdir에서 실제 <code>bin/harness-team.mjs</code>를 spawn해 기계적으로 검증</li>
+          <li>플러그인 <strong>CLI 로직만</strong> 본다 (arg 파싱 · scaffold · 병합)</li>
+          <li>auth·에이전트 <strong>불필요</strong>, 초 단위로 끝남</li>
+        </ul>
+      </div>
+      <div class="card card-accent-purple">
+        <h3>L5 — agent-in-the-loop (이 가이드)</h3>
+        <ul>
+          <li><strong>무엇:</strong> <code>tests/sim/agentloop.mjs</code></li>
+          <li>실제 <code>claude -p</code> 세션을 띄워 그 <strong>사이드이펙트</strong>를 채점</li>
+          <li><strong>설치된 하네스(2번)</strong>를 측정하는 유일한 경로</li>
+          <li>auth · 권한 allowlist · 시간(~30–50분) 필요</li>
+        </ul>
+      </div>
+    </div>
+
+    <h4>왜 L5만 "설치된 하네스(2번)"를 측정할 수 있나</h4>
+    <p class="body">
+      <code>harness-init</code>/<code>apply</code>/<code>task</code>가 소비자 프로젝트에 심는 것들 —
+      <strong>설치된 hook</strong>(<code>SessionStart</code> · <code>post-commit</code>),
+      <strong>slash → CLI 체인</strong>, <strong>트리거</strong> — 은
+      <strong>cwd가 그 프로젝트인 세션</strong>에서만 발화한다.
+      한 세션 안에서 도는 스킬은 이 설치물의 발화를 <em>구조적으로</em> 관찰할 수 없다.
+      그래서 L5는 cwd=테스트프로젝트로 <strong>실제 에이전트 세션을 별도 프로세스로 띄워야만</strong>
+      "설치된 것이 진짜 켜지는가"를 볼 수 있다. 이것이 CLI sim(L4)이 도달 못 하는 "2번" 레이어다.
+    </p>
+    <div class="infobox good">
+      <strong>핵심 성과:</strong> CLI sim이 "⚠️ 수동확인"으로 미뤄두던
+      <code>SessionStart</code> nudge 주입을, L5는 transcript 증거로 <span class="pill pill-pass">✅ PASS</span>
+      자동 판정으로 전환했다. (실제 2번 측정 성공 — <code>sim-agentloop-redesign-artifact.md</code>)
+    </div>
+  </section>
+
+  <!-- ============ 2. 아키텍처 ============ -->
+  <section id="arch">
+    <div class="section-title">2 · 아키텍처 — spawn → 사이드이펙트 → 채점</div>
+    <div class="section-sub">throwaway 샌드박스에서 실 에이전트를 띄우고, 산문이 아닌 관찰 가능한 상태 변화만 신호로 삼는다.</div>
+
+    <div class="diagram-wrap">
+      <svg viewBox="0 0 860 430" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, sans-serif">
+        <defs>
+          <marker id="arw" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+            <path d="M0,0 L7,3 L0,6 Z" fill="#7a82a0"/>
+          </marker>
+        </defs>
+
+        <!-- makeSandbox -->
+        <rect x="20" y="150" width="180" height="130" rx="10" fill="#1a1d27" stroke="#50c8f544"/>
+        <text x="110" y="176" text-anchor="middle" fill="#50c8f5" font-size="13" font-weight="700">makeSandbox()</text>
+        <text x="110" y="200" text-anchor="middle" fill="#7a82a0" font-size="10.5">.sim-tmp/&lt;TS&gt;/&lt;name&gt;</text>
+        <text x="110" y="219" text-anchor="middle" fill="#7a82a0" font-size="10.5">PATH shim → harness-team</text>
+        <text x="110" y="238" text-anchor="middle" fill="#7a82a0" font-size="10.5">git init + config</text>
+        <text x="110" y="257" text-anchor="middle" fill="#7a82a0" font-size="10.5">package.json (stack)</text>
+
+        <!-- spawn claude -p -->
+        <rect x="250" y="140" width="200" height="150" rx="10" fill="#1a1d27" stroke="#7c6af566"/>
+        <text x="350" y="166" text-anchor="middle" fill="#7c6af5" font-size="13" font-weight="700">runHeadless()</text>
+        <text x="350" y="189" text-anchor="middle" fill="#cdd3e6" font-size="11">claude -p &lt;prompt&gt;</text>
+        <text x="350" y="207" text-anchor="middle" fill="#7a82a0" font-size="10.5">--output-format json</text>
+        <text x="350" y="225" text-anchor="middle" fill="#7a82a0" font-size="10.5">--allowedTools (scoped)</text>
+        <text x="350" y="248" text-anchor="middle" fill="#4df0aa" font-size="10.5">cwd = 테스트프로젝트</text>
+        <text x="350" y="270" text-anchor="middle" fill="#f5a623" font-size="10.5">token → child env only</text>
+
+        <!-- auth badge -->
+        <rect x="250" y="40" width="200" height="66" rx="8" fill="#22263a" stroke="#2e3350"/>
+        <text x="350" y="62" text-anchor="middle" fill="#e2e6f0" font-size="11" font-weight="700">auth (택1)</text>
+        <text x="350" y="80" text-anchor="middle" fill="#7a82a0" font-size="10">토큰 파일 → child env 주입</text>
+        <text x="350" y="96" text-anchor="middle" fill="#7a82a0" font-size="10">or 유저-런(ambient 로그인)</text>
+        <line x1="350" y1="106" x2="350" y2="138" stroke="#7a82a0" stroke-width="1.4" marker-end="url(#arw)"/>
+
+        <!-- side effects -->
+        <rect x="500" y="30" width="150" height="86" rx="9" fill="#0b0d13" stroke="#2e3350"/>
+        <text x="575" y="52" text-anchor="middle" fill="#e2e6f0" font-size="11" font-weight="700">사이드이펙트</text>
+        <text x="575" y="72" text-anchor="middle" fill="#7a82a0" font-size="10">파일 / git</text>
+        <text x="575" y="88" text-anchor="middle" fill="#7a82a0" font-size="10">session transcript(jsonl)</text>
+        <text x="575" y="104" text-anchor="middle" fill="#7a82a0" font-size="10">hook stderr</text>
+
+        <rect x="500" y="130" width="150" height="70" rx="9" fill="#0b0d13" stroke="#2e3350"/>
+        <text x="575" y="152" text-anchor="middle" fill="#e2e6f0" font-size="11" font-weight="700">envelope(json)</text>
+        <text x="575" y="172" text-anchor="middle" fill="#7a82a0" font-size="10">session_id · usage</text>
+        <text x="575" y="188" text-anchor="middle" fill="#7a82a0" font-size="10">total_cost_usd</text>
+
+        <!-- signal scoring -->
+        <rect x="500" y="220" width="150" height="80" rx="9" fill="#1a1d27" stroke="#4df0aa44"/>
+        <text x="575" y="244" text-anchor="middle" fill="#4df0aa" font-size="12" font-weight="700">signal 채점</text>
+        <text x="575" y="264" text-anchor="middle" fill="#7a82a0" font-size="10">이진 판정 (증거 기반)</text>
+        <text x="575" y="281" text-anchor="middle" fill="#7a82a0" font-size="10">✅ PASS ❌ FAIL ⚠️ MANUAL</text>
+
+        <!-- report -->
+        <rect x="700" y="120" width="140" height="90" rx="9" fill="#1a1d27" stroke="#f5a62344"/>
+        <text x="770" y="146" text-anchor="middle" fill="#f5a623" font-size="12" font-weight="700">리포트</text>
+        <text x="770" y="166" text-anchor="middle" fill="#7a82a0" font-size="10">sim-reports/</text>
+        <text x="770" y="182" text-anchor="middle" fill="#7a82a0" font-size="10">agentloop-&lt;TS&gt;.md</text>
+        <text x="770" y="200" text-anchor="middle" fill="#7a82a0" font-size="10">+ 골든 스냅샷</text>
+
+        <!-- arrows -->
+        <line x1="200" y1="215" x2="248" y2="215" stroke="#7a82a0" stroke-width="1.4" marker-end="url(#arw)"/>
+        <line x1="450" y1="180" x2="498" y2="120" stroke="#7a82a0" stroke-width="1.4" marker-end="url(#arw)"/>
+        <line x1="450" y1="215" x2="498" y2="180" stroke="#7a82a0" stroke-width="1.4" marker-end="url(#arw)"/>
+        <line x1="650" y1="90"  x2="690" y2="240" stroke="#7a82a0" stroke-width="1.1" stroke-dasharray="3 3"/>
+        <line x1="650" y1="165" x2="690" y2="250" stroke="#7a82a0" stroke-width="1.1" stroke-dasharray="3 3"/>
+        <line x1="650" y1="260" x2="698" y2="200" stroke="#7a82a0" stroke-width="1.4" marker-end="url(#arw)"/>
+
+        <!-- cleanup note -->
+        <text x="110" y="320" text-anchor="middle" fill="#7a82a0" font-size="10">런 종료 → .sim-tmp/&lt;TS&gt; 삭제 (무오염)</text>
+        <text x="770" y="235" text-anchor="middle" fill="#7a82a0" font-size="10">스냅샷·리포트는 영속</text>
+      </svg>
+    </div>
+    <div class="diagram-label">그림 1 · agentloop.mjs 채점 파이프라인 — spawn 한 세션당 사이드이펙트를 신호로 이진 판정</div>
+
+    <h4>구성 요소</h4>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>단계</th><th>함수</th><th>하는 일</th></tr></thead>
+        <tbody>
+          <tr><td>샌드박스</td><td><code>makeSandbox()</code></td><td><code>../harness-playground/.sim-tmp/&lt;TS&gt;/&lt;name&gt;</code>에 throwaway dir 생성. <code>.bin/harness-team</code> PATH shim(설치된 post-commit hook이 <code>harness-team</code>을 찾도록), <code>git init</code> + <code>user.name=simbot</code>, stack별 <code>package.json</code>.</td></tr>
+          <tr><td>세션 spawn</td><td><code>runHeadless()</code></td><td><code>claude -p &lt;prompt&gt; --output-format json --allowedTools ...</code>를 cwd=샌드박스로 실행. 토큰은 <strong>child env에만</strong> 주입(<code>CLAUDE_CODE_OAUTH_TOKEN</code>), <code>CLAUDE_CODE_CHILD_SESSION</code>·<code>CLAUDECODE</code>는 제거(중첩 세션 혼동 방지).</td></tr>
+          <tr><td>transcript 조회</td><td><code>findTranscript()</code></td><td><code>~/.claude/projects/&lt;proj&gt;/&lt;session_id&gt;.jsonl</code>을 session_id로 글롭. <code>SessionStart</code> nudge 주입 여부를 여기서 확인.</td></tr>
+          <tr><td>채점</td><td><code>sig()</code> / <code>manual()</code></td><td>신호 = <code>{ label, status, note }</code>. <code>PASS</code>/<code>FAIL</code>은 파일·git·transcript 상태로 이진 판정. 관찰 불가는 <code>MANUAL</code>. 에이전트 산문은 <code>sanitizeNote()</code>로 소독되며 <strong>신호가 되지 않는다</strong>.</td></tr>
+          <tr><td>스냅샷</td><td><code>snapshot()</code></td><td><code>rsync</code>로 scaffold 산출물을 <code>sim-snapshots/&lt;version&gt;/&lt;scenario&gt;/</code>에 복사(<code>.git</code>·<code>node_modules</code>·<code>.bin</code> 제외). 버전 간 <code>git diff</code>용.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ 3. 시나리오 ============ -->
+  <section id="scenarios">
+    <div class="section-title">3 · 시나리오 — SC1 ~ SC5</div>
+    <div class="section-sub">SC1/SC2는 stack 매트릭스(node·next·react-native)로, SC3/4/5는 canonical(node) applied 프로젝트에서 1회.</div>
+
+    <div class="legend">
+      <span><span class="ico">✅</span> PASS — 증거 있음</span>
+      <span><span class="ico">❌</span> FAIL — 신호 미검출</span>
+      <span><span class="ico">⚠️</span> MANUAL — 헤드리스 관찰 불가</span>
+    </div>
+
+    <h4>SC1 · init — 빈 dir에 하네스 scaffold</h4>
+    <p class="body">빈 dir + <code>/harness-aijient-team:harness-init</code>. 단, init은 <strong>기본이 대화형</strong>이라
+    헤드리스에서 멈춘다 → 프롬프트에 <em>"NON-INTERACTIVELY, accept all defaults, pass <code>--yes</code>, 질문 금지"</em>를
+    명시해 완주시킨다. 8개 신호:</p>
+    <div class="card">
+      <ul>
+        <li>agent run completed (auth/parse error 없음)</li>
+        <li><code>AGENTS.md</code> + <code>harness:section=</code> 마커</li>
+        <li><code>CLAUDE.md</code>의 <code>@AGENTS.md</code> import</li>
+        <li><code>GEMINI.md</code>의 <code>@AGENTS.md</code> import</li>
+        <li><code>.claude/settings.json</code>에 <code>hooks</code> 존재</li>
+        <li><code>.claude/rules</code> 디렉토리 존재</li>
+        <li><code>AGENTS.md</code> stack label = 기대값 <span class="kbd">(stack-discriminating)</span></li>
+        <li><code>doctor</code> green (<code>doctor --json</code> status success, fail 0)</li>
+      </ul>
+    </div>
+
+    <h4>SC2 · apply — 기존 프로젝트에 비파괴 주입</h4>
+    <p class="body">기존 파일(<code>README.md</code>, <code>src/index.js</code>)이 있는 dir + <code>harness-apply</code>.
+    apply는 헤드리스에서 그대로 완주한다. 6개 신호:</p>
+    <div class="card">
+      <ul>
+        <li>agent run completed</li>
+        <li><code>README.md</code> 보존 (sha256 해시 불변)</li>
+        <li><code>src/index.js</code> 보존 (해시 불변)</li>
+        <li><code>AGENTS.md</code> 코어 주입됨</li>
+        <li><code>AGENTS.md</code> stack label = 기대값</li>
+        <li><code>doctor</code> green</li>
+      </ul>
+    </div>
+
+    <h4>SC3 · task — 4종 SSOT 생성</h4>
+    <p class="body">applied dir + <code>harness-task sim-&lt;TS&gt;</code>. member dir은 git <code>user.name</code>(=<code>simbot</code>). 5개 신호:</p>
+    <div class="card">
+      <ul>
+        <li>agent run completed</li>
+        <li>4종 SSOT 생성 (<code>spec</code>·<code>plan</code>·<code>handoff</code>·<code>artifact</code>)</li>
+        <li><code>.harness/active.json</code>이 task를 가리킴</li>
+        <li>spec에 <code>Ambiguity 자가진단</code> 섹션</li>
+        <li>spec에 <code>Ontology</code> 섹션</li>
+      </ul>
+    </div>
+
+    <h4>SC4 · 설치-hook 발화 — 본질적 "2번"</h4>
+    <p class="body">순서가 중요하다. <strong>post-commit을 먼저</strong> 돌린다 — active task가 살아 있을 때만
+    <code>handoff</code>가 갱신되기 때문. 그 다음 <code>active.json</code>을 <code>null</code>로 만들고
+    2번째 세션을 띄워 <code>SessionStart</code> nudge 주입을 확인한다.</p>
+    <div class="card">
+      <ul>
+        <li><span class="pill pill-pass">✅</span> post-commit handoff 갱신 (더미 커밋 후 mtime 전진, active task 존재 시)</li>
+        <li><span class="pill pill-pass">✅</span> SessionStart nudge 주입 — 2번째 세션 transcript에 <code>"활성 task가 없습니다"</code> 등장</li>
+        <li><span class="pill pill-manual">⚠️</span> PreToolUse protect-files 차단 — <strong>헤드리스에서 신뢰성 있게 관찰 불가 → 항상 수동확인</strong></li>
+      </ul>
+    </div>
+
+    <h4>SC5 · slash/skill 트리거 신뢰성 (비결정)</h4>
+    <p class="body">트리거는 비결정적이라 단일 PASS가 아니라 <strong>pass-rate(N=2)</strong>로 표기. 1/2 이하는 flaky.</p>
+    <div class="card">
+      <ul>
+        <li>네임스페이스 slash <code>/harness-aijient-team:harness-doctor</code> 해석 (pass-rate 2/2)</li>
+        <li>자연어("harness doctor 점검해줘")로도 트리거 (pass-rate 2/2)</li>
+      </ul>
+    </div>
+
+    <h4>stack 매트릭스 — 정확히 무엇을 검증하나</h4>
+    <div class="infobox warn">
+      <strong>전제 정정:</strong> 현재 코드에서 stack별로 <em>갈리는</em> 산출물은
+      <code>AGENTS.md</code>의 <code>## 기술 스택</code> 섹션 <strong>stackLabel 하나뿐</strong>이다.
+      rules·settings·permissions는 stack 무관. 이 매트릭스는
+      ① init/apply 전 과정의 stack별 완주 ② stackLabel 렌더(stack-discriminating signal)
+      ③ 스냅샷 stack delta를 검증하며, <strong>"stack별 rules·permissions"는 검증하지 않는다</strong>.
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>stack.id</th><th>package.json 시그니처</th><th class="center">기대 stackLabel</th></tr></thead>
+        <tbody>
+          <tr><td><code>node</code></td><td>bare-app (deps 없음)</td><td class="center"><code>Node.js</code></td></tr>
+          <tr><td><code>next</code></td><td><code>next@14</code> + <code>react@18</code></td><td class="center"><code>Next.js</code></td></tr>
+          <tr><td><code>react-native</code></td><td><code>expo@51</code> + <code>react-native@0.74</code></td><td class="center"><code>React Native (Expo)</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="body">SC1·SC2는 세 stack 모두 실행. SC3·SC4·SC5는 stack 무관이므로 canonical=<code>node</code>의
+    applied 프로젝트에서 1회만 돈다 (apply는 헤드리스-안전 · 풀 scaffold 설치 → 설치-hook 신호가 init의 대화형 이슈에 오염되지 않음).</p>
+  </section>
+
+  <!-- ============ 4. 실행법 ============ -->
+  <section id="run">
+    <div class="section-title">4 · 실행법 — probe → run</div>
+    <div class="section-sub">인증 벽·권한 게이트·시간을 먼저 이해하고, 계약을 굳힌 뒤 풀런을 백그라운드로 돌린다.</div>
+
+    <h4>Phase 0 · 프리플라이트</h4>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>점검</th><th>이유 / 없으면</th></tr></thead>
+        <tbody>
+          <tr><td>playground 존재</td><td><code>../harness-playground</code> 없으면 "dev 전용 도구" 안내 후 우아하게 종료(에러 아님).</td></tr>
+          <tr><td><code>harness-team</code> PATH</td><td><code>command -v harness-team</code>. 없으면 설치된 post-commit hook이 <code>harness-team</code>을 못 불러 <strong>거짓 통과</strong>. plugin repo에서 <code>npm link</code>.</td></tr>
+          <tr><td>auth 준비</td><td>중첩 <code>claude -p</code>는 부모 세션 인증을 <strong>상속 못 함</strong>(검증됨). 토큰 파일 또는 유저-런 필요.</td></tr>
+          <tr><td>권한 인지</td><td>헤드리스 에이전트는 권한 게이트라 <code>node</code>/<code>git</code>이 막힌다 → 스코프 allowlist 필요.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>auth — 두 경로 (택1)</h4>
+    <div class="card-grid">
+      <div class="card card-accent-orange">
+        <h3>토큰-런 (에이전트 자동실행)</h3>
+        <p>중첩 세션은 keychain에 못 닿으므로 구독 OAuth 토큰 파일이 필요. child env에만 주입됨(추가 과금 없음).</p>
+        <pre><code><span class="k">claude</span> setup-token
+<span class="k">umask</span> 077; <span class="k">echo</span> <span class="s">'&lt;token&gt;'</span> &gt; <span class="s">~/.claude-sim-oauth-token</span></code></pre>
+      </div>
+      <div class="card card-accent-green">
+        <h3>유저-런 (인증된 터미널)</h3>
+        <p>토큰 파일이 없으면 <strong>당신이 직접</strong> 인증된 터미널에서 실행 — spawn된 <code>claude -p</code>가 대화형 로그인(keychain)을 상속한다. 토큰 불필요.</p>
+        <pre><code><span class="c"># 이미 로그인된 터미널에서</span>
+<span class="k">node</span> tests/sim/agentloop.mjs run</code></pre>
+      </div>
+    </div>
+
+    <h4>권한 — 스코프 allowlist (블랭킷 skip 아님)</h4>
+    <p class="body">헤드리스 에이전트는 하네스 CLI가 필요로 하는 <code>node</code>/<code>git</code>을 못 돌린다.
+    <code>agentloop.mjs</code>가 딱 필요한 것만 여는 allowlist로 spawn한다. 샌드박스는 throwaway + git 격리라 안전.
+    필요 시 <code>SIM_ALLOWED_TOOLS</code>로 오버라이드.</p>
+    <pre><code><span class="c"># 기본 allowlist (runHeadless)</span>
+Bash(node:*),Bash(git:*),Bash(harness-team:*),Read,Write,Edit,Glob,Grep</code></pre>
+    <div class="infobox warn">
+      <strong>어시스턴트가 대신 돌리려면 사용자 허가가 필요하다.</strong> 블랭킷 permission skip은 금지 —
+      classifier 차단 대상이자 위험. 이 sim은 유저-런 또는 명시적 허가 하에서만 자동 구동된다.
+    </div>
+
+    <h4>Phase 1 · probe (계약 검증, 권장)</h4>
+    <pre><code><span class="k">node</span> tests/sim/agentloop.mjs probe</code></pre>
+    <p class="body">헤드리스 계약을 굳힌다 — auth 작동(토큰/ambient), envelope 파싱, session_id로 transcript 조회,
+    slash 형태 해석(네임스페이스 vs bare vs 자연어). <strong>auth 실패(401 등)는 여기서 드러난다</strong> → 풀런 전 토큰 재발급.</p>
+
+    <h4>Phase 2 · run (풀 시뮬레이션)</h4>
+    <pre><code><span class="c"># 헤드리스 콜 ~10개 · 약 30–50분 · 백그라운드 실행 필수</span>
+<span class="k">node</span> tests/sim/agentloop.mjs run</code></pre>
+    <p class="body">throwaway <code>.sim-tmp/&lt;TS&gt;/</code> 샌드박스에서 SC1~SC5를 채점하고
+    <code>../harness-playground/sim-reports/agentloop-&lt;TS&gt;.md</code> + 골든 스냅샷을 남긴 뒤
+    <code>.sim-tmp/&lt;TS&gt;</code>를 삭제한다. 시작 시 죽은 auth면 모든 실행 신호가 false FAIL이 되므로
+    <strong>런 초입에서 auth를 먼저 확인하고 실패 시 exit 2로 중단</strong>한다.</p>
+
+    <h4>무오염 원칙</h4>
+    <p class="body">모든 변경은 throwaway <code>.sim-tmp</code>에 국한. 실제 <code>src/</code>·영속 playground 3프로젝트는
+    건드리지 않는다. 종료 후 <code>.sim-tmp</code> 삭제 확인 + 영속 프로젝트 <code>git status</code> clean 사후 검증.
+    (<code>sim-reports/</code>·<code>sim-snapshots/</code>는 playground 소속 — 커밋 정책은 유저 몫.)</p>
+  </section>
+
+  <!-- ============ 5. 리포트 해석 ============ -->
+  <section id="report">
+    <div class="section-title">5 · 리포트 해석</div>
+    <div class="section-sub">신호는 증거 기반. 산문 PASS 없음. 의심 FAIL은 CLI 레벨로 격리 검증해 진짜/아티팩트를 가른다.</div>
+
+    <h4>상태 3종</h4>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th class="center">아이콘</th><th>상태</th><th>의미</th></tr></thead>
+        <tbody>
+          <tr><td class="center"><span class="ico">✅</span></td><td><span class="pill pill-pass">PASS</span></td><td>파일/git/transcript/hook-stderr <strong>증거</strong>로 검증됨.</td></tr>
+          <tr><td class="center"><span class="ico">❌</span></td><td><span class="pill pill-fail">FAIL</span></td><td>기대 신호 미검출. <strong>먼저 sim 아티팩트를 의심</strong>하고 격리 검증(아래).</td></tr>
+          <tr><td class="center"><span class="ico">⚠️</span></td><td><span class="pill pill-manual">MANUAL</span></td><td>transcript로도 관찰 불가 → 정직하게 수동확인으로 남김. false PASS 금지. (예: PreToolUse)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>정직성 규칙 (위조 금지)</h4>
+    <div class="card">
+      <ul>
+        <li><strong>산문은 신호가 아니다.</strong> PASS는 반드시 파일/git/transcript/hook-stderr 증거에 근거.</li>
+        <li><strong>PreToolUse protect-files</strong>는 헤드리스에서 신뢰성 있게 관찰 불가 → 항상 <code>⚠️manual</code>.</li>
+        <li>비결정 항목(트리거)은 단일 PASS가 아니라 <strong>pass-rate(N=2)</strong>로 표기.</li>
+        <li>의심 FAIL은 CLI 레벨로 격리 검증 후 "진짜 결함 vs sim 아티팩트"를 판별해 리포트에 명시.</li>
+      </ul>
+    </div>
+
+    <h4>리포트 헤더 (실제 형태)</h4>
+    <p class="body">각 리포트 상단은 실행일시 · plugin 버전 · git SHA · 측정 레이어 · stack 매트릭스 · 신호 집계를 담는다.
+    아래는 <code>agentloop-2026-07-01T1301.md</code>(v0.9.5)의 실제 집계:</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>항목</th><th>값</th></tr></thead>
+        <tbody>
+          <tr><td>측정 레이어</td><td>L5 agent-in-the-loop (설치된 하네스 = 2번)</td></tr>
+          <tr><td>stack 매트릭스</td><td>node · next · react-native (SC1/SC2) · canonical=node (SC3/4/5)</td></tr>
+          <tr><td>신호 집계</td><td><span class="pill pill-pass">PASS 51</span> · <span class="pill pill-fail">FAIL 0</span> · <span class="pill pill-manual">MANUAL 1</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h4>의심 FAIL 격리 검증 — 실제 사례</h4>
+    <div class="infobox">
+      <strong>SC4 post-commit ❌ → sim 버그였다 (하네스는 정상).</strong>
+      초기 런에서 SC4가 SessionStart 테스트를 위해 active task를 먼저 <code>null</code>로 만든 뒤 커밋해,
+      active가 없으면 no-op인 <code>handoff</code>가 갱신 안 돼 false FAIL이 났다.
+      CLI 레벨 격리(<code>.git/hooks/post-commit</code> 설치 확인 + active 있을 때 mtime 갱신 직접 검증)로
+      "진짜 결함 아님"을 증명 → SC4 순서를 <strong>post-commit 먼저</strong>로 교체해 수정.
+      이처럼 FAIL은 하네스 결함으로 바로 적지 말고 시나리오 의존성부터 의심한다.
+    </div>
+    <div class="infobox good">
+      <strong>진짜 발견 (CLI sim이 못 잡는 것):</strong> <code>harness-init</code>은 대화형이라
+      헤드리스/비대화형 컨텍스트에서 <strong>멈춰</strong> scaffold를 안 만든다. → 프롬프트에 비대화형 지시를
+      주면 완주(7/7 → 현재 8신호). L5만 잡아낼 수 있는 자동화-적대성이다.
+    </div>
+  </section>
+
+  <!-- ============ 6. 버전 비교 ============ -->
+  <section id="versioning">
+    <div class="section-title">6 · 버전 간 비교 워크플로우</div>
+    <div class="section-sub">"하네스 버전 올린 뒤 다시 돌려 비교" — 하네스 버전만 변수로 두는 통제 실험.</div>
+
+    <h4>하이브리드 상태 관리 — 세 상태를 분리한다</h4>
+    <div class="card-grid">
+      <div class="card card-accent-blue">
+        <h3>① baseline (노이즈)</h3>
+        <p>시나리오 작업 흔적(<code>.sim-scratch</code>·더미 커밋·handoff churn). <strong>매 런 throwaway</strong>로 clean 복원 → 시작 조건을 버전 간 동일하게 유지(비교가능성).</p>
+      </div>
+      <div class="card card-accent-green">
+        <h3>② 골든 스냅샷 (측정 대상)</h3>
+        <p>init/apply scaffold·4종 SSOT 구조를 <code>sim-snapshots/&lt;version&gt;/&lt;stack&gt;-{init,apply}/</code>에 커밋. <code>git diff &lt;v1&gt;..&lt;v2&gt;</code>로 "이번 업데이트가 출력을 뭘 바꿨나" 회귀 탐지.</p>
+      </div>
+      <div class="card card-accent-orange">
+        <h3>③ 리포트 (측정 결과)</h3>
+        <p>pass-rate를 날짜+버전 박아 <code>sim-reports/</code>에 누적. 점수 추이를 시간축으로 추적.</p>
+      </div>
+    </div>
+
+    <h4>"하네스 업데이트 후 재테스트" 시나리오</h4>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th class="center">#</th><th>동작</th><th>결과물</th></tr></thead>
+        <tbody>
+          <tr><td class="center">1</td><td>구버전에서 <code>run</code> → 스냅샷 <code>sim-snapshots/&lt;v1&gt;/</code> + 리포트 확보</td><td>기준선</td></tr>
+          <tr><td class="center">2</td><td>하네스 버전 bump (<code>harness-release</code>)</td><td>plugin 버전 갱신</td></tr>
+          <tr><td class="center">3</td><td>신버전에서 <code>run</code> → <code>sim-snapshots/&lt;v2&gt;/</code> + 새 리포트</td><td>비교 대상</td></tr>
+          <tr><td class="center">4</td><td><code>git diff &lt;v1&gt;..&lt;v2&gt;</code> (구조 회귀) + 리포트 pass-rate 비교(점수 회귀)</td><td><strong>2축 회귀 판정</strong></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="body">결과적으로 버전 간 비교가 <strong>점수 비교(리포트)</strong>와 <strong>구조 diff(스냅샷)</strong> 두 축으로 성립한다.
+    스냅샷은 stack별로 분리돼 stack 간·버전 간 diff가 모두 가능하다.</p>
+  </section>
+
+  <!-- ============ 7. 트러블슈팅 ============ -->
+  <section id="troubleshoot">
+    <div class="section-title">7 · 트러블슈팅</div>
+    <div class="section-sub">이 sim이 실제로 부딪힌 이슈들. 대부분 sim 아티팩트이지 하네스 결함이 아니다.</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>증상</th><th>원인</th><th>대응</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>토큰 401 / 무효 (<code>not logged in</code>, <code>invalid bearer token</code>, <code>api error: 401</code>)</td>
+            <td>토큰 만료/무효. 이 상태면 모든 실행 신호가 false FAIL.</td>
+            <td><code>probe</code>가 먼저 잡아준다. <code>claude setup-token</code> 재발급 후 토큰 파일 갱신. 풀런은 초입 auth 체크에서 <strong>exit 2</strong>로 중단하니 재발급 후 재실행.</td>
+          </tr>
+          <tr>
+            <td><code>claude setup-token</code>이 응답 없이 멈춤</td>
+            <td>setup-token은 대화형(브라우저 인증) 흐름이라 헤드리스/무인 환경에서 걸릴 수 있다.</td>
+            <td>인증된 터미널에서 <strong>직접</strong> 발급하거나, 아예 토큰을 만들지 말고 <strong>유저-런</strong>(ambient 로그인 상속) 경로를 택한다.</td>
+          </tr>
+          <tr>
+            <td>헤드리스 세션이 <code>node</code>/<code>git</code>을 못 실행 (권한 차단)</td>
+            <td>헤드리스 에이전트는 권한 게이트 기본값 → 하네스 CLI 명령이 막힘.</td>
+            <td>스코프 allowlist(<code>Bash(node:*),Bash(git:*),Bash(harness-team:*)</code> + 파일툴)로 spawn. 필요 시 <code>SIM_ALLOWED_TOOLS</code> 오버라이드. 블랭킷 skip 금지.</td>
+          </tr>
+          <tr>
+            <td>SC1 init이 완주 안 됨 / scaffold 미생성</td>
+            <td><code>harness-init</code>이 대화형(백업 위치 등 질문) → 헤드리스에서 <strong>멈춤</strong>. (진짜 발견)</td>
+            <td>프롬프트에 비대화형 지시 명시: "Run NON-INTERACTIVELY · accept all defaults · pass <code>--yes</code> · 질문 금지". SC1이 이미 이 지시를 담고 있다.</td>
+          </tr>
+          <tr>
+            <td>SC4 post-commit handoff ❌</td>
+            <td>active task를 SessionStart 테스트용으로 먼저 null 처리 → no-op. <strong>sim 순서 버그</strong>(하네스 정상).</td>
+            <td>SC4 순서를 post-commit(active 살아있을 때) → SessionStart(null)로. CLI 격리로 "진짜 결함 아님" 확인 후 <code>agentloop.mjs</code> 수정.</td>
+          </tr>
+          <tr>
+            <td>transcript NOT FOUND</td>
+            <td>session_id로 <code>~/.claude/projects/*/&lt;id&gt;.jsonl</code>을 못 찾음(auth 실패로 세션 미생성 등).</td>
+            <td>auth부터 확인. SessionStart 신호는 transcript 위치 가능성이 전제 — <code>probe</code>의 "transcript locatable" 관찰로 사전 점검.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="infobox">
+      <strong>진단 원칙:</strong> FAIL을 보면 하네스 결함으로 단정하지 말고 <strong>시나리오 의존성 → CLI 레벨 격리 검증</strong> 순으로 좁힌다.
+      임시 dir에서 <code>harness-team apply --yes</code> 후 <code>.git/hooks/post-commit</code>·handoff mtime을 직접 확인하는 식.
+      진짜 결함이면 리포트에 남기고, sim 아티팩트면 <code>agentloop.mjs</code>를 고쳐 재실행한다.
+    </div>
+  </section>
+
+  <hr/>
+  <footer>
+    harness-sim L5 agent-in-the-loop 가이드 · 근거: <code>tests/sim/agentloop.mjs</code> ·
+    <code>skills/harness-sim/SKILL.md</code> · <code>tests/e2e/sandbox.mjs</code> ·
+    <code>docs/chad/sim-agentloop-redesign/*</code> · plugin v0.9.5<br/>
+    산문은 신호가 아니다 — 파일 · git · transcript · hook-stderr만 신호다.
+  </footer>
+
+</main>
+</body>
+</html>
