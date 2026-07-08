@@ -4,7 +4,7 @@
 codex-plugin-support
 
 ## Last Commit (2026-07-08)
-89cfd55 docs: commit 0.9.5 doc snapshots + script→inline-SVG conversion
+952c383 feat: add codex plugin support
 
 ## Full Context
 → docs/chad/codex-plugin-support/codex-plugin-support-handoff.md

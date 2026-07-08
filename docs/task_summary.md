@@ -17,4 +17,4 @@
 | chad | pocock-merge | ✅ done | 2026-07-02 |
 | chad | plugin-hardening | ✅ done | 2026-07-02 |
 | chad | task-index-open-naming | ✅ done | 2026-07-07 |
-| chad | codex-plugin-support | 🔄 open | 2026-07-08 |
+| chad | codex-plugin-support | ✅ done | 2026-07-08 |

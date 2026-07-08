@@ -1,7 +1,7 @@
 # chad — Tasks
 
 ## Open
-- codex-plugin-support (created 2026-07-08)
+
 
 
 
@@ -19,6 +19,7 @@
 
 
 ## Completed
+- ✅ codex-plugin-support
 - ✅ harness-sim-guide
 - ✅ task-index-open-naming
 - ✅ plugin-hardening
