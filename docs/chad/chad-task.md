@@ -5,7 +5,7 @@
 
 
 
-- harness-sim-guide (created 2026-07-01)
+
 
 
 
@@ -18,6 +18,7 @@
 
 
 ## Completed
+- ✅ harness-sim-guide
 - ✅ task-index-open-naming
 - ✅ plugin-hardening
 - ✅ pocock-merge

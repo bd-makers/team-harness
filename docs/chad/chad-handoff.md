@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-task-index-open-naming
+(없음 — 활성 task 없음. `harness-team task <name>` 로 시작)
 
-## Last Commit (2026-07-07)
-51d90ee refactor(task): rename index "active" label to "open"
+## Last Commit (2026-07-08)
+2587882 docs(sim-guide): commit L5 agent-in-the-loop simulation guide
 
 ## Full Context
-→ docs/chad/task-index-open-naming/task-index-open-naming-handoff.md
+(활성 task 없음 — 모든 task 완료. v0.10.0 릴리스 + harness-sim-guide 마감 완료)
