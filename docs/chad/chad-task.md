@@ -18,7 +18,11 @@
 
 
 
+
+
 ## Completed
+- ✅ codex-l5-sim-plan
+- ✅ codex-plugin-sim-check
 - ✅ codex-plugin-support
 - ✅ harness-sim-guide
 - ✅ task-index-open-naming

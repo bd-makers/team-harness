@@ -18,3 +18,5 @@
 | chad | plugin-hardening | ✅ done | 2026-07-02 |
 | chad | task-index-open-naming | ✅ done | 2026-07-07 |
 | chad | codex-plugin-support | ✅ done | 2026-07-08 |
+| chad | codex-plugin-sim-check | ✅ done | 2026-07-08 |
+| chad | codex-l5-sim-plan | ✅ done | 2026-07-08 |

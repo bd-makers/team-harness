@@ -134,10 +134,11 @@ async function runHeadless(token, cwd, prompt, { debugHooks = false, timeoutMs =
 }
 
 function withTimeout(promise, ms) {
-  return Promise.race([
-    promise,
-    new Promise((res) => setTimeout(() => res({ code: -2, stdout: '', stderr: `TIMEOUT after ${ms}ms` }), ms)),
-  ]);
+  let timer;
+  const timeout = new Promise((res) => {
+    timer = setTimeout(() => res({ code: -2, stdout: '', stderr: `TIMEOUT after ${ms}ms` }), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
 // ── session transcript lookup (sessionId is globally unique → glob by id) ──────

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Codex Sim"
+  short_description: "Run Codex headless L5 harness simulations."
+  default_prompt: "Run Codex L5 harness simulation."

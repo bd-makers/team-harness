@@ -124,8 +124,18 @@ cd my-project
 
 - `.codex-plugin/plugin.json` — Codex 플러그인 메타데이터
 - `skills/harness-team/SKILL.md` — Codex에서 `harness-team` CLI와 task workflow를 사용하는 진입점
+- `skills/harness-codex-sim/SKILL.md` — `codex exec --json` 기반 Codex L5 시뮬레이션 운용 가이드
 
 Codex 쪽 marketplace/설치 위치는 개인·팀 환경에 따라 다릅니다. 로컬 개발 중에는 이 레포를 Codex local plugin source로 등록한 뒤, 새 Codex thread에서 `harness-team` skill이 노출되는지 확인하세요.
+
+Codex headless L5 검증은 먼저 probe로 auth/JSONL 계약을 확인한 뒤 full run을 실행합니다:
+
+```bash
+node tests/sim/codex-agentloop.mjs probe
+node tests/sim/codex-agentloop.mjs run
+```
+
+full run은 throwaway `../harness-playground/.sim-tmp/<TS>/` 안에서 `.git/hooks/post-commit` 설치까지 검증하므로 Codex sandbox를 `danger-full-access`로 올립니다. 실제 프로젝트 디렉토리에는 실행하지 말고, 결과는 `../harness-playground/sim-reports/codex-agentloop-<TS>.md`에서 확인하세요.
 
 ### 방법 C: 독립 CLI
 

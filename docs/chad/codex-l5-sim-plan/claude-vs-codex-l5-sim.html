@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Claude Plugin vs Codex Plugin · L5 Simulation</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --ink: #17202a;
+      --muted: #687385;
+      --line: #dfe4ea;
+      --blue: #2563eb;
+      --green: #15803d;
+      --amber: #b45309;
+      --red: #b91c1c;
+      --code: #111827;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--line);
+      padding: 42px 28px 30px;
+    }
+
+    main {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 28px 0 56px;
+    }
+
+    h1 {
+      max-width: 1180px;
+      margin: 0 auto 10px;
+      font-size: clamp(32px, 5vw, 58px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 23px;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 17px;
+      letter-spacing: 0;
+    }
+
+    p { margin: 0 0 12px; }
+
+    code {
+      color: var(--code);
+      background: #eef1f5;
+      border: 1px solid #dde3eb;
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.92em;
+    }
+
+    pre {
+      margin: 0;
+      overflow-x: auto;
+      background: #111827;
+      color: #f9fafb;
+      border-radius: 6px;
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    pre code {
+      background: transparent;
+      border: 0;
+      color: inherit;
+      padding: 0;
+    }
+
+    .subtitle {
+      max-width: 1180px;
+      margin: 0 auto;
+      color: var(--muted);
+      font-size: 17px;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      max-width: 1180px;
+      margin: 18px auto 0;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #f8fafc;
+      color: #334155;
+      padding: 3px 10px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .span-12 { grid-column: span 12; }
+    .span-6 { grid-column: span 6; }
+    .span-4 { grid-column: span 4; }
+    .span-3 { grid-column: span 3; }
+
+    .score {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px;
+      background: #fbfcfe;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 24px;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+
+    .ok strong { color: var(--green); }
+    .fail strong { color: var(--red); }
+    .manual strong { color: var(--amber); }
+    .na strong { color: var(--muted); }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 11px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #334155;
+      font-weight: 650;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .tag-blue { background: #dbeafe; color: #1d4ed8; }
+    .tag-green { background: #dcfce7; color: #166534; }
+    .tag-amber { background: #fef3c7; color: #92400e; }
+    .tag-gray { background: #e5e7eb; color: #374151; }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .step {
+      min-height: 88px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px;
+      background: #fbfcfe;
+    }
+
+    .step .num {
+      color: var(--blue);
+      font-weight: 700;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 880px) {
+      header { padding: 30px 20px 24px; }
+      main {
+        width: min(100% - 24px, 1180px);
+        padding-top: 18px;
+      }
+      .span-6, .span-4, .span-3 { grid-column: span 12; }
+      .score, .split, .flow { grid-template-columns: 1fr; }
+      table { font-size: 13px; }
+      th, td { padding: 9px 8px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Claude Plugin vs Codex Plugin</h1>
+    <p class="subtitle">Team Harness의 두 호스트 어댑터와 L5 agent-in-the-loop 시뮬레이션 테스트 비교</p>
+    <div class="meta">
+      <span class="pill">작성일: 2026-07-09</span>
+      <span class="pill">plugin: harness-aijient-team v0.10.0</span>
+      <span class="pill">baseline SHA: 990d07b</span>
+      <span class="pill">task: codex-l5-sim-plan</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="grid">
+      <article class="panel span-6">
+        <h2>핵심 결론</h2>
+        <p>Claude 플러그인과 Codex 플러그인은 같은 <code>harness-team</code> CLI, 같은 <code>AGENTS.md</code> 계약, 같은 템플릿을 공유한다. 차이는 하네스를 호출하는 호스트 표면이다.</p>
+        <p>Claude 쪽은 slash command와 Claude hook/transcript 계약을 검증한다. Codex 쪽은 skill activation과 <code>codex exec --json</code> JSONL 이벤트 계약을 검증한다.</p>
+      </article>
+
+      <article class="panel span-6">
+        <h2>공유 불변식</h2>
+        <table>
+          <tbody>
+            <tr><td>실행 코어</td><td><code>bin/</code>, <code>src/</code>, <code>templates/</code></td></tr>
+            <tr><td>프로젝트 SSOT</td><td><code>AGENTS.md</code>, task 4파일, <code>.harness/active.json</code></td></tr>
+            <tr><td>판정 원칙</td><td>파일, git, transcript, JSONL, hook output 증거만 PASS</td></tr>
+            <tr><td>산문 응답</td><td>diagnostic only, PASS 신호로 사용하지 않음</td></tr>
+          </tbody>
+        </table>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="panel span-12">
+        <h2>플러그인 표면 비교</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>항목</th>
+              <th>Claude Code Plugin</th>
+              <th>Codex Plugin</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Manifest</td>
+              <td><code>.claude-plugin/plugin.json</code></td>
+              <td><code>.codex-plugin/plugin.json</code></td>
+            </tr>
+            <tr>
+              <td>주 진입점</td>
+              <td><code>commands/*.md</code> slash commands</td>
+              <td><code>skills/harness-team/SKILL.md</code> 및 bundled skills</td>
+            </tr>
+            <tr>
+              <td>사용자 호출</td>
+              <td><code>/harness-aijient-team:harness-apply</code>, <code>/harness-task</code></td>
+              <td><code>$harness-aijient-team:harness-team</code>, 자연어 skill trigger</td>
+            </tr>
+            <tr>
+              <td>Headless 엔진</td>
+              <td><code>claude -p --output-format json</code></td>
+              <td><code>codex exec --json --ephemeral</code></td>
+            </tr>
+            <tr>
+              <td>Transcript</td>
+              <td><code>~/.claude/projects/.../&lt;session_id&gt;.jsonl</code></td>
+              <td>stdout JSONL event stream, <code>thread.started</code>, <code>item.completed</code>, <code>turn.completed</code></td>
+            </tr>
+            <tr>
+              <td>Hook 신호</td>
+              <td>SessionStart nudge와 post-commit handoff를 직접 채점</td>
+              <td>post-commit compatibility는 채점, Claude SessionStart는 <span class="tag tag-gray">N/A</span></td>
+            </tr>
+            <tr>
+              <td>권한 모델</td>
+              <td>scoped allowed tools: <code>node</code>, <code>git</code>, <code>harness-team</code>, file tools</td>
+              <td>probe는 <code>workspace-write</code>, full run은 throwaway에서 <code>danger-full-access</code></td>
+            </tr>
+            <tr>
+              <td>대표 리스크</td>
+              <td>nested auth/token, slash namespace, transcript lookup</td>
+              <td>sandbox가 <code>.git/hooks</code> 쓰기를 막는지, skill trigger가 의도대로 선택되는지</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="panel span-6">
+        <h2>Claude L5 결과</h2>
+        <p class="note">Runner: <code>tests/sim/agentloop.mjs</code></p>
+        <p><strong>집계:</strong> PASS 59 · FAIL 0 · MANUAL 2</p>
+        <div class="score">
+          <div class="metric ok"><strong>59</strong><span>PASS</span></div>
+          <div class="metric fail"><strong>0</strong><span>FAIL</span></div>
+          <div class="metric manual"><strong>2</strong><span>MANUAL</span></div>
+          <div class="metric na"><strong>0</strong><span>N/A</span></div>
+        </div>
+        <table>
+          <tbody>
+            <tr><td>Report</td><td><code>agentloop-2026-07-08T1712.md</code></td></tr>
+            <tr><td>Probe</td><td>auth, JSON envelope, transcript lookup, namespaced slash 통과</td></tr>
+            <tr><td>Manual</td><td>PreToolUse protect-files, AskUserQuestion done human gate</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="panel span-6">
+        <h2>Codex L5 결과</h2>
+        <p class="note">Runner: <code>tests/sim/codex-agentloop.mjs</code></p>
+        <p><strong>집계:</strong> PASS 39 · FAIL 0 · MANUAL 1 · N/A 1</p>
+        <div class="score">
+          <div class="metric ok"><strong>39</strong><span>PASS</span></div>
+          <div class="metric fail"><strong>0</strong><span>FAIL</span></div>
+          <div class="metric manual"><strong>1</strong><span>MANUAL</span></div>
+          <div class="metric na"><strong>1</strong><span>N/A</span></div>
+        </div>
+        <table>
+          <tbody>
+            <tr><td>Report</td><td><code>codex-agentloop-2026-07-08T1932.md</code></td></tr>
+            <tr><td>Probe</td><td>preflight, auth, JSONL parse, thread id, turn completed 통과</td></tr>
+            <tr><td>Manual/N/A</td><td>PreToolUse는 MANUAL, Claude SessionStart는 N/A</td></tr>
+          </tbody>
+        </table>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="panel span-12">
+        <h2>L5 시나리오 매트릭스</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>검증 축</th>
+              <th>Claude L5</th>
+              <th>Codex L5</th>
+              <th>PASS 증거</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>초기 계약</td>
+              <td>auth, JSON envelope, transcript, slash resolution</td>
+              <td>preflight, auth, JSONL parser, thread/turn events</td>
+              <td>process exit, parsed envelope/event, transcript path</td>
+            </tr>
+            <tr>
+              <td>하네스 설치</td>
+              <td>SC1 init, SC2 apply across node/next/react-native</td>
+              <td>SC1 explicit skill trigger apply, SC2 natural-language apply N=2</td>
+              <td><code>AGENTS.md</code>, thin imports, hooks, rules, doctor green</td>
+            </tr>
+            <tr>
+              <td>Task workflow</td>
+              <td>SC3 task docs and active pointer</td>
+              <td>SC3 task docs and active pointer</td>
+              <td>4 SSOT files, <code>active.json</code>, Ambiguity, Ontology</td>
+            </tr>
+            <tr>
+              <td>Installed hook</td>
+              <td>post-commit handoff, SessionStart nudge</td>
+              <td>post-commit handoff compatibility, SessionStart N/A</td>
+              <td>hook executable, commit output, handoff mtime/content</td>
+            </tr>
+            <tr>
+              <td>Trigger reliability</td>
+              <td>namespaced slash N=2, natural language N=2</td>
+              <td>explicit skill, natural language N=2</td>
+              <td>pass-rate, generated files, command execution events</td>
+            </tr>
+            <tr>
+              <td>Cleanup</td>
+              <td>throwaway tmp removal, persistent playground clean</td>
+              <td>throwaway tmp removal, persistent playground clean</td>
+              <td><code>git status --porcelain</code>, removed <code>.sim-tmp</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="panel span-12">
+        <h2>운용 플로우</h2>
+        <div class="flow">
+          <div class="step"><div class="num">01</div><strong>Probe</strong><br>auth와 headless envelope 계약을 먼저 확인</div>
+          <div class="step"><div class="num">02</div><strong>Full Run</strong><br>throwaway sandbox에서 실제 agent session 실행</div>
+          <div class="step"><div class="num">03</div><strong>Evidence</strong><br>파일, git, transcript, JSONL, hook output 수집</div>
+          <div class="step"><div class="num">04</div><strong>Isolation</strong><br>FAIL은 CLI direct run으로 sim artifact 여부 분리</div>
+          <div class="step"><div class="num">05</div><strong>Report</strong><br>PASS/FAIL/MANUAL/N/A와 snapshot 경로 기록</div>
+        </div>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="panel span-6">
+        <h2>실행 명령</h2>
+        <pre><code>node tests/sim/agentloop.mjs probe
+node tests/sim/agentloop.mjs run
+
+node tests/sim/codex-agentloop.mjs probe
+node tests/sim/codex-agentloop.mjs run
+
+npm test</code></pre>
+      </article>
+
+      <article class="panel span-6">
+        <h2>판정 규칙</h2>
+        <table>
+          <tbody>
+            <tr><td><span class="tag tag-green">PASS</span></td><td>관찰 가능한 파일/git/transcript/JSONL/hook 증거 충족</td></tr>
+            <tr><td><span class="tag tag-amber">MANUAL</span></td><td>headless에서 안정적으로 관찰할 수 없는 보호/휴먼 게이트</td></tr>
+            <tr><td><span class="tag tag-gray">N/A</span></td><td>해당 호스트 레이어의 측정 대상이 아닌 신호</td></tr>
+            <tr><td><span class="tag tag-blue">DIAG</span></td><td>agent final message, CLI list 등 보조 진단</td></tr>
+          </tbody>
+        </table>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="panel span-12">
+        <h2>운영 판단</h2>
+        <div class="split">
+          <div>
+            <h3>언제 Claude L5를 보는가</h3>
+            <p>Claude slash command, Claude transcript, SessionStart hook, Claude Code 권한 allowlist가 깨졌는지 확인할 때 사용한다.</p>
+          </div>
+          <div>
+            <h3>언제 Codex L5를 보는가</h3>
+            <p>Codex plugin manifest, skill activation, <code>codex exec --json</code> 이벤트, Codex sandbox 정책과 설치된 hook compatibility를 확인할 때 사용한다.</p>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>
