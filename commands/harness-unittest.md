@@ -108,6 +108,9 @@ Principles, Practices, and Patterns* 전략을 실행 규칙으로 적용해 단
 
 ## 4단계 — React / React Native 특화 규칙
 
+> **라우팅**: 렌더 결과·사용자 상호작용 자체가 관심사인 컴포넌트·화면·폼 플로우 테스트는
+> 통합 층 커맨드 `/harness-comptest` 소관이다 (양방향 라우팅).
+
 - **[허용] 사용자 관점 쿼리 우선순위**: `getByRole` > `getByLabelText` > `getByPlaceholderText`
   > `getByText`. `getByTestId`는 **최후 수단**.
 - **[금지] 구현 접근** — 컴포넌트 내부 state·인스턴스·내부 함수에 직접 접근하지 않는다.

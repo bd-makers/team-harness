@@ -25,3 +25,4 @@
 | chad | codex-plugin-cache-refresh | ✅ done | 2026-07-09 |
 | chad | update-comparison-html | ✅ done | 2026-07-09 |
 | chad | harness-unittest | ✅ done | 2026-07-10 |
+| chad | harness-comptest | 🔄 open | 2026-07-10 |

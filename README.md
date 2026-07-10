@@ -118,6 +118,7 @@ cd my-project
 | `/harness-release` | Claude/Codex 매니페스트 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화 (항상 `--dry-run` 먼저) |
 | `/harness-sim` | playground 3-스택에서 설치된 하네스를 굴려 L4 시뮬레이션 + 날짜 리포트 |
 | `/harness-unittest` | JS/TS/React/RN에 Khorikov 원칙 기반 단위테스트 작성 (스택 감지 → GWT 강제 → 커버리지 → 검증) |
+| `/harness-comptest` | React/RN 컴포넌트·화면·UI 플로우에 Testing Trophy 통합 층 테스트 작성 (스택 감지 → 사용자 관점 검증 → 커버리지 → 검증) |
 
 ### 방법 B: Codex 플러그인
 

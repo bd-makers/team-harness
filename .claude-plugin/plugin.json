@@ -22,7 +22,8 @@
     "./commands/harness-retro.md",
     "./commands/harness-release.md",
     "./commands/harness-sim.md",
-    "./commands/harness-unittest.md"
+    "./commands/harness-unittest.md",
+    "./commands/harness-comptest.md"
   ],
   "skills": [
     "./skills"
