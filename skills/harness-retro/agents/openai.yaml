@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Retro"
+  short_description: "Append learnings to the task artifact."
+  default_prompt: "Use $harness-retro to record this learning."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Sim"
+  short_description: "Run Claude Code L5 harness simulations."
+  default_prompt: "Use $harness-sim to run a harness simulation."

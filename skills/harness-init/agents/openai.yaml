@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Init"
+  short_description: "Scaffold the team harness in a project."
+  default_prompt: "Use $harness-init to initialize the team harness."

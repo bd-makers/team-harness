@@ -1,6 +1,6 @@
 {
   "name": "harness-aijient-team",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Claude-led team harness: scaffold or apply multi-agent (Codex/Gemini/Cursor/OpenCode) configuration with a single source of truth.",
   "author": {
     "name": "chad"
@@ -21,7 +21,8 @@
     "./commands/harness-simplifier.md",
     "./commands/harness-retro.md",
     "./commands/harness-release.md",
-    "./commands/harness-sim.md"
+    "./commands/harness-sim.md",
+    "./commands/harness-unittest.md"
   ],
   "skills": [
     "./skills"

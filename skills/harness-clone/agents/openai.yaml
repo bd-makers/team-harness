@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Clone"
+  short_description: "Sync project files to the backup dir."
+  default_prompt: "Use $harness-clone to sync the project backup."

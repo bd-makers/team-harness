@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Symlink"
+  short_description: "Create or replace harness symlinks."
+  default_prompt: "Use $harness-symlink to recreate harness symlinks."

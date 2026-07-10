@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Interview"
+  short_description: "Clarify an active task spec with questions."
+  default_prompt: "Use $harness-interview to clarify this active task."

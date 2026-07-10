@@ -6,6 +6,12 @@ allowed-tools: Read, Write, Edit, Bash, Glob
 
 # /harness-sim — agent-in-the-loop L5 시뮬레이션 + 리포트
 
+## Codex command surface
+
+This skill also serves as the Codex `$harness-sim` entry corresponding to Claude
+Code `/harness-sim`. The Claude wrapper lives at `../../commands/harness-sim.md`;
+keep this SKILL.md as the SSOT for the simulation procedure.
+
 **측정 대상(2번):** `harness-init`/`apply`/`task`로 소비자 프로젝트에 *설치된* 하네스가
 실제로 작동하는가 — slash→CLI 체인, 설치된 hook(SessionStart·post-commit) 발화,
 트리거 신뢰성. 이 레이어는 실제 **`claude -p` 에이전트 세션을 cwd=테스트프로젝트에서

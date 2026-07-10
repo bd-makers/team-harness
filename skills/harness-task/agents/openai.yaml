@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Task"
+  short_description: "Create, activate, list, or close task docs."
+  default_prompt: "Use $harness-task to create or activate a task."

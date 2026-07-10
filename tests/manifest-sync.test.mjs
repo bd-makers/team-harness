@@ -79,6 +79,17 @@ test('manifest-sync: Codex-exposed skills use quick_validate-compatible frontmat
   }
 });
 
+test('manifest-sync: Claude harness commands have Codex command-equivalent skills', async () => {
+  const commands = await commandNames();
+
+  for (const name of commands) {
+    const skillPath = join(ROOT, 'skills', name, 'SKILL.md');
+    const body = await readFile(skillPath, 'utf8');
+    assert.match(body, new RegExp(`^name:\\s*${name}$`, 'm'), `${name}: skill frontmatter name must match command`);
+    assert.match(body, new RegExp(`commands/${name}\\.md`), `${name}: skill must reference the command contract`);
+  }
+});
+
 // commands/<name>.md ⟺ plugin.json.commands (both directions).
 test('manifest-sync: commands/*.md ⟺ plugin.json commands', async () => {
   const files = await commandNames();

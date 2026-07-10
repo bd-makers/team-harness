@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Doctor"
+  short_description: "Check harness install health."
+  default_prompt: "Use $harness-doctor to check harness health."

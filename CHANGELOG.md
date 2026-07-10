@@ -18,7 +18,12 @@ modified: 2026-06-02
 
 ## [Unreleased]
 
+---
+
+## [0.11.0] - 2026-07-11
+
 ### Added
+- **`/harness-unittest` 커맨드** (`commands/harness-unittest.md` + `skills/harness-unittest/SKILL.md`) — JS/TS/React/React Native 프로젝트에 Vladimir Khorikov 원칙 기반 단위테스트를 작성하는 에이전트 워크플로우. 기술스택 자동 감지(Vitest/Jest·web/RN·TS·Testing Library·msw) → 스코프 파싱(file/session/feature/folder/project) → Khorikov 4대 기둥(리팩토링 내성 최우선)을 금지/허용 규칙으로 강제 → GWT 구조 → React/RN 특화 규칙 → 위험 기반 커버리지 → 뮤테이션 자가점검 검증. `plugin.json` `commands` + README 커맨드 표 + Codex 래퍼 스킬에 등록.
 - Codex 플러그인 어댑터 추가: `.codex-plugin/plugin.json`과 `skills/harness-team`을 통해 같은 레포를 Codex 플러그인으로도 사용할 수 있게 함. Claude Code 플러그인 구조는 유지하고 공통 코어(`bin/`, `src/`, `templates/`, `AGENTS.md`)를 공유.
 
 ### Changed

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Sync"
+  short_description: "Regenerate symlinks and mirrored rules."
+  default_prompt: "Use $harness-sync to resync harness files."

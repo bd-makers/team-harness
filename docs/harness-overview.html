@@ -200,7 +200,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 협업을 위한 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Gemini, Cursor, OpenCode를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.9.5</span>
+      <span class="tag tag-purple">v0.11.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥18</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -297,7 +297,7 @@
   <!-- COMMANDS -->
   <section id="commands">
     <div class="section-title">Commands</div>
-    <p class="section-sub">16개의 slash command — 설치·백업·유지보수·태스크 관리 + 페르소나(interview·contrarian·simplifier)·릴리스·시뮬레이션(sim). <code>backup</code>·<code>session-context</code>는 CLI 전용 서브커맨드(slash 미노출)</p>
+    <p class="section-sub">17개의 slash command — 설치·백업·유지보수·태스크 관리 + 페르소나(interview·contrarian·simplifier)·릴리스·시뮬레이션(sim)·단위테스트(unittest). <code>backup</code>·<code>session-context</code>는 CLI 전용 서브커맨드(slash 미노출)</p>
     <div class="table-wrap">
       <table>
         <thead>
@@ -399,6 +399,12 @@
             <td><code>commands/harness-sim.md</code> → <code>skills/harness-sim</code></td>
             <td>영속 <code>harness-playground</code> 3스택(bare-node·next·rn)에서 <strong>설치된</strong> 하네스를 실제로 굴려 L4/L5 시뮬레이션 + 날짜 리포트(<code>sim-reports/</code>). 절차 SSOT는 스킬 본문, 커맨드는 위임만(0.9.4 래퍼)</td>
             <td><span class="tag tag-green" style="font-size:0.72rem;padding:2px 8px;">Sim</span></td>
+          </tr>
+          <tr>
+            <td><span class="cmd">/harness-unittest</span></td>
+            <td><code>commands/harness-unittest.md</code> → <code>skills/harness-unittest</code></td>
+            <td>JS/TS/React/RN에 <strong>Khorikov 원칙</strong> 기반 단위테스트 작성. 스택 자동 감지(Vitest/Jest·web/RN·TS·Testing Library) → 스코프 파싱(file/session/feature/folder/project) → 리팩토링 내성 최우선 mock/stub 규율 → GWT 강제 → 위험 기반 커버리지 → 뮤테이션 자가점검. 에이전트 워크플로우(CLI 서브커맨드 아님, 0.11.0)</td>
+            <td><span class="tag tag-green" style="font-size:0.72rem;padding:2px 8px;">Test</span></td>
           </tr>
         </tbody>
       </table>
@@ -925,7 +931,7 @@
 </main>
 
 <footer>
-  harness-aijient-team-plugin v0.9.5 (AGENTS.md SSOT) &nbsp;·&nbsp; Generated 2026-07-01
+  harness-aijient-team-plugin v0.11.0 (AGENTS.md SSOT) &nbsp;·&nbsp; Generated 2026-07-11
 </footer>
 
 

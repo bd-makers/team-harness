@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Release"
+  short_description: "Bump manifests and sync plugin release files."
+  default_prompt: "Use $harness-release to dry-run a plugin release."

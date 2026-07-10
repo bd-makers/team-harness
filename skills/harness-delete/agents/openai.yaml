@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Delete"
+  short_description: "Remove harness symlinks from a project."
+  default_prompt: "Use $harness-delete to remove harness symlinks."

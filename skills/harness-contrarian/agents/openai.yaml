@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Contrarian"
+  short_description: "Challenge task assumptions and plans."
+  default_prompt: "Use $harness-contrarian to challenge this task plan."

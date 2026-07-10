@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Simplifier"
+  short_description: "Find removable steps and abstractions."
+  default_prompt: "Use $harness-simplifier to simplify this task plan."

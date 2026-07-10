@@ -117,6 +117,7 @@ cd my-project
 | `/harness-retro` | 활성 task의 artifact.md에 학습/교정 내용 append (자기개선 루프) |
 | `/harness-release` | Claude/Codex 매니페스트 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화 (항상 `--dry-run` 먼저) |
 | `/harness-sim` | playground 3-스택에서 설치된 하네스를 굴려 L4 시뮬레이션 + 날짜 리포트 |
+| `/harness-unittest` | JS/TS/React/RN에 Khorikov 원칙 기반 단위테스트 작성 (스택 감지 → GWT 강제 → 커버리지 → 검증) |
 
 ### 방법 B: Codex 플러그인
 
@@ -126,7 +127,9 @@ cd my-project
 - `skills/harness-team/SKILL.md` — Codex에서 `harness-team` CLI와 task workflow를 사용하는 진입점
 - `skills/harness-codex-sim/SKILL.md` — `codex exec --json` 기반 Codex L5 시뮬레이션 운용 가이드
 
-Codex 쪽 marketplace/설치 위치는 개인·팀 환경에 따라 다릅니다. 로컬 개발 중에는 이 레포를 Codex local plugin source로 등록한 뒤, 새 Codex thread에서 `harness-team` skill이 노출되는지 확인하세요.
+Codex 쪽 marketplace/설치 위치는 개인·팀 환경에 따라 다릅니다. 로컬 개발 중에는 이 레포를 Codex local plugin source로 등록한 뒤, 새 Codex thread에서 `harness-team` 및 `harness-*` command-equivalent skills가 노출되는지 확인하세요.
+
+주의: Codex 플러그인은 Claude Code의 `.claude-plugin/plugin.json` `commands[]`를 같은 slash command 목록으로 가져오지 않습니다. Codex의 플러그인 표면은 `skills`, apps, MCP 서버이며, 명시 호출은 `/harness-*`가 아니라 `$harness-aijient-team:harness-apply`처럼 `$` skill invocation을 사용합니다. 이 레포는 Claude의 17개 `/harness-*` 명령과 대응되는 `skills/harness-*` 래퍼를 제공하고, 각 wrapper는 기존 `commands/harness-*.md`를 SSOT로 읽습니다.
 
 Codex headless L5 검증은 먼저 probe로 auth/JSONL 계약을 확인한 뒤 full run을 실행합니다:
 

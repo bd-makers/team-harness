@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Migrate"
+  short_description: "Migrate older harness layouts."
+  default_prompt: "Use $harness-migrate to migrate this harness setup."

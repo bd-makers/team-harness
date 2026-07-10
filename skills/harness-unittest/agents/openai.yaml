@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Unittest"
+  short_description: "Write Khorikov-style unit tests for JS/TS/React/RN."
+  default_prompt: "Use $harness-unittest to write unit tests for this scope."
