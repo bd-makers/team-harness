@@ -20,3 +20,8 @@
 | chad | codex-plugin-support | ✅ done | 2026-07-08 |
 | chad | codex-plugin-sim-check | ✅ done | 2026-07-08 |
 | chad | codex-l5-sim-plan | ✅ done | 2026-07-08 |
+| chad | codex-command-surface | ✅ done | 2026-07-09 |
+| chad | codex-wrapper-skills | ✅ done | 2026-07-09 |
+| chad | codex-plugin-cache-refresh | ✅ done | 2026-07-09 |
+| chad | update-comparison-html | ✅ done | 2026-07-09 |
+| chad | harness-unittest | ✅ done | 2026-07-10 |

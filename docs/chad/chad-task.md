@@ -20,7 +20,17 @@
 
 
 
+
+
+
+
+
 ## Completed
+- ✅ harness-unittest
+- ✅ update-comparison-html
+- ✅ codex-plugin-cache-refresh
+- ✅ codex-wrapper-skills
+- ✅ codex-command-surface
 - ✅ codex-l5-sim-plan
 - ✅ codex-plugin-sim-check
 - ✅ codex-plugin-support

@@ -255,6 +255,7 @@
       <span class="pill">plugin: harness-aijient-team v0.10.0</span>
       <span class="pill">baseline SHA: 990d07b</span>
       <span class="pill">task: codex-l5-sim-plan</span>
+      <span class="pill">updated: Codex wrapper skills + cache refresh</span>
     </div>
   </header>
 
@@ -263,7 +264,7 @@
       <article class="panel span-6">
         <h2>핵심 결론</h2>
         <p>Claude 플러그인과 Codex 플러그인은 같은 <code>harness-team</code> CLI, 같은 <code>AGENTS.md</code> 계약, 같은 템플릿을 공유한다. 차이는 하네스를 호출하는 호스트 표면이다.</p>
-        <p>Claude 쪽은 slash command와 Claude hook/transcript 계약을 검증한다. Codex 쪽은 skill activation과 <code>codex exec --json</code> JSONL 이벤트 계약을 검증한다.</p>
+        <p>Claude 쪽은 slash command와 Claude hook/transcript 계약을 검증한다. Codex 쪽은 command-equivalent <code>$harness-*</code> skills, skill activation, <code>codex exec --json</code> JSONL 이벤트 계약을 검증한다.</p>
       </article>
 
       <article class="panel span-6">
@@ -299,12 +300,22 @@
             <tr>
               <td>주 진입점</td>
               <td><code>commands/*.md</code> slash commands</td>
-              <td><code>skills/harness-team/SKILL.md</code> 및 bundled skills</td>
+              <td><code>skills/harness-*/SKILL.md</code> command-equivalent wrappers 및 bundled skills</td>
             </tr>
             <tr>
               <td>사용자 호출</td>
               <td><code>/harness-aijient-team:harness-apply</code>, <code>/harness-task</code></td>
-              <td><code>$harness-aijient-team:harness-team</code>, 자연어 skill trigger</td>
+              <td><code>$harness-aijient-team:harness-apply</code>, <code>$harness-aijient-team:harness-doctor</code>, 자연어 skill trigger</td>
+            </tr>
+            <tr>
+              <td>Command parity</td>
+              <td>16개 <code>/harness-*</code> command</td>
+              <td>16개 command-equivalent <code>$harness-*</code> skill surface</td>
+            </tr>
+            <tr>
+              <td>SSOT 관계</td>
+              <td><code>commands/harness-*.md</code>가 slash command 계약 소유</td>
+              <td>wrapper skill이 <code>../../commands/harness-*.md</code>를 읽어 drift 최소화</td>
             </tr>
             <tr>
               <td>Headless 엔진</td>
@@ -329,8 +340,41 @@
             <tr>
               <td>대표 리스크</td>
               <td>nested auth/token, slash namespace, transcript lookup</td>
-              <td>sandbox가 <code>.git/hooks</code> 쓰기를 막는지, skill trigger가 의도대로 선택되는지</td>
+              <td>sandbox가 <code>.git/hooks</code> 쓰기를 막는지, wrapper skill trigger와 installed cache가 의도대로 반영되는지</td>
             </tr>
+          </tbody>
+        </table>
+      </article>
+    </section>
+
+    <section class="grid">
+      <article class="panel span-6">
+        <h2>Codex Skill Surface 업데이트</h2>
+        <p>기존 Codex 표면은 <code>harness-team</code>, <code>harness-sim</code> 중심이었다. 최신 상태에서는 Claude의 16개 <code>/harness-*</code> command와 대응되는 Codex <code>$harness-*</code> skill entry가 모두 설치 캐시에 들어 있다.</p>
+        <div class="score">
+          <div class="metric ok"><strong>16</strong><span>command-equivalent</span></div>
+          <div class="metric ok"><strong>18</strong><span>installed skills</span></div>
+          <div class="metric ok"><strong>0</strong><span>missing</span></div>
+          <div class="metric na"><strong>2</strong><span>extra skills</span></div>
+        </div>
+        <table>
+          <tbody>
+            <tr><td>신규 wrapper</td><td>15개 <code>skills/harness-*</code> 추가</td></tr>
+            <tr><td>기존 유지</td><td><code>harness-sim</code>은 Codex <code>$harness-sim</code> entry로 명시</td></tr>
+            <tr><td>추가 skill</td><td><code>harness-team</code>, <code>harness-codex-sim</code></td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="panel span-6">
+        <h2>Cache Refresh 검증</h2>
+        <p>개인 marketplace의 <code>harness-aijient-team</code> source는 현재 repo를 가리키며, Codex installed cache에는 wrapper skill 목록이 반영됐다.</p>
+        <table>
+          <tbody>
+            <tr><td>Marketplace</td><td><code>personal</code></td></tr>
+            <tr><td>Installed version</td><td><code>0.10.0</code></td></tr>
+            <tr><td>Installed cache</td><td><code>~/.codex/plugins/cache/personal/harness-aijient-team/0.10.0</code></td></tr>
+            <tr><td>Verification</td><td><code>commands=16</code>, <code>skills=18</code>, <code>missing=[]</code></td></tr>
           </tbody>
         </table>
       </article>
@@ -416,7 +460,7 @@
             <tr>
               <td>Trigger reliability</td>
               <td>namespaced slash N=2, natural language N=2</td>
-              <td>explicit skill, natural language N=2</td>
+              <td>explicit <code>$harness-*</code> skill, natural language N=2</td>
               <td>pass-rate, generated files, command execution events</td>
             </tr>
             <tr>
@@ -452,6 +496,9 @@ node tests/sim/agentloop.mjs run
 node tests/sim/codex-agentloop.mjs probe
 node tests/sim/codex-agentloop.mjs run
 
+codex plugin add harness-aijient-team@personal
+node --test tests/manifest-sync.test.mjs
+
 npm test</code></pre>
       </article>
 
@@ -478,7 +525,7 @@ npm test</code></pre>
           </div>
           <div>
             <h3>언제 Codex L5를 보는가</h3>
-            <p>Codex plugin manifest, skill activation, <code>codex exec --json</code> 이벤트, Codex sandbox 정책과 설치된 hook compatibility를 확인할 때 사용한다.</p>
+            <p>Codex plugin manifest, command-equivalent skill surface, skill activation, <code>codex exec --json</code> 이벤트, Codex sandbox 정책과 설치된 hook compatibility를 확인할 때 사용한다.</p>
           </div>
         </div>
       </article>
