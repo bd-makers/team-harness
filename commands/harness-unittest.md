@@ -81,6 +81,7 @@ Principles, Practices, and Patterns* 전략을 실행 규칙으로 적용해 단
   네이티브 모듈. 이때만 상호작용(호출 여부·인자)을 assert한다.
 - **[금지] managed 의존성 목킹** — 앱이 소유한 DB 등은 실물/인메모리로 검증한다
   (해당 시). 관찰 불가능한 내부 협력자를 mock으로 세우지 않는다.
+  managed 의존성을 실물 인프라와 함께 태우는 수직 슬라이스(핸들러→DB→응답)는 이 커맨드가 아니라 `/harness-inttest` 소관이다 (3형제 라우팅).
 - **[허용] stub은 입력 데이터 제공용** — 반환값만 세팅한다.
 - **[금지] stub 호출 여부 assert** — stub에 대한 `toHaveBeenCalled` 류는 과잉명세다.
 - **[금지] 내부 클래스/함수 과잉 목킹(over-mocking)** — 발견하면 테스트를 억지로 짜지 말고

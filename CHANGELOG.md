@@ -19,6 +19,7 @@ modified: 2026-06-02
 ## [Unreleased]
 
 ### Added
+- **`/harness-inttest` 커맨드** (`commands/harness-inttest.md` + `skills/harness-inttest/SKILL.md`) — API 핸들러·리포지토리/DB 접근·캐시·큐·파일시스템·아웃바운드 HTTP 등 **프로세스 경계를 넘는 코드**에 Vladimir Khorikov Part III(통합 테스트) 전략을 적용하는 에이전트 워크플로우. `/harness-unittest`·`/harness-comptest`의 세 번째 형제로 단계 골격(라우팅 → 0단계 스택 감지 → 스코프 → 전략 → GWT → 특화 규칙 → 커버리지 → 검증)을 계승하되 대상만 교체. 통합 특화: 서버 프레임워크별 인프로세스 호출 수단(Fastify inject·Hono app.request·supertest·tRPC createCaller) 감지, Docker 가용성 확인, **managed 의존성은 실물(testcontainers)로·목킹 금지 / unmanaged 의존성은 HTTP 경계에서만 msw(node) 목킹**이라는 핵심 규율, [금지] 프로덕션과 다른 in-memory DB 대체(SQLite로 Postgres 대행), 데이터 격리(트랜잭션 롤백/truncate·마이그레이션 스키마), 응답+영속 상태 둘 다 assert하는 GWT, 에러 경로(제약 위반·타임아웃·롤백·4xx) 기본 세트, 단독/전체 실행 격리 증명 검증. 3형제 라우팅 완성: comptest 라우팅 섹션과 unittest §2에 inttest 교차 참조 각 1줄 추가. `plugin.json` `commands` + README 커맨드 표 + Codex 래퍼 스킬에 등록.
 - **`/harness-comptest` 커맨드** (`commands/harness-comptest.md` + `skills/harness-comptest/SKILL.md`) — React/React Native 컴포넌트·화면·UI 훅·폼 플로우에 Kent C. Dodds Testing Trophy 통합 층 테스트를 작성하는 에이전트 워크플로우. `/harness-unittest`의 형제 커맨드로 문체·단계 골격(0단계 스택 감지 → 스코프 → 전략 → GWT → 특화 규칙 → 커버리지 → 검증)을 계승하되 대상만 교체. 컴포넌트 특화: 전역 프로바이더/custom render 헬퍼 감지, msw 네트워크 경계 목킹([금지] fetch/react-query 훅 직접 목킹), 사용자 관점 쿼리 우선순위(getByRole > … > testID 최후), user-event 강제, 조건부 렌더 3상태(로딩/에러/빈) 기본 세트, RN 특화(RNTL·실제 NavigationContainer), act 경고 0건 검증. unittest 계약 §4에 양방향 라우팅 교차 참조 추가. `plugin.json` `commands` + README 커맨드 표 + Codex 래퍼 스킬에 등록.
 
 ---

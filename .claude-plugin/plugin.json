@@ -23,7 +23,8 @@
     "./commands/harness-release.md",
     "./commands/harness-sim.md",
     "./commands/harness-unittest.md",
-    "./commands/harness-comptest.md"
+    "./commands/harness-comptest.md",
+    "./commands/harness-inttest.md"
   ],
   "skills": [
     "./skills"

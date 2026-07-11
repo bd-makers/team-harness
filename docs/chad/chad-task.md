@@ -1,6 +1,7 @@
 # chad — Tasks
 
 ## Open
+- harness-inttest (created 2026-07-11)
 - harness-comptest (created 2026-07-10)
 
 
