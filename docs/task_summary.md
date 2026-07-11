@@ -26,4 +26,4 @@
 | chad | update-comparison-html | ✅ done | 2026-07-09 |
 | chad | harness-unittest | ✅ done | 2026-07-10 |
 | chad | harness-comptest | 🔄 open | 2026-07-10 |
-| chad | harness-inttest | 🔄 open | 2026-07-11 |
+| chad | harness-inttest | ✅ done | 2026-07-11 |
