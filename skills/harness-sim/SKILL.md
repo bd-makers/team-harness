@@ -22,9 +22,14 @@ keep this SKILL.md as the SSOT for the simulation procedure.
 >   플러그인 CLI 로직만 본다. auth·에이전트 불필요.
 > - **L5 (agent-in-the-loop, 이 스킬):** `tests/sim/agentloop.mjs`. 실 에이전트 세션의
 >   사이드이펙트를 채점. **설치된 하네스(2번)** 를 측정하는 유일한 경로. auth·권한·시간 필요.
+> - **L5-skill (에이전트-워크플로우 스킬 검증, 자매 하네스):** `tests/sim/skilltest.mjs`.
+>   `/harness-unittest`·`/harness-comptest` 처럼 CLI가 아닌 **에이전트 워크플로우 스킬**을
+>   fixture 프로젝트에서 실제 `claude -p` 로 구동해 작성된 테스트 side-effect(파일·GWT·query
+>   우선순위·`npm test` 통과)를 채점. `agentloop.mjs`(scaffold)가 못 보는 레이어. auth 필요.
+>   `selftest`(스코어러 자체검증)·`warm`(fixture 프리빌드)은 **auth 불필요**.
 
-핵심 판정 도구는 `tests/sim/agentloop.mjs`다. 이 스킬은 그것을 **구동하고 리포트를
-해석**한다 — assert를 새로 짜지 않는다.
+핵심 판정 도구는 `tests/sim/agentloop.mjs`(scaffold)와 `tests/sim/skilltest.mjs`(command 스킬)다.
+이 스킬은 그것들을 **구동하고 리포트를 해석**한다 — assert를 새로 짜지 않는다.
 
 ## 정직성 규칙 (위조 금지)
 - **산문은 신호가 아니다.** PASS는 반드시 파일/git/transcript/hook-stderr **증거**에 근거.
