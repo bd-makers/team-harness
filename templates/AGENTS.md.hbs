@@ -36,7 +36,7 @@
 | 에이전트 | 역할 | 호출 방식 |
 |---|---|---|
 | **Claude Code** | 리드 프로그래머 (drive) | 주 세션 |
-| **OpenCode** | 보조 드라이버 (병렬 작성 세션) | `opencode.json` 설정 |
+| **OpenCode** | 보조 드라이버 (순차 전환 세션) | `opencode.json` 설정 |
 | **Codex** | 리뷰어 (read-only) | Bash: `codex exec --sandbox read-only` |
 | **Gemini** | 리뷰어 (read-only) | Bash: `gemini --approval-mode default -p` |
 | **Cursor** | 보조 에디터 (IDE) | `.cursor/rules/*.mdc` 자동 적용 |
@@ -44,6 +44,12 @@
 > **D2 (2026-06-11):** drive 주체 = Claude·OpenCode, 리뷰어 = Codex·Gemini.
 > 독립 리뷰어의 가치는 작성자와의 분리에서 나오므로 리뷰 루프 정착을 우선한다.
 > (Codex 하네스 확장 시 D2 재평가 — 그때 driver 승격 검토.)
+>
+> **D4 (2026-07-28):** 설정·상태 하네스로 재표방하며 쓰기는 단일 스레드로 못 박는다 — Claude·OpenCode는
+> **동시에 병렬로 쓰지 않는다.** OpenCode는 순차적으로 전환해 쓰는 별도 세션이며, D2의 "drive 주체" 지위는
+> 유지하되 그 실행이 병렬 작성으로 해석되지 않도록 정정한다. 근거: 병렬로 "쓰는" 에이전트를 상충·신뢰성
+> 위험으로 보고 단일 스레드 실행 + 얇고 직접 소유한 제어흐름을 권장하는 최근 1차 소스
+> (Anthropic, OpenAI, Cognition, 12-Factor Agents #8).
 
 ### 리뷰 프로토콜
 중요한 변경(새 기능, 아키텍처, 복잡한 리팩토링, 보안, 스키마/API) 완료 후
