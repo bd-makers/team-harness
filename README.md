@@ -64,7 +64,7 @@ Anthropic·OpenAI·Cognition·12-Factor Agents 등 최근 1차 소스는 병렬�
 드라이버(Claude·OpenCode) → 리뷰어(Codex·Gemini, read-only) 순차 루프는 그 방향과 정합적입니다.
 반면 조사·탐색을 위한 **컨텍스트 격리 서브에이전트**(별도 창에서 조사 후 요약만 반환)는 이 원칙과
 무관하게 표준 실무이며 계속 활용합니다 — 자세한 구분은 [`CLAUDE.md` §2](./CLAUDE.md) 참고.
-OS/네트워크 격리(3층 샌드박스)는 이 플러그인의 스코프 밖입니다 — devcontainer·sandbox 등 운영
+OS/네트워크 격리는 이 플러그인의 스코프 밖입니다 — devcontainer·sandbox 등 운영
 환경이 담당할 영역입니다.
 
 ---
