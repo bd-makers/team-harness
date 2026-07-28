@@ -51,6 +51,43 @@ test('AGENTS.md(core) roles 표는 D2 반영 — OpenCode=drive, Codex/Gemini=�
   assert.match(out, /리뷰어/, '리뷰어 역할 명시');
 });
 
+// D4 (2026-07-28) — 쓰기는 단일 스레드. scaffold 되는 AGENTS.md/CLAUDE.md 쌍이
+// 병렬 작성 여부에서 서로 모순되면 소비자 프로젝트가 자기모순 문서를 받는다.
+const roleRows = (agentsMd) => agentsMd.split('\n').filter((l) => /^\|\s*\*\*/.test(l));
+
+test('AGENTS.md(core) roles 표의 OpenCode 행은 순차 전환 세션 — "병렬 작성 세션" 회귀 금지', async () => {
+  const out = render(await tpl('AGENTS.md.hbs'), VARS);
+  const row = roleRows(out).find((l) => l.includes('**OpenCode**'));
+  assert.ok(row, 'OpenCode 행 존재');
+  assert.match(row, /순차/, 'OpenCode는 순차 전환 세션으로 표기');
+  assert.doesNotMatch(row, /병렬 작성/, '역할 표가 병렬 작성 세션으로 되돌아가면 안 됨');
+});
+
+test('AGENTS.md(core)는 D2 이력을 보존한 채 D4 단일 스레드 쓰기 결정을 담는다', async () => {
+  const out = render(await tpl('AGENTS.md.hbs'), VARS);
+  assert.match(out, /\*\*D2 \(2026-06-11\)/, 'D2 결정 이력 보존');
+  assert.match(out, /\*\*D4 \(2026-07-28\)/, 'D4 결정 노트 존재');
+  assert.match(out, /동시에 병렬로 쓰지 않는다/, '단일 스레드 쓰기 규칙 명문화');
+});
+
+test('CLAUDE.md(thin) §2는 컨텍스트 격리 서브에이전트는 유지, 병렬 작성·결정은 금지', async () => {
+  const out = render(await tpl('CLAUDE.md.hbs'), VARS);
+  assert.match(out, /컨텍스트 격리 서브에이전트/, '조사용 서브에이전트는 표준 실무로 유지');
+  assert.match(out, /병렬 작성·결정 에이전트는 두지 않는다/, '병렬 작성·결정 금지 규칙');
+  assert.match(out, /쓰기는 단일 스레드로 유지한다/, '단일 스레드 쓰기 규칙');
+  assert.doesNotMatch(out, /병렬 분석은 서브에이전트에게 위임/, '구 문구 회귀 금지');
+});
+
+test('scaffold 되는 AGENTS.md/CLAUDE.md 쌍은 병렬 쓰기 서술에서 모순되지 않는다', async () => {
+  const agents = render(await tpl('AGENTS.md.hbs'), VARS);
+  const claude = render(await tpl('CLAUDE.md.hbs'), VARS);
+  assert.match(claude, /쓰기는 단일 스레드로 유지한다/, 'CLAUDE.md가 단일 스레드 쓰기를 규정');
+  const rows = roleRows(agents);
+  assert.ok(rows.length >= 4, `역할 표 행 파싱 실패 (${rows.length}행)`);
+  for (const row of rows)
+    assert.doesNotMatch(row, /병렬/, `역할 표가 병렬 실행을 기술해 CLAUDE.md와 충돌: ${row}`);
+});
+
 test('AGENTS.md(core) stack 명령이 vars로 렌더된다', async () => {
   const out = render(await tpl('AGENTS.md.hbs'), VARS);
   assert.match(out, /npm test/, 'cmdTest 치환');
