@@ -9,7 +9,7 @@ modified: 2026-06-02
 
 # harness-aijient-team
 
-> **Claude 메인 + Codex · Gemini · Cursor · OpenCode** — 다섯 AI 에이전트를 하나의 프로젝트에서 협업시키는 팀용 하네스 플러그인.
+> **Claude 메인 + Codex · Gemini · Cursor · OpenCode** — 다섯 AI 에이전트의 설정과 상태를 하나의 프로젝트에서 통일하는 멀티에이전트 **설정·상태 하네스** 플러그인.
 
 프로젝트에 통일된 멀티 에이전트 설정을 **새로 scaffold**하거나 **기존 repo에 비파괴적으로 적용**합니다.
 `AGENTS.md`(Linux Foundation 오픈 표준)를 공유 코어 단일 진실의 원천(SSOT)으로 삼고, `CLAUDE.md` / `GEMINI.md`는 `@AGENTS.md`를 import하는 얇은 파일로 두어 drift가 없습니다.
@@ -56,6 +56,16 @@ modified: 2026-06-02
 - 작업은 `docs/<member>/<name>/` 구조로 팀원·task별 격리
 
 결과: 규칙·스킬을 한 곳에서 편집하면 모든 에이전트가 같은 내용을 읽고, 팀원이 서로의 작업에 간섭하지 않습니다.
+
+**설계 스코프: 설정·상태 하네스이지 런타임 오케스트레이션이 아닙니다.** 지휘자·공유 작업큐·
+팬아웃/팬인 같은 런타임 협업 계층은 두지 않습니다 — 이는 누락이 아니라 의도된 설계입니다.
+Anthropic·OpenAI·Cognition·12-Factor Agents 등 최근 1차 소스는 병렬로 "쓰는" 에이전트를
+상충·신뢰성 위험으로 보고, 단일 스레드 실행 + 얇고 직접 소유한 제어흐름을 권장합니다. 이 플러그인의
+드라이버(Claude·OpenCode) → 리뷰어(Codex·Gemini, read-only) 순차 루프는 그 방향과 정합적입니다.
+반면 조사·탐색을 위한 **컨텍스트 격리 서브에이전트**(별도 창에서 조사 후 요약만 반환)는 이 원칙과
+무관하게 표준 실무이며 계속 활용합니다 — 자세한 구분은 [`CLAUDE.md` §2](./CLAUDE.md) 참고.
+OS/네트워크 격리(3층 샌드박스)는 이 플러그인의 스코프 밖입니다 — devcontainer·sandbox 등 운영
+환경이 담당할 영역입니다.
 
 ---
 
