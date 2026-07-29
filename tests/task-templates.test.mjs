@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, readFile, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { taskSpecTemplate, taskPlanTemplate, taskArtifactTemplate, runTask, runList, runDone } from '../src/commands/task.mjs';
+import { taskSpecTemplate, taskPlanTemplate, taskArtifactTemplate, taskContextTemplate, runTask, runList, runDone } from '../src/commands/task.mjs';
 import { migrateTaskIndexLabels } from '../src/commands/migrate.mjs';
 
 test('spec 템플릿은 4차원 Ambiguity 자가진단 섹션을 포함한다', () => {
@@ -39,6 +39,17 @@ test('runTask는 artifact.md를 실제로 생성한다', async () => {
     const content = await readFile(artifactPath, 'utf8');
     assert.match(content, /## 결과/);
     assert.match(content, /## Learnings/);
+  } finally {
+    await rm(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('runTask는 설계 계약 그대로 context.md를 생성한다', async () => {
+  const tmpDir = await mkdtemp(join(tmpdir(), 'harness-task-context-'));
+  try {
+    await runTask({ targetDir: tmpDir, flags: { member: 'tester' }, taskArgs: ['demo'] });
+    const contextPath = join(tmpDir, 'docs', 'tester', 'demo', 'demo-context.md');
+    assert.equal(await readFile(contextPath, 'utf8'), taskContextTemplate('demo'));
   } finally {
     await rm(tmpDir, { recursive: true, force: true });
   }

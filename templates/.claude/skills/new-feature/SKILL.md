@@ -18,7 +18,7 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash
 2. ```bash
    harness-team task <name>
    ```
-   - `docs/<user>/<name>/{<name>-spec,<name>-plan,<name>-handoff}.md` 생성 + active 설정
+   - `docs/<user>/<name>/{<name>-spec,<name>-plan,<name>-handoff,<name>-artifact,<name>-context}.md` 생성 + active 설정
 3. `<name>-spec.md`에 초기 요구사항 작성
 
 ### Phase 2: 계획 수립
@@ -27,7 +27,10 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash
 
 ### Phase 3: 구현
 1. 단계별로 구현 + `<name>-plan.md` 체크리스트 갱신
-2. 중요한 변경은 `CLAUDE.md`의 **코드 리뷰 기준** 확인
+2. 재현 가능한 실패는 `<name>-context.md`의 failure capsule에 신호·시도·현재 가설·다음 판별법·
+   안전한 source 위치만 압축해 기록한다(최대 3개). raw stderr, 토큰, 비밀값, 전체 HTTP payload는 복사하지 않는다.
+   해소 시 capsule을 제거하고 재발 방지 가치가 있으면 artifact의 `## Learnings`에 남긴다.
+3. 중요한 변경은 `CLAUDE.md`의 **코드 리뷰 기준** 확인
 
 ### Phase 4: 완료
 1. git commit → post-commit hook이 handoff 자동 갱신
