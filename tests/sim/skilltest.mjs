@@ -162,8 +162,8 @@ async function findTestFiles(dir) {
 // greppable and live in the separate *Manual() lists below.
 // Accept-set = the command contract's (`commands/harness-{unittest,comptest}.md`).
 
-// Extract each it()/test() callback body by brace-matching, skipping strings and
-// comments — blank-line region counting must stay INSIDE a single test body.
+// Extract each it()/test() callback body by brace-matching — markers and blank-line
+// regions are both judged per body.
 function skipString(src, i) {
   const q = src[i];
   for (let j = i + 1; j < src.length; j++) {
@@ -172,51 +172,101 @@ function skipString(src, i) {
   }
   return -1;
 }
-function matchBrace(src, open) {
-  let depth = 0;
-  for (let i = open; i < src.length; i++) {
-    const c = src[i];
-    if (c === '"' || c === "'" || c === '`') { i = skipString(src, i); if (i === -1) return -1; continue; }
-    if (c === '/' && src[i + 1] === '/') { i = src.indexOf('\n', i); if (i === -1) return -1; continue; }
-    if (c === '/' && src[i + 1] === '*') { i = src.indexOf('*/', i); if (i === -1) return -1; i++; continue; }
-    if (c === '{') depth++;
-    else if (c === '}' && --depth === 0) return i;
+function prevCode(src, i) {
+  let j = i - 1;
+  while (j >= 0 && /\s/.test(src[j])) j--;
+  return j;
+}
+// Must NOT include `}`, `<` or `>`-alone — in JSX those precede `/` (`{…} />`, `</p>`).
+// `=>` is matched as a pair below.
+const REGEX_PRECEDERS = '(,=:[!&|?;{';
+const REGEX_KEYWORDS = ['return', 'typeof', 'instanceof', 'in', 'of', 'case', 'do', 'else', 'void', 'delete', 'await', 'yield', 'new'];
+function startsRegex(src, i) {
+  const j = prevCode(src, i);
+  if (j < 0) return true;
+  if (REGEX_PRECEDERS.includes(src[j])) return true;
+  if (src[j] === '>' && src[j - 1] === '=') return true;
+  const word = src.slice(0, j + 1).match(/[A-Za-z$_]+$/)?.[0];
+  return word ? REGEX_KEYWORDS.includes(word) : false;
+}
+function skipRegex(src, i) {
+  let inClass = false;
+  for (let j = i + 1; j < src.length; j++) {
+    const c = src[j];
+    if (c === '\\') { j++; continue; }
+    if (c === '\n') return -1;
+    if (c === '[') inClass = true;
+    else if (c === ']') inClass = false;
+    else if (c === '/' && !inClass) return j;
   }
   return -1;
 }
-// First `{` that is not inside the test's name literal (titles may contain braces).
+// Index of the last char of the string/comment/regex starting at `i`, or null when
+// `i` is ordinary code. -1 means unterminated → the caller must not guess.
+function scanNonCode(src, i) {
+  const c = src[i];
+  if (c === '"' || c === "'" || c === '`') return skipString(src, i);
+  if (c === '/' && src[i + 1] === '/') { const n = src.indexOf('\n', i); return n === -1 ? src.length : n; }
+  if (c === '/' && src[i + 1] === '*') { const n = src.indexOf('*/', i); return n === -1 ? -1 : n + 1; }
+  if (c === '/' && startsRegex(src, i)) return skipRegex(src, i);
+  return null;
+}
+function matchBrace(src, open) {
+  let depth = 0;
+  for (let i = open; i < src.length; i++) {
+    const skip = scanNonCode(src, i);
+    if (skip !== null) { if (skip === -1) return -1; i = skip; continue; }
+    if (src[i] === '{') depth++;
+    else if (src[i] === '}' && --depth === 0) return i;
+  }
+  return -1;
+}
+// The callback body's `{` is the one preceded by `=>` or by a `function (…)` head.
 function findBodyOpen(src, from) {
   for (let i = from; i < src.length; i++) {
-    const c = src[i];
-    if (c === '"' || c === "'" || c === '`') { i = skipString(src, i); if (i === -1) return -1; continue; }
-    if (c === '{') return i;
+    const skip = scanNonCode(src, i);
+    if (skip !== null) { if (skip === -1) return -1; i = skip; continue; }
+    if (src[i] !== '{') continue;
+    const j = prevCode(src, i);
+    if (j >= 0 && (src[j] === ')' || (src[j] === '>' && src[j - 1] === '='))) return i;
+    const close = matchBrace(src, i);
+    if (close === -1) return -1;
+    i = close;
   }
   return -1;
 }
 function testBodies(src) {
   const bodies = [];
-  const decl = /\b(?:it|test)\s*(?:\.\s*\w+\s*)?\(/g;
+  let declared = 0, unparsed = 0;
+  const decl = /(?<![\w$.])(?:it|test)\s*(?:\.\s*\w+\s*)?\(/g;
   let m;
   while ((m = decl.exec(src))) {
+    declared++;
     const open = findBodyOpen(src, m.index);
-    if (open === -1) continue;
-    const end = matchBrace(src, open);
-    if (end === -1) continue;
+    const end = open === -1 ? -1 : matchBrace(src, open);
+    if (end === -1) { unparsed++; continue; }
     bodies.push(src.slice(open + 1, end));
   }
-  return bodies;
+  return { bodies, declared, unparsed };
 }
 
 // Markers must LEAD a comment line — a bare `\bword\b` also hits `.then(` and prose.
 const marker = (word) => new RegExp(String.raw`^[ \t]*(?:\/\/|\/\*|\*)\s*${word}\b`, 'im');
 const GWT_MARKERS = ['given', 'when', 'then'].map(marker);
 const AAA_MARKERS = ['arrange', 'act', 'assert'].map(marker);
+const markersIn = (body) => GWT_MARKERS.every((re) => re.test(body)) || AAA_MARKERS.every((re) => re.test(body));
+const regionsIn = (body) => (body.match(/\n[ \t]*\n/g) ?? []).length >= 2;
 
+// Contract (unittest 3단계 · comptest 3단계): **모든** 테스트가 3구획을 "주석 또는
+// 빈 줄"로 구분한다.
 function scoreGWT(src) {
-  // Contract (unittest 3단계 · comptest 3단계): 3구획을 "주석 또는 빈 줄"로 구분.
-  const marked = GWT_MARKERS.every((re) => re.test(src)) || AAA_MARKERS.every((re) => re.test(src));
-  const spaced = testBodies(src).some((b) => (b.match(/\n[ \t]*\n/g) ?? []).length >= 2);
-  return sig('GWT/AAA 3구획 구분 (주석 마커 또는 빈 줄)', marked || spaced);
+  const label = 'GWT/AAA 3구획 구분 (주석 마커 또는 빈 줄)';
+  const { bodies, declared, unparsed } = testBodies(src);
+  if (!declared) return sig(label, false, 'it()/test() 선언 없음');
+  const off = bodies.filter((b) => !markersIn(b) && !regionsIn(b)).length;
+  if (off) return sig(label, false, `${off}/${declared} 테스트에 3구획 없음`);
+  if (unparsed) return manual(label, `본문 ${unparsed}/${declared}개 파싱 실패 — 수기 확인`);
+  return sig(label, true);
 }
 const hasExpect = (src) => /\bexpect\s*\(/.test(src);
 const hasSnapshot = (src) => /toMatch(Inline)?Snapshot\s*\(/.test(src);
@@ -498,6 +548,131 @@ it('a', () => { expect(1).toBe(1); });
 
 it('b', () => { expect(2).toBe(2); });`) === 'FAIL');
 
+  // — 모든 테스트가 3구획을 지켜야 한다: 한 테스트의 마커가 다른 테스트를 대신 통과시키면 안 된다 —
+  assert('GWT: 3개 중 1개만 구조화 → FAIL', gwtOf(
+`import { it, expect } from 'vitest';
+it('구조화된 테스트', () => {
+  // Given
+  const a = 1;
+  // When
+  const out = f(a);
+  // Then
+  expect(out).toBe(2);
+});
+it('b', () => { expect(2).toBe(2); });
+it('c', () => { expect(3).toBe(3); });`) === 'FAIL');
+  assert('GWT: 마커가 테스트 3개에 흩어져 있으면 FAIL', gwtOf(
+`import { it, expect } from 'vitest';
+it('t1', () => {
+  // Given
+  const a = 1;
+});
+it('t2', () => {
+  // When
+  const b = 2;
+});
+it('t3', () => {
+  // Then
+  expect(1).toBe(1);
+});`) === 'FAIL');
+  assert('GWT: 테스트 2개 모두 구조화 → PASS', gwtOf(
+`import { it, expect } from 'vitest';
+it('a', () => {
+  // Given
+  const a = 1;
+  // When
+  const out = f(a);
+  // Then
+  expect(out).toBe(2);
+});
+it('b', () => {
+  const b = 2;
+
+  const out = f(b);
+
+  expect(out).toBe(3);
+});`) === 'PASS');
+
+  // — parser: 본문 추출이 틀리면 위 판정이 전부 거짓이 된다 —
+  assert('parser: it.each 데이터 테이블이 아니라 콜백 본문을 읽는다 → PASS', gwtOf(
+`import { it, expect } from 'vitest';
+it.each([{ a: 1 }, { a: 2 }])('case %s', ({ a }) => {
+  const x = a;
+
+  const out = double(x);
+
+  expect(out).toBe(a * 2);
+});`) === 'PASS');
+  assert('parser: 옵션 객체를 본문으로 오인하지 않는다 → PASS', gwtOf(
+`import { it, expect } from 'vitest';
+it('느린 테스트', { timeout: 10000 }, () => {
+  const a = 1;
+
+  const out = f(a);
+
+  expect(out).toBe(2);
+});`) === 'PASS');
+  assert('parser: 정규식 리터럴의 중괄호가 본문을 깨지 않는다 → PASS', gwtOf(
+`import { it, expect } from 'vitest';
+it('중괄호 패턴을 찾는다', () => {
+  const re = /[{]/;
+
+  const out = re.test('{');
+
+  expect(out).toBe(true);
+});`) === 'PASS');
+  assert('parser: function 콜백도 본문을 찾는다 → PASS', gwtOf(
+`import { it, expect } from 'vitest';
+it('function 스타일', function () {
+  const a = 1;
+
+  const out = f(a);
+
+  expect(out).toBe(2);
+});`) === 'PASS');
+  assert('parser: 나눗셈을 정규식으로 오인하지 않는다 → PASS', gwtOf(
+`import { it, expect } from 'vitest';
+it('평균을 구한다', () => {
+  const total = 10;
+
+  const out = total / 2 + (4) / 2;
+
+  expect(out).toBe(7);
+});`) === 'PASS');
+  assert('parser: 본문을 못 읽으면 PASS도 FAIL도 아닌 MANUAL', gwtOf(
+`import { it, expect } from 'vitest';
+it('깨진 소스', () => {
+  const s = 'unterminated;
+});`) === 'MANUAL');
+  assert('parser: `.test(`/`.it(` 메서드 호출은 테스트 선언이 아니다 → PASS', gwtOf(
+`import { it, expect } from 'vitest';
+it('패턴에 맞으면 통과한다', () => {
+  const re = /^a/;
+
+  const out = re.test('abc');
+
+  expect(out).toBe(true);
+});`) === 'PASS');
+  assert('parser: JSX 자기닫힘 태그가 본문을 깨지 않는다 → PASS', gwtOf(
+`import { it, expect } from 'vitest';
+it('렌더한다', () => {
+  render(<LoginForm onSubmit={() => {}} />);
+
+  const el = screen.getByRole('button');
+
+  expect(el).toBeInTheDocument();
+});`) === 'PASS');
+  assert('parser: JSX 닫는 태그가 본문을 깨지 않는다 → PASS', gwtOf(
+`import { it, expect } from 'vitest';
+it('자식을 렌더한다', () => {
+  render(<div><p>hello</p></div>);
+
+  const el = screen.getByText('hello');
+
+  expect(el).toBeInTheDocument();
+});`) === 'PASS');
+  assert('GWT: it()/test() 선언이 없으면 FAIL', gwtOf(`export const x = 1;`) === 'FAIL');
+
   // — greppable comptest scorer: GOOD vs BAD —
   const goodComp =
 `import { it, expect } from 'vitest';
@@ -658,7 +833,7 @@ async function runFull() {
   const counts = { PASS: 0, FAIL: 0, MANUAL: 0 };
   for (const s of allSignals) counts[s.status]++;
   // Retain the sandbox on FAIL — Phase 3 격리 검증 re-runs against the agent's output.
-  const hasFail = counts.FAIL > 0;
+  const keepSandbox = counts.FAIL > 0 && !authDead;
 
   const report = [
     `# skilltest — /harness-unittest · /harness-comptest 검증`,
@@ -668,7 +843,7 @@ async function runFull() {
     `- fixtures: web React + Vitest (스킬당 1개; RN·라우팅 cross-check는 defer/MANUAL)`,
     `- 신호 집계: PASS ${counts.PASS} · FAIL ${counts.FAIL} · MANUAL ${counts.MANUAL}`,
     authDead ? `- ⚠️ AUTH FAILED — 실행 신호는 무효. 인증된 터미널에서 재실행 필요.` : null,
-    hasFail ? `- 🔍 FAIL 있음 — 격리 검증용 증거 보존: \`${sandbox}\` (해석 후 직접 삭제)` : null,
+    keepSandbox ? `- 🔍 FAIL 있음 — 격리 검증용 증거 보존: \`${sandbox}\` (해석 후 직접 삭제)` : null,
     ``,
     `> 정직성: greppable side-effect만 PASS/FAIL. 판단(리팩토링 내성·뮤테이션·라우팅)은 ⚠️manual.`,
     ``,
@@ -679,7 +854,7 @@ async function runFull() {
   await mkdir(reportsDir, { recursive: true });
   const reportPath = join(reportsDir, `skilltest-${TS}.md`);
   await writeFile(reportPath, report);
-  if (!hasFail) await rm(sandbox, { recursive: true, force: true }); // templates persist in CACHE
+  if (!keepSandbox) await rm(sandbox, { recursive: true, force: true }); // templates persist in CACHE
 
   console.log(report);
   console.log(`\n✓ report: ${reportPath}`);
