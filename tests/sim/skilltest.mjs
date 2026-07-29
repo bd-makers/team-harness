@@ -269,23 +269,30 @@ function testBodies(src) {
 
 // A region marker must LEAD a comment line, or a `&`/`/`-joined segment of one
 // (`// When & Then` — the two-region form for a single toThrow assert).
-// Must stay scoped to comment lines: that is what keeps `.then(` and prose out.
+// Two constraints keep this a 구획 signal rather than a word hunt:
+//   • scoped to comment lines — that is what keeps `.then(` and prose out;
+//   • spread over ≥2 comment lines — one line cannot separate three regions.
 const MARKER_SEGMENT = /[&/+,·]|\band\b/i;
 const REGION_WORDS = { gwt: ['given', 'when', 'then'], aaa: ['arrange', 'act', 'assert'] };
-function markerWordsIn(body) {
-  const words = new Set();
+function markerLineWords(body) {
+  const lines = [];
   for (const line of body.match(/^[ \t]*(?:\/\/|\/\*|\*)[^\n]*/gm) ?? []) {
     const text = line.replace(/^[ \t]*(?:\/\/|\/\*+|\*)/, '');
+    const words = new Set();
     for (const seg of text.split(MARKER_SEGMENT)) {
       const w = seg.trim().replace(/^[^A-Za-z]+/, '').match(/^[A-Za-z]+/)?.[0];
       if (w) words.add(w.toLowerCase());
     }
+    if (words.size) lines.push(words);
   }
-  return words;
+  return lines;
 }
 const markersIn = (body) => {
-  const words = markerWordsIn(body);
-  return Object.values(REGION_WORDS).some((set) => set.every((w) => words.has(w)));
+  const lines = markerLineWords(body);
+  return Object.values(REGION_WORDS).some((set) => {
+    const carrying = lines.filter((words) => set.some((w) => words.has(w)));
+    return carrying.length >= 2 && set.every((w) => carrying.some((words) => words.has(w)));
+  });
 };
 const regionsIn = (body) => (body.match(/\n[ \t]*\n/g) ?? []).length >= 2;
 
@@ -752,6 +759,41 @@ it('음수 가격이면 예외를 던진다', () => {
   const price = -1;
   // When & Then
   expect(() => applyDiscount(price, 'SAVE10')).toThrow('price must be >= 0');
+});`) === 'PASS');
+  // 한 줄은 세 구획을 나눌 수 없다 — 마커는 서로 다른 주석 줄에 흩어져 있어야 한다.
+  const oneLiner = (comment) =>
+`import { it, expect } from 'vitest';
+it('가격을 계산한다', () => {
+${comment}
+  const out = applyDiscount(100, 'SAVE10');
+  expect(out).toBe(90);
+});`;
+  assert('GWT: 한 줄 서술형 마커(given…when…then)는 구획이 아니다 → FAIL',
+    gwtOf(oneLiner('  // Given a valid code, when applied, then the price drops')) === 'FAIL');
+  assert('GWT: `// Given & When & Then` 한 줄 → FAIL',
+    gwtOf(oneLiner('  // Given & When & Then')) === 'FAIL');
+  assert('GWT: `// Arrange, Act, Assert` 한 줄 → FAIL',
+    gwtOf(oneLiner('  // Arrange, Act, Assert')) === 'FAIL');
+  assert('GWT: AAA 마커가 줄마다 있으면 PASS', gwtOf(
+`import { it, expect } from 'vitest';
+it('할인가를 반환한다', () => {
+  // Arrange
+  const price = 100;
+  // Act
+  const out = applyDiscount(price, 'SAVE10');
+  // Assert
+  expect(out).toBe(90);
+});`) === 'PASS');
+  assert('GWT: 요약 주석이 있어도 줄별 마커가 있으면 PASS', gwtOf(
+`import { it, expect } from 'vitest';
+it('할인가를 반환한다', () => {
+  // Given, When, Then 순서로 검증한다
+  // Given
+  const price = 100;
+  // When
+  const out = applyDiscount(price, 'SAVE10');
+  // Then
+  expect(out).toBe(90);
 });`) === 'PASS');
   assert('GWT: 주석 안의 `.then(` 산문은 마커가 아니다 → FAIL', gwtOf(
 `import { it, expect } from 'vitest';
