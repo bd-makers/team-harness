@@ -126,7 +126,7 @@ cd my-project
 | `/harness-simplifier` | 활성 task의 plan.md에서 제거 가능한 단계·추상화 탐지 |
 | `/harness-retro` | 활성 task의 artifact.md에 학습/교정 내용 append (자기개선 루프) |
 | `/harness-release` | Claude/Codex 매니페스트 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화 (항상 `--dry-run` 먼저) |
-| `/harness-sim` | playground 3-스택에서 설치된 하네스를 굴려 L4 시뮬레이션 + 날짜 리포트 |
+| `/harness-sim` | playground 3-스택에서 설치된 하네스를 굴려 L5 시뮬레이션 + 날짜 리포트 |
 | `/harness-unittest` | JS/TS/React/RN에 Khorikov 원칙 기반 단위테스트 작성 (스택 감지 → GWT 강제 → 커버리지 → 검증) |
 | `/harness-comptest` | React/RN 컴포넌트·화면·UI 플로우에 Testing Trophy 통합 층 테스트 작성 (스택 감지 → 사용자 관점 검증 → 커버리지 → 검증) |
 | `/harness-inttest` | API 핸들러·DB·캐시·아웃바운드 HTTP 등 프로세스 경계 코드에 Khorikov Part III 통합 테스트 작성 (스택 감지 → managed/unmanaged 구분 → 커버리지 → 검증) |

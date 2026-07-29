@@ -1,6 +1,6 @@
 ---
 name: harness-sim
-description: 설치된 하네스가 소비자 프로젝트에서 진짜 작동하는지 실제 claude -p 에이전트 세션으로 검증하고(L5 agent-in-the-loop) 날짜 리포트를 남긴다. "하네스 시뮬레이션", "harness sim", "playground 검증", "하네스 동작 점검", "설치된 하네스 테스트" 요청에 사용.
+description: 설치된 하네스와 에이전트 워크플로우 스킬(`/harness-unittest`·`/harness-comptest`)이 진짜 작동하는지 실제 claude -p 에이전트 세션으로 검증하고(L5 agent-in-the-loop) 날짜 리포트를 남긴다. "하네스 시뮬레이션", "harness sim", "playground 검증", "하네스 동작 점검", "설치된 하네스 테스트", "스킬 검증(skilltest)" 요청에 사용.
 allowed-tools: Read, Write, Edit, Bash, Glob
 ---
 
