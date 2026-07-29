@@ -1,6 +1,6 @@
 ---
 name: harness-sim
-description: 설치된 하네스가 소비자 프로젝트에서 진짜 작동하는지 실제 claude -p 에이전트 세션으로 검증하고(L5 agent-in-the-loop) 날짜 리포트를 남긴다. "하네스 시뮬레이션", "harness sim", "playground 검증", "하네스 동작 점검", "설치된 하네스 테스트" 요청에 사용.
+description: 설치된 하네스와 에이전트 워크플로우 스킬(`/harness-unittest`·`/harness-comptest`)이 진짜 작동하는지 실제 claude -p 에이전트 세션으로 검증하고(L5 agent-in-the-loop) 날짜 리포트를 남긴다. "하네스 시뮬레이션", "harness sim", "playground 검증", "하네스 동작 점검", "설치된 하네스 테스트", "스킬 검증(skilltest)" 요청에 사용.
 allowed-tools: Read, Write, Edit, Bash, Glob
 ---
 
@@ -22,9 +22,14 @@ keep this SKILL.md as the SSOT for the simulation procedure.
 >   플러그인 CLI 로직만 본다. auth·에이전트 불필요.
 > - **L5 (agent-in-the-loop, 이 스킬):** `tests/sim/agentloop.mjs`. 실 에이전트 세션의
 >   사이드이펙트를 채점. **설치된 하네스(2번)** 를 측정하는 유일한 경로. auth·권한·시간 필요.
+> - **L5-skill (에이전트-워크플로우 스킬 검증, 자매 하네스):** `tests/sim/skilltest.mjs`.
+>   `/harness-unittest`·`/harness-comptest` 처럼 CLI가 아닌 **에이전트 워크플로우 스킬**을
+>   fixture 프로젝트에서 실제 `claude -p` 로 구동해 작성된 테스트 side-effect(파일·GWT·query
+>   우선순위·`npm test` 통과)를 채점. `agentloop.mjs`(scaffold)가 못 보는 레이어. auth 필요.
+>   `selftest`(스코어러 자체검증)·`warm`(fixture 프리빌드)은 **auth 불필요**.
 
-핵심 판정 도구는 `tests/sim/agentloop.mjs`다. 이 스킬은 그것을 **구동하고 리포트를
-해석**한다 — assert를 새로 짜지 않는다.
+핵심 판정 도구는 `tests/sim/agentloop.mjs`(scaffold)와 `tests/sim/skilltest.mjs`(command 스킬)다.
+이 스킬은 그것들을 **구동하고 리포트를 해석**한다 — assert를 새로 짜지 않는다.
 
 ## 정직성 규칙 (위조 금지)
 - **산문은 신호가 아니다.** PASS는 반드시 파일/git/transcript/hook-stderr **증거**에 근거.
@@ -43,13 +48,22 @@ keep this SKILL.md as the SSOT for the simulation procedure.
 2. **harness-team PATH** — `command -v harness-team`. 없으면 설치된 post-commit 훅이
    `harness-team`을 못 불러 검증이 거짓 통과. 없으면 안내: plugin repo에서 `npm link`.
 3. **auth 준비** — nested `claude -p`는 자식세션 인증을 **상속하지 못한다**(검증됨).
-   두 경로 중 하나 필요:
-   - **토큰:** `~/.claude-sim-oauth-token`(600) 존재 → `agentloop.mjs`가 child env에만 주입.
-     없으면 만들기: `claude setup-token` → `umask 077; echo '<token>' > ~/.claude-sim-oauth-token`.
-   - **유저-런:** 토큰 없으면 인증된 터미널에서 유저가 직접 `node tests/sim/agentloop.mjs run`.
+   두 경로 중 하나 필요(두 하네스 공통):
+   - **토큰:** `~/.claude-sim-oauth-token`(600) 존재 → `agentloop.mjs`·`skilltest.mjs`가
+     child env에만 주입. 없으면 만들기:
+     `claude setup-token` → `umask 077; echo '<token>' > ~/.claude-sim-oauth-token`.
+   - **유저-런:** 토큰 없으면 인증된 터미널에서 유저가 직접 `run` 서브커맨드를 실행.
 4. **권한 인지** — 헤드리스 에이전트는 권한 게이트라 `node`/`git` 실행이 막힌다.
-   `agentloop.mjs`가 **스코프 allowlist**(`Bash(node:*),Bash(git:*),Bash(harness-team:*)` +
-   파일툴)로 spawn한다. **어시스턴트가 대신 돌리려면 사용자 허가가 필요**(블랭킷 skip 금지).
+   두 하네스는 **서로 다른 스코프 allowlist**로 spawn하니 허가 전에 대상을 확인하라:
+   - `agentloop.mjs`: `Bash(node:*),Bash(git:*),Bash(harness-team:*)` + 파일툴
+   - `skilltest.mjs`: `Bash(npm:*),Bash(npx:*),Bash(node:*),Bash(git:*)` + 파일툴
+     — 검증 대상 스킬이 테스트 러너를 직접 돌리므로 `npm`/`npx`가 추가된다.
+
+   **어시스턴트가 대신 돌리려면 사용자 허가가 필요**(블랭킷 skip 금지).
+
+> **어느 하네스를 돌릴지 먼저 정하라.** 설치된 스캐폴드(2번)가 대상이면 Phase 1–2
+> (`agentloop.mjs`), `/harness-unittest`·`/harness-comptest` 같은 **에이전트 워크플로우
+> 스킬**이 대상이면 Phase 2-B(`skilltest.mjs`). 전체 점검이면 둘 다 — 각자 리포트를 낸다.
 
 ## Phase 1 — probe (계약 검증, 선택이지만 권장)
 
@@ -73,13 +87,37 @@ throwaway `.sim-tmp/<TS>/` 샌드박스에서 실 에이전트를 띄워 SC1~SC5
 산출: `../harness-playground/sim-reports/agentloop-<TS>.md` +
 골든 스냅샷 `sim-snapshots/<version>/{init,apply}`(버전 간 `git diff`용). 정리 후 `.sim-tmp` 삭제.
 
+## Phase 2-B — skilltest (command 스킬, 자매 하네스)
+
+`agentloop.mjs`가 못 보는 레이어 — `/harness-unittest`·`/harness-comptest`를 fixture
+프로젝트에서 실제로 구동해 **작성된 테스트**를 채점한다. 순서대로:
+
+1. `node tests/sim/skilltest.mjs selftest` — **auth·에이전트 불필요**(세션 안에서 바로 실행).
+   스코어러 자체 검증: GWT 구획 판정, 쿼리 accept-set, `npm test` exit-code 분기,
+   타임아웃 child kill, fixture 해시. **여기가 빨간불이면 아래 신호는 전부 무의미**하다.
+2. `node tests/sim/skilltest.mjs warm` — **auth 불필요**. fixture 템플릿 프리빌드
+   (`npm install` 1회 → `.skilltest-cache/`). 템플릿 선언이 바뀌면 지문이 달라져 자동 재빌드.
+3. `node tests/sim/skilltest.mjs probe` — auth 계약 검증(401이면 여기서 드러난다).
+4. `node tests/sim/skilltest.mjs run` — **~10-20분**. 백그라운드 실행 권장.
+   스킬당 실 에이전트 1콜 → 작성된 테스트를 **파일별로** 채점: GWT 3구획(주석 또는 빈 줄),
+   사용자 관점 쿼리 우선순위, snapshot·`react-test-renderer` 금지, `npm test` exit 0,
+   그리고 **fixture 비파괴 해시**(에이전트가 production source를 고쳐 테스트를 통과시키면 FAIL).
+
+산출: `../harness-playground/sim-reports/skilltest-<TS>.md`.
+판단 항목(리팩토링 내성·뮤테이션 생존·unittest↔comptest 라우팅)은 설계상 `⚠️manual`이다.
+
 ## Phase 3 — 해석 & 보고
 
-1. 리포트의 신호 집계(PASS/FAIL/MANUAL)와 SC 매트릭스를 읽는다.
+1. 리포트의 신호 집계(PASS/FAIL/MANUAL)와 매트릭스를 읽는다
+   (agentloop은 SC1~SC5, skilltest은 스킬×파일별 신호).
 2. **FAIL이 있으면** 시나리오 의존성부터 의심 → CLI 레벨로 격리 검증(예: 임시 dir에서
    `harness-team apply --yes` 후 `.git/hooks/post-commit`·handoff mtime 직접 확인).
-   진짜 결함이면 남기고, sim 아티팩트면 `agentloop.mjs`를 고쳐 재실행.
+   진짜 결함이면 남기고, sim 아티팩트면 해당 하네스(`agentloop.mjs` 또는
+   `skilltest.mjs`)를 고쳐 재실행.
 3. 무오염 확인: `.sim-tmp` 삭제됨 + 영속 playground 3프로젝트 `git status` clean.
+   - 예외: `skilltest run`은 **FAIL이 있을 때만 샌드박스를 남긴다** — 2번의 격리 검증에
+     에이전트가 쓴 소스가 필요하기 때문. 경로가 리포트에 찍히니 해석 후 직접 삭제한다
+     (읽기만 할 거면 리포트의 "작성된 테스트 원문" 블록으로 충분하다).
 4. 리포트 경로를 사용자에게 보고. (sim-reports/·sim-snapshots/는 playground 소속 — 커밋 정책은 유저.)
 
 ## 상태 관리 (하이브리드 — 버전 간 비교)
