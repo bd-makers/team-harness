@@ -211,9 +211,9 @@ function scanNonCode(src, i) {
   if (c === '/' && startsRegex(src, i)) return skipRegex(src, i);
   return null;
 }
-function matchBrace(src, open) {
+function matchBrace(src, open, limit = src.length) {
   let depth = 0;
-  for (let i = open; i < src.length; i++) {
+  for (let i = open; i < limit; i++) {
     const skip = scanNonCode(src, i);
     if (skip !== null) { if (skip === -1) return -1; i = skip; continue; }
     if (src[i] === '{') depth++;
@@ -222,50 +222,83 @@ function matchBrace(src, open) {
   return -1;
 }
 // The callback body's `{` is the one preceded by `=>` or by a `function (…)` head.
-function findBodyOpen(src, from) {
-  for (let i = from; i < src.length; i++) {
+// `limit` bounds the search to this one declaration — a test with no braced callback
+// of its own must report not-found.
+function findBodyOpen(src, from, limit = src.length) {
+  for (let i = from; i < limit; i++) {
     const skip = scanNonCode(src, i);
     if (skip !== null) { if (skip === -1) return -1; i = skip; continue; }
     if (src[i] !== '{') continue;
     const j = prevCode(src, i);
     if (j >= 0 && (src[j] === ')' || (src[j] === '>' && src[j - 1] === '='))) return i;
-    const close = matchBrace(src, i);
+    const close = matchBrace(src, i, limit);
     if (close === -1) return -1;
     i = close;
   }
   return -1;
 }
-function testBodies(src) {
-  const bodies = [];
-  let declared = 0, unparsed = 0;
-  const decl = /(?<![\w$.])(?:it|test)\s*(?:\.\s*\w+\s*)?\(/g;
-  let m;
-  while ((m = decl.exec(src))) {
-    declared++;
-    const open = findBodyOpen(src, m.index);
-    const end = open === -1 ? -1 : matchBrace(src, open);
-    if (end === -1) { unparsed++; continue; }
-    bodies.push(src.slice(open + 1, end));
+// Collected with the same string/comment awareness the body parser uses, so `it(`
+// inside a string is not a test. The trailing `[(\`]` admits ``it.each`table`(…)``.
+const DECL = /(?<![\w$.])(?:it|test)\s*(?:\.\s*\w+\s*)?[(`]/y;
+function findDeclarations(src) {
+  const decls = [];
+  for (let i = 0; i < src.length; i++) {
+    const skip = scanNonCode(src, i);
+    if (skip !== null) {
+      if (skip === -1) return { decls, truncated: true };
+      i = skip; continue;
+    }
+    DECL.lastIndex = i;
+    if (DECL.exec(src)) decls.push(i);
   }
-  return { bodies, declared, unparsed };
+  return { decls, truncated: false };
+}
+function testBodies(src) {
+  const { decls, truncated } = findDeclarations(src);
+  const bodies = [];
+  let unparsed = 0;
+  decls.forEach((start, k) => {
+    const limit = k + 1 < decls.length ? decls[k + 1] : src.length;
+    const open = findBodyOpen(src, start, limit);
+    const end = open === -1 ? -1 : matchBrace(src, open, limit);
+    if (end === -1) { unparsed++; return; }
+    bodies.push(src.slice(open + 1, end));
+  });
+  return { bodies, declared: decls.length, unparsed, truncated };
 }
 
-// Markers must LEAD a comment line — a bare `\bword\b` also hits `.then(` and prose.
-const marker = (word) => new RegExp(String.raw`^[ \t]*(?:\/\/|\/\*|\*)\s*${word}\b`, 'im');
-const GWT_MARKERS = ['given', 'when', 'then'].map(marker);
-const AAA_MARKERS = ['arrange', 'act', 'assert'].map(marker);
-const markersIn = (body) => GWT_MARKERS.every((re) => re.test(body)) || AAA_MARKERS.every((re) => re.test(body));
+// A region marker must LEAD a comment line, or a `&`/`/`-joined segment of one
+// (`// When & Then` — the two-region form for a single toThrow assert).
+// Must stay scoped to comment lines: that is what keeps `.then(` and prose out.
+const MARKER_SEGMENT = /[&/+,·]|\band\b/i;
+const REGION_WORDS = { gwt: ['given', 'when', 'then'], aaa: ['arrange', 'act', 'assert'] };
+function markerWordsIn(body) {
+  const words = new Set();
+  for (const line of body.match(/^[ \t]*(?:\/\/|\/\*|\*)[^\n]*/gm) ?? []) {
+    const text = line.replace(/^[ \t]*(?:\/\/|\/\*+|\*)/, '');
+    for (const seg of text.split(MARKER_SEGMENT)) {
+      const w = seg.trim().replace(/^[^A-Za-z]+/, '').match(/^[A-Za-z]+/)?.[0];
+      if (w) words.add(w.toLowerCase());
+    }
+  }
+  return words;
+}
+const markersIn = (body) => {
+  const words = markerWordsIn(body);
+  return Object.values(REGION_WORDS).some((set) => set.every((w) => words.has(w)));
+};
 const regionsIn = (body) => (body.match(/\n[ \t]*\n/g) ?? []).length >= 2;
 
 // Contract (unittest 3단계 · comptest 3단계): **모든** 테스트가 3구획을 "주석 또는
 // 빈 줄"로 구분한다.
 function scoreGWT(src) {
   const label = 'GWT/AAA 3구획 구분 (주석 마커 또는 빈 줄)';
-  const { bodies, declared, unparsed } = testBodies(src);
-  if (!declared) return sig(label, false, 'it()/test() 선언 없음');
+  const { bodies, declared, unparsed, truncated } = testBodies(src);
   const off = bodies.filter((b) => !markersIn(b) && !regionsIn(b)).length;
   if (off) return sig(label, false, `${off}/${declared} 테스트에 3구획 없음`);
-  if (unparsed) return manual(label, `본문 ${unparsed}/${declared}개 파싱 실패 — 수기 확인`);
+  if (unparsed) return manual(label, `본문 ${unparsed}/${declared}개를 읽지 못함 — 수기 확인`);
+  if (truncated) return manual(label, '소스를 끝까지 파싱하지 못함 — 수기 확인');
+  if (!declared) return sig(label, false, 'it()/test() 선언 없음');
   return sig(label, true);
 }
 const hasExpect = (src) => /\bexpect\s*\(/.test(src);
@@ -671,6 +704,81 @@ it('자식을 렌더한다', () => {
 
   expect(el).toBeInTheDocument();
 });`) === 'PASS');
+  assert('parser: 본문 없는 테스트가 다음 테스트 본문을 훔치지 않는다 → MANUAL', gwtOf(
+`import { it, expect } from 'vitest';
+it('a', () => expect(x).toBe(1));
+it('b', () => {
+  // Given
+  const a = 1;
+  // When
+  const out = f(a);
+  // Then
+  expect(out).toBe(2);
+});`) === 'MANUAL');
+  assert('parser: 마지막 it.todo가 앞 테스트 판정을 가리지 않는다 → MANUAL', gwtOf(
+`import { it } from 'vitest';
+it('b', () => {
+  // Given
+  const a = 1;
+  // When
+  const out = f(a);
+  // Then
+  expect(out).toBe(2);
+});
+it.todo('나중에');`) === 'MANUAL');
+  assert('parser: 문자열 안의 `it(`는 선언이 아니다 → PASS', gwtOf(
+`import { it, expect } from 'vitest';
+it('안내 문구를 만든다', () => {
+  const tpl = 'it(x) 형식으로 쓰세요';
+
+  const out = render(tpl);
+
+  expect(out).toContain('it(x)');
+});`) === 'PASS');
+  assert('parser: it.each 태그드 템플릿도 선언으로 인식한다 → PASS', gwtOf(
+"import { it, expect } from 'vitest';\n"
++ 'it.each`\n  a | b\n  ${1} | ${2}\n`' + `('$a + $b', ({ a, b }) => {
+  // Given
+  const sum = a + b;
+  // When
+  const out = add(a, b);
+  // Then
+  expect(out).toBe(sum);
+});`) === 'PASS');
+  assert('GWT: `// When & Then` 결합 구획(toThrow) → PASS', gwtOf(
+`import { it, expect } from 'vitest';
+it('음수 가격이면 예외를 던진다', () => {
+  // Given
+  const price = -1;
+  // When & Then
+  expect(() => applyDiscount(price, 'SAVE10')).toThrow('price must be >= 0');
+});`) === 'PASS');
+  assert('GWT: 주석 안의 `.then(` 산문은 마커가 아니다 → FAIL', gwtOf(
+`import { it, expect } from 'vitest';
+it('토큰을 받는다', async () => {
+  // given the login endpoint is stubbed we return p.then(token)
+  const out = await login();
+  expect(out).toBe('t');
+});`) === 'FAIL');
+  assert('parser: describe로 감싼 마지막 테스트가 describe 닫는 괄호를 삼키지 않는다 → FAIL 1/2', (() => {
+    const src =
+`import { describe, it, expect } from 'vitest';
+describe('LoginForm', () => {
+  it('a', () => { expect(1).toBe(1); });
+
+  it('b', () => {
+    // Given
+    const a = 1;
+    // When
+    const out = f(a);
+    // Then
+    expect(out).toBe(2);
+  });
+});`;
+    const parsed = testBodies(src);
+    return parsed.declared === 2 && parsed.bodies.length === 2 && parsed.unparsed === 0
+      && scoreGWT(src).note.startsWith('1/2');
+  })());
   assert('GWT: it()/test() 선언이 없으면 FAIL', gwtOf(`export const x = 1;`) === 'FAIL');
 
   // — greppable comptest scorer: GOOD vs BAD —
