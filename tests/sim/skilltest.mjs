@@ -272,11 +272,42 @@ function testBodies(src) {
 // Two constraints keep this a 구획 signal rather than a word hunt:
 //   • scoped to comment lines — that is what keeps `.then(` and prose out;
 //   • spread over ≥2 comment lines — one line cannot separate three regions.
+// Both marker AND blank-line detection run over maskNonCode(body), NOT the raw
+// body: the same tokenizer that bounds a body first blanks out string / template /
+// regex spans, so a `// Given` line or a blank line living INSIDE a string can
+// never forge a 구획. testBodies made body *extraction* structural; this keeps the
+// *within-body* judgment structural too, so the leak cannot relocate into content.
 const MARKER_SEGMENT = /[&/+,·]|\band\b/i;
 const REGION_WORDS = { gwt: ['given', 'when', 'then'], aaa: ['arrange', 'act', 'assert'] };
+// Collapse every string / template / regex / comment span to a single NON-space
+// sentinel — dropping the newlines, markers and blank lines it holds — so its
+// content can forge neither a comment marker nor a blank-line region. The sentinel
+// is non-whitespace on purpose: a masked span must never read as a blank line.
+// `keepComments` preserves comment spans verbatim (markersIn needs them); regionsIn
+// masks comments too, so a blank line inside a block comment is not a 구획 either.
+// A line comment is special: scanNonCode returns the index OF its terminating
+// newline, so that newline is kept as code — a comment line is content, not a
+// blank separator, and must neither become blank nor merge the blanks around it.
+// An unterminated span is left as-is — testBodies never yields such a body
+// (matchBrace drops it), so that branch is only defensive.
+const MASK = '#'; // non-whitespace, not a comment (/, *) or MARKER_SEGMENT char
+function maskNonCode(body, { keepComments = false } = {}) {
+  let out = '';
+  for (let i = 0; i < body.length; i++) {
+    const skip = scanNonCode(body, i);
+    if (skip === null) { out += body[i]; continue; }
+    if (skip === -1) { out += body.slice(i); break; }
+    const isLineComment = body[i] === '/' && body[i + 1] === '/';
+    const isComment = isLineComment || (body[i] === '/' && body[i + 1] === '*');
+    if (keepComments && isComment) out += body.slice(i, skip + 1);
+    else out += (isLineComment && body[skip] === '\n') ? `${MASK}\n` : MASK;
+    i = skip;
+  }
+  return out;
+}
 function markerLineWords(body) {
   const lines = [];
-  for (const line of body.match(/^[ \t]*(?:\/\/|\/\*|\*)[^\n]*/gm) ?? []) {
+  for (const line of maskNonCode(body, { keepComments: true }).match(/^[ \t]*(?:\/\/|\/\*|\*)[^\n]*/gm) ?? []) {
     const text = line.replace(/^[ \t]*(?:\/\/|\/\*+|\*)/, '');
     const words = new Set();
     for (const seg of text.split(MARKER_SEGMENT)) {
@@ -294,7 +325,7 @@ const markersIn = (body) => {
     return carrying.length >= 2 && set.every((w) => carrying.some((words) => words.has(w)));
   });
 };
-const regionsIn = (body) => (body.match(/\n[ \t]*\n/g) ?? []).length >= 2;
+const regionsIn = (body) => (maskNonCode(body).match(/\n[ \t]*\n/g) ?? []).length >= 2;
 
 // Contract (unittest 3단계 · comptest 3단계): **모든** 테스트가 3구획을 "주석 또는
 // 빈 줄"로 구분한다.
@@ -822,6 +853,99 @@ describe('LoginForm', () => {
       && scoreGWT(src).note.startsWith('1/2');
   })());
   assert('GWT: it()/test() 선언이 없으면 FAIL', gwtOf(`export const x = 1;`) === 'FAIL');
+
+  // — 구획 판정도 토큰화 위에서 돈다: 문자열/템플릿/주석 *안*의 마커·빈 줄은 구획이 아니다.
+  //   본문 경계는 testBodies가 구조적으로 잡지만, 본문 *안*의 판정이 원시 텍스트면 누수가
+  //   그리로 이동한다(round 4). maskNonCode가 그 basis를 제거한다. —
+  assert('구획: 템플릿 리터럴 안의 // Given/When/Then 는 마커가 아니다 → FAIL', gwtOf(
+`import { it, expect } from 'vitest';
+it('GWT 스캐폴드를 생성한다', () => {
+  const template = \`
+// Given
+// When
+// Then
+\`;
+  expect(scaffold()).toBe(template);
+});`) === 'FAIL');
+  assert('구획: 템플릿 리터럴 안의 빈 줄은 구획이 아니다 → FAIL', gwtOf(
+`import { it, expect } from 'vitest';
+it('여러 줄 문서를 만든다', () => {
+  const doc = \`line1
+
+line2
+
+line3\`;
+  expect(doc).toBe(doc);
+});`) === 'FAIL');
+  assert('구획: 블록 주석 안의 빈 줄은 구획이 아니다 → FAIL', gwtOf(
+`import { it, expect } from 'vitest';
+it('설명이 긴 테스트', () => {
+  /* 설명
+
+  중간 빈 줄
+
+  끝 */
+  expect(f()).toBe(1);
+});`) === 'FAIL');
+  assert('구획: 여러 줄 템플릿을 사이에 두고도 주석 마커는 인식된다 → PASS', gwtOf(
+`import { it, expect } from 'vitest';
+it('마커 사이 템플릿', () => {
+  // Given
+  const s = \`a
+b\`;
+  // When
+  const out = f(s);
+  // Then
+  expect(out).toBe(1);
+});`) === 'PASS');
+
+  // — 주석 줄과 빈 줄 구획의 상호작용: 마스킹이 빈 줄을 만들거나 지워선 안 된다.
+  //   (a) 빈 줄 구획 사이의 말미 인라인 주석은 정상 테스트다 → PASS 유지(false-FAIL 금지).
+  //   (b) 주석 줄 자체는 빈 줄 구획을 위조하지 않는다 → FAIL(false-PASS 금지). —
+  assert('구획: 빈 줄 구획 사이 말미 인라인 주석은 구획을 깨지 않는다 → PASS', gwtOf(
+`import { it, expect } from 'vitest';
+it('말미 주석이 있는 테스트', () => {
+  const a = 1;
+
+  const b = f(a); // 계산
+
+  expect(b).toBe(1);
+});`) === 'PASS');
+  assert('구획: 주석 줄은 빈 줄 구획을 위조하지 않는다 → FAIL', gwtOf(
+`import { it, expect } from 'vitest';
+it('주석만 있고 빈 줄 없음', () => {
+  const a = 1;
+  // step 1
+  const b = 2;
+  // step 2
+  const c = a + b;
+  expect(c).toBe(3);
+});`) === 'FAIL');
+
+  // — across-FILES 누수 (round 1): 파일 A의 마커가 파일 B의 계약을 대신 충족하면 안 된다.
+  //   runFull은 파일마다 독립 채점(concat 금지)한다. 게다가 본문 경계가 구조적이라 설령
+  //   두 파일을 concat 해도 각 본문이 따로 잡혀 세탁이 안 된다 — 아래가 그 concat을 못박는다:
+  //   whole-blob 단어 스캔으로 회귀하면 concat이 given+when+then 을 다 보고 PASS 로 새어
+  //   이 assert 가 붉어진다. —
+  const givenOnlyFile =
+`import { it, expect } from 'vitest';
+it('a', () => {
+  // Given
+  const x = 1;
+  expect(x).toBe(1);
+});`;
+  const whenThenFile =
+`import { it, expect } from 'vitest';
+it('b', () => {
+  // When
+  const out = f(1);
+  // Then
+  expect(out).toBe(1);
+});`;
+  assert('across-files: given-only 파일 단독 → FAIL', gwtOf(givenOnlyFile) === 'FAIL');
+  assert('across-files: when/then 파일 단독 → FAIL', gwtOf(whenThenFile) === 'FAIL');
+  assert('across-files: 두 파일을 concat 해도 마커가 세탁되지 않는다 → FAIL',
+    gwtOf(`${givenOnlyFile}\n${whenThenFile}`) === 'FAIL');
 
   // — greppable comptest scorer: GOOD vs BAD —
   const goodComp =
