@@ -120,7 +120,7 @@ cd my-project
 
 Codex 쪽 marketplace/설치 위치는 개인·팀 환경에 따라 다릅니다. 로컬 개발 중에는 이 레포를 Codex local plugin source로 등록한 뒤, 새 Codex thread에서 `harness-team` 및 `harness-*` command-equivalent skills가 노출되는지 확인하세요.
 
-주의: Codex 플러그인은 Claude Code의 `.claude-plugin/plugin.json` `commands[]`를 같은 slash command 목록으로 가져오지 않습니다. Codex의 플러그인 표면은 `skills`, apps, MCP 서버이며, 명시 호출은 `/harness-*`가 아니라 `$harness-aijient-team:harness-apply`처럼 `$` skill invocation을 사용합니다. 대응 관계와 각 wrapper의 정본은 `skills/harness-*` 및 `commands/harness-*.md`에서 확인합니다.
+주의: Codex 플러그인은 Claude Code의 `.claude-plugin/plugin.json` `commands[]`를 같은 slash command 목록으로 가져오지 않습니다. Codex의 플러그인 표면은 `skills`, apps, MCP 서버이며, 명시 호출은 `/harness-*`가 아니라 `$harness-aijient-team:harness-apply`처럼 `$` skill invocation을 사용합니다. 이 레포는 Claude의 `/harness-*` 명령에 대응하는 `skills/harness-*` 래퍼를 제공하고, 각 wrapper는 `commands/harness-*.md`를 SSOT로 읽습니다.
 
 Codex headless L5 검증은 먼저 probe로 auth/JSONL 계약을 확인한 뒤 full run을 실행합니다:
 
@@ -290,7 +290,7 @@ v0.2.x에서 backup dir에 있던 `clone.sh`, `symlink.sh`, `delete.sh`를 프�
 
 ### 디렉토리 구조
 
-task 디렉토리 구조와 파일 계약은 scaffold 되는 `AGENTS.md`의 **작업 프로토콜** 및 **Task Context Card (TCC)** 섹션이 정본입니다. 활성 task 포인터는 `.harness/active.json`에 보관되며, `harness-team context init` / `context check`로 카드를 생성·검사합니다(검사는 카드를 수정하지 않음).
+task 디렉토리 구조와 파일 계약은 scaffold 되는 `AGENTS.md`의 **작업 프로토콜** 및 **Task Context Card (TCC)** 섹션이 정본입니다. `task_summary.md`·`<member>-task.md` 같은 docs 트리 인덱스는 `templates/docs/README.md`(설치 시 `docs/README.md`)가 정본입니다. 활성 task 포인터는 `.harness/active.json`에 보관되며, `harness-team context init` / `context check`로 카드를 생성·검사합니다(검사는 카드를 수정하지 않음).
 
 ### member 식별 규칙
 
@@ -476,7 +476,7 @@ cd ~/work/project-a
 
 ## 설치 결과물
 
-설치되는 파일과 task 계약은 scaffold 되는 `AGENTS.md`의 **작업 프로토콜** 및 `templates/`를 확인합니다. 개인 상태 파일은 `.harness/active.json`에 보관됩니다.
+설치되는 파일과 task 계약은 scaffold 되는 `AGENTS.md`의 **작업 프로토콜** 및 `templates/`를 확인합니다. 개인 상태 파일은 `.harness/active.json`에 보관됩니다. 반면 백업 클론 폴더 경로를 기억하는 `.harness/backup.json`은 팀이 공유하는 설정이므로 commit을 권장합니다.
 
 자동으로 `.gitignore`에 추가되는 항목:
 - `.claude/settings.local.json` (개인 권한 오버라이드)
@@ -550,7 +550,9 @@ node /path/to/plugin/bin/harness-team.mjs doctor
 
 ### 버전 범프 체크리스트
 
-버전을 올릴 때 반드시 **4개 파일** 모두 갱신하고, 로컬 캐시까지 동기화해야 합니다.
+권장 경로는 `harness-team release <minor|patch|major>`입니다(항상 `--dry-run` 먼저) — 매니페스트 버전을 일괄 bump하고 캐시·마켓플레이스·`installed_plugins.json`까지 동기화합니다. 절차는 `MAINTAINING.md`의 **릴리스 절차**가 정본입니다.
+
+아래는 자동화를 쓸 수 없을 때의 수동 절차입니다. 버전을 올릴 때 반드시 **4개 파일** 모두 갱신하고, 로컬 캐시까지 동기화해야 합니다.
 
 ```bash
 VERSION="0.x.0"
