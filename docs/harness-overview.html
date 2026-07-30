@@ -297,7 +297,7 @@
   <!-- COMMANDS -->
   <section id="commands">
     <div class="section-title">Commands</div>
-    <p class="section-sub">17개의 slash command — 설치·백업·유지보수·태스크 관리 + 페르소나(interview·contrarian·simplifier)·릴리스·시뮬레이션(sim)·단위테스트(unittest). <code>backup</code>·<code>session-context</code>는 CLI 전용 서브커맨드(slash 미노출)</p>
+    <p class="section-sub">명령의 현재 목록과 등록 정보는 <code>commands/*.md</code> 및 <code>.claude-plugin/plugin.json</code>에서 확인합니다.</p>
     <div class="table-wrap">
       <table>
         <thead>
@@ -699,24 +699,7 @@
     </div>
     <p class="diagram-label">Task 상태 다이어그램 — create → active(commit loop) → AskUserQuestion → done</p>
 
-    <div class="card-grid" style="margin-top:1.5rem">
-      <div class="card card-accent-blue">
-        <h3>📄 &lt;name&gt;-spec.md</h3>
-        <p>요구사항 문서. 목표, 기능 범위, 설계 접근을 기록한다. Claude와 사용자가 함께 작성.</p>
-      </div>
-      <div class="card card-accent-purple">
-        <h3>✅ &lt;name&gt;-plan.md</h3>
-        <p>구현 체크리스트. 단계별 <code>- [ ]</code> 항목으로 진행 추적. 전체 완료 시 post-commit hook이 done 여부를 Claude에게 알림.</p>
-      </div>
-      <div class="card card-accent-orange">
-        <h3>🤝 &lt;name&gt;-handoff.md</h3>
-        <p>commit마다 post-commit hook이 자동 append. git log·diff stat 기반. 세션 재개 시 컨텍스트 복원에 사용.</p>
-      </div>
-      <div class="card card-accent-green">
-        <h3>📋 &lt;user&gt;-handoff.md</h3>
-        <p>사용자의 세션 포인터. 현재 활성 task와 마지막 커밋 요약. 새 세션 시작 시 CLAUDE.md rule이 이 파일을 먼저 읽도록 강제.</p>
-      </div>
-    </div>
+    <p style="margin-top:1.5rem">task 파일 계약과 Context Card 규약은 scaffold 되는 <code>AGENTS.md</code>의 <strong>작업 프로토콜</strong>에서 확인합니다.</p>
 
     <div style="margin-top:1.5rem">
       <div class="diagram-wrap">
