@@ -528,11 +528,12 @@ my-project/
 │   ├── active.json           # 활성 task 포인터 (gitignored)
 │   └── backup.json           # 형제 백업 클론 폴더 경로 (commit 권장)
 ├── .claude/
-│   ├── settings.json         # permissions + hooks (PreToolUse/PostToolUse, SessionStart task-gate)
+│   ├── settings.json         # permissions + tool lifecycle hooks + SessionStart task-gate
 │   ├── hooks/
 │   │   ├── protect-files.sh        # .env, node_modules 수정 차단
 │   │   ├── auto-format.sh          # 저장 후 Prettier
-│   │   └── pre-commit-check.sh     # 커밋 전 typecheck + test
+│   │   ├── pre-commit-check.sh     # 커밋 전 typecheck + test
+│   │   └── observe-tools.mjs       # 원문 비보존 도구 호출 JSONL 관측
 │   │   # SessionStart task-gate은 별도 파일 없이 settings.json에서 `harness-team session-context` 호출
 │   ├── rules/                # 영역별 코딩 규칙 (navigation, state-mgmt, styling, testing)
 │   └── skills/               # 슬래시 명령 (plan, handoff, verify, new-feature, fix-bug, review)
@@ -543,6 +544,10 @@ my-project/
 자동으로 `.gitignore`에 추가되는 항목:
 - `.claude/settings.local.json` (개인 권한 오버라이드)
 - `.harness/active.json` (개인 활성 task 상태)
+- `.harness/observability/` (로컬 도구 관측 로그와 HMAC 키)
+
+Claude Code 도구 관측은 원문을 보존하지 않는 로컬 JSONL만 `.harness/observability/`에 기록합니다.
+보존 데이터·권한·회전·정리 정책은 [Hooks 레퍼런스](docs/harness-overview.html#hooks)를 참조하세요.
 
 ---
 

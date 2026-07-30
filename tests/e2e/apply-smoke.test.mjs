@@ -14,6 +14,7 @@ const REQUIRED_PATHS = [
   '.claude/hooks/protect-files.sh',
   '.claude/hooks/auto-format.sh',
   '.claude/hooks/pre-commit-check.sh',
+  '.claude/hooks/observe-tools.mjs',
   '.cursor/rules',
   '.opencode/opencode.json',
   '.harness/backup.json',
@@ -32,6 +33,9 @@ for (const stack of STACKS) {
       for (const p of REQUIRED_PATHS) {
         await access(join(sb.dir, p)); // throws → test fails if missing
       }
+
+      const gitignore = await (await import('node:fs/promises')).readFile(join(sb.dir, '.gitignore'), 'utf8');
+      assert.match(gitignore, /^\.harness\/observability\/$/m, 'observability logs must always be gitignored');
 
       const doc = await sb.cli(['doctor', '--json']);
       assert.equal(doc.code, 0, `doctor exit non-zero:\n${doc.stdout}\n${doc.stderr}`);
