@@ -211,6 +211,21 @@ function scanNonCode(src, i) {
   if (c === '/' && startsRegex(src, i)) return skipRegex(src, i);
   return null;
 }
+// A `'…'`/`"…"` literal cannot hold a raw newline in valid JS, so a span that does
+// is proof the scan mis-paired a quote — two bare apostrophes in JSX prose
+// (`Don't` … `It's`) pair into a pseudo-string that swallows real code. Backticks
+// are exempt: templates span newlines legally.
+function hasMisparsedString(src) {
+  for (let i = 0; i < src.length; i++) {
+    const skip = scanNonCode(src, i);
+    if (skip === null) continue;
+    if (skip === -1) break;
+    const q = src[i];
+    if ((q === '"' || q === "'") && src.slice(i + 1, skip).includes('\n')) return true;
+    i = skip;
+  }
+  return false;
+}
 function matchBrace(src, open, limit = src.length) {
   let depth = 0;
   for (let i = open; i < limit; i++) {
@@ -262,7 +277,11 @@ function testBodies(src) {
     const open = findBodyOpen(src, start, limit);
     const end = open === -1 ? -1 : matchBrace(src, open, limit);
     if (end === -1) { unparsed++; return; }
-    bodies.push(src.slice(open + 1, end));
+    const body = src.slice(open + 1, end);
+    // Mis-paired quotes make the body's spans untrustworthy — the mask below would
+    // eat real markers/blank lines — so report it unparsed rather than grade it.
+    if (hasMisparsedString(body)) { unparsed++; return; }
+    bodies.push(body);
   });
   return { bodies, declared: decls.length, unparsed, truncated };
 }
@@ -742,6 +761,29 @@ it('자식을 렌더한다', () => {
 
   expect(el).toBeInTheDocument();
 });`) === 'PASS');
+  // — JSX 산문의 아포스트로피 두 개는 가짜 문자열 스팬으로 짝지어져 그 사이의 마커·빈 줄을
+  //   삼킨다. `'…'` 리터럴은 개행을 담을 수 없으므로 그런 스팬은 오파싱의 증거다 — 채점하면
+  //   PASS/FAIL 어느 쪽도 믿을 수 없으니 못 읽은 본문과 같은 MANUAL 통에 넣는다.
+  //   (옛 원시 텍스트 basis에서는 둘 다 PASS 였다 — 부모 커밋 ad937fe 사본으로 실측.) —
+  assert('parser: JSX 아포스트로피가 주석 마커를 삼키면 채점하지 않는다 → MANUAL', gwtOf(
+`import { it, expect } from 'vitest';
+it('x', () => {
+  // Given
+  render(<p>Don't panic</p>);
+  // When
+  rerender(<p>It's fine</p>);
+  // Then
+  expect(1).toBe(1);
+});`) === 'MANUAL');
+  assert('parser: JSX 아포스트로피가 빈 줄 구획을 삼키면 채점하지 않는다 → MANUAL', gwtOf(
+`import { it, expect } from 'vitest';
+it('y', () => {
+  render(<p>Don't panic</p>);
+
+  rerender(<p>It's fine</p>);
+
+  expect(1).toBe(1);
+});`) === 'MANUAL');
   assert('parser: 본문 없는 테스트가 다음 테스트 본문을 훔치지 않는다 → MANUAL', gwtOf(
 `import { it, expect } from 'vitest';
 it('a', () => expect(x).toBe(1));

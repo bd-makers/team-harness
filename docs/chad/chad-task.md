@@ -28,6 +28,7 @@
 
 
 ## Completed
+- ✅ skilltest-ast-grader
 - ✅ harness-inttest
 - ✅ harness-unittest
 - ✅ update-comparison-html

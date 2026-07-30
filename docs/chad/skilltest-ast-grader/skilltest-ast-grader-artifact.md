@@ -22,8 +22,10 @@ commit #2)의 `skilltest.mjs`는 이미 **구조적 파서**로 태어나 있었
 - 템플릿 리터럴/블록 주석 안의 빈 줄 → 가짜 3구획 → PASS
 
 **수정(basis 제거).** `markersIn`/`regionsIn` 을 `maskNonCode(body)` 위에서 돌린다.
-본문 경계를 잡는 그 토큰화기가 먼저 문자열·템플릿·정규식 스팬을 공백 하나로 치환해
-(내부 개행·마커·빈 줄까지 제거) 콘텐츠가 구획을 위조할 수 없게 만든다. `keepComments`
+본문 경계를 잡는 그 토큰화기가 먼저 문자열·템플릿·정규식 스팬을 **비공백 sentinel 한 글자
+(`MASK='#'`)** 로 치환해(내부 개행·마커·빈 줄까지 제거) 콘텐츠가 구획을 위조할 수 없게
+만든다. sentinel이 공백이 아닌 것은 의도다 — 아래 FIX-B 참고: 공백으로 치우면 마스킹된
+스팬 자체가 빈 줄로 읽혀 새 오판을 만든다. `keepComments`
 옵션으로 `markersIn`은 주석은 보존하고(마커 = 주석이므로), `regionsIn`은 주석까지 지워
 블록 주석 내부 빈 줄도 구획이 아니게 한다.
 
@@ -37,18 +39,28 @@ false-FAIL**(2구획→1구획). 반대로 개행을 살리되 공백으로 치�
 코드로 살린다(주석 줄은 콘텐츠지 구획 구분선이 아니다). 3안(공백-개행먹기 / 공백-개행살리기
 / 비공백-개행살리기)을 배터리로 비교해 마지막만 legit·false-PASS 양쪽 0 fault임을 확인.
 
-변경 크기: 헬퍼 1개(`maskNonCode`) + 호출 지점 2개(`markerLineWords`, `regionsIn`) +
-신규 selftest 9개. 토큰화기(scanNonCode/matchBrace/findBodyOpen/findDeclarations)는
+**오파싱 본문은 채점하지 않는다(FIX-C, 리뷰 라운드 1).** 마스킹은 스팬 판정을 신뢰한다 —
+스팬이 틀리면 진짜 마커·빈 줄이 마스킹돼 **false-FAIL**이 난다. JSX 산문의 아포스트로피
+두 개(`Don't` … `It's`)가 가짜 문자열 스팬으로 짝지어지는 경우가 그렇다(실측: OLD PASS →
+NEW FAIL). `'…'`/`"…"` 리터럴은 개행을 담을 수 없으므로 **개행을 넘는 따옴표 스팬 = 오파싱의
+증거**다. `hasMisparsedString(body)`가 이를 잡아 `testBodies`가 해당 본문을 `unparsed`로
+세고, `scoreGWT`는 못 읽은 본문과 동일하게 **MANUAL**로 보낸다(추측 금지 계약과 동일한 통).
+백틱은 제외 — 템플릿은 개행을 합법적으로 담는다. 토큰화기(`skipString`)는 손대지 않았다.
+
+변경 크기: 헬퍼 2개(`maskNonCode`, `hasMisparsedString`) + 호출 지점 3개(`markerLineWords`,
+`regionsIn`, `testBodies`) + 신규 selftest 11개.
+토큰화기(scanNonCode/matchBrace/findBodyOpen/findDeclarations)는
 정확하고 검증돼 있어 **손대지 않았다**(advisor 권고).
 
 **검증.**
-- `node tests/sim/skilltest.mjs selftest` → **59/59 그린**(기존 50 불변 + 신규 9).
+- `node tests/sim/skilltest.mjs selftest` → **61/61 그린**(기존 50 불변 + 신규 11).
 - 기존 50개 중 하나도 뒤집히지 않음(criterion 5). scratchpad에 OLD-vs-NEW 배터리로
   legit 13종·forbid 6종 불변, adversarial 4종 false-PASS 교정을 사전 확인; 별도 배터리로
   line-comment 3안을 비교해 FIX-B가 유일하게 무결함을 확인.
 - 회귀 테스트가 **옛(원시 텍스트) basis에서 붉어짐**을 실증: mask seam을 원시 텍스트로
   되돌린 복사본에서 round-4 3개 assert(템플릿 마커·템플릿 빈 줄·블록 주석 빈 줄)가
-  ❌(56/59), mask 복원 시 그린. line-comment 2개 guard는 원시 basis에서도 그린(그들은
+  ❌(측정 당시 59개 기준 56/59), mask 복원 시 그린. FIX-C 회귀 2개도 부모 커밋
+  ad937fe 사본에서 OLD PASS → 현재 MANUAL 임을 실측. line-comment 2개 guard는 원시 basis에서도 그린(그들은
   raw→structural 전환이 아니라 **mask 구현 자체**를 지킨다 — 공백 sentinel 안이면 붉어진다).
 - `npm run test:unit` → 128 pass / 0 fail (레포 스위트 무영향; skilltest는 `npm test`에
   포함되지 않는 수동 L5 harness라 selftest가 권위 있는 검증).
@@ -66,6 +78,8 @@ false-FAIL**(2구획→1구획). 반대로 개행을 살리되 공백으로 치�
    `findBodyOpen`(`=>` 또는 `function(...)` 뒤의 `{`) + `matchBrace`(scanNonCode 인지
    중괄호 짝)로 경계를 확정한다. 본문 훔치기(round 3)·describe 닫는 괄호 삼키기가
    구조적으로 불가능하고, 못 읽으면 `unparsed`로 세어 MANUAL 처리(추측 금지).
+   경계를 잡은 뒤 `hasMisparsedString(body)`로 **스팬 판정 자체의 신뢰성**도 검사한다 —
+   개행을 넘는 `'…'`/`"…"` 스팬은 따옴표 짝이 어긋났다는 뜻이므로 그 본문도 `unparsed`.
 3. **`scoreGWT(src)`** — 본문마다 `markersIn`(주석 마커가 ≥2줄에 흩어져 given·when·then
    또는 arrange·act·assert를 모두 담음) 또는 `regionsIn`(빈 줄 구획 ≥2). **이제 둘 다
    `maskNonCode(body)` 위에서 돈다** — 비코드 스팬을 비공백 sentinel(`#`)로 접어(line
@@ -100,6 +114,20 @@ GWT 3구획 판정만 de-base 했다(브리프가 지목한 재발 클래스). �
   "silently widen 금지"를 지시했다. 재발 클래스(3구획 false-PASS) 밖이라 **이 태스크에서
   손대지 않고 콜아웃**한다. 캡틴이 원하면 동일한 `maskNonCode`로 확장 가능하며 legit
   테스트를 깨지 않는다(masking 후에도 코드상의 실제 호출은 그대로 잡힘).
+
+## 오파싱 잔여 (범위 밖 — 콜아웃)
+
+`hasMisparsedString`은 **본문 범위**의 사후 탐지다. 근본 수정은 `skipString`이 백틱이
+아닌 따옴표에서 개행을 만나면 멈추게 하는 한 줄이지만, 토큰화기는 이 태스크에서
+**의도적으로 불가침**(브리프·advisor·캡틴 3중 지시)이라 택하지 않았다. 그 결과 남는 것:
+
+- **본문 밖 오파싱** — 가짜 따옴표 스팬이 `it(` 선언 자체를 삼키면 본문 검사에 닿지 않는다.
+  다만 그 경우 짝이 남지 않아 `skipString`이 -1을 반환하고, `findDeclarations`가
+  `truncated`로, `matchBrace`가 `end === -1`로 각각 MANUAL 경로에 태운다 —
+  즉 조용한 PASS/FAIL이 아니라 이미 수기 확인으로 빠진다. 각주지 구멍은 아니다.
+- **정상 테스트의 MANUAL 승격(감수한 비용)** — 짝수 개의 맨 아포스트로피가 든 JSX 산문은
+  실제로 옳게 채점되던 경우에도 MANUAL로 간다. "못 읽으면 추측 금지" 계약상
+  false-PASS/false-FAIL보다 나은 실패 방향이라 좁히지 않았다.
 
 ## sibling harness 점검 (브리프 요구)
 
@@ -142,6 +170,21 @@ GWT 3구획 판정만 de-base 했다(브리프가 지목한 재발 클래스). �
   1 매핑 문구가 across-files gap을 "메웠다"로 오독될 수 있음 → 세 누수는 이미 닫혀 있었고
   신규 asserts는 round-1 basis 회귀 가드임을 명확히 재서술. (3) `hasSnapshot` false-FAIL
   콜아웃은 캡틴용으로 유효 — 콜아웃 유지가 옳다는 확인.
+- **2026-07-30 · 파이프라인 코드 리뷰 라운드 1** — 3개 발견, 전부 조치.
+  발견/조치: (1) **warning · criterion 5 위반**: `skipString`이 개행에서 멈추지 않아 JSX
+  산문의 아포스트로피 두 개(`Don't` … `It's`)가 가짜 문자열 스팬으로 짝지어지고,
+  그 사이의 `// When`이 `maskNonCode`에 먹혀 정상 테스트가 OLD PASS → NEW FAIL로
+  뒤집힘. 실측 확인: 베이스 커밋 사본 `scoreGWT` = PASS, HEAD = FAIL(`1/1 테스트에 3구획
+  없음`). → 토큰화기 불가침을 지키는 경로로 수정 — `hasMisparsedString`(개행을 넘는
+  `'…'`/`"…"` 스팬 = 오파싱)을 `testBodies`에 걸어 해당 본문을 `unparsed` → **MANUAL**로
+  보낸다(FIX-C). 회귀 selftest 2개 추가(주석 마커 삼킴 · 빈 줄 구획 삼킴, 둘 다 옛 basis
+  에서는 PASS). 백틱은 제외 확인(기존 멀티라인 템플릿 assert 그린 유지). 근본 한 줄
+  (`skipString` 개행 정지)은 3중 불가침 지시라 택하지 않고 "오파싱 잔여" 섹션에 콜아웃.
+  (2) **info**: 본 파일 "수정(basis 제거)" 문단이 sentinel을 "공백 하나"로 서술해 10줄
+  아래 FIX-B(비공백 `MASK='#'`)와 모순 → 비공백 sentinel로 재서술. line 130의 Reviews
+  항목은 *기각된* 첫 구현을 서술하므로 사료로서 정확 — 그대로 둠. (3) **info**: task
+  SSOT 4파일 중 spec·plan·handoff 누락 + 두 레지스트리 미등록 → 형제 24개 태스크 형태에
+  맞춰 생성·등록(`docs/chad/` 범위 한정, AGENTS.md/CLAUDE.md 무수정).
 
 ## Learnings
 
@@ -152,6 +195,10 @@ GWT 3구획 판정만 de-base 했다(브리프가 지목한 재발 클래스). �
   assert가 ❌ 나는 것을 확인해야 "옛 것에 대한 회귀"임이 증명된다. 그냥 그린은 증거가 아니다.
 - **criterion 5는 "옳던 곳"만 보호한다.** 옛 grader의 PASS가 애초에 가짜(문자열 안 구획)면
   NEW-FAIL은 위반이 아니라 교정 — 단, 놀람으로 튀어나오지 않게 문서화한다.
+- **마스킹은 스팬 판정을 신뢰한다 — 그래서 오파싱을 감지해야 한다.** 원시 텍스트 basis는
+  틀린 스팬에 둔감했지만, 마스킹은 틀린 스팬을 곧바로 false-FAIL로 증폭한다. 토큰화기를
+  못 고치는 상황이라면 최소한 **불가능한 모양**(개행을 넘는 `'…'` 스팬)을 탐지해 채점을
+  거부해야 한다 — 채점 거부(MANUAL)는 오답보다 언제나 낫다.
 - **범위 규율.** presence 체크와 sibling harness는 같은 뿌리를 공유할 수 있으나, 재발
   클래스 밖이면 조용히 넓히지 말고 콜아웃한다(브리프·advisor 공통 지시).
 - **마스킹은 무엇으로 치우느냐가 정답을 가른다.** 비코드 스팬을 공백으로 치우면 그 자체가
