@@ -120,7 +120,7 @@ cd my-project
 
 Codex 쪽 marketplace/설치 위치는 개인·팀 환경에 따라 다릅니다. 로컬 개발 중에는 이 레포를 Codex local plugin source로 등록한 뒤, 새 Codex thread에서 `harness-team` 및 `harness-*` command-equivalent skills가 노출되는지 확인하세요.
 
-주의: Codex 플러그인은 Claude Code의 `.claude-plugin/plugin.json` `commands[]`를 같은 slash command 목록으로 가져오지 않습니다. Codex의 플러그인 표면은 `skills`, apps, MCP 서버이며, 명시 호출은 `/harness-*`가 아니라 `$harness-aijient-team:harness-apply`처럼 `$` skill invocation을 사용합니다. 이 레포는 Claude의 `/harness-*` 명령에 대응하는 `skills/harness-*` 래퍼를 제공하고, 각 wrapper는 `commands/harness-*.md`를 SSOT로 읽습니다.
+주의: Codex 플러그인은 Claude Code의 `.claude-plugin/plugin.json` `commands[]`를 같은 slash command 목록으로 가져오지 않습니다. Codex의 플러그인 표면은 `skills`, apps, MCP 서버이며, 명시 호출은 `/harness-*`가 아니라 `$harness-aijient-team:harness-apply`처럼 `$` skill invocation을 사용합니다. 이 레포는 Claude의 `/harness-*` 명령에 대응하는 `skills/harness-*` 래퍼를 제공하고, 각 wrapper는 `commands/harness-*.md`를 SSOT로 읽습니다. 단, `harness-sim`은 방향이 반대로 — 커맨드가 얇은 래퍼이고 절차 SSOT는 스킬 본문입니다.
 
 Codex headless L5 검증은 먼저 probe로 auth/JSONL 계약을 확인한 뒤 full run을 실행합니다:
 
@@ -149,6 +149,8 @@ harness-team --help
 ---
 
 ## 명령어 레퍼런스
+
+아래는 전체 목록이 아니라 자주 쓰는 명령만 다루는 부분 안내입니다 — 등록된 전체 명령은 `commands/*.md` 및 `.claude-plugin/plugin.json`이 정본입니다.
 
 ### `/harness-init` — 신규 scaffold
 
