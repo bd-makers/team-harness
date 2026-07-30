@@ -9,6 +9,7 @@ import { OBSERVABILITY_VERSION, RETENTION_DAYS, observeToolEvent } from '../temp
 const TOKEN = 'sk-test-secret-value-must-never-be-recorded';
 const ABSOLUTE_PATH = '/Users/secret-person/private/project/.env';
 const PROMPT = 'private prompt body must never be recorded';
+const MAX_CAPTURED_BYTES = 1024 * 1024;
 
 async function fixture() {
   const dir = await mkdtemp(join(tmpdir(), 'harness-observe-'));
@@ -98,6 +99,30 @@ test('observeToolEvent: extracts numeric usage only, never model text or output 
     assert.equal(result.record.signals.usage_present, true);
     const output = await readFile(result.file, 'utf8');
     assert.doesNotMatch(output, /private-model-name|private prompt|sk-test/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('observeToolEvent: exact 1 MiB payloads are not marked as capped', async () => {
+  const dir = await fixture();
+  try {
+    const toolInput = { content: 'a'.repeat(MAX_CAPTURED_BYTES - Buffer.byteLength(JSON.stringify({ content: '' }), 'utf8')) };
+    assert.equal(Buffer.byteLength(JSON.stringify(toolInput), 'utf8'), MAX_CAPTURED_BYTES);
+
+    const result = await observeToolEvent({ ...payload('PostToolUse'), tool_input: toolInput }, { projectDir: dir });
+    assert.equal(result.record.input_bytes, MAX_CAPTURED_BYTES);
+    assert.equal(result.record.input_bytes_capped, false);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('observeToolEvent: oversized payloads are capped without recording their full size', async () => {
+  const dir = await fixture();
+  try {
+    const toolResponse = { content: 'a'.repeat(MAX_CAPTURED_BYTES) };
+    assert.ok(Buffer.byteLength(JSON.stringify(toolResponse), 'utf8') > MAX_CAPTURED_BYTES);
+
+    const result = await observeToolEvent({ ...payload('PostToolUse'), tool_response: toolResponse }, { projectDir: dir });
+    assert.equal(result.record.response_bytes, MAX_CAPTURED_BYTES);
+    assert.equal(result.record.response_bytes_capped, true);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

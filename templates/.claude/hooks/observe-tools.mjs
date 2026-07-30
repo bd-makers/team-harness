@@ -23,12 +23,13 @@ function safeError() {
   process.stderr.write('team-harness observability: logging skipped\n');
 }
 
-function byteLength(value) {
-  if (value === undefined) return null;
+function byteMetadata(value) {
+  if (value === undefined) return { bytes: null, capped: false };
   try {
-    return Math.min(Buffer.byteLength(JSON.stringify(value), 'utf8'), 1024 * 1024);
+    const bytes = Buffer.byteLength(JSON.stringify(value), 'utf8');
+    return { bytes: Math.min(bytes, 1024 * 1024), capped: bytes > 1024 * 1024 };
   } catch {
-    return null;
+    return { bytes: null, capped: false };
   }
 }
 
@@ -149,6 +150,8 @@ function buildRecord(input, key, task) {
   }
   const response = input.tool_response;
   const usage = numericUsage(response?.usage);
+  const inputSize = byteMetadata(input.tool_input);
+  const responseSize = byteMetadata(response);
   const record = {
     v: OBSERVABILITY_VERSION,
     recorded_at: new Date().toISOString(),
@@ -160,8 +163,10 @@ function buildRecord(input, key, task) {
     call_ref: hmacRef(key, 'tool-use', input.tool_use_id),
     tool_ref: hmacRef(key, 'tool', input.tool_name),
     tool_category: toolCategory(input.tool_name),
-    input_bytes: byteLength(input.tool_input),
-    response_bytes: byteLength(response),
+    input_bytes: inputSize.bytes,
+    input_bytes_capped: inputSize.capped,
+    response_bytes: responseSize.bytes,
+    response_bytes_capped: responseSize.capped,
     duration_ms: Number.isSafeInteger(input.duration_ms) && input.duration_ms >= 0 ? input.duration_ms : null,
     signals: {
       interrupted: input.is_interrupt === true || input.tool_response?.interrupted === true,
