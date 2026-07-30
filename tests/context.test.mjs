@@ -41,15 +41,19 @@ function captureLogs() {
   return { lines, restore: () => { console.log = original; } };
 }
 
+function filledCapsule(index) {
+  return `### F-${String(index).padStart(3, '0')}\n- Signal: reproducible failure ${index}`;
+}
+
 function cardWithEveryFailure() {
   const capsules = Array.from(
     { length: CONTEXT_MAX_FAILURE_CAPSULES + 1 },
-    (_, index) => `### F-${String(index + 1).padStart(3, '0')}`,
+    (_, index) => filledCapsule(index + 1),
   );
   return [
     taskContextTemplate('demo').replace('## Resume checklist', '## Missing resume heading'),
-    ...capsules,
     ...Array.from({ length: CONTEXT_MAX_NONBLANK_LINES + 1 }, () => 'x'.repeat(80)),
+    ...capsules,
   ].join('\n');
 }
 
@@ -58,7 +62,25 @@ test('validateContextCard: verbatim template is valid and within both budgets', 
   assert.equal(result.valid, true);
   assert.ok(result.metrics.bytes <= CONTEXT_MAX_BYTES);
   assert.ok(result.metrics.nonblankLines <= CONTEXT_MAX_NONBLANK_LINES);
-  assert.equal(result.metrics.failureCapsules, 1);
+  assert.equal(result.metrics.failureCapsules, 0);
+});
+
+test('validateContextCard: empty capsules never consume the unresolved budget', () => {
+  const template = taskContextTemplate('demo');
+  const filled = template.replace('### F-001\n- Signal:', `${filledCapsule(1)}`);
+
+  const one = validateContextCard(filled, 'demo');
+  assert.equal(one.valid, true);
+  assert.equal(one.metrics.failureCapsules, 1);
+
+  const withStub = validateContextCard(`${filled}\n### F-002\n- Signal:\n`, 'demo');
+  assert.equal(withStub.valid, true);
+  assert.equal(withStub.metrics.failureCapsules, 1);
+
+  const extras = Array.from({ length: CONTEXT_MAX_FAILURE_CAPSULES }, (_, i) => filledCapsule(i + 2));
+  const overBudget = validateContextCard([filled, ...extras].join('\n'), 'demo');
+  assert.equal(overBudget.metrics.failureCapsules, CONTEXT_MAX_FAILURE_CAPSULES + 1);
+  assert.ok(overBudget.failures.some(failure => failure.code === 'failure-capsules'));
 });
 
 test('validateContextCard: size, line, heading, and capsule failures are deterministic', () => {
@@ -73,7 +95,7 @@ test('validateContextCard: size, line, heading, and capsule failures are determi
   ]);
   assert.ok(first.metrics.bytes > CONTEXT_MAX_BYTES);
   assert.ok(first.metrics.nonblankLines > CONTEXT_MAX_NONBLANK_LINES);
-  assert.equal(first.metrics.failureCapsules, CONTEXT_MAX_FAILURE_CAPSULES + 2);
+  assert.equal(first.metrics.failureCapsules, CONTEXT_MAX_FAILURE_CAPSULES + 1);
 });
 
 test('context init creates only a missing active-task card and then becomes a no-op', async () => {
@@ -126,6 +148,26 @@ test('context check reports a missing card with the concrete init action', async
     const result = await runContextCheck({ targetDir: dir });
     assert.equal(result.status, 'missing');
     assert.ok(cap.lines.includes('next-action: harness-team context init'));
+    assert.equal(process.exitCode, 1);
+  } finally {
+    cap.restore();
+    process.exitCode = previousExitCode;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('context check diagnoses an unreadable card path instead of throwing', async () => {
+  const { dir, path } = await fixture();
+  await mkdir(path, { recursive: true });
+  const cap = captureLogs();
+  const previousExitCode = process.exitCode;
+  try {
+    const result = await runContextCheck({ targetDir: dir });
+    assert.equal(result.status, 'unreadable');
+    assert.ok(cap.lines.includes('context: unreadable'));
+    assert.ok(cap.lines.includes(`path: ${path}`));
+    assert.ok(cap.lines.some(line => line.startsWith('failure: unreadable |')));
+    assert.ok(cap.lines.some(line => line.startsWith('next-action:')));
     assert.equal(process.exitCode, 1);
   } finally {
     cap.restore();
