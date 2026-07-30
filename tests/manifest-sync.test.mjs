@@ -1,8 +1,7 @@
-// Guards the 4-file command invariant (spec Ontology "4-파일 동기화"):
-// each command must line up across commands/<name>.md, .claude-plugin/plugin.json,
-// the README command table, and — for commands that wrap a CLI subcommand —
-// the bin router. A mismatch here is a release bug (a command that installs but
-// doesn't route, or is undocumented), so we fail CI instead of shipping drift.
+// Guards the command invariant (spec Ontology "4-파일 동기화"):
+// commands/<name>.md and .claude-plugin/plugin.json must stay in sync; README
+// points to those canonical sources, and CLI-wrapping commands must route in bin.
+// A mismatch here is a release bug, so we fail CI instead of shipping drift.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
@@ -103,19 +102,11 @@ test('manifest-sync: commands/*.md ⟺ plugin.json commands', async () => {
   assert.deepEqual(sorted(manifest), sorted(files));
 });
 
-// commands/<name>.md ⟺ README command-table rows (| `/harness-x` | ... |).
-test('manifest-sync: commands/*.md ⟺ README command-table rows', async () => {
-  const files = await commandNames();
+// README is intentionally a pointer, not a copy of the command inventory.
+test('manifest-sync: README points to command SSOTs', async () => {
   const readme = await readFile(join(ROOT, 'README.md'), 'utf8');
-  const rows = new Set(
-    [...readme.matchAll(/\|\s*`\/(harness-[a-z-]+)`/g)].map(m => m[1]),
-  );
-  for (const name of files) {
-    assert.ok(rows.has(name), `commands/${name}.md exists but has no README command-table row`);
-  }
-  for (const name of rows) {
-    assert.ok(files.has(name), `README documents /${name} but commands/${name}.md is missing`);
-  }
+  assert.match(readme, /설치되는 슬래시 명령과 설명은 `commands\/\*\.md` 및 `\.claude-plugin\/plugin\.json`에서 확인합니다\./);
+  assert.doesNotMatch(readme, /설치 후 다음 슬래시 명령 사용 가능:/);
 });
 
 // Every CLI subcommand a command wraps must exist in the bin router. One-directional:
