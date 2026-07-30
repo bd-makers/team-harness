@@ -84,8 +84,7 @@ cd my-project
 
 # 3. 첫 작업 시작
 /harness-task user-auth
-# → docs/<your-name>/user-auth/{user-auth-spec.md, user-auth-plan.md, user-auth-handoff.md,
-#     user-auth-artifact.md} (SSOT 4종) + user-auth-context.md (Context Card) 생성
+# → task 파일 계약은 AGENTS.md의 작업 프로토콜 및 templates/docs/README.md 참조
 # → .harness/active.json이 이 task를 가리킴
 
 # 4. 세션 종료 전
@@ -108,29 +107,7 @@ cd my-project
 /plugin install harness-aijient-team
 ```
 
-설치 후 다음 슬래시 명령 사용 가능:
-
-| 명령 | 용도 |
-|---|---|
-| `/harness-init` | 신규 프로젝트 scaffold |
-| `/harness-apply` | 기존 프로젝트에 비파괴 적용 |
-| `/harness-sync` | 내부 symlink/mirror 재동기화 |
-| `/harness-doctor` | 무결성 점검 |
-| `/harness-task` | task 관리 (task/list/done/handoff) |
-| `/harness-clone` | project → backup dir 동기화 |
-| `/harness-symlink` | backup dir → project symlink 생성 |
-| `/harness-delete` | project에서 harness symlink/파일 제거 |
-| `/harness-migrate` | v0.2.x 스크립트 → v0.3+ 위치 이전 |
-| `/harness-upgrade` | v0.3.x 실제 파일 → v0.4+ symlink 원스텝 전환 |
-| `/harness-interview` | 활성 task의 spec.md를 소크라테스식 질문으로 검증해 숨겨진 가정 드러냄 |
-| `/harness-contrarian` | 활성 task의 spec.md / plan.md 가정에 전면 의문 제기 |
-| `/harness-simplifier` | 활성 task의 plan.md에서 제거 가능한 단계·추상화 탐지 |
-| `/harness-retro` | 활성 task의 artifact.md에 학습/교정 내용 append (자기개선 루프) |
-| `/harness-release` | Claude/Codex 매니페스트 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화 (항상 `--dry-run` 먼저) |
-| `/harness-sim` | playground 3-스택에서 설치된 하네스를 굴려 L5 시뮬레이션 + 날짜 리포트 |
-| `/harness-unittest` | JS/TS/React/RN에 Khorikov 원칙 기반 단위테스트 작성 (스택 감지 → GWT 강제 → 커버리지 → 검증) |
-| `/harness-comptest` | React/RN 컴포넌트·화면·UI 플로우에 Testing Trophy 통합 층 테스트 작성 (스택 감지 → 사용자 관점 검증 → 커버리지 → 검증) |
-| `/harness-inttest` | API 핸들러·DB·캐시·아웃바운드 HTTP 등 프로세스 경계 코드에 Khorikov Part III 통합 테스트 작성 (스택 감지 → managed/unmanaged 구분 → 커버리지 → 검증) |
+설치되는 슬래시 명령과 설명은 `commands/*.md` 및 `.claude-plugin/plugin.json`에서 확인합니다.
 
 ### 방법 B: Codex 플러그인
 
@@ -142,7 +119,7 @@ cd my-project
 
 Codex 쪽 marketplace/설치 위치는 개인·팀 환경에 따라 다릅니다. 로컬 개발 중에는 이 레포를 Codex local plugin source로 등록한 뒤, 새 Codex thread에서 `harness-team` 및 `harness-*` command-equivalent skills가 노출되는지 확인하세요.
 
-주의: Codex 플러그인은 Claude Code의 `.claude-plugin/plugin.json` `commands[]`를 같은 slash command 목록으로 가져오지 않습니다. Codex의 플러그인 표면은 `skills`, apps, MCP 서버이며, 명시 호출은 `/harness-*`가 아니라 `$harness-aijient-team:harness-apply`처럼 `$` skill invocation을 사용합니다. 이 레포는 Claude의 17개 `/harness-*` 명령과 대응되는 `skills/harness-*` 래퍼를 제공하고, 각 wrapper는 기존 `commands/harness-*.md`를 SSOT로 읽습니다.
+주의: Codex 플러그인은 Claude Code의 `.claude-plugin/plugin.json` `commands[]`를 같은 slash command 목록으로 가져오지 않습니다. Codex의 플러그인 표면은 `skills`, apps, MCP 서버이며, 명시 호출은 `/harness-*`가 아니라 `$harness-aijient-team:harness-apply`처럼 `$` skill invocation을 사용합니다. 이 레포는 Claude의 `/harness-*` 명령에 대응하는 `skills/harness-*` 래퍼를 제공하고, 각 wrapper는 `commands/harness-*.md`를 SSOT로 읽습니다. 단, `harness-sim`은 방향이 반대로 — 커맨드가 얇은 래퍼이고 절차 SSOT는 스킬 본문입니다.
 
 Codex headless L5 검증은 먼저 probe로 auth/JSONL 계약을 확인한 뒤 full run을 실행합니다:
 
@@ -171,6 +148,8 @@ harness-team --help
 ---
 
 ## 명령어 레퍼런스
+
+아래는 전체 목록이 아니라 자주 쓰는 명령만 다루는 부분 안내입니다 — 등록된 전체 명령은 `commands/*.md` 및 `.claude-plugin/plugin.json`이 정본입니다.
 
 ### `/harness-init` — 신규 scaffold
 
@@ -312,24 +291,7 @@ v0.2.x에서 backup dir에 있던 `clone.sh`, `symlink.sh`, `delete.sh`를 프�
 
 ### 디렉토리 구조
 
-```
-docs/
-├── task_summary.md                # 전체 task 요약 (User | Task | Status | Created)
-└── <member>/                      # git config user.name → $USER → --member
-    ├── <member>-task.md           # 이 멤버의 Active / Completed 인덱스
-    └── <task-name>/
-        ├── <task-name>-spec.md     # 요구사항 / 설계 (사람이 먼저 작성)
-        ├── <task-name>-plan.md     # 단계별 체크리스트
-        ├── <task-name>-handoff.md  # 세션 인수인계 (post-commit hook으로 갱신)
-        ├── <task-name>-artifact.md # 실행 결과 / 학습 (done·retro 시 append)
-        └── <task-name>-context.md  # Context Card — 현재 working set (비-SSOT)
-```
-
-활성 task 포인터: `.harness/active.json` (gitignored).
-
-위 네 개(spec·plan·handoff·artifact)가 task의 SSOT이고, Context Card는 그것들에서 파생된
-현재 working set입니다. 카드 규약과 예산은 scaffold 되는 `AGENTS.md`의 **Task Context Card (TCC)**
-섹션이 정본이며, `harness-team context init` / `context check`로 생성·검사합니다(검사는 카드를 수정하지 않음).
+task 디렉토리 구조와 파일 계약은 scaffold 되는 `AGENTS.md`의 **작업 프로토콜** 및 **Task Context Card (TCC)** 섹션이 정본입니다. `task_summary.md`·`<member>-task.md` 같은 docs 트리 인덱스는 `templates/docs/README.md`(설치 시 `docs/README.md`)가 정본입니다. 활성 task 포인터는 `.harness/active.json`에 보관되며, `harness-team context init` / `context check`로 카드를 생성·검사합니다(검사는 카드를 수정하지 않음).
 
 ### member 식별 규칙
 
@@ -515,31 +477,7 @@ cd ~/work/project-a
 
 ## 설치 결과물
 
-```
-my-project/
-├── AGENTS.md                 # 공유 코어 SSOT — principles/stack/roles/protocol (오픈 표준, 실파일)
-├── CLAUDE.md                 # @AGENTS.md import + Claude 전용 (workflow 섹션)
-├── GEMINI.md                 # @AGENTS.md import + Gemini 리뷰어 지침 (reviewer 섹션)
-├── docs/
-│   ├── README.md
-│   └── <member>/<name>/{<name>-spec.md, <name>-plan.md, <name>-handoff.md,
-│                        <name>-artifact.md}  + <name>-context.md (Context Card)
-├── .harness/
-│   ├── active.json           # 활성 task 포인터 (gitignored)
-│   └── backup.json           # 형제 백업 클론 폴더 경로 (commit 권장)
-├── .claude/
-│   ├── settings.json         # permissions + tool lifecycle hooks + SessionStart task-gate
-│   ├── hooks/
-│   │   ├── protect-files.sh        # .env, node_modules 수정 차단
-│   │   ├── auto-format.sh          # 저장 후 Prettier
-│   │   ├── pre-commit-check.sh     # 커밋 전 typecheck + test
-│   │   └── observe-tools.mjs       # 원문 비보존 도구 호출 JSONL 관측
-│   │   # SessionStart task-gate은 별도 파일 없이 settings.json에서 `harness-team session-context` 호출
-│   ├── rules/                # 영역별 코딩 규칙 (navigation, state-mgmt, styling, testing)
-│   └── skills/               # 슬래시 명령 (plan, handoff, verify, new-feature, fix-bug, review)
-├── .cursor/rules/*.mdc       # .claude/rules에서 자동 미러링
-└── .opencode/opencode.json   # .claude/skills를 참조 (drift 없음)
-```
+설치되는 파일과 task 계약은 scaffold 되는 `AGENTS.md`의 **작업 프로토콜** 및 `templates/`를 확인합니다. 개인 상태 파일은 `.harness/active.json`에 보관됩니다. 반면 백업 클론 폴더 경로를 기억하는 `.harness/backup.json`은 팀이 공유하는 설정이므로 commit을 권장합니다.
 
 자동으로 `.gitignore`에 추가되는 항목:
 - `.claude/settings.local.json` (개인 권한 오버라이드)
@@ -609,53 +547,13 @@ node /path/to/plugin/bin/harness-team.mjs doctor
 
 ### 저장소 레이아웃
 
-```
-harness-aijient-team-plugin/
-├── .claude-plugin/
-│   ├── plugin.json              # Claude Code 플러그인 메타 (버전 포함)
-│   └── marketplace.json         # 마켓 등록 (버전 포함 — 범프 시 반드시 갱신)
-├── .codex-plugin/
-│   └── plugin.json              # Codex 플러그인 메타 (버전 포함)
-├── bin/harness-team.mjs         # CLI 엔트리
-├── commands/                    # 슬래시 명령 래퍼 (CLI 호출)
-│   └── harness-{init,apply,sync,doctor,task,
-│           clone,symlink,delete,migrate,upgrade}.md
-├── skills/
-│   ├── harness-team/            # Codex 진입 skill
-│   └── harness-sim/             # L5 시뮬레이션 skill
-├── src/
-│   ├── backup-dir.mjs           # backup dir 탐색 (opts override + auto-detect)
-│   ├── detect-stack.mjs         # 스택 탐지
-│   ├── render.mjs               # 템플릿 치환
-│   ├── merge.mjs                # 비파괴 섹션 병합 + JSON deep-merge
-│   ├── symlink.mjs              # 크로스플랫폼 symlink
-│   ├── member.mjs               # git config user.name 감지
-│   ├── git-hooks.mjs            # post-commit hook 설치
-│   ├── user-config.mjs          # username 영속 저장
-│   ├── fsx.mjs, prompt.mjs      # 유틸
-│   ├── harness.mjs              # init/apply 공통 오케스트레이션
-│   └── commands/
-│       ├── init.mjs, apply.mjs, sync.mjs, doctor.mjs, task.mjs
-│       ├── backup.mjs           # backup dir 이동 + symlink 교체 (upgrade 내부용)
-│       ├── clone.mjs            # project → backup 동기화
-│       ├── symlink.mjs          # backup → project symlink
-│       ├── delete.mjs           # symlink/실제파일 제거 (--include-real)
-│       ├── migrate.mjs          # v0.2.x 스크립트 이전
-│       └── upgrade.mjs          # v0.3.x → v0.4+ 원스텝 전환
-├── tests/
-│   ├── backup-dir.test.mjs
-│   └── delete.test.mjs
-└── templates/                   # 프로젝트에 복사되는 원본
-    ├── CLAUDE.md.hbs
-    ├── clone.sh, symlink.sh, delete.sh
-    ├── .claude/{settings.json, hooks, rules, skills}
-    ├── .opencode/opencode.json
-    └── docs/README.md
-```
+현재 파일 목록은 저장소 트리가 정본입니다. 명령 등록은 `commands/` 및 `.claude-plugin/plugin.json`, 구현은 `src/`, 설치 산출물은 `templates/`에서 확인합니다.
 
 ### 버전 범프 체크리스트
 
-버전을 올릴 때 반드시 **4개 파일** 모두 갱신하고, 로컬 캐시까지 동기화해야 합니다.
+권장 경로는 `harness-team release <minor|patch|major>`입니다(항상 `--dry-run` 먼저) — 매니페스트 버전을 일괄 bump하고 캐시·마켓플레이스·`installed_plugins.json`까지 동기화합니다. 절차는 `MAINTAINING.md`의 **릴리스 절차**가 정본입니다.
+
+아래는 자동화를 쓸 수 없을 때의 수동 절차입니다. 버전을 올릴 때 반드시 **4개 파일** 모두 갱신하고, 로컬 캐시까지 동기화해야 합니다.
 
 ```bash
 VERSION="0.x.0"
