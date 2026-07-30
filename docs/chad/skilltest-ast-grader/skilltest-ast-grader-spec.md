@@ -23,7 +23,9 @@ laundering"으로 명명하고 라운드 4를 고치지 말고 basis를 없애�
 
 수정: 같은 토큰화기를 재사용하는 `maskNonCode(body)` 헬퍼를 두고 두 판정을 그 위에서 돌린다.
 토큰화기 자체(`scanNonCode`/`matchBrace`/`findBodyOpen`/`findDeclarations`)는 이미 정확하고
-검증돼 있으므로 **손대지 않는다**(advisor 권고). 변경은 헬퍼 + 호출 지점 2곳 + selftest.
+검증돼 있으므로 **손대지 않는다**(advisor 권고). 변경은 헬퍼 + 호출 지점 2곳 + selftest
+— 리뷰 라운드 1에서 오파싱 가드(`hasMisparsedString` + `testBodies` 호출 지점 1곳)가
+더해져 최종은 헬퍼 2개·호출 지점 3개다(경위는 `<name>-artifact.md` FIX-C).
 
 제약:
 - 신규 런타임 의존성 0 — stdlib만(레포 요구).

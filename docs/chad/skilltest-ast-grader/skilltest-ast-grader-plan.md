@@ -15,8 +15,9 @@
 - [x] FIX-B: sentinel을 비공백(`MASK='#'`)으로, line comment 종료 개행은 코드로 보존
       — 3안 배터리 비교로 양방향 무결 확인
 - [x] round-4 회귀 assert 3개 + line-comment guard 2개 + across-files guard 3개 추가
-- [x] mask seam을 원시 텍스트로 되돌린 사본에서 3개 assert ❌(56/59) 실증
-- [x] `node tests/sim/skilltest.mjs selftest` 59/59 그린 · `npm run test:unit` 128 pass
+- [x] mask seam을 원시 텍스트로 되돌린 사본에서 3개 assert ❌ 실증
+- [x] `node tests/sim/skilltest.mjs selftest` 그린 · `npm run test:unit` 통과
+      — 최종 수치는 `<name>-artifact.md` **검증** 절이 소유(리뷰 라운드로 계속 늘어남)
 - [x] 유지 특례 2개(`.then(` 주석 한정 · `// When & Then` 분절) artifact에 명시 disclosure
 - [x] 범위 밖 잔여(presence 신호 raw `.test()`) 콜아웃 — 조용히 확장 안 함
 - [x] 리뷰 라운드 1 (2026-07-30): FIX-C — `hasMisparsedString`으로 개행을 넘는

@@ -105,6 +105,9 @@ throwaway `.sim-tmp/<TS>/` 샌드박스에서 실 에이전트를 띄워 SC1~SC5
 
 산출: `../harness-playground/sim-reports/skilltest-<TS>.md`.
 판단 항목(리팩토링 내성·뮤테이션 생존·unittest↔comptest 라우팅)은 설계상 `⚠️manual`이다.
+GWT 3구획 신호도 파서가 본문을 신뢰할 수 없으면(`본문 n/m개를 읽지 못함`) `⚠️manual`로
+빠진다 — 예: JSX 산문의 아포스트로피 두 개나 여러 줄 JSX 문자열 속성. **결함이 아니라
+"못 읽으면 추측 금지"** 계약이니, 그 파일은 리포트의 테스트 원문 블록으로 수기 확인한다.
 
 ## Phase 3 — 해석 & 보고
 

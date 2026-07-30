@@ -295,7 +295,7 @@ function testBodies(src) {
 //   • scoped to comment lines — that is what keeps `.then(` and prose out;
 //   • spread over ≥2 comment lines — one line cannot separate three regions.
 // Both marker AND blank-line detection run over maskNonCode(body), NOT the raw
-// body: the same tokenizer that bounds a body first blanks out string / template /
+// body: the same tokenizer that bounds a body first masks out string / template /
 // regex spans, so a `// Given` line or a blank line living INSIDE a string can
 // never forge a 구획. testBodies made body *extraction* structural; this keeps the
 // *within-body* judgment structural too, so the leak cannot relocate into content.
