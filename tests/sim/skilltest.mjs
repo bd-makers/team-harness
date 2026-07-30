@@ -167,7 +167,13 @@ async function findTestFiles(dir) {
 function skipString(src, i) {
   const q = src[i];
   for (let j = i + 1; j < src.length; j++) {
-    if (src[j] === '\\') { j++; continue; }
+    if (src[j] === '\\') {
+      j += src[j + 1] === '\r' && src[j + 2] === '\n' ? 2 : 1;
+      continue;
+    }
+    // Quote recovery stops before a raw newline so the newline remains code.
+    // Templates may span lines, and escaped newlines were consumed above.
+    if (q !== '`' && (src[j] === '\n' || src[j] === '\r' || src[j] === '\u2028' || src[j] === '\u2029')) return j - 1;
     if (src[j] === q) return j;
   }
   return -1;
@@ -210,24 +216,6 @@ function scanNonCode(src, i) {
   if (c === '/' && src[i + 1] === '*') { const n = src.indexOf('*/', i); return n === -1 ? -1 : n + 1; }
   if (c === '/' && startsRegex(src, i)) return skipRegex(src, i);
   return null;
-}
-// A `'…'`/`"…"` literal cannot hold a RAW newline in valid JS, so a span that does
-// is proof the scan mis-paired a quote — two bare apostrophes in JSX prose
-// (`Don't` … `It's`) pair into a pseudo-string that swallows real code. Backticks
-// are exempt: templates span newlines legally. A backslash line continuation
-// (`'abc\` ⏎ `def'`) is legal, so escape pairs are dropped first — left-to-right and
-// non-overlapping, mirroring skipString's `\\` → `j++` skip, which is what keeps an
-// *escaped* backslash from shielding the raw newline after it.
-function hasMisparsedString(src) {
-  for (let i = 0; i < src.length; i++) {
-    const skip = scanNonCode(src, i);
-    if (skip === null) continue;
-    if (skip === -1) break;
-    const q = src[i];
-    if ((q === '"' || q === "'") && src.slice(i + 1, skip).replace(/\\[\s\S]/g, '').includes('\n')) return true;
-    i = skip;
-  }
-  return false;
 }
 function matchBrace(src, open, limit = src.length) {
   let depth = 0;
@@ -281,9 +269,6 @@ function testBodies(src) {
     const end = open === -1 ? -1 : matchBrace(src, open, limit);
     if (end === -1) { unparsed++; return; }
     const body = src.slice(open + 1, end);
-    // Mis-paired quotes make the body's spans untrustworthy — the mask below would
-    // eat real markers/blank lines — so report it unparsed rather than grade it.
-    if (hasMisparsedString(body)) { unparsed++; return; }
     bodies.push(body);
   });
   return { bodies, declared: decls.length, unparsed, truncated };
@@ -735,8 +720,7 @@ it('평균을 구한다', () => {
   assert('parser: 본문을 못 읽으면 PASS도 FAIL도 아닌 MANUAL', gwtOf(
 `import { it, expect } from 'vitest';
 it('깨진 소스', () => {
-  const s = 'unterminated;
-});`) === 'MANUAL');
+  const s = 'unterminated;`) === 'MANUAL');
   assert('parser: `.test(`/`.it(` 메서드 호출은 테스트 선언이 아니다 → PASS', gwtOf(
 `import { it, expect } from 'vitest';
 it('패턴에 맞으면 통과한다', () => {
@@ -764,11 +748,9 @@ it('자식을 렌더한다', () => {
 
   expect(el).toBeInTheDocument();
 });`) === 'PASS');
-  // — JSX 산문의 아포스트로피 두 개는 가짜 문자열 스팬으로 짝지어져 그 사이의 마커·빈 줄을
-  //   삼킨다. `'…'` 리터럴은 개행을 담을 수 없으므로 그런 스팬은 오파싱의 증거다 — 채점하면
-  //   PASS/FAIL 어느 쪽도 믿을 수 없으니 못 읽은 본문과 같은 MANUAL 통에 넣는다.
-  //   (옛 원시 텍스트 basis에서는 둘 다 PASS 였다 — 부모 커밋 ad937fe 사본으로 실측.) —
-  assert('parser: JSX 아포스트로피가 주석 마커를 삼키면 채점하지 않는다 → MANUAL', gwtOf(
+  // — JSX 산문의 아포스트로피는 JS 문자열 열림이 아니다. 백틱이 아닌 문자열
+  //   스캐너가 raw 개행에서 멈춰야 다음 줄의 실제 마커·빈 줄을 삼키지 않는다. —
+  assert('parser: JSX 아포스트로피 사이의 주석 마커를 인식한다 → PASS', gwtOf(
 `import { it, expect } from 'vitest';
 it('x', () => {
   // Given
@@ -777,8 +759,8 @@ it('x', () => {
   rerender(<p>It's fine</p>);
   // Then
   expect(1).toBe(1);
-});`) === 'MANUAL');
-  assert('parser: JSX 아포스트로피가 빈 줄 구획을 삼키면 채점하지 않는다 → MANUAL', gwtOf(
+});`) === 'PASS');
+  assert('parser: JSX 아포스트로피 사이의 빈 줄 구획을 인식한다 → PASS', gwtOf(
 `import { it, expect } from 'vitest';
 it('y', () => {
   render(<p>Don't panic</p>);
@@ -786,12 +768,34 @@ it('y', () => {
   rerender(<p>It's fine</p>);
 
   expect(1).toBe(1);
-});`) === 'MANUAL');
-  // — 오파싱 판정은 **raw** 개행만 본다. 역슬래시 줄 이음은 합법 ECMAScript이고
-  //   `skipString`도 escape 분기로 넘기므로, 그 본문은 정상 채점돼야 한다(옛 basis도 PASS).
-  //   반대로 역슬래시 자신이 이스케이프된 뒤의 개행은 raw다 — 그 소스는 애초에 불법 JS라
-  //   옛 basis의 PASS가 무의미했고, MANUAL이 옳은 방향이다. 이 두 assert가
-  //   escape 제거를 left-to-right·non-overlapping(`/\\[\s\S]/g`)으로 못박는다. —
+});`) === 'PASS');
+  assert('parser: 줄별 JSX 아포스트로피 사이의 it() 선언 2개를 모두 읽는다 → PASS', (() => {
+    const src =
+`import { it, expect } from "vitest";
+const before = <p>Don't stop</p>;
+it("a", () => {
+  // Given
+  const a = 1;
+  // When
+  const out = f(a);
+  // Then
+  expect(out).toBe(2);
+});
+it("b", () => {
+  const b = 2;
+
+  const out = f(b);
+
+  expect(out).toBe(3);
+});
+const after = <p>It's done</p>;
+`;
+    const parsed = testBodies(src);
+    return parsed.declared === 2 && parsed.bodies.length === 2 && parsed.unparsed === 0
+      && !parsed.truncated && scoreGWT(src).status === 'PASS';
+  })());
+  // — 역슬래시 줄 이음은 합법 ECMAScript이므로 escape 분기가 개행을 넘는다.
+  //   반대로 역슬래시 자신이 이스케이프된 뒤의 개행은 raw이므로 그 직전에서 멈춘다. —
   assert('parser: 역슬래시 줄 이음 문자열은 오파싱이 아니다 → PASS', gwtOf(
 `import { it, expect } from 'vitest';
 it('줄 이음 문자열', () => {
@@ -803,17 +807,13 @@ def';
   // Then
   expect(out).toBe(6);
 });`) === 'PASS');
-  assert('parser: 이스케이프된 역슬래시 뒤의 raw 개행은 오파싱이다 → MANUAL', gwtOf(
-`import { it, expect } from 'vitest';
-it('불법 문자열', () => {
-  // Given
-  const s = 'a\\\\
-b';
-  // When
-  const out = f(s);
-  // Then
-  expect(out).toBe(2);
-});`) === 'MANUAL');
+  const crlfContinuation = "'a\\\r\nb'";
+  assert('parser: CRLF 역슬래시 줄 이음은 닫는 따옴표까지 스캔한다',
+    skipString(crlfContinuation, 0) === crlfContinuation.length - 1);
+  const rawNewlineAfterEscapedBackslash = "'a\\\\\nb'";
+  const rawNewline = rawNewlineAfterEscapedBackslash.indexOf('\n');
+  assert('parser: 이스케이프된 역슬래시가 raw 개행을 가리지 않는다',
+    skipString(rawNewlineAfterEscapedBackslash, 0) === rawNewline - 1);
   assert('parser: 본문 없는 테스트가 다음 테스트 본문을 훔치지 않는다 → MANUAL', gwtOf(
 `import { it, expect } from 'vitest';
 it('a', () => expect(x).toBe(1));

@@ -28,3 +28,4 @@
 | chad | harness-comptest | 🔄 open | 2026-07-10 |
 | chad | harness-inttest | ✅ done | 2026-07-11 |
 | chad | skilltest-ast-grader | ✅ done | 2026-07-29 |
+| chad | skilltest-skipstring | 🔄 open | 2026-07-30 |
