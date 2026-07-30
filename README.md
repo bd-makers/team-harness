@@ -84,8 +84,7 @@ cd my-project
 
 # 3. 첫 작업 시작
 /harness-task user-auth
-# → docs/<your-name>/user-auth/{user-auth-spec.md, user-auth-plan.md, user-auth-handoff.md,
-#     user-auth-artifact.md} (SSOT 4종) + user-auth-context.md (Context Card) 생성
+# → task 파일 계약은 AGENTS.md의 작업 프로토콜 및 templates/docs/README.md 참조
 # → .harness/active.json이 이 task를 가리킴
 
 # 4. 세션 종료 전
