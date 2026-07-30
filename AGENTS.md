@@ -108,6 +108,9 @@
 ### task 워크플로우
 - **시작**: `harness-team task <name>` — 생성 또는 활성화
 - **진행**: `<name>-plan.md` 체크리스트 항목 완료 시 `- [x]`로 갱신
+- **경계 계약**: spec의 `## Boundary contracts` JSON 선언이 있으면 plan checkbox 완료 직전에
+  `harness-team boundary check`가 생산자·소비자 JSON Schema의 필수 필드와 기본 type을 대조한다.
+  선언이 없으면 `boundary: not-configured`으로 통과한다.
 - **commit 시**: post-commit hook이 `<name>-handoff.md`와 `<user>-handoff.md` 자동 갱신
 - **완료**: plan 전체 완료 감지 또는 사용자 신호 → AskUserQuestion → `harness-team done`
 

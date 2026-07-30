@@ -24,12 +24,14 @@ export const STACKS = [
 
 export function run(cmd, args, opts = {}) {
   return new Promise((res) => {
-    const child = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'pipe'], ...opts });
+    const { input, ...spawnOpts } = opts;
+    const child = spawn(cmd, args, { stdio: ['pipe', 'pipe', 'pipe'], ...spawnOpts });
     let stdout = '', stderr = '';
     child.stdout.on('data', (d) => { stdout += d; });
     child.stderr.on('data', (d) => { stderr += d; });
     child.on('close', (code) => res({ code, stdout, stderr }));
     child.on('error', (err) => res({ code: -1, stdout, stderr: String(err.stack || err) }));
+    child.stdin.end(input);
   });
 }
 

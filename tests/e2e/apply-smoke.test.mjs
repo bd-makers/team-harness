@@ -12,6 +12,7 @@ const REQUIRED_PATHS = [
   'clone.sh', 'symlink.sh', 'delete.sh',
   '.claude/settings.json',
   '.claude/hooks/protect-files.sh',
+  '.claude/hooks/boundary-checkpoint.sh',
   '.claude/hooks/auto-format.sh',
   '.claude/hooks/pre-commit-check.sh',
   '.claude/hooks/observe-tools.mjs',

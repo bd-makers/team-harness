@@ -91,6 +91,7 @@ const CHECKS = [
   { path: 'GEMINI.md', required: false, realFile: true, contains: '@AGENTS.md' },
   { path: '.claude/settings.json', required: true, json: true },
   { path: '.claude/hooks/protect-files.sh', executable: true },
+  { path: '.claude/hooks/boundary-checkpoint.sh', executable: true },
   { path: '.claude/hooks/auto-format.sh', executable: true },
   { path: '.claude/hooks/pre-commit-check.sh', executable: true },
   { path: '.cursor/rules', required: false, dir: true },

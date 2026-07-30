@@ -316,9 +316,43 @@ task 디렉토리 구조와 파일 계약은 scaffold 되는 `AGENTS.md`의 **�
 
 # 활성 task의 handoff.md를 최신 커밋 정보로 갱신 (post-commit hook이 자동 호출)
 /harness-task handoff
+
+# spec에 선언한 JSON Schema producer/consumer boundary 대조
+harness-team boundary check
 ```
 
 > `feature/` · `fix/` 같은 중간 카테고리는 사용하지 않는다 — 모든 task는 `docs/<member>/<name>/` 평탄 구조로 관리한다.
+
+### Boundary contracts
+
+API 응답 래핑, `camelCase`/`snake_case`, 필드명처럼 생산자와 소비자 선언을 함께 봐야 하는
+불일치는 task spec의 `## Boundary contracts` 바로 아래 JSON fenced block으로 명시합니다.
+선언이 없으면 기존 task는 그대로 통과하며, 선언이 있으면 Claude가 plan checkbox를 완료로
+바꾸기 직전에 hook이 `harness-team boundary check`를 실행합니다. 이 검사는 LLM이 아니라
+local JSON Schema를 읽는 결정론적 CLI입니다.
+
+```json
+{
+  "version": 1,
+  "boundaries": [
+    {
+      "id": "user-response",
+      "producer": { "path": "contracts/server-user.json", "pointer": "/data" },
+      "consumer": { "path": "contracts/web-user.json" }
+    }
+  ]
+}
+```
+
+V1은 object schema의 `properties`, `required`, 기본 `type`만 비교합니다. consumer가 필수로
+읽는 field가 producer에 없거나 producer가 required로 보장하지 않으면 실패합니다. `/data`처럼
+schema instance의 object root를 가리키는 pointer와 표준 document pointer(`/properties/data`)를
+모두 지원합니다. OpenAPI resolver, TypeScript type parser, runtime schema 실행은 범위 밖입니다.
+
+기존 설치에는 `harness-team apply`가 없는 `boundary-checkpoint.sh`만 추가하고 settings를
+non-destructive merge합니다. 알려진 기본 protect hook은 한 번만 실행되도록 업그레이드하지만,
+커스터마이즈한 hook group/script는 덮어쓰지 않습니다. `migrate`는 기존 hook을 자동 교체하지
+않으므로, 누락 진단은 `harness-team apply`로 해결합니다.
 
 ### 실전 예제
 

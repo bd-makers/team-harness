@@ -20,7 +20,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node --test tests/*.test.mjs tests/e2e/*.test.mjs",
+    "test": "node --test tests/*.test.mjs tests/e2e/*.test.mjs && node --test --test-concurrency=1 tests/perf/*.test.mjs",
     "test:unit": "node --test tests/*.test.mjs",
     "test:e2e": "node --test tests/e2e/*.test.mjs"
   },

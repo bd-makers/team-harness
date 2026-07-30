@@ -15,6 +15,7 @@ import { runUpgrade } from '../src/commands/upgrade.mjs';
 import { runRelease } from '../src/commands/release.mjs';
 import { runSessionContext } from '../src/commands/session-context.mjs';
 import { runContext } from '../src/commands/context.mjs';
+import { runBoundary } from '../src/commands/boundary.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -40,6 +41,7 @@ Commands:
   done [--force]                    Complete the active task (--force bypasses the completion guard)
   handoff                           Update handoff from latest commit (post-commit hook)
   context <init|check>              Initialize or validate the active task's Context Card
+  boundary check                    Compare declared JSON Schema producer/consumer boundaries
   session-context                   Emit bounded SessionStart Context Card or no-task nudge
   retro [text]                      Append a dated Learnings entry to the active task's artifact.md
   release [patch|minor|major|x.y.z] [--dry-run] [--skip-cache]   Bump 3 manifests + sync plugin cache/marketplace/installed_plugins.json
@@ -82,13 +84,13 @@ async function main() {
   const parsed = parseArgs(argv);
   const { cmd, positional, flags } = parsed;
 
-  const taskCmds = new Set(['task', 'list', 'done', 'handoff', 'retro', 'release', 'context', 'session-context']);
+  const taskCmds = new Set(['task', 'list', 'done', 'handoff', 'retro', 'release', 'context', 'boundary', 'session-context']);
   const target = flags.target || (taskCmds.has(cmd) ? process.cwd() : positional[0]) || process.cwd();
   const ctx = {
     root: ROOT,
     targetDir: resolve(process.cwd(), target),
     flags,
-    taskArgs: (cmd === 'task' || cmd === 'retro' || cmd === 'release' || cmd === 'context') ? positional : [],
+    taskArgs: (cmd === 'task' || cmd === 'retro' || cmd === 'release' || cmd === 'context' || cmd === 'boundary') ? positional : [],
   };
 
   switch (cmd) {
@@ -107,6 +109,7 @@ async function main() {
     case 'done': return runDone(ctx);
     case 'handoff': return runHandoffAuto(ctx);
     case 'context': return runContext(ctx);
+    case 'boundary': return runBoundary(ctx);
     case 'session-context': return runSessionContext(ctx);
     case 'retro': return runRetro(ctx);
     case 'release': return runRelease(ctx);
