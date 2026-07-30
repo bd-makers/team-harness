@@ -46,22 +46,32 @@ NEW FAIL). `'…'`/`"…"` 리터럴은 개행을 담을 수 없으므로 **개�
 증거**다. `hasMisparsedString(body)`가 이를 잡아 `testBodies`가 해당 본문을 `unparsed`로
 세고, `scoreGWT`는 못 읽은 본문과 동일하게 **MANUAL**로 보낸다(추측 금지 계약과 동일한 통).
 백틱은 제외 — 템플릿은 개행을 합법적으로 담는다. 토큰화기(`skipString`)는 손대지 않았다.
+판정 대상은 **raw** 개행뿐이다(리뷰 라운드 2): 역슬래시 줄 이음(`'abc\` ⏎ `def'`)은 합법
+ECMAScript이고 `skipString`도 escape 분기로 넘기므로, escape 쌍을 먼저 제거한 뒤에
+개행을 본다(`/\\[\s\S]/g` — left-to-right·non-overlapping으로 `skipString`의 `j++` 스킵과
+동일 의미론이라, *이스케이프된* 역슬래시가 뒤따르는 raw 개행을 가려주지 못한다).
 
 변경 크기: 헬퍼 2개(`maskNonCode`, `hasMisparsedString`) + 호출 지점 3개(`markerLineWords`,
-`regionsIn`, `testBodies`) + 신규 selftest 11개.
+`regionsIn`, `testBodies`) + 신규 selftest 13개.
 토큰화기(scanNonCode/matchBrace/findBodyOpen/findDeclarations)는
 정확하고 검증돼 있어 **손대지 않았다**(advisor 권고).
 
 **검증.**
-- `node tests/sim/skilltest.mjs selftest` → **61/61 그린**(기존 50 불변 + 신규 11).
+- `node tests/sim/skilltest.mjs selftest` → **63/63 그린**(기존 50 불변 + 신규 13).
 - 기존 50개 중 하나도 뒤집히지 않음(criterion 5). scratchpad에 OLD-vs-NEW 배터리로
   legit 13종·forbid 6종 불변, adversarial 4종 false-PASS 교정을 사전 확인; 별도 배터리로
   line-comment 3안을 비교해 FIX-B가 유일하게 무결함을 확인.
 - 회귀 테스트가 **옛(원시 텍스트) basis에서 붉어짐**을 실증: mask seam을 원시 텍스트로
   되돌린 복사본에서 round-4 3개 assert(템플릿 마커·템플릿 빈 줄·블록 주석 빈 줄)가
-  ❌(측정 당시 59개 기준 56/59), mask 복원 시 그린. FIX-C 회귀 2개도 부모 커밋
-  ad937fe 사본에서 OLD PASS → 현재 MANUAL 임을 실측. line-comment 2개 guard는 원시 basis에서도 그린(그들은
+  ❌(측정 당시 59개 기준 56/59), mask 복원 시 그린. line-comment 2개 guard는 원시 basis에서도 그린(그들은
   raw→structural 전환이 아니라 **mask 구현 자체**를 지킨다 — 공백 sentinel 안이면 붉어진다).
+- FIX-C 관련 4개 assert의 OLD(ad937fe 사본) vs NEW 실측 — 넷의 관계가 서로 다르므로 개별 기록:
+  - 라운드 1 · JSX 아포스트로피 2개(주석 마커 삼킴 · 빈 줄 구획 삼킴) — **OLD PASS → NEW
+    MANUAL**. 오파싱된 본문을 채점하지 않게 된 것이 이 태스크의 교정.
+  - 라운드 2 · 역슬래시 줄 이음 — **OLD PASS → NEW PASS**. 합법 문법이므로 불변이어야
+    하며, 좁히기 전에는 MANUAL로 강등됐다(그것이 고친 오탐).
+  - 라운드 2 · 이스케이프된 역슬래시 뒤 raw 개행 — OLD PASS → **NEW MANUAL**. 소스 자체가
+    불법 JS라 옛 PASS가 무의미 — criterion 5 위반이 아니라 escape 의미론을 못박는 guard다.
 - `npm run test:unit` → 128 pass / 0 fail (레포 스위트 무영향; skilltest는 `npm test`에
   포함되지 않는 수동 L5 harness라 selftest가 권위 있는 검증).
 
@@ -121,13 +131,28 @@ GWT 3구획 판정만 de-base 했다(브리프가 지목한 재발 클래스). �
 아닌 따옴표에서 개행을 만나면 멈추게 하는 한 줄이지만, 토큰화기는 이 태스크에서
 **의도적으로 불가침**(브리프·advisor·캡틴 3중 지시)이라 택하지 않았다. 그 결과 남는 것:
 
-- **본문 밖 오파싱** — 가짜 따옴표 스팬이 `it(` 선언 자체를 삼키면 본문 검사에 닿지 않는다.
-  다만 그 경우 짝이 남지 않아 `skipString`이 -1을 반환하고, `findDeclarations`가
-  `truncated`로, `matchBrace`가 `end === -1`로 각각 MANUAL 경로에 태운다 —
-  즉 조용한 PASS/FAIL이 아니라 이미 수기 확인으로 빠진다. 각주지 구멍은 아니다.
+- **선언 스캔 오파싱 → 조용한 FAIL (실재하는 구멍, 리뷰 라운드 2에서 정정)** — 초기 서술은
+  "본문 밖 오파싱은 항상 MANUAL로 빠지므로 구멍이 아니다"라고 썼으나 **틀렸다**. 선언을
+  삼키려면 그 앞의 따옴표 개수가 홀수여야 하지만, `truncated`로 탈출하는 조건은
+  **전체** 개수가 홀수인 것이다 — 마지막 선언 뒤에 맨 아포스트로피가 하나 더 있으면
+  패리티가 복구돼 스캔이 깨끗하게 끝난다. 그러면 `findDeclarations`가
+  `decls=[] / truncated=false`를 반환하고, `unparsed`도 0이라
+  `scoreGWT`의 `if (!declared)` 경로로 떨어져 **`it()/test() 선언 없음` FAIL**이 된다 —
+  멀쩡한 GWT 테스트 파일이 조용히 ❌. `hasMisparsedString`은 **본문 스팬만** 지키므로
+  선언 스캔의 이 경로를 보지 못한다.
+  - **pre-existing이다.** 원인은 불가침 토큰화기의 따옴표 스패닝 + 기존 선언 스캔이며,
+    이번 변경이 만든 것이 아니다.
+  - **criterion 5 미위반 — 주장이 아니라 실측이다.** 리뷰어 재현 fixture를 부모 커밋
+    ad937fe 사본과 현재 HEAD에 각각 걸어 **양쪽 모두 `FAIL · it()/test() 선언 없음`**
+    (동일 note)임을 확인했다. 옛 grader와 결과가 같으므로 채점 의미론은 불변이다.
+  - **근본 원인(`skipString`의 따옴표 스패닝)은 별도로 추적**하며 이 태스크에서는
+    의도적으로 고치지 않는다(토큰화기 불가침 · 선언 레벨 fail-safe는 캡틴이 명시 기각).
 - **정상 테스트의 MANUAL 승격(감수한 비용)** — 짝수 개의 맨 아포스트로피가 든 JSX 산문은
-  실제로 옳게 채점되던 경우에도 MANUAL로 간다. "못 읽으면 추측 금지" 계약상
-  false-PASS/false-FAIL보다 나은 실패 방향이라 좁히지 않았다.
+  실제로 옳게 채점되던 경우에도 MANUAL로 간다. 같은 이유로 **여러 줄에 걸친 JSX 문자열
+  속성**(`<img alt="긴 설명⏎둘째 줄" />`)도 — JSX로는 합법이지만 토큰화기 눈에는 개행을
+  넘는 JS 문자열 스팬이라 — MANUAL로 간다. 토큰화기를 못 고치는 한 이 잔여는 피할 수
+  없고, "못 읽으면 추측 금지" 계약상 false-PASS/false-FAIL보다 나은 실패 방향이라
+  좁히지 않았다.
 
 ## sibling harness 점검 (브리프 요구)
 
@@ -185,6 +210,22 @@ GWT 3구획 판정만 de-base 했다(브리프가 지목한 재발 클래스). �
   항목은 *기각된* 첫 구현을 서술하므로 사료로서 정확 — 그대로 둠. (3) **info**: task
   SSOT 4파일 중 spec·plan·handoff 누락 + 두 레지스트리 미등록 → 형제 24개 태스크 형태에
   맞춰 생성·등록(`docs/chad/` 범위 한정, AGENTS.md/CLAUDE.md 무수정).
+- **2026-07-30 · 파이프라인 코드 리뷰 라운드 2** — 2개 발견, 전부 조치. (캡틴 결정: A1
+  doc-only, 선언 레벨 fail-safe(A2)는 명시 기각, 토큰화기 불가침 유지.)
+  발견/조치: (1) **warning · 문서가 코드에 없는 보증을 주장**: 라운드 1에서 추가한
+  "오파싱 잔여" 콜아웃이 본문 밖 오파싱은 항상 MANUAL이라 단언했으나, 짝수 개의 맨
+  아포스트로피가 선언을 **가로질러** 짝지어지면 `decls=[] / truncated=false`로 스캔이
+  깨끗하게 끝나 `if (!declared)` 조용한 FAIL이 된다. → **doc-only 정정**. 리뷰어 fixture를
+  부모 커밋 ad937fe 사본과 HEAD에 각각 걸어 **양쪽 다 `FAIL · it()/test() 선언 없음`**
+  임을 실측 — pre-existing이며 criterion 5 미위반임을 주장이 아닌 측정으로 기록.
+  근본 원인(토큰화기 따옴표 스패닝)은 별도 추적, 여기서 안 고침. (2) **info · 새 가드가
+  합법 문법을 오탐**: `hasMisparsedString`이 따옴표 스팬의 **모든** 개행을 오파싱으로 봐서,
+  합법 ECMAScript인 역슬래시 줄 이음(`'abc\` ⏎ `def'`)이 든 정상 본문을 MANUAL로 강등
+  (실측 OLD PASS → NEW MANUAL — criterion 5 위반). → escape 쌍을 먼저 제거해 **raw** 개행만
+  보도록 좁힘(`/\\[\s\S]/g`, `skipString`의 escape 분기와 동일 의미론). 회귀 selftest 2개
+  추가: 줄 이음 → PASS, *이스케이프된* 역슬래시 뒤 raw 개행 → MANUAL(후자는 애초에 불법
+  JS라 옛 basis의 PASS가 무의미 — 이 flip은 criterion 5 위반이 아니다). 라운드 1의 JSX
+  아포스트로피 MANUAL 2개가 그대로 그린임을 확인(escape 제거가 그것들을 풀지 않음).
 
 ## Learnings
 
@@ -195,6 +236,14 @@ GWT 3구획 판정만 de-base 했다(브리프가 지목한 재발 클래스). �
   assert가 ❌ 나는 것을 확인해야 "옛 것에 대한 회귀"임이 증명된다. 그냥 그린은 증거가 아니다.
 - **criterion 5는 "옳던 곳"만 보호한다.** 옛 grader의 PASS가 애초에 가짜(문자열 안 구획)면
   NEW-FAIL은 위반이 아니라 교정 — 단, 놀람으로 튀어나오지 않게 문서화한다.
+- **fail-safe 가드는 "불가능한 모양"만 잡아야 한다.** 첫 구현은 따옴표 스팬의 *모든* 개행을
+  오파싱으로 봤는데, 역슬래시 줄 이음은 합법이라 정상 테스트를 MANUAL로 강등했다. 가드의
+  기준은 토큰화기가 실제로 처리하는 의미론(`skipString`의 escape 분기)과 **글자 그대로
+  일치**해야 한다 — 어긋나면 가드 자신이 새 오판원이 된다.
+- **문서에 "구멍 아님"을 쓰기 전에 반증을 시도하라.** 라운드 1 콜아웃은 본문 밖 오파싱이
+  항상 MANUAL이라 단언했지만, 리뷰어가 패리티를 복구하는 fixture 하나로 뒤집었다.
+  콜아웃은 안심시키는 문장이 아니라 **측정된 경계**여야 한다. 정정본은 OLD/NEW 양쪽 실측을
+  함께 적어, 다음 독자가 주장이 아니라 증거를 읽게 했다.
 - **마스킹은 스팬 판정을 신뢰한다 — 그래서 오파싱을 감지해야 한다.** 원시 텍스트 basis는
   틀린 스팬에 둔감했지만, 마스킹은 틀린 스팬을 곧바로 false-FAIL로 증폭한다. 토큰화기를
   못 고치는 상황이라면 최소한 **불가능한 모양**(개행을 넘는 `'…'` 스팬)을 탐지해 채점을

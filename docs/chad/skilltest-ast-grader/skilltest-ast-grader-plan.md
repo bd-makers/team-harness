@@ -23,6 +23,11 @@
       `'…'`/`"…"` 스팬(JSX 아포스트로피 오파싱)을 잡아 해당 본문을 MANUAL로 라우팅
 - [x] 리뷰 라운드 1: artifact sentinel 서술 정정(공백 하나 → 비공백 `MASK='#'`)
 - [x] 리뷰 라운드 1: task SSOT 4파일 완성 + 두 레지스트리 등록
+- [x] 리뷰 라운드 2 (2026-07-30): "오파싱 잔여" 콜아웃 정정 — 선언을 가로지르는 짝수
+      아포스트로피는 `decls=[] / truncated=false`로 조용한 FAIL이 된다(doc-only,
+      OLD==NEW 실측으로 pre-existing·criterion 5 미위반 기록)
+- [x] 리뷰 라운드 2: `hasMisparsedString`을 **raw** 개행으로 좁힘 — escape 쌍 선제거로
+      합법 역슬래시 줄 이음 오탐 제거 + 회귀 selftest 2개
 
 ## Ontology 변경 로그
 
@@ -34,6 +39,11 @@
 - **마스킹은 스팬 판정을 신뢰한다** — 틀린 스팬은 원시 basis에선 무해했지만 마스킹
   basis에선 false-FAIL로 증폭된다. 토큰화기를 못 고치면 **불가능한 모양**을 탐지해
   채점을 거부(MANUAL)하는 것이 정답(FIX-C).
+- **"불가능한 모양"의 정의는 토큰화기와 글자 그대로 일치해야 한다** — 따옴표 스팬의 개행이
+  전부 불법인 것이 아니라 **raw** 개행만 불법이다(역슬래시 줄 이음은 합법). 가드가
+  `skipString`의 escape 의미론과 어긋나면 가드 자신이 오판원이 된다.
+- **MANUAL 승격은 무해하지 않다** — fail-safe 방향이라 해도 정상 테스트를 삼키면 grader의
+  신뢰도가 떨어진다. 탐지 기준은 넓게가 아니라 **정확히** 잡고, 남는 잔여는 콜아웃한다.
 
 ## 참고
 - `tests/sim/skilltest.mjs` — grader + selftest 배터리 SSOT.

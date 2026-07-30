@@ -211,17 +211,20 @@ function scanNonCode(src, i) {
   if (c === '/' && startsRegex(src, i)) return skipRegex(src, i);
   return null;
 }
-// A `'…'`/`"…"` literal cannot hold a raw newline in valid JS, so a span that does
+// A `'…'`/`"…"` literal cannot hold a RAW newline in valid JS, so a span that does
 // is proof the scan mis-paired a quote — two bare apostrophes in JSX prose
 // (`Don't` … `It's`) pair into a pseudo-string that swallows real code. Backticks
-// are exempt: templates span newlines legally.
+// are exempt: templates span newlines legally. A backslash line continuation
+// (`'abc\` ⏎ `def'`) is legal, so escape pairs are dropped first — left-to-right and
+// non-overlapping, mirroring skipString's `\\` → `j++` skip, which is what keeps an
+// *escaped* backslash from shielding the raw newline after it.
 function hasMisparsedString(src) {
   for (let i = 0; i < src.length; i++) {
     const skip = scanNonCode(src, i);
     if (skip === null) continue;
     if (skip === -1) break;
     const q = src[i];
-    if ((q === '"' || q === "'") && src.slice(i + 1, skip).includes('\n')) return true;
+    if ((q === '"' || q === "'") && src.slice(i + 1, skip).replace(/\\[\s\S]/g, '').includes('\n')) return true;
     i = skip;
   }
   return false;
@@ -783,6 +786,33 @@ it('y', () => {
   rerender(<p>It's fine</p>);
 
   expect(1).toBe(1);
+});`) === 'MANUAL');
+  // — 오파싱 판정은 **raw** 개행만 본다. 역슬래시 줄 이음은 합법 ECMAScript이고
+  //   `skipString`도 escape 분기로 넘기므로, 그 본문은 정상 채점돼야 한다(옛 basis도 PASS).
+  //   반대로 역슬래시 자신이 이스케이프된 뒤의 개행은 raw다 — 그 소스는 애초에 불법 JS라
+  //   옛 basis의 PASS가 무의미했고, MANUAL이 옳은 방향이다. 이 두 assert가
+  //   escape 제거를 left-to-right·non-overlapping(`/\\[\s\S]/g`)으로 못박는다. —
+  assert('parser: 역슬래시 줄 이음 문자열은 오파싱이 아니다 → PASS', gwtOf(
+`import { it, expect } from 'vitest';
+it('줄 이음 문자열', () => {
+  // Given
+  const s = 'abc\\
+def';
+  // When
+  const out = f(s);
+  // Then
+  expect(out).toBe(6);
+});`) === 'PASS');
+  assert('parser: 이스케이프된 역슬래시 뒤의 raw 개행은 오파싱이다 → MANUAL', gwtOf(
+`import { it, expect } from 'vitest';
+it('불법 문자열', () => {
+  // Given
+  const s = 'a\\\\
+b';
+  // When
+  const out = f(s);
+  // Then
+  expect(out).toBe(2);
 });`) === 'MANUAL');
   assert('parser: 본문 없는 테스트가 다음 테스트 본문을 훔치지 않는다 → MANUAL', gwtOf(
 `import { it, expect } from 'vitest';
