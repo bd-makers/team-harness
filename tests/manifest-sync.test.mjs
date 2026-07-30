@@ -107,6 +107,9 @@ test('manifest-sync: README points to command SSOTs', async () => {
   const readme = await readFile(join(ROOT, 'README.md'), 'utf8');
   assert.match(readme, /설치되는 슬래시 명령과 설명은 `commands\/\*\.md` 및 `\.claude-plugin\/plugin\.json`에서 확인합니다\./);
   assert.doesNotMatch(readme, /설치 후 다음 슬래시 명령 사용 가능:/);
+  const documented = new Set([...readme.matchAll(/\|\s*`\/(harness-[a-z-]+)`/g)].map(match => match[1]));
+  const commands = await commandNames();
+  assert.ok([...commands].some(name => !documented.has(name)), 'README partial guide must not copy every registered command');
 });
 
 // Every CLI subcommand a command wraps must exist in the bin router. One-directional:
