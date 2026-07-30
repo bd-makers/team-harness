@@ -528,7 +528,7 @@ my-project/
 │   ├── active.json           # 활성 task 포인터 (gitignored)
 │   └── backup.json           # 형제 백업 클론 폴더 경로 (commit 권장)
 ├── .claude/
-│   ├── settings.json         # permissions + hooks (PreToolUse/PostToolUse, SessionStart task-gate)
+│   ├── settings.json         # permissions + tool lifecycle hooks + SessionStart task-gate
 │   ├── hooks/
 │   │   ├── protect-files.sh        # .env, node_modules 수정 차단
 │   │   ├── auto-format.sh          # 저장 후 Prettier
@@ -546,9 +546,8 @@ my-project/
 - `.harness/active.json` (개인 활성 task 상태)
 - `.harness/observability/` (로컬 도구 관측 로그와 HMAC 키)
 
-도구 관측은 Claude Code의 `PreToolUse`/`PostToolUse`/실패·권한거절 이벤트를 로컬 JSONL로 기록합니다.
-프롬프트, 도구 인자·결과, 경로, stdout/stderr와 raw ID는 저장하지 않으며, 참조값은 프로젝트별 HMAC으로만 남깁니다.
-로그는 UTC 기준 14일이 지나면 다음 세션 시작 시 정리되고, 결과 바이트 수는 토큰·비용이 아닙니다. 외부 전송이나 LLM 호출은 하지 않습니다.
+Claude Code 도구 관측은 원문을 보존하지 않는 로컬 JSONL만 `.harness/observability/`에 기록합니다.
+보존 데이터·권한·회전·정리 정책은 [Hooks 레퍼런스](docs/harness-overview.html#hooks)를 참조하세요.
 
 ---
 
