@@ -100,7 +100,9 @@
 5. retrieval map은 재개 비용을 낮추는 단서만 남기고, 오래된 경로는 제거한다.
 
 > **task-gate (자동):** SessionStart 훅이 `harness-team session-context`를 호출해
-> 활성 task 유무를 주입한다. 활성 task가 없으면 첫 작업 프롬프트에서 `AskUserQuestion`으로
+> 활성 task 유무를 주입한다. 활성 task가 있으면 breadcrumb 다음에 유효한 TCC를 그대로 주입하고,
+> 카드가 없으면 `context init`, 읽을 수 없거나 유효하지 않으면 원문 대신 `context check` 안내만 내보낸다.
+> 활성 task가 없으면 첫 작업 프롬프트에서 `AskUserQuestion`으로
 > **재개 / 새 task / task 없이 진행**을 확인하라 — 이는 block이 아닌 nudge이며 판단은 Claude 몫.
 
 ### task 워크플로우
