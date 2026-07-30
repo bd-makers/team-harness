@@ -147,7 +147,11 @@ export async function verifyBoundary(targetDir, boundary, cache = new Map()) {
     }
     const producerType = basicType(producerField);
     const consumerType = basicType(consumerField);
-    if (producerType && consumerType && producerType !== consumerType) {
+    if (!producerType) {
+      failures.push(failure(boundary.id, 'unsupported-producer-type', `field "${field}" producer type must be a single string`));
+    } else if (!consumerType) {
+      failures.push(failure(boundary.id, 'unsupported-consumer-type', `field "${field}" consumer type must be a single string`));
+    } else if (producerType !== consumerType) {
       failures.push(failure(boundary.id, 'type-mismatch', `field "${field}" is ${producerType} for producer but ${consumerType} for consumer`));
     }
   }

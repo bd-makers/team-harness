@@ -19,6 +19,25 @@ function hasCommand(group, command) {
   return group?.hooks?.some(hook => hook?.type === 'command' && hook.command === command);
 }
 
+function hasExactKeys(value, keys) {
+  return value !== null
+    && typeof value === 'object'
+    && !Array.isArray(value)
+    && Object.keys(value).length === keys.length
+    && keys.every(key => Object.hasOwn(value, key));
+}
+
+function isKnownDefaultProtectGroup(group) {
+  if (!hasExactKeys(group, ['matcher', 'hooks']) || group.matcher !== 'Edit|Write' || !Array.isArray(group.hooks) || group.hooks.length !== 1) {
+    return false;
+  }
+  const [hook] = group.hooks;
+  return hasExactKeys(hook, ['type', 'command', 'timeout'])
+    && hook.type === 'command'
+    && hook.command === './.claude/hooks/protect-files.sh'
+    && hook.timeout === 10;
+}
+
 // Settings arrays normally union whole hook groups. When upgrading the known
 // default Edit|Write group, normalize the old protect-only group into the new
 // protect→boundary group so `apply` does not run protect-files twice. Any
@@ -31,11 +50,7 @@ export function mergeClaudeSettings(existing, incoming) {
   const mergedGroups = merged?.hooks?.PreToolUse;
   if (!Array.isArray(existingGroups) || !Array.isArray(incomingGroups) || !Array.isArray(mergedGroups)) return merged;
 
-  const oldGroup = existingGroups.find(group =>
-    group?.matcher === 'Edit|Write'
-      && Array.isArray(group.hooks)
-      && group.hooks.length === 1
-      && hasCommand(group, './.claude/hooks/protect-files.sh'));
+  const oldGroup = existingGroups.find(isKnownDefaultProtectGroup);
   const newGroup = incomingGroups.find(group =>
     group?.matcher === 'Edit|Write'
       && hasCommand(group, './.claude/hooks/protect-files.sh')

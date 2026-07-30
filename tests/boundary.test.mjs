@@ -141,6 +141,28 @@ test('boundary check: basic type mismatch fails', async () => {
   } finally { await cleanup(result); }
 });
 
+test('boundary check: producer field without a type cannot satisfy a typed consumer field', async () => {
+  const result = await check({
+    producer: objectSchema({ id: {} }),
+    consumer: objectSchema({ id: { type: 'string' } }),
+  });
+  try {
+    assert.equal(result.exitCode, 2);
+    assert.ok(result.lines.some(line => line.includes('unsupported-producer-type') && line.includes('"id"')));
+  } finally { await cleanup(result); }
+});
+
+test('boundary check: producer field with a union type cannot satisfy a typed consumer field', async () => {
+  const result = await check({
+    producer: objectSchema({ id: { type: ['string', 'number'] } }),
+    consumer: objectSchema({ id: { type: 'string' } }),
+  });
+  try {
+    assert.equal(result.exitCode, 2);
+    assert.ok(result.lines.some(line => line.includes('unsupported-producer-type') && line.includes('"id"')));
+  } finally { await cleanup(result); }
+});
+
 test('boundary check: optional consumer field does not require producer support', async () => {
   const result = await check({
     producer: objectSchema({ id: { type: 'string' } }),

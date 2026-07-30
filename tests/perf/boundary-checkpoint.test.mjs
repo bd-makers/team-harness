@@ -35,8 +35,8 @@ async function fixture() {
   const taskDir = join(dir, 'docs', 'tester', 'demo');
   const boundaries = Array.from({ length: 10 }, (_, index) => ({
     id: `edge-${index}`,
-    producer: { path: 'schemas/producer.json' },
-    consumer: { path: 'schemas/consumer.json' },
+    producer: { path: `schemas/producer-${index}.json` },
+    consumer: { path: `schemas/consumer-${index}.json` },
   }));
   await mkdir(join(dir, '.harness'), { recursive: true });
   await mkdir(join(dir, 'schemas'), { recursive: true });
@@ -46,8 +46,10 @@ async function fixture() {
   await writeFile(join(taskDir, 'demo-spec.md'), `# demo — Spec\n\n## Boundary contracts\n\n\`\`\`json\n${JSON.stringify({ version: 1, boundaries }, null, 2)}\n\`\`\`\n`);
   const contract = JSON.stringify(schema());
   assert.ok(Buffer.byteLength(contract) >= 10 * 1024, 'fixture represents at least a 10 KiB schema');
-  await writeFile(join(dir, 'schemas', 'producer.json'), contract);
-  await writeFile(join(dir, 'schemas', 'consumer.json'), contract);
+  await Promise.all(boundaries.flatMap(({ producer, consumer }) => [
+    writeFile(join(dir, producer.path), contract),
+    writeFile(join(dir, consumer.path), contract),
+  ]));
   const binDir = join(dir, '.bin');
   await mkdir(binDir, { recursive: true });
   const shim = join(binDir, 'harness-team');
@@ -85,10 +87,15 @@ test('boundary performance: cold check <100ms and plan checkpoint <200ms for 10 
       assert.equal(checkpoint.code, 0, checkpoint.stderr);
       assert.match(checkpoint.stdout, /boundary: pass \(10 checked\)/);
     }
-    const coldMs = Math.min(...coldMeasurements);
-    const checkpointMs = Math.min(...checkpointMeasurements);
-    assert.ok(coldMs < 100, `fastest cold boundary CLI was ${coldMs.toFixed(1)}ms (limit: 100ms; samples: ${coldMeasurements.map(ms => ms.toFixed(1)).join(', ')})`);
-    assert.ok(checkpointMs < 200, `fastest plan checkpoint was ${checkpointMs.toFixed(1)}ms (limit: 200ms; samples: ${checkpointMeasurements.map(ms => ms.toFixed(1)).join(', ')})`);
+    // Three samples use the median for the normal ceiling so one scheduler outlier does not fail the test;
+    // the additional absolute ceiling still catches a consistently or severely slow implementation.
+    const median = measurements => [...measurements].sort((a, b) => a - b)[1];
+    const coldMs = median(coldMeasurements);
+    const checkpointMs = median(checkpointMeasurements);
+    assert.ok(coldMs < 100, `median cold boundary CLI was ${coldMs.toFixed(1)}ms (limit: 100ms; samples: ${coldMeasurements.map(ms => ms.toFixed(1)).join(', ')})`);
+    assert.ok(checkpointMs < 200, `median plan checkpoint was ${checkpointMs.toFixed(1)}ms (limit: 200ms; samples: ${checkpointMeasurements.map(ms => ms.toFixed(1)).join(', ')})`);
+    assert.ok(Math.max(...coldMeasurements) < 500, `cold boundary CLI exceeded the absolute 500ms ceiling (samples: ${coldMeasurements.map(ms => ms.toFixed(1)).join(', ')})`);
+    assert.ok(Math.max(...checkpointMeasurements) < 800, `plan checkpoint exceeded the absolute 800ms ceiling (samples: ${checkpointMeasurements.map(ms => ms.toFixed(1)).join(', ')})`);
   } finally {
     await rm(setup.dir, { recursive: true, force: true });
   }

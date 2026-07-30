@@ -22,3 +22,19 @@ test('mergeClaudeSettings preserves a customized Edit|Write group while adding t
     { matcher: 'Edit|Write', hooks: [protect, boundary] },
   ]);
 });
+
+test('mergeClaudeSettings preserves protect-files hooks with customized settings', () => {
+  for (const customizedProtect of [
+    { ...protect, timeout: 30 },
+    { ...protect, continueOnError: true },
+  ]) {
+    const existingGroup = { matcher: 'Edit|Write', hooks: [customizedProtect] };
+    const existing = { hooks: { PreToolUse: [existingGroup] } };
+    const incoming = { hooks: { PreToolUse: [{ matcher: 'Edit|Write', hooks: [protect, boundary] }] } };
+    const result = mergeClaudeSettings(existing, incoming);
+    assert.deepEqual(result.hooks.PreToolUse, [
+      existingGroup,
+      { matcher: 'Edit|Write', hooks: [protect, boundary] },
+    ]);
+  }
+});
