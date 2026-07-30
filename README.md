@@ -532,7 +532,8 @@ my-project/
 │   ├── hooks/
 │   │   ├── protect-files.sh        # .env, node_modules 수정 차단
 │   │   ├── auto-format.sh          # 저장 후 Prettier
-│   │   └── pre-commit-check.sh     # 커밋 전 typecheck + test
+│   │   ├── pre-commit-check.sh     # 커밋 전 typecheck + test
+│   │   └── observe-tools.mjs       # 원문 비보존 도구 호출 JSONL 관측
 │   │   # SessionStart task-gate은 별도 파일 없이 settings.json에서 `harness-team session-context` 호출
 │   ├── rules/                # 영역별 코딩 규칙 (navigation, state-mgmt, styling, testing)
 │   └── skills/               # 슬래시 명령 (plan, handoff, verify, new-feature, fix-bug, review)
@@ -543,6 +544,11 @@ my-project/
 자동으로 `.gitignore`에 추가되는 항목:
 - `.claude/settings.local.json` (개인 권한 오버라이드)
 - `.harness/active.json` (개인 활성 task 상태)
+- `.harness/observability/` (로컬 도구 관측 로그와 HMAC 키)
+
+도구 관측은 Claude Code의 `PreToolUse`/`PostToolUse`/실패·권한거절 이벤트를 로컬 JSONL로 기록합니다.
+프롬프트, 도구 인자·결과, 경로, stdout/stderr와 raw ID는 저장하지 않으며, 참조값은 프로젝트별 HMAC으로만 남깁니다.
+로그는 UTC 기준 14일이 지나면 다음 세션 시작 시 정리되고, 결과 바이트 수는 토큰·비용이 아닙니다. 외부 전송이나 LLM 호출은 하지 않습니다.
 
 ---
 

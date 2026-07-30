@@ -204,6 +204,7 @@ async function appendGitignore(targetDir, { addAiEntries = false } = {}) {
   const harnessNeeded = [
     '.claude/settings.local.json',
     '.harness/',
+    '.harness/observability/',
   ];
   const harnessMissing = harnessNeeded.filter(line => !has(line));
 
