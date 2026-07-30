@@ -15,6 +15,7 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash
 2. ```bash
    harness-team task <name>
    ```
+   - `docs/<user>/<name>/{<name>-spec,<name>-plan,<name>-handoff,<name>-artifact,<name>-context}.md` 생성 + active 설정
 3. `docs/<user>/<name>/<name>-spec.md`에 증상·재현 경로·의심 원인 기록
 4. **수정하기 전에 red 피드백 루프부터 만든다.** 코드를 노려보며 가설부터 세우지 말 것 —
    이 버그에서만 red가 되는 신호가 없으면 원인을 못 찾는다.
@@ -30,6 +31,9 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash
    - 각 가설은 예측을 명시: "X가 원인이면 Y를 바꿨을 때 버그가 사라진다". 예측 못 세우면 버린다.
    - 랭킹 목록을 사용자에게 보여주면 도메인 지식으로 즉시 재랭킹될 수 있다(값싼 체크포인트, AFK면 진행).
    - 계측은 **변수 하나만** 바꿔 검증. 디버그 로그엔 `[DEBUG-xxxx]` 같은 고유 태그를 달아 나중에 grep 한 번으로 제거.
+   - 재현 가능한 실패는 `<name>-context.md`의 failure capsule에 신호·시도·현재 가설·다음 판별법·
+     안전한 source 위치만 압축해 기록한다(최대 3개). raw stderr, 토큰, 비밀값, 전체 HTTP payload는 복사하지 않는다.
+     해소 시 capsule을 제거하고 재발 방지 가치가 있으면 artifact의 `## Learnings`에 남긴다.
 3. 최소 surgical fix (관련 없는 리팩토링 금지)
 4. 회귀 방지 테스트 작성 (Phase 1의 최소 재현을 테스트로 고정)
 

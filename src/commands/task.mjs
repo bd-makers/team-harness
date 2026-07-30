@@ -119,6 +119,37 @@ export function taskArtifactTemplate(name) {
 `;
 }
 
+export function taskContextTemplate(name) {
+  return `# ${name} — Context Card
+<!-- working set only; UTF-8 <= 6 KiB, nonblank lines <= 100 -->
+
+## Now
+- Goal:
+- Current atomic step:
+- Stop / human-decision condition:
+
+## Constraints and settled decisions
+-
+
+## JIT retrieval map
+- Identifiers / symbols:
+- Narrow globs:
+- Read next:
+- Verification command:
+
+## Failure capsules (max 3 unresolved)
+### F-001
+- Signal:
+- Tried:
+- Compact finding / current hypothesis:
+- Next discriminator:
+- Source (safe path or command):
+
+## Resume checklist
+-
+`;
+}
+
 function userTaskIndexTemplate(user) {
   return `# ${user} — Tasks
 
@@ -240,6 +271,7 @@ export async function runTask(ctx) {
   await writeText(join(dir, `${name}-plan.md`), taskPlanTemplate(name));
   await writeText(join(dir, `${name}-handoff.md`), taskHandoffTemplate(name));
   await writeText(join(dir, `${name}-artifact.md`), taskArtifactTemplate(name));
+  await writeText(join(dir, `${name}-context.md`), taskContextTemplate(name));
 
   await writeActive(ctx.targetDir, {
     user, task: name,
@@ -264,6 +296,7 @@ export async function runTask(ctx) {
         `docs/${user}/${name}/${name}-plan.md`,
         `docs/${user}/${name}/${name}-handoff.md`,
         `docs/${user}/${name}/${name}-artifact.md`,
+        `docs/${user}/${name}/${name}-context.md`,
       ],
     }));
   } else {

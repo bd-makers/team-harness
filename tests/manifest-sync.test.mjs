@@ -119,7 +119,7 @@ test('manifest-sync: commands/*.md ⟺ README command-table rows', async () => {
 });
 
 // Every CLI subcommand a command wraps must exist in the bin router. One-directional:
-// internal subcommands (list/done/handoff/session-context/backup) need no command file.
+// internal subcommands (list/done/handoff/context/session-context/backup) need no command file.
 // Only backtick-quoted or code-fence occurrences count, so prose can't false-positive.
 test('manifest-sync: bin subcommands referenced in commands/ exist in the router', async () => {
   const bin = await readFile(join(ROOT, 'bin', 'harness-team.mjs'), 'utf8');

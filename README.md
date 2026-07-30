@@ -84,7 +84,8 @@ cd my-project
 
 # 3. 첫 작업 시작
 /harness-task user-auth
-# → docs/<your-name>/user-auth/{user-auth-spec.md, user-auth-plan.md, user-auth-handoff.md} 생성
+# → docs/<your-name>/user-auth/{user-auth-spec.md, user-auth-plan.md, user-auth-handoff.md,
+#     user-auth-artifact.md} (SSOT 4종) + user-auth-context.md (Context Card) 생성
 # → .harness/active.json이 이 task를 가리킴
 
 # 4. 세션 종료 전
@@ -317,12 +318,18 @@ docs/
 └── <member>/                      # git config user.name → $USER → --member
     ├── <member>-task.md           # 이 멤버의 Active / Completed 인덱스
     └── <task-name>/
-        ├── <task-name>-spec.md    # 요구사항 / 설계 (사람이 먼저 작성)
-        ├── <task-name>-plan.md    # 단계별 체크리스트
-        └── <task-name>-handoff.md # 세션 인수인계 (post-commit hook으로 갱신)
+        ├── <task-name>-spec.md     # 요구사항 / 설계 (사람이 먼저 작성)
+        ├── <task-name>-plan.md     # 단계별 체크리스트
+        ├── <task-name>-handoff.md  # 세션 인수인계 (post-commit hook으로 갱신)
+        ├── <task-name>-artifact.md # 실행 결과 / 학습 (done·retro 시 append)
+        └── <task-name>-context.md  # Context Card — 현재 working set (비-SSOT)
 ```
 
 활성 task 포인터: `.harness/active.json` (gitignored).
+
+위 네 개(spec·plan·handoff·artifact)가 task의 SSOT이고, Context Card는 그것들에서 파생된
+현재 working set입니다. 카드 규약과 예산은 scaffold 되는 `AGENTS.md`의 **Task Context Card (TCC)**
+섹션이 정본이며, `harness-team context init` / `context check`로 생성·검사합니다(검사는 카드를 수정하지 않음).
 
 ### member 식별 규칙
 
@@ -515,7 +522,8 @@ my-project/
 ├── GEMINI.md                 # @AGENTS.md import + Gemini 리뷰어 지침 (reviewer 섹션)
 ├── docs/
 │   ├── README.md
-│   └── <member>/<name>/{<name>-spec.md, <name>-plan.md, <name>-handoff.md}
+│   └── <member>/<name>/{<name>-spec.md, <name>-plan.md, <name>-handoff.md,
+│                        <name>-artifact.md}  + <name>-context.md (Context Card)
 ├── .harness/
 │   ├── active.json           # 활성 task 포인터 (gitignored)
 │   └── backup.json           # 형제 백업 클론 폴더 경로 (commit 권장)

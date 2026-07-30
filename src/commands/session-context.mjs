@@ -2,6 +2,7 @@ import { join } from 'node:path';
 import { readdir, readFile } from 'node:fs/promises';
 import { exists } from '../fsx.mjs';
 import { readActive, planHasOpenBoxes } from './task.mjs';
+import { contextCardPath, validateContextCard } from './context.mjs';
 
 // "task-gate가 있다"의 단일 정의 — migrate(보강)와 doctor(감지)가 공유.
 // .claude/settings.json의 SessionStart hook 중 `session-context`를 호출하는 항목이 있으면 true.
@@ -35,7 +36,39 @@ export async function listIncompleteTasks(targetDir) {
 export async function buildSessionContext(targetDir) {
   const active = await readActive(targetDir);
   if (active && active.task) {
-    return `[harness] 활성 task: ${active.user}/${active.task} — 세션 시작 프로토콜대로 ${active.task}-plan.md 확인.`;
+    const breadcrumb = `[harness] 활성 task: ${active.user}/${active.task} — 세션 시작 프로토콜대로 ${active.task}-plan.md 확인.`;
+    const path = contextCardPath(targetDir, active);
+    if (!(await exists(path))) {
+      return [
+        breadcrumb,
+        '[harness] Context Card가 없습니다.',
+        'next-action: harness-team context init',
+      ].join('\n');
+    }
+
+    let card;
+    try {
+      card = await readFile(path, 'utf8');
+    } catch {
+      return [
+        breadcrumb,
+        `[harness] Context Card를 읽을 수 없습니다: ${active.user}/${active.task}.`,
+        'next-action: harness-team context check',
+      ].join('\n');
+    }
+
+    const validation = validateContextCard(card, active.task);
+    if (!validation.valid) {
+      const lines = [
+        breadcrumb,
+        `[harness] Context Card가 유효하지 않습니다: ${active.user}/${active.task}.`,
+        ...validation.failures.map(failure => `failure: ${failure.code} | ${failure.message}`),
+        'next-action: harness-team context check',
+      ];
+      return lines.join('\n');
+    }
+
+    return `${breadcrumb}\n${card}`;
   }
   const incomplete = await listIncompleteTasks(targetDir);
   // Plain stdout (SessionStart injects it into context). No literal <system-reminder>

@@ -4,6 +4,8 @@ import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { buildSessionContext } from '../src/commands/session-context.mjs';
+import { CONTEXT_MAX_BYTES } from '../src/commands/context.mjs';
+import { taskContextTemplate } from '../src/commands/task.mjs';
 
 async function baseDir() {
   const dir = await mkdtemp(join(tmpdir(), 'harness-sctx-'));
@@ -19,14 +21,73 @@ async function writeTask(dir, user, name, plan) {
   await writeFile(join(td, `${name}-spec.md`), `# ${name} — Spec\n`);
   await writeFile(join(td, `${name}-plan.md`), plan);
 }
+async function writeCard(dir, user, name, content = taskContextTemplate(name)) {
+  const td = join(dir, 'docs', user, name);
+  await mkdir(td, { recursive: true });
+  await writeFile(join(td, `${name}-context.md`), content);
+}
 
-test('활성 task 있음 → breadcrumb에 user/task 포함', async () => {
+test('활성 task + valid card → breadcrumb 다음에 card 전체만 주입', async () => {
+  const dir = await baseDir();
+  try {
+    await writeActive(dir, { user: 'chad', task: 'demo', path: 'docs/chad/demo' });
+    const card = taskContextTemplate('demo');
+    await writeCard(dir, 'chad', 'demo', card);
+    const out = await buildSessionContext(dir);
+    assert.equal(out, `[harness] 활성 task: chad/demo — 세션 시작 프로토콜대로 demo-plan.md 확인.\n${card}`);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('활성 task + missing card → breadcrumb와 context init 안내만 출력', async () => {
   const dir = await baseDir();
   try {
     await writeActive(dir, { user: 'chad', task: 'demo', path: 'docs/chad/demo' });
     const out = await buildSessionContext(dir);
-    assert.ok(out.includes('활성 task: chad/demo'), 'breadcrumb names the active task');
-    assert.ok(!out.includes('활성 task가 없습니다'), 'no nudge when active');
+    assert.match(out, /활성 task: chad\/demo/);
+    assert.match(out, /^next-action: harness-team context init$/m);
+    assert.doesNotMatch(out, /## Now/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('활성 task + over-budget card → 원문을 자르거나 주입하지 않고 check 안내', async () => {
+  const dir = await baseDir();
+  try {
+    await writeActive(dir, { user: 'chad', task: 'demo', path: 'docs/chad/demo' });
+    const marker = 'DO_NOT_INJECT_OVER_BUDGET';
+    const card = `${taskContextTemplate('demo')}\n${marker.repeat(CONTEXT_MAX_BYTES)}\n`;
+    await writeCard(dir, 'chad', 'demo', card);
+    const out = await buildSessionContext(dir);
+    assert.match(out, /활성 task: chad\/demo — 세션 시작 프로토콜대로 demo-plan\.md 확인\./);
+    assert.match(out, /failure: size/);
+    assert.match(out, /harness-team context check/);
+    assert.doesNotMatch(out, new RegExp(marker));
+    assert.doesNotMatch(out, /## Now/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('활성 task + malformed card → 원문을 주입하지 않고 check 안내', async () => {
+  const dir = await baseDir();
+  try {
+    await writeActive(dir, { user: 'chad', task: 'demo', path: 'docs/chad/demo' });
+    const marker = 'MALFORMED_CARD_BODY';
+    await writeCard(dir, 'chad', 'demo', `# demo — Context Card\n${marker}\n`);
+    const out = await buildSessionContext(dir);
+    assert.match(out, /활성 task: chad\/demo — 세션 시작 프로토콜대로 demo-plan\.md 확인\./);
+    assert.match(out, /failure: required-headings/);
+    assert.match(out, /harness-team context check/);
+    assert.doesNotMatch(out, new RegExp(marker));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('활성 task + 읽을 수 없는 card → breadcrumb는 유지하고 check 안내', async () => {
+  const dir = await baseDir();
+  try {
+    await writeActive(dir, { user: 'chad', task: 'demo', path: 'docs/chad/demo' });
+    await mkdir(join(dir, 'docs', 'chad', 'demo', 'demo-context.md'), { recursive: true });
+    const out = await buildSessionContext(dir);
+    assert.match(out, /활성 task: chad\/demo — 세션 시작 프로토콜대로 demo-plan\.md 확인\./);
+    assert.match(out, /^next-action: harness-team context check$/m);
+    assert.doesNotMatch(out, /## Now/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
