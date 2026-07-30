@@ -1,6 +1,7 @@
 # chad — Tasks
 
 ## Open
+- skilltest-skipstring (created 2026-07-30)
 
 - harness-comptest (created 2026-07-10)
 
