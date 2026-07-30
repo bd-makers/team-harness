@@ -7,6 +7,14 @@ import { mergeMarkdown, deepMergeJson, simpleDiff } from './merge.mjs';
 
 export const DEFAULT_BACKUP_PARENT = 'harness-backup';
 
+// AGENTS.md (shared core) + CLAUDE.md / GEMINI.md (thin, @AGENTS.md import).
+// Exported so drift checks stay in step with what apply actually renders.
+export const AGENT_FILE_TEMPLATES = [
+  ['AGENTS.md', 'AGENTS.md.hbs'],
+  ['CLAUDE.md', 'CLAUDE.md.hbs'],
+  ['GEMINI.md', 'GEMINI.md.hbs'],
+];
+
 // The symlink-backup architecture breaks when a cloud sync service evicts files
 // (offloads to cloud-only). Warn when a target/backup path lives under a known
 // sync folder. Returns a warning string, or null. Best-effort by path substring.
@@ -52,13 +60,9 @@ export async function planChanges(ctx, { stack }) {
   const changes = [];
   const legacyAgentFiles = [];
 
-  // AGENTS.md (shared core) + CLAUDE.md / GEMINI.md (thin, @AGENTS.md import).
-  // Each is marker-merged independently: managed sections updated, user text preserved.
-  for (const [file, tplName] of [
-    ['AGENTS.md', 'AGENTS.md.hbs'],
-    ['CLAUDE.md', 'CLAUDE.md.hbs'],
-    ['GEMINI.md', 'GEMINI.md.hbs'],
-  ]) {
+  // Each agent file is marker-merged independently: managed sections updated,
+  // user text preserved.
+  for (const [file, tplName] of AGENT_FILE_TEMPLATES) {
     const t = await readTextSafe(join(tplDir, tplName));
     if (!t) continue;
     const filePath = join(targetDir, file);

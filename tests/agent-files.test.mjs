@@ -4,13 +4,14 @@ import { readFile, mkdtemp, rm, writeFile, symlink, lstat } from 'node:fs/promis
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { render } from '../src/render.mjs';
-import { planChanges, applyChanges } from '../src/harness.mjs';
+import { AGENT_FILE_TEMPLATES, planChanges, applyChanges } from '../src/harness.mjs';
 import { mergeMarkdown, extractSections } from '../src/merge.mjs';
 import { detectStack } from '../src/detect-stack.mjs';
 import { tmpdir } from 'node:os';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const tpl = (f) => readFile(join(ROOT, 'templates', f), 'utf8');
+const repoStack = detectStack(ROOT);
 const VARS = {
   projectName: 'demo', stackLabel: 'Node', packageManager: 'npm',
   language: 'ts', cmdInstall: 'npm i', cmdDev: 'npm run dev', cmdTest: 'npm test',
@@ -21,20 +22,24 @@ const VARS = {
 // 반면 harness:section 마커 블록은 apply가 템플릿에서 관리하는 영역이므로, 렌더된
 // 템플릿의 모든 블록이 루트 적용본에도 내용까지 같아야 한다. 이는 새 샌드박스가 아닌
 // 이 저장소 자체를 확인해 템플릿만 변경되어도 드리프트를 잡는다.
-test('저장소 루트 AGENTS.md는 렌더된 템플릿의 관리 절과 드리프트하지 않는다', async () => {
-  const [template, rootAgents, stack] = await Promise.all([
-    tpl('AGENTS.md.hbs'),
-    readFile(join(ROOT, 'AGENTS.md'), 'utf8'),
-    detectStack(ROOT),
-  ]);
-  const expected = extractSections(render(template, { projectName: 'repository-root', ...stack }));
-  const actual = extractSections(rootAgents);
+// AGENTS/CLAUDE/GEMINI 세 파일은 planChanges가 같은 루프에서 렌더·마커 병합하므로
+// 드리프트 결함 부류가 같다 — 파일 목록을 harness.mjs와 공유해 셋 다 같은 기준으로 본다.
+for (const [file, tplName] of AGENT_FILE_TEMPLATES) {
+  test(`저장소 루트 ${file}는 렌더된 템플릿의 관리 절과 드리프트하지 않는다`, async () => {
+    const [template, rootFile, stack] = await Promise.all([
+      tpl(tplName),
+      readFile(join(ROOT, file), 'utf8'),
+      repoStack,
+    ]);
+    const expected = extractSections(render(template, { projectName: 'repository-root', ...stack }));
+    const actual = extractSections(rootFile);
 
-  assert.ok(Object.keys(expected).length > 0, '템플릿 관리 절을 찾지 못함');
-  for (const [name, section] of Object.entries(expected)) {
-    assert.equal(actual[name], section, `루트 AGENTS.md의 ${name} 관리 절이 템플릿과 다름`);
-  }
-});
+    assert.ok(Object.keys(expected).length > 0, `${tplName} 관리 절을 찾지 못함`);
+    for (const [name, section] of Object.entries(expected)) {
+      assert.equal(actual[name], section, `루트 ${file}의 ${name} 관리 절이 템플릿과 다름`);
+    }
+  });
+}
 
 test('AGENTS.md(core)는 protocol/roles/principles/stack 마커를 모두 포함', async () => {
   const out = render(await tpl('AGENTS.md.hbs'), VARS);
