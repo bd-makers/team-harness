@@ -262,7 +262,9 @@ v0.2.x에서 backup dir에 있던 `clone.sh`, `symlink.sh`, `delete.sh`를 프�
 
 > migrate는 **구조 마이그레이션**도 함께 수행합니다 — task 디렉토리 레이아웃(→0.6/0.7),
 > 레거시 `CLAUDE.md` → `AGENTS.md` 코어, 그리고 `settings.json`에 **SessionStart task-gate
-> hook이 없으면 추가**(0.9+). 모두 멱등이라 이미 최신이면 `up to date`로 건너뜁니다.
+> hook**이나 **PreToolUse boundary checkpoint hook**이 없으면 추가합니다(0.9+). 단,
+> `.claude/settings.json`이 없거나 JSON으로 파싱되지 않으면 해당 hook은 설치하지 않고 안내만 출력합니다.
+> 모두 멱등이라 이미 최신이면 `up to date`로 건너뜁니다.
 > (hook은 `apply`의 deep-merge로도 들어옵니다 — migrate는 구조 변경 없이 hook만 보강할 때 유용.)
 
 ### `/harness-upgrade` — v0.3.x → v0.4+ 원스텝 전환
@@ -349,11 +351,11 @@ V1은 object schema의 `properties`, `required`, 기본 `type`만 비교합니�
 schema instance의 object root를 가리키는 pointer와 표준 document pointer(`/properties/data`)를
 모두 지원합니다. OpenAPI resolver, TypeScript type parser, runtime schema 실행은 범위 밖입니다.
 
-기존 설치에 이 기능을 추가하는 업그레이드 경로는 `harness-team apply`뿐입니다. `apply`는 없는
-`boundary-checkpoint.sh`를 추가하고 settings를 non-destructive merge합니다. 알려진 기본 protect
-hook은 한 번만 실행되도록 업그레이드하지만, 커스터마이즈한 hook group/script는 덮어쓰지 않습니다.
-`migrate`는 이 hook의 등록이나 script 추가를 수행하지 않으므로, doctor가 보고하는 누락은
-`harness-team apply`로 해결합니다.
+기존 설치에는 `harness-team apply` 또는 `harness-team migrate`로 이 기능을 추가할 수 있습니다.
+`apply`는 settings 템플릿을 deep-merge하고, `migrate`는 구조 마이그레이션과 별도로 위 설정 파일
+조건을 만족하는 기존 설치의 hook을 보강합니다. 알려진 기본 protect hook은 한 번만 실행되도록
+업그레이드하지만, 커스터마이즈한 hook group/script는 덮어쓰지 않습니다. 커스터마이즈된 group은
+그대로 두고 안전한 경우 template boundary group을 추가합니다.
 
 ### 실전 예제
 

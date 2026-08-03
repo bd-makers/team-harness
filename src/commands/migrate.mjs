@@ -1,7 +1,8 @@
 import { join, basename } from 'node:path';
-import { unlink, rmdir, readdir, mkdir, lstat } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { unlink, rmdir, readdir, mkdir, lstat, stat, access } from 'node:fs/promises';
 import { readTextSafe, writeText, exists } from '../fsx.mjs';
-import { loadBackupDir } from '../harness.mjs';
+import { loadBackupDir, mergeClaudeSettings, settingsHasBoundaryCheckpoint } from '../harness.mjs';
 import { extractSections, deepMergeJson } from '../merge.mjs';
 import { render } from '../render.mjs';
 import { confirm } from '../prompt.mjs';
@@ -534,6 +535,103 @@ export async function migrateSessionStartHook(ctx) {
   return true;
 }
 
+// --- PreToolUse boundary checkpoint (pre-boundary settings.json → + hook) ---
+//
+// Keep this deliberately narrower than apply: only the template's PreToolUse
+// groups participate. mergeClaudeSettings() recognizes the exact old default
+// protect group and upgrades it; every other group is preserved and receives a
+// non-destructive union with the template group. The hook script is copied only
+// when absent, so an installed user-customized script is never overwritten.
+
+export async function migrateBoundaryCheckpointHook(ctx) {
+  const { root, targetDir } = ctx;
+  const settingsPath = join(targetDir, '.claude/settings.json');
+  const raw = await readTextSafe(settingsPath);
+  if (raw === null) {
+    console.log('  PreToolUse boundary checkpoint: no .claude/settings.json — skipping (run apply/init)');
+    return null;
+  }
+
+  let settings;
+  try { settings = JSON.parse(raw); } catch {
+    console.log('  PreToolUse boundary checkpoint: settings.json parse 실패 — 건너뜀');
+    return null;
+  }
+
+  const tplSettingsRaw = await readTextSafe(join(root, 'templates/.claude/settings.json'));
+  let tplBoundaryGroup;
+  try {
+    const tplPreToolUse = tplSettingsRaw ? JSON.parse(tplSettingsRaw).hooks?.PreToolUse : null;
+    tplBoundaryGroup = Array.isArray(tplPreToolUse)
+      ? tplPreToolUse.find(group => group?.hooks?.some(h => h?.type === 'command' && h.command === './.claude/hooks/boundary-checkpoint.sh'))
+      : null;
+  } catch { tplBoundaryGroup = null; }
+  if (!tplBoundaryGroup) {
+    console.log('  PreToolUse boundary checkpoint: 템플릿에 boundary hook 없음 — 건너뜀');
+    return null;
+  }
+
+  const merged = mergeClaudeSettings(settings, { hooks: { PreToolUse: [tplBoundaryGroup] } });
+  const settingsChanged = !settingsHasBoundaryCheckpoint(settings)
+    && JSON.stringify(merged) !== JSON.stringify(settings);
+  const scriptRel = '.claude/hooks/boundary-checkpoint.sh';
+  const scriptPath = join(targetDir, scriptRel);
+  let scriptEntry;
+  try {
+    scriptEntry = await lstat(scriptPath);
+  } catch (err) {
+    if (err?.code !== 'ENOENT') {
+      console.log(`  PreToolUse boundary checkpoint: ${scriptRel} 확인 실패 — 건너뜀`);
+      return null;
+    }
+  }
+  if (scriptEntry) {
+    let scriptReady = false;
+    try {
+      const scriptTarget = scriptEntry.isSymbolicLink() ? await stat(scriptPath) : scriptEntry;
+      if (scriptTarget.isFile()) {
+        await access(scriptPath, constants.X_OK);
+        scriptReady = true;
+      }
+    } catch {
+      scriptReady = false;
+    }
+    if (!scriptReady) {
+      console.log(`  PreToolUse boundary checkpoint: ${scriptRel}이 실행 가능한 일반 파일이 아닙니다 — settings.json을 변경하지 않습니다`);
+      return null;
+    }
+  }
+  const scriptMissing = !scriptEntry;
+  const templateScript = scriptMissing
+    ? await readTextSafe(join(root, 'templates', scriptRel))
+    : null;
+  if (scriptMissing && !templateScript) {
+    console.log(`  ${scriptRel}: 템플릿 없음 — 건너뜀`);
+    return null;
+  }
+  if (!settingsChanged && !scriptMissing) {
+    console.log('  PreToolUse boundary checkpoint: up to date');
+    return false;
+  }
+
+  console.log('\nFound incomplete PreToolUse boundary checkpoint migration:');
+  if (settingsChanged) console.log('  + hooks.PreToolUse → boundary-checkpoint.sh (custom groups preserved)');
+  if (scriptMissing) console.log(`  + ${scriptRel}`);
+
+  const ok = ctx.flags.yes || await confirm('\nAdd PreToolUse boundary checkpoint hook?', { defaultYes: true });
+  if (!ok) { console.log('Skipped PreToolUse boundary checkpoint migration.'); return false; }
+
+  if (settingsChanged) {
+    await writeText(settingsPath, JSON.stringify(merged, null, 2) + '\n');
+    console.log('  ✓ added PreToolUse boundary checkpoint to .claude/settings.json');
+  }
+  if (scriptMissing) {
+    await writeText(scriptPath, templateScript, { mode: 0o755 });
+    console.log(`  ✓ added ${scriptRel}`);
+  }
+  return true;
+}
+
 export async function runMigrate(ctx) {
   console.log(`harness-team migrate → ${ctx.targetDir}`);
 
@@ -546,8 +644,14 @@ export async function runMigrate(ctx) {
   const claudeHooksRefreshed = await refreshClaudeHooks(ctx);
   const taskLabelsRenamed = await migrateTaskIndexLabels(ctx);
   const hookMigrated = await migrateSessionStartHook(ctx);
+  const boundaryHookMigrated = await migrateBoundaryCheckpointHook(ctx);
 
-  if (!agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !claudeHooksRefreshed && !taskLabelsRenamed && !hookMigrated) {
+  if (boundaryHookMigrated === null) {
+    console.log('\nMigration incomplete — resolve the PreToolUse boundary checkpoint issue and rerun.');
+    return;
+  }
+
+  if (!agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !claudeHooksRefreshed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated) {
     console.log('\nNothing to migrate — project is already up to date.');
     return;
   }

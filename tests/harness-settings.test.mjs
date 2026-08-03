@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mergeClaudeSettings } from '../src/harness.mjs';
+import { mergeClaudeSettings, settingsHasBoundaryCheckpoint } from '../src/harness.mjs';
 
 const protect = { type: 'command', command: './.claude/hooks/protect-files.sh', timeout: 10 };
 const boundary = { type: 'command', command: './.claude/hooks/boundary-checkpoint.sh', timeout: 10 };
@@ -37,4 +37,9 @@ test('mergeClaudeSettings preserves protect-files hooks with customized settings
       { matcher: 'Edit|Write', hooks: [protect, boundary] },
     ]);
   }
+});
+
+test('settingsHasBoundaryCheckpoint ignores malformed custom hook groups', () => {
+  const settings = { hooks: { PreToolUse: [{ matcher: 'Edit', hooks: {} }] } };
+  assert.equal(settingsHasBoundaryCheckpoint(settings), false);
 });
