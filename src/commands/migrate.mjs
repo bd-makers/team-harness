@@ -1,5 +1,6 @@
 import { join, basename } from 'node:path';
-import { unlink, rmdir, readdir, mkdir, lstat } from 'node:fs/promises';
+import { constants } from 'node:fs';
+import { unlink, rmdir, readdir, mkdir, lstat, stat, access } from 'node:fs/promises';
 import { readTextSafe, writeText, exists } from '../fsx.mjs';
 import { loadBackupDir, mergeClaudeSettings, settingsHasBoundaryCheckpoint } from '../harness.mjs';
 import { extractSections, deepMergeJson } from '../merge.mjs';
@@ -575,14 +576,39 @@ export async function migrateBoundaryCheckpointHook(ctx) {
     && JSON.stringify(merged) !== JSON.stringify(settings);
   const scriptRel = '.claude/hooks/boundary-checkpoint.sh';
   const scriptPath = join(targetDir, scriptRel);
-  const scriptStatus = await lstat(scriptPath)
-    .then(() => 'present')
-    .catch(err => err?.code === 'ENOENT' ? 'missing' : 'unknown');
-  if (scriptStatus === 'unknown') {
-    console.log(`  PreToolUse boundary checkpoint: ${scriptRel} 확인 실패 — 건너뜀`);
+  let scriptEntry;
+  try {
+    scriptEntry = await lstat(scriptPath);
+  } catch (err) {
+    if (err?.code !== 'ENOENT') {
+      console.log(`  PreToolUse boundary checkpoint: ${scriptRel} 확인 실패 — 건너뜀`);
+      return false;
+    }
+  }
+  if (scriptEntry) {
+    let scriptReady = false;
+    try {
+      const scriptTarget = scriptEntry.isSymbolicLink() ? await stat(scriptPath) : scriptEntry;
+      if (scriptTarget.isFile()) {
+        await access(scriptPath, constants.X_OK);
+        scriptReady = true;
+      }
+    } catch {
+      scriptReady = false;
+    }
+    if (!scriptReady) {
+      console.log(`  PreToolUse boundary checkpoint: ${scriptRel}이 실행 가능한 일반 파일이 아닙니다 — settings.json을 변경하지 않습니다`);
+      return false;
+    }
+  }
+  const scriptMissing = !scriptEntry;
+  const templateScript = scriptMissing
+    ? await readTextSafe(join(root, 'templates', scriptRel))
+    : null;
+  if (scriptMissing && !templateScript) {
+    console.log(`  ${scriptRel}: 템플릿 없음 — 건너뜀`);
     return false;
   }
-  const scriptMissing = scriptStatus === 'missing';
   if (!settingsChanged && !scriptMissing) {
     console.log('  PreToolUse boundary checkpoint: up to date');
     return false;
@@ -600,12 +626,7 @@ export async function migrateBoundaryCheckpointHook(ctx) {
     console.log('  ✓ added PreToolUse boundary checkpoint to .claude/settings.json');
   }
   if (scriptMissing) {
-    const script = await readTextSafe(join(root, 'templates', scriptRel));
-    if (!script) {
-      console.log(`  ${scriptRel}: 템플릿 없음 — 건너뜀`);
-      return settingsChanged;
-    }
-    await writeText(scriptPath, script, { mode: 0o755 });
+    await writeText(scriptPath, templateScript, { mode: 0o755 });
     console.log(`  ✓ added ${scriptRel}`);
   }
   return true;

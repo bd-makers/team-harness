@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, readFile, rm, stat, chmod } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm, stat, lstat, chmod, symlink } from 'node:fs/promises';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
@@ -149,3 +149,25 @@ test('읽을 수 없는 기존 boundary script도 덮어쓰지 않는다', async
     assert.equal(await readFile(scriptPath, 'utf8'), '#!/usr/bin/env bash\n# CUSTOM\nexit 0\n');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+for (const [name, create] of [
+  ['디렉터리', path => mkdir(path)],
+  ['실행 권한 없는 파일', path => writeFile(path, '#!/usr/bin/env bash\nexit 0\n', { mode: 0o600 })],
+  ['깨진 심볼릭 링크', path => symlink('missing-target.sh', path)],
+]) {
+  test(`${name}인 기존 boundary 경로는 설정을 변경하지 않는다`, async () => {
+    const dir = await fixture({ hooks: { PreToolUse: [OLD_DEFAULT_PROTECT] } });
+    try {
+      const scriptPath = join(dir, '.claude/hooks/boundary-checkpoint.sh');
+      await mkdir(join(dir, '.claude/hooks'), { recursive: true });
+      await create(scriptPath);
+      const before = await readSettings(dir);
+
+      const ret = await migrateBoundaryCheckpointHook(ctxYes(dir));
+
+      assert.equal(ret, false);
+      assert.deepEqual(await readSettings(dir), before);
+      assert.ok(await lstat(scriptPath));
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  });
+}
