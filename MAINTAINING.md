@@ -76,19 +76,31 @@ Codex manifest/skill을 수정했다면 Codex validator도 실행하세요. 로�
 4. `harness-team release <minor|patch|major>` 실행
    - 4개 매니페스트(`package.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`) 버전 일괄 bump
    - 캐시·마켓플레이스·`installed_plugins.json` 자동 동기화
-5. `CHANGELOG.md`의 `## [Unreleased]`를 새 버전 헤딩(`## [X.Y.Z] - YYYY-MM-DD`)으로 이동
-6. 기능 브랜치에 릴리스 준비 커밋을 만들고 PR로 검토를 요청합니다. 기본 브랜치에 직접 push하거나 PR을 직접 merge하지 마세요.
+5. `docs/what-changes-latest-version.html`을 새 버전의 변경·근거로 직접 갱신하고, 같은 내용을 `docs/what-changes-X.Y.Z.html` 스냅샷으로 남깁니다. 이어서 `npm test`, `npm run docs:generate`, `npm run docs:check`를 실행합니다.
+   - 변경의 `왜`는 자동 생성하지 않습니다. 릴리스 범위를 검토해 사람이 작성합니다.
+6. `CHANGELOG.md`의 `## [Unreleased]`를 새 버전 헤딩(`## [X.Y.Z] - YYYY-MM-DD`)으로 이동
+7. 기능 브랜치에 릴리스 준비 커밋을 만들고 PR로 검토를 요청합니다. 기본 브랜치에 직접 push하거나 PR을 직접 merge하지 마세요.
    ```bash
    git commit -m "chore(release): 버전 X.Y.Z으로 범프"
    git push -u origin <feature-branch>
    ```
-7. PR이 병합된 뒤, 병합된 기본 브랜치에서 태그를 만들고 push합니다.
+8. PR이 병합된 뒤, 병합된 기본 브랜치에서 태그를 만들고 push합니다.
    ```bash
    git switch main
    git pull --ff-only origin main
    git tag vX.Y.Z
    git push origin vX.Y.Z
    ```
+
+---
+
+## 최신 변경 설명 문서의 최신성 보장
+
+`what-changes-latest-version.html`은 현재 `package.json` 버전을 설명하는 소비자용 문서입니다. 릴리스마다 사람이 근거를 갱신한 뒤 같은 내용을 버전별 스냅샷으로 남깁니다. `tests/what-changes-latest-version.test.mjs`는 현재 문서의 제목·요약 버전 표기, 현재 버전 스냅샷의 존재, 두 파일의 완전한 일치를 검사합니다. 의도적으로 제목 버전을 어긋나게 한 입력도 이 테스트에서 실패하므로, 갱신 단계를 잊으면 PR 전 `npm test`가 실패합니다.
+
+이 선택은 이미 쓰는 `latest + 버전별 스냅샷` 관례를 따르면서 현재 문서의 약속과 역사 기록을 함께 보존합니다. 스냅샷만 남기면 `latest`의 갱신 누락을 막지 못하고, 버전 일치 검사만 두면 릴리스별 기록이 남지 않습니다. 소스 생성은 변경의 근거를 신뢰성 있게 만들 수 없으며, 이 문서의 핵심인 사람이 검토한 `왜`를 자동화하지 않는 원칙에도 맞지 않습니다.
+
+README에서 이 문서를 연결해 실제 독자가 도달할 수 있게 합니다. **재고 조건:** 릴리스마다 사람이 검토한 변경 근거를 보존하는 구조화된 정본이 생겨 문서를 손실 없이 생성할 수 있거나, 버전별 공개 기록을 더 이상 보존하지 않기로 결정하면 이 구조를 다시 검토합니다.
 
 ---
 
