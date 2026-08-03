@@ -1,0 +1,22 @@
+graph LR
+    subgraph W["~/work/"]
+        subgraph P["my-project/  (프로젝트)"]
+            CM["CLAUDE.md"]
+            CL[".claude/"]
+            HA[".harness/\nbackup.json"]
+            SCR["clone.sh\nsymlink.sh\ndelete.sh"]
+        end
+        subgraph B["harness-backup/my-project/  (백업)"]
+            B_CM["CLAUDE.md"]
+            B_CL[".claude/"]
+            B_DOCS["docs/"]
+            B_SCR["clone.sh\nsymlink.sh\ndelete.sh"]
+        end
+    end
+
+    SCR -. "clone.sh\nnewer-wins rsync" .-> B_CM & B_CL & B_DOCS
+    B_SCR -. "symlink.sh\nbackup→project" .-> CM
+
+    style P fill:#1a2035,stroke:#2e3350
+    style B fill:#231a10,stroke:#2e3350
+    style W fill:#1a1d27,stroke:#2e3350

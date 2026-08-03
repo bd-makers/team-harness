@@ -30,3 +30,4 @@
 | chad | skilltest-ast-grader | ✅ done | 2026-07-29 |
 | chad | skilltest-skipstring | 🔄 open | 2026-07-30 |
 | chad | th-resident-verify | 🔄 open | 2026-07-30 |
+| chad | th-overview-mermaid | 🔄 open | 2026-08-03 |

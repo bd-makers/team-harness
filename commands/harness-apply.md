@@ -1,5 +1,6 @@
 ---
 description: 기존 프로젝트에 팀 하네스를 비파괴적으로 적용 (dry-run 후 병합)
+phase: Onboarding
 argument-hint: [--yes]
 tags:
   - project

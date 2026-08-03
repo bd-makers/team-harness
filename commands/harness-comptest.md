@@ -1,5 +1,6 @@
 ---
 description: React/React Native 컴포넌트·화면·UI 플로우에 Testing Trophy 통합 층 테스트를 작성한다 (스택 감지 → 사용자 관점 검증 강제 → 커버리지 → 검증)
+phase: Testing
 argument-hint: "[file <경로> | session | feature <설명|경로> | folder <경로> | project] (기본: session)"
 tags:
   - project

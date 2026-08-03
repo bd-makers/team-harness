@@ -1,5 +1,6 @@
 ---
 description: 현재(또는 지정) task의 artifact.md에 학습/교정 내용을 append. CLAUDE.md 자기개선 루프 정책 실행.
+phase: Workflow
 argument-hint: [학습 내용 요약]
 tags:
   - project

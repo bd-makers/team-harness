@@ -1,5 +1,6 @@
 ---
 description: 현재 프로젝트에 팀 하네스를 신규 scaffold합니다 (Claude 메인 + Codex/Gemini/Cursor/OpenCode)
+phase: First-time
 argument-hint: [--stack react-native|next|node|python|generic] [--yes]
 tags:
   - react

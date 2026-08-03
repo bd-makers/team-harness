@@ -13,7 +13,7 @@ function section(html, id) {
   return match[1];
 }
 
-test('documentation points to task and command SSOTs instead of copying inventories', async () => {
+test('README points to SSOTs while overview exposes generated inventories', async () => {
   const [readme, overview, agents, docsReadme, manifestText, commandFiles] = await Promise.all([
     read('README.md'),
     read('docs/harness-overview.html'),
@@ -45,10 +45,15 @@ test('documentation points to task and command SSOTs instead of copying inventor
   const files = section(overview, 'files');
   assert.match(commands, /commands\/\*\.md/);
   assert.match(commands, /\.claude-plugin\/plugin\.json/);
-  assert.doesNotMatch(commands, /<table\b/);
+  assert.match(commands, /<table data-generated="commands">/);
+  assert.equal((commands.match(/data-command-source=/g) ?? []).length, manifest.commands.length);
+  for (const entry of manifest.commands) {
+    assert.match(commands, new RegExp(`data-command-source="${entry.replace('./', '')}"`));
+  }
   assert.doesNotMatch(commands, /17개의 slash command/);
   assert.match(task, /task 파일 계약과 Context Card 규약은 scaffold 되는/);
   assert.doesNotMatch(task, /class="card-grid"/);
-  assert.match(files, /저장소 트리가 정본입니다/);
-  assert.doesNotMatch(files, /<table\b/);
+  assert.match(files, /현재 소스 트리에서 생성됩니다/);
+  assert.match(files, /<table data-generated="source-tree">/);
+  assert.match(files, /scripts\/generate-harness-overview\.mjs/);
 });

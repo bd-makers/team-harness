@@ -1,5 +1,6 @@
 ---
 description: project → backup dir 동기화 (merge, newer-wins)
+phase: Backup
 argument-hint: [--yes] [--target <dir>]
 tags:
   - project

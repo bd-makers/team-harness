@@ -1,5 +1,6 @@
 ---
 description: 설치된 하네스와 에이전트 워크플로우 스킬이 진짜 작동하는지 실제 claude -p 세션으로 검증 (L5 agent-in-the-loop) + 날짜 리포트 (harness-sim 스킬 위임)
+phase: Simulation
 argument-hint: "[run|probe]"
 tags:
   - project

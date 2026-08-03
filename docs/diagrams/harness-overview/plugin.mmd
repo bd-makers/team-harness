@@ -1,0 +1,10 @@
+flowchart LR
+    V["버전 범프\n예: 0.5.1 → 0.5.2"]
+    V --> A["package.json\nversion 필드"]
+    V --> B[".claude-plugin/\nplugin.json"]
+    V --> C[".claude-plugin/\nmarketplace.json ⚠️"]
+    V --> D["~/.claude/plugins/cache/\nharness-aijient-team/X.Y.Z/\n(로컬 캐시 동기화)"]
+    A & B & C & D --> E["git commit + push\ninstalled_plugins.json 갱신\n/reload-plugins 실행"]
+
+    style C fill:#3d2700,stroke:#f5a623
+    style E fill:#0e3d30,stroke:#4df0aa

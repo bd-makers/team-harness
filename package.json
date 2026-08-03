@@ -20,6 +20,8 @@
     "node": ">=18"
   },
   "scripts": {
+    "docs:generate": "node scripts/generate-harness-overview.mjs",
+    "docs:check": "node scripts/generate-harness-overview.mjs --check",
     "test": "node --test tests/*.test.mjs tests/e2e/*.test.mjs && node --test --test-concurrency=1 tests/perf/*.test.mjs",
     "test:unit": "node --test tests/*.test.mjs",
     "test:e2e": "node --test tests/e2e/*.test.mjs"

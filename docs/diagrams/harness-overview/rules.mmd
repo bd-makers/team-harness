@@ -1,0 +1,25 @@
+graph LR
+    subgraph SOURCE[".claude/rules/  (SSOT)"]
+        NAV["navigation.md"]
+        STATE["state-management.md"]
+        STYLE["styling.md"]
+        TEST["testing.md"]
+    end
+
+    subgraph MIRROR[".cursor/rules/  (auto-mirror)"]
+        NAV2["navigation.mdc"]
+        STATE2["state-management.mdc"]
+        STYLE2["styling.mdc"]
+        TEST2["testing.mdc"]
+    end
+
+    NAV -. "harness-sync" .-> NAV2
+    STATE -. "harness-sync" .-> STATE2
+    STYLE -. "harness-sync" .-> STYLE2
+    TEST -. "harness-sync" .-> TEST2
+
+    SOURCE -->|"paths 매칭 시 자동 주입"| CLAUDE_CODE["Claude Code"]
+    MIRROR -->|"Cursor IDE에서 읽음"| CURSOR_IDE["Cursor IDE"]
+
+    style SOURCE fill:#1e3a5f,stroke:#50c8f5
+    style MIRROR fill:#0e3d30,stroke:#4df0aa

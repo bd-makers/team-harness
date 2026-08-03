@@ -1,0 +1,41 @@
+graph TB
+    subgraph PROJECT["📁 my-project/"]
+        CORE["📄 AGENTS.md\n공유 코어 실파일 (오픈 표준 SSOT)\nprotocol · roles · principles · stack"]
+        CLA["📄 CLAUDE.md (thin)\n@AGENTS.md + workflow"]
+        GEM["📄 GEMINI.md (thin)\n@AGENTS.md + reviewer"]
+        CLA -. "@AGENTS.md import" .-> CORE
+        GEM -. "@AGENTS.md import" .-> CORE
+
+        subgraph RULES_SRC[".claude/rules/"]
+            R1["navigation.md"]
+            R2["state-management.md"]
+            R3["styling.md"]
+            R4["testing.md"]
+        end
+
+        subgraph CURSOR_RULES[".cursor/rules/"]
+            C1["navigation.mdc"]
+            C2["state-management.mdc"]
+            C3["styling.mdc"]
+            C4["testing.mdc"]
+        end
+    end
+
+    R1 -. "mirror" .-> C1
+    R2 -. "mirror" .-> C2
+    R3 -. "mirror" .-> C3
+    R4 -. "mirror" .-> C4
+
+    CLA -->|"@import"| CLAUDE_A["Claude Code (drive)"]
+    GEM -->|"@import"| GEMINI_A["Gemini CLI (review)"]
+    CORE -->|네이티브| CODEX_A["Codex (review)"]
+    CORE -->|네이티브| OPENCODE_A["OpenCode (drive)"]
+    CORE -->|네이티브| CURSOR_A["Cursor"]
+    CURSOR_RULES --> CURSOR_A
+
+    style CORE fill:#0e3d30,stroke:#4df0aa
+    style CLA fill:#1e3a5f,stroke:#50c8f5
+    style GEM fill:#1e3a5f,stroke:#50c8f5
+    style PROJECT fill:#1a1d27,stroke:#2e3350
+    style RULES_SRC fill:#1e3a5f,stroke:#50c8f5
+    style CURSOR_RULES fill:#0e3d30,stroke:#4df0aa

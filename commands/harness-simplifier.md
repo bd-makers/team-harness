@@ -1,5 +1,6 @@
 ---
 description: 활성 task의 plan.md에서 제거 가능한 단계와 추상화를 찾아낸다
+phase: Persona
 argument-hint: (없음)
 tags:
   - project

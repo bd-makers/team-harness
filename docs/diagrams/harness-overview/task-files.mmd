@@ -1,0 +1,12 @@
+graph LR
+    CMD["harness-team task auth-redesign"] --> ACTIVE[".harness/active.json\n{user, task, path, switchedAt}"]
+    CMD --> DIR["docs/chad/auth-redesign/"]
+    DIR --> SP["auth-redesign-spec.md"]
+    DIR --> PL["auth-redesign-plan.md"]
+    DIR --> HO["auth-redesign-handoff.md\n← post-commit 자동 갱신"]
+    CMD --> IDX["docs/chad/chad-task.md\nActive 목록에 추가"]
+    CMD --> SUM["docs/task_summary.md\n프로젝트 전체 뷰"]
+
+    style CMD fill:#2a1f5c,stroke:#7c6af5
+    style ACTIVE fill:#1e3a5f,stroke:#50c8f5
+    style HO fill:#0e3d30,stroke:#4df0aa

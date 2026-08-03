@@ -1,0 +1,36 @@
+stateDiagram-v2
+    [*] --> Created : harness-team task &lt;name&gt;
+
+    state Created {
+        direction LR
+        [*] --> spec : &lt;name&gt;-spec.md 생성
+        spec --> plan : &lt;name&gt;-plan.md 생성
+        plan --> handoff : &lt;name&gt;-handoff.md 생성
+        handoff --> active_json : .harness/active.json 갱신
+    }
+
+    Created --> Active : 자동 활성화
+
+    state Active {
+        direction LR
+        [*] --> work : 개발 진행
+        work --> commit : git commit
+        commit --> hook : post-commit hook
+        hook --> work : handoff 자동 갱신
+        work --> switch : harness-team task &lt;other&gt;
+        switch --> work : 다른 task 활성화
+    }
+
+    Active --> AskDone : plan 완료 감지\n또는 완료 발화\n또는 harness-team done
+    AskDone --> Active : 아직 진행 중
+    AskDone --> Done : 완료 처리
+
+    state Done {
+        direction LR
+        [*] --> handoff_final : handoff.md 완료 append
+        handoff_final --> index : &lt;user&gt;-task.md 갱신
+        index --> summary : task_summary.md 갱신
+        summary --> clear : active.json → null
+    }
+
+    Done --> [*]

@@ -1,5 +1,6 @@
 ---
 description: 활성 task의 spec.md를 소크라테스식 질문으로 검증해 숨겨진 가정을 드러낸다
+phase: Persona
 argument-hint: (없음 — 활성 task 자동 감지)
 tags:
   - project

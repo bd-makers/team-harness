@@ -1,0 +1,47 @@
+sequenceDiagram
+    actor User
+    participant CLI as harness-team.mjs
+    participant Cmd as init / apply
+    participant H as harness.mjs
+    participant FS as FileSystem
+
+    rect rgb(26, 32, 53)
+        Note over User,FS: /harness-init (신규 프로젝트)
+        User->>CLI: /harness-init
+        CLI->>Cmd: init.run(cwd, flags)
+        Cmd->>H: detectStack(cwd)
+        H-->>Cmd: stack, language, packageManager
+        Cmd->>User: 백업 폴더명 확인 (prompt)
+        User-->>Cmd: "harness-backup"
+        Cmd->>FS: mkdir(backupDir)
+        Cmd->>H: planChanges(ctx)
+        H->>H: render(AGENTS/CLAUDE/GEMINI.md.hbs)
+        H-->>Cmd: changes[]
+        Cmd->>User: diff 미리보기 + 승인
+        User-->>Cmd: 확인
+        Cmd->>H: applyChanges(changes)
+        H->>FS: AGENTS.md (core) 기록
+        H->>FS: CLAUDE.md / GEMINI.md (@AGENTS.md import) 기록
+        Cmd->>H: copyStaticAssets
+        H->>FS: hooks · rules · skills · docs 복사
+        H->>FS: .claude/rules → .cursor/rules 미러링
+        Cmd->>FS: clone.sh · symlink.sh · delete.sh 기록
+        Cmd-->>User: ✅ 완료
+    end
+
+    rect rgb(26, 40, 30)
+        Note over User,FS: /harness-apply (기존 프로젝트)
+        User->>CLI: /harness-apply
+        CLI->>Cmd: apply.run(cwd, flags)
+        Cmd->>FS: readFile(CLAUDE.md)
+        FS-->>Cmd: existingContent
+        Cmd->>H: mergeMarkdown(existing, template)
+        Note over H: 마커 외부 사용자 콘텐츠 보존
+        H-->>Cmd: mergedContent
+        Cmd->>H: deepMergeJson(settings.json)
+        Cmd->>H: deepMergeJson(opencode.json)
+        Cmd->>User: diff 미리보기 + 승인
+        User-->>Cmd: 확인
+        Cmd->>FS: writeFile(CLAUDE.md)
+        Cmd-->>User: ✅ 완료
+    end

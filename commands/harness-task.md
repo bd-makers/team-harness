@@ -1,5 +1,6 @@
 ---
 description: task 관리 (task/list/done/handoff) — docs/<user>/<name>/ 구조
+phase: Workflow
 argument-hint: <name> | list | done
 tags:
   - project
