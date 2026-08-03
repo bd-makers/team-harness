@@ -77,10 +77,17 @@ Codex manifest/skill을 수정했다면 Codex validator도 실행하세요. 로�
    - 4개 매니페스트(`package.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`, `.codex-plugin/plugin.json`) 버전 일괄 bump
    - 캐시·마켓플레이스·`installed_plugins.json` 자동 동기화
 5. `CHANGELOG.md`의 `## [Unreleased]`를 새 버전 헤딩(`## [X.Y.Z] - YYYY-MM-DD`)으로 이동
-6. 커밋 및 태그:
+6. 기능 브랜치에 릴리스 준비 커밋을 만들고 PR로 검토를 요청합니다. 기본 브랜치에 직접 push하거나 PR을 직접 merge하지 마세요.
    ```bash
    git commit -m "chore(release): 버전 X.Y.Z으로 범프"
-   git tag vX.Y.Z && git push --follow-tags
+   git push -u origin <feature-branch>
+   ```
+7. PR이 병합된 뒤, 병합된 기본 브랜치에서 태그를 만들고 push합니다.
+   ```bash
+   git switch main
+   git pull --ff-only origin main
+   git tag vX.Y.Z
+   git push origin vX.Y.Z
    ```
 
 ---

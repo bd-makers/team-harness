@@ -18,16 +18,27 @@ modified: 2026-06-02
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-08-03
+
 ### Added
-- **agent 파일 managed-섹션 드리프트 검사** (`tests/agent-files.test.mjs`) — `templates/{AGENTS,CLAUDE,GEMINI}.md.hbs`를 이 저장소 스택으로 렌더해 루트 `AGENTS.md`·`CLAUDE.md`·`GEMINI.md`의 `harness:section` 블록과 **내용까지** 비교한다. 템플릿에만 절이 추가되고 루트 적용본에서 빠지는 드리프트를 CI에서 잡는다. 마커 밖 텍스트(저장소 고유 제목·비관리 영역)는 검사하지 않으므로 루트 파일 전체 일치를 요구하지 않는다. 파일 목록은 `src/harness.mjs`가 apply에서 실제로 렌더하는 `AGENT_FILE_TEMPLATES`를 공유해 검사와 구현이 어긋나지 않게 했다. 테스트 전용 — 런타임 동작·템플릿·루트 문서 내용 변경 없음, 의존성 추가 없음. (작업 규칙은 `MAINTAINING.md` 참고.)
-- **Task Context Card (TCC)** (`src/commands/context.mjs` + `harness-team context <init|check>`) — task별 `docs/<user>/<name>/<name>-context.md`를 도입한다. 기존 spec·plan·handoff·artifact **네 파일은 그대로 SSOT**이고 카드는 그 파생물인 **비-SSOT working set**이다(`harness-team task <name>`가 다섯 번째 파일로 함께 생성하며 `--json` `artifacts`는 4 SSOT + 카드). `context init`은 활성 task에 카드가 없을 때만 만들고 이미 있으면 no-op, `context check`는 **결정론적으로 검사만** 한다 — UTF-8 6 KiB, 비공백 100행, 필수 헤딩 6종, 미해결 failure capsule 최대 3개(본문이 빈 템플릿 stub는 세지 않음). 카드를 수정·요약·절삭하지 않으며, 활성 task가 없으면 두 서브커맨드 모두 카드를 만들지 않고 `no-active-task`(exit 1)로 끝난다. 알 수 없는 액션은 `invalid-action` + usage(exit 1). `session-context`·`backup`처럼 **CLI 전용 서브커맨드**(slash 미노출). 계약은 scaffold 되는 `AGENTS.md`의 **Task Context Card (TCC)** 섹션이 정본이며, 같은 섹션에 5단계 **JIT retrieval 프로토콜**(TCC → Grep 식별자 → 좁은 Glob → 매치 파일만 Read → map 정리)을 추가하고 `new-feature`·`fix-bug` 스킬에 failure capsule 안전 기록 규칙(raw stderr·토큰·비밀값·전체 payload 복사 금지)을 넣었다. 의존성 추가 없음.
-- **SessionStart Context Card 주입** (`src/commands/session-context.mjs`) — 활성 task가 있고 카드가 유효하면 기존 breadcrumb **다음에 카드 원문을 그대로** 주입한다. 카드가 없으면 breadcrumb + `context init` 안내, 유효하지 않거나 읽을 수 없으면 breadcrumb + 실패 코드 + `context check` 안내만 내보내고 **원문은 절대 절삭·주입하지 않는다**. 활성 task가 없을 때의 task-gate nudge 동작은 그대로다.
-- **L5-skill 검증 하네스** (`tests/sim/skilltest.mjs`) — `/harness-unittest`·`/harness-comptest`처럼 CLI가 아닌 **에이전트 워크플로우 스킬**을 fixture 프로젝트(web React + Vitest)에서 실제 `claude -p`로 구동해 *작성된 테스트*를 채점한다. `agentloop.mjs`(설치된 scaffold)가 못 보는 레이어. 서브커맨드 `selftest|warm|probe|run` — `selftest`(스코어러 자체검증)·`warm`(fixture 프리빌드, `npm install` 1회 → `.skilltest-cache/`)은 **auth 불필요**. 채점은 파일별로: GWT/AAA 3구획(주석 마커 또는 빈 줄), 사용자 관점 쿼리 우선순위, snapshot·`react-test-renderer` 금지, `npm test` exit 0, 그리고 **fixture 비파괴 해시**(에이전트가 production source를 고쳐 통과시키면 FAIL). 판단 항목(리팩토링 내성·뮤테이션 생존·unittest↔comptest 라우팅)은 설계상 `⚠️manual`. 리포트는 `../harness-playground/sim-reports/skilltest-<TS>.md`이며, FAIL이 있을 때만 격리 검증용 샌드박스를 남긴다. 절차는 `skills/harness-sim/SKILL.md`(SSOT)의 Phase 2-B에 편입 — `commands/harness-sim.md` 래퍼는 중복 절차를 걷어내고 포인터로 축소. (배포 산출물 미포함 — `files`에 `tests` 없음)
-- **`/harness-inttest` 커맨드** (`commands/harness-inttest.md` + `skills/harness-inttest/SKILL.md`) — API 핸들러·리포지토리/DB 접근·캐시·큐·파일시스템·아웃바운드 HTTP 등 **프로세스 경계를 넘는 코드**에 Vladimir Khorikov Part III(통합 테스트) 전략을 적용하는 에이전트 워크플로우. `/harness-unittest`·`/harness-comptest`의 세 번째 형제로 단계 골격(라우팅 → 0단계 스택 감지 → 스코프 → 전략 → GWT → 특화 규칙 → 커버리지 → 검증)을 계승하되 대상만 교체. 통합 특화: 서버 프레임워크별 인프로세스 호출 수단(Fastify inject·Hono app.request·supertest·tRPC createCaller) 감지, Docker 가용성 확인, **managed 의존성은 실물(testcontainers)로·목킹 금지 / unmanaged 의존성은 HTTP 경계에서만 msw(node) 목킹**이라는 핵심 규율, [금지] 프로덕션과 다른 in-memory DB 대체(SQLite로 Postgres 대행), 데이터 격리(트랜잭션 롤백/truncate·마이그레이션 스키마), 응답+영속 상태 둘 다 assert하는 GWT, 에러 경로(제약 위반·타임아웃·롤백·4xx) 기본 세트, 단독/전체 실행 격리 증명 검증. 3형제 라우팅 완성: comptest 라우팅 섹션과 unittest §2에 inttest 교차 참조 각 1줄 추가. `plugin.json` `commands` + README 커맨드 표 + Codex 래퍼 스킬에 등록.
-- **`/harness-comptest` 커맨드** (`commands/harness-comptest.md` + `skills/harness-comptest/SKILL.md`) — React/React Native 컴포넌트·화면·UI 훅·폼 플로우에 Kent C. Dodds Testing Trophy 통합 층 테스트를 작성하는 에이전트 워크플로우. `/harness-unittest`의 형제 커맨드로 문체·단계 골격(0단계 스택 감지 → 스코프 → 전략 → GWT → 특화 규칙 → 커버리지 → 검증)을 계승하되 대상만 교체. 컴포넌트 특화: 전역 프로바이더/custom render 헬퍼 감지, msw 네트워크 경계 목킹([금지] fetch/react-query 훅 직접 목킹), 사용자 관점 쿼리 우선순위(getByRole > … > testID 최후), user-event 강제, 조건부 렌더 3상태(로딩/에러/빈) 기본 세트, RN 특화(RNTL·실제 NavigationContainer), act 경고 0건 검증. unittest 계약 §4에 양방향 라우팅 교차 참조 추가. `plugin.json` `commands` + README 커맨드 표 + Codex 래퍼 스킬에 등록.
+- **Task Context Card 생명주기** — task를 만들 때 현재 작업에 필요한 작은 비-SSOT 카드를 함께 만들고, 세션 시작 시 유효한 카드만 breadcrumb 뒤에 주입한다. 긴 task를 재개할 때 전체 문서를 다시 읽지 않고도 현재 단계와 다음 검색 단서를 복원할 수 있다.
+- **컴포넌트·통합 테스트 워크플로우** — `/harness-comptest`와 `/harness-inttest`가 테스트 경계에 맞는 전략, 목킹 규칙, 실패 경로 검증을 안내한다. 단위 테스트가 맡지 않아야 할 UI·프로세스 경계 테스트를 명확히 분리한다.
+- **L5 skilltest 하네스** — 에이전트 워크플로우 스킬을 fixture 프로젝트에서 실제로 실행하고, 생성된 테스트와 production source 비파괴 여부까지 채점할 수 있다. CLI·scaffold 테스트가 닿지 못하던 스킬 동작을 검증한다.
+- **경계 계약 검증** — task가 선언한 생산자·소비자 JSON Schema를 plan 단계 완료 전에 결정론적으로 대조한다. 응답 래핑, 이름, 케이스 변환처럼 한쪽 명세만 봐서는 놓치는 불일치를 조기에 차단한다.
+- **비공개 도구 호출 관측 기록** — Claude 도구 호출의 빈도·시간·결과 크기를 원문 없이 허용목록 메타데이터로 기록한다. 안전한 키를 확보하지 못하면 기록하지 않아 프롬프트·경로·자격증명이 로그로 새지 않는다.
+- **agent 파일 드리프트 검사** — 실제 apply 대상 목록을 정본으로 사용해 템플릿의 managed section과 저장소 루트 적용본이 같은지 CI에서 확인한다.
 
 ### Changed
-- **포지셔닝 정정 — 런타임 협업이 아니라 설정·상태 하네스 (D4, 2026-07-28).** 문서 전용, 코드·런타임 동작 변경 없음. `README.md` 태그라인 + "왜 필요한가"에 설계 스코프 문단(지휘자·공유 작업큐·팬아웃/팬인 없음은 의도된 설계, OS/네트워크 격리는 스코프 밖). `AGENTS.md` / `templates/AGENTS.md.hbs` role 표에서 OpenCode를 "병렬 작성 세션" → **"순차 전환 세션"**으로 정정하고 D2 이력을 보존한 채 **D4** 결정 노트 추가(쓰기는 단일 스레드). `CLAUDE.md` / `templates/CLAUDE.md.hbs` §2 — 조사·탐색용 **컨텍스트 격리 서브에이전트**는 표준 실무로 유지, 병렬 작성·결정 에이전트는 두지 않음. `docs/harness-overview.html`(v0.11.0) hero·역할 표·역할 다이어그램을 같은 내용으로 정렬 — scaffold 되는 `AGENTS.md`/`CLAUDE.md` 쌍이 병렬 쓰기 서술에서 모순되지 않게 한다.
+- 프로젝트 설명을 런타임 오케스트레이터가 아닌 **설정·상태 하네스**로 정정하고, 쓰기 작업은 단일 스레드로 수행하도록 역할 문서를 일치시켰다. 탐색용 서브에이전트와 순차 드라이버 전환은 그대로 지원한다.
+- 아키텍처 개요를 Mermaid 원본·manifest·추적 소스에서 생성하도록 전환했다. 명령과 파일 인벤토리는 각 정본을 가리키므로 문서를 손으로 중복 갱신하지 않는다.
+- README와 개요에 복제돼 있던 목록은 최신화하지 않고 정본 포인터로 축소했다. 같은 사실의 사본이 서로 다른 상태로 남는 문제를 제거했다.
+
+### Fixed
+- skilltest 채점이 문자열·템플릿·주석 속 가짜 GWT 표식을 코드 구조로 오인하지 않도록 구문 기반으로 바꾸고, 닫히지 않은 문자열이 다음 줄까지 가짜 인용 구간을 만들던 근본 원인을 수정했다. 정상 테스트가 조용히 실패하던 오탐과 이를 위한 우회 계층이 사라졌다.
+- failure capsule의 범위를 CommonMark 제목 문법에 맞췄다. 하위 제목은 capsule 안에 남되 제목 자체는 내용 예산으로 세지 않고, fenced code와 들여쓴 코드의 heading 유사 줄은 올바르게 구분한다.
+
+### Removed
+- 아무 코드나 문서도 참조하지 않고 실제 시뮬레이션 출력과도 맞지 않던 `harness-sim` 리포트 템플릿을 제거했다.
 
 ---
 

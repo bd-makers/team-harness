@@ -32,3 +32,4 @@
 | chad | th-resident-verify | 🔄 open | 2026-07-30 |
 | chad | th-overview-mermaid | 🔄 open | 2026-08-03 |
 | chad | th-capsule-grammar | 🔄 open | 2026-08-03 |
+| chad | th-release-0-12 | 🔄 open | 2026-08-03 |
