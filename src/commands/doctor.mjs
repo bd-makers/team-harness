@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { exists } from '../fsx.mjs';
-import { loadBackupDir } from '../harness.mjs';
+import { loadBackupDir, settingsHasBoundaryCheckpoint } from '../harness.mjs';
 import { buildEnvelope, emitObservation } from '../observation.mjs';
 import { settingsHasSessionGate } from './session-context.mjs';
 
@@ -85,14 +85,7 @@ export async function checkSessionStartHook(targetDir) {
   return 'SessionStart task-gate hook 없음 (0.9+) — run: harness-team apply (또는 migrate)';
 }
 
-export function settingsHasBoundaryCheckpoint(settings) {
-  const groups = settings?.hooks?.PreToolUse;
-  return Array.isArray(groups) && groups.some(group =>
-    typeof group?.matcher === 'string'
-      && group.matcher.split('|').includes('Edit')
-      && Array.isArray(group.hooks)
-      && group.hooks.some(h => h?.type === 'command' && h.command === './.claude/hooks/boundary-checkpoint.sh'));
-}
+export { settingsHasBoundaryCheckpoint };
 
 export async function checkBoundaryCheckpointHook(targetDir) {
   let settings;

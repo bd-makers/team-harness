@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm, stat } from 'node:fs/promises';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
-import { migrateSessionStartHook } from '../src/commands/migrate.mjs';
+import { migrateSessionStartHook, migrateBoundaryCheckpointHook } from '../src/commands/migrate.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ctxYes = (dir) => ({ targetDir: dir, root: ROOT, flags: { yes: true } });
@@ -19,6 +19,12 @@ async function fixture(settings) {
 }
 async function readSettings(dir) {
   return JSON.parse(await readFile(join(dir, '.claude/settings.json'), 'utf8'));
+}
+async function installBoundaryScript(dir, content = '#!/usr/bin/env bash\nexit 0\n') {
+  const path = join(dir, '.claude/hooks/boundary-checkpoint.sh');
+  await mkdir(join(dir, '.claude/hooks'), { recursive: true });
+  await writeFile(path, content, { mode: 0o755 });
+  return path;
 }
 
 const PRE_GATE = {
@@ -64,5 +70,68 @@ test('.claude/settings.json 없음 → skip (false)', async () => {
   try {
     const ret = await migrateSessionStartHook(ctxYes(dir));
     assert.equal(ret, false, 'settings.json 없으면 skip');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+const OLD_DEFAULT_PROTECT = {
+  matcher: 'Edit|Write',
+  hooks: [{ type: 'command', command: './.claude/hooks/protect-files.sh', timeout: 10 }],
+};
+const CUSTOM_EDIT_HOOK = {
+  matcher: 'Edit|Write',
+  hooks: [
+    { type: 'command', command: './.claude/hooks/protect-files.sh', timeout: 10 },
+    { type: 'command', command: './custom-hook.sh', timeout: 10 },
+  ],
+};
+
+test('기본 protect 설정 → boundary hook 설정과 실행 script를 추가한다', async () => {
+  const dir = await fixture({ hooks: { PreToolUse: [OLD_DEFAULT_PROTECT] } });
+  try {
+    const ret = await migrateBoundaryCheckpointHook(ctxYes(dir));
+    assert.equal(ret, true);
+    const settings = await readSettings(dir);
+    assert.deepEqual(settings.hooks.PreToolUse[0].hooks.map(h => h.command), [
+      './.claude/hooks/protect-files.sh',
+      './.claude/hooks/boundary-checkpoint.sh',
+    ]);
+    const scriptPath = join(dir, '.claude/hooks/boundary-checkpoint.sh');
+    assert.equal((await stat(scriptPath)).mode & 0o111, 0o111, 'script is executable');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('커스터마이즈된 Edit hook은 보존하고 boundary 기본 group만 비파괴적으로 추가한다', async () => {
+  const dir = await fixture({ hooks: { PreToolUse: [CUSTOM_EDIT_HOOK] } });
+  try {
+    const ret = await migrateBoundaryCheckpointHook(ctxYes(dir));
+    assert.equal(ret, true);
+    const settings = await readSettings(dir);
+    assert.deepEqual(settings.hooks.PreToolUse[0], CUSTOM_EDIT_HOOK, 'custom group is untouched');
+    assert.ok(settings.hooks.PreToolUse.slice(1).some(group =>
+      group.hooks?.some(h => h.command === './.claude/hooks/boundary-checkpoint.sh')),
+    'template boundary group added without replacing customization');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('커스터마이즈된 boundary hook이 이미 있으면 설정과 script를 변경하지 않는다', async () => {
+  const dir = await fixture({
+    hooks: {
+      PreToolUse: [{
+        matcher: 'Edit',
+        hooks: [
+          { type: 'command', command: './custom-boundary-wrapper.sh', timeout: 30 },
+          { type: 'command', command: './.claude/hooks/boundary-checkpoint.sh', timeout: 30 },
+        ],
+      }],
+    },
+  });
+  try {
+    const scriptPath = await installBoundaryScript(dir, '#!/usr/bin/env bash\n# CUSTOM\nexit 0\n');
+    const before = await readSettings(dir);
+    const beforeScript = await readFile(scriptPath, 'utf8');
+    const ret = await migrateBoundaryCheckpointHook(ctxYes(dir));
+    assert.equal(ret, false);
+    assert.deepEqual(await readSettings(dir), before, 'settings unchanged');
+    assert.equal(await readFile(scriptPath, 'utf8'), beforeScript, 'existing script unchanged');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

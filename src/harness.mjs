@@ -19,6 +19,14 @@ function hasCommand(group, command) {
   return group?.hooks?.some(hook => hook?.type === 'command' && hook.command === command);
 }
 
+export function settingsHasBoundaryCheckpoint(settings) {
+  const groups = settings?.hooks?.PreToolUse;
+  return Array.isArray(groups) && groups.some(group =>
+    typeof group?.matcher === 'string'
+      && group.matcher.split('|').includes('Edit')
+      && hasCommand(group, './.claude/hooks/boundary-checkpoint.sh'));
+}
+
 function hasExactKeys(value, keys) {
   return value !== null
     && typeof value === 'object'
