@@ -10,6 +10,7 @@ import {
   CONTEXT_MAX_BYTES,
   CONTEXT_MAX_FAILURE_CAPSULES,
   CONTEXT_MAX_NONBLANK_LINES,
+  capsuleLineHasContent,
   runContextCheck,
   runContextInit,
   validateContextCard,
@@ -81,6 +82,56 @@ test('validateContextCard: empty capsules never consume the unresolved budget', 
   const overBudget = validateContextCard([filled, ...extras].join('\n'), 'demo');
   assert.equal(overBudget.metrics.failureCapsules, CONTEXT_MAX_FAILURE_CAPSULES + 1);
   assert.ok(overBudget.failures.some(failure => failure.code === 'failure-capsules'));
+});
+
+test('validateContextCard: a lower heading keeps following capsule content in scope', () => {
+  const content = `${taskContextTemplate('demo')}
+### F-002
+#### Signal
+502 from upstream
+`;
+
+  assert.equal(validateContextCard(content, 'demo').metrics.failureCapsules, 1);
+});
+
+test('capsuleLineHasContent: an empty lower heading is not substantive content', () => {
+  assert.equal(capsuleLineHasContent('#### Signal'), false);
+});
+
+test('validateContextCard: a capsule with only a lower heading stays empty', () => {
+  const content = `${taskContextTemplate('demo')}
+### F-002
+#### Signal
+`;
+
+  assert.equal(validateContextCard(content, 'demo').metrics.failureCapsules, 0);
+});
+
+test('capsuleLineHasContent: code fence delimiters are not substantive content', () => {
+  assert.equal(capsuleLineHasContent('```sh'), false);
+  assert.equal(capsuleLineHasContent('```'), false);
+});
+
+test('validateContextCard: a shell comment in a code fence does not close the capsule', () => {
+  const content = `${taskContextTemplate('demo')}
+### F-002
+\`\`\`sh
+# npm test -- foo
+command failed
+\`\`\`
+`;
+
+  assert.equal(validateContextCard(content, 'demo').metrics.failureCapsules, 1);
+});
+
+test('validateContextCard: a level-two section still closes the capsule', () => {
+  const content = `${taskContextTemplate('demo')}
+### F-002
+## Outside the capsule
+content after the section
+`;
+
+  assert.equal(validateContextCard(content, 'demo').metrics.failureCapsules, 0);
 });
 
 test('validateContextCard: size, line, heading, and capsule failures are deterministic', () => {

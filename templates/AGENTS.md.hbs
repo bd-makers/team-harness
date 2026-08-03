@@ -82,6 +82,10 @@
 결과·학습은 artifact에 기록한다. TCC는 이 파일들에서 파생된 현재 working set만 담는다.
 
 - UTF-8 6 KiB 이하, 비공백 100행 이하, 미해결 failure capsule 최대 3개를 유지한다.
+- failure capsule은 `### F-*`에서 시작해 다음 capsule 또는 `#`/`##` 절 제목 직전까지 이어진다.
+  `####` 이하 하위 제목은 capsule 본문 범위에 남기되 제목 줄 자체는 실질 내용으로 세지 않는다.
+  따라서 상세 기록은 예산을 정직하게 소비하고, 빈 하위 제목만 있는 stub은 소비하지 않는다.
+  fenced code 안의 `# ...` 셸 주석도 절 제목이 아니므로 capsule을 종결하지 않는다.
 - task 생성 직후, 세션을 넘기기 전, plan의 atomic step이 바뀔 때, 재현 가능한 실패가 생기거나
   해소될 때 에이전트가 직접 갱신한다. 반복 상세 이력은 제거하고 가치 있는 학습은 artifact로 옮긴다.
 - raw stderr, 토큰, 비밀값, 전체 HTTP payload를 복사하지 않는다. 안전한 요약과 원문 source 위치만 남긴다.
