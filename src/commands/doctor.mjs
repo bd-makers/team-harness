@@ -85,12 +85,30 @@ export async function checkSessionStartHook(targetDir) {
   return 'SessionStart task-gate hook 없음 (0.9+) — run: harness-team apply (또는 migrate)';
 }
 
+export function settingsHasBoundaryCheckpoint(settings) {
+  const groups = settings?.hooks?.PreToolUse;
+  return Array.isArray(groups) && groups.some(group =>
+    typeof group?.matcher === 'string'
+      && group.matcher.split('|').includes('Edit')
+      && Array.isArray(group.hooks)
+      && group.hooks.some(h => h?.type === 'command' && h.command === './.claude/hooks/boundary-checkpoint.sh'));
+}
+
+export async function checkBoundaryCheckpointHook(targetDir) {
+  let settings;
+  try { settings = JSON.parse(await readFile(join(targetDir, '.claude/settings.json'), 'utf8')); }
+  catch { return null; }
+  if (settingsHasBoundaryCheckpoint(settings)) return null;
+  return 'PreToolUse boundary checkpoint hook 없음 — run: harness-team apply';
+}
+
 const CHECKS = [
   { path: 'AGENTS.md', required: true, realFile: true, contains: 'harness:section="protocol"' },
   { path: 'CLAUDE.md', required: true, realFile: true, contains: '@AGENTS.md' },
   { path: 'GEMINI.md', required: false, realFile: true, contains: '@AGENTS.md' },
   { path: '.claude/settings.json', required: true, json: true },
   { path: '.claude/hooks/protect-files.sh', executable: true },
+  { path: '.claude/hooks/boundary-checkpoint.sh', executable: true },
   { path: '.claude/hooks/auto-format.sh', executable: true },
   { path: '.claude/hooks/pre-commit-check.sh', executable: true },
   { path: '.cursor/rules', required: false, dir: true },
@@ -256,6 +274,9 @@ export async function runDoctor(ctx) {
   const hookWarning = pluginDev ? null : await checkSessionStartHook(ctx.targetDir);
   if (hookWarning) add('SessionStart task-gate', 'warning', hookWarning, `\n⚠️ ${hookWarning}`);
 
+  const boundaryHookWarning = pluginDev ? null : await checkBoundaryCheckpointHook(ctx.targetDir);
+  if (boundaryHookWarning) add('PreToolUse boundary checkpoint', 'warning', boundaryHookWarning, `\n⚠️ ${boundaryHookWarning}`);
+
   if (json) {
     const warnCount = checks.filter(c => c.status === 'warning').length;
     const skipCount = checks.filter(c => c.status === 'skip').length;
@@ -272,7 +293,7 @@ export async function runDoctor(ctx) {
     const warnActions = [];
     if (legacyWarning) warnActions.push('harness-team migrate');
     if (specGateWarning) warnActions.push('harness-team task <name>');
-    if (hookWarning) warnActions.push('harness-team apply');
+    if (hookWarning || boundaryHookWarning) warnActions.push('harness-team apply');
     emitObservation(buildEnvelope({
       command: 'doctor',
       status,

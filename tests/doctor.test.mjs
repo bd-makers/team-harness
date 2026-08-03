@@ -6,7 +6,7 @@ import { mkdtemp, mkdir, writeFile, rm, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { checkCommand, checkSelfCli, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, isPluginDevRepo } from '../src/commands/doctor.mjs';
+import { checkCommand, checkSelfCli, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, isPluginDevRepo } from '../src/commands/doctor.mjs';
 import { cloudSyncPathWarning } from '../src/harness.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
 
@@ -146,6 +146,26 @@ test('checkSessionStartHook: settings.json 부재 → null (CHECKS가 담당, �
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+test('checkBoundaryCheckpointHook: Edit PreToolUse 경계 훅 없음 → 경고(apply 유도)', async () => {
+  const dir = await makeSettingsFixture({
+    hooks: { PreToolUse: [{ matcher: 'Edit|Write', hooks: [{ type: 'command', command: './x.sh' }] }] },
+  });
+  try {
+    const w = await checkBoundaryCheckpointHook(dir);
+    assert.ok(typeof w === 'string', 'returns a warning string');
+    assert.match(w, /apply/, 'apply로 유도');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkBoundaryCheckpointHook: Edit PreToolUse 경계 훅 있음 → null', async () => {
+  const dir = await makeSettingsFixture({
+    hooks: { PreToolUse: [{ matcher: 'Edit', hooks: [{ type: 'command', command: './.claude/hooks/boundary-checkpoint.sh' }] }] },
+  });
+  try {
+    assert.equal(await checkBoundaryCheckpointHook(dir), null);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('detectLegacyStructure: AGENTS.md 실파일 + .cursorrules 없으면 null(신구조)', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'harness-new-'));
   try {
@@ -224,5 +244,15 @@ test('runDoctor: backup dir이 설정됐지만 디스크에 없으면 fail (iClo
     const c = checkOf(env, 'backup clone dir');
     assert.equal(c?.status, 'fail');
     assert.match(c.detail, /missing on disk/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('runDoctor: boundary checkpoint가 settings에 없으면 apply 경고를 노출한다', async () => {
+  const dir = await makeSettingsFixture({ hooks: {} });
+  try {
+    const env = await doctorJson(dir);
+    const c = checkOf(env, 'PreToolUse boundary checkpoint');
+    assert.equal(c?.status, 'warning');
+    assert.match(c.detail, /harness-team apply/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

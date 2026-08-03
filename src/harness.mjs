@@ -15,6 +15,56 @@ export const AGENT_FILE_TEMPLATES = [
   ['GEMINI.md', 'GEMINI.md.hbs'],
 ];
 
+function hasCommand(group, command) {
+  return group?.hooks?.some(hook => hook?.type === 'command' && hook.command === command);
+}
+
+function hasExactKeys(value, keys) {
+  return value !== null
+    && typeof value === 'object'
+    && !Array.isArray(value)
+    && Object.keys(value).length === keys.length
+    && keys.every(key => Object.hasOwn(value, key));
+}
+
+function isKnownDefaultProtectGroup(group) {
+  if (!hasExactKeys(group, ['matcher', 'hooks']) || group.matcher !== 'Edit|Write' || !Array.isArray(group.hooks) || group.hooks.length !== 1) {
+    return false;
+  }
+  const [hook] = group.hooks;
+  return hasExactKeys(hook, ['type', 'command', 'timeout'])
+    && hook.type === 'command'
+    && hook.command === './.claude/hooks/protect-files.sh'
+    && hook.timeout === 10;
+}
+
+// Settings arrays normally union whole hook groups. When upgrading the known
+// default Edit|Write group, normalize the old protect-only group into the new
+// protect→boundary group so `apply` does not run protect-files twice. Any
+// customized group is left intact; the normal non-destructive union still adds
+// the new template group without replacing user hooks.
+export function mergeClaudeSettings(existing, incoming) {
+  const merged = deepMergeJson(existing, incoming);
+  const existingGroups = existing?.hooks?.PreToolUse;
+  const incomingGroups = incoming?.hooks?.PreToolUse;
+  const mergedGroups = merged?.hooks?.PreToolUse;
+  if (!Array.isArray(existingGroups) || !Array.isArray(incomingGroups) || !Array.isArray(mergedGroups)) return merged;
+
+  const oldGroup = existingGroups.find(isKnownDefaultProtectGroup);
+  const newGroup = incomingGroups.find(group =>
+    group?.matcher === 'Edit|Write'
+      && hasCommand(group, './.claude/hooks/protect-files.sh')
+      && hasCommand(group, './.claude/hooks/boundary-checkpoint.sh'));
+  if (!oldGroup || !newGroup) return merged;
+
+  const oldIndex = mergedGroups.findIndex(group => JSON.stringify(group) === JSON.stringify(oldGroup));
+  const newIndex = mergedGroups.findIndex(group => JSON.stringify(group) === JSON.stringify(newGroup));
+  if (oldIndex === -1 || newIndex === -1 || oldIndex === newIndex) return merged;
+  mergedGroups[oldIndex] = newGroup;
+  mergedGroups.splice(newIndex, 1);
+  return merged;
+}
+
 // The symlink-backup architecture breaks when a cloud sync service evicts files
 // (offloads to cloud-only). Warn when a target/backup path lives under a known
 // sync folder. Returns a warning string, or null. Best-effort by path substring.
@@ -94,7 +144,7 @@ export async function planChanges(ctx, { stack }) {
   // .claude/settings.json — JSON deep-merge
   const tplSettings = JSON.parse(await readTextSafe(join(tplDir, '.claude/settings.json')));
   const existingSettings = JSON.parse((await readTextSafe(join(targetDir, '.claude/settings.json'))) || 'null');
-  const mergedSettings = deepMergeJson(existingSettings, tplSettings);
+  const mergedSettings = mergeClaudeSettings(existingSettings, tplSettings);
   const existingSettingsText = existingSettings ? JSON.stringify(existingSettings, null, 2) : null;
   const mergedSettingsText = JSON.stringify(mergedSettings, null, 2);
   if (existingSettingsText !== mergedSettingsText) {
