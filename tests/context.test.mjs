@@ -94,8 +94,18 @@ test('validateContextCard: a lower heading keeps following capsule content in sc
   assert.equal(validateContextCard(content, 'demo').metrics.failureCapsules, 1);
 });
 
-test('capsuleLineHasContent: an empty lower heading is not substantive content', () => {
+test('capsuleLineHasContent: a lower heading with up to three spaces is not substantive content', () => {
   assert.equal(capsuleLineHasContent('#### Signal'), false);
+  assert.equal(capsuleLineHasContent('   #### Signal'), false);
+});
+
+test('validateContextCard: a four-space indented heading-like line fills the capsule', () => {
+  const content = `${taskContextTemplate('demo')}
+### F-002
+    #### raw failure marker
+`;
+
+  assert.equal(validateContextCard(content, 'demo').metrics.failureCapsules, 1);
 });
 
 test('validateContextCard: a capsule with only a lower heading stays empty', () => {
@@ -157,6 +167,16 @@ test('validateContextCard: a level-two section still closes the capsule', () => 
   const content = `${taskContextTemplate('demo')}
 ### F-002
 ## Outside the capsule
+content after the section
+`;
+
+  assert.equal(validateContextCard(content, 'demo').metrics.failureCapsules, 0);
+});
+
+test('validateContextCard: a level-two section with up to three spaces still closes the capsule', () => {
+  const content = `${taskContextTemplate('demo')}
+### F-002
+   ## Outside the capsule
 content after the section
 `;
 

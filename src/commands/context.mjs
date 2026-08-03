@@ -8,8 +8,8 @@ export const CONTEXT_MAX_NONBLANK_LINES = 100;
 export const CONTEXT_MAX_FAILURE_CAPSULES = 3;
 
 const CAPSULE_HEADING = /^### F-[^\s].*$/;
-const SECTION_HEADING = /^#{1,2}(\s|$)/;
-const ATX_HEADING = /^#{1,6}(\s|$)/;
+const SECTION_HEADING = /^ {0,3}#{1,2}(\s|$)/;
+const ATX_HEADING = /^ {0,3}#{1,6}(\s|$)/;
 const CODE_FENCE = /^ {0,3}(`{3,}|~{3,})/;
 const CODE_FENCE_CLOSE = /^ {0,3}(`+|~+)[ \t]*$/;
 
@@ -28,7 +28,8 @@ function closesCodeFence(line, fence) {
 export function capsuleLineHasContent(line) {
   const body = line.trim().replace(/^[-*+]\s*/, '');
   if (body.length === 0) return false;
-  if (ATX_HEADING.test(body) || CODE_FENCE.test(line)) return false;
+  const headingCandidate = line.replace(/^ {0,3}[-*+]\s*/, '');
+  if (ATX_HEADING.test(headingCandidate) || CODE_FENCE.test(line)) return false;
   const colon = body.indexOf(':');
   return (colon === -1 ? body : body.slice(colon + 1)).trim().length > 0;
 }
