@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, readFile, rm, stat } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm, stat, chmod } from 'node:fs/promises';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
@@ -133,5 +133,19 @@ test('커스터마이즈된 boundary hook이 이미 있으면 설정과 script�
     assert.equal(ret, false);
     assert.deepEqual(await readSettings(dir), before, 'settings unchanged');
     assert.equal(await readFile(scriptPath, 'utf8'), beforeScript, 'existing script unchanged');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('읽을 수 없는 기존 boundary script도 덮어쓰지 않는다', async () => {
+  const dir = await fixture({ hooks: { PreToolUse: [OLD_DEFAULT_PROTECT] } });
+  try {
+    const scriptPath = await installBoundaryScript(dir, '#!/usr/bin/env bash\n# CUSTOM\nexit 0\n');
+    await chmod(scriptPath, 0o300);
+
+    const ret = await migrateBoundaryCheckpointHook(ctxYes(dir));
+
+    assert.equal(ret, true);
+    await chmod(scriptPath, 0o755);
+    assert.equal(await readFile(scriptPath, 'utf8'), '#!/usr/bin/env bash\n# CUSTOM\nexit 0\n');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

@@ -575,7 +575,14 @@ export async function migrateBoundaryCheckpointHook(ctx) {
     && JSON.stringify(merged) !== JSON.stringify(settings);
   const scriptRel = '.claude/hooks/boundary-checkpoint.sh';
   const scriptPath = join(targetDir, scriptRel);
-  const scriptMissing = (await readTextSafe(scriptPath)) === null;
+  const scriptStatus = await lstat(scriptPath)
+    .then(() => 'present')
+    .catch(err => err?.code === 'ENOENT' ? 'missing' : 'unknown');
+  if (scriptStatus === 'unknown') {
+    console.log(`  PreToolUse boundary checkpoint: ${scriptRel} 확인 실패 — 건너뜀`);
+    return false;
+  }
+  const scriptMissing = scriptStatus === 'missing';
   if (!settingsChanged && !scriptMissing) {
     console.log('  PreToolUse boundary checkpoint: up to date');
     return false;
