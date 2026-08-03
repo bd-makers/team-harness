@@ -11,6 +11,7 @@ const CAPSULE_HEADING = /^### F-[^\s].*$/;
 const SECTION_HEADING = /^#{1,2}(\s|$)/;
 const ATX_HEADING = /^#{1,6}(\s|$)/;
 const CODE_FENCE = /^ {0,3}(`{3,}|~{3,})/;
+const CODE_FENCE_CLOSE = /^ {0,3}(`+|~+)[ \t]*$/;
 
 function codeFenceMarker(line) {
   const match = CODE_FENCE.exec(line);
@@ -18,9 +19,10 @@ function codeFenceMarker(line) {
 }
 
 function closesCodeFence(line, fence) {
-  const marker = line.trim();
-  return marker.length >= fence.length
-    && marker.split('').every(char => char === fence.char);
+  const match = CODE_FENCE_CLOSE.exec(line);
+  return match !== null
+    && match[1][0] === fence.char
+    && match[1].length >= fence.length;
 }
 
 export function capsuleLineHasContent(line) {
@@ -41,22 +43,21 @@ function countUnresolvedCapsules(lines) {
     if (open && filled) count += 1;
     open = false;
     filled = false;
-    codeFence = null;
   };
   for (const line of lines) {
+    if (codeFence) {
+      if (closesCodeFence(line, codeFence)) codeFence = null;
+      else if (open && line.trim().length > 0) filled = true;
+      continue;
+    }
+    codeFence = codeFenceMarker(line);
+    if (codeFence) continue;
     if (CAPSULE_HEADING.test(line)) {
       close();
       open = true;
       continue;
     }
     if (!open) continue;
-    if (codeFence) {
-      if (closesCodeFence(line, codeFence)) codeFence = null;
-      else if (line.trim().length > 0) filled = true;
-      continue;
-    }
-    codeFence = codeFenceMarker(line);
-    if (codeFence) continue;
     if (SECTION_HEADING.test(line)) { close(); continue; }
     if (capsuleLineHasContent(line)) filled = true;
   }

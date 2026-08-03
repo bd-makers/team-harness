@@ -124,6 +124,35 @@ command failed
   assert.equal(validateContextCard(content, 'demo').metrics.failureCapsules, 1);
 });
 
+test('validateContextCard: a literal capsule heading in fenced code remains content', () => {
+  const content = `${taskContextTemplate('demo')}
+### F-002
+- Signal: actual failure
+\`\`\`text
+### F-003
+- Signal: log detail
+## Log heading
+\`\`\`
+## Outside the capsule
+`;
+
+  assert.equal(validateContextCard(content, 'demo').metrics.failureCapsules, 1);
+});
+
+test('validateContextCard: an indented fence-like line does not close fenced code', () => {
+  const content = `${taskContextTemplate('demo')}
+### F-002
+\`\`\`
+    \`\`\`
+## Log heading
+diagnostic line
+\`\`\`
+## Outside the capsule
+`;
+
+  assert.equal(validateContextCard(content, 'demo').metrics.failureCapsules, 1);
+});
+
 test('validateContextCard: a level-two section still closes the capsule', () => {
   const content = `${taskContextTemplate('demo')}
 ### F-002
