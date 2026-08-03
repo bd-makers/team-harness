@@ -1,5 +1,6 @@
 ---
 description: 구버전 구조(실제 파일)를 신버전(symlink)으로 원스텝 마이그레이션
+phase: Migration
 argument-hint: [--yes] [--backup-dir <path>] [--target <dir>]
 tags:
   - project

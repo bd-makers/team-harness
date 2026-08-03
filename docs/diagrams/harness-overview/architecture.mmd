@@ -1,0 +1,54 @@
+graph TB
+    BIN["🖥 bin/harness-team.mjs\nCLI Entry · Command Router"]
+
+    subgraph CMDS["Commands Layer"]
+        direction LR
+        INIT["init"] & APPLY["apply"] & SYNC["sync"]
+        CLONE["clone"] & SYM["symlink"] & DEL["delete"] & BACKUP["backup"]
+        DOCTOR["doctor"] & TASK["task · list · done\nhandoff · retro"] & SESS["session-context"]
+        MIG["migrate"] & UPG["upgrade"] & REL["release"]
+    end
+
+    subgraph ORCH["Orchestration"]
+        direction LR
+        HARNESS["harness.mjs\nplanChanges · applyChanges\ncopyStaticAssets (renders 3 agent files)"]
+        BACKUPDIR["backup-dir.mjs\nresolveBackupDir\n4-priority resolution"]
+    end
+
+    subgraph UTIL["Utilities"]
+        direction LR
+        MERGE["merge.mjs\nmergeMarkdown · extractSections\ndeepMergeJson"]
+        RENDER["render.mjs\n{{var}} 치환"]
+        DETECT["detect-stack.mjs\nAuto stack detection"]
+        MEMBER["member.mjs\ndetectMember"]
+        UCFG["user-config.mjs\nensureUsername"]
+        GHOOKS["git-hooks.mjs\ninstallPostCommitHook"]
+        OBS["observation.mjs\nbuildEnvelope · emitObservation\n--json 엔벨로프 (P2 0.8.0)"]
+    end
+
+    subgraph TMPL["Templates"]
+        direction LR
+        HBS["AGENTS.md.hbs (core)\nCLAUDE.md.hbs (thin)\nGEMINI.md.hbs (thin)"]
+        HOOKS_T[".claude/hooks/"]
+        RULES_T[".claude/rules/"]
+        SKILLS_T[".claude/skills/"]
+        SCRIPTS["clone.sh\nsymlink.sh\ndelete.sh"]
+    end
+
+    BIN --> CMDS
+    INIT & APPLY & SYNC --> HARNESS
+    CLONE & SYM & DEL & BACKUP & MIG & UPG --> BACKUPDIR
+    DOCTOR --> BACKUPDIR
+    TASK --> MEMBER
+    DOCTOR & TASK & REL --> OBS
+    DOCTOR --> SESS
+    SESS --> TASK
+    INIT & SYNC --> UCFG & GHOOKS
+    HARNESS --> MERGE & RENDER & DETECT
+    HARNESS --> TMPL
+
+    style CMDS fill:#1e2140,stroke:#2e3350
+    style ORCH fill:#1e3a5f,stroke:#50c8f5
+    style UTIL fill:#1a2035,stroke:#2e3350
+    style TMPL fill:#1e2810,stroke:#2e3350
+    style BIN fill:#2a1f5c,stroke:#7c6af5

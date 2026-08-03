@@ -1,0 +1,13 @@
+graph LR
+    USER["사용자\n/new-feature auth-redesign"] --> SKILL["new-feature/SKILL.md\n워크플로우 가이드 주입"]
+    SKILL --> TASK_NEW["harness-team task auth-redesign"]
+    TASK_NEW --> DOCS["docs/chad/auth-redesign/\nauth-redesign-spec.md\nauth-redesign-plan.md\nauth-redesign-handoff.md"]
+    SKILL --> IMPL["Phase 2-3\n계획·구현"]
+    IMPL --> COMMIT["git commit"]
+    COMMIT --> HOOK["post-commit hook\nhandoff 자동 갱신"]
+    HOOK --> DONE["harness-team done\n(AskUserQuestion 거침)"]
+
+    style USER fill:#2a1f5c,stroke:#7c6af5
+    style SKILL fill:#1e3a5f,stroke:#50c8f5
+    style HOOK fill:#3d2700,stroke:#f5a623
+    style DONE fill:#0e3d30,stroke:#4df0aa

@@ -1,0 +1,21 @@
+flowchart TD
+    S([resolveBackupDir 호출]) --> F1{"--backup-dir\n플래그?"}
+    F1 -- Yes --> R1[/"CLI 플래그 경로"/]
+    F1 -- No --> F2{".harness/backup.json\n존재?"}
+    F2 -- Yes --> F2a{"dir 필드\n있음?"}
+    F2a -- Yes --> R2[/"backup.json dir 경로"/]
+    F2a -- No --> F2b{"parent + name\n있음?"}
+    F2b -- Yes --> R3[/"path.join(parent, name)"/]
+    F2b -- No --> F3
+    F2 -- No --> F3{"기존 symlink\n역추적?"}
+    F3 -- Yes --> R4[/"symlink target 경로"/]
+    F3 -- No --> F4{"../harness-backup/\nprojectName/?"}
+    F4 -- Yes --> R5[/"자동 탐지 경로"/]
+    F4 -- No --> R6[/"null 반환"/]
+
+    style R1 fill:#0e3d30,stroke:#4df0aa
+    style R2 fill:#0e3d30,stroke:#4df0aa
+    style R3 fill:#0e3d30,stroke:#4df0aa
+    style R4 fill:#0e3d30,stroke:#4df0aa
+    style R5 fill:#0e3d30,stroke:#4df0aa
+    style R6 fill:#3d1a1a,stroke:#f05050

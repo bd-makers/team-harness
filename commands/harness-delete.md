@@ -1,5 +1,6 @@
 ---
 description: project에서 harness symlink 제거
+phase: Cleanup
 argument-hint: [--yes] [--target <dir>]
 tags:
   - project

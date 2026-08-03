@@ -1,5 +1,6 @@
 ---
 description: 활성 task의 spec.md / plan.md의 모든 가정에 의문을 제기한다
+phase: Persona
 argument-hint: (없음)
 tags:
   - project

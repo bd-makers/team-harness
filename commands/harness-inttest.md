@@ -1,5 +1,6 @@
 ---
 description: API 핸들러·DB 접근·캐시·아웃바운드 HTTP 등 프로세스 경계 코드에 Khorikov Part III 통합 테스트를 작성한다 (스택 감지 → managed/unmanaged 구분 강제 → 커버리지 → 검증)
+phase: Testing
 argument-hint: "[file <경로> | session | feature <설명|경로> | folder <경로> | project] (기본: session)"
 tags:
   - project

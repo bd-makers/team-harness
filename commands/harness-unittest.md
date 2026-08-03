@@ -1,5 +1,6 @@
 ---
 description: JS/TS/React/RN 프로젝트에 Khorikov 원칙 기반 단위테스트를 작성한다 (스택 자동 감지 → GWT 강제 → 커버리지 → 검증)
+phase: Testing
 argument-hint: "[file <경로> | session | feature <설명|경로> | folder <경로> | project] (기본: session)"
 tags:
   - project

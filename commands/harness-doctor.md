@@ -1,5 +1,6 @@
 ---
 description: 하네스 무결성 점검 (symlink, hooks, settings)
+phase: Validation
 tags:
   - project
   - ai

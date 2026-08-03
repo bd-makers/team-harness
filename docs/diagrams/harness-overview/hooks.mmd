@@ -1,0 +1,38 @@
+sequenceDiagram
+    participant Claude as Claude Code
+    participant Hook as Hook Script
+    participant Tool as Tool (Edit/Bash)
+
+    rect rgb(30, 40, 60)
+        Note over Claude,Tool: PreToolUse — Edit/Write 도구 실행 전
+        Claude->>Hook: protect-files.sh (파일 경로 전달)
+        alt 보호 대상 파일
+            Hook-->>Claude: exit 2 (차단)
+            Note over Claude: 🚫 .env · node_modules · .git 보호
+        else 허용
+            Hook-->>Claude: exit 0
+            Claude->>Tool: Edit/Write 실행
+        end
+    end
+
+    rect rgb(26, 40, 30)
+        Note over Claude,Tool: PostToolUse — Edit/Write 완료 후
+        Claude->>Tool: 파일 수정 완료
+        Tool-->>Claude: 완료
+        Claude->>Hook: auto-format.sh (파일 경로 전달)
+        Hook->>Hook: npx prettier --write (ts/tsx/js/jsx/json)
+        Hook-->>Claude: exit 0
+    end
+
+    rect rgb(40, 26, 26)
+        Note over Claude,Tool: PreToolUse — Bash git commit 실행 전
+        Claude->>Hook: pre-commit-check.sh (명령어 전달)
+        Hook->>Hook: pnpm tsc --noEmit
+        Hook->>Hook: pnpm test
+        alt 실패
+            Hook-->>Claude: exit 2 (커밋 차단)
+        else 통과
+            Hook-->>Claude: exit 0
+            Claude->>Tool: git commit 실행
+        end
+    end

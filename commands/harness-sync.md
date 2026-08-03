@@ -1,5 +1,6 @@
 ---
 description: symlink 재생성 + .cursor/rules ←→ .claude/rules 동기화
+phase: Maintenance
 tags:
   - project
   - ai

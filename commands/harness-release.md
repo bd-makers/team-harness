@@ -1,5 +1,6 @@
 ---
 description: 3개 매니페스트(package.json/plugin.json/marketplace.json) 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화. 휴먼 에러(marketplace.json 누락·버전 불일치) 차단.
+phase: Release
 argument-hint: "[patch|minor|major|x.y.z] [--dry-run] [--skip-cache]"
 tags:
   - project
