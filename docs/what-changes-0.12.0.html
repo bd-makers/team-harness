@@ -289,6 +289,15 @@
         </article>
 
         <article class="change-card maintenance">
+          <div class="card-head"><div class="kind">Release documentation</div><h3>최신 변경 설명의 버전 드리프트를 릴리스 전에 차단</h3></div>
+          <dl>
+            <div><dt>변경</dt><dd>릴리스 도구가 매니페스트 버전을 bump한 뒤 사람이 <code>what-changes-latest-version.html</code>을 검토·갱신하고 같은 내용을 <code>what-changes-X.Y.Z.html</code>에 남깁니다. Node 내장 테스트가 패키지 버전과 제목·요약, 스냅샷 존재, 두 파일의 완전한 일치를 검사합니다.</dd></div>
+            <div class="why"><dt>왜</dt><dd><code>latest</code>라는 이름만으로는 이전 릴리스의 설명이 남아도 알기 어렵고, 스냅샷만 남기면 현재 문서의 갱신 누락을 막을 수 없습니다.</dd></div>
+            <div class="effect"><dt>그래서</dt><dd>의도적으로 어긋난 버전 표기도 실패합니다. 사람이 작성한 변경 근거는 자동 생성하지 않은 채 최신 문서와 역사 기록을 함께 신뢰할 수 있습니다.</dd></div>
+          </dl>
+        </article>
+
+        <article class="change-card maintenance">
           <div class="card-head"><div class="kind">Single source</div><h3>중복 인벤토리를 제거하고 정본 포인터로 축소</h3></div>
           <dl>
             <div><dt>변경</dt><dd>README·개요 등에 복제돼 있던 명령·파일 목록을 제거하고 manifest, skill, source tree 같은 소유자를 가리키도록 바꿨습니다.</dd></div>
