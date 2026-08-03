@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Harness Aijient Team 0.12.0 — 무엇이 왜 달라졌나</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3350;
+      --accent: #7c6af5;
+      --accent2: #50c8f5;
+      --accent3: #4df0aa;
+      --warning: #f5a623;
+      --text: #e2e6f0;
+      --muted: #9aa2bf;
+      --tag-blue: #1e3a5f;
+      --tag-green: #0e3d30;
+      --tag-purple: #2a1f5c;
+      --tag-orange: #3d2700;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      height: 54px;
+      padding: 0 2rem;
+      background: rgba(15, 17, 23, 0.95);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+    .nav-logo {
+      flex: 0 0 auto;
+      margin-right: 1.5rem;
+      color: var(--accent);
+      font-weight: 750;
+      white-space: nowrap;
+    }
+    .nav-links {
+      display: flex;
+      min-width: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .nav-links::-webkit-scrollbar { display: none; }
+    .nav-links a {
+      display: flex;
+      align-items: center;
+      height: 54px;
+      padding: 0 0.8rem;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      font-size: 0.84rem;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .nav-links a:hover { color: var(--text); border-bottom-color: var(--accent); }
+
+    main { width: min(1120px, 100%); margin: 0 auto; padding: 2.5rem 2rem 5rem; }
+    .hero { padding: 3.5rem 0 2.5rem; text-align: center; }
+    .eyebrow {
+      margin-bottom: 0.75rem;
+      color: var(--accent3);
+      font-size: 0.78rem;
+      font-weight: 750;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0 0 1rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      background-clip: text;
+      color: transparent;
+      font-size: clamp(2rem, 6vw, 3.25rem);
+      line-height: 1.18;
+    }
+    .hero > p { max-width: 760px; margin: 0 auto 1.4rem; color: var(--muted); }
+    .tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+    .tag { padding: 4px 12px; border-radius: 999px; font-size: 0.78rem; font-weight: 650; }
+    .tag-purple { background: var(--tag-purple); color: #a99cf8; }
+    .tag-blue { background: var(--tag-blue); color: var(--accent2); }
+    .tag-green { background: var(--tag-green); color: var(--accent3); }
+
+    .release-brief {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      overflow: hidden;
+      margin: 0 0 4rem;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--border);
+    }
+    .release-brief > div { min-width: 0; padding: 1.2rem 1.3rem; background: var(--surface); }
+    .release-brief dt { color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; }
+    .release-brief dd { margin: 0.25rem 0 0; font-size: 0.95rem; overflow-wrap: anywhere; }
+
+    section { margin-bottom: 4.5rem; scroll-margin-top: 76px; }
+    .section-title { display: flex; align-items: center; gap: 0.65rem; margin: 0 0 0.35rem; font-size: 1.5rem; }
+    .section-title::before {
+      width: 4px;
+      height: 1.5rem;
+      border-radius: 2px;
+      background: var(--accent);
+      content: "";
+    }
+    .section-sub { margin: 0 0 1.4rem; color: var(--muted); font-size: 0.92rem; }
+    .change-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .change-card {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+    }
+    .change-card.accuracy { border-top: 3px solid var(--accent3); }
+    .change-card.feature { border-top: 3px solid var(--accent2); }
+    .change-card.maintenance { border-top: 3px solid var(--accent); }
+    .card-head { padding: 1.2rem 1.3rem 0.9rem; border-bottom: 1px solid var(--border); }
+    .card-head h3 { margin: 0.25rem 0 0; font-size: 1.02rem; line-height: 1.4; }
+    .kind { color: var(--muted); font-size: 0.72rem; font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase; }
+    .change-card dl { margin: 0; }
+    .change-card dl > div {
+      display: grid;
+      grid-template-columns: 5.4rem minmax(0, 1fr);
+      gap: 0.8rem;
+      padding: 0.85rem 1.3rem;
+      border-bottom: 1px solid rgba(46, 51, 80, 0.7);
+    }
+    .change-card dl > div:last-child { border-bottom: 0; }
+    .change-card dt { color: var(--muted); font-size: 0.78rem; font-weight: 750; }
+    .change-card dd { min-width: 0; margin: 0; color: #cbd1e3; font-size: 0.87rem; overflow-wrap: anywhere; }
+    .change-card .why dt { color: var(--warning); }
+    .change-card .effect dt { color: var(--accent3); }
+    code {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--surface2);
+      color: var(--accent2);
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.83em;
+      overflow-wrap: anywhere;
+    }
+
+    .principle {
+      display: grid;
+      grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+      gap: 1rem;
+      align-items: stretch;
+    }
+    .principle > div { min-width: 0; padding: 1.4rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+    .principle h3 { margin: 0 0 0.6rem; color: var(--accent2); font-size: 1rem; }
+    .principle p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+    .pointer { border-left: 3px solid var(--accent3) !important; }
+
+    footer { padding: 2rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.8rem; text-align: center; }
+
+    @media (max-width: 780px) {
+      nav { padding: 0 1rem; }
+      main { padding: 1.5rem 1rem 4rem; }
+      .hero { padding-top: 2.5rem; }
+      .release-brief, .change-grid, .principle { grid-template-columns: minmax(0, 1fr); }
+      .change-card dl > div { grid-template-columns: minmax(0, 1fr); gap: 0.3rem; }
+    }
+  </style>
+</head>
+<body>
+  <nav aria-label="문서 섹션">
+    <div class="nav-logo">Harness 0.12.0</div>
+    <div class="nav-links">
+      <a href="#accuracy">정확성 수정</a>
+      <a href="#features">새 기능</a>
+      <a href="#maintenance">문서·유지보수</a>
+      <a href="#principles">설계 원칙</a>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Release note · 2026-08-03</div>
+      <h1>무엇이 바뀌었고,<br>왜 바꿨는가</h1>
+      <p><strong>0.11.0</strong> 이후의 작업을 묶은 <strong>0.12.0</strong> 릴리스입니다. 새 기능의 수보다 더 중요한 변화는, 사본과 추측에 기대던 지점을 정본과 결정론적 검사로 옮겼다는 점입니다.</p>
+      <div class="tags">
+        <span class="tag tag-purple">0.11.0 → 0.12.0</span>
+        <span class="tag tag-blue">minor release</span>
+        <span class="tag tag-green">호환성 유지</span>
+      </div>
+    </header>
+
+    <dl class="release-brief" aria-label="릴리스 요약">
+      <div><dt>버전</dt><dd>0.12.0</dd></div>
+      <div><dt>날짜</dt><dd>2026-08-03</dd></div>
+      <div><dt>기준</dt><dd><code>v0.11.0..main</code></dd></div>
+    </dl>
+
+    <section id="accuracy">
+      <h2 class="section-title">정확성 수정</h2>
+      <p class="section-sub">증상을 덧대지 않고, 잘못된 판정을 만들던 문법과 파서의 원인을 닫았습니다.</p>
+      <div class="change-grid">
+        <article class="change-card accuracy">
+          <div class="card-head"><div class="kind">Skilltest scorer</div><h3>채점을 원문 정규식에서 코드 구조 판정으로 전환</h3></div>
+          <dl>
+            <div><dt>변경</dt><dd>테스트 본문과 GWT/AAA 구획을 구문 단위로 판정하고, 문자열·템플릿·주석 내부 표식은 채점에서 제외했습니다. 이어서 따옴표 문자열이 실제 줄바꿈에서 끝나도록 문자열 건너뛰기를 바로잡았습니다.</dd></div>
+            <div class="why"><dt>왜</dt><dd>같은 원인의 오탐이 두 라운드에 걸쳐 다른 모습으로 나타났습니다. 개행에서 멈추지 않는 문자열 건너뛰기가 가짜 인용 구간을 만들어 정상 테스트를 조용히 실패시켰습니다.</dd></div>
+            <div class="effect"><dt>그래서</dt><dd>문자열 속 가짜 마커가 통과·실패를 조작하지 못하고, 파서를 불신해 수동 판정으로 돌리던 우회 계층도 제거됐습니다.</dd></div>
+          </dl>
+        </article>
+
+        <article class="change-card accuracy">
+          <div class="card-head"><div class="kind">Context grammar</div><h3>Failure capsule의 제목·내용 문법을 함께 확정</h3></div>
+          <dl>
+            <div><dt>변경</dt><dd>CommonMark에서 허용하는 하위 제목은 capsule 본문 범위에 남기되, 제목 줄 자체는 실질 내용으로 세지 않습니다. fenced code와 들여쓴 코드의 heading 유사 줄도 구분합니다.</dd></div>
+            <div class="why"><dt>왜</dt><dd>하위 제목이 본문인지 종결자인지 정해지지 않아 capsule 예산이 새고 있었습니다. 제목 깊이만 좁히면 빈 제목을 내용으로 세는 반대 방향의 오류가 생깁니다.</dd></div>
+            <div class="effect"><dt>그래서</dt><dd>범위 판정과 내용 판정이 같은 문법을 사용해 빈 stub은 예산을 소비하지 않고, 실제 코드·설명은 누락되지 않습니다.</dd></div>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <section id="features">
+      <h2 class="section-title">새 기능</h2>
+      <p class="section-sub">모델의 기억이나 사후 리뷰에만 기대던 구간을 작은 상태와 결정론적 검사로 보강했습니다.</p>
+      <div class="change-grid">
+        <article class="change-card feature">
+          <div class="card-head"><div class="kind">Task lifecycle</div><h3>Task Context Card 생명주기와 세션 주입</h3></div>
+          <dl>
+            <div><dt>변경</dt><dd>task마다 현재 atomic step, 제약, JIT 검색 단서, failure capsule을 담는 작은 <code>*-context.md</code>를 만들고 <code>context init|check</code>로 관리합니다. 유효한 카드만 SessionStart breadcrumb 뒤에 주입합니다.</dd></div>
+            <div class="why"><dt>왜</dt><dd>긴 task를 재개할 때 전체 SSOT를 다시 읽으면 비용이 크지만, 요약본을 새 정본으로 만들면 상태가 둘로 갈라집니다.</dd></div>
+            <div class="effect"><dt>그래서</dt><dd>spec·plan·handoff·artifact는 계속 정본이고, 카드는 버릴 수 있는 working set으로만 동작합니다. 유효하지 않은 카드는 원문 대신 복구 안내를 냅니다.</dd></div>
+          </dl>
+        </article>
+
+        <article class="change-card feature">
+          <div class="card-head"><div class="kind">Boundary contracts</div><h3>생산자와 소비자 스키마를 동시에 검증</h3></div>
+          <dl>
+            <div><dt>변경</dt><dd>spec에 선언된 생산자·소비자 JSON Schema의 필수 필드와 기본 type을 <code>boundary check</code>가 plan 단계 완료 전에 대조합니다.</dd></div>
+            <div class="why"><dt>왜</dt><dd>응답 래핑, 케이스 변환, 이름 불일치는 사후 리뷰나 한쪽 린터만으로 잡히지 않습니다. 양쪽 명세를 함께 봐야만 드러납니다.</dd></div>
+            <div class="effect"><dt>그래서</dt><dd>모델의 추론이 아니라 결정론적 코드가 경계 불일치를 재현 가능하게 차단하고, 선언이 없는 task는 기존처럼 통과합니다.</dd></div>
+          </dl>
+        </article>
+
+        <article class="change-card feature">
+          <div class="card-head"><div class="kind">Private observability</div><h3>원문 없는 도구 호출 관측 기록</h3></div>
+          <dl>
+            <div><dt>변경</dt><dd>도구 호출의 빈도, 소요 시간, 결과 크기와 제한 여부를 프로젝트 내부의 비공개 JSONL로 기록합니다. 식별자는 프로젝트별 HMAC 참조값만 남깁니다.</dd></div>
+            <div class="why"><dt>왜</dt><dd>관측이 없으면 성능 저하와 비용 급증의 원인을 짚을 수 없습니다. 반대로 원문을 저장하면 프롬프트·경로·자격증명이 로그로 샐 수 있습니다.</dd></div>
+            <div class="effect"><dt>그래서</dt><dd>허용목록 메타데이터만 분석할 수 있고, 키를 안전하게 다루지 못하면 기록 자체를 건너뜁니다. 내용 유출 없이 병목을 찾을 수 있습니다.</dd></div>
+          </dl>
+        </article>
+
+        <article class="change-card feature">
+          <div class="card-head"><div class="kind">Skill verification</div><h3>에이전트 워크플로우를 실제 실행하는 L5 skilltest</h3></div>
+          <dl>
+            <div><dt>변경</dt><dd>fixture 프로젝트에서 테스트 작성 스킬을 실제 에이전트 세션으로 구동하고, 생성된 테스트의 구조·실행 결과·production source 비파괴 여부를 채점합니다.</dd></div>
+            <div class="why"><dt>왜</dt><dd>기존 하네스는 설치된 scaffold와 CLI 흐름은 검증했지만, 자연어 스킬이 실제로 어떤 코드를 쓰는지는 보지 못했습니다.</dd></div>
+            <div class="effect"><dt>그래서</dt><dd>스킬 프롬프트의 품질을 부작용으로 검증하고, 컴포넌트·통합 테스트 워크플로우도 각 테스트 경계에 맞춰 사용할 수 있습니다.</dd></div>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <section id="maintenance">
+      <h2 class="section-title">문서·유지보수</h2>
+      <p class="section-sub">틀린 사본을 더 잘 갱신하는 대신, 사본을 없애거나 자동 생성 대상으로 바꿨습니다.</p>
+      <div class="change-grid">
+        <article class="change-card maintenance">
+          <div class="card-head"><div class="kind">Drift guard</div><h3>템플릿과 저장소 agent 문서의 managed section 대조</h3></div>
+          <dl>
+            <div><dt>변경</dt><dd>apply가 실제 렌더하는 agent 파일 목록을 공유해 템플릿과 루트 적용본의 managed section 내용을 CI에서 비교합니다.</dd></div>
+            <div class="why"><dt>왜</dt><dd>템플릿만 고치고 적용본을 잊어 절이 조용히 사라진 사례가 있었습니다. 렌더 결과 테스트와 새 샌드박스 테스트는 이 저장소의 적용본 드리프트를 보지 못했습니다.</dd></div>
+            <div class="effect"><dt>그래서</dt><dd>정본과 실제 dogfooding 문서가 어긋나면 릴리스 전에 실패하고, 검사 대상 목록 자체도 구현과 따로 복제되지 않습니다.</dd></div>
+          </dl>
+        </article>
+
+        <article class="change-card maintenance">
+          <div class="card-head"><div class="kind">Single source</div><h3>중복 인벤토리를 제거하고 정본 포인터로 축소</h3></div>
+          <dl>
+            <div><dt>변경</dt><dd>README·개요 등에 복제돼 있던 명령·파일 목록을 제거하고 manifest, skill, source tree 같은 소유자를 가리키도록 바꿨습니다.</dd></div>
+            <div class="why"><dt>왜</dt><dd>같은 목록이 여러 곳에 있어 하나를 고쳐도 나머지가 계속 틀렸습니다. 사본을 유지하는 행위 자체가 결함의 원인이었습니다.</dd></div>
+            <div class="effect"><dt>그래서</dt><dd>목록을 최신화하는 별도 작업이 줄고, 실제 지원 범위는 항상 해당 정본에서 확인하게 됩니다.</dd></div>
+          </dl>
+        </article>
+
+        <article class="change-card maintenance">
+          <div class="card-head"><div class="kind">Generated docs</div><h3>아키텍처 개요를 소스 기반 생성물로 전환</h3></div>
+          <dl>
+            <div><dt>변경</dt><dd>Mermaid 원본, command frontmatter, manifest와 git 추적 소스에서 <code>harness-overview.html</code>을 생성합니다. 직접 편집 대신 <code>docs:generate</code>가 산출물을 갱신합니다.</dd></div>
+            <div class="why"><dt>왜</dt><dd>큰 inline SVG 한 줄에서 라벨을 손으로 고쳐야 했고 실제로 낡은 라벨이 남았습니다. 문서 표도 소스의 또 다른 사본이라 계속 틀어졌습니다.</dd></div>
+            <div class="effect"><dt>그래서</dt><dd>다이어그램과 인벤토리의 리뷰 가능한 원본이 생기고, <code>docs:check</code>가 생성물 드리프트를 차단합니다.</dd></div>
+          </dl>
+        </article>
+
+        <article class="change-card maintenance">
+          <div class="card-head"><div class="kind">Removal</div><h3>고아 리포트 템플릿 제거</h3></div>
+          <dl>
+            <div><dt>변경</dt><dd>아무 코드나 문서도 참조하지 않는 <code>harness-sim</code> 리포트 템플릿을 삭제했습니다.</dd></div>
+            <div class="why"><dt>왜</dt><dd>템플릿이 실제 출력과 맞지 않았고, 맞춰 고치면 실제 생성 로직과 별개로 손으로 유지할 사본이 하나 더 생깁니다.</dd></div>
+            <div class="effect"><dt>그래서</dt><dd>사용되지 않는 계약처럼 보이는 파일이 사라지고, 실제 리포트 형식은 실행 코드와 스킬 절차에서만 결정됩니다.</dd></div>
+          </dl>
+        </article>
+
+        <article class="change-card maintenance">
+          <div class="card-head"><div class="kind">Positioning</div><h3>설정·상태 하네스와 단일 스레드 쓰기로 역할 정정</h3></div>
+          <dl>
+            <div><dt>변경</dt><dd>프로젝트를 런타임 오케스트레이터가 아닌 설정·상태 하네스로 설명하고, OpenCode를 병렬 작성자가 아닌 순차 전환 드라이버로 명시했습니다.</dd></div>
+            <div class="why"><dt>왜</dt><dd>이 프로젝트가 직접 소유하지 않는 지휘·작업큐·격리 기능을 암시했고, 병렬 쓰기는 충돌과 신뢰성 위험을 키웁니다.</dd></div>
+            <div class="effect"><dt>그래서</dt><dd>탐색용 격리 서브에이전트는 유지하면서, 코드 쓰기와 결정은 하나의 흐름으로 이어지는 실제 운영 모델과 문서가 일치합니다.</dd></div>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <section id="principles">
+      <h2 class="section-title">이번 릴리스가 택한 방향</h2>
+      <p class="section-sub">기능들은 달라도 설계 결정은 같은 원칙으로 수렴합니다.</p>
+      <div class="principle">
+        <div>
+          <h3>추측보다 결정론</h3>
+          <p>구문 채점, context 검사, boundary 대조, docs drift 검사는 모델의 기억이나 사후 해석 대신 재현 가능한 코드가 판정합니다.</p>
+        </div>
+        <div class="pointer">
+          <h3>사본보다 정본</h3>
+          <p>동적 명령 목록과 파일 인벤토리는 이 문서에 복제하지 않습니다. 지원 명령은 plugin manifest와 각 command·skill을, task 계약은 <code>AGENTS.md</code>를, 아키텍처 파일 목록은 생성된 overview와 그 소스를 참조합니다.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>Harness Aijient Team Plugin 0.12.0 · 2026-08-03 · 0.11.0 이후 변경 설명</footer>
+</body>
+</html>
