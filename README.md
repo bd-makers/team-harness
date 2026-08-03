@@ -349,10 +349,11 @@ V1은 object schema의 `properties`, `required`, 기본 `type`만 비교합니�
 schema instance의 object root를 가리키는 pointer와 표준 document pointer(`/properties/data`)를
 모두 지원합니다. OpenAPI resolver, TypeScript type parser, runtime schema 실행은 범위 밖입니다.
 
-기존 설치에는 `harness-team apply`가 없는 `boundary-checkpoint.sh`만 추가하고 settings를
-non-destructive merge합니다. 알려진 기본 protect hook은 한 번만 실행되도록 업그레이드하지만,
-커스터마이즈한 hook group/script는 덮어쓰지 않습니다. `migrate`는 기존 hook을 자동 교체하지
-않으므로, 누락 진단은 `harness-team apply`로 해결합니다.
+기존 설치에 이 기능을 추가하는 업그레이드 경로는 `harness-team apply`뿐입니다. `apply`는 없는
+`boundary-checkpoint.sh`를 추가하고 settings를 non-destructive merge합니다. 알려진 기본 protect
+hook은 한 번만 실행되도록 업그레이드하지만, 커스터마이즈한 hook group/script는 덮어쓰지 않습니다.
+`migrate`는 이 hook의 등록이나 script 추가를 수행하지 않으므로, doctor가 보고하는 누락은
+`harness-team apply`로 해결합니다.
 
 ### 실전 예제
 
