@@ -1,6 +1,8 @@
+import { execFile } from 'node:child_process';
 import { readFile, readdir, writeFile } from 'node:fs/promises';
-import { basename, dirname, join, relative, sep } from 'node:path';
+import { basename, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const templatePath = 'docs/harness-overview.template.html';
@@ -19,6 +21,7 @@ const sourceTreeEntries = [
   diagramDirectory,
   templatePath,
 ];
+const execFileAsync = promisify(execFile);
 
 function escapeHtml(value) {
   return value
@@ -90,25 +93,15 @@ export function renderCommandTable(rows) {
     </div>`;
 }
 
-async function walkFiles(root, entry) {
-  const absolutePath = join(root, entry);
-  const children = await readdir(absolutePath, { withFileTypes: true }).catch((error) => {
-    if (error.code === 'ENOTDIR') return null;
-    throw error;
-  });
-  if (children === null) return [entry];
-
-  const files = [];
-  for (const child of children) {
-    const childPath = join(entry, child.name);
-    if (child.isDirectory()) files.push(...await walkFiles(root, childPath));
-    else if (child.isFile()) files.push(childPath);
-  }
-  return files;
-}
-
-function normalizePath(path) {
-  return path.split(sep).join('/');
+async function listTrackedSourceFiles(root) {
+  const { stdout } = await execFileAsync('git', [
+    '-C', root,
+    'ls-files',
+    '-z',
+    '--',
+    ...sourceTreeEntries,
+  ]);
+  return stdout.split('\0').filter(Boolean);
 }
 
 function fileType(path) {
@@ -148,10 +141,8 @@ function fileRole(path, commandDescriptions) {
 export async function buildFileRows(root = repositoryRoot, commandRows) {
   commandRows ??= await buildCommandRows(root);
   const commandDescriptions = new Map(commandRows.map((row) => [row.sourcePath, row.description]));
-  const paths = (await Promise.all(sourceTreeEntries.map((entry) => walkFiles(root, entry))))
-    .flat()
-    .map(normalizePath);
-  return [...new Set(paths)].sort().map((path) => ({
+  const paths = await listTrackedSourceFiles(root);
+  return paths.sort().map((path) => ({
     path,
     type: fileType(path),
     role: fileRole(path, commandDescriptions),

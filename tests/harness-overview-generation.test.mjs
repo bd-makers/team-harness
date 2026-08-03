@@ -29,6 +29,24 @@ test('generated harness overview matches its sources', async () => {
   assert.doesNotMatch(actual, /병렬 작성/);
 });
 
+test('ignored and untracked source-root files do not change the generated overview', async () => {
+  const before = await generateOverview(root);
+  const fixture = await mkdtemp(join(root, 'tests/.harness-overview-'));
+  const ignoredPath = join(fixture, '.DS_Store');
+  const untrackedPath = join(fixture, 'untracked.mjs');
+
+  try {
+    await Promise.all([
+      writeFile(ignoredPath, 'ignored'),
+      writeFile(untrackedPath, 'untracked'),
+    ]);
+
+    assert.equal(await generateOverview(root), before);
+  } finally {
+    await rm(fixture, { recursive: true, force: true });
+  }
+});
+
 test('adding a manifest command adds a generated command row', async () => {
   const fixture = await mkdtemp(join(tmpdir(), 'harness-overview-'));
   try {
