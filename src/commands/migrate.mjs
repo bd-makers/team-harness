@@ -549,13 +549,13 @@ export async function migrateBoundaryCheckpointHook(ctx) {
   const raw = await readTextSafe(settingsPath);
   if (raw === null) {
     console.log('  PreToolUse boundary checkpoint: no .claude/settings.json — skipping (run apply/init)');
-    return false;
+    return null;
   }
 
   let settings;
   try { settings = JSON.parse(raw); } catch {
     console.log('  PreToolUse boundary checkpoint: settings.json parse 실패 — 건너뜀');
-    return false;
+    return null;
   }
 
   const tplSettingsRaw = await readTextSafe(join(root, 'templates/.claude/settings.json'));
@@ -568,7 +568,7 @@ export async function migrateBoundaryCheckpointHook(ctx) {
   } catch { tplBoundaryGroup = null; }
   if (!tplBoundaryGroup) {
     console.log('  PreToolUse boundary checkpoint: 템플릿에 boundary hook 없음 — 건너뜀');
-    return false;
+    return null;
   }
 
   const merged = mergeClaudeSettings(settings, { hooks: { PreToolUse: [tplBoundaryGroup] } });
@@ -582,7 +582,7 @@ export async function migrateBoundaryCheckpointHook(ctx) {
   } catch (err) {
     if (err?.code !== 'ENOENT') {
       console.log(`  PreToolUse boundary checkpoint: ${scriptRel} 확인 실패 — 건너뜀`);
-      return false;
+      return null;
     }
   }
   if (scriptEntry) {
@@ -598,7 +598,7 @@ export async function migrateBoundaryCheckpointHook(ctx) {
     }
     if (!scriptReady) {
       console.log(`  PreToolUse boundary checkpoint: ${scriptRel}이 실행 가능한 일반 파일이 아닙니다 — settings.json을 변경하지 않습니다`);
-      return false;
+      return null;
     }
   }
   const scriptMissing = !scriptEntry;
@@ -607,7 +607,7 @@ export async function migrateBoundaryCheckpointHook(ctx) {
     : null;
   if (scriptMissing && !templateScript) {
     console.log(`  ${scriptRel}: 템플릿 없음 — 건너뜀`);
-    return false;
+    return null;
   }
   if (!settingsChanged && !scriptMissing) {
     console.log('  PreToolUse boundary checkpoint: up to date');
@@ -645,6 +645,11 @@ export async function runMigrate(ctx) {
   const taskLabelsRenamed = await migrateTaskIndexLabels(ctx);
   const hookMigrated = await migrateSessionStartHook(ctx);
   const boundaryHookMigrated = await migrateBoundaryCheckpointHook(ctx);
+
+  if (boundaryHookMigrated === null) {
+    console.log('\nMigration incomplete — resolve the PreToolUse boundary checkpoint issue and rerun.');
+    return;
+  }
 
   if (!agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !claudeHooksRefreshed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated) {
     console.log('\nNothing to migrate — project is already up to date.');

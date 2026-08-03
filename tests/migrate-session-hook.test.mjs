@@ -4,10 +4,17 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, stat, lstat, chmod, symlink } 
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
-import { migrateSessionStartHook, migrateBoundaryCheckpointHook } from '../src/commands/migrate.mjs';
+import { migrateSessionStartHook, migrateBoundaryCheckpointHook, runMigrate } from '../src/commands/migrate.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ctxYes = (dir) => ({ targetDir: dir, root: ROOT, flags: { yes: true } });
+
+function captureLogs() {
+  const lines = [];
+  const original = console.log;
+  console.log = (...args) => lines.push(args.join(' '));
+  return { lines, restore: () => { console.log = original; } };
+}
 
 async function fixture(settings) {
   const dir = await mkdtemp(join(tmpdir(), 'harness-mig-hook-'));
@@ -165,9 +172,27 @@ for (const [name, create] of [
 
       const ret = await migrateBoundaryCheckpointHook(ctxYes(dir));
 
-      assert.equal(ret, false);
+      assert.equal(ret, null);
       assert.deepEqual(await readSettings(dir), before);
       assert.ok(await lstat(scriptPath));
     } finally { await rm(dir, { recursive: true, force: true }); }
   });
 }
+
+test('실행 불가 boundary script는 migrate 완료로 보고하지 않는다', async () => {
+  const dir = await fixture({
+    hooks: {
+      SessionStart: [{ hooks: [{ type: 'command', command: 'harness-team session-context 2>/dev/null || true' }] }],
+      PreToolUse: [OLD_DEFAULT_PROTECT],
+    },
+  });
+  try {
+    await mkdir(join(dir, '.claude/hooks/boundary-checkpoint.sh'), { recursive: true });
+    const cap = captureLogs();
+    try {
+      await runMigrate(ctxYes(dir));
+    } finally { cap.restore(); }
+    assert.ok(cap.lines.some(line => line.includes('Migration incomplete')));
+    assert.ok(!cap.lines.some(line => line.includes('Nothing to migrate')));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

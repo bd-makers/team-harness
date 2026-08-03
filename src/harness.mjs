@@ -16,7 +16,8 @@ export const AGENT_FILE_TEMPLATES = [
 ];
 
 function hasCommand(group, command) {
-  return group?.hooks?.some(hook => hook?.type === 'command' && hook.command === command);
+  return Array.isArray(group?.hooks)
+    && group.hooks.some(hook => hook?.type === 'command' && hook.command === command);
 }
 
 export function settingsHasBoundaryCheckpoint(settings) {
