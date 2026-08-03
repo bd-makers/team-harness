@@ -14,6 +14,8 @@
   - 하위 제목 뒤 본문: 기대 `1`, 실제 `0` — capsule 범위 누수 재현.
   - `capsuleLineHasContent('#### Signal')`: 기대 `false`, 실제 `true` — 단순 정규식 축소 시 과다 계수 위험 재현.
 - 수정 후 `node --test tests/context.test.mjs`: 15/15 통과. 하위 제목+본문, 하위 제목-only, fenced code의 셸 주석, `##` 종결자를 모두 고정했다.
+- 후속 R1/R2 수정 전 `validateContextCard` 재현: fenced code 내부 capsule 제목은 기대 `1`, 실제 `2`; 네 칸 들여쓴 fence 유사 줄 뒤의 `##`은 기대 `1`, 실제 `0`이었다.
+- 후속 수정 후 `node --test tests/context.test.mjs`: 17/17 통과. `a literal capsule heading in fenced code remains content`와 `an indented fence-like line does not close fenced code` 회귀를 추가했다.
 
 ### 기존 카드 전수 비교
 
@@ -43,7 +45,7 @@
 - 보안: 파일 문자열의 결정론적 로컬 판정만 변경했으며 외부 입력 실행·의존성·민감 데이터 변경이 없다.
 - 단순성: 기존 줄 단위 스캔을 유지하고 종결자/내용 정규식과 최소 fence 상태만 추가했다.
 - 테스트: 핵심 성공·실패 방향과 요구된 네 사례를 커버했다.
-- 발견/조치: 추가 finding 없음.
+- 발견/조치: R1은 fenced code 내부의 `### F-*`가 capsule로 다시 열리던 결함이었고, fence 상태를 capsule/절 제목보다 먼저 처리해 해결했다. R2는 네 칸 들여쓴 닫힘 유사 줄을 허용하던 결함이었고, CommonMark 범위의 들여쓰기와 marker 문자·길이를 함께 확인해 해결했다.
 
 ## Learnings
 
