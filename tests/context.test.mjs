@@ -10,6 +10,7 @@ import {
   CONTEXT_MAX_BYTES,
   CONTEXT_MAX_FAILURE_CAPSULES,
   CONTEXT_MAX_NONBLANK_LINES,
+  capsuleLineHasContent,
   runContextCheck,
   runContextInit,
   validateContextCard,
@@ -81,6 +82,105 @@ test('validateContextCard: empty capsules never consume the unresolved budget', 
   const overBudget = validateContextCard([filled, ...extras].join('\n'), 'demo');
   assert.equal(overBudget.metrics.failureCapsules, CONTEXT_MAX_FAILURE_CAPSULES + 1);
   assert.ok(overBudget.failures.some(failure => failure.code === 'failure-capsules'));
+});
+
+test('validateContextCard: a lower heading keeps following capsule content in scope', () => {
+  const content = `${taskContextTemplate('demo')}
+### F-002
+#### Signal
+502 from upstream
+`;
+
+  assert.equal(validateContextCard(content, 'demo').metrics.failureCapsules, 1);
+});
+
+test('capsuleLineHasContent: a lower heading with up to three spaces is not substantive content', () => {
+  assert.equal(capsuleLineHasContent('#### Signal'), false);
+  assert.equal(capsuleLineHasContent('   #### Signal'), false);
+});
+
+test('validateContextCard: a four-space indented heading-like line fills the capsule', () => {
+  const content = `${taskContextTemplate('demo')}
+### F-002
+    #### raw failure marker
+`;
+
+  assert.equal(validateContextCard(content, 'demo').metrics.failureCapsules, 1);
+});
+
+test('validateContextCard: a capsule with only a lower heading stays empty', () => {
+  const content = `${taskContextTemplate('demo')}
+### F-002
+#### Signal
+`;
+
+  assert.equal(validateContextCard(content, 'demo').metrics.failureCapsules, 0);
+});
+
+test('capsuleLineHasContent: code fence delimiters are not substantive content', () => {
+  assert.equal(capsuleLineHasContent('```sh'), false);
+  assert.equal(capsuleLineHasContent('```'), false);
+});
+
+test('validateContextCard: a shell comment in a code fence does not close the capsule', () => {
+  const content = `${taskContextTemplate('demo')}
+### F-002
+\`\`\`sh
+# npm test -- foo
+command failed
+\`\`\`
+`;
+
+  assert.equal(validateContextCard(content, 'demo').metrics.failureCapsules, 1);
+});
+
+test('validateContextCard: a literal capsule heading in fenced code remains content', () => {
+  const content = `${taskContextTemplate('demo')}
+### F-002
+- Signal: actual failure
+\`\`\`text
+### F-003
+- Signal: log detail
+## Log heading
+\`\`\`
+## Outside the capsule
+`;
+
+  assert.equal(validateContextCard(content, 'demo').metrics.failureCapsules, 1);
+});
+
+test('validateContextCard: an indented fence-like line does not close fenced code', () => {
+  const content = `${taskContextTemplate('demo')}
+### F-002
+\`\`\`
+    \`\`\`
+## Log heading
+diagnostic line
+\`\`\`
+## Outside the capsule
+`;
+
+  assert.equal(validateContextCard(content, 'demo').metrics.failureCapsules, 1);
+});
+
+test('validateContextCard: a level-two section still closes the capsule', () => {
+  const content = `${taskContextTemplate('demo')}
+### F-002
+## Outside the capsule
+content after the section
+`;
+
+  assert.equal(validateContextCard(content, 'demo').metrics.failureCapsules, 0);
+});
+
+test('validateContextCard: a level-two section with up to three spaces still closes the capsule', () => {
+  const content = `${taskContextTemplate('demo')}
+### F-002
+   ## Outside the capsule
+content after the section
+`;
+
+  assert.equal(validateContextCard(content, 'demo').metrics.failureCapsules, 0);
 });
 
 test('validateContextCard: size, line, heading, and capsule failures are deterministic', () => {

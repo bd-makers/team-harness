@@ -8,11 +8,28 @@ export const CONTEXT_MAX_NONBLANK_LINES = 100;
 export const CONTEXT_MAX_FAILURE_CAPSULES = 3;
 
 const CAPSULE_HEADING = /^### F-[^\s].*$/;
-const MARKDOWN_HEADING = /^#{1,6}(\s|$)/;
+const SECTION_HEADING = /^ {0,3}#{1,2}(\s|$)/;
+const ATX_HEADING = /^ {0,3}#{1,6}(\s|$)/;
+const CODE_FENCE = /^ {0,3}(`{3,}|~{3,})/;
+const CODE_FENCE_CLOSE = /^ {0,3}(`+|~+)[ \t]*$/;
 
-function capsuleLineHasContent(line) {
+function codeFenceMarker(line) {
+  const match = CODE_FENCE.exec(line);
+  return match ? { char: match[1][0], length: match[1].length } : null;
+}
+
+function closesCodeFence(line, fence) {
+  const match = CODE_FENCE_CLOSE.exec(line);
+  return match !== null
+    && match[1][0] === fence.char
+    && match[1].length >= fence.length;
+}
+
+export function capsuleLineHasContent(line) {
   const body = line.trim().replace(/^[-*+]\s*/, '');
   if (body.length === 0) return false;
+  const headingCandidate = line.replace(/^ {0,3}[-*+]\s*/, '');
+  if (ATX_HEADING.test(headingCandidate) || CODE_FENCE.test(line)) return false;
   const colon = body.indexOf(':');
   return (colon === -1 ? body : body.slice(colon + 1)).trim().length > 0;
 }
@@ -22,15 +39,27 @@ function countUnresolvedCapsules(lines) {
   let count = 0;
   let open = false;
   let filled = false;
-  const close = () => { if (open && filled) count += 1; open = false; filled = false; };
+  let codeFence = null;
+  const close = () => {
+    if (open && filled) count += 1;
+    open = false;
+    filled = false;
+  };
   for (const line of lines) {
+    if (codeFence) {
+      if (closesCodeFence(line, codeFence)) codeFence = null;
+      else if (open && line.trim().length > 0) filled = true;
+      continue;
+    }
+    codeFence = codeFenceMarker(line);
+    if (codeFence) continue;
     if (CAPSULE_HEADING.test(line)) {
       close();
       open = true;
       continue;
     }
     if (!open) continue;
-    if (MARKDOWN_HEADING.test(line)) { close(); continue; }
+    if (SECTION_HEADING.test(line)) { close(); continue; }
     if (capsuleLineHasContent(line)) filled = true;
   }
   close();

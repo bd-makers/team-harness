@@ -1,6 +1,7 @@
 # chad — Tasks
 
 ## Open
+- th-capsule-grammar (created 2026-08-03)
 - th-overview-mermaid (created 2026-08-03)
 - skilltest-skipstring (created 2026-07-30)
 - th-resident-verify (created 2026-07-30)
