@@ -1,7 +1,7 @@
 # chad — Tasks
 
 ## Open
-- harness-activation (created 2026-08-06)
+
 - th-whatschanged-upkeep (created 2026-08-03)
 - th-release-0-12 (created 2026-08-03)
 - th-capsule-grammar (created 2026-08-03)
@@ -35,6 +35,7 @@
 
 
 ## Completed
+- ✅ harness-activation
 - ✅ skilltest-ast-grader
 - ✅ harness-inttest
 - ✅ harness-unittest
