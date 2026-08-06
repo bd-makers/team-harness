@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-06-02
+modified: 2026-08-06
 ---
 
 # harness-aijient-team
@@ -238,7 +238,7 @@ symlink · JSON 유효성 · 실행 권한 · 외부 도구 존재 여부 체크
 
 문제가 있으면 exit 1 + 문제 항목 리포트.
 
-출력 예시 (외부 도구 + 자체 CLI 섹션):
+출력 예시 (외부 도구 + 자체 CLI + consumer hook CLI 섹션):
 
 ```
 external tools:
@@ -248,11 +248,13 @@ external tools:
 - opencode (OpenCode CLI)  (not found, optional)
 ✓ jq (JSON processor)
 ✓ harness-team CLI  (--help OK)
+✓ SessionStart/post-commit hook CLI  (session-context/handoff supported)
 
 All checks passed.
 ```
 
 심볼: `✓` 정상, `✗` 실패(exit 1), `-` 선택 항목 없음(정상).
+소비자 프로젝트에서는 PATH의 `harness-team`이 `session-context`와 `handoff`를 지원하는지도 경고로 점검합니다. 플러그인 소스 저장소는 소비자 훅을 설치하지 않으므로 이 항목이 n/a로 건너뛰어집니다.
 
 ### `/harness-task` — task 관리
 

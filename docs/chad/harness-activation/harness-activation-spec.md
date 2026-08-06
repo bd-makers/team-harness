@@ -204,4 +204,3 @@ post-commit 훅은 `harness-team handoff 2>/dev/null || true`.
 > 위 `docs/*.md` 3종은 2026-08-06 현재 **untracked**이며 본문이 이 저장소에 없는
 > `data/th-concept-verify/` 경로를 참조한다. 커밋 여부는 사용자 판단 사항이므로
 > 본 spec은 이들에 의존하지 않도록 D1 근거를 자립시켰다.
-
