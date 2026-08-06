@@ -4,14 +4,14 @@
 
 ## 결과
 
-- 평문 `task` 생성·재활성화 출력에 spec → interview → 구현 → 테스트 → 리뷰 → retro → done 안내를 추가했고, 재활성화에는 plan 현재 단계 경로를 포함했다. JSON envelope는 변경하지 않았다.
+- 평문 `task` 생성 출력에 spec → interview → 구현 → 테스트 → 리뷰 → retro → done 안내를, 재활성화 출력에는 plan 현재 단계 경로와 interview → 구현 → 테스트 → 리뷰 → retro → done 안내를 추가했다(재활성화 시 spec 작성은 생략). JSON envelope는 변경하지 않았다.
 - README에 apply / Claude Code 플러그인 / 전역 CLI의 독립 3채널, clone 팀원 복구 절차, 에이전트별 강제력 비대칭을 문서화했다.
-- doctor가 소비자 프로젝트에서 `harness-team --help` 실행 가능성을 확인해 SessionStart와 post-commit 훅의 공통 PATH 의존성을 경고한다. plugin-dev는 로컬 `node bin/harness-team.mjs`로 실행하고 소비자 훅을 설치하지 않으므로 같은 검사를 n/a로 skip한다.
+- doctor가 소비자 프로젝트에서 PATH의 `harness-team --help`가 `session-context`와 `handoff`를 지원한다고 광고하는지 확인해 SessionStart와 post-commit 훅의 공통 PATH 의존성을 경고한다. plugin-dev는 로컬 `node bin/harness-team.mjs`로 실행하고 소비자 훅을 설치하지 않으므로 같은 검사를 n/a로 skip한다.
 
 ### Probe (2026-08-06)
 
-- `/tmp/fm-th-activation/probe-activation`에서 `task activation-probe` 생성 출력이 spec·interview·test·review·retro·done 체인을, 재실행 출력이 `activation-probe-plan.md` 현재 단계 힌트를 보였다.
-- 같은 probe를 커맨드 없이 clone한 팀원으로 가정해 README의 플러그인 설치 → `npm i -g harness-team` → `harness-team doctor` 절차와 독립 채널·`apply` 제한 설명을 확인했다.
+- `/tmp/fm-th-activation/probe-activation`에서 `task activation-probe` 생성 출력이 spec·interview·test·review·retro·done 체인을, 재실행 출력이 `activation-probe-plan.md` 현재 단계 힌트와 interview·test·review·retro·done 체인을 보였다(재활성화 시 spec 단계 없음).
+- 같은 probe를 커맨드 없이 clone한 팀원으로 가정해 README의 플러그인 설치 → `npm i -g harness-aijient-team` → `harness-team doctor` 절차와 독립 채널·`apply` 제한 설명을 확인했다.
 - 정상 PATH의 doctor는 `SessionStart/post-commit hook CLI` pass, node만 남긴 PATH는 복구 명령을 포함한 warning을 보고했다.
 
 ## Reviews
