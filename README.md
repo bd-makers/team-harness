@@ -86,7 +86,7 @@ OS/네트워크 격리는 이 플러그인의 스코프 밖입니다 — devcont
 ```bash
 /plugin marketplace add https://github.com/bd-makers/team-harness
 /plugin install harness-aijient-team
-npm i -g harness-team
+npm i -g harness-aijient-team
 cd cloned-project
 harness-team doctor
 ```
@@ -170,7 +170,7 @@ full run은 throwaway `../harness-playground/.sim-tmp/<TS>/` 안에서 `.git/hoo
 
 npm 배포 후:
 ```bash
-npx harness-team <command>
+npx harness-aijient-team <command>
 ```
 
 로컬 개발:

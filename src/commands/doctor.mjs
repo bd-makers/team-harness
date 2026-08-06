@@ -39,7 +39,13 @@ export async function checkSelfCli(root, env = process.env) {
 // `harness-team` command. The source repository runs its local Node entrypoint,
 // so that check cannot prove consumer hooks will be able to run.
 export async function checkHookCli(env = process.env) {
-  return checkCommand('harness-team', ['--help'], env);
+  try {
+    const { stdout } = await pexec('harness-team', ['--help'], { timeout: 3000, env });
+    return ['session-context', 'handoff'].every(command =>
+      new RegExp(`^\\s*${command}(?:\\s|$)`, 'm').test(stdout));
+  } catch {
+    return false;
+  }
 }
 
 // Detect gate bypass: an active task whose spec.md lacks the Ambiguity self-check
@@ -283,10 +289,10 @@ export async function runDoctor(ctx) {
   if (!pluginDev) {
     hookCliOk = await checkHookCli();
     if (!hookCliOk) {
-      const detail = 'harness-team을 PATH에서 찾지 못함 — SessionStart/post-commit 훅이 실행되지 않음; npm i -g harness-team 또는 Claude Code 플러그인 경로를 PATH에 추가';
+      const detail = 'PATH의 harness-team이 실행되지 않거나 session-context/handoff를 지원하지 않음 — SessionStart/post-commit 훅이 실행되지 않음; npm i -g harness-aijient-team 또는 Claude Code 플러그인 경로를 PATH에 추가';
       add('SessionStart/post-commit hook CLI', 'warning', detail, `\n⚠️ ${detail}`);
     } else {
-      add('SessionStart/post-commit hook CLI', 'pass', 'harness-team --help OK', '✓ SessionStart/post-commit hook CLI  (harness-team --help OK)');
+      add('SessionStart/post-commit hook CLI', 'pass', 'session-context/handoff supported', '✓ SessionStart/post-commit hook CLI  (session-context/handoff supported)');
     }
   } else {
     add('SessionStart/post-commit hook CLI', 'skip', 'plugin-dev repo — consumer hook PATH check n/a', '- SessionStart/post-commit hook CLI  (plugin-dev repo — n/a)');
@@ -309,7 +315,7 @@ export async function runDoctor(ctx) {
     if (legacyWarning) warnActions.push('harness-team migrate');
     if (specGateWarning) warnActions.push('harness-team task <name>');
     if (hookWarning || boundaryHookWarning) warnActions.push('harness-team apply');
-    if (!pluginDev && !hookCliOk) warnActions.push('npm i -g harness-team');
+    if (!pluginDev && !hookCliOk) warnActions.push('npm i -g harness-aijient-team');
     emitObservation(buildEnvelope({
       command: 'doctor',
       status,

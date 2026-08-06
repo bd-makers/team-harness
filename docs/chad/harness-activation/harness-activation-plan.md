@@ -12,8 +12,12 @@ task 확장(loop/graph/workflow 신설)을 기각한 대신, 하네스가 실제
 - [x] `src/commands/task.mjs` 평문 분기에 `nextActions` 상당 안내 추가
       (현재 `--json` 분기에만 존재 — 생성 `task.mjs:293`, 재활성화 `task.mjs:260`;
       평문은 `task.mjs:303`의 2줄)
-- [x] 안내 내용 확정: spec 작성(Ambiguity 자가진단) → `/harness-interview` →
-      구현 → 테스트(`/harness-unittest` 계열) → 리뷰 → `/harness-retro` → `done`
+- [x] 안내 내용 확정:
+      - 생성: spec 작성(Ambiguity 자가진단) → `/harness-interview` → 구현 →
+        테스트(`/harness-unittest` 계열) → 리뷰 → `/harness-retro` → `done`
+      - 재활성화: `<name>-plan.md` 현재 단계 힌트 → `/harness-interview` → 구현 →
+        테스트(`/harness-unittest` 계열) → 리뷰 → `/harness-retro` → `done`
+        (기존 spec 작성은 의도적으로 생략)
 - [x] 기존 task 활성화(재진입) 경로에도 현재 단계 힌트가 나오는지 확인
 - [x] **검증**: probe 프로젝트에서 `harness-team task <new>` 실행 → 다음 단계가 stdout에 보임.
       `--json` 출력의 기존 envelope 스키마가 깨지지 않음(테스트 통과)

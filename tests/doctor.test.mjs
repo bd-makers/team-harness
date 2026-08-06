@@ -50,13 +50,15 @@ test('checkSelfCli: 실제 bin으로 실행 → true (harness-team 출력 포함
   assert.equal(result, true);
 });
 
-test('checkHookCli: PATH의 harness-team 실행 가능 여부를 확인하며 두 hook 소비처를 보장한다', async () => {
+test('checkHookCli: PATH의 CLI가 두 hook 명령을 광고할 때만 통과한다', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-cli-'));
   try {
     const shim = join(dir, 'harness-team');
-    await writeFile(shim, '#!/bin/sh\necho harness-team\n');
+    await writeFile(shim, '#!/bin/sh\nif [ "$1" != "--help" ]; then exit 1; fi\nprintf "%s\\n" "harness-team" "  handoff" "  session-context"\n');
     await chmod(shim, 0o755);
     assert.equal(await checkHookCli({ PATH: dir }), true);
+    await writeFile(shim, '#!/bin/sh\nprintf "%s\\n" "harness-team" "  session-context"\n');
+    assert.equal(await checkHookCli({ PATH: dir }), false);
     assert.equal(await checkHookCli({ PATH: join(dir, 'missing') }), false);
     assert.match(POST_COMMIT_HOOK, /harness-team handoff/);
   } finally { await rm(dir, { recursive: true, force: true }); }
