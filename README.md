@@ -69,6 +69,42 @@ OS/네트워크 격리는 이 플러그인의 스코프 밖입니다 — devcont
 
 ---
 
+## 적용과 설치: 독립된 3개 채널
+
+하네스 구성요소는 서로 독립된 다음 세 채널로 도달합니다. 한 채널을 완료해도 다른 채널이 자동으로 완료되지는 않습니다.
+
+| 채널 | 대상/시점 | 제공하는 것 |
+|---|---|---|
+| `apply` | 프로젝트당 1회 | hooks·rules·AGENTS/CLAUDE/GEMINI·docs 구조·`opencode.json`·`.cursor/rules` |
+| Claude Code 플러그인 설치 | 사람·머신마다 | `/harness-*` 슬래시 커맨드 19개 |
+| npm 전역 `harness-team` 설치 | 사람마다 | 터미널과 훅이 호출하는 `harness-team` CLI |
+
+**`apply`만으로는 `/harness-*` 슬래시 커맨드가 설치되지 않습니다.** `apply`는 `commands/*.md` 19개를 프로젝트에 복사하지 않으며, 해당 명령은 Claude Code 플러그인 설치 채널에서 제공됩니다.
+
+이미 하네스가 적용된 저장소를 clone한 팀원은 프로젝트에 다시 `apply`하지 마세요. 먼저 자신의 Claude Code에 플러그인을 설치하고, 자신의 PATH에 CLI를 설치한 뒤 점검합니다.
+
+```bash
+/plugin marketplace add https://github.com/bd-makers/team-harness
+/plugin install harness-aijient-team
+npm i -g harness-team
+cd cloned-project
+harness-team doctor
+```
+
+에이전트별 강제력은 의도적으로 대칭이 아닙니다(0.11.0 probe 실측).
+
+| 에이전트 | hooks | 커맨드/적용 표면 |
+|---|---|---|
+| Claude Code | 4종 | 플러그인 설치 시 19개 슬래시 커맨드 |
+| OpenCode | 0 | `new-feature` / `fix-bug` / `verify` 3개 |
+| Gemini | 0 | `GEMINI.md` 텍스트만 |
+| Cursor | 0 | `.cursor/rules/*.mdc` 규칙만 |
+| Codex | 0 | 별도 `.codex-plugin`; `apply`로 설치되지 않음 |
+
+훅은 `.claude/settings.json`에 사는 Claude Code 전용 메커니즘이므로 이 비대칭은 구조적입니다. Claude Code 외 에이전트에서는 하네스 규칙이 결정론적 강제가 아니라 규범으로 적용됩니다.
+
+---
+
 ## 빠른 시작
 
 ```bash

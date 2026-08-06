@@ -2,11 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { mkdtemp, mkdir, writeFile, rm, symlink } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, rm, symlink, chmod } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { checkCommand, checkSelfCli, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, isPluginDevRepo } from '../src/commands/doctor.mjs';
+import { checkCommand, checkSelfCli, checkHookCli, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, isPluginDevRepo } from '../src/commands/doctor.mjs';
+import { POST_COMMIT_HOOK } from '../src/git-hooks.mjs';
 import { cloudSyncPathWarning } from '../src/harness.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
 
@@ -47,6 +48,18 @@ test('checkCommand: 존재하지 않는 명령어 → false (ENOENT 처리)', as
 test('checkSelfCli: 실제 bin으로 실행 → true (harness-team 출력 포함)', async () => {
   const result = await checkSelfCli(ROOT);
   assert.equal(result, true);
+});
+
+test('checkHookCli: PATH의 harness-team 실행 가능 여부를 확인하며 두 hook 소비처를 보장한다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-cli-'));
+  try {
+    const shim = join(dir, 'harness-team');
+    await writeFile(shim, '#!/bin/sh\necho harness-team\n');
+    await chmod(shim, 0o755);
+    assert.equal(await checkHookCli({ PATH: dir }), true);
+    assert.equal(await checkHookCli({ PATH: join(dir, 'missing') }), false);
+    assert.match(POST_COMMIT_HOOK, /harness-team handoff/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
 test('checkActiveSpecGate: 활성 task 없으면 null (조용히 skip)', async () => {

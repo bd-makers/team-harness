@@ -35,6 +35,13 @@ export async function checkSelfCli(root, env = process.env) {
   }
 }
 
+// Claude's SessionStart and git post-commit hooks invoke the globally resolvable
+// `harness-team` command. The source repository runs its local Node entrypoint,
+// so that check cannot prove consumer hooks will be able to run.
+export async function checkHookCli(env = process.env) {
+  return checkCommand('harness-team', ['--help'], env);
+}
+
 // Detect gate bypass: an active task whose spec.md lacks the Ambiguity self-check
 // section (a "pointer shell" spec authored outside the task tool). Returns a warning
 // string, or null when there is no active task / the spec is intact.
@@ -270,6 +277,21 @@ export async function runDoctor(ctx) {
   const boundaryHookWarning = pluginDev ? null : await checkBoundaryCheckpointHook(ctx.targetDir);
   if (boundaryHookWarning) add('PreToolUse boundary checkpoint', 'warning', boundaryHookWarning, `\n⚠️ ${boundaryHookWarning}`);
 
+  // Like the hook-presence checks above, this is consumer-only. plugin-dev uses
+  // `node bin/harness-team.mjs` and deliberately does not install consumer hooks.
+  let hookCliOk = null;
+  if (!pluginDev) {
+    hookCliOk = await checkHookCli();
+    if (!hookCliOk) {
+      const detail = 'harness-team을 PATH에서 찾지 못함 — SessionStart/post-commit 훅이 실행되지 않음; npm i -g harness-team 또는 Claude Code 플러그인 경로를 PATH에 추가';
+      add('SessionStart/post-commit hook CLI', 'warning', detail, `\n⚠️ ${detail}`);
+    } else {
+      add('SessionStart/post-commit hook CLI', 'pass', 'harness-team --help OK', '✓ SessionStart/post-commit hook CLI  (harness-team --help OK)');
+    }
+  } else {
+    add('SessionStart/post-commit hook CLI', 'skip', 'plugin-dev repo — consumer hook PATH check n/a', '- SessionStart/post-commit hook CLI  (plugin-dev repo — n/a)');
+  }
+
   if (json) {
     const warnCount = checks.filter(c => c.status === 'warning').length;
     const skipCount = checks.filter(c => c.status === 'skip').length;
@@ -287,6 +309,7 @@ export async function runDoctor(ctx) {
     if (legacyWarning) warnActions.push('harness-team migrate');
     if (specGateWarning) warnActions.push('harness-team task <name>');
     if (hookWarning || boundaryHookWarning) warnActions.push('harness-team apply');
+    if (!pluginDev && !hookCliOk) warnActions.push('npm i -g harness-team');
     emitObservation(buildEnvelope({
       command: 'doctor',
       status,
