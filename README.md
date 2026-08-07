@@ -76,10 +76,10 @@ OS/네트워크 격리는 이 플러그인의 스코프 밖입니다 — devcont
 | 채널 | 대상/시점 | 제공하는 것 |
 |---|---|---|
 | `apply` | 프로젝트당 1회 | hooks·rules·AGENTS/CLAUDE/GEMINI·docs 구조·`opencode.json`·`.cursor/rules` |
-| Claude Code 플러그인 설치 | 사람·머신마다 | `/harness-*` 슬래시 커맨드 19개 |
+| Claude Code 플러그인 설치 | 사람·머신마다 | `/harness-*` 슬래시 커맨드 21개 |
 | 전역 `harness-team` CLI 링크 | 사람마다 | 터미널과 훅이 호출하는 `harness-team` CLI |
 
-**`apply`만으로는 `/harness-*` 슬래시 커맨드가 설치되지 않습니다.** `apply`는 `commands/*.md` 19개를 프로젝트에 복사하지 않으며, 해당 명령은 Claude Code 플러그인 설치 채널에서 제공됩니다.
+**`apply`만으로는 `/harness-*` 슬래시 커맨드가 설치되지 않습니다.** `apply`는 `commands/*.md` 21개를 프로젝트에 복사하지 않으며, 해당 명령은 Claude Code 플러그인 설치 채널에서 제공됩니다.
 
 이 패키지는 **npm 공개 저장소에 배포되지 않습니다** — 전역 CLI는 `/plugin install`이 만든
 로컬 마켓플레이스 클론을 `npm i -g`로 링크해 얻습니다. 이미 하네스가 적용된 저장소를 clone한
@@ -98,7 +98,7 @@ harness-team doctor
 
 | 에이전트 | hooks | 커맨드/적용 표면 |
 |---|---|---|
-| Claude Code | 4종 | 플러그인 설치 시 19개 슬래시 커맨드 |
+| Claude Code | 4종 | 플러그인 설치 시 21개 슬래시 커맨드 |
 | OpenCode | 0 | `new-feature` / `fix-bug` / `verify` 3개 |
 | Gemini | 0 | `GEMINI.md` 텍스트만 |
 | Cursor | 0 | `.cursor/rules/*.mdc` 규칙만 |
