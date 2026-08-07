@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-06-02
+modified: 2026-08-06
 ---
 
 # harness-aijient-team
@@ -66,6 +66,42 @@ Anthropic·OpenAI·Cognition·12-Factor Agents 등 최근 1차 소스는 병렬�
 무관하게 표준 실무이며 계속 활용합니다 — 자세한 구분은 [`CLAUDE.md` §2](./CLAUDE.md) 참고.
 OS/네트워크 격리는 이 플러그인의 스코프 밖입니다 — devcontainer·sandbox 등 운영
 환경이 담당할 영역입니다.
+
+---
+
+## 적용과 설치: 독립된 3개 채널
+
+하네스 구성요소는 서로 독립된 다음 세 채널로 도달합니다. 한 채널을 완료해도 다른 채널이 자동으로 완료되지는 않습니다.
+
+| 채널 | 대상/시점 | 제공하는 것 |
+|---|---|---|
+| `apply` | 프로젝트당 1회 | hooks·rules·AGENTS/CLAUDE/GEMINI·docs 구조·`opencode.json`·`.cursor/rules` |
+| Claude Code 플러그인 설치 | 사람·머신마다 | `/harness-*` 슬래시 커맨드 19개 |
+| npm 전역 `harness-team` 설치 | 사람마다 | 터미널과 훅이 호출하는 `harness-team` CLI |
+
+**`apply`만으로는 `/harness-*` 슬래시 커맨드가 설치되지 않습니다.** `apply`는 `commands/*.md` 19개를 프로젝트에 복사하지 않으며, 해당 명령은 Claude Code 플러그인 설치 채널에서 제공됩니다.
+
+이미 하네스가 적용된 저장소를 clone한 팀원은 프로젝트에 다시 `apply`하지 마세요. 먼저 자신의 Claude Code에 플러그인을 설치하고, 자신의 PATH에 CLI를 설치한 뒤 점검합니다.
+
+```bash
+/plugin marketplace add https://github.com/bd-makers/team-harness
+/plugin install harness-aijient-team
+npm i -g harness-aijient-team
+cd cloned-project
+harness-team doctor
+```
+
+에이전트별 강제력은 의도적으로 대칭이 아닙니다(0.11.0 probe 실측).
+
+| 에이전트 | hooks | 커맨드/적용 표면 |
+|---|---|---|
+| Claude Code | 4종 | 플러그인 설치 시 19개 슬래시 커맨드 |
+| OpenCode | 0 | `new-feature` / `fix-bug` / `verify` 3개 |
+| Gemini | 0 | `GEMINI.md` 텍스트만 |
+| Cursor | 0 | `.cursor/rules/*.mdc` 규칙만 |
+| Codex | 0 | 별도 `.codex-plugin`; `apply`로 설치되지 않음 |
+
+훅은 `.claude/settings.json`에 사는 Claude Code 전용 메커니즘이므로 이 비대칭은 구조적입니다. Claude Code 외 에이전트에서는 하네스 규칙이 결정론적 강제가 아니라 규범으로 적용됩니다.
 
 ---
 
@@ -134,7 +170,7 @@ full run은 throwaway `../harness-playground/.sim-tmp/<TS>/` 안에서 `.git/hoo
 
 npm 배포 후:
 ```bash
-npx harness-team <command>
+npx harness-aijient-team <command>
 ```
 
 로컬 개발:
@@ -202,7 +238,7 @@ symlink · JSON 유효성 · 실행 권한 · 외부 도구 존재 여부 체크
 
 문제가 있으면 exit 1 + 문제 항목 리포트.
 
-출력 예시 (외부 도구 + 자체 CLI 섹션):
+출력 예시 (외부 도구 + 자체 CLI + consumer hook CLI 섹션):
 
 ```
 external tools:
@@ -212,11 +248,13 @@ external tools:
 - opencode (OpenCode CLI)  (not found, optional)
 ✓ jq (JSON processor)
 ✓ harness-team CLI  (--help OK)
+✓ SessionStart/post-commit hook CLI  (session-context/handoff supported)
 
 All checks passed.
 ```
 
 심볼: `✓` 정상, `✗` 실패(exit 1), `-` 선택 항목 없음(정상).
+소비자 프로젝트에서는 PATH의 `harness-team`이 `session-context`와 `handoff`를 지원하는지도 경고로 점검합니다. 플러그인 소스 저장소는 소비자 훅을 설치하지 않으므로 이 항목이 n/a로 건너뛰어집니다.
 
 ### `/harness-task` — task 관리
 

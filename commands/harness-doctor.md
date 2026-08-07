@@ -1,5 +1,5 @@
 ---
-description: 하네스 무결성 점검 (symlink, hooks, settings)
+description: 하네스 무결성 점검 (파일, hooks, CLI PATH)
 phase: Validation
 tags:
   - project

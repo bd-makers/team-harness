@@ -310,10 +310,10 @@
   <!-- OBSERVATION / --json -->
   <section id="observation">
     <div class="section-title">CLI Observation 계약 (<code>--json</code>)</div>
-    <p class="section-sub">P2 (0.8.0) — drive 에이전트(Codex·OpenCode)가 <code>harness-team</code> CLI를 Bash로 호출하면 stdout이 곧 observation이 된다. 사람용 출력은 그대로 두고, <code>--json</code>으로 구조화 엔벨로프를 opt-in</p>
+    <p class="section-sub">P2 (0.8.0) — drive 에이전트(Codex·OpenCode)가 <code>harness-team</code> CLI를 Bash로 호출하면 stdout이 곧 observation이 된다. 사람용 출력과 별도로 <code>--json</code>으로 구조화 엔벨로프를 opt-in</p>
 
     <div class="infobox">
-      <strong>동작 방식:</strong> drive 4커맨드(<code>task</code> · <code>retro</code> · <code>release</code> · <code>doctor</code>)에 <code>--json</code>을 주면 stdout에 단일 JSON 엔벨로프 1개만 출력하고 <code>process.exitCode</code>로 신호한다. 사람용 산문 출력은 <strong>바이트 동일</strong>하게 보존(기본). 헬퍼는 <code>src/observation.mjs</code>의 <code>buildEnvelope</code> · <code>emitObservation</code>.
+      <strong>동작 방식:</strong> drive 4커맨드(<code>task</code> · <code>retro</code> · <code>release</code> · <code>doctor</code>)에 <code>--json</code>을 주면 stdout에 단일 JSON 엔벨로프 1개만 출력하고 <code>process.exitCode</code>로 신호한다. 사람용 출력은 각 커맨드의 별도 계약을 따르며, <code>task</code>는 생성·재활성화 뒤 다음 단계 안내를 출력한다. 헬퍼는 <code>src/observation.mjs</code>의 <code>buildEnvelope</code> · <code>emitObservation</code>.
     </div>
 
     <div class="card">
@@ -336,7 +336,7 @@
     <div class="card-grid" style="margin-top:1rem">
       <div class="card card-accent-blue">
         <h3>doctor --json</h3>
-        <p>표준 엔벨로프 + per-check <code>checks:[{label, status, detail}]</code>. status는 <code>pass | fail | missing | optional</code>. 에이전트가 누락 도구·파일을 직접 판단.</p>
+        <p>표준 엔벨로프 + per-check <code>checks:[{label, status, detail}]</code>. status는 <code>pass | fail | missing | optional | warning | skip</code>. 소비자 프로젝트에서는 SessionStart·post-commit 훅이 쓸 PATH의 <code>harness-team</code>도 경고로 확인한다.</p>
       </div>
       <div class="card card-accent-green">
         <h3>task / retro --json</h3>

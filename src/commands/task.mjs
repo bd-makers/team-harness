@@ -47,6 +47,13 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function printTaskNextActions(user, name, { activated = false } = {}) {
+  const base = `docs/${user}/${name}/${name}`;
+  if (activated) console.log(`next: 현재 단계는 ${base}-plan.md 에서 확인`);
+  else console.log(`next: ${base}-spec.md 작성 (Ambiguity 자가진단 포함)`);
+  console.log('next: /harness-interview → 구현 → 테스트 (/harness-unittest 계열) → 리뷰 → /harness-retro → done');
+}
+
 export function taskSpecTemplate(name) {
   return `# ${name} — Spec
 
@@ -262,6 +269,7 @@ export async function runTask(ctx) {
       }));
     } else {
       console.log(`activated: ${user}/${name}`);
+      printTaskNextActions(user, name, { activated: true });
     }
     return;
   }
@@ -302,6 +310,7 @@ export async function runTask(ctx) {
   } else {
     console.log(`created: docs/${user}/${name}/`);
     console.log(`active: ${user}/${name}`);
+    printTaskNextActions(user, name);
   }
 }
 

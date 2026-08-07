@@ -44,6 +44,38 @@ test('runTask는 artifact.md를 실제로 생성한다', async () => {
   }
 });
 
+test('runTask 평문 생성 출력은 spec부터 done까지 다음 단계 안내를 제공한다', async () => {
+  const tmpDir = await mkdtemp(join(tmpdir(), 'harness-task-human-create-'));
+  const logs = [];
+  const original = console.log;
+  console.log = (...args) => logs.push(args.join(' '));
+  try {
+    await runTask({ targetDir: tmpDir, flags: { member: 'tester' }, taskArgs: ['demo'] });
+    const output = logs.join('\n');
+    assert.match(output, /demo-spec\.md 작성 \(Ambiguity 자가진단 포함\)/);
+    assert.match(output, /\/harness-interview → 구현 → 테스트 \(\/harness-unittest 계열\) → 리뷰 → \/harness-retro → done/);
+  } finally {
+    console.log = original;
+    await rm(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('runTask 평문 재활성화 출력은 plan 현재 단계 힌트를 제공한다', async () => {
+  const tmpDir = await mkdtemp(join(tmpdir(), 'harness-task-human-activate-'));
+  const logs = [];
+  const original = console.log;
+  console.log = (...args) => logs.push(args.join(' '));
+  try {
+    await runTask({ targetDir: tmpDir, flags: { member: 'tester' }, taskArgs: ['demo'] });
+    logs.length = 0;
+    await runTask({ targetDir: tmpDir, flags: { member: 'tester' }, taskArgs: ['demo'] });
+    assert.match(logs.join('\n'), /현재 단계는 docs\/tester\/demo\/demo-plan\.md 에서 확인/);
+  } finally {
+    console.log = original;
+    await rm(tmpDir, { recursive: true, force: true });
+  }
+});
+
 test('runTask는 설계 계약 그대로 context.md를 생성한다', async () => {
   const tmpDir = await mkdtemp(join(tmpdir(), 'harness-task-context-'));
   try {
