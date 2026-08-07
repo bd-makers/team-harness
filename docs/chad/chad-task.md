@@ -1,6 +1,7 @@
 # chad — Tasks
 
 ## Open
+- doctor-hookcli-tests (created 2026-08-07)
 
 
 - th-whatschanged-upkeep (created 2026-08-03)

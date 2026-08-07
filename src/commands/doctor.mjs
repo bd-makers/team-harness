@@ -49,6 +49,17 @@ export async function checkHookCli(env = process.env) {
   }
 }
 
+// This package is NOT published to the public npm registry, so `npm i -g <package-name>`
+// 404s — the global CLI comes from linking the local marketplace clone that
+// `/plugin install` creates. Keep the recovery command in one place so the doctor
+// warning, JSON next_actions, and README cannot drift back to the broken form.
+export const HOOK_CLI_MARKETPLACE_DIR = 'harness-aijient-team-marketplace';
+
+export function hookCliInstallCommand(env = process.env) {
+  const pluginsRoot = env.CLAUDE_PLUGINS_ROOT ?? join(homedir(), '.claude/plugins');
+  return `npm i -g "${join(pluginsRoot, 'marketplaces', HOOK_CLI_MARKETPLACE_DIR)}"`;
+}
+
 // Detect gate bypass: an active task whose spec.md lacks the Ambiguity self-check
 // section (a "pointer shell" spec authored outside the task tool). Returns a warning
 // string, or null when there is no active task / the spec is intact.
@@ -140,8 +151,7 @@ const BACKUP_SCRIPTS = ['clone.sh', 'symlink.sh', 'delete.sh'];
 
 export async function runDoctor(ctx) {
   const json = !!(ctx.flags && ctx.flags.json);
-  const pluginsRoot = process.env.CLAUDE_PLUGINS_ROOT ?? join(homedir(), '.claude/plugins');
-  const hookCliInstall = `npm i -g "${join(pluginsRoot, 'marketplaces', 'harness-aijient-team-marketplace')}"`;
+  const hookCliInstall = hookCliInstallCommand();
   const checks = [];
   const add = (label, status, detail, humanLine) => {
     if (json) checks.push(detail ? { label, status, detail } : { label, status });
