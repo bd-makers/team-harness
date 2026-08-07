@@ -89,7 +89,7 @@ OS/네트워크 격리는 이 플러그인의 스코프 밖입니다 — devcont
 ```bash
 /plugin marketplace add https://github.com/bd-makers/team-harness
 /plugin install harness-aijient-team
-npm i -g ~/.claude/plugins/marketplaces/harness-aijient-team-marketplace
+npm i -g "${CLAUDE_PLUGINS_ROOT:-$HOME/.claude/plugins}/marketplaces/harness-aijient-team-marketplace"
 cd cloned-project
 harness-team doctor
 ```
@@ -175,7 +175,7 @@ full run은 throwaway `../harness-playground/.sim-tmp/<TS>/` 안에서 `.git/hoo
 플러그인 설치가 만든 로컬 마켓플레이스 클론을 링크해서 얻습니다:
 
 ```bash
-npm i -g ~/.claude/plugins/marketplaces/harness-aijient-team-marketplace
+npm i -g "${CLAUDE_PLUGINS_ROOT:-$HOME/.claude/plugins}/marketplaces/harness-aijient-team-marketplace"
 harness-team --help
 ```
 
