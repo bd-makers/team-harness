@@ -18,6 +18,19 @@ modified: 2026-06-02
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-08-07
+
+### Added
+- **task 활성화 평문 다음 단계 안내** — `harness-team task <name>`으로 task를 새로 만들거나 재활성화할 때, 평문 출력이 spec 작성부터 done까지 이어지는 다음 단계를 안내한다. 재활성화 시에는 plan의 현재 단계 힌트도 함께 보여준다. `--json` 스키마는 변경하지 않는다.
+- **doctor 훅 CLI 실행 가능성 검사** — `harness-team doctor`가 PATH의 `harness-team`이 실제로 실행되며 `session-context`/`handoff`를 지원하는지 확인하고, 실패하면 전역 CLI를 다시 링크하라는 복구 안내를 낸다. 플러그인 소스 저장소 자신은 이 검사를 n/a로 skip한다(소비자 전용 검사이므로).
+
+### Changed
+- **README 온보딩 3채널 문서화** — `apply` / Claude Code 플러그인 설치 / 전역 CLI 링크가 서로 독립된 채널임을 표로 명시하고, 이미 하네스가 적용된 저장소를 clone한 팀원이 밟아야 할 복구 절차(플러그인 설치 → 전역 CLI 링크 → `doctor`)를 추가했다.
+- **에이전트별 강제력 비대칭 표** — Claude Code(hooks 4종 + 커맨드 19개)와 그 외 에이전트(OpenCode/Gemini/Cursor/Codex, hooks 0)가 받는 강제력 차이를 README에 표로 명시했다. 훅이 Claude Code 전용 메커니즘이라는 구조적 이유를 함께 설명한다.
+
+### Fixed
+- **설치 안내 결함** — `npm i -g harness-aijient-team`은 이 패키지가 npm 공개 저장소에 배포되지 않아 404로 실패하던 안내였다. README·`doctor`의 경고 detail·JSON `nextActions`를 모두 `/plugin install`이 만드는 로컬 마켓플레이스 클론 경로(`npm i -g ~/.claude/plugins/marketplaces/harness-aijient-team-marketplace`)를 링크하는 실제 동작 절차로 일치시켰다. npm 공개 배포는 하지 않기로 확정했다.
+
 ## [0.12.0] - 2026-08-03
 
 ### Added

@@ -289,7 +289,7 @@ export async function runDoctor(ctx) {
   if (!pluginDev) {
     hookCliOk = await checkHookCli();
     if (!hookCliOk) {
-      const detail = 'PATH의 harness-team이 실행되지 않거나 session-context/handoff를 지원하지 않음 — SessionStart/post-commit 훅이 실행되지 않음; npm i -g harness-aijient-team 또는 Claude Code 플러그인 경로를 PATH에 추가';
+      const detail = 'PATH의 harness-team이 실행되지 않거나 session-context/handoff를 지원하지 않음 — SessionStart/post-commit 훅이 실행되지 않음; npm i -g ~/.claude/plugins/marketplaces/harness-aijient-team-marketplace 로 전역 CLI를 링크하거나 Claude Code 플러그인 경로를 PATH에 추가';
       add('SessionStart/post-commit hook CLI', 'warning', detail, `\n⚠️ ${detail}`);
     } else {
       add('SessionStart/post-commit hook CLI', 'pass', 'session-context/handoff supported', '✓ SessionStart/post-commit hook CLI  (session-context/handoff supported)');
@@ -315,7 +315,7 @@ export async function runDoctor(ctx) {
     if (legacyWarning) warnActions.push('harness-team migrate');
     if (specGateWarning) warnActions.push('harness-team task <name>');
     if (hookWarning || boundaryHookWarning) warnActions.push('harness-team apply');
-    if (!pluginDev && !hookCliOk) warnActions.push('npm i -g harness-aijient-team');
+    if (!pluginDev && !hookCliOk) warnActions.push('npm i -g ~/.claude/plugins/marketplaces/harness-aijient-team-marketplace');
     emitObservation(buildEnvelope({
       command: 'doctor',
       status,
