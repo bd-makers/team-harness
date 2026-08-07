@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-06-02
+modified: 2026-08-07
 ---
 
 # MAINTAINING.md — harness-aijient-team 운영 가이드
@@ -69,6 +69,8 @@ Codex manifest/skill을 수정했다면 Codex validator도 실행하세요. 로�
 ## 릴리스 절차
 
 > **주의:** `harness-team release`는 `installed_plugins.json`을 직접 수정합니다. Claude Code가 실행 중이면 경쟁 조건이 발생할 수 있으니, **가급적 Claude Code 종료 후** 실행하세요. 중단 시 복구는 명시적 버전으로 재실행하면 됩니다: `harness-team release X.Y.Z`.
+>
+> **함정:** `harness-team release`는 `--help`를 지원하지 않습니다 — 인자와 함께 실행하면 그대로 릴리스가 수행됩니다(탐색·확인 목적의 시험 실행이 아닙니다). 결과를 미리 보려면 반드시 `--dry-run`을 붙이고, 실제 실행은 검증이 끝난 뒤 의도적으로 한 번만 하세요.
 
 1. 변경 작성 + `node --test tests/` 통과 확인
 2. `CHANGELOG.md`의 `## [Unreleased]` 항목 채우기

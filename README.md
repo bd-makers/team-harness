@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-08-06
+modified: 2026-08-07
 ---
 
 # harness-aijient-team
@@ -77,16 +77,19 @@ OS/네트워크 격리는 이 플러그인의 스코프 밖입니다 — devcont
 |---|---|---|
 | `apply` | 프로젝트당 1회 | hooks·rules·AGENTS/CLAUDE/GEMINI·docs 구조·`opencode.json`·`.cursor/rules` |
 | Claude Code 플러그인 설치 | 사람·머신마다 | `/harness-*` 슬래시 커맨드 19개 |
-| npm 전역 `harness-team` 설치 | 사람마다 | 터미널과 훅이 호출하는 `harness-team` CLI |
+| 전역 `harness-team` CLI 링크 | 사람마다 | 터미널과 훅이 호출하는 `harness-team` CLI |
 
 **`apply`만으로는 `/harness-*` 슬래시 커맨드가 설치되지 않습니다.** `apply`는 `commands/*.md` 19개를 프로젝트에 복사하지 않으며, 해당 명령은 Claude Code 플러그인 설치 채널에서 제공됩니다.
 
-이미 하네스가 적용된 저장소를 clone한 팀원은 프로젝트에 다시 `apply`하지 마세요. 먼저 자신의 Claude Code에 플러그인을 설치하고, 자신의 PATH에 CLI를 설치한 뒤 점검합니다.
+이 패키지는 **npm 공개 저장소에 배포되지 않습니다** — 전역 CLI는 `/plugin install`이 만든
+로컬 마켓플레이스 클론을 `npm i -g`로 링크해 얻습니다. 이미 하네스가 적용된 저장소를 clone한
+팀원은 프로젝트에 다시 `apply`하지 마세요. 먼저 자신의 Claude Code에 플러그인을 설치하고,
+자신의 PATH에 CLI를 링크한 뒤 점검합니다.
 
 ```bash
 /plugin marketplace add https://github.com/bd-makers/team-harness
 /plugin install harness-aijient-team
-npm i -g harness-aijient-team
+npm i -g "${CLAUDE_PLUGINS_ROOT:-$HOME/.claude/plugins}/marketplaces/harness-aijient-team-marketplace"
 cd cloned-project
 harness-team doctor
 ```
@@ -168,16 +171,19 @@ full run은 throwaway `../harness-playground/.sim-tmp/<TS>/` 안에서 `.git/hoo
 
 ### 방법 C: 독립 CLI
 
-npm 배포 후:
+이 패키지는 npm 공개 저장소에 배포되지 않습니다. 전역 `harness-team` CLI는 Claude Code
+플러그인 설치가 만든 로컬 마켓플레이스 클론을 링크해서 얻습니다:
+
 ```bash
-npx harness-aijient-team <command>
+npm i -g "${CLAUDE_PLUGINS_ROOT:-$HOME/.claude/plugins}/marketplaces/harness-aijient-team-marketplace"
+harness-team --help
 ```
 
-로컬 개발:
+로컬 개발(이 레포를 직접 clone한 경우):
 ```bash
 git clone <this-repo>
 cd harness-aijient-team-plugin
-npm link          # 전역에 harness-team 명령 등록
+npm link          # 전역에 harness-team 명령 등록 (이 클론 경로를 가리킴)
 harness-team --help
 ```
 

@@ -44,7 +44,7 @@ Commands:
   boundary check                    Compare declared JSON Schema producer/consumer boundaries
   session-context                   Emit bounded SessionStart Context Card or no-task nudge
   retro [text]                      Append a dated Learnings entry to the active task's artifact.md
-  release [patch|minor|major|x.y.z] [--dry-run] [--skip-cache]   Bump 3 manifests + sync plugin cache/marketplace/installed_plugins.json
+  release [patch|minor|major|x.y.z] [--dry-run] [--skip-cache]   Bump 4 manifests + sync plugin cache/marketplace/installed_plugins.json
   help                              Show this help
 
 Options:

@@ -1,5 +1,5 @@
 ---
-description: 3개 매니페스트(package.json/plugin.json/marketplace.json) 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화. 휴먼 에러(marketplace.json 누락·버전 불일치) 차단.
+description: 4개 매니페스트(package.json/.claude-plugin/plugin.json/.claude-plugin/marketplace.json/.codex-plugin/plugin.json) 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화. 휴먼 에러(manifest 누락·버전 불일치) 차단.
 phase: Release
 argument-hint: "[patch|minor|major|x.y.z] [--dry-run] [--skip-cache]"
 tags:
@@ -7,10 +7,10 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-06-02
+modified: 2026-08-07
 ---
 
-이 명령은 릴리즈를 한 번에 처리한다: 3개 매니페스트 버전을 동시에 올리고,
+이 명령은 릴리즈를 한 번에 처리한다: 4개 매니페스트 버전을 동시에 올리고,
 플러그인 캐시·마켓플레이스 디렉토리·`installed_plugins.json`을 동기화한다.
 bump/검증/복사 로직은 모두 CLI(`harness-team release`)가 소유한다 — 이 래퍼는 orchestrate만 한다.
 

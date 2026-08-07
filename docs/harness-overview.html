@@ -203,7 +203,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Gemini, Cursor, OpenCode를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.12.0</span>
+      <span class="tag tag-purple">v0.13.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥18</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -487,7 +487,7 @@
           <tr data-command-source="commands/harness-release.md">
             <td><span class="cmd">/harness-release</span></td>
             <td><code>commands/harness-release.md</code></td>
-            <td>3개 매니페스트(package.json/plugin.json/marketplace.json) 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화. 휴먼 에러(marketplace.json 누락·버전 불일치) 차단.</td>
+            <td>4개 매니페스트(package.json/.claude-plugin/plugin.json/.claude-plugin/marketplace.json/.codex-plugin/plugin.json) 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화. 휴먼 에러(manifest 누락·버전 불일치) 차단.</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Release</span></td>
           </tr>
           <tr data-command-source="commands/harness-sim.md">
@@ -1275,7 +1275,7 @@
           <tr>
             <td><code>commands/harness-release.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
-            <td>3개 매니페스트(package.json/plugin.json/marketplace.json) 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화. 휴먼 에러(marketplace.json 누락·버전 불일치) 차단.</td>
+            <td>4개 매니페스트(package.json/.claude-plugin/plugin.json/.claude-plugin/marketplace.json/.codex-plugin/plugin.json) 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화. 휴먼 에러(manifest 누락·버전 불일치) 차단.</td>
           </tr>
           <tr>
             <td><code>commands/harness-retro.md</code></td>
@@ -2004,7 +2004,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.12.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.13.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

@@ -35,3 +35,4 @@
 | chad | th-release-0-12 | 🔄 open | 2026-08-03 |
 | chad | th-whatschanged-upkeep | 🔄 open | 2026-08-03 |
 | chad | harness-activation | ✅ done | 2026-08-06 |
+| chad | release-0-13 | ✅ done | 2026-08-07 |
