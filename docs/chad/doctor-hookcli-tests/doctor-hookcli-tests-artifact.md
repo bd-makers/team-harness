@@ -47,7 +47,18 @@ plugin-dev에서 `- SessionStart/post-commit hook CLI  (plugin-dev repo — n/a)
   - **단순성**: 지역 변수 → 함수 1 + 상수 1. 추상화 추가 없음, 신규 테스트 파일 0.
   - **테스트**: 갭 3건이 모두 어써션으로 고정됨. 남은 미검증 지점은 아래 Learnings 참조.
   - 발견된 결함 없음 → 조치 없음.
-- 외부 리뷰(Codex/Gemini)는 미실행 — 필요 시 별도 수행.
+- **2026-08-07 — Codex 리뷰 (`codex exec --sandbox read-only`, 커밋 `e32f7b1` 대상)**
+  - **발견 (P2, 테스트 공백)**: 금지 정규식 `/npm i -g\s+harness-aijient-team(?![-\w])/`가
+    **`npm i` 축약형·비인용 형태만** 차단한다. `npm install -g harness-aijient-team`,
+    `npm i -g "harness-aijient-team"`, `npm i --global ...`은 통과하므로,
+    README에 올바른 경로 안내와 404 안내가 **함께** 있으면 회귀를 놓친다.
+  - **검증**: 6개 케이스로 대조해 지적이 사실임을 확인(변형 3건 미검출).
+  - **조치**: 공통 상수 `FORBIDDEN_NPM_INSTALL`로 추출하고
+    `/npm\s+(?:i|install)\s+(?:-g|--global)\s+["']?harness-aijient-team(?![-\w])/`로 확대.
+    정규식 자체를 검증하는 테스트를 추가해(4개 금지 변형 + 2개 정상 경로) 가드가
+    오탐 없이 넓어졌음을 고정했다. 212 → **213 pass**, mutation(README에
+    `npm install -g` 형태 추가) → fail 1 확인.
+- Gemini 리뷰는 미실행 — 이 머신에 `gemini` CLI가 없다(doctor 확인).
 
 ## Learnings
 

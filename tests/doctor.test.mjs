@@ -22,6 +22,11 @@ async function doctorJson(targetDir) {
 }
 const checkOf = (env, label) => (env.checks || []).find(c => c.label === label);
 
+// Installing by package name 404s — this package is not on the public npm registry.
+// Cover the variants a doc edit could reintroduce (install/-g spellings, quoting);
+// the trailing lookahead keeps the legitimate ...-marketplace path from matching.
+const FORBIDDEN_NPM_INSTALL = /npm\s+(?:i|install)\s+(?:-g|--global)\s+["']?harness-aijient-team(?![-\w])/;
+
 async function makeActiveFixture(specContent) {
   const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-gate-'));
   await mkdir(join(dir, '.harness'), { recursive: true });
@@ -89,7 +94,7 @@ test('hookCliInstallCommand: 마켓플레이스 클론 경로를 링크한다 (�
     'CLAUDE_PLUGINS_ROOT 미설정 시 ~/.claude/plugins로 폴백해야 한다');
 
   for (const cmd of [scoped, fallback]) {
-    assert.doesNotMatch(cmd, /npm i -g\s+harness-aijient-team(?![-\w])/,
+    assert.doesNotMatch(cmd, FORBIDDEN_NPM_INSTALL,
       'npm 공개 배포가 없으므로 패키지명 직접 설치는 404 — 경로 링크여야 한다');
   }
 });
@@ -98,8 +103,22 @@ test('README는 doctor와 같은 복구 경로를 안내한다', async () => {
   const readme = await readFile(join(ROOT, 'README.md'), 'utf8');
   assert.ok(readme.includes(`marketplaces/${HOOK_CLI_MARKETPLACE_DIR}`),
     'README가 doctor와 같은 마켓플레이스 클론 경로를 안내해야 한다');
-  assert.doesNotMatch(readme, /npm i -g\s+harness-aijient-team(?![-\w])/,
+  assert.doesNotMatch(readme, FORBIDDEN_NPM_INSTALL,
     'README에 404가 되는 패키지명 직접 설치 안내가 있으면 안 된다');
+});
+
+test('FORBIDDEN_NPM_INSTALL: 404 변형은 잡고 정상 경로는 통과시킨다', () => {
+  for (const bad of [
+    'npm i -g harness-aijient-team',
+    'npm install -g harness-aijient-team',
+    'npm i -g "harness-aijient-team"',
+    'npm i --global harness-aijient-team',
+  ]) assert.match(bad, FORBIDDEN_NPM_INSTALL, `404 변형을 놓쳤다: ${bad}`);
+
+  for (const good of [
+    'npm i -g "${CLAUDE_PLUGINS_ROOT:-$HOME/.claude/plugins}/marketplaces/harness-aijient-team-marketplace"',
+    hookCliInstallCommand({ CLAUDE_PLUGINS_ROOT: '/tmp/plugins-root' }),
+  ]) assert.doesNotMatch(good, FORBIDDEN_NPM_INSTALL, `정상 경로를 오탐했다: ${good}`);
 });
 
 test('checkActiveSpecGate: 활성 task 없으면 null (조용히 skip)', async () => {
