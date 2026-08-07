@@ -1,7 +1,7 @@
 # chad — Tasks
 
 ## Open
-- codex-review-commands (created 2026-08-07)
+
 
 
 - th-whatschanged-upkeep (created 2026-08-03)
@@ -37,6 +37,7 @@
 
 
 ## Completed
+- ✅ codex-review-commands
 - ✅ release-0-13
 - ✅ harness-activation
 - ✅ skilltest-ast-grader

@@ -20,3 +20,16 @@
  skills/harness-codex-review/SKILL.md               |  19 ++
  15 files changed, 738 insertions(+), 4 deletions(-)
 
+
+## 2026-08-07T23:49:30.324Z — bc49995 feat(commands): add harness codex review commands
+docs/chad/chad-handoff.md                          | 10 +++---
+ .../codex-review-commands-artifact.md              | 37 ++++++++++++++++++++++
+ .../codex-review-commands-handoff.md               | 19 +++++++++++
+ .../codex-review-commands-plan.md                  |  4 +--
+ docs/harness-overview.html                         | 32 +++++++++++++++++++
+ 5 files changed, 94 insertions(+), 8 deletions(-)
+
+
+## 2026-08-07T23:49:40.934Z — 완료
+
+태스크 종료.
