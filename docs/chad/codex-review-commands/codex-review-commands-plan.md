@@ -26,8 +26,8 @@ command+skill로 추가하고 manifest·README 계약을 통과시킨다.
 
 ### §4 종결
 - [x] `npm run test` 전체 통과
-- [ ] Codex 리뷰 실행(신규 커맨드 절차 자체 사용) + artifact `## Reviews` 기록
-- [ ] artifact `## 결과` 작성 → 커밋 → done
+- [x] Codex 리뷰 실행(신규 커맨드 절차 자체 사용) + artifact `## Reviews` 기록
+- [x] artifact `## 결과` 작성 → 커밋 → done
 
 ## Ontology 변경 로그
 
