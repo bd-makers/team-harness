@@ -41,7 +41,10 @@ export async function checkSelfCli(root, env = process.env) {
 // so that check cannot prove consumer hooks will be able to run.
 export async function checkHookCli(env = process.env) {
   try {
-    const { stdout } = await pexec('harness-team', ['--help'], { timeout: 3000, env });
+    // 5s to match checkSelfCli: both spawn node with this CLI, so a loaded machine
+    // that is slow for one is slow for the other. A shorter budget here would report
+    // "hooks can't run" for what is only a slow spawn.
+    const { stdout } = await pexec('harness-team', ['--help'], { timeout: 5000, env });
     return ['session-context', 'handoff'].every(command =>
       new RegExp(`^\\s*${command}(?:\\s|$)`, 'm').test(stdout));
   } catch {
