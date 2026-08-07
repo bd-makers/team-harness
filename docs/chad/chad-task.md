@@ -3,6 +3,7 @@
 ## Open
 
 
+
 - th-whatschanged-upkeep (created 2026-08-03)
 - th-release-0-12 (created 2026-08-03)
 - th-capsule-grammar (created 2026-08-03)
@@ -36,6 +37,7 @@
 
 
 ## Completed
+- ✅ doctor-hookcli-tests
 - ✅ release-0-13
 - ✅ harness-activation
 - ✅ skilltest-ast-grader

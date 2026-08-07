@@ -1,12 +1,10 @@
 # Session Handoff
 
 ## Active Task
-None
+doctor-hookcli-tests
 
-## Last Commit (2026-07-08)
-990d07b docs: complete codex plugin support task
+## Last Commit (2026-08-07)
+e32f7b1 test(doctor): pin hook CLI recovery command and skip-branch contracts
 
 ## Full Context
-No active task. Recent completed work:
-- docs/chad/codex-plugin-sim-check/codex-plugin-sim-check-handoff.md
-- docs/chad/codex-l5-sim-plan/codex-l5-sim-plan-handoff.md
+→ docs/chad/doctor-hookcli-tests/doctor-hookcli-tests-handoff.md
