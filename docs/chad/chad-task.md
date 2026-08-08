@@ -1,7 +1,7 @@
 # chad — Tasks
 
 ## Open
-- release-publish-workflow (created 2026-08-08)
+
 
 
 
@@ -38,6 +38,7 @@
 
 
 ## Completed
+- ✅ release-publish-workflow
 - ✅ codex-review-commands
 - ✅ doctor-hookcli-tests
 - ✅ release-0-13

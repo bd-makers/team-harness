@@ -38,4 +38,4 @@
 | chad | release-0-13 | ✅ done | 2026-08-07 |
 | chad | codex-review-commands | ✅ done | 2026-08-07 |
 | chad | doctor-hookcli-tests | ✅ done | 2026-08-07 |
-| chad | release-publish-workflow | 🔄 open | 2026-08-08 |
+| chad | release-publish-workflow | ✅ done | 2026-08-08 |

@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-codex-review-commands
+release-publish-workflow
 
-## Last Commit (2026-08-07)
-bc49995 feat(commands): add harness codex review commands
+## Last Commit (2026-08-08)
+58e10c9 ci: publish github releases from version tags
 
 ## Full Context
-→ docs/chad/codex-review-commands/codex-review-commands-handoff.md
+→ docs/chad/release-publish-workflow/release-publish-workflow-handoff.md
