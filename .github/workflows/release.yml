@@ -1,0 +1,51 @@
+name: release
+
+# Tags are the release signal. `test.yml` filters on `branches: [main]`, so a
+# tag push runs this workflow only — which means nothing here can assume the
+# tagged commit was tested elsewhere. The suite runs below before publishing.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+
+      # A tag on a commit whose manifests were never bumped would publish a
+      # release that does not match what the plugin reports as its version.
+      - name: Verify tag matches the packaged version
+        run: |
+          tag_version="${GITHUB_REF_NAME#v}"
+          package_version="$(node -p "require('./package.json').version")"
+          if [ "$tag_version" != "$package_version" ]; then
+            echo "tag ${GITHUB_REF_NAME} does not match package.json ${package_version}" >&2
+            exit 1
+          fi
+
+      # A `v*` tag can be pushed from any commit, so the tag being green is not
+      # inherited from main — verify it here rather than assume it.
+      - name: Configure git identity
+        run: |
+          git config --global user.email "ci@harness.test"
+          git config --global user.name "harness-ci"
+          git config --global init.defaultBranch main
+
+      - name: Run tests
+        run: npm test
+
+      - name: Extract release notes
+        run: node scripts/changelog-section.mjs "${GITHUB_REF_NAME#v}" > release-notes.md
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${GITHUB_REF_NAME}" --title "${GITHUB_REF_NAME}" --notes-file release-notes.md

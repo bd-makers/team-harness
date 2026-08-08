@@ -93,6 +93,16 @@ Codex manifest/skill을 수정했다면 Codex validator도 실행하세요. 로�
    git tag vX.Y.Z
    git push origin vX.Y.Z
    ```
+9. 태그 push가 `release` 워크플로우를 실행해 GitHub Release를 자동 발행합니다 — 수동 발행은 하지 마세요.
+   본문은 `CHANGELOG.md`의 `## [X.Y.Z]` 절 **내용**입니다 — 헤딩 줄은 빠지고 앞뒤 공백은 정리됩니다
+   (`scripts/changelog-section.mjs`).
+   워크플로우는 세 경우에 실패하며, 실패하면 Release가 만들어지지 않습니다:
+   - 태그 버전과 그 커밋의 `package.json` version이 다를 때 (6단계까지의 bump 누락)
+   - 태그가 가리키는 커밋에서 `npm test`가 실패할 때 (태그는 main 외 커밋에도 붙을 수 있으므로 여기서 다시 확인합니다)
+   - `CHANGELOG.md`에 해당 버전 절이 없거나 비어 있을 때 (2·6단계 누락)
+
+   실패했다면 원인을 고쳐 main에 반영한 뒤, 태그를 다시 만들어 push합니다
+   (`git tag -d vX.Y.Z && git push origin :vX.Y.Z` 후 8단계 재실행).
 
 ---
 
