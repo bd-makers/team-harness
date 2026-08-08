@@ -18,6 +18,15 @@ modified: 2026-08-07
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-08-08
+
+### Added
+- **Codex 외부 리뷰 커맨드** — `/harness-codex-review`와 적대적 변형 `/harness-codex-adversarial-review`를 추가했다. 두 커맨드는 `codex exec --sandbox read-only`를 직접 실행하고 인수(`--base <ref>`·focus)를 해석하며, base가 없으면 `origin/main` → `main`으로 물러난다. 커맨드가 절차 SSOT이고 동명의 스킬이 Codex 표면 래퍼다. openai-codex 플러그인의 `/codex:review`류는 `disable-model-invocation`이라 모델이 호출할 수 없어, 타 플러그인 내부가 아닌 CLI 계약에만 의존하도록 하네스가 절차를 소유한다. (#19)
+- **복구 명령 회귀 테스트** — npm 공개 저장소를 가리키는 설치 형태(`npm i`/`install`, `-g`/`--global`, 따옴표 유무)가 `doctor` 출력과 README 어디에도 없음을 어써션한다. plugin-dev 저장소의 n/a skip 분기와 실제 bin `--help` 검증도 함께 고정했다. mutation 4건이 전부 실패로 잡히는 것을 확인했다. (#18)
+
+### Fixed
+- **`checkHookCli` 타임아웃 정합** — 같은 작업(node spawn)을 하는 `checkSelfCli`와 동일하게 5초로 맞췄다. 짧은 예산은 느린 머신의 spawn을 "훅이 실행되지 않음"으로 오보할 수 있다. (#18)
+
 ## [0.13.0] - 2026-08-07
 
 ### Added
