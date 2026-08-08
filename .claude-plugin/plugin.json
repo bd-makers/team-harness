@@ -24,7 +24,9 @@
     "./commands/harness-sim.md",
     "./commands/harness-unittest.md",
     "./commands/harness-comptest.md",
-    "./commands/harness-inttest.md"
+    "./commands/harness-inttest.md",
+    "./commands/harness-codex-review.md",
+    "./commands/harness-codex-adversarial-review.md"
   ],
   "skills": [
     "./skills"

@@ -514,6 +514,18 @@
             <td>API 핸들러·DB 접근·캐시·아웃바운드 HTTP 등 프로세스 경계 코드에 Khorikov Part III 통합 테스트를 작성한다 (스택 감지 → managed/unmanaged 구분 강제 → 커버리지 → 검증)</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Testing</span></td>
           </tr>
+          <tr data-command-source="commands/harness-codex-review.md">
+            <td><span class="cmd">/harness-codex-review</span></td>
+            <td><code>commands/harness-codex-review.md</code></td>
+            <td>Codex read-only 외부 리뷰를 로컬 git 상태에 실행하고 결과를 활성 task의 artifact ## Reviews에 기록</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-codex-adversarial-review.md">
+            <td><span class="cmd">/harness-codex-adversarial-review</span></td>
+            <td><code>commands/harness-codex-adversarial-review.md</code></td>
+            <td>설계 결정과 가정에 반박을 시도하는 적대적 Codex read-only 리뷰 — 절차는 harness-codex-review와 동일, 프레이밍만 교체</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -1233,6 +1245,16 @@
             <td>project → backup dir 동기화 (merge, newer-wins)</td>
           </tr>
           <tr>
+            <td><code>commands/harness-codex-adversarial-review.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>설계 결정과 가정에 반박을 시도하는 적대적 Codex read-only 리뷰 — 절차는 harness-codex-review와 동일, 프레이밍만 교체</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-codex-review.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>Codex read-only 외부 리뷰를 로컬 git 상태에 실행하고 결과를 활성 task의 artifact ## Reviews에 기록</td>
+          </tr>
+          <tr>
             <td><code>commands/harness-comptest.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
             <td>React/React Native 컴포넌트·화면·UI 플로우에 Testing Trophy 통합 층 테스트를 작성한다 (스택 감지 → 사용자 관점 검증 강제 → 커버리지 → 검증)</td>
@@ -1406,6 +1428,16 @@
             <td><code>skills/harness-clone/agents/openai.yaml</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
             <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-codex-adversarial-review/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-codex-review/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
           </tr>
           <tr>
             <td><code>skills/harness-codex-sim/SKILL.md</code></td>

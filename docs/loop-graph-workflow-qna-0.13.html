@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>team-harness 0.13 — 업데이트 요약 & 루프·그래프·워크플로우 Q&A</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3350;
+      --accent: #7c6af5;
+      --accent2: #50c8f5;
+      --accent3: #4df0aa;
+      --warning: #f5a623;
+      --danger: #f56a6a;
+      --text: #e2e6f0;
+      --muted: #9aa2bf;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+    nav {
+      position: sticky; top: 0; z-index: 10;
+      display: flex; align-items: center; min-width: 0;
+      height: 54px; padding: 0 2rem;
+      background: rgba(15, 17, 23, 0.95);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+    .nav-logo { flex: 0 0 auto; margin-right: 1.5rem; color: var(--accent); font-weight: 750; white-space: nowrap; }
+    .nav-links { display: flex; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+    .nav-links::-webkit-scrollbar { display: none; }
+    .nav-links a {
+      display: flex; align-items: center; height: 54px; padding: 0 0.8rem;
+      color: var(--muted); border-bottom: 2px solid transparent;
+      font-size: 0.84rem; text-decoration: none; white-space: nowrap;
+    }
+    .nav-links a:hover { color: var(--text); border-bottom-color: var(--accent); }
+    main { width: min(1080px, 100%); margin: 0 auto; padding: 2.5rem 2rem 5rem; }
+    .hero { padding: 3rem 0 2rem; text-align: center; }
+    .eyebrow { margin-bottom: 0.75rem; color: var(--accent3); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+    h1 { margin: 0 0 0.8rem; font-size: 1.9rem; line-height: 1.3; }
+    .hero p { max-width: 640px; margin: 0 auto; color: var(--muted); font-size: 0.95rem; }
+    section { margin-top: 3.2rem; }
+    h2 {
+      padding-bottom: 0.5rem; border-bottom: 1px solid var(--border);
+      font-size: 1.3rem;
+    }
+    h2 .qtag {
+      display: inline-block; margin-right: 0.5rem; padding: 0.1rem 0.55rem;
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 999px;
+      color: var(--accent2); font-size: 0.72rem; font-weight: 700; vertical-align: middle;
+    }
+    h3 { margin: 1.6rem 0 0.6rem; font-size: 1.02rem; color: var(--accent2); }
+    p { margin: 0.6rem 0; }
+    .muted { color: var(--muted); }
+    .card {
+      margin: 1rem 0; padding: 1.1rem 1.3rem;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    }
+    .card.good { border-left: 3px solid var(--accent3); }
+    .card.warn { border-left: 3px solid var(--warning); }
+    .card.no   { border-left: 3px solid var(--danger); }
+    .verdict {
+      margin: 1.2rem 0; padding: 1rem 1.3rem;
+      background: linear-gradient(135deg, rgba(124,106,245,0.12), rgba(80,200,245,0.08));
+      border: 1px solid var(--accent); border-radius: 12px;
+      font-size: 1.02rem;
+    }
+    .verdict strong { color: var(--accent3); }
+    .table-wrap { overflow-x: auto; margin: 1rem 0; border: 1px solid var(--border); border-radius: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { padding: 0.6rem 0.9rem; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+    th { background: var(--surface2); font-size: 0.8rem; letter-spacing: 0.03em; white-space: nowrap; }
+    tr:last-child td { border-bottom: none; }
+    td code, p code, li code {
+      padding: 0.1rem 0.35rem; background: var(--surface2);
+      border-radius: 5px; font-size: 0.84em;
+      font-family: "SF Mono", ui-monospace, Menlo, monospace;
+    }
+    pre {
+      overflow-x: auto; margin: 0.8rem 0; padding: 1rem 1.2rem;
+      background: #12141d; border: 1px solid var(--border); border-radius: 10px;
+      font-size: 0.82rem; line-height: 1.55;
+      font-family: "SF Mono", ui-monospace, Menlo, monospace;
+    }
+    pre .cm { color: #6b7394; }
+    pre .hl { color: var(--accent3); }
+    ul { margin: 0.5rem 0; padding-left: 1.3rem; }
+    li { margin: 0.35rem 0; }
+    .pill {
+      display: inline-block; padding: 0.05rem 0.5rem; border-radius: 999px;
+      font-size: 0.75rem; font-weight: 700; white-space: nowrap;
+    }
+    .pill.yes { background: rgba(77,240,170,0.12); color: var(--accent3); border: 1px solid rgba(77,240,170,0.35); }
+    .pill.no  { background: rgba(245,106,106,0.12); color: var(--danger); border: 1px solid rgba(245,106,106,0.35); }
+    .pill.na  { background: rgba(154,162,191,0.12); color: var(--muted); border: 1px solid rgba(154,162,191,0.3); }
+    .svg-wrap { overflow-x: auto; margin: 1.4rem 0; padding: 1.2rem; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+    footer { margin-top: 4rem; padding-top: 1.2rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.8rem; }
+  </style>
+</head>
+<body>
+<nav>
+  <span class="nav-logo">team-harness 0.13</span>
+  <div class="nav-links">
+    <a href="#changes">0.12→0.13</a>
+    <a href="#q1">Q1 자체 지원?</a>
+    <a href="#q2">Q2 확장 필요?</a>
+    <a href="#q3">Q3 프롬프팅</a>
+    <a href="#q4">Q4 spec·plan</a>
+  </div>
+</nav>
+<main>
+
+<div class="hero">
+  <div class="eyebrow">2026-08-08 · Session Digest</div>
+  <h1>0.13 업데이트 요약 &<br>루프 · 그래프 · 워크플로우 Q&amp;A</h1>
+  <p>0.12 → 0.13 변경 사항과, "팀 하네스에서 루프·그래프 엔지니어링·워크플로우를
+  어떻게 다루는가"에 대한 질의 4건의 결론을 한 페이지로 정리.</p>
+</div>
+
+<!-- ============================================================ -->
+<section id="changes">
+  <h2>1. 0.12 → 0.13 무엇이 달라졌나</h2>
+  <p>0.13의 세 변경은 전부 <strong>harness-activation task가 지목한 "발동 갭" 3건</strong>의
+  해소다(PR #16·#17). 선언(문서·설정)은 있는데 실제로 발동되지 않던 지점들이다.</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>구분</th><th>변경</th><th>메운 갭</th></tr>
+    <tr>
+      <td><span class="pill yes">Added</span></td>
+      <td><strong>task 활성화 평문 다음 단계 안내</strong> — <code>harness-team task &lt;name&gt;</code> 생성/재활성화 시
+      spec 작성부터 done까지 체인을 stdout으로 안내. 재활성화 시 plan 현재 단계 힌트 포함.
+      <code>--json</code> 스키마는 불변.</td>
+      <td>갭1 — 워크플로우 진입점 부재 (<code>nextActions</code>가 JSON 분기에만 있었음)</td>
+    </tr>
+    <tr>
+      <td><span class="pill yes">Added</span></td>
+      <td><strong>doctor 훅 CLI 실행 가능성 검사</strong> — PATH의 <code>harness-team</code>이 실제 실행되고
+      <code>session-context</code>/<code>handoff</code>를 지원하는지 확인. 실패 시 복구 명령 안내.
+      플러그인 소스 저장소 자신은 n/a skip.</td>
+      <td>갭3 — CLI 부재 시 SessionStart·post-commit 훅이 <code>|| true</code>로 조용히 죽던 문제</td>
+    </tr>
+    <tr>
+      <td><span class="pill na">Changed</span></td>
+      <td><strong>README 온보딩 3채널 문서화</strong> — apply / 플러그인 설치 / 전역 CLI 링크가
+      독립 채널임을 표로 명시 + clone한 팀원의 복구 절차. <strong>에이전트별 강제력 비대칭 표</strong>
+      (Claude: hooks 4종 + 커맨드 19개 vs 나머지 4개 에이전트: hooks 0).</td>
+      <td>갭2 — apply만으로는 슬래시 커맨드가 오지 않는다는 사실이 미문서화</td>
+    </tr>
+    <tr>
+      <td><span class="pill no">Fixed</span></td>
+      <td><strong>설치 안내 결함</strong> — <code>npm i -g harness-aijient-team</code>은 npm 미배포라 404였다.
+      README·doctor·JSON <code>nextActions</code>를 전부 로컬 마켓플레이스 클론 경로로 일치.
+      npm 공개 배포는 하지 않기로 확정.</td>
+      <td>#16 검증이 문서를 "읽어서" 확인하고 실행하지 않아 새어나간 결함 (#17)</td>
+    </tr>
+  </table></div>
+
+  <div class="card warn">
+    <strong>0.13 이후 진행 중:</strong> PR #18 (<code>fm/th-hookcli-tests</code>) — 404 재발을 막는
+    복구 명령 회귀 테스트(금지 정규식 + mutation 검증 4건), <code>checkHookCli</code> 타임아웃 정합(3s→5s).
+    209 → 213 pass. no-mistakes 파이프라인 결과 대기 중.
+  </div>
+</section>
+
+<!-- ============================================================ -->
+<section id="q1">
+  <h2><span class="qtag">Q1</span>0.13에서 루프·그래프·워크플로우가 자체 기능으로 가능한가?</h2>
+
+  <div class="verdict">아니요 — <strong>셋 다 하네스 자체 기능으로는 없다.</strong>
+  구조적으로 의도된 부재다.</div>
+
+  <div class="table-wrap"><table>
+    <tr><th>항목</th><th>자체 지원</th><th>실제로 있는 것</th></tr>
+    <tr>
+      <td><strong>루프</strong></td>
+      <td><span class="pill no">없음</span></td>
+      <td>스케줄러·데몬·watch 없음. hooks 4종(SessionStart·post-commit 등) + 1회성 CLI 명령뿐</td>
+    </tr>
+    <tr>
+      <td><strong>그래프</strong></td>
+      <td><span class="pill no">없음</span></td>
+      <td>DAG 엔진 없음. plan.md는 순차 체크리스트, boundary check는 두 스키마의 1:1 대조,
+      Mermaid는 문서 생성용</td>
+    </tr>
+    <tr>
+      <td><strong>워크플로우</strong></td>
+      <td><span class="pill no">없음</span></td>
+      <td><code>templates/.claude/</code>에 workflows/ 배포 없음. 문서의 "워크플로우"는
+      task→spec→plan→done이라는 <em>규범적 절차</em>를 뜻하는 말</td>
+    </tr>
+  </table></div>
+
+  <p>이유: 0.12에서 하네스를 <strong>"설정·상태 하네스"로 재정의</strong>하며 런타임 오케스트레이터
+  역할을 명시적으로 버렸다(AGENTS.md D4). 실행 레이어는 호스트(Claude Code)의
+  <code>/loop</code>·cron·<code>Workflow</code> 도구가 맡는 구조다.</p>
+
+  <div class="svg-wrap">
+    <svg viewBox="0 0 720 240" xmlns="http://www.w3.org/2000/svg" style="min-width:560px; width:100%; height:auto;" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+      <!-- layer 3: host -->
+      <rect x="20" y="20" width="680" height="60" rx="10" fill="#22263a" stroke="#50c8f5" stroke-width="1.5"/>
+      <text x="40" y="45" fill="#50c8f5" font-size="13" font-weight="700">호스트 (Claude Code) — 실행 레이어</text>
+      <text x="40" y="66" fill="#9aa2bf" font-size="12">/loop · cron · Workflow 도구 (fan-out) · 서브에이전트</text>
+      <!-- layer 2: agent -->
+      <rect x="20" y="95" width="680" height="55" rx="10" fill="#1a1d27" stroke="#7c6af5" stroke-width="1.5"/>
+      <text x="40" y="118" fill="#7c6af5" font-size="13" font-weight="700">에이전트 (loop) — 판단·쓰기 (단일 스레드, D4)</text>
+      <text x="40" y="138" fill="#9aa2bf" font-size="12">spec 해석 → plan § 실행 → 검증 → 커밋 · 병렬은 읽기 전용에만</text>
+      <!-- layer 1: harness -->
+      <rect x="20" y="165" width="680" height="55" rx="10" fill="#1a1d27" stroke="#4df0aa" stroke-width="1.5"/>
+      <text x="40" y="188" fill="#4df0aa" font-size="13" font-weight="700">team-harness — 설정·상태 레이어</text>
+      <text x="40" y="208" fill="#9aa2bf" font-size="12">task 4파일 SSOT · TCC · hooks · done-guard · boundary check · doctor</text>
+    </svg>
+  </div>
+
+  <p class="muted">가능한 조합은 "하네스 명령을 호스트 기능에 얹는 것"이다 —
+  예: <code>/loop 30m /harness-doctor</code>. doctor가 read-only·결정론적이라 루프 대상으로 안전하기 때문.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="q2">
+  <h2><span class="qtag">Q2</span>그럼 확장할 필요가 있는가?</h2>
+
+  <div class="verdict"><strong>기각 유지 (D1), 재검토 트리거 없음.</strong>
+  2026-08-06 결정이 여전히 유효하고, 0.13이 "발동 갭"을 닫으면서 근거가 오히려 강해졌다.</div>
+
+  <h3>용어부터 — 범주 오류 (D1 근거 1)</h3>
+  <p>"loop/그래프 엔지니어링"은 2026-07 커뮤니티 조어다. Anthropic 어휘로 옮기면
+  <strong>graph와 workflow는 같은 것</strong>이라 3형제(<code>task loop</code>/<code>task graph</code>/<code>task workflow</code>)의
+  셋째 자리에 들어갈 독립 개념이 없다.</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>커뮤니티 조어</th><th>Anthropic</th><th>정의</th></tr>
+    <tr><td>loop engineering</td><td><strong>agent</strong></td><td>LLM이 스스로 프로세스·도구 사용을 지휘</td></tr>
+    <tr><td>graph engineering</td><td><strong>workflow</strong></td><td>미리 정의된 코드 경로로 오케스트레이션 (+5패턴)</td></tr>
+    <tr><td>harness engineering</td><td><strong>harness</strong></td><td>세션을 가로지르는 상태 구조</td></tr>
+  </table></div>
+
+  <h3>D1 기각 근거 4</h3>
+  <ul>
+    <li><strong>범주 오류</strong> — 위 표. 실제 층은 harness → agent/loop → workflow=graph 3층.</li>
+    <li><strong>task는 이미 harness 층 산출물</strong> — spec↔feature list, plan↔progress 파일,
+    session-context↔세션 시작 프로토콜, done-guard↔"declares victory too early" 방어.
+    loop/graph 형제를 만들면 층을 섞는다.</li>
+    <li><strong>graph(런타임 오케스트레이션)는 7/28에 이미 기각</strong> — 1차 소스 6종
+    (Anthropic×2·OpenAI·Cognition·Karpathy·12-Factor)이 병렬 작성자 토폴로지를 신뢰성 위험으로 봄.
+    호스트 <code>Workflow</code> 도구가 이미 제공하므로 재구현은 플랫폼 중복.</li>
+    <li><strong>비용 명백</strong> — task당 4→7파일, 매 세션 읽을 문서 배가.
+    "smallest set of high-signal tokens" 위배.</li>
+  </ul>
+
+  <h3>핵심 반전 (D2) — 진짜 갭은 "형태"가 아니라 "발동"이었다</h3>
+  <p>probe 실측 결론: <em>"loop는 트리거할 필요가 없고(훅이 자동), workflow는 트리거할
+  방법이 없다(진입점 부재)."</em> 그래서 확장 대신 발동 갭 3건을 메웠고 — 그게 그대로
+  0.13이 됐다. 확장이 필요해 보이던 증상의 원인이 고쳐졌으니 확장 논거는 더 약해졌다.</p>
+
+  <h3>재고 조건 3 — 오늘(2026-08-08) 기준 대조</h3>
+  <div class="table-wrap"><table>
+    <tr><th>D1을 다시 여는 조건</th><th>현재</th></tr>
+    <tr><td>에이전트 간 통신·컨텍스트 공유가 성숙해 Cognition의 반대 근거(중간 결정 비가시성)가 무너질 때</td>
+        <td><span class="pill no">미성립</span> 병렬 작성자 회피가 여전히 프론티어 공통 권고</td></tr>
+    <tr><td>여러 저장소에 걸친 동시 작업을 요구받을 때</td>
+        <td><span class="pill no">미성립</span> cross-repo는 firstmate 소관, team-harness는 단일 프로젝트 도구</td></tr>
+    <tr><td>호스트 <code>Workflow</code> 도구가 못 하는 하네스 고유 팬아웃 요구가 실제 발생할 때</td>
+        <td><span class="pill no">미성립</span> 그런 요구가 나온 적 없음</td></tr>
+  </table></div>
+
+  <p class="muted">유일하게 D1을 건드리지 않는 확장은 "workflow <strong>템플릿</strong> 배포"
+  (실행이 아닌 설정 배포)지만, 이것도 구체적 수요 전에는 만들 이유가 없다.</p>
+</section>
+
+<!-- ============================================================ -->
+<section id="q3">
+  <h2><span class="qtag">Q3</span>활용법 — 단계별 프롬프팅 플레이북</h2>
+
+  <p>0.13부터 task 생성 stdout이 이 체인을 안내한다:
+  <strong>spec 작성 → <code>/harness-interview</code> → 구현 → 테스트 → 리뷰 →
+  <code>/harness-retro</code> → done</strong>. 프롬프팅은 이 체인에 맞춘다.</p>
+
+  <div class="table-wrap"><table>
+    <tr><th>단계</th><th>프롬프트 예</th><th>발동되는 것</th></tr>
+    <tr><td>시작</td><td><code>/harness-task</code> new feature auth-refresh + 요구사항 2~3문장</td>
+        <td>4파일 + TCC 생성, 다음 단계 안내 출력</td></tr>
+    <tr><td>spec 검증</td><td><code>/harness-interview</code></td>
+        <td>소크라테스식 질문으로 숨은 가정 노출</td></tr>
+    <tr><td>plan 다듬기</td><td><code>/harness-contrarian</code> → <code>/harness-simplifier</code></td>
+        <td>가정 반박 → 단계 축소</td></tr>
+    <tr><td>구현</td><td><strong>"plan §1부터 진행해줘"</strong></td>
+        <td>boundary check(선언 시) + 체크박스 갱신</td></tr>
+    <tr><td>테스트</td><td><code>/harness-unittest</code> (UI: comptest / 프로세스 경계: inttest)</td>
+        <td>GWT 강제 + 커버리지</td></tr>
+    <tr><td>리뷰</td><td><strong>"Codex 리뷰 돌려줘"</strong> → Bash <code>codex exec --sandbox read-only</code> (AGENTS.md 공식 호출 방식) 또는 워크플로우 명시 요청 (아래).
+        <span class="muted">플러그인의 <code>/codex:review</code>·<code>/codex:adversarial-review</code>는 <code>disable-model-invocation</code>이라 터미널 대화형 세션 전용 — 앱 세션에서는 못 쓴다</span></td>
+        <td>Codex read-only 리뷰 → artifact <code>## Reviews</code> 기록. Gemini는 <code>gemini -p</code> CLI 설치 시에만 병렬 실행, 미설치면 미실행 사실을 기록</td></tr>
+    <tr><td>종결</td><td>"retro 남기고 done 처리해줘"</td>
+        <td><code>/harness-retro</code> append → done-guard 4중 확인</td></tr>
+  </table></div>
+
+  <h3>규칙 4</h3>
+  <ul>
+    <li><strong>plan 단계 번호로 지시한다</strong> — "§2 해줘"면 충분. 요구사항을 프롬프트에
+    다시 쓰지 않는다. SSOT는 spec/plan, 프롬프트는 포인터. 재개 세션도 SessionStart 훅이
+    TCC를 주입하므로 "이어서 해줘"면 된다.</li>
+    <li><strong>Workflow는 명시적 단어가 필요하다</strong> (옵트인 규칙) —
+    <em>"이 변경을 워크플로우로 리뷰해줘 — 정확성·엣지케이스·보안 3차원 fan-out,
+    검증 통과분만 artifact ## Reviews에 기록"</em></li>
+    <li><strong>루프도 명시적으로</strong> — <code>/loop 30m /harness-doctor</code> (무결성 감시),
+    PR 후 <em>"/loop 10m CI 상태 확인하고 실패하면 고쳐줘"</em></li>
+    <li><strong>병렬은 읽기에만</strong> (D4) — "병렬로 조사·리뷰해줘"는 되고,
+    "병렬로 고쳐줘"는 안 된다. 쓰기는 항상 메인 세션 순차.</li>
+  </ul>
+</section>
+
+<!-- ============================================================ -->
+<section id="q4">
+  <h2><span class="qtag">Q4</span>spec · plan 구성법</h2>
+
+  <h3>spec.md — scaffold 5섹션 + 필요 시 2</h3>
+  <pre><span class="cm">## 목적 / 요구사항     ← 직접 작성. 외부 문서 포인터 껍데기 금지 (doctor가 경고)</span>
+<span class="cm">## 설계 / 접근</span>
+<span class="cm">## Ontology            ← "X가 정확히 뭔가" 한 줄 정의 + 게이트 통과 근거</span>
+<span class="cm">## Ambiguity 자가진단   ← Goal 40% / Constraint 30% / Success 30% / Context</span>
+<span class="cm">                          3개 이상 미체크면 코드 금지 → /harness-interview 복귀</span>
+<span class="cm">## 참고</span>
+
+<span class="hl"># 필요 시 추가:</span>
+<span class="cm">## 결정                 ← D1, D2… 포맷: 근거 + "재고 지점"(재검토 트리거 조건)</span>
+<span class="cm">## Boundary contracts   ← 생산자/소비자 JSON Schema — plan 체크 직전 자동 대조</span></pre>
+
+  <p class="muted"><code>## 결정</code>의 D-포맷은 harness-activation task에서 검증된 패턴 —
+  기각/채택에 근거와 <strong>재고 조건</strong>을 함께 적어두면, 나중에 "그 결정 아직 유효한가"를
+  조건 대조만으로 판정할 수 있다 (오늘 Q2가 정확히 그 사례).</p>
+
+  <h3>plan.md — 검증 기준은 "깨뜨렸을 때 실패하는가"</h3>
+  <pre><span class="cm">## 목표</span>
+(한 문장)
+
+<span class="cm">## 단계</span>
+<span class="hl">### §1 추출 (동작 불변)</span>
+- [ ] hookCliInstall 모듈 스코프 추출 — <span class="hl">검증: 전후 출력 바이트 동일(diff)</span>
+<span class="hl">### §2 회귀 테스트</span>
+- [ ] 금지 문자열 어써션 — <span class="hl">검증: README에 금지 형태를 넣으면 fail 1이 나는가</span>
+<span class="hl">### §3 종결               ← 항상 마지막 §로 고정</span>
+- [ ] npm test 전체 통과
+- [ ] 리뷰 실행 + artifact ## Reviews 기록
+- [ ] artifact ## 결과 작성 → 커밋 → done</pre>
+
+  <div class="card good">
+    <strong>이 구조가 강제 장치와 1:1로 맞물린다.</strong>
+    마지막 §는 done-guard 4중 가드(plan 미완 / artifact 템플릿 / 미커밋 / 커밋 0)를 절차화한
+    것이라 종결에서 막히지 않는다. "깨뜨렸을 때 실패" 기준은 mutation 4건(M1~M4)을 전부
+    잡아낸 실증 방식 — 통과만 확인하는 plan은 #16의 404처럼 "읽고 확인했다"가 통과해 버린다.
+  </div>
+
+  <p class="muted">루프·워크플로우는 read-only 단계에만 표시한다 — 예: §2에
+  "리뷰: 워크플로우 fan-out 가능", PR 이후 "CI: /loop 감시". 쓰기 단계(§1 구현)에는 붙이지 않는다.</p>
+</section>
+
+<footer>
+  team-harness 0.13.0 (<code>ee6e459</code>) 기준 · 2026-08-08 세션 정리 ·
+  근거: CHANGELOG 0.13.0, docs/chad/harness-activation/harness-activation-spec.md (D1~D4),
+  src/commands/task.mjs scaffold
+</footer>
+
+</main>
+</body>
+</html>
