@@ -41,12 +41,26 @@ export async function checkSelfCli(root, env = process.env) {
 // so that check cannot prove consumer hooks will be able to run.
 export async function checkHookCli(env = process.env) {
   try {
-    const { stdout } = await pexec('harness-team', ['--help'], { timeout: 3000, env });
+    // 5s to match checkSelfCli: both spawn node with this CLI, so a loaded machine
+    // that is slow for one is slow for the other. A shorter budget here would report
+    // "hooks can't run" for what is only a slow spawn.
+    const { stdout } = await pexec('harness-team', ['--help'], { timeout: 5000, env });
     return ['session-context', 'handoff'].every(command =>
       new RegExp(`^\\s*${command}(?:\\s|$)`, 'm').test(stdout));
   } catch {
     return false;
   }
+}
+
+// This package is NOT published to the public npm registry, so `npm i -g <package-name>`
+// 404s — the global CLI comes from linking the local marketplace clone that
+// `/plugin install` creates. Keep the recovery command in one place so the doctor
+// warning, JSON next_actions, and README cannot drift back to the broken form.
+export const HOOK_CLI_MARKETPLACE_DIR = 'harness-aijient-team-marketplace';
+
+export function hookCliInstallCommand(env = process.env) {
+  const pluginsRoot = env.CLAUDE_PLUGINS_ROOT ?? join(homedir(), '.claude/plugins');
+  return `npm i -g "${join(pluginsRoot, 'marketplaces', HOOK_CLI_MARKETPLACE_DIR)}"`;
 }
 
 // Detect gate bypass: an active task whose spec.md lacks the Ambiguity self-check
@@ -140,8 +154,7 @@ const BACKUP_SCRIPTS = ['clone.sh', 'symlink.sh', 'delete.sh'];
 
 export async function runDoctor(ctx) {
   const json = !!(ctx.flags && ctx.flags.json);
-  const pluginsRoot = process.env.CLAUDE_PLUGINS_ROOT ?? join(homedir(), '.claude/plugins');
-  const hookCliInstall = `npm i -g "${join(pluginsRoot, 'marketplaces', 'harness-aijient-team-marketplace')}"`;
+  const hookCliInstall = hookCliInstallCommand();
   const checks = [];
   const add = (label, status, detail, humanLine) => {
     if (json) checks.push(detail ? { label, status, detail } : { label, status });

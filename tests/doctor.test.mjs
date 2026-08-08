@@ -2,11 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { mkdtemp, mkdir, writeFile, rm, symlink, chmod } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
+import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from 'node:fs/promises';
+import { tmpdir, homedir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { checkCommand, checkSelfCli, checkHookCli, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, isPluginDevRepo } from '../src/commands/doctor.mjs';
+import { checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, isPluginDevRepo } from '../src/commands/doctor.mjs';
 import { POST_COMMIT_HOOK } from '../src/git-hooks.mjs';
 import { cloudSyncPathWarning } from '../src/harness.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
@@ -21,6 +21,11 @@ async function doctorJson(targetDir) {
   return JSON.parse(stdout);
 }
 const checkOf = (env, label) => (env.checks || []).find(c => c.label === label);
+
+// Installing by package name 404s — this package is not on the public npm registry.
+// Cover the variants a doc edit could reintroduce (install/-g spellings, quoting);
+// the trailing lookahead keeps the legitimate ...-marketplace path from matching.
+const FORBIDDEN_NPM_INSTALL = /npm\s+(?:i|install)\s+(?:-g|--global)\s+["']?harness-aijient-team(?![-\w])/;
 
 async function makeActiveFixture(specContent) {
   const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-gate-'));
@@ -62,6 +67,58 @@ test('checkHookCli: PATH의 CLI가 두 hook 명령을 광고할 때만 통과한
     assert.equal(await checkHookCli({ PATH: join(dir, 'missing') }), false);
     assert.match(POST_COMMIT_HOOK, /harness-team handoff/);
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// The real bin — not a shim. checkSelfCli asserts a loose substring while checkHookCli
+// line-anchors two command names, so a --help reformat could pass one and fail the other.
+// This pins the actual help output to the stricter contract.
+test('checkHookCli: 실제 bin을 PATH에 링크해도 통과한다 (--help 포맷 계약)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-realcli-'));
+  try {
+    // env-shebang needs node on the same PATH; link it here so nothing else leaks in.
+    await symlink(process.execPath, join(dir, 'node'));
+    await symlink(join(ROOT, 'bin/harness-team.mjs'), join(dir, 'harness-team'));
+    assert.equal(await checkHookCli({ PATH: dir }), true,
+      'real --help must keep advertising session-context and handoff at line start');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// #16 shipped `npm i -g harness-aijient-team`, which 404s — this package is not on the
+// public registry. Pin the working form so the recovery command cannot regress.
+test('hookCliInstallCommand: 마켓플레이스 클론 경로를 링크한다 (패키지명 직접 설치 금지)', () => {
+  const scoped = hookCliInstallCommand({ CLAUDE_PLUGINS_ROOT: '/tmp/plugins-root' });
+  assert.equal(scoped, `npm i -g "${join('/tmp/plugins-root', 'marketplaces', HOOK_CLI_MARKETPLACE_DIR)}"`);
+
+  const fallback = hookCliInstallCommand({});
+  assert.equal(fallback, `npm i -g "${join(homedir(), '.claude/plugins', 'marketplaces', HOOK_CLI_MARKETPLACE_DIR)}"`,
+    'CLAUDE_PLUGINS_ROOT 미설정 시 ~/.claude/plugins로 폴백해야 한다');
+
+  for (const cmd of [scoped, fallback]) {
+    assert.doesNotMatch(cmd, FORBIDDEN_NPM_INSTALL,
+      'npm 공개 배포가 없으므로 패키지명 직접 설치는 404 — 경로 링크여야 한다');
+  }
+});
+
+test('README는 doctor와 같은 복구 경로를 안내한다', async () => {
+  const readme = await readFile(join(ROOT, 'README.md'), 'utf8');
+  assert.ok(readme.includes(`marketplaces/${HOOK_CLI_MARKETPLACE_DIR}`),
+    'README가 doctor와 같은 마켓플레이스 클론 경로를 안내해야 한다');
+  assert.doesNotMatch(readme, FORBIDDEN_NPM_INSTALL,
+    'README에 404가 되는 패키지명 직접 설치 안내가 있으면 안 된다');
+});
+
+test('FORBIDDEN_NPM_INSTALL: 404 변형은 잡고 정상 경로는 통과시킨다', () => {
+  for (const bad of [
+    'npm i -g harness-aijient-team',
+    'npm install -g harness-aijient-team',
+    'npm i -g "harness-aijient-team"',
+    'npm i --global harness-aijient-team',
+  ]) assert.match(bad, FORBIDDEN_NPM_INSTALL, `404 변형을 놓쳤다: ${bad}`);
+
+  for (const good of [
+    'npm i -g "${CLAUDE_PLUGINS_ROOT:-$HOME/.claude/plugins}/marketplaces/harness-aijient-team-marketplace"',
+    hookCliInstallCommand({ CLAUDE_PLUGINS_ROOT: '/tmp/plugins-root' }),
+  ]) assert.doesNotMatch(good, FORBIDDEN_NPM_INSTALL, `정상 경로를 오탐했다: ${good}`);
 });
 
 test('checkActiveSpecGate: 활성 task 없으면 null (조용히 skip)', async () => {
@@ -236,6 +293,10 @@ test('runDoctor: 플러그인 소스 레포 → plugin-dev 모드, backup 체크
   const skipCount = (env.checks || []).filter(c => c.status === 'skip').length;
   assert.ok(skipCount >= 5, `expected ≥5 skipped backup checks, got ${skipCount}`);
   assert.equal(checkOf(env, '.harness/backup.json')?.status, 'skip', 'backup.json check must be skipped, not failed');
+  // Consumer-only: plugin-dev runs `node bin/harness-team.mjs` and installs no consumer
+  // hooks, so a PATH miss here would be a false alarm rather than a real breakage.
+  assert.equal(checkOf(env, 'SessionStart/post-commit hook CLI')?.status, 'skip',
+    'hook CLI PATH check must be skipped in plugin-dev, not evaluated');
 });
 
 test('runDoctor: 깨진(dangling) symlink → "broken symlink"로 구분 fail', async () => {

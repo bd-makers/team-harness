@@ -38,6 +38,7 @@
 
 ## Completed
 - ✅ codex-review-commands
+- ✅ doctor-hookcli-tests
 - ✅ release-0-13
 - ✅ harness-activation
 - ✅ skilltest-ast-grader
