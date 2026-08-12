@@ -1,6 +1,7 @@
 # chad — Tasks
 
 ## Open
+- cursor-rules-prune (created 2026-08-12)
 
 
 

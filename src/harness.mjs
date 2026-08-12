@@ -388,23 +388,89 @@ function yamlScalar(value) {
     : value;
 }
 
+// Stamped into every generated `.mdc` as provenance, and re-checked before deleting:
+// if the stamp is gone the user has taken the file over. A markdown comment, so
+// Cursor renders nothing.
+export const CURSOR_MIRROR_MARKER = '<!-- harness:mirror -->';
+
+// What the last run wrote. Deletion is authorized by this record, not by the file's
+// own content: the marker is a public string, so a rule started by copying a
+// generated `.mdc` would carry it, and content alone would sentence that copy to
+// deletion. Only a path this harness recorded writing may be removed.
+const CURSOR_MIRROR_MANIFEST = '.harness/cursor-mirror.json';
+
+// Manifest entries name files to delete, so they are read as untrusted input: a
+// hand-edited `..` or absolute path must not reach unlink outside the mirror.
+function isSafeMirrorEntry(rel) {
+  return typeof rel === 'string'
+    && rel.endsWith('.mdc')
+    && !rel.startsWith('/')
+    && !rel.includes('\\')
+    && !rel.split('/').includes('..');
+}
+
+async function readMirrorManifest(targetDir) {
+  const raw = await readTextSafe(join(targetDir, CURSOR_MIRROR_MANIFEST));
+  if (!raw) return [];
+  try {
+    const { generated } = JSON.parse(raw);
+    return Array.isArray(generated) ? generated.filter(isSafeMirrorEntry) : [];
+  } catch { return []; }
+}
+
+// Mirrors from a pre-manifest harness are absent from the record and so are never
+// pruned — the conservative failure is a stale rule, not a deleted one.
+async function pruneCursorMirrors(dstDir, previous, keep) {
+  const { rmdir, unlink } = await import('node:fs/promises');
+  const out = [];
+  const dirs = new Set();
+  for (const rel of previous) {
+    if (keep.has(rel)) continue;
+    const full = join(dstDir, rel);
+    const content = await readTextSafe(full);
+    if (content === null || !content.includes(CURSOR_MIRROR_MARKER)) continue;
+    await unlink(full);
+    out.push({ path: full, action: 'prune' });
+    if (rel.includes('/')) dirs.add(rel.slice(0, rel.lastIndexOf('/')));
+  }
+  // Deepest first, and rmdir fails on anything non-empty, so a directory still
+  // holding a hand-written rule survives without a separate check.
+  for (const dir of [...dirs].sort((a, b) => b.length - a.length)) {
+    await rmdir(join(dstDir, dir)).catch(() => {});
+  }
+  return out;
+}
+
 export async function mirrorCursorRules(ctx) {
   const srcDir = join(ctx.targetDir, '.claude/rules');
   const dstDir = join(ctx.targetDir, '.cursor/rules');
-  if (!(await exists(srcDir))) return [];
+  const previous = await readMirrorManifest(ctx.targetDir);
+  // A removed `.claude/rules` is the strongest form of "no longer produced" —
+  // returning early here would strand every mirror it ever generated.
+  const sources = await exists(srcDir) ? await collectRuleFiles(srcDir) : [];
+  if (!sources.length && !previous.length) return [];
+
   const out = [];
-  for (const rel of await collectRuleFiles(srcDir)) {
+  const written = new Set();
+  for (const rel of sources) {
     const content = await readTextSafe(join(srcDir, rel));
     const name = rel.replace(/\.md$/, '');
     const { paths, body } = splitRulePaths(content);
     const scope = paths.length
       ? `globs: ${yamlScalar(paths.join(', '))}\nalwaysApply: false`
       : 'alwaysApply: true';
-    const mdc = `---\ndescription: ${name} rules\n${scope}\n---\n\n${body}`;
+    const mdc = `---\ndescription: ${name} rules\n${scope}\n---\n\n${CURSOR_MIRROR_MARKER}\n\n${body}`;
     const dst = join(dstDir, `${name}.mdc`);
     await writeText(dst, mdc);
+    written.add(`${name}.mdc`);
     out.push({ path: dst, action: 'mirror' });
   }
+  // A renamed or deleted rule leaves its old mirror behind, and Cursor keeps loading
+  // it — the stale copy expires never, so the mirror must remove what it no longer
+  // produces.
+  out.push(...await pruneCursorMirrors(dstDir, previous, written));
+  await writeText(join(ctx.targetDir, CURSOR_MIRROR_MANIFEST),
+    JSON.stringify({ generated: [...written].sort() }, null, 2) + '\n');
   return out;
 }
 

@@ -4,11 +4,13 @@
 // body as literal text.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, readFile, rm, symlink } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rename, rm, stat, symlink } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { mirrorCursorRules, splitRulePaths } from '../src/harness.mjs';
+import { CURSOR_MIRROR_MARKER, mirrorCursorRules, splitRulePaths } from '../src/harness.mjs';
+
+const missing = (path) => stat(path).then(() => false, () => true);
 
 async function sandbox(rules) {
   const dir = await mkdtemp(join(tmpdir(), 'harness-cursor-rules-'));
@@ -133,6 +135,127 @@ test('cursor mirror: two aliases of one shared directory are both mirrored', asy
   } finally {
     await rm(dir, { recursive: true, force: true });
     await rm(shared, { recursive: true, force: true });
+  }
+});
+
+test('cursor mirror: a moved rule does not leave its old mirror behind', async () => {
+  // Cursor keeps loading a stale .mdc forever, so a rename would apply the rule
+  // twice — once at its new scope and once at the scope it was moved away from.
+  const dir = await sandbox({ 'styling.md': SCOPED });
+  try {
+    await mirrorCursorRules({ targetDir: dir });
+    assert.ok(!(await missing(join(dir, '.cursor/rules/styling.mdc'))), 'precondition: mirrored once');
+
+    await mkdir(join(dir, '.claude/rules/frontend'), { recursive: true });
+    await rename(join(dir, '.claude/rules/styling.md'), join(dir, '.claude/rules/frontend/styling.md'));
+    const results = await mirrorCursorRules({ targetDir: dir });
+
+    assert.ok(await missing(join(dir, '.cursor/rules/styling.mdc')), 'the old mirror must be pruned');
+    assert.ok(!(await missing(join(dir, '.cursor/rules/frontend/styling.mdc'))), 'the new mirror must exist');
+    assert.deepEqual(results.filter(r => r.action === 'prune').length, 1);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('cursor mirror: a deleted rule leaves no mirror and no empty directory', async () => {
+  const dir = await sandbox({ 'frontend/styling.md': SCOPED, 'common.md': GLOBAL });
+  try {
+    await mirrorCursorRules({ targetDir: dir });
+    await rm(join(dir, '.claude/rules/frontend'), { recursive: true, force: true });
+    await mirrorCursorRules({ targetDir: dir });
+
+    assert.ok(await missing(join(dir, '.cursor/rules/frontend')), 'the emptied directory must go too');
+    assert.ok(!(await missing(join(dir, '.cursor/rules/common.mdc'))), 'surviving rules stay');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('cursor mirror: rules the harness never recorded writing are not pruned', async () => {
+  // Deletion is authorized by the manifest, not by content. `copied.mdc` carries the
+  // stamp because it was started from a generated file — the realistic way a hand-written
+  // rule acquires it — and must survive; `legacy.mdc` stands in for a pre-manifest mirror.
+  const dir = await sandbox({ 'common.md': GLOBAL });
+  try {
+    await mirrorCursorRules({ targetDir: dir });
+    const generated = await readFile(join(dir, '.cursor/rules/common.mdc'), 'utf8');
+    await writeFile(join(dir, '.cursor/rules/copied.mdc'), generated, 'utf8');
+    await writeFile(join(dir, '.cursor/rules/legacy.mdc'), '---\nalwaysApply: true\n---\n\n# 구버전 미러 산출물\n', 'utf8');
+    await rm(join(dir, '.claude/rules/common.md'));
+
+    const results = await mirrorCursorRules({ targetDir: dir });
+
+    assert.ok(await missing(join(dir, '.cursor/rules/common.mdc')), 'the recorded orphan is pruned');
+    assert.ok(!(await missing(join(dir, '.cursor/rules/copied.mdc'))), 'a stamped copy the harness never wrote survives');
+    assert.ok(!(await missing(join(dir, '.cursor/rules/legacy.mdc'))), 'unrecorded mirrors survive');
+    assert.equal(results.filter(r => r.action === 'prune').length, 1);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('cursor mirror: a mirror the user has taken over (stamp removed) is kept', async () => {
+  const dir = await sandbox({ 'common.md': GLOBAL });
+  try {
+    await mirrorCursorRules({ targetDir: dir });
+    const adopted = (await readFile(join(dir, '.cursor/rules/common.mdc'), 'utf8')).replace(CURSOR_MIRROR_MARKER, '');
+    await writeFile(join(dir, '.cursor/rules/common.mdc'), adopted, 'utf8');
+    await rm(join(dir, '.claude/rules/common.md'));
+
+    await mirrorCursorRules({ targetDir: dir });
+
+    assert.ok(!(await missing(join(dir, '.cursor/rules/common.mdc'))), 'removing the stamp means the user owns it now');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('cursor mirror: removing .claude/rules entirely prunes what it generated', async () => {
+  const dir = await sandbox({ 'common.md': GLOBAL, 'frontend/styling.md': SCOPED });
+  try {
+    await mirrorCursorRules({ targetDir: dir });
+    await rm(join(dir, '.claude/rules'), { recursive: true, force: true });
+
+    const results = await mirrorCursorRules({ targetDir: dir });
+
+    assert.ok(await missing(join(dir, '.cursor/rules/common.mdc')));
+    assert.ok(await missing(join(dir, '.cursor/rules/frontend')), 'the emptied directory goes too');
+    assert.equal(results.filter(r => r.action === 'prune').length, 2);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('cursor mirror: a manifest path escaping the mirror directory is ignored', async () => {
+  const dir = await sandbox({ 'common.md': GLOBAL });
+  try {
+    await mirrorCursorRules({ targetDir: dir });
+    await writeFile(join(dir, 'outside.mdc'), `x\n${CURSOR_MIRROR_MARKER}\n`, 'utf8');
+    // Two levels up from `.cursor/rules` is the project root — one level would land
+    // inside `.cursor/` and never touch the file, testing nothing.
+    await writeFile(join(dir, '.harness/cursor-mirror.json'),
+      JSON.stringify({ generated: ['../../outside.mdc'] }), 'utf8');
+    await rm(join(dir, '.claude/rules/common.md'));
+
+    await mirrorCursorRules({ targetDir: dir });
+
+    assert.ok(!(await missing(join(dir, 'outside.mdc'))), 'unlink must never follow a traversal entry');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('cursor mirror: generated rules carry the harness stamp', async () => {
+  const dir = await sandbox({ 'common.md': GLOBAL });
+  try {
+    await mirrorCursorRules({ targetDir: dir });
+    const mdc = await readFile(join(dir, '.cursor/rules/common.mdc'), 'utf8');
+
+    assert.ok(mdc.includes(CURSOR_MIRROR_MARKER), 'without the stamp the next run cannot prune it');
+    assert.match(mdc, /# 공통 규칙/, 'body still follows the stamp');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
   }
 });
 
