@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-release-publish-workflow
+codex-hooks-template
 
-## Last Commit (2026-08-08)
-58e10c9 ci: publish github releases from version tags
+## Last Commit (2026-08-12)
+bbe287a feat(apply): install the Codex SessionStart hook template
 
 ## Full Context
-→ docs/chad/release-publish-workflow/release-publish-workflow-handoff.md
+→ docs/chad/codex-hooks-template/codex-hooks-template-handoff.md
