@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-cursor-rules-mirror
+cursor-rules-prune
 
 ## Last Commit (2026-08-12)
-6dc2d24 fix(apply): quote indicator-leading globs and scope the mirror's cycle guard
+abc087c fix(apply): remove Cursor mirrors whose source rule is gone
 
 ## Full Context
-→ docs/chad/cursor-rules-mirror/cursor-rules-mirror-handoff.md
+→ docs/chad/cursor-rules-prune/cursor-rules-prune-handoff.md
