@@ -319,20 +319,76 @@ async function appendGitignore(targetDir, { addAiEntries = false } = {}) {
 
 export const AI_GITIGNORE_PREVIEW = AI_GITIGNORE_ENTRIES.join('\n');
 
+// `.claude/rules/*.md` scopes a rule with a `paths:` glob list; Claude Code then
+// loads it only while working with matching files. Cursor expresses the same
+// intent as a comma-separated `globs:` string, so the mirror must translate —
+// emitting `alwaysApply: true` for a scoped rule would load it into every Cursor
+// session, the opposite of what the source asked for. Returns the source's paths
+// and the body with the source frontmatter removed (leaving it in place would
+// stack two frontmatter blocks and strand the second as literal text).
+export function splitRulePaths(content) {
+  const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n)?/.exec(content);
+  if (!match) return { paths: [], body: content };
+  const unquote = (value) => value.trim().replace(/^["']|["']$/g, '');
+  const paths = [];
+  let inPaths = false;
+  for (const line of match[1].split(/\r?\n/)) {
+    const inline = /^paths:\s*\[(.*)\]\s*$/.exec(line);
+    if (inline) {
+      paths.push(...inline[1].split(',').map(unquote).filter(Boolean));
+      inPaths = false;
+      continue;
+    }
+    if (/^paths:\s*$/.test(line)) { inPaths = true; continue; }
+    if (inPaths) {
+      const item = /^\s*-\s+(.+)$/.exec(line);
+      if (item) { paths.push(unquote(item[1])); continue; }
+      inPaths = false;
+    }
+  }
+  return { paths, body: content.slice(match[0].length) };
+}
+
+// Claude Code discovers `.claude/rules/**/*.md` recursively, so rules organized into
+// `frontend/` or `backend/` subdirectories are live for Claude. A flat mirror would
+// drop them silently — Cursor would be missing rules nobody noticed were missing.
+// Symlinked rule directories are a documented sharing pattern, so they are followed,
+// with a realpath set to stop a circular link from recursing forever.
+async function collectRuleFiles(dir, { base = '', seen = new Set() } = {}) {
+  const { readdir, realpath, stat } = await import('node:fs/promises');
+  const real = await realpath(dir).catch(() => dir);
+  if (seen.has(real)) return [];
+  seen.add(real);
+  const entries = await readdir(dir, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    if (entry.name === '.DS_Store') continue;
+    const full = join(dir, entry.name);
+    const rel = base ? `${base}/${entry.name}` : entry.name;
+    const isDir = entry.isDirectory()
+      || (entry.isSymbolicLink() && await stat(full).then(s => s.isDirectory()).catch(() => false));
+    if (isDir) files.push(...await collectRuleFiles(full, { base: rel, seen }));
+    else if (entry.name.endsWith('.md')) files.push(rel);
+  }
+  return files;
+}
+
 export async function mirrorCursorRules(ctx) {
   const srcDir = join(ctx.targetDir, '.claude/rules');
   const dstDir = join(ctx.targetDir, '.cursor/rules');
   if (!(await exists(srcDir))) return [];
-  const { readdir } = await import('node:fs/promises');
-  const entries = await readdir(srcDir);
   const out = [];
-  for (const name of entries) {
-    if (!name.endsWith('.md')) continue;
-    const content = await readTextSafe(join(srcDir, name));
-    const mdcName = name.replace(/\.md$/, '.mdc');
-    const mdc = `---\ndescription: ${name.replace('.md', '')} rules\nalwaysApply: true\n---\n\n${content}`;
-    await writeText(join(dstDir, mdcName), mdc);
-    out.push({ path: join(dstDir, mdcName), action: 'mirror' });
+  for (const rel of await collectRuleFiles(srcDir)) {
+    const content = await readTextSafe(join(srcDir, rel));
+    const name = rel.replace(/\.md$/, '');
+    const { paths, body } = splitRulePaths(content);
+    const scope = paths.length
+      ? `globs: ${paths.join(', ')}\nalwaysApply: false`
+      : 'alwaysApply: true';
+    const mdc = `---\ndescription: ${name} rules\n${scope}\n---\n\n${body}`;
+    const dst = join(dstDir, `${name}.mdc`);
+    await writeText(dst, mdc);
+    out.push({ path: dst, action: 'mirror' });
   }
   return out;
 }

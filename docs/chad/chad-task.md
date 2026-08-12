@@ -1,6 +1,7 @@
 # chad — Tasks
 
 ## Open
+- cursor-rules-mirror (created 2026-08-12)
 
 
 

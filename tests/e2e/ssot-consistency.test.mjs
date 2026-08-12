@@ -29,6 +29,13 @@ for (const stack of STACKS) {
       assert.ok(opencode && typeof opencode === 'object', '.opencode/opencode.json should be a JSON object');
       const cursorRules = await readdir(join(sb.dir, '.cursor/rules'));
       assert.ok(cursorRules.some((f) => f.endsWith('.mdc')), '.cursor/rules should contain mirrored .mdc rules');
+
+      // The shipped rules are all path-scoped, so the mirror must translate `paths:`
+      // into Cursor's auto-attach form — an always-on mirror would drop the scoping.
+      const styling = await readFile(join(sb.dir, '.cursor/rules/styling.mdc'), 'utf8');
+      assert.match(styling, /^globs: .+$/m, 'a path-scoped rule must mirror as Cursor globs');
+      assert.doesNotMatch(styling, /alwaysApply: true/, 'a path-scoped rule must not become always-on in Cursor');
+      assert.doesNotMatch(styling, /paths:/, 'source frontmatter must not survive into the .mdc body');
     } finally {
       await sb.cleanup();
     }

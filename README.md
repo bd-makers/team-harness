@@ -49,13 +49,19 @@ modified: 2026-08-07
 각각 관리하면 동기화 지옥이 됩니다. 이 플러그인은:
 
 - `AGENTS.md`를 공유 코어 실파일(오픈 표준)로 두고 `CLAUDE.md` / `GEMINI.md`는 `@AGENTS.md` import 얇은 파일 (Cursor·OpenCode는 `AGENTS.md` 네이티브 인식)
-- `.claude/rules/*.md`를 원본으로 `.cursor/rules/*.mdc`를 자동 미러링
+- `.claude/rules/*.md`를 원본으로 `.cursor/rules/*.mdc`를 자동 미러링 — `paths:`가 있으면 Cursor의 `globs:`(auto-attach)로, 없으면 `alwaysApply: true`로 번역
 - `opencode.json`은 `.claude/skills/*/SKILL.md`를 **참조**(복사 아님)
 - `.codex-plugin/plugin.json` + `skills/harness-team`으로 Codex에서도 같은 CLI/AGENTS.md 워크플로우를 사용
 - Codex/Gemini는 read-only 리뷰어로 Bash를 통해 호출 (first-token 매칭 규칙 준수)
 - 작업은 `docs/<member>/<name>/` 구조로 팀원·task별 격리
 
 결과: 규칙·스킬을 한 곳에서 편집하면 모든 에이전트가 같은 내용을 읽고, 팀원이 서로의 작업에 간섭하지 않습니다.
+
+> **예외 — `.claude/rules`는 팀 전체 규칙이 아닙니다.** 경로 스코프 규칙(`paths:` frontmatter)을
+> 네이티브로 읽는 건 Claude Code와 미러를 받는 Cursor뿐입니다. Codex·Gemini·OpenCode는 `.claude/`를
+> 보지 않으므로, 이들에게도 적용돼야 하는 규칙은 `AGENTS.md`(전역) 또는 하위 디렉터리
+> `AGENTS.md`(경로별)에 둬야 합니다. 특히 Codex는 리뷰어 역할이라 — 작성자만 아는 기준으로
+> 리뷰하는 상황을 만들지 않으려면 리뷰에 쓰일 기준은 `AGENTS.md`에 있어야 합니다.
 
 **설계 스코프: 설정·상태 하네스이지 런타임 오케스트레이션이 아닙니다.** 지휘자·공유 작업큐·
 팬아웃/팬인 같은 런타임 협업 계층은 두지 않습니다 — 이는 누락이 아니라 의도된 설계입니다.
@@ -96,13 +102,13 @@ harness-team doctor
 
 에이전트별 강제력은 의도적으로 대칭이 아닙니다.
 
-| 에이전트 | hooks | 커맨드/적용 표면 |
-|---|---|---|
-| Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 21개 슬래시 커맨드 |
-| Codex | SessionStart 1종 (신뢰 승인 필요) | 슬래시 커맨드는 없고 별도 `.codex-plugin` 설치 시 동명의 스킬 |
-| OpenCode | 0 | `new-feature` / `fix-bug` / `verify` 3개 |
-| Gemini | 0 | `GEMINI.md` 텍스트만 |
-| Cursor | 0 | `.cursor/rules/*.mdc` 규칙만 |
+| 에이전트 | hooks | 커맨드/적용 표면 | 경로 스코프 규칙 |
+|---|---|---|---|
+| Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 21개 슬래시 커맨드 | `.claude/rules` `paths:` — 매칭 파일 **Read 시** 로드 |
+| Codex | SessionStart 1종 (신뢰 승인 필요) | 슬래시 커맨드는 없고 별도 `.codex-plugin` 설치 시 동명의 스킬 | 없음 — 하위 디렉터리 `AGENTS.md`로 대체 |
+| OpenCode | 0 | `new-feature` / `fix-bug` / `verify` 3개 | 없음 |
+| Gemini | 0 | `GEMINI.md` 텍스트만 | 없음 |
+| Cursor | 0 | `.cursor/rules/*.mdc` 규칙만 | `.mdc` `globs:` — `.claude/rules`에서 미러 |
 
 `apply`는 Claude Code용 `.claude/settings.json` 훅과 Codex용 `.codex/hooks.json` SessionStart 훅을 설치합니다. 둘 다 `harness-team session-context`를 호출해 활성 task의 Context Card를 주입합니다. 나머지 에이전트는 훅 메커니즘이 없어 하네스 규칙이 결정론적 강제가 아니라 규범으로 적용됩니다.
 

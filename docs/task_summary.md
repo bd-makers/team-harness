@@ -40,3 +40,4 @@
 | chad | doctor-hookcli-tests | ✅ done | 2026-08-07 |
 | chad | release-publish-workflow | ✅ done | 2026-08-08 |
 | chad | codex-hooks-template | ✅ done | 2026-08-12 |
+| chad | cursor-rules-mirror | 🔄 open | 2026-08-12 |
