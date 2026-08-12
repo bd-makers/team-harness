@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-codex-hooks-template
+cursor-rules-mirror
 
 ## Last Commit (2026-08-12)
-bbe287a feat(apply): install the Codex SessionStart hook template
+6dc2d24 fix(apply): quote indicator-leading globs and scope the mirror's cycle guard
 
 ## Full Context
-→ docs/chad/codex-hooks-template/codex-hooks-template-handoff.md
+→ docs/chad/cursor-rules-mirror/cursor-rules-mirror-handoff.md

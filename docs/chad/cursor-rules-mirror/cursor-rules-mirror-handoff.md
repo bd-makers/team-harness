@@ -24,3 +24,18 @@ docs/chad/chad-handoff.md                                |  6 +++---
  docs/harness-overview.html                               | 15 +++++++++++++++
  3 files changed, 34 insertions(+), 3 deletions(-)
 
+
+## 2026-08-12T08:48:29.434Z — 6dc2d24 fix(apply): quote indicator-leading globs and scope the mirror's cycle guard
+CHANGELOG.md                                       |  1 +
+ docs/chad/chad-handoff.md                          |  6 ++--
+ .../cursor-rules-mirror-artifact.md                | 14 ++++++++
+ .../cursor-rules-mirror-handoff.md                 | 23 ++++++++++++++
+ .../cursor-rules-mirror-plan.md                    |  1 +
+ src/harness.mjs                                    | 25 ++++++++++++---
+ tests/cursor-rules-mirror.test.mjs                 | 37 ++++++++++++++++++++++
+ 7 files changed, 99 insertions(+), 8 deletions(-)
+
+
+## 2026-08-12T08:48:37.050Z — 완료
+
+태스크 종료.
