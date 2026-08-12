@@ -3,7 +3,7 @@ import { lstat, readlink, mkdir, copyFile, readdir, symlink as makeSymlink } fro
 import { resolveBackupDir } from '../backup-dir.mjs';
 import { confirm } from '../prompt.mjs';
 
-const ITEMS = ['CLAUDE.md', '.claude', '.cursor', '.opencode', 'docs', '.harness'];
+const ITEMS = ['CLAUDE.md', '.claude', '.cursor', '.opencode', '.codex', 'docs', '.harness'];
 
 async function mergeDirNewer(src, dst) {
   await mkdir(dst, { recursive: true });

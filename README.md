@@ -94,17 +94,28 @@ cd cloned-project
 harness-team doctor
 ```
 
-에이전트별 강제력은 의도적으로 대칭이 아닙니다(0.11.0 probe 실측).
+에이전트별 강제력은 의도적으로 대칭이 아닙니다.
 
 | 에이전트 | hooks | 커맨드/적용 표면 |
 |---|---|---|
-| Claude Code | 4종 | 플러그인 설치 시 21개 슬래시 커맨드 |
+| Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 21개 슬래시 커맨드 |
+| Codex | SessionStart 1종 (신뢰 승인 필요) | 슬래시 커맨드는 없고 별도 `.codex-plugin` 설치 시 동명의 스킬 |
 | OpenCode | 0 | `new-feature` / `fix-bug` / `verify` 3개 |
 | Gemini | 0 | `GEMINI.md` 텍스트만 |
 | Cursor | 0 | `.cursor/rules/*.mdc` 규칙만 |
-| Codex | 0 | 별도 `.codex-plugin`; `apply`로 설치되지 않음 |
 
-훅은 `.claude/settings.json`에 사는 Claude Code 전용 메커니즘이므로 이 비대칭은 구조적입니다. Claude Code 외 에이전트에서는 하네스 규칙이 결정론적 강제가 아니라 규범으로 적용됩니다.
+`apply`는 Claude Code용 `.claude/settings.json` 훅과 Codex용 `.codex/hooks.json` SessionStart 훅을 설치합니다. 둘 다 `harness-team session-context`를 호출해 활성 task의 Context Card를 주입합니다. 나머지 에이전트는 훅 메커니즘이 없어 하네스 규칙이 결정론적 강제가 아니라 규범으로 적용됩니다.
+
+> **Codex 훅은 설치만으로 동작하지 않습니다 — 한 번의 신뢰 승인이 필요합니다.** Codex는 새로 나타난
+> 프로젝트 훅을 사용자가 검토·신뢰할 때까지 실행하지 않고, 승인 결과를 `~/.codex/config.toml`
+> `[hooks.state]`에 해시로 기록합니다. `apply` 이후 첫 Codex 세션에서 승인하세요. 훅 파일을 수정하면
+> 해시가 바뀌어 재승인이 필요합니다 — **하네스 업그레이드 후 재`apply`로 훅 커맨드가 바뀌었을 때도
+> 마찬가지입니다.** 또한 `harness-team` CLI가 PATH에 없으면 훅은 조용히 no-op으로
+> 넘어갑니다(전역 CLI 링크는 별도 채널 — 위 표 참조).
+> `harness-team doctor`가 `.codex/hooks.json`이 존재하는데 harness SessionStart 훅이 없는 상태를
+> 경고로 잡아 줍니다.
+
+> 커맨드 표면은 별개입니다 — 슬래시 커맨드(`commands/`)는 Claude Code 전용이고, Codex는 `.codex-plugin`을 따로 설치해야 동명의 스킬(`skills/`)을 받습니다. `apply`가 설치해 주지 않습니다.
 
 ---
 

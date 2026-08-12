@@ -20,6 +20,17 @@ function hasCommand(group, command) {
     && group.hooks.some(hook => hook?.type === 'command' && hook.command === command);
 }
 
+// A project can author its own `.codex/hooks.json`. `apply` deep-merges the harness
+// group in, but a hand-edited file can still drop it — and then Codex sessions silently
+// lose task context while the file stays valid JSON. Content check, not just parse.
+export function codexHooksHaveSessionContext(hooks) {
+  const groups = hooks?.hooks?.SessionStart;
+  return Array.isArray(groups) && groups.some(group =>
+    Array.isArray(group?.hooks) && group.hooks.some(hook =>
+      hook?.type === 'command' && typeof hook.command === 'string'
+        && hook.command.includes('harness-team session-context')));
+}
+
 export function settingsHasBoundaryCheckpoint(settings) {
   const groups = settings?.hooks?.PreToolUse;
   return Array.isArray(groups) && groups.some(group =>
@@ -180,6 +191,24 @@ export async function planChanges(ctx, { stack }) {
     });
   }
 
+  // .codex/hooks.json — Codex reads project-local hooks. Deep-merge (not skip-existing)
+  // so a project that already authored its own Codex hooks still gains the harness
+  // SessionStart group instead of silently keeping none. Array union is by JSON identity,
+  // so re-applying is a no-op and user-authored groups survive.
+  const tplCodex = JSON.parse(await readTextSafe(join(tplDir, '.codex/hooks.json')));
+  const existingCodex = JSON.parse((await readTextSafe(join(targetDir, '.codex/hooks.json'))) || 'null');
+  const mergedCodex = deepMergeJson(existingCodex, tplCodex);
+  const existingCodexText = existingCodex ? JSON.stringify(existingCodex, null, 2) : null;
+  const mergedCodexText = JSON.stringify(mergedCodex, null, 2);
+  if (existingCodexText !== mergedCodexText) {
+    changes.push({
+      kind: 'json',
+      path: join(targetDir, '.codex/hooks.json'),
+      before: existingCodexText,
+      after: mergedCodexText,
+    });
+  }
+
   return { changes, vars, legacyAgentFiles };
 }
 
@@ -250,6 +279,8 @@ const AI_GITIGNORE_ENTRIES = [
   '.cursorrules',
   '.opencode',
   '.opencode/',
+  '.codex',
+  '.codex/',
   '',
   '# build',
   'output/',

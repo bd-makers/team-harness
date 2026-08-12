@@ -18,6 +18,16 @@ modified: 2026-08-07
 
 ## [Unreleased]
 
+### Added
+- **Codex SessionStart 훅 템플릿** — `templates/.codex/hooks.json`을 신설해 `apply`/`init`이 대상 프로젝트에 설치한다. Claude 쪽 `.claude/settings.json`과 동일하게 `harness-team session-context`를 호출하므로 Codex 세션도 활성 task의 Context Card를 주입받는다. 훅은 Codex 세션의 cwd에서 실행되므로 `--target "$(git rev-parse --show-toplevel || pwd)"`로 저장소 루트를 직접 해석한다 — 하위 디렉터리에서 Codex를 띄워도 "활성 task 없음"으로 오보하지 않는다. `.claude/settings.json`·`.opencode/opencode.json`과 같은 JSON deep-merge 레인을 쓰므로 이미 자기 Codex 훅을 작성한 프로젝트도 harness 그룹을 추가로 얻는다(사용자 훅 보존, 재적용 멱등). `doctor`는 파일 존재·JSON 유효성만이 아니라 **harness SessionStart 훅이 실제로 들어 있는지**까지 확인한다 — 손으로 편집해 harness 그룹이 빠진 파일은 유효한 JSON이라 파싱 검사만으로는 healthy로 보이지만, 그 상태가 곧 Codex 세션이 조용히 task context를 잃는 드리프트다. apply 스모크가 3개 스택 전부에서 생성을 어써션한다.
+- **`.codex`를 백업 아키텍처 관리 대상에 포함** — `backup`/`clone`/`symlink`/`delete`/`upgrade`의 item 목록(JS 5곳 + shell 템플릿 3곳)과 AI gitignore 항목에 `.codex`가 빠져 있었다. 그대로면 `backup` 시 `.codex`만 프로젝트에 실물로 남고 `delete` 시 잔재가 남는다.
+
+### Changed
+- **강제력 비대칭 표 정정** — README의 `Codex | hooks 0`은 0.11.0 probe 기준이라 낡았다. Codex CLI 0.147.0은 프로젝트 로컬 `.codex/hooks.json`을 지원한다(`~/.codex/config.toml` `[hooks.state]`에 신뢰 등록 확인). 훅이 Claude Code 전용 메커니즘이라는 설명을 걷어내고, 훅 표면과 커맨드 표면을 분리해 기술했다 — 슬래시 커맨드는 여전히 Claude Code 전용이고 Codex 스킬은 `.codex-plugin` 별도 설치가 필요하다.
+
+### Fixed
+- **Codex 스킬 커맨드 안내 공백** — `skills/harness-team/SKILL.md`의 커맨드 목록에 에이전트가 직접 호출해야 하는 `context init|check`(0.13)와 `release`(0.12)가 빠져 있었다. Codex는 이 스킬이 유일한 진입점이라 안내 공백이 곧 기능 공백이다. 훅·하네스가 호출하는 `session-context`·`boundary check`는 직접 호출 금지로 명시했다.
+
 ## [0.14.0] - 2026-08-08
 
 ### Added

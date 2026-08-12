@@ -1,6 +1,7 @@
 # chad — Tasks
 
 ## Open
+- codex-hooks-template (created 2026-08-12)
 
 
 

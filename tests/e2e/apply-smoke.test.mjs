@@ -18,6 +18,7 @@ const REQUIRED_PATHS = [
   '.claude/hooks/observe-tools.mjs',
   '.cursor/rules',
   '.opencode/opencode.json',
+  '.codex/hooks.json',
   '.harness/backup.json',
   '.harness/active.json',
   'docs/README.md',

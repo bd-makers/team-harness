@@ -6,7 +6,7 @@ import { confirm } from '../prompt.mjs';
 
 // AGENTS.md / GEMINI.md are real files now → treated as MOVE items so --include-real
 // teardown removes them. The alias list is retired (.cursorrules dropped).
-const MOVE_ITEMS = ['CLAUDE.md', 'AGENTS.md', 'GEMINI.md', '.claude', '.cursor', '.opencode', 'docs', '.harness', 'clone.sh', 'delete.sh'];
+const MOVE_ITEMS = ['CLAUDE.md', 'AGENTS.md', 'GEMINI.md', '.claude', '.cursor', '.opencode', '.codex', 'docs', '.harness', 'clone.sh', 'delete.sh'];
 const ALIAS_ITEMS = [];
 
 export async function runDelete(ctx) {
