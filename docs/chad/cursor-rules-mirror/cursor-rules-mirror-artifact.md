@@ -25,6 +25,20 @@
 ## Reviews
 *Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 
+### 2026-08-12 — Codex (`codex exec --sandbox read-only`, codex-cli 0.147.0)
+
+대상: 커밋 `188ff28` diff. focus — frontmatter 파싱 / 재귀·순환 가드 / Cursor 문법 유효성 /
+테스트가 실제로 회귀를 잡는지. 판정: **as-is 머지 불가, P2 2건**. (Gemini 병렬 리뷰는 `gemini` CLI
+미설치로 **미실행**.)
+
+| # | 심각도 | 발견 | 판별 | 조치 |
+|---|---|---|---|---|
+| 1 | P2 | `globs:` 값을 인용하지 않아, 첫 glob이 `**/*.ts`처럼 YAML indicator로 시작하면 생성된 frontmatter가 파싱 불가 | **진짜 결함** — js-yaml로 실측: `globs: **/*.ts` → `unidentified alias`, `globs: [id].tsx, ...` → `bad indentation of a mapping entry`. 현 템플릿 4개는 전부 `src/`·`app/` 선행이라 우연히 통과하고 있었다 | `yamlScalar()` 추가 — indicator로 시작할 때만 작은따옴표로 감싼다(일반 케이스는 Cursor 문서 형태 그대로 유지). 회귀 테스트 1건 추가 |
+| 2 | P2 | 순환 방지 `seen`이 전역이라, 같은 공유 디렉터리를 가리키는 **두 번째** 심볼릭 링크가 통째로 누락됨 | **진짜 결함** — 순환은 "자기 조상"일 때만 성립하는데 방문 집합이 형제 경로까지 삼켰다. 이 task가 고치려던 "조용한 누락"과 같은 부류 | `seen` → `chain`(현재 분기의 조상 집합)으로 바꾸고 재귀 후 `delete`로 backtrack. 회귀 테스트 1건 추가 |
+
+두 수정 모두 뮤테이션으로 확인했다 — `chain.delete` 제거 시 alias 테스트만 실패, `yamlScalar`
+무력화 시 인용 테스트만 실패. 전량 `npm test` 233 pass / 0 fail.
+
 ## Learnings
 
 - **미러는 복사가 아니라 번역이다.** 원본 frontmatter 위에 대상 frontmatter를 덧붙이는 구현은

@@ -15,6 +15,7 @@ README에 규칙 표면의 비대칭을 명시한다.
 - [x] 실제 템플릿 4개로 출력 확인 (`globs:` 번역, 본문에 죽은 frontmatter 없음)
 - [x] `npm test` 전량 통과 + `npm run docs:check`
 - [x] CHANGELOG `[Unreleased]` 기록
+- [x] Codex 외부 리뷰(read-only) 실행 → P2 2건 판별·수정(YAML 인용, 순환 가드 backtracking) + 회귀 테스트 2건 + 뮤테이션 확인
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

@@ -354,11 +354,15 @@ export function splitRulePaths(content) {
 // drop them silently — Cursor would be missing rules nobody noticed were missing.
 // Symlinked rule directories are a documented sharing pattern, so they are followed,
 // with a realpath set to stop a circular link from recursing forever.
-async function collectRuleFiles(dir, { base = '', seen = new Set() } = {}) {
+// `chain` holds the realpaths of the current branch's ancestors, not every directory
+// visited: a link is circular only when it reaches a directory it is already inside.
+// A global visited set would also swallow two separate aliases of one shared rules
+// directory, dropping the second alias's rules — the same silent omission this walk exists to fix.
+async function collectRuleFiles(dir, { base = '', chain = new Set() } = {}) {
   const { readdir, realpath, stat } = await import('node:fs/promises');
   const real = await realpath(dir).catch(() => dir);
-  if (seen.has(real)) return [];
-  seen.add(real);
+  if (chain.has(real)) return [];
+  chain.add(real);
   const entries = await readdir(dir, { withFileTypes: true });
   const files = [];
   for (const entry of entries) {
@@ -367,10 +371,21 @@ async function collectRuleFiles(dir, { base = '', seen = new Set() } = {}) {
     const rel = base ? `${base}/${entry.name}` : entry.name;
     const isDir = entry.isDirectory()
       || (entry.isSymbolicLink() && await stat(full).then(s => s.isDirectory()).catch(() => false));
-    if (isDir) files.push(...await collectRuleFiles(full, { base: rel, seen }));
+    if (isDir) files.push(...await collectRuleFiles(full, { base: rel, chain }));
     else if (entry.name.endsWith('.md')) files.push(rel);
   }
+  chain.delete(real);
   return files;
+}
+
+// A YAML plain scalar may not open with an indicator character, and globs routinely
+// do: `**/*.ts` reads as an alias, `[id].tsx` as a flow sequence — both make the
+// generated frontmatter unparseable. Quote only those, so the ordinary case stays
+// byte-identical to the plain form Cursor's own docs show.
+function yamlScalar(value) {
+  return /^[-?:,[\]{}#&*!|>'"%@`]/.test(value)
+    ? `'${value.replace(/'/g, "''")}'`
+    : value;
 }
 
 export async function mirrorCursorRules(ctx) {
@@ -383,7 +398,7 @@ export async function mirrorCursorRules(ctx) {
     const name = rel.replace(/\.md$/, '');
     const { paths, body } = splitRulePaths(content);
     const scope = paths.length
-      ? `globs: ${paths.join(', ')}\nalwaysApply: false`
+      ? `globs: ${yamlScalar(paths.join(', '))}\nalwaysApply: false`
       : 'alwaysApply: true';
     const mdc = `---\ndescription: ${name} rules\n${scope}\n---\n\n${body}`;
     const dst = join(dstDir, `${name}.mdc`);

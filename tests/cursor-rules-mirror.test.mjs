@@ -80,6 +80,23 @@ test('cursor mirror: rules in subdirectories are mirrored, preserving structure'
   }
 });
 
+test('cursor mirror: quotes a glob list that would otherwise be invalid YAML', async () => {
+  // `**/*.ts` opens a YAML alias and `[id].tsx` a flow sequence — unquoted, the
+  // generated frontmatter fails to parse and the rule is lost, not just mis-scoped.
+  const dir = await sandbox({
+    'wild.md': '---\npaths:\n  - "**/*.ts"\n  - "src/*.tsx"\n---\n\n# wild\n',
+    'route.md': '---\npaths: ["[id].tsx"]\n---\n\n# route\n',
+  });
+  try {
+    await mirrorCursorRules({ targetDir: dir });
+
+    assert.match(await readFile(join(dir, '.cursor/rules/wild.mdc'), 'utf8'), /^globs: '\*\*\/\*\.ts, src\/\*\.tsx'$/m);
+    assert.match(await readFile(join(dir, '.cursor/rules/route.mdc'), 'utf8'), /^globs: '\[id\]\.tsx'$/m);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('cursor mirror: follows a symlinked rules directory without looping', async () => {
   const dir = await sandbox({ 'common.md': GLOBAL });
   const shared = await mkdtemp(join(tmpdir(), 'harness-shared-rules-'));
@@ -93,6 +110,26 @@ test('cursor mirror: follows a symlinked rules directory without looping', async
     const linked = await readFile(join(dir, '.cursor/rules/shared/styling.mdc'), 'utf8');
 
     assert.match(linked, /globs: src\/\*\*\/\*\.tsx, app\/\*\*\/\*\.tsx/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+    await rm(shared, { recursive: true, force: true });
+  }
+});
+
+test('cursor mirror: two aliases of one shared directory are both mirrored', async () => {
+  // Cycle protection must key on the current branch's ancestors; a global visited
+  // set would treat the second alias as already-seen and silently drop its rules.
+  const dir = await sandbox({ 'common.md': GLOBAL });
+  const shared = await mkdtemp(join(tmpdir(), 'harness-shared-rules-'));
+  try {
+    await writeFile(join(shared, 'styling.md'), SCOPED, 'utf8');
+    await symlink(shared, join(dir, '.claude/rules/team-a'));
+    await symlink(shared, join(dir, '.claude/rules/team-b'));
+
+    await mirrorCursorRules({ targetDir: dir });
+
+    assert.match(await readFile(join(dir, '.cursor/rules/team-a/styling.mdc'), 'utf8'), /globs: /);
+    assert.match(await readFile(join(dir, '.cursor/rules/team-b/styling.mdc'), 'utf8'), /globs: /);
   } finally {
     await rm(dir, { recursive: true, force: true });
     await rm(shared, { recursive: true, force: true });

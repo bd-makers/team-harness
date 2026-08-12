@@ -28,6 +28,7 @@ modified: 2026-08-07
 
 ### Fixed
 - **Cursor 규칙 미러가 경로 스코프를 파괴하던 문제** — `.claude/rules/*.md`의 `paths:` frontmatter는 Claude Code가 매칭 파일을 읽을 때만 로드하라는 선언인데, 미러는 이를 무시하고 `alwaysApply: true`를 붙인 뒤 원본 frontmatter를 본문에 그대로 남겼다. 결과적으로 Cursor에서는 좁혀 둔 규칙이 항상 로드되고 죽은 frontmatter가 리터럴 텍스트로 남았다. 이제 `paths:` → Cursor `globs:`(auto-attach, `alwaysApply: false`)로 번역하고 원본 frontmatter는 소비한다. `paths:`가 없는 규칙만 `alwaysApply: true`로 유지한다.
+- **`globs:` 값이 YAML로 파싱되지 않던 경우** — `**/*.ts`·`[id].tsx`처럼 YAML indicator로 시작하는 glob이 첫 항목이면 생성된 Cursor frontmatter가 통째로 파싱 불가였다(`**`는 alias, `[`는 flow sequence로 읽힌다). 현 템플릿 4개는 전부 `src/`·`app/` 선행이라 우연히 통과하고 있었다. 이제 indicator로 시작할 때만 작은따옴표로 감싼다 — 일반 케이스는 Cursor 문서의 평문 형태를 그대로 유지한다.
 - **하위 디렉터리 규칙이 Cursor에 누락되던 문제** — 미러가 최상위 `readdir` 하나만 돌아 `.claude/rules/frontend/styling.md` 같은 규칙을 건너뛰었다. Claude Code는 `.claude/rules/**/*.md`를 재귀 탐색하므로, 규칙을 폴더로 정리한 프로젝트는 Claude에는 있고 Cursor에는 없는 규칙이 조용히 생긴다. 이제 재귀 탐색으로 구조를 보존해 미러하고(`frontend/styling.md` → `.cursor/rules/frontend/styling.mdc`), 공유 규칙 심볼릭 링크도 따라가되 realpath 집합으로 순환을 차단한다.
 - **Codex 스킬 커맨드 안내 공백** — `skills/harness-team/SKILL.md`의 커맨드 목록에 에이전트가 직접 호출해야 하는 `context init|check`(0.13)와 `release`(0.12)가 빠져 있었다. Codex는 이 스킬이 유일한 진입점이라 안내 공백이 곧 기능 공백이다. 훅·하네스가 호출하는 `session-context`·`boundary check`는 직접 호출 금지로 명시했다.
 
