@@ -1,11 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, rm, chmod } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import {
   cliDriftWarning,
+  cliDriftAction,
   installedHarnessVersion,
+  normalizeVersion,
   readPathCliVersion,
   checkCliDrift,
   HOOK_CLI_MARKETPLACE_DIR,
@@ -15,6 +20,8 @@ import { release, marketplaceStaleHints } from '../src/commands/release.mjs';
 
 const PLUGIN = 'harness-aijient-team';
 const KEY = `${PLUGIN}@${HOOK_CLI_MARKETPLACE_DIR}`;
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const pexec = promisify(execFile);
 
 function installedFixture(version) {
   return { version: 3, plugins: { [KEY]: [{ scope: 'user', version, installPath: 'x' }] } };
@@ -69,6 +76,38 @@ test('cli-drift: nothing to compare stays quiet', () => {
   const pathCli = { state: 'version', version: '0.15.1' };
   assert.equal(cliDriftWarning({ pathCli, installedVersion: null, installCommand: 'x' }), null);
   assert.equal(cliDriftWarning({ pathCli: { state: 'missing' }, installedVersion: '0.15.1', installCommand: 'x' }), null);
+  assert.equal(
+    cliDriftWarning({ pathCli: { state: 'unknown' }, installedVersion: '0.15.1', installCommand: 'x' }),
+    null,
+    'a CLI that never got to answer must not be dated by its silence',
+  );
+});
+
+// A prerelease install is past the --version floor; Number('2-rc') is not.
+test('cli-drift: a prerelease install still dates a --version-less CLI', () => {
+  assert.match(
+    cliDriftWarning({ pathCli: { state: 'legacy' }, installedVersion: '0.15.2-rc.1', installCommand: 'x' }),
+    /--version/,
+  );
+});
+
+// A current CLI that decorates its output must not be reported as drift.
+test('cli-drift: decorated version output is normalized before comparing', () => {
+  assert.equal(normalizeVersion('v0.15.1\n'), '0.15.1');
+  assert.equal(normalizeVersion('harness-team 0.15.1 (build 3)'), '0.15.1');
+  assert.equal(normalizeVersion('0.15.2-rc.1'), '0.15.2-rc.1');
+  assert.equal(normalizeVersion('no version here'), null);
+
+  assert.equal(cliDriftWarning({
+    pathCli: { state: 'version', version: normalizeVersion('v0.15.1') },
+    installedVersion: '0.15.1',
+    installCommand: 'x',
+  }), null);
+});
+
+test('cli-drift: the JSON remediation is a runnable command', () => {
+  const action = cliDriftAction({ CLAUDE_PLUGINS_ROOT: '/plugins' });
+  assert.match(action, /^git -C "\/plugins\/marketplaces\/.+" pull$/);
 });
 
 test('cli-drift: the installed record is found by its marketplace half', () => {
@@ -94,6 +133,38 @@ test('cli-drift: readPathCliVersion separates absent from pre-0.15.1', async () 
     await writeFile(shim, '#!/bin/sh\necho 0.15.1\n');
     await chmod(shim, 0o755);
     assert.deepEqual(await readPathCliVersion(env), { state: 'version', version: '0.15.1' });
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+// A binary that could not run says nothing about its version. Dating it by that
+// silence would warn "your CLI is pre-0.15.1" at someone whose real problem is a
+// permission bit or a missing interpreter.
+test('cli-drift: an unrunnable CLI is unknown, not legacy', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-drift-broken-'));
+  try {
+    const env = { ...process.env, PATH: dir };
+    const shim = join(dir, 'harness-team');
+
+    await writeFile(shim, '#!/bin/sh\necho 0.15.1\n');
+    await chmod(shim, 0o644);
+    assert.deepEqual(await readPathCliVersion(env), { state: 'missing' }, 'not executable → cannot run it');
+
+    // 127 is "the wrapper ran but could not find what it wraps" — a `#!/usr/bin/env
+    // node` entrypoint on a PATH without node. The CLI never answered, so its
+    // version is unknown; calling it pre-0.15.1 would name the wrong problem.
+    await writeFile(shim, '#!/bin/sh\nexit 127\n');
+    await chmod(shim, 0o755);
+    assert.deepEqual(await readPathCliVersion(env), { state: 'unknown' });
+
+    // Ran and rejected the flag — that, and only that, dates the binary.
+    await writeFile(shim, '#!/bin/sh\nexit 1\n');
+    assert.deepEqual(await readPathCliVersion(env), { state: 'legacy' });
+
+    // Exited 0 but said nothing version-shaped: also not a statement about age.
+    await writeFile(shim, '#!/bin/sh\necho "harness-team"\n');
+    assert.deepEqual(await readPathCliVersion(env), { state: 'unknown' });
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -131,6 +202,43 @@ test('cli-drift: a missing or unreadable plugins root is not an error', async ()
     assert.equal(await checkCliDrift(env), null);
   } finally {
     await rm(pluginsRoot, { recursive: true, force: true });
+  }
+});
+
+// End to end through the real CLI (doctor is read-only, so spawning it is safe).
+// This is the only test that proves the two things unit tests cannot: that the
+// check is not swallowed by the plugin-dev gate the way every consumer-only
+// check around it is, and that the warning reaches next_actions instead of
+// leaving an agent with a problem and no command.
+test('cli-drift: doctor reports drift in a plugin-dev repo, with a remedy', async () => {
+  const binDir = await mkdtemp(join(tmpdir(), 'harness-drift-e2e-'));
+  try {
+    const shim = join(binDir, 'harness-team');
+    await writeFile(shim, '#!/bin/sh\necho 0.0.1\n');
+    await chmod(shim, 0o755);
+    const env = { ...process.env, PATH: `${binDir}:${process.env.PATH}` };
+    const bin = join(ROOT, 'bin/harness-team.mjs');
+
+    const { stdout } = await pexec('node', [bin, 'doctor', '--json'], { env, timeout: 30000 })
+      .catch(error => ({ stdout: error.stdout || '' }));
+    const envelope = JSON.parse(stdout);
+    assert.equal(envelope.mode, 'plugin-dev', 'this repo is plugin-dev — the gate must not apply here');
+    const drift = envelope.checks.find(c => /drift/.test(c.label));
+    assert.ok(drift, 'the drift check must run in plugin-dev mode');
+    assert.equal(drift.status, 'warning');
+    assert.ok(
+      envelope.next_actions.some(action => action.includes('marketplaces')),
+      `a drift warning must carry a remedy — got ${JSON.stringify(envelope.next_actions)}`,
+    );
+
+    // Text mode must not overwrite the warning it just printed with a green bill.
+    const text = await pexec('node', [bin, 'doctor'], { env, timeout: 30000 })
+      .then(r => r.stdout)
+      .catch(error => error.stdout || '');
+    assert.match(text, /warning\(s\)\./);
+    assert.doesNotMatch(text, /All checks passed/);
+  } finally {
+    await rm(binDir, { recursive: true, force: true });
   }
 });
 

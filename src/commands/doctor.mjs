@@ -62,26 +62,41 @@ export const HOOK_CLI_MARKETPLACE_DIR = 'harness-aijient-team-marketplace';
 // and exited 1, so "no version reported" dates the binary rather than hiding it.
 export const VERSION_FLAG_SINCE = '0.15.1';
 
+// Tolerant on purpose: a CLI may print `v0.15.1`, `harness-team 0.15.1`, or a
+// prerelease. Pulling the first semver-shaped run out of the output beats an
+// anchored test that would call a perfectly current CLI "too old to answer".
+export function normalizeVersion(text) {
+  const match = String(text ?? '').match(/\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?/);
+  return match ? match[0] : null;
+}
+
+// Compares only major.minor.patch, so `0.15.2-rc.1` counts as past `0.15.1`
+// instead of falling over on Number('2-rc'). Prerelease ordering is deliberately
+// ignored: the only question here is whether the binary is new enough to have
+// grown `--version`, and an rc of that version has it.
 function isAtLeast(version, floor) {
-  const a = String(version).split('.').map(Number);
+  const parsed = String(version).match(/^(\d+)\.(\d+)\.(\d+)/);
+  if (!parsed) return false;
+  const a = parsed.slice(1, 4).map(Number);
   const b = floor.split('.').map(Number);
-  for (let i = 0; i < 3; i++) {
-    if (!Number.isInteger(a[i])) return false;
-    if (a[i] !== b[i]) return a[i] > b[i];
-  }
+  for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] > b[i];
   return true;
 }
 
-// Three outcomes, not two: the remediation for "not on PATH" differs from
-// "on PATH but too old to say which version it is", and collapsing them the way
-// checkHookCli does would report the wrong fix.
+// Four outcomes. `missing` and `legacy` need different fixes — install the CLI
+// vs refresh the source it points at — and `unknown` exists so a CLI that never
+// got to answer is not dated by its silence. A timeout, a missing interpreter
+// (exit 127), or a signal says nothing about the binary's version; only a plain
+// non-zero exit means it ran and rejected `--version`, which does date it.
 export async function readPathCliVersion(env = process.env) {
   try {
     const { stdout } = await pexec('harness-team', ['--version'], { timeout: 5000, env });
-    const version = stdout.trim().split('\n')[0].trim();
-    return /^\d+\.\d+\.\d+/.test(version) ? { state: 'version', version } : { state: 'legacy' };
+    const version = normalizeVersion(stdout);
+    return version ? { state: 'version', version } : { state: 'unknown' };
   } catch (error) {
-    return { state: error?.code === 'ENOENT' ? 'missing' : 'legacy' };
+    if (error?.code === 'ENOENT' || error?.code === 'EACCES') return { state: 'missing' };
+    if (error?.killed || error?.code === 127 || typeof error?.code !== 'number') return { state: 'unknown' };
+    return { state: 'legacy' };
   }
 }
 
@@ -109,13 +124,26 @@ export function installedHarnessVersion(installed, marketplace = HOOK_CLI_MARKET
 // comparator. The one ordered comparison is against VERSION_FLAG_SINCE, which
 // is what makes a silent `--version` conclusive instead of ambiguous.
 export function cliDriftWarning({ pathCli, installedVersion, installCommand }) {
-  if (!installedVersion || !pathCli || pathCli.state === 'missing') return null;
+  if (!installedVersion || !pathCli) return null;
+  // Absent or unrunnable is not drift: there is no version to disagree with, and
+  // the consumer-side hook CLI check already owns "the CLI will not run".
+  if (pathCli.state === 'missing' || pathCli.state === 'unknown') return null;
+  const remedy = `전역 CLI 출처를 갱신하라 (marketplace clone: git pull 또는 /plugin marketplace update), 필요하면 ${installCommand}로 재링크`;
   if (pathCli.state === 'legacy') {
     if (!isAtLeast(installedVersion, VERSION_FLAG_SINCE)) return null;
-    return `PATH의 harness-team이 --version을 지원하지 않음 (${VERSION_FLAG_SINCE} 이전) — 설치된 플러그인은 ${installedVersion}; 훅과 터미널이 구버전 CLI로 실행 중이다. 전역 CLI 출처를 갱신하라 (marketplace clone: git pull 또는 /plugin marketplace update), 필요하면 ${installCommand}로 재링크`;
+    return `PATH의 harness-team이 --version을 지원하지 않음 (${VERSION_FLAG_SINCE} 이전) — 설치된 플러그인은 ${installedVersion}; 훅과 터미널이 구버전 CLI로 실행 중이다. ${remedy}`;
   }
-  if (pathCli.version === installedVersion) return null;
-  return `전역 CLI 버전 불일치 — PATH의 harness-team은 ${pathCli.version}, 설치된 플러그인은 ${installedVersion}; 훅과 터미널이 설치본과 다른 코드로 실행 중이다. 전역 CLI 출처를 갱신하라 (marketplace clone: git pull 또는 /plugin marketplace update), 필요하면 ${installCommand}로 재링크`;
+  if (pathCli.version === normalizeVersion(installedVersion)) return null;
+  return `전역 CLI 버전 불일치 — PATH의 harness-team은 ${pathCli.version}, 설치된 플러그인은 ${installedVersion}; 훅과 터미널이 설치본과 다른 코드로 실행 중이다. ${remedy}`;
+}
+
+// The remediation as a runnable command, for the JSON envelope's next_actions —
+// an agent consuming a warning with no action to take reads it as noise.
+// `/plugin marketplace update` is the Claude Code equivalent, but next_actions
+// carries shell commands.
+export function cliDriftAction(env = process.env) {
+  const pluginsRoot = env.CLAUDE_PLUGINS_ROOT ?? join(homedir(), '.claude/plugins');
+  return `git -C "${join(pluginsRoot, 'marketplaces', HOOK_CLI_MARKETPLACE_DIR)}" pull`;
 }
 
 export async function checkCliDrift(env = process.env) {
@@ -244,7 +272,11 @@ export async function runDoctor(ctx) {
   const json = !!(ctx.flags && ctx.flags.json);
   const hookCliInstall = hookCliInstallCommand();
   const checks = [];
+  // Counted here rather than from `checks`, which is only populated in JSON
+  // mode — a text-mode tally read off that array is always zero.
+  let warnings = 0;
   const add = (label, status, detail, humanLine) => {
+    if (status === 'warning') warnings++;
     if (json) checks.push(detail ? { label, status, detail } : { label, status });
     else console.log(humanLine);
   };
@@ -417,7 +449,7 @@ export async function runDoctor(ctx) {
   }
 
   if (json) {
-    const warnCount = checks.filter(c => c.status === 'warning').length;
+    const warnCount = warnings;
     const skipCount = checks.filter(c => c.status === 'skip').length;
     const status = fail ? 'error' : (warnCount ? 'warning' : 'success');
     // Make plugin-dev mode legible to an agent parsing the envelope: a green bill
@@ -434,6 +466,7 @@ export async function runDoctor(ctx) {
     if (specGateWarning) warnActions.push('harness-team task <name>');
     if (hookWarning || boundaryHookWarning) warnActions.push('harness-team apply');
     if (!pluginDev && !hookCliOk) warnActions.push(hookCliInstall);
+    if (driftWarning) warnActions.push(cliDriftAction());
     emitObservation(buildEnvelope({
       command: 'doctor',
       status,
@@ -449,7 +482,11 @@ export async function runDoctor(ctx) {
       extra: { checks, mode: pluginDev ? 'plugin-dev' : 'project' },
     }));
   } else {
+    // "All checks passed" after a printed ⚠️ contradicts the lines above it —
+    // the JSON branch has always said `warning` here, and the text branch now
+    // agrees instead of overwriting the warnings with a green bill.
     console.log(fail ? `\n${fail} problem(s). Run: harness-team sync`
+      : warnings ? `\n${warnings} warning(s).`
       : (pluginDev ? '\nAll checks passed (plugin-dev mode).' : '\nAll checks passed.'));
   }
   if (fail) process.exitCode = 1;
