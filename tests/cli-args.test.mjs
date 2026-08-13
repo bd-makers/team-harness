@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { COMMANDS, GLOBAL_FLAGS, resolveInvocation, parseArgs } from '../src/cli-args.mjs';
+import { COMMANDS, GLOBAL_FLAGS, FLAG_ALIASES, resolveInvocation, parseArgs } from '../src/cli-args.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const pexec = promisify(execFile);
@@ -55,10 +55,33 @@ test('cli-args: a dangling value flag is rejected before path resolution', () =>
 });
 
 test('cli-args: unknown command still exits 1 with the full help', () => {
-  const invocation = resolveInvocation(['relase']);
-  assert.equal(invocation.kind, 'error');
-  assert.equal(invocation.code, 1);
-  assert.match(invocation.message, /Unknown command: relase/);
+  for (const argv of [['relase'], ['relase', '--help']]) {
+    const invocation = resolveInvocation(argv);
+    assert.equal(invocation.kind, 'error', `${argv.join(' ')} must not succeed`);
+    assert.equal(invocation.code, 1, 'a missing command is exit 1 regardless of --help');
+    assert.match(invocation.message, /Unknown command: relase/);
+  }
+});
+
+// `--` ends flag parsing, so free text that starts with a dash reaches the
+// command instead of being read as a malformed flag.
+test('cli-args: -- passes the rest through as positional text', () => {
+  const invocation = resolveInvocation(['retro', '--', '--help', '-h', 'text']);
+  assert.equal(invocation.kind, 'run');
+  assert.deepEqual(invocation.positional, ['--help', '-h', 'text']);
+});
+
+// A help token consumed as the value of a value flag is data, not a request.
+test('cli-args: -h in a value position is a value', () => {
+  const invocation = resolveInvocation(['doctor', '--target', '-h']);
+  assert.equal(invocation.kind, 'run');
+  assert.equal(invocation.flags.target, '-h');
+});
+
+// Asking how to use a command has to work while the rest of the argv is wrong.
+test('cli-args: --help outranks a parse error on the same line', () => {
+  assert.equal(resolveInvocation(['doctor', '--target', '--help']).kind, 'help');
+  assert.equal(resolveInvocation(['release', '--dryrun', '--help']).kind, 'help');
 });
 
 test('cli-args: --version is answered without touching a command', () => {
@@ -119,6 +142,24 @@ test('cli-args: the command table and the bin router agree', async () => {
 
   for (const name of listed) assert.ok(routed.has(name), `COMMANDS lists "${name}" but bin has no case`);
   for (const name of routed) assert.ok(listed.has(name), `bin routes "${name}" but COMMANDS omits it`);
+});
+
+// A flag that is accepted and documented but never read is the same silent
+// failure this module exists to remove: the caller passes `--backup-dir B`,
+// nothing errors, and the command operates on A. Each declared flag must appear
+// in the module that actually handles the command.
+const HANDLER = { apply: 'init', list: 'task', done: 'task', handoff: 'task', retro: 'task' };
+
+test('cli-args: every declared flag is read by the command that declares it', async () => {
+  for (const command of COMMANDS.filter(c => c.name !== 'help' && c.flags.length > 0)) {
+    const module = HANDLER[command.name] ?? command.name;
+    const source = await readFile(join(ROOT, 'src/commands', `${module}.mjs`), 'utf8');
+    for (const declared of command.flags) {
+      const key = FLAG_ALIASES.get(declared) ?? declared;
+      const read = source.includes(`flags['${key}']`) || source.includes(`flags.${key}`);
+      assert.ok(read, `${command.name} accepts --${declared} but ${module}.mjs never reads flags['${key}']`);
+    }
+  }
 });
 
 // Wiring check on a read-only command: proves the resolver is actually consulted

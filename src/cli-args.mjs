@@ -20,30 +20,34 @@ export const VALUE_FLAGS = new Set(['stack', 'member', 'target', 'backup-dir', '
 // to any subcommand without the registry having to enumerate it per command.
 export const GLOBAL_FLAGS = ['target', 'member', 'yes', 'json'];
 
-// Backup-architecture commands share the backup dir resolution helpers, so they
-// share its flags.
-const BACKUP_FLAGS = ['backup-dir', 'backup-parent'];
+// Only the commands that pass an override into `resolveBackupDir` list
+// `backup-dir`; `backup-parent` is read by init/apply alone. `backup` and
+// `migrate` call `loadBackupDir` and ignore both, so they must not advertise
+// them — a flag that is accepted and then ignored is the same silent-default
+// failure this module exists to remove.
+const BACKUP_DIR_FLAG = ['backup-dir'];
+const INIT_FLAGS = ['backup-dir', 'backup-parent', 'stack', 'no-backup', 'gitignore-ai', 'no-gitignore-ai'];
 
 // Single source for the command table: `--help` renders from `summary`, flag
 // validation reads `flags`. A flag that is not listed here cannot be passed,
 // so an accepted flag and a documented flag are the same thing by construction.
 export const COMMANDS = [
-  { name: 'init', args: '[dir]', summary: 'Scaffold a new project with the full harness',
-    flags: [...BACKUP_FLAGS, 'stack', 'no-backup', 'gitignore-ai', 'no-gitignore-ai'] },
-  { name: 'apply', args: '[dir]', summary: 'Apply the harness to an existing project (non-destructive)',
-    flags: [...BACKUP_FLAGS, 'stack', 'no-backup', 'gitignore-ai', 'no-gitignore-ai'] },
+  { name: 'init', args: '[dir]', summary: 'Scaffold a new project with the full harness', flags: INIT_FLAGS },
+  // apply is `runInit` under a different verb (src/commands/apply.mjs), so it
+  // takes exactly the same flags.
+  { name: 'apply', args: '[dir]', summary: 'Apply the harness to an existing project (non-destructive)', flags: INIT_FLAGS },
   { name: 'backup', args: '[dir]', summary: 'Move harness items to backup dir and replace with symlinks',
-    flags: BACKUP_FLAGS },
+    flags: [] },
   { name: 'clone', args: '[dir]', summary: 'Sync project items to backup dir (merge, newer-wins)',
-    flags: BACKUP_FLAGS },
+    flags: BACKUP_DIR_FLAG },
   { name: 'symlink', args: '[dir]', summary: 'Create backup→project symlinks',
-    flags: BACKUP_FLAGS },
+    flags: BACKUP_DIR_FLAG },
   { name: 'delete', args: '[dir]', summary: 'Remove harness symlinks from project',
-    flags: [...BACKUP_FLAGS, 'include-real'] },
+    flags: [...BACKUP_DIR_FLAG, 'include-real'] },
   { name: 'migrate', args: '[dir]', summary: 'Migrate to latest: backup scripts → root, task structure (→0.6, →0.7 artifact.md split)',
-    flags: BACKUP_FLAGS },
+    flags: [] },
   { name: 'upgrade', args: '[dir]', summary: 'Migrate real files → symlinks in one step (v0.3.x → v0.4+)',
-    flags: BACKUP_FLAGS },
+    flags: BACKUP_DIR_FLAG },
   { name: 'sync', args: '[dir]', summary: 'Re-sync symlinks, cursor rules, opencode config', flags: [] },
   { name: 'doctor', args: '[dir]', summary: 'Diagnose harness integrity', flags: [] },
   { name: 'task', args: '<name>', summary: 'Create or activate a task', flags: [] },
@@ -114,9 +118,15 @@ ${accepted.map(flag => `  --${flag}`).join('\n')}
 }
 
 export function parseArgs(argv) {
-  const out = { cmd: argv[0], positional: [], flags: {}, error: null };
+  const out = { cmd: argv[0], positional: [], flags: {}, helpRequested: false, error: null };
+  let literal = false;
   for (let i = 1; i < argv.length; i++) {
     const token = argv[i];
+    // `--` ends flag parsing so free text can start with a dash — `retro --
+    // --help` records the words, it does not print usage.
+    if (literal) { out.positional.push(token); continue; }
+    if (token === '--') { literal = true; continue; }
+    if (token === '--help' || token === '-h') { out.helpRequested = true; continue; }
     if (!token.startsWith('--')) {
       out.positional.push(token);
       continue;
@@ -127,12 +137,15 @@ export function parseArgs(argv) {
     if (VALUE_FLAGS.has(name)) {
       // A value flag left dangling used to become `true`, which then reached
       // path resolution as a boolean and crashed with an unrelated TypeError.
-      const value = inline ?? argv[++i];
-      if (value === undefined || value.startsWith('--')) {
-        out.error = `--${name} requires a value`;
-        return out;
+      // The next token is never swallowed when it is itself a flag, so
+      // `--target --help` records the error and still reaches the help check.
+      const next = inline ?? argv[i + 1];
+      if (next === undefined || (inline === undefined && next.startsWith('--'))) {
+        out.error ??= `--${name} requires a value`;
+        continue;
       }
-      out.flags[name] = value;
+      if (inline === undefined) i++;
+      out.flags[name] = next;
     } else {
       out.flags[name] = inline ?? true;
     }
@@ -140,14 +153,19 @@ export function parseArgs(argv) {
   return out;
 }
 
-// `--no-gitignore-ai` is the negation of `--gitignore-ai`, and init reads the
-// single normalized key. Normalization runs after validation so the error
-// message names the flag the caller actually typed.
+// Negations the parser rewrites before dispatch: the command reads one key, so
+// it never sees the name the caller typed. Declared here so a test can tell
+// "this flag is deliberately renamed" apart from "this flag is ignored".
+export const FLAG_ALIASES = new Map([['no-gitignore-ai', 'gitignore-ai']]);
+
+// Normalization runs after validation so an error message names the flag the
+// caller actually typed.
 function normalize(flags) {
   const out = { ...flags };
-  if (out['no-gitignore-ai'] !== undefined) {
-    out['gitignore-ai'] = false;
-    delete out['no-gitignore-ai'];
+  for (const [alias, target] of FLAG_ALIASES) {
+    if (out[alias] === undefined) continue;
+    out[target] = false;
+    delete out[alias];
   }
   return out;
 }
@@ -160,27 +178,31 @@ export function unknownFlags(command, flags) {
 // Returns what the invocation *is* without performing it. `kind: 'run'` is the
 // only outcome that reaches the router.
 export function resolveInvocation(argv) {
-  // Scanned across the whole argv, not just the command slot: `release --help`
-  // is a request for usage, and answering it must not depend on where it sits.
-  if (argv.includes('--help') || argv.includes('-h')) {
-    const command = findCommand(argv[0]);
-    return command && command.name !== 'help'
-      ? { kind: 'help', text: renderCommandHelp(command) }
-      : { kind: 'help', text: renderHelp() };
-  }
-  if (argv[0] === '--version' || argv[0] === '-v') return { kind: 'version' };
-  if (argv.length === 0 || argv[0] === 'help') {
+  const head = argv[0];
+  if (argv.length === 0 || head === '--help' || head === '-h') return { kind: 'help', text: renderHelp() };
+  if (head === '--version' || head === '-v') return { kind: 'version' };
+  if (head === 'help') {
     const requested = findCommand(argv[1]);
     return requested && requested.name !== 'help'
       ? { kind: 'help', text: renderCommandHelp(requested) }
       : { kind: 'help', text: renderHelp() };
   }
 
-  const parsed = parseArgs(argv);
-  const command = findCommand(parsed.cmd);
+  const command = findCommand(head);
+  // An unknown command exits 1 whether or not `--help` follows. Nothing can run
+  // either way, and one code for "no such command" beats a code that depends on
+  // the rest of the argv.
   if (!command) {
-    return { kind: 'error', code: 1, message: `Unknown command: ${parsed.cmd}`, text: renderHelp() };
+    return { kind: 'error', code: 1, message: `Unknown command: ${head}`, text: renderHelp() };
   }
+
+  const parsed = parseArgs(argv);
+  // Help is answered wherever it appears in the argv — `release --help` is a
+  // request for usage, not a release — and it outranks parse and flag errors,
+  // because asking how to use a command has to work while the argv is wrong.
+  // Only a `--help` consumed as a flag counts: after `--`, or as the value of
+  // `--target`, it is data.
+  if (parsed.helpRequested) return { kind: 'help', text: renderCommandHelp(command) };
   if (parsed.error) {
     return { kind: 'error', code: 2, message: `${command.name}: ${parsed.error}`, text: renderCommandHelp(command) };
   }
