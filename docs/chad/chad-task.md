@@ -1,6 +1,7 @@
 # chad — Tasks
 
 ## Open
+- global-cli-drift (created 2026-08-13)
 
 
 

@@ -247,6 +247,18 @@ export async function release({
     await syncCommandsDir(srcCommands, path.join(marketplaceDir, 'commands'));
   }
 
+  // The clone is a catalog: `/plugin marketplace update` (a git pull) owns its
+  // code, and release only refreshes the manifest and commands. That leaves the
+  // clone claiming the new version while its bin/ and src/ stay at whatever it
+  // last pulled — and on machines where the global `harness-team` is a symlink
+  // into this clone, that stale code is what hooks and the terminal actually
+  // run. Release cannot fix it (pulling someone else's checkout is not this
+  // command's business) but it must not stay quiet about causing it.
+  result.marketplaceStaleVersion = await readJsonVersion(path.join(marketplaceDir, 'package.json'));
+  if (result.marketplaceStaleVersion && result.marketplaceStaleVersion !== newVersion) {
+    result.marketplaceStaleDir = marketplaceDir;
+  }
+
   // 9. installed_plugins.json.
   const installedPath = path.join(pluginsRoot, 'installed_plugins.json');
   if (await exists(installedPath)) {
@@ -274,6 +286,24 @@ export async function release({
   }
 
   return result;
+}
+
+async function readJsonVersion(file) {
+  const raw = await readFile(file, 'utf8').catch(() => null);
+  if (!raw) return null;
+  try { return JSON.parse(raw).version ?? null; } catch { return null; }
+}
+
+// Emitted after the git `next:` line because it is a separate follow-up: the
+// release itself succeeded, and this is about the clone the global CLI is
+// symlinked into. Returns lines so the CLI and the JSON envelope share wording.
+export function marketplaceStaleHints(res) {
+  if (!res.marketplaceStaleDir) return [];
+  return [
+    `⚠️ marketplace clone이 ${res.marketplaceStaleVersion} 코드에 머물러 있음 (${res.marketplaceStaleDir}) — ` +
+    `release는 카탈로그(marketplace.json·commands)만 갱신한다. 전역 harness-team이 이 clone을 가리키면 훅과 터미널이 구버전으로 실행된다.`,
+    `next: 커밋·태그를 push한 뒤 clone을 갱신하라 — /plugin marketplace update 또는 git -C "${res.marketplaceStaleDir}" pull`,
+  ];
 }
 
 function releaseArtifacts(res) {
@@ -322,7 +352,10 @@ export async function runRelease(ctx) {
           : `release: ${res.oldVersion} → ${res.newVersion}`),
         nextActions: res.dryRun
           ? [`harness-team release ${bump}`]
-          : [`git add -A && git commit -m "chore(release): 버전 ${res.newVersion}으로 범프" && git tag v${res.newVersion} && git push && git push --tags`],
+          : [
+              `git add -A && git commit -m "chore(release): 버전 ${res.newVersion}으로 범프" && git tag v${res.newVersion} && git push && git push --tags`,
+              ...marketplaceStaleHints(res).filter(line => line.startsWith('next: ')).map(line => line.slice('next: '.length)),
+            ],
         artifacts: releaseArtifacts(res),
         extra: res.claudeRunning ? { claudeRunning: true, claudeProcs: res.claudeProcs, warning: CLAUDE_RUNNING_WARNING } : undefined,
       }));
@@ -342,6 +375,7 @@ export async function runRelease(ctx) {
         `next: git add -A && git commit -m "chore(release): 버전 ${res.newVersion}으로 범프" && ` +
         `git tag v${res.newVersion} && git push && git push --tags`,
       );
+      for (const line of marketplaceStaleHints(res)) console.log(line);
     }
     return res;
   } catch (err) {

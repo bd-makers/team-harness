@@ -18,6 +18,9 @@ modified: 2026-08-13
 
 ## [Unreleased]
 
+### Fixed
+- **전역 CLI가 조용히 구버전으로 남던 문제** — 릴리스 뒤 이 플러그인은 세 곳에 존재한다: 버전별 cache(설치본), marketplace clone(카탈로그), 그리고 PATH의 `harness-team`(훅과 터미널이 실제로 실행하는 바이너리). 세 번째는 보통 clone을 가리키는 심볼릭 링크인데 `release`는 clone의 `marketplace.json`·`commands/`만 덮어쓴다. 그래서 clone이 옛 커밋에 멈춘 채 버전만 새 값이 되는 **자기모순 트리**가 되고, `installed_plugins.json`은 새 버전을 가리키는데 훅은 옛 코드로 돈다. 실제로 0.15.1 직후 이 상태에서 전역 CLI가 0.14.0이었고, 0.15.1이 고친 `--help` 가드가 없어 `harness-team release --help`가 또 진짜 릴리스를 수행했다. 이제 `release`가 clone이 뒤처졌음을 `⚠️`와 `next:` 힌트로 알리고, `doctor`에 `global CLI version drift` 검사가 추가돼 PATH CLI 버전과 설치 버전이 다르면 경고한다. 이 검사는 **plugin-dev 저장소에서도 실행된다** — 다른 소비자 전용 검사와 달리, 전역 CLI와 소스 트리가 가장 크게 벌어지는 곳이 메인테이너 머신이고 이번 사고도 거기서 났다. `release`가 clone을 대신 git pull 하지는 않는다(남의 checkout을 건드리는 것은 이 명령의 일이 아니다). MAINTAINING.md에 세 위치와 갱신 주체를 표로 명시했다.
+
 ## [0.15.1] - 2026-08-13
 
 ### Fixed

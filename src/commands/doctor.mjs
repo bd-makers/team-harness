@@ -58,6 +58,82 @@ export async function checkHookCli(env = process.env) {
 // warning, JSON next_actions, and README cannot drift back to the broken form.
 export const HOOK_CLI_MARKETPLACE_DIR = 'harness-aijient-team-marketplace';
 
+// `--version` landed in 0.15.1. Before that the CLI answered `Unknown command`
+// and exited 1, so "no version reported" dates the binary rather than hiding it.
+export const VERSION_FLAG_SINCE = '0.15.1';
+
+function isAtLeast(version, floor) {
+  const a = String(version).split('.').map(Number);
+  const b = floor.split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    if (!Number.isInteger(a[i])) return false;
+    if (a[i] !== b[i]) return a[i] > b[i];
+  }
+  return true;
+}
+
+// Three outcomes, not two: the remediation for "not on PATH" differs from
+// "on PATH but too old to say which version it is", and collapsing them the way
+// checkHookCli does would report the wrong fix.
+export async function readPathCliVersion(env = process.env) {
+  try {
+    const { stdout } = await pexec('harness-team', ['--version'], { timeout: 5000, env });
+    const version = stdout.trim().split('\n')[0].trim();
+    return /^\d+\.\d+\.\d+/.test(version) ? { state: 'version', version } : { state: 'legacy' };
+  } catch (error) {
+    return { state: error?.code === 'ENOENT' ? 'missing' : 'legacy' };
+  }
+}
+
+// The installed record is keyed `<plugin>@<marketplace>`; the harness owns one
+// marketplace, so match on that half rather than hardcoding the plugin name.
+export function installedHarnessVersion(installed, marketplace = HOOK_CLI_MARKETPLACE_DIR) {
+  for (const [key, records] of Object.entries(installed?.plugins ?? {})) {
+    if (key.split('@').pop() !== marketplace) continue;
+    if (!Array.isArray(records) || records.length === 0) continue;
+    const record = records.find(r => r.scope === 'user') ?? records[0];
+    if (record?.version) return record.version;
+  }
+  return null;
+}
+
+// Claude Code loads commands and skills from the versioned cache dir that
+// installed_plugins.json points at, but SessionStart and post-commit hooks shell
+// out to whatever `harness-team` PATH resolves to — usually a symlink to the
+// marketplace clone, which `release` does not update. The two can disagree for
+// weeks in silence: the plugin reports the new version while every hook, and
+// every command the maintainer types, runs the old code.
+//
+// Reported as a mismatch rather than "PATH is older", because a PATH CLI ahead
+// of the installed record is drift too and ordering would need a full semver
+// comparator. The one ordered comparison is against VERSION_FLAG_SINCE, which
+// is what makes a silent `--version` conclusive instead of ambiguous.
+export function cliDriftWarning({ pathCli, installedVersion, installCommand }) {
+  if (!installedVersion || !pathCli || pathCli.state === 'missing') return null;
+  if (pathCli.state === 'legacy') {
+    if (!isAtLeast(installedVersion, VERSION_FLAG_SINCE)) return null;
+    return `PATH의 harness-team이 --version을 지원하지 않음 (${VERSION_FLAG_SINCE} 이전) — 설치된 플러그인은 ${installedVersion}; 훅과 터미널이 구버전 CLI로 실행 중이다. 전역 CLI 출처를 갱신하라 (marketplace clone: git pull 또는 /plugin marketplace update), 필요하면 ${installCommand}로 재링크`;
+  }
+  if (pathCli.version === installedVersion) return null;
+  return `전역 CLI 버전 불일치 — PATH의 harness-team은 ${pathCli.version}, 설치된 플러그인은 ${installedVersion}; 훅과 터미널이 설치본과 다른 코드로 실행 중이다. 전역 CLI 출처를 갱신하라 (marketplace clone: git pull 또는 /plugin marketplace update), 필요하면 ${installCommand}로 재링크`;
+}
+
+export async function checkCliDrift(env = process.env) {
+  const pluginsRoot = env.CLAUDE_PLUGINS_ROOT ?? join(homedir(), '.claude/plugins');
+  const installedPath = join(pluginsRoot, 'installed_plugins.json');
+  const raw = await readFile(installedPath, 'utf8').catch(() => null);
+  if (!raw) return null;
+  let installed;
+  try { installed = JSON.parse(raw); } catch { return null; }
+  const installedVersion = installedHarnessVersion(installed);
+  if (!installedVersion) return null;
+  return cliDriftWarning({
+    pathCli: await readPathCliVersion(env),
+    installedVersion,
+    installCommand: hookCliInstallCommand(env),
+  });
+}
+
 export function hookCliInstallCommand(env = process.env) {
   const pluginsRoot = env.CLAUDE_PLUGINS_ROOT ?? join(homedir(), '.claude/plugins');
   return `npm i -g "${join(pluginsRoot, 'marketplaces', HOOK_CLI_MARKETPLACE_DIR)}"`;
@@ -327,6 +403,17 @@ export async function runDoctor(ctx) {
     }
   } else {
     add('SessionStart/post-commit hook CLI', 'skip', 'plugin-dev repo — consumer hook PATH check n/a', '- SessionStart/post-commit hook CLI  (plugin-dev repo — n/a)');
+  }
+
+  // Deliberately NOT gated on plugin-dev, unlike every check above. Those skip
+  // because a consumer's hook wiring cannot be proven from the source repo —
+  // that rationale does not transfer here. The maintainer's machine is where the
+  // PATH binary and the source tree diverge furthest, and the incident that
+  // motivated this check happened in this repo: a stale global CLI ran a release
+  // that the fixed source would have refused.
+  const driftWarning = await checkCliDrift();
+  if (driftWarning) {
+    add('global CLI version drift', 'warning', driftWarning, `\n⚠️ ${driftWarning}`);
   }
 
   if (json) {

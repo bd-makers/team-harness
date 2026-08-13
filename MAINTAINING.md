@@ -107,6 +107,34 @@ Codex manifest/skill을 수정했다면 Codex validator도 실행하세요. 로�
    실패했다면 원인을 고쳐 main에 반영한 뒤, 태그를 다시 만들어 push합니다
    (`git tag -d vX.Y.Z && git push origin :vX.Y.Z` 후 8단계 재실행).
 
+10. **전역 CLI가 새 코드로 바뀌었는지 확인합니다.** 아래 "설치본 세 곳" 참조 — `release`는 marketplace
+    clone의 코드를 갱신하지 않으므로, 이 단계를 건너뛰면 훅과 터미널이 계속 옛 버전으로 실행됩니다.
+    ```bash
+    harness-team --version   # 새 버전이 나와야 합니다
+    ```
+
+---
+
+## 설치본 세 곳과 갱신 주체
+
+릴리스 뒤 이 플러그인은 서로 다른 세 곳에 존재하며, **갱신 주체가 각각 다릅니다.**
+
+| 위치 | 무엇인가 | 누가 갱신하나 |
+|---|---|---|
+| `~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/` | 버전별 **설치본** — Claude Code가 커맨드·스킬을 읽는 곳 | `harness-team release` (저장소 트리 전체 복사) |
+| `~/.claude/plugins/marketplaces/<marketplace>/` | 저장소의 git clone = **카탈로그** | `/plugin marketplace update`(= git pull). `release`는 `marketplace.json`과 `commands/`만 덮어씁니다 |
+| PATH의 `harness-team` | 훅(SessionStart·post-commit)과 터미널이 실제로 실행하는 **바이너리** | 보통 위 clone을 가리키는 심볼릭 링크이므로 **clone을 갱신해야 바뀝니다** |
+
+`release`가 clone의 카탈로그만 갱신하는 것은 의도된 동작입니다 — 남의 checkout을 대신 pull 하는 것은
+이 명령의 일이 아닙니다. 대신 clone이 뒤처져 있으면 release가 `⚠️`와 `next:` 힌트로 알리고,
+`doctor`의 `global CLI version drift` 검사가 PATH CLI 버전과 `installed_plugins.json`의 설치 버전이
+다를 때 경고합니다. 이 검사는 **plugin-dev 저장소에서도 실행됩니다** — 다른 소비자 전용 검사와 달리,
+전역 CLI와 소스 트리가 가장 크게 벌어지는 곳이 메인테이너 머신이기 때문입니다.
+
+> **왜 cache가 아니라 clone에 링크하나:** cache 경로는 버전별(`.../0.15.1/`)이라 심볼릭 링크가 그 버전에
+> 영구히 고정됩니다. clone이 안정적인 링크 대상인 게 맞고, 문제는 링크 대상이 아니라 clone의 코드를
+> 아무도 갱신하지 않는다는 점이었습니다.
+
 ---
 
 ## 최신 변경 설명 문서의 최신성 보장
