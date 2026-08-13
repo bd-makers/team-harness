@@ -18,6 +18,21 @@ modified: 2026-08-07
 
 ## [Unreleased]
 
+### Added
+- **Codex SessionStart 훅 템플릿** — `templates/.codex/hooks.json`을 신설해 `apply`/`init`이 대상 프로젝트에 설치한다. Claude 쪽 `.claude/settings.json`과 동일하게 `harness-team session-context`를 호출하므로 Codex 세션도 활성 task의 Context Card를 주입받는다. 훅은 Codex 세션의 cwd에서 실행되므로 `--target "$(git rev-parse --show-toplevel || pwd)"`로 저장소 루트를 직접 해석한다 — 하위 디렉터리에서 Codex를 띄워도 "활성 task 없음"으로 오보하지 않는다. `.claude/settings.json`·`.opencode/opencode.json`과 같은 JSON deep-merge 레인을 쓰므로 이미 자기 Codex 훅을 작성한 프로젝트도 harness 그룹을 추가로 얻는다(사용자 훅 보존, 재적용 멱등). `doctor`는 파일 존재·JSON 유효성만이 아니라 **harness SessionStart 훅이 실제로 들어 있는지**까지 확인한다 — 손으로 편집해 harness 그룹이 빠진 파일은 유효한 JSON이라 파싱 검사만으로는 healthy로 보이지만, 그 상태가 곧 Codex 세션이 조용히 task context를 잃는 드리프트다. apply 스모크가 3개 스택 전부에서 생성을 어써션한다.
+- **`.codex`를 백업 아키텍처 관리 대상에 포함** — `backup`/`clone`/`symlink`/`delete`/`upgrade`의 item 목록(JS 5곳 + shell 템플릿 3곳)과 AI gitignore 항목에 `.codex`가 빠져 있었다. 그대로면 `backup` 시 `.codex`만 프로젝트에 실물로 남고 `delete` 시 잔재가 남는다.
+
+### Changed
+- **규칙 표면의 비대칭 명시** — README 강제력 표에 `경로 스코프 규칙` 열을 추가하고, `.claude/rules`가 팀 전체 규칙이 아니라는 경고를 넣었다. 경로 스코프 규칙을 읽는 건 Claude Code(+미러를 받는 Cursor)뿐이고 Codex·Gemini·OpenCode는 `.claude/`를 보지 않는다 — 리뷰어(Codex)가 모르는 기준으로 리뷰하는 상황을 막으려면 리뷰 기준은 `AGENTS.md`에 있어야 한다.
+- **강제력 비대칭 표 정정** — README의 `Codex | hooks 0`은 0.11.0 probe 기준이라 낡았다. Codex CLI 0.147.0은 프로젝트 로컬 `.codex/hooks.json`을 지원한다(`~/.codex/config.toml` `[hooks.state]`에 신뢰 등록 확인). 훅이 Claude Code 전용 메커니즘이라는 설명을 걷어내고, 훅 표면과 커맨드 표면을 분리해 기술했다 — 슬래시 커맨드는 여전히 Claude Code 전용이고 Codex 스킬은 `.codex-plugin` 별도 설치가 필요하다.
+
+### Fixed
+- **Cursor 규칙 미러가 경로 스코프를 파괴하던 문제** — `.claude/rules/*.md`의 `paths:` frontmatter는 Claude Code가 매칭 파일을 읽을 때만 로드하라는 선언인데, 미러는 이를 무시하고 `alwaysApply: true`를 붙인 뒤 원본 frontmatter를 본문에 그대로 남겼다. 결과적으로 Cursor에서는 좁혀 둔 규칙이 항상 로드되고 죽은 frontmatter가 리터럴 텍스트로 남았다. 이제 `paths:` → Cursor `globs:`(auto-attach, `alwaysApply: false`)로 번역하고 원본 frontmatter는 소비한다. `paths:`가 없는 규칙만 `alwaysApply: true`로 유지한다.
+- **원본이 사라진 Cursor 미러가 영구히 남던 문제** — 미러가 쓰기만 하고 지우지 않아, 규칙 이름을 바꾸거나 하위 폴더로 옮기면 옛 `.mdc`가 그대로 남고 Cursor는 그것을 계속 로드했다. 규칙 하나가 옛 스코프와 새 스코프로 두 번 적용되는 셈이다(재귀 미러링이 들어가면서 "규칙을 폴더로 정리"가 실제 시나리오가 됐다). 이제 `.harness/cursor-mirror.json`에 **직전 실행이 쓴 경로를 기록**하고, 그 기록에 있으면서 이번에 다시 쓰이지 않은 산출물만 제거한다. 삭제 권한을 파일 내용이 아니라 기록에서 가져오는 이유는, 생성 `.mdc`에 찍는 `<!-- harness:mirror -->` 스탬프가 공개 문자열이라 생성물을 복사해 만든 사용자 규칙도 그 스탬프를 갖기 때문이다 — 그런 사본과 구버전 하네스 산출물은 기록에 없으므로 안전하다. 스탬프는 2차 게이트로 남아, 사용자가 스탬프를 지우면 인수한 것으로 보고 건드리지 않는다. `.claude/rules`가 통째로 삭제된 경우도 prune 대상이며, 비게 된 디렉터리를 정리하고 `sync`가 prune 건수를 보고한다.
+- **`globs:` 값이 YAML로 파싱되지 않던 경우** — `**/*.ts`·`[id].tsx`처럼 YAML indicator로 시작하는 glob이 첫 항목이면 생성된 Cursor frontmatter가 통째로 파싱 불가였다(`**`는 alias, `[`는 flow sequence로 읽힌다). 현 템플릿 4개는 전부 `src/`·`app/` 선행이라 우연히 통과하고 있었다. 이제 indicator로 시작할 때만 작은따옴표로 감싼다 — 일반 케이스는 Cursor 문서의 평문 형태를 그대로 유지한다.
+- **하위 디렉터리 규칙이 Cursor에 누락되던 문제** — 미러가 최상위 `readdir` 하나만 돌아 `.claude/rules/frontend/styling.md` 같은 규칙을 건너뛰었다. Claude Code는 `.claude/rules/**/*.md`를 재귀 탐색하므로, 규칙을 폴더로 정리한 프로젝트는 Claude에는 있고 Cursor에는 없는 규칙이 조용히 생긴다. 이제 재귀 탐색으로 구조를 보존해 미러하고(`frontend/styling.md` → `.cursor/rules/frontend/styling.mdc`), 공유 규칙 심볼릭 링크도 따라가되 realpath 집합으로 순환을 차단한다.
+- **Codex 스킬 커맨드 안내 공백** — `skills/harness-team/SKILL.md`의 커맨드 목록에 에이전트가 직접 호출해야 하는 `context init|check`(0.13)와 `release`(0.12)가 빠져 있었다. Codex는 이 스킬이 유일한 진입점이라 안내 공백이 곧 기능 공백이다. 훅·하네스가 호출하는 `session-context`·`boundary check`는 직접 호출 금지로 명시했다.
+
 ## [0.14.0] - 2026-08-08
 
 ### Added

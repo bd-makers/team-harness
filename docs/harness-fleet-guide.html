@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Harness 0.14 — firstmate · Orca 크루에서 task 운용하기</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3350;
+      --accent: #7c6af5;
+      --accent2: #50c8f5;
+      --accent3: #4df0aa;
+      --warning: #f5a623;
+      --danger: #f5566a;
+      --text: #e2e6f0;
+      --muted: #9aa2bf;
+      --tag-blue: #1e3a5f;
+      --tag-green: #0e3d30;
+      --tag-purple: #2a1f5c;
+      --tag-orange: #3d2700;
+      --tag-red: #3d1520;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      height: 54px;
+      padding: 0 2rem;
+      background: rgba(15, 17, 23, 0.95);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+    .nav-logo { flex: 0 0 auto; margin-right: 1.5rem; color: var(--accent); font-weight: 750; white-space: nowrap; }
+    .nav-links { display: flex; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+    .nav-links::-webkit-scrollbar { display: none; }
+    .nav-links a {
+      display: flex;
+      align-items: center;
+      height: 54px;
+      padding: 0 0.8rem;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      font-size: 0.84rem;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .nav-links a:hover { color: var(--text); border-bottom-color: var(--accent); }
+
+    main { width: min(1120px, 100%); margin: 0 auto; padding: 2.5rem 2rem 5rem; }
+    .hero { padding: 3.5rem 0 2.5rem; text-align: center; }
+    .eyebrow {
+      margin-bottom: 0.75rem;
+      color: var(--accent3);
+      font-size: 0.78rem;
+      font-weight: 750;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0 0 1rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      background-clip: text;
+      color: transparent;
+      font-size: clamp(1.9rem, 5.5vw, 3rem);
+      line-height: 1.2;
+    }
+    .hero > p { max-width: 800px; margin: 0 auto 1.4rem; color: var(--muted); }
+    .tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+    .tag { padding: 4px 12px; border-radius: 999px; font-size: 0.78rem; font-weight: 650; }
+    .tag-purple { background: var(--tag-purple); color: #a99cf8; }
+    .tag-blue { background: var(--tag-blue); color: var(--accent2); }
+    .tag-green { background: var(--tag-green); color: var(--accent3); }
+    .tag-orange { background: var(--tag-orange); color: var(--warning); }
+
+    .release-brief {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      overflow: hidden;
+      margin: 0 0 4rem;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--border);
+    }
+    .release-brief > div { min-width: 0; padding: 1.2rem 1.3rem; background: var(--surface); }
+    .release-brief dt { color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; }
+    .release-brief dd { margin: 0.25rem 0 0; font-size: 0.95rem; overflow-wrap: anywhere; }
+
+    section { margin-bottom: 4.5rem; scroll-margin-top: 76px; }
+    .section-title { display: flex; align-items: center; gap: 0.65rem; margin: 0 0 0.35rem; font-size: 1.5rem; }
+    .section-title::before { width: 4px; height: 1.5rem; border-radius: 2px; background: var(--accent); content: ""; }
+    .section-sub { margin: 0 0 1.4rem; color: var(--muted); font-size: 0.92rem; }
+    h3.sub { margin: 2.2rem 0 0.5rem; color: var(--accent2); font-size: 1.05rem; }
+    h4.sub2 { margin: 1.6rem 0 0.4rem; font-size: 0.95rem; }
+    p { overflow-wrap: anywhere; }
+
+    code {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--surface2);
+      color: var(--accent2);
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.83em;
+      overflow-wrap: anywhere;
+    }
+    pre {
+      overflow-x: auto;
+      margin: 0.9rem 0;
+      padding: 1rem 1.1rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: #14161f;
+      font-size: 0.82rem;
+      line-height: 1.6;
+    }
+    pre code { padding: 0; background: none; color: #cbd1e3; font-size: 0.82rem; }
+    pre .c { color: var(--muted); }
+    pre .g { color: var(--accent3); }
+    pre .r { color: var(--danger); }
+    pre .y { color: var(--warning); }
+    pre .b { color: var(--accent2); }
+    pre.hero-block { border-left: 3px solid var(--accent3); }
+
+    .table-wrap { overflow-x: auto; margin: 1rem 0; border: 1px solid var(--border); border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+    th, td { padding: 0.7rem 0.9rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
+    th { background: var(--surface2); color: var(--muted); font-size: 0.76rem; font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:nth-child(even) { background: rgba(34, 38, 58, 0.35); }
+    td strong { color: var(--text); }
+
+    .callout {
+      display: grid;
+      grid-template-columns: 2.1rem minmax(0, 1fr);
+      gap: 0.5rem;
+      margin: 1.2rem 0;
+      padding: 1rem 1.2rem;
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 10px;
+      background: var(--surface);
+      font-size: 0.88rem;
+    }
+    .callout .mark { font-size: 1.05rem; line-height: 1.4; }
+    .callout p { margin: 0 0 0.5rem; }
+    .callout p:last-child { margin-bottom: 0; }
+    .callout.warn { border-left-color: var(--warning); }
+    .callout.bad { border-left-color: var(--danger); }
+    .callout.good { border-left-color: var(--accent3); }
+    .callout h5 { margin: 0 0 0.35rem; font-size: 0.9rem; }
+
+    .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    .card { min-width: 0; padding: 1.15rem 1.25rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+    .card h4 { margin: 0 0 0.45rem; font-size: 0.95rem; }
+    .card p { margin: 0; color: var(--muted); font-size: 0.86rem; }
+    .card.ok { border-top: 3px solid var(--accent3); }
+    .card.no { border-top: 3px solid var(--danger); }
+    .card.note { border-top: 3px solid var(--accent2); }
+    .card ul { margin: 0.4rem 0 0; padding-left: 1.1rem; color: var(--muted); font-size: 0.86rem; }
+    .card li { margin-bottom: 0.25rem; }
+
+    .figure { overflow-x: auto; margin: 1.4rem 0 0.6rem; padding: 1.1rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+    .figure svg { display: block; width: 100%; min-width: 660px; height: auto; }
+    figcaption { margin: 0.4rem 0 0; color: var(--muted); font-size: 0.8rem; }
+    .svg-box { fill: var(--surface2); stroke: var(--border); }
+    .svg-box-accent { fill: #221d47; stroke: var(--accent); }
+    .svg-box-warn { fill: #2b2110; stroke: var(--warning); }
+    .svg-label { fill: var(--text); font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 12.5px; font-weight: 650; }
+    .svg-sub { fill: var(--muted); font-family: "SF Mono", monospace; font-size: 10px; }
+    .svg-gate { fill: var(--warning); font-family: -apple-system, sans-serif; font-size: 10.5px; }
+    .svg-ok { fill: var(--accent3); font-family: -apple-system, sans-serif; font-size: 10.5px; }
+    .svg-line { stroke: var(--accent2); stroke-width: 1.6; fill: none; }
+    .svg-line-dash { stroke: var(--warning); stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; }
+
+    ol.steps { margin: 1rem 0; padding-left: 1.3rem; }
+    ol.steps > li { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    ul.tight { margin: 0.6rem 0; padding-left: 1.2rem; font-size: 0.9rem; }
+    ul.tight li { margin-bottom: 0.35rem; }
+    .pill { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.71rem; font-weight: 700; white-space: nowrap; }
+    .pill-probe { background: var(--tag-green); color: var(--accent3); }
+    .pill-doc { background: var(--tag-blue); color: var(--accent2); }
+    .pill-src { background: var(--tag-purple); color: #a99cf8; }
+    .pill-no { background: var(--tag-red); color: var(--danger); }
+    .legend { display: flex; flex-wrap: wrap; gap: 0.8rem; margin: 0.6rem 0 0; color: var(--muted); font-size: 0.8rem; }
+
+    footer { padding: 2rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.8rem; text-align: center; }
+
+    @media (max-width: 780px) {
+      nav { padding: 0 1rem; }
+      main { padding: 1.5rem 1rem 4rem; }
+      .hero { padding-top: 2.5rem; }
+      .release-brief, .grid2, .grid3 { grid-template-columns: minmax(0, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <nav aria-label="문서 섹션">
+    <div class="nav-logo">Harness 0.14 · fleet guide</div>
+    <div class="nav-links">
+      <a href="#bootstrap">크루메이트 부트스트랩</a>
+      <a href="#facts">왜 이 순서인가</a>
+      <a href="#boundary">소유 경계</a>
+      <a href="#firstmate">firstmate 운용</a>
+      <a href="#orca">Orca 운용</a>
+      <a href="#conflict">병렬 충돌 지도</a>
+      <a href="#safety">안전</a>
+      <a href="#checklist">체크리스트</a>
+      <a href="#pitfalls">함정</a>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Fleet guide · 0.14.0</div>
+      <h1>크루가 여러 명일 때<br>하네스 task는 이렇게 굴린다</h1>
+      <p>단일 세션용 절차는 <code>docs/harness-task-guide.html</code>에 있습니다. 이 문서는 <strong>firstmate</strong>가 크루메이트를 워크트리에 띄우고 <strong>Orca</strong>가 그 워크트리와 터미널을 소유하는 환경에서, 하네스 task 계약이 어디서 끊기고 무엇으로 이어 붙이는지를 다룹니다. 결론부터: <strong>활성 포인터는 git을 타고 오지 않으므로 크루메이트의 첫 명령은 task 활성화</strong>입니다.</p>
+      <div class="tags">
+        <span class="tag tag-purple">firstmate crew</span>
+        <span class="tag tag-blue">Orca worktree · orchestration</span>
+        <span class="tag tag-green">실측 4건</span>
+        <span class="tag tag-orange">병렬 안전</span>
+      </div>
+    </header>
+
+    <dl class="release-brief" aria-label="문서 요약">
+      <div><dt>대상</dt><dd>firstmate 캡틴 · 크루메이트 · Orca 코디네이터 역할을 하는 에이전트</dd></div>
+      <div><dt>불변식</dt><dd>1 워크트리 = 1 하네스 task = 1 writer</dd></div>
+      <div><dt>정본</dt><dd><code>orca skills get</code> · firstmate <code>AGENTS.md §7·§11</code> · 하네스 <code>AGENTS.md</code></dd></div>
+    </dl>
+
+    <section id="bootstrap">
+      <h2 class="section-title">1. 크루메이트 부트스트랩 — 워크트리에 들어가면 이 순서로</h2>
+      <p class="section-sub">이 문서에서 발견한 실패는 전부 <strong>이 시퀀스에서 한 줄이 빠진 것</strong>이었습니다. 브리프에 그대로 붙여 넣어도 됩니다.</p>
+
+      <pre class="hero-block"><code><span class="c"># 1. 워크트리 격리 확인 — 주 체크아웃에서 돌리면 즉시 멈춘다 (ship 브리프의 assertion)</span>
+git rev-parse --show-toplevel; test -f .git &amp;&amp; echo "linked worktree OK"
+
+<span class="c"># 2. 하네스 task 활성화 — .harness/active.json은 gitignore라 따라오지 않는다</span>
+<span class="c">#    docs/&lt;user&gt;/&lt;name&gt;/ 이 이미 있으면 '활성화', 없으면 파일 5개 생성</span>
+harness-team task &lt;name&gt; --member &lt;user&gt;
+
+<span class="c"># 3. 카드와 경계 확인</span>
+harness-team context check
+harness-team boundary check        <span class="c"># 선언 없으면 not-configured로 통과</span>
+
+<span class="c"># 4. 작업 → 커밋 (plan 체크박스 갱신 포함)</span>
+
+<span class="c"># 5. handoff — 훅이 있으면 커밋 때 이미 돌았고, 없거나 확신이 없으면 직접</span>
+harness-team handoff
+
+<span class="c"># 6. 종결은 캡틴/배송 경로 승인 이후 (가드 4종을 통과해야 닫힌다)</span>
+harness-team done</code></pre>
+
+      <div class="callout bad">
+        <div class="mark">🚫</div>
+        <div>
+          <h5>워크트리에서 절대 돌리지 않는 것</h5>
+          <p><code>harness-team apply</code> · <code>init</code> · <code>sync</code> · <code>migrate</code> · <code>upgrade</code> · <code>backup</code> — 관리 구역(<code>AGENTS.md</code> 마커 섹션, <code>.claude/</code>, rules)을 재생성해 브랜치를 오염시킵니다. 하네스 적용은 <strong>별도 task</strong>의 일이고, 크루메이트의 기본 자세는 "이미 적용된 하네스를 쓴다"입니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="facts">
+      <h2 class="section-title">2. 왜 이 순서인가 — 확인한 사실 4개</h2>
+      <p class="section-sub">아래는 이 저장소의 소스와 실제 실행으로 확인한 것입니다. 표의 배지가 근거의 종류를 나타냅니다.</p>
+      <div class="legend">
+        <span><span class="pill pill-probe">실측</span> 실제로 실행해 확인</span>
+        <span><span class="pill pill-src">소스</span> 하네스 소스 코드</span>
+        <span><span class="pill pill-doc">문서</span> firstmate·Orca 문서</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>사실</th><th>근거</th><th>그래서 무엇을 해야 하나</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong><code>.harness/active.json</code>·<code>config.json</code>은 추적되지 않는다</strong></td>
+              <td><code>.gitignore</code>에 두 줄 모두 있고 <code>git ls-files .harness</code>는 빈 결과 <span class="pill pill-probe">실측</span></td>
+              <td>새 워크트리에는 <strong>활성 task가 없다</strong> → 첫 명령이 <code>harness-team task &lt;name&gt;</code></td>
+            </tr>
+            <tr>
+              <td><strong>워크트리에서는 훅을 설치할 수 없다</strong></td>
+              <td>연결 워크트리의 <code>.git</code>은 파일이고, <code>installPostCommitHook</code>은 <code>.git/hooks</code> 접근 실패 시 조용히 <code>return</code> <span class="pill pill-src">소스</span> <span class="pill pill-probe">실측</span></td>
+              <td>훅 설치는 <strong>주 체크아웃에서 1회</strong>. 워크트리에서 설치를 시도하지 않는다</td>
+            </tr>
+            <tr>
+              <td><strong>그러나 훅은 주 체크아웃에서 공유 실행된다</strong></td>
+              <td>워크트리에서 커밋 → 훅 발화, 그때 <strong>cwd는 워크트리</strong>(프로브 출력: <code>HOOK FIRED in …/wt1</code>), <code>git rev-parse --git-path hooks</code>는 주 체크아웃 경로 <span class="pill pill-probe">실측</span></td>
+              <td>에이전트 종류와 무관하게 <strong>커밋하는 누구에게나</strong> 발동한다(Claude 전용이 아니다). 다만 cwd가 워크트리이므로 <code>handoff</code>는 <strong>워크트리의</strong> 활성 포인터를 읽는다 — 없으면 주 체크아웃 handoff를 대신 고치지 않고 그냥 no-op이다</td>
+            </tr>
+            <tr>
+              <td><strong><code>handoff</code>는 포인터가 없으면 아무 일도 안 한다</strong></td>
+              <td><code>runHandoffAuto</code>가 <code>readActive</code> → <code>null</code>이면 즉시 <code>return</code> <span class="pill pill-src">소스</span></td>
+              <td>2단계를 건너뛰면 <strong>자동이든 수동이든</strong> handoff는 갱신되지 않는다</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout warn">
+        <div class="mark">🔁</div>
+        <div>
+          <h5>운영 메모 한 줄 교정 — "왜"가 다르면 필요한 단계가 하나 늘어난다</h5>
+          <p>firstmate <code>data/learnings.md</code>에는 <em>"handoff 자동 갱신은 Claude Code 훅이라 다른 하네스 작업자에겐 발동하지 않으니 <code>harness-team handoff</code>를 직접 부를 것"</em>으로 적혀 있습니다. 지시(직접 부르기)는 옳지만 이유가 다릅니다: handoff를 부르는 것은 <strong>git post-commit 훅</strong>이고, 위 실측대로 <strong>워크트리에서 커밋하는 어떤 에이전트에게도</strong> 발동합니다. Claude 전용인 것은 <code>SessionStart</code>(카드 주입)와 <code>PreToolUse</code>/<code>PostToolUse</code> 계열입니다.</p>
+          <p>차이가 중요한 이유: 진짜 원인은 <strong>활성 포인터의 부재</strong>이므로, 직접 부르기만으로는 부족하고 <strong>활성화가 선행되어야</strong> 합니다. 지금 브리프에는 그 단계가 없습니다 — §1의 2번 줄을 추가하면 닫힙니다.</p>
+        </div>
+      </div>
+
+      <h3 class="sub">부수 효과: <code>docs/&lt;user&gt;/</code> 경로가 갈릴 수 있다</h3>
+      <p>member 결정 순서는 <code>--member</code> → <code>git config user.name</code> → <code>$USER</code> → <code>unknown</code>이고, 이를 고정해 두는 <code>.harness/config.json</code>은 <strong>추적되지 않습니다</strong>. 같은 task가 다른 home·다른 호스트(secondmate)에서 활성화되면 <code>docs/other-name/&lt;task&gt;/</code>라는 <strong>두 번째 트리</strong>가 생기고, 두 트리는 서로를 모릅니다. 그래서 브리프는 <code>--member</code>를 못박습니다.</p>
+      <pre><code><span class="c"># 브리프에 넣을 형태 — 값은 프로젝트의 docs/&lt;user&gt;/ 와 정확히 일치해야 한다</span>
+harness-team task th-token-refresh --member chad</code></pre>
+      <p>이 플래그가 항상 이기는 이유: user 결정은 <code>config.json</code>의 <code>user</code>를 먼저 보고 없으면 <code>--member</code>를 포함한 감지 순서로 내려가는데, 워크트리에는 그 <code>config.json</code>이 아예 없습니다 <span class="pill pill-src">소스</span>. 즉 워크트리에서는 <code>--member</code>가 유일한 확정 수단입니다.</p>
+    </section>
+
+    <section id="boundary">
+      <h2 class="section-title">3. 소유 경계 — 세 시스템이 각각 무엇을 소유하나</h2>
+      <p class="section-sub">겹치는 것처럼 보이는 세 개가 실제로는 서로 다른 층을 소유합니다. 충돌은 대개 층을 착각할 때 생깁니다.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>층</th><th>소유자</th><th>구체적으로</th></tr></thead>
+          <tbody>
+            <tr><td>작업의 입력·상태·출력 계약</td><td><strong>team-harness</strong></td><td><code>spec</code>(요구사항·Ontology·경계) · <code>plan</code>(검증 계약) · <code>context</code>(working set) · <code>artifact</code>(결과·Reviews·Learnings) · <code>handoff</code></td></tr>
+            <tr><td>크루 라이프사이클과 배송</td><td><strong>firstmate</strong></td><td>intake·브리프·spawn·감독·status 신호·배송 모드(<code>no-mistakes</code>/<code>direct-PR</code>/<code>local-only</code>)·PR·병합 권한 <span class="pill pill-doc">문서</span></td></tr>
+            <tr><td>워크트리·터미널·조율 상태</td><td><strong>Orca</strong></td><td>워크트리 생성/해제 · 터미널 핸들 · Run/Task/Dispatch · <code>worker_done</code>·ask/reply·gate <span class="pill pill-doc">문서</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <figure class="figure">
+        <svg viewBox="0 0 960 320" role="img" aria-labelledby="own-title">
+          <title id="own-title">캡틴·firstmate·크루메이트 워크트리와 하네스 파일의 소유 경계</title>
+          <defs>
+            <marker id="fa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#50c8f5"></path>
+            </marker>
+            <marker id="fw" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#f5a623"></path>
+            </marker>
+          </defs>
+
+          <rect class="svg-box-accent" x="360" y="14" width="240" height="46" rx="9"></rect>
+          <text class="svg-label" x="480" y="34" text-anchor="middle">캡틴 (사람)</text>
+          <text class="svg-sub" x="480" y="50" text-anchor="middle">요청 · 결정 · 병합 승인</text>
+
+          <path class="svg-line" d="M480,60 L480,88" marker-end="url(#fa)"></path>
+
+          <rect class="svg-box" x="300" y="92" width="360" height="52" rx="9"></rect>
+          <text class="svg-label" x="480" y="113" text-anchor="middle">first mate — 프로젝트에 대해 읽기 전용</text>
+          <text class="svg-sub" x="480" y="130" text-anchor="middle">브리프 작성 · spawn · 감독 · 배송 모드 결정</text>
+
+          <path class="svg-line" d="M380,144 L200,186" marker-end="url(#fa)"></path>
+          <path class="svg-line" d="M480,144 L480,186" marker-end="url(#fa)"></path>
+          <path class="svg-line" d="M580,144 L760,186" marker-end="url(#fa)"></path>
+
+          <rect class="svg-box" x="60" y="190" width="280" height="86" rx="10"></rect>
+          <text class="svg-label" x="200" y="211" text-anchor="middle">크루메이트 A · 워크트리</text>
+          <text class="svg-sub" x="200" y="230" text-anchor="middle">harness task #1 — 유일한 writer</text>
+          <text class="svg-ok" x="200" y="248" text-anchor="middle">spec · plan · context · artifact (git)</text>
+          <text class="svg-gate" x="200" y="266" text-anchor="middle">active.json ✗ 직접 활성화 필요</text>
+
+          <rect class="svg-box" x="360" y="190" width="240" height="86" rx="10"></rect>
+          <text class="svg-label" x="480" y="211" text-anchor="middle">크루메이트 B · 워크트리</text>
+          <text class="svg-sub" x="480" y="230" text-anchor="middle">harness task #2</text>
+          <text class="svg-ok" x="480" y="248" text-anchor="middle">독립 브랜치 · 독립 PR</text>
+          <text class="svg-gate" x="480" y="266" text-anchor="middle">active.json ✗</text>
+
+          <rect class="svg-box-warn" x="620" y="190" width="280" height="86" rx="10"></rect>
+          <text class="svg-label" x="760" y="211" text-anchor="middle">주 체크아웃 (projects/&lt;repo&gt;)</text>
+          <text class="svg-sub" x="760" y="230" text-anchor="middle">.git/hooks/post-commit ← 설치 지점</text>
+          <text class="svg-gate" x="760" y="248" text-anchor="middle">읽기 전용 — 여기서 task 문서를 손대지 않는다</text>
+          <text class="svg-sub" x="760" y="266" text-anchor="middle">훅은 모든 워크트리에서 공유 실행</text>
+
+          <path class="svg-line-dash" d="M620,246 L344,246" marker-end="url(#fw)"></path>
+          <text class="svg-sub" x="480" y="300" text-anchor="middle">Orca를 backend로 쓰면 워크트리·터미널의 소유자는 Orca이고, 크루메이트 하네스는 그 터미널 안의 에이전트 프로세스다</text>
+        </svg>
+        <figcaption>하네스 문서는 git을 타고 흐르고, 활성 포인터는 흐르지 않는다. 훅은 주 체크아웃에 한 번 설치돼 모든 워크트리에 공유된다.</figcaption>
+      </figure>
+
+      <div class="callout">
+        <div class="mark">🔒</div>
+        <div>
+          <p>first mate는 프로젝트에 대해 <strong>읽기 전용</strong>입니다(hard rule 1) <span class="pill pill-doc">문서</span>. 그래서 하네스 문서의 수정도 크루메이트가 브랜치에서 합니다. 캡틴이 주 체크아웃에서 <code>spec.md</code>를 직접 고치면, 브랜치를 소유한 크루메이트와 <strong>같은 파일을 두 곳에서 쓰는</strong> 상태가 됩니다 — D4 위반이고 병합 충돌의 흔한 원인입니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="firstmate">
+      <h2 class="section-title">4. firstmate 운용 — 브리프가 하네스를 가리키게 쓴다</h2>
+      <p class="section-sub">브리프는 SSOT가 아니라 <strong>SSOT로 가는 포인터</strong>입니다. 요구사항을 브리프에 복사하면 spec과 브리프 두 개의 진실이 생기고, 크루메이트는 대개 브리프를 믿습니다.</p>
+
+      <h3 class="sub">브리프에 넣는 하네스 절</h3>
+      <pre><code><span class="c">## 하네스 계약 (이 절이 요구사항의 정본을 가리킨다)</span>
+
+- 정본: `docs/chad/th-token-refresh/th-token-refresh-spec.md` (요구사항·Ontology·경계 계약)
+- 단계: 같은 디렉터리의 `-plan.md`. 체크박스는 완료할 때마다 `- [x]`로 갱신한다.
+- 첫 명령: `harness-team task th-token-refresh --member chad`
+  <span class="c"># 활성 포인터는 gitignore라 이 워크트리에 없다. 이걸 건너뛰면 handoff·done이 조용히 무력화된다.</span>
+- 커밋 후: `harness-team handoff`
+- 금지: `apply` / `init` / `sync` / `migrate` / `upgrade` / `backup`
+- 완료 보고 전: `harness-team done`이 통과해야 한다 (미완 박스·artifact 템플릿·미커밋·커밋 0개)</code></pre>
+
+      <p>그 위에 이 저장소에서 이미 검증된 브리프 3절 패턴을 얹습니다 — <strong>이미 확인된 사실(다시 조사하지 말 것)</strong> · <strong>하지 말 것</strong> · <strong>검증(증거 없이 완료 처리 금지)</strong>. 첫 절이 재조사를 막고, 둘째 절이 관리 구역 훼손을 막고, 셋째 절이 "보고서는 상세한데 산출물이 없는" 실패를 막습니다.</p>
+
+      <h3 class="sub">status 신호 ↔ 하네스 기록</h3>
+      <p>firstmate의 status는 <strong>감독자가 움직여야 하는 사건</strong>만 적는 희소 채널이고, 하네스 문서는 <strong>다음 세션이 읽을 상태</strong>입니다. 둘은 같은 내용을 두 번 쓰는 게 아니라 역할이 다릅니다.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>firstmate 신호</th><th>언제</th><th>하네스 쪽에 남기는 것</th></tr></thead>
+          <tbody>
+            <tr><td><code>paused:</code></td><td>스스로 풀릴 것으로 <em>선언된</em> 외부 대기</td><td>TCC <code>## Now</code>의 중단 조건 한 줄. capsule로 승격하지 않는다</td></tr>
+            <tr><td><code>blocked:</code></td><td>firstmate가 움직여야 풀림</td><td>TCC failure capsule(<code>### F-00x</code>) — Signal·Tried·현재 가설·다음 판별자·안전한 source 경로</td></tr>
+            <tr><td><code>needs-decision:</code></td><td>ask-user 권한이 필요한 판단</td><td>spec <code>## 결정</code>에 D-초안(근거 + 재고 지점). 구현 작업자가 자기 발견을 스스로 결정하지 않는다 <span class="pill pill-doc">문서</span></td></tr>
+            <tr><td><code>done: PR &lt;url&gt; checks green</code></td><td><code>no-mistakes</code> CI green</td><td>artifact <code>## 결과</code> + <code>## Reviews</code>(파이프라인 판정·risk·조치)</td></tr>
+            <tr><td><code>done: ready in branch</code></td><td><code>local-only</code></td><td>artifact <code>## 결과</code>. 병합 승인은 캡틴</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p><code>paused:</code>는 양방향으로 새는 신호입니다 — 끝나지 않을 대기를 "곧 풀릴 외부 대기"로 오분류한 사례가 있습니다 <span class="pill pill-doc">문서</span>. 판정 기준을 한 줄로 적어 두면(<em>"무엇이 일어나면 풀리는가"</em>) 그 오분류가 눈에 보입니다.</p>
+
+      <h3 class="sub">배송 모드와 리뷰 소유권 — 리뷰를 겹치지 않는다</h3>
+      <p>하네스 리뷰 프로토콜은 "중요한 변경엔 작성자와 분리된 리뷰"를 요구하고, firstmate는 "선택된 배송 경로가 자기 rigor를 소유하며 수동 리뷰를 겹쳐 쌓지 말 것"을 요구합니다 <span class="pill pill-doc">문서</span>. 충돌이 아니라 <strong>모드별로 리뷰의 주인이 정해지는 것</strong>으로 읽습니다.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>모드</th><th>리뷰 주인</th><th><code>## Reviews</code>에 적는 것</th><th>하지 않는 것</th></tr></thead>
+          <tbody>
+            <tr><td><code>no-mistakes</code></td><td>파이프라인</td><td>파이프라인 판정 · risk 등급 · ask-user 결정과 조치 · PR URL</td><td><code>/harness-codex-review</code>를 위에 덧붙이지 않는다 <span class="pill pill-no">금지</span></td></tr>
+            <tr><td><code>direct-PR</code></td><td>하네스 외부 리뷰가 <strong>유일한</strong> 리뷰</td><td><code>/harness-codex-review</code> 요약·발견·조치(날짜)</td><td>파이프라인을 흉내내는 수동 게이트를 새로 만들지 않는다</td></tr>
+            <tr><td><code>local-only</code></td><td>동일</td><td>동일 + 병합 승인자와 시각</td><td>가드 없는 저수준 merge 명령을 직접 부르지 않는다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p>어느 모드든 <strong>기록 없는 리뷰는 안 한 리뷰</strong>라는 하네스 규칙은 그대로입니다. Gemini 병렬 리뷰가 불가능한 머신에서는 "미실행" 사실을 남깁니다.</p>
+
+      <h3 class="sub">scout에는 하네스 task를 만들지 않는다</h3>
+      <p>scout의 산출물은 <code>data/&lt;id&gt;/report.md</code>이고 워크트리는 scratch로 폐기됩니다 <span class="pill pill-doc">문서</span>. 거기서 하네스 task를 만들면 <strong>폐기될 워크트리에 SSOT를 쓰는</strong> 셈입니다. 규칙:</p>
+      <ul class="tight">
+        <li>scout 단계에서는 하네스 task를 만들지 않는다.</li>
+        <li>구현이 별도로 승인되면 promote한 ship task에서 <code>harness-team task &lt;name&gt;</code>을 만들고, spec <code>## 참고</code>에 리포트 경로를 인용한다.</li>
+        <li>재현된 버그는 그 ship task의 <strong>회귀 테스트</strong>로 바뀐다 — 리포트에만 남기지 않는다.</li>
+      </ul>
+    </section>
+
+    <section id="orca">
+      <h2 class="section-title">5. Orca 운용 — 인계인가 감독인가를 먼저 가른다</h2>
+      <p class="section-sub">이 갈래를 틀리면 잘못된 명령을 씁니다. 기준은 사용자가 <strong>감독을 요청했는지</strong>입니다 <span class="pill pill-doc">문서</span>.</p>
+
+      <figure class="figure">
+        <svg viewBox="0 0 960 250" role="img" aria-labelledby="orca-title">
+          <title id="orca-title">Orca에서 전체 인계와 감독 조율의 분기</title>
+          <defs>
+            <marker id="oa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#50c8f5"></path>
+            </marker>
+          </defs>
+
+          <rect class="svg-box-accent" x="360" y="12" width="240" height="44" rx="9"></rect>
+          <text class="svg-label" x="480" y="32" text-anchor="middle">요청을 분류한다</text>
+          <text class="svg-sub" x="480" y="47" text-anchor="middle">감독을 명시했는가?</text>
+
+          <path class="svg-line" d="M420,56 L230,92" marker-end="url(#oa)"></path>
+          <path class="svg-line" d="M540,56 L730,92" marker-end="url(#oa)"></path>
+          <text class="svg-sub" x="290" y="78">아니오 — "넘겨줘 / 다른 에이전트"</text>
+          <text class="svg-sub" x="600" y="78">예 — "감독 / 기다려 / DAG / 게이트"</text>
+
+          <rect class="svg-box" x="60" y="96" width="340" height="120" rx="10"></rect>
+          <text class="svg-label" x="230" y="118" text-anchor="middle">전체 인계 (ownership transfer)</text>
+          <text class="svg-sub" x="80" y="140">worktree create --no-parent --agent … --prompt …</text>
+          <text class="svg-sub" x="80" y="158">프롬프트에 하네스 활성화 명령을 포함한다</text>
+          <text class="svg-gate" x="80" y="178">금지: task-create · dispatch --inject · check --wait</text>
+          <text class="svg-gate" x="80" y="196">전달 후 진행 상황을 엿보지 않는다</text>
+
+          <rect class="svg-box" x="560" y="96" width="340" height="120" rx="10"></rect>
+          <text class="svg-label" x="730" y="118" text-anchor="middle">감독 조율 (supervised)</text>
+          <text class="svg-sub" x="580" y="140">run-create → task-create → worker-start</text>
+          <text class="svg-sub" x="580" y="158">check --wait --types worker_done,escalation,question</text>
+          <text class="svg-sub" x="580" y="176">worker_done 수신 → 처리 → worker-release</text>
+          <text class="svg-ok" x="580" y="196">timeout·{count:0}은 실패가 아니라 체크포인트</text>
+        </svg>
+        <figcaption>인계는 lifecycle 의무를 만들지 않고, 감독은 만든다. 두 경로에 같은 명령을 섞지 않는다.</figcaption>
+      </figure>
+
+      <h3 class="sub">불변식: 1 Orca 워크트리 = 1 하네스 task = 1 writer</h3>
+      <p>이것이 병렬 크루에서 D4(쓰기는 단일 스레드)가 살아남는 방식입니다. 병렬성은 <strong>워크트리 사이</strong>에 있고, 하나의 SSOT 범위 안에는 없습니다. 같은 task 문서를 두 워커가 만지게 하는 배치는 D4 위반이며, Orca는 충돌을 추론해 주지 않습니다 — 배치와 동시성은 호출자의 책임입니다 <span class="pill pill-doc">문서</span>.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>하네스 쪽</th><th>Orca 쪽 대응</th><th>주의</th></tr></thead>
+          <tbody>
+            <tr><td>task 이름 <code>&lt;name&gt;</code></td><td>worktree <code>--name</code>, Task spec의 제목</td><td>이름을 일치시키면 <code>worktree list</code>만 보고 어느 task인지 알 수 있다</td></tr>
+            <tr><td>spec = 요구사항 정본</td><td><code>task-create --spec</code>에는 <strong>경로 포인터</strong>만</td><td>spec 본문을 복사하면 두 개의 진실이 생긴다</td></tr>
+            <tr><td>plan 체크박스</td><td>워커의 <code>status</code>/heartbeat</td><td>heartbeat는 살아있음의 증거이고 완료의 증거가 아니다</td></tr>
+            <tr><td>artifact <code>## 결과</code></td><td><code>worker_done --outcome … --files-modified …</code> body</td><td>body에 artifact 경로를 적어 코디네이터가 증거를 열 수 있게 한다</td></tr>
+            <tr><td><code>done</code> 가드 통과</td><td>코디네이터의 수락 판단</td><td>가드를 통과하지 못한 <code>worker_done</code>은 "완료"가 아니다</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <div class="mark">📎</div>
+        <div>
+          <p>플래그와 하위 명령은 <strong>이 문서가 아니라 바이너리가 소유</strong>합니다. 릴리스마다 바뀌므로 실행 전에 정본을 읽으세요: <code>orca skills get orca-cli</code> · <code>orca skills get orchestration</code>. 실행 전 <code>orca status --json</code>으로 <code>reachable=true</code>·<code>state="ready"</code>를 확인합니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="conflict">
+      <h2 class="section-title">6. 병렬 충돌 지도 — 어느 하네스 파일이 실제로 깨지나</h2>
+      <p class="section-sub">task 문서는 task별로 갈라져 있어 안전하지만, <strong>사용자 단위 집계 파일 3개</strong>는 브랜치마다 갈립니다.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>파일</th><th>병렬에서 어떻게 깨지나</th><th>해결</th></tr></thead>
+          <tbody>
+            <tr><td><code>docs/&lt;user&gt;/&lt;name&gt;/*</code></td><td>task별 디렉터리라 서로 닿지 않는다</td><td>1 워크트리 = 1 task 규칙만 지키면 충돌 없음</td></tr>
+            <tr><td><code>docs/&lt;user&gt;/&lt;user&gt;-handoff.md</code></td><td><strong>매 커밋마다 전체가 덮어써진다</strong>(<code>writeFile</code>) → 브랜치마다 다른 내용 → 병합 시 거의 항상 충돌 <span class="pill pill-src">소스</span></td><td>어느 쪽이든 취해 충돌을 닫고 <code>harness-team handoff</code>로 재생성한다. 손으로 병합하지 않는다</td></tr>
+            <tr><td><code>docs/task_summary.md</code></td><td>표 끝에 행 append → 같은 자리에 두 행</td><td>양쪽 행을 모두 살린다(정보 손실 없음)</td></tr>
+            <tr><td><code>docs/&lt;user&gt;/&lt;user&gt;-task.md</code></td><td><code>## Open</code> 아래 삽입, <code>done</code> 시 <code>## Completed</code>로 이동</td><td>양쪽 항목 유지 후 실제 done 상태만 정리</td></tr>
+            <tr><td><code>.harness/active.json</code></td><td>추적되지 않아 충돌 자체가 불가능</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout good">
+        <div class="mark">🧭</div>
+        <div>
+          <p>충돌을 줄이는 배치 규칙: <strong>서로 다른 task는 서로 다른 워크트리에서, 같은 task의 후속 단계는 같은 워크트리에서</strong>. 파일이 겹치는 것 자체는 직렬화 이유가 못 됩니다 — 진짜 이유는 의미적 의존, 공유 가변 외부 상태, 양립 불가한 마이그레이션입니다 <span class="pill pill-doc">문서</span>.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="safety">
+      <h2 class="section-title">7. 안전 — "확인 목적"으로 실행하면 안 되는 것</h2>
+      <p class="section-sub">감독자가 상태를 확인하려고 프로젝트 명령을 돌리는 순간이 가장 위험합니다. <code>--help</code>가 없는 명령은 인자를 그대로 실행으로 받습니다.</p>
+
+      <div class="callout bad">
+        <div class="mark">💥</div>
+        <div>
+          <h5><code>harness-team release --help</code>는 도움말이 아니라 실제 patch 릴리스다</h5>
+          <p>CLI는 <code>help</code>/<code>--help</code>/<code>-h</code>를 <strong>명령 위치에서만</strong> 처리합니다. <code>release</code> 뒤의 <code>--help</code>는 플래그로 파싱되고, bump는 <code>taskArgs[0] || 'patch'</code>로 결정됩니다 <span class="pill pill-src">소스</span> — 즉 4개 매니페스트가 실제로 올라가고 캐시·마켓플레이스가 동기화됩니다. 실제 사고 기록이 있습니다(2026-08-07) <span class="pill pill-doc">문서</span>.</p>
+          <p>절차는 <strong>문서로 읽고</strong>(<code>MAINTAINING.md</code> 릴리스 절차) 실행은 작업자에게 맡기세요. 확인이 꼭 필요하면 안전한 형태는 <code>harness-team release --dry-run</code>입니다 — 이 플래그는 실제로 존재하며 변경 전에 결과만 돌려줍니다 <span class="pill pill-src">소스</span>.</p>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="card no">
+          <h4>워크트리에서 금지</h4>
+          <ul>
+            <li><code>apply</code>/<code>init</code>/<code>sync</code> — 관리 구역 재생성</li>
+            <li><code>migrate</code>/<code>upgrade</code>/<code>backup</code> — 구조 이전은 별도 task</li>
+            <li>하네스가 <code>AGENTS.md</code>를 소유한 저장소에서 <code>fm-ensure-agents-md.sh</code> <span class="pill pill-doc">문서</span></li>
+          </ul>
+        </div>
+        <div class="card note">
+          <h4>두 채널을 따로 확인</h4>
+          <p>릴리스는 <strong>전역 <code>harness-team</code> CLI를 갱신하지 않습니다</strong> — 슬래시 커맨드 캐시만 새 버전이 되고, 훅이 부르는 전역 CLI는 마켓플레이스 클론에 묶여 옛 버전으로 남습니다 <span class="pill pill-doc">문서</span>. 크루메이트가 신기능을 "없다"고 보고하면 먼저 <code>harness-team doctor</code>와 버전 채널을 확인하세요.</p>
+        </div>
+      </div>
+
+      <h3 class="sub">완료 판정은 증거로</h3>
+      <ul class="tight">
+        <li>칸반·crew-state의 "done"을 병합 근거로 쓰지 않는다 <span class="pill pill-doc">문서</span>.</li>
+        <li>워커 보고서는 <strong>증거를 확인</strong>한다 — <code>ls</code> 한 번, 파일 한 번 열기. 상세하고 일관된 보고서가 산출물의 존재 증명은 아니다.</li>
+        <li>반대로 워커가 <strong>스스로 신고한 간극</strong>은 대개 진짜다 — 확인하고 닫는다.</li>
+        <li>하네스 쪽 증거는 <code>done</code> 가드다: 미완 박스 0, artifact 내용 있음, 미커밋 없음, 활성화 이후 커밋 ≥ 1.</li>
+      </ul>
+    </section>
+
+    <section id="checklist">
+      <h2 class="section-title">8. 체크리스트</h2>
+      <div class="grid2">
+        <div class="card ok">
+          <h4>크루메이트 — 완료 보고 전</h4>
+          <ul>
+            <li>워크트리 격리 assertion 통과했다</li>
+            <li><code>harness-team task &lt;name&gt; --member &lt;user&gt;</code>로 활성화했다</li>
+            <li>plan 체크박스가 실제 상태와 일치한다(위장 체크 없음)</li>
+            <li>artifact <code>## 결과</code>를 썼고, 모드에 맞는 <code>## Reviews</code>를 남겼다</li>
+            <li><code>context check</code> green, <code>boundary check</code> pass 또는 not-configured</li>
+            <li>커밋했고 <code>harness-team handoff</code>가 handoff를 갱신했다</li>
+            <li>status는 <code>done: …</code> 형식으로, 증거 경로를 포함해 보고했다</li>
+          </ul>
+        </div>
+        <div class="card note">
+          <h4>캡틴/코디네이터 — 병합 승인 전</h4>
+          <ul>
+            <li>PR이 <strong>전체 URL</strong>로 왔고 CI가 green이다(red 병합 금지)</li>
+            <li>diff에 task 문서 5종의 갱신이 들어 있다</li>
+            <li>artifact가 템플릿 그대로가 아니다 — 한 번 열어서 확인했다</li>
+            <li>집계 파일 3개의 충돌을 <code>handoff</code> 재생성으로 닫았다</li>
+            <li><code>harness-team done</code>이 <code>--force</code> 없이 통과했다(우회했다면 이유가 artifact에 있다)</li>
+            <li>병합은 기록되는 경로로 했다(가드 없는 저수준 merge 금지)</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="pitfalls">
+      <h2 class="section-title">9. 함정</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>증상</th><th>원인</th><th>조치</th></tr></thead>
+          <tbody>
+            <tr><td>handoff가 한 번도 갱신되지 않았다</td><td>워크트리에 활성 포인터가 없어 <code>handoff</code>가 no-op</td><td><code>harness-team task &lt;name&gt; --member &lt;user&gt;</code> 후 재실행</td></tr>
+            <tr><td><code>done</code>이 "no active task"라고 한다</td><td>같은 원인</td><td>활성화 후 다시 <code>done</code></td></tr>
+            <tr><td><code>docs/&lt;다른-이름&gt;/&lt;task&gt;/</code>가 생겼다</td><td><code>config.json</code>이 추적되지 않아 member가 <code>git config user.name</code>/<code>$USER</code>로 갈렸다</td><td>잘못된 트리 제거, 브리프에 <code>--member</code> 고정</td></tr>
+            <tr><td>브랜치를 병합할 때마다 handoff 충돌</td><td><code>&lt;user&gt;-handoff.md</code>는 전체 덮어쓰기 파일</td><td>어느 쪽이든 취하고 <code>harness-team handoff</code> 재생성</td></tr>
+            <tr><td>워크트리에서 <code>apply</code>를 돌려 diff가 폭발했다</td><td>관리 구역 재생성</td><td>해당 파일들 <code>git checkout</code>으로 되돌리고, 하네스 갱신은 전용 task로 분리</td></tr>
+            <tr><td>리뷰가 두 번 쌓였다</td><td><code>no-mistakes</code> 위에 수동 리뷰를 얹었다</td><td>모드별 리뷰 주인 표를 따르고, 파이프라인 결과를 <code>## Reviews</code>에 기록</td></tr>
+            <tr><td>scout 워크트리와 함께 task 문서가 사라졌다</td><td>scratch 워크트리에 하네스 task를 만들었다</td><td>scout엔 task를 만들지 않고, ship promote 시 생성 + 리포트 경로 인용</td></tr>
+            <tr><td>"버전 확인"이 릴리스를 일으켰다</td><td><code>release --help</code>가 실제 patch bump</td><td>절차는 문서로 읽고 실행은 작업자에게. <code>--dry-run</code>만 안전</td></tr>
+            <tr><td>워커가 조용해서 종료시켰다</td><td>timeout/idle을 실패로 오독</td><td>rolling <code>check --wait</code>를 유지. <code>worker_done</code>·escalation·종료 외에는 살아있는 것으로 본다</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout good">
+        <div class="mark">✅</div>
+        <div>
+          <h5>한 문장 요약</h5>
+          <p>문서는 <strong>git</strong>으로 흐르고 포인터는 흐르지 않는다 — 그래서 크루메이트의 첫 명령은 <strong>활성화</strong>, 마지막 명령은 <strong>가드를 통과한 done</strong>이다.</p>
+        </div>
+      </div>
+
+      <p class="section-sub" style="margin-top:2rem">정본: 단일 세션 절차는 <code>docs/harness-task-guide.html</code> · 하네스 작업 프로토콜은 <code>AGENTS.md</code> · firstmate 라이프사이클과 브리프 계약은 그 <code>AGENTS.md §7·§11</code>과 <code>bin/fm-brief.sh --help</code> · Orca 명령 표면은 <code>orca skills get orca-cli</code>와 <code>orca skills get orchestration</code>.</p>
+    </section>
+  </main>
+
+  <footer>Harness Aijient Team Plugin 0.14.0 · firstmate · Orca 크루 운용 가이드 · 실측 표기는 2026-08-11 확인</footer>
+</body>
+</html>

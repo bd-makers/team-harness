@@ -7,7 +7,7 @@ set -euo pipefail
 
 BACKUP_DIR="{{BACKUP_DIR}}"
 # AGENTS.md / GEMINI.md are real files now (not CLAUDE.md aliases); .cursorrules retired.
-ITEMS=("CLAUDE.md" "AGENTS.md" "GEMINI.md" ".claude" ".cursor" ".opencode" "docs" ".harness")
+ITEMS=("CLAUDE.md" "AGENTS.md" "GEMINI.md" ".claude" ".cursor" ".opencode" ".codex" "docs" ".harness")
 
 for item in "${ITEMS[@]}"; do
   if [ -L "$item" ]; then

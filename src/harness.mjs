@@ -20,6 +20,17 @@ function hasCommand(group, command) {
     && group.hooks.some(hook => hook?.type === 'command' && hook.command === command);
 }
 
+// A project can author its own `.codex/hooks.json`. `apply` deep-merges the harness
+// group in, but a hand-edited file can still drop it — and then Codex sessions silently
+// lose task context while the file stays valid JSON. Content check, not just parse.
+export function codexHooksHaveSessionContext(hooks) {
+  const groups = hooks?.hooks?.SessionStart;
+  return Array.isArray(groups) && groups.some(group =>
+    Array.isArray(group?.hooks) && group.hooks.some(hook =>
+      hook?.type === 'command' && typeof hook.command === 'string'
+        && hook.command.includes('harness-team session-context')));
+}
+
 export function settingsHasBoundaryCheckpoint(settings) {
   const groups = settings?.hooks?.PreToolUse;
   return Array.isArray(groups) && groups.some(group =>
@@ -180,6 +191,24 @@ export async function planChanges(ctx, { stack }) {
     });
   }
 
+  // .codex/hooks.json — Codex reads project-local hooks. Deep-merge (not skip-existing)
+  // so a project that already authored its own Codex hooks still gains the harness
+  // SessionStart group instead of silently keeping none. Array union is by JSON identity,
+  // so re-applying is a no-op and user-authored groups survive.
+  const tplCodex = JSON.parse(await readTextSafe(join(tplDir, '.codex/hooks.json')));
+  const existingCodex = JSON.parse((await readTextSafe(join(targetDir, '.codex/hooks.json'))) || 'null');
+  const mergedCodex = deepMergeJson(existingCodex, tplCodex);
+  const existingCodexText = existingCodex ? JSON.stringify(existingCodex, null, 2) : null;
+  const mergedCodexText = JSON.stringify(mergedCodex, null, 2);
+  if (existingCodexText !== mergedCodexText) {
+    changes.push({
+      kind: 'json',
+      path: join(targetDir, '.codex/hooks.json'),
+      before: existingCodexText,
+      after: mergedCodexText,
+    });
+  }
+
   return { changes, vars, legacyAgentFiles };
 }
 
@@ -250,6 +279,8 @@ const AI_GITIGNORE_ENTRIES = [
   '.cursorrules',
   '.opencode',
   '.opencode/',
+  '.codex',
+  '.codex/',
   '',
   '# build',
   'output/',
@@ -288,21 +319,158 @@ async function appendGitignore(targetDir, { addAiEntries = false } = {}) {
 
 export const AI_GITIGNORE_PREVIEW = AI_GITIGNORE_ENTRIES.join('\n');
 
+// `.claude/rules/*.md` scopes a rule with a `paths:` glob list; Claude Code then
+// loads it only while working with matching files. Cursor expresses the same
+// intent as a comma-separated `globs:` string, so the mirror must translate —
+// emitting `alwaysApply: true` for a scoped rule would load it into every Cursor
+// session, the opposite of what the source asked for. Returns the source's paths
+// and the body with the source frontmatter removed (leaving it in place would
+// stack two frontmatter blocks and strand the second as literal text).
+export function splitRulePaths(content) {
+  const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n)?/.exec(content);
+  if (!match) return { paths: [], body: content };
+  const unquote = (value) => value.trim().replace(/^["']|["']$/g, '');
+  const paths = [];
+  let inPaths = false;
+  for (const line of match[1].split(/\r?\n/)) {
+    const inline = /^paths:\s*\[(.*)\]\s*$/.exec(line);
+    if (inline) {
+      paths.push(...inline[1].split(',').map(unquote).filter(Boolean));
+      inPaths = false;
+      continue;
+    }
+    if (/^paths:\s*$/.test(line)) { inPaths = true; continue; }
+    if (inPaths) {
+      const item = /^\s*-\s+(.+)$/.exec(line);
+      if (item) { paths.push(unquote(item[1])); continue; }
+      inPaths = false;
+    }
+  }
+  return { paths, body: content.slice(match[0].length) };
+}
+
+// Claude Code discovers `.claude/rules/**/*.md` recursively, so rules organized into
+// `frontend/` or `backend/` subdirectories are live for Claude. A flat mirror would
+// drop them silently — Cursor would be missing rules nobody noticed were missing.
+// Symlinked rule directories are a documented sharing pattern, so they are followed,
+// with a realpath set to stop a circular link from recursing forever.
+// `chain` holds the realpaths of the current branch's ancestors, not every directory
+// visited: a link is circular only when it reaches a directory it is already inside.
+// A global visited set would also swallow two separate aliases of one shared rules
+// directory, dropping the second alias's rules — the same silent omission this walk exists to fix.
+async function collectRuleFiles(dir, { base = '', chain = new Set() } = {}) {
+  const { readdir, realpath, stat } = await import('node:fs/promises');
+  const real = await realpath(dir).catch(() => dir);
+  if (chain.has(real)) return [];
+  chain.add(real);
+  const entries = await readdir(dir, { withFileTypes: true });
+  const files = [];
+  for (const entry of entries) {
+    if (entry.name === '.DS_Store') continue;
+    const full = join(dir, entry.name);
+    const rel = base ? `${base}/${entry.name}` : entry.name;
+    const isDir = entry.isDirectory()
+      || (entry.isSymbolicLink() && await stat(full).then(s => s.isDirectory()).catch(() => false));
+    if (isDir) files.push(...await collectRuleFiles(full, { base: rel, chain }));
+    else if (entry.name.endsWith('.md')) files.push(rel);
+  }
+  chain.delete(real);
+  return files;
+}
+
+// A YAML plain scalar may not open with an indicator character, and globs routinely
+// do: `**/*.ts` reads as an alias, `[id].tsx` as a flow sequence — both make the
+// generated frontmatter unparseable. Quote only those, so the ordinary case stays
+// byte-identical to the plain form Cursor's own docs show.
+function yamlScalar(value) {
+  return /^[-?:,[\]{}#&*!|>'"%@`]/.test(value)
+    ? `'${value.replace(/'/g, "''")}'`
+    : value;
+}
+
+// Stamped into every generated `.mdc` as provenance, and re-checked before deleting:
+// if the stamp is gone the user has taken the file over. A markdown comment, so
+// Cursor renders nothing.
+export const CURSOR_MIRROR_MARKER = '<!-- harness:mirror -->';
+
+// What the last run wrote. Deletion is authorized by this record, not by the file's
+// own content: the marker is a public string, so a rule started by copying a
+// generated `.mdc` would carry it, and content alone would sentence that copy to
+// deletion. Only a path this harness recorded writing may be removed.
+const CURSOR_MIRROR_MANIFEST = '.harness/cursor-mirror.json';
+
+// Manifest entries name files to delete, so they are read as untrusted input: a
+// hand-edited `..` or absolute path must not reach unlink outside the mirror.
+function isSafeMirrorEntry(rel) {
+  return typeof rel === 'string'
+    && rel.endsWith('.mdc')
+    && !rel.startsWith('/')
+    && !rel.includes('\\')
+    && !rel.split('/').includes('..');
+}
+
+async function readMirrorManifest(targetDir) {
+  const raw = await readTextSafe(join(targetDir, CURSOR_MIRROR_MANIFEST));
+  if (!raw) return [];
+  try {
+    const { generated } = JSON.parse(raw);
+    return Array.isArray(generated) ? generated.filter(isSafeMirrorEntry) : [];
+  } catch { return []; }
+}
+
+// Mirrors from a pre-manifest harness are absent from the record and so are never
+// pruned — the conservative failure is a stale rule, not a deleted one.
+async function pruneCursorMirrors(dstDir, previous, keep) {
+  const { rmdir, unlink } = await import('node:fs/promises');
+  const out = [];
+  const dirs = new Set();
+  for (const rel of previous) {
+    if (keep.has(rel)) continue;
+    const full = join(dstDir, rel);
+    const content = await readTextSafe(full);
+    if (content === null || !content.includes(CURSOR_MIRROR_MARKER)) continue;
+    await unlink(full);
+    out.push({ path: full, action: 'prune' });
+    if (rel.includes('/')) dirs.add(rel.slice(0, rel.lastIndexOf('/')));
+  }
+  // Deepest first, and rmdir fails on anything non-empty, so a directory still
+  // holding a hand-written rule survives without a separate check.
+  for (const dir of [...dirs].sort((a, b) => b.length - a.length)) {
+    await rmdir(join(dstDir, dir)).catch(() => {});
+  }
+  return out;
+}
+
 export async function mirrorCursorRules(ctx) {
   const srcDir = join(ctx.targetDir, '.claude/rules');
   const dstDir = join(ctx.targetDir, '.cursor/rules');
-  if (!(await exists(srcDir))) return [];
-  const { readdir } = await import('node:fs/promises');
-  const entries = await readdir(srcDir);
+  const previous = await readMirrorManifest(ctx.targetDir);
+  // A removed `.claude/rules` is the strongest form of "no longer produced" —
+  // returning early here would strand every mirror it ever generated.
+  const sources = await exists(srcDir) ? await collectRuleFiles(srcDir) : [];
+  if (!sources.length && !previous.length) return [];
+
   const out = [];
-  for (const name of entries) {
-    if (!name.endsWith('.md')) continue;
-    const content = await readTextSafe(join(srcDir, name));
-    const mdcName = name.replace(/\.md$/, '.mdc');
-    const mdc = `---\ndescription: ${name.replace('.md', '')} rules\nalwaysApply: true\n---\n\n${content}`;
-    await writeText(join(dstDir, mdcName), mdc);
-    out.push({ path: join(dstDir, mdcName), action: 'mirror' });
+  const written = new Set();
+  for (const rel of sources) {
+    const content = await readTextSafe(join(srcDir, rel));
+    const name = rel.replace(/\.md$/, '');
+    const { paths, body } = splitRulePaths(content);
+    const scope = paths.length
+      ? `globs: ${yamlScalar(paths.join(', '))}\nalwaysApply: false`
+      : 'alwaysApply: true';
+    const mdc = `---\ndescription: ${name} rules\n${scope}\n---\n\n${CURSOR_MIRROR_MARKER}\n\n${body}`;
+    const dst = join(dstDir, `${name}.mdc`);
+    await writeText(dst, mdc);
+    written.add(`${name}.mdc`);
+    out.push({ path: dst, action: 'mirror' });
   }
+  // A renamed or deleted rule leaves its old mirror behind, and Cursor keeps loading
+  // it — the stale copy expires never, so the mirror must remove what it no longer
+  // produces.
+  out.push(...await pruneCursorMirrors(dstDir, previous, written));
+  await writeText(join(ctx.targetDir, CURSOR_MIRROR_MANIFEST),
+    JSON.stringify({ generated: [...written].sort() }, null, 2) + '\n');
   return out;
 }
 

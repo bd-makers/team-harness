@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { exists } from '../fsx.mjs';
-import { loadBackupDir, settingsHasBoundaryCheckpoint } from '../harness.mjs';
+import { loadBackupDir, settingsHasBoundaryCheckpoint, codexHooksHaveSessionContext } from '../harness.mjs';
 import { buildEnvelope, emitObservation } from '../observation.mjs';
 import { settingsHasSessionGate } from './session-context.mjs';
 
@@ -115,6 +115,17 @@ export async function checkSessionStartHook(targetDir) {
 
 export { settingsHasBoundaryCheckpoint };
 
+// Absent `.codex/hooks.json` is fine (optional CHECKS entry reports it). A file that
+// exists but carries no harness SessionStart hook is the silent-drift case: valid JSON,
+// no task context in Codex sessions.
+export async function checkCodexSessionHook(targetDir) {
+  let hooks;
+  try { hooks = JSON.parse(await readFile(join(targetDir, '.codex/hooks.json'), 'utf8')); }
+  catch { return null; }
+  if (codexHooksHaveSessionContext(hooks)) return null;
+  return '.codex/hooks.json에 harness SessionStart 훅 없음 — Codex 세션이 task context를 못 받음; run: harness-team apply';
+}
+
 export async function checkBoundaryCheckpointHook(targetDir) {
   let settings;
   try { settings = JSON.parse(await readFile(join(targetDir, '.claude/settings.json'), 'utf8')); }
@@ -134,6 +145,7 @@ const CHECKS = [
   { path: '.claude/hooks/pre-commit-check.sh', executable: true },
   { path: '.cursor/rules', required: false, dir: true },
   { path: '.opencode/opencode.json', required: false, json: true },
+  { path: '.codex/hooks.json', required: false, json: true },
   { path: 'docs/README.md', required: false },
   // Backup/symlink architecture is a consumer-project concern; the plugin source
   // repo uses git instead, so this check is skipped in plugin-dev mode.
@@ -298,6 +310,9 @@ export async function runDoctor(ctx) {
 
   const boundaryHookWarning = pluginDev ? null : await checkBoundaryCheckpointHook(ctx.targetDir);
   if (boundaryHookWarning) add('PreToolUse boundary checkpoint', 'warning', boundaryHookWarning, `\n⚠️ ${boundaryHookWarning}`);
+
+  const codexHookWarning = pluginDev ? null : await checkCodexSessionHook(ctx.targetDir);
+  if (codexHookWarning) add('Codex SessionStart hook', 'warning', codexHookWarning, `\n⚠️ ${codexHookWarning}`);
 
   // Like the hook-presence checks above, this is consumer-only. plugin-dev uses
   // `node bin/harness-team.mjs` and deliberately does not install consumer hooks.

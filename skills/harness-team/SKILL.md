@@ -36,6 +36,10 @@ Common commands:
 - `harness-team doctor --json`: diagnose install health with a structured observation.
 - `harness-team done`: complete the active task after the plan and artifact are complete.
 - `harness-team retro "<note>"`: append a learning to the active task artifact.
+- `harness-team context init` / `context check`: create or validate the active task's Context Card. Agents own this file — update it when the plan's atomic step changes or a reproducible failure appears or clears.
+- `harness-team release [patch|minor|major|x.y.z] [--dry-run]`: bump the four manifests together. Run `--dry-run` first.
+
+`session-context` and `boundary check` are invoked by hooks and the harness itself — do not call them directly.
 
 ## Output Contract
 

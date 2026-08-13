@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-release-publish-workflow
+cursor-rules-prune
 
-## Last Commit (2026-08-08)
-58e10c9 ci: publish github releases from version tags
+## Last Commit (2026-08-12)
+abc087c fix(apply): remove Cursor mirrors whose source rule is gone
 
 ## Full Context
-→ docs/chad/release-publish-workflow/release-publish-workflow-handoff.md
+→ docs/chad/cursor-rules-prune/cursor-rules-prune-handoff.md
