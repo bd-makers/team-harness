@@ -4,7 +4,7 @@
 global-cli-drift
 
 ## Last Commit (2026-08-13)
-35a1c9c fix(doctor): correct the drift check per Codex review
+1eb9aef test(cli-drift): stop reading the developer's real ~/.claude
 
 ## Full Context
 → docs/chad/global-cli-drift/global-cli-drift-handoff.md

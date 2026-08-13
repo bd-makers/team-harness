@@ -28,3 +28,10 @@ CHANGELOG.md                                       |   1 +
  tests/cli-drift.test.mjs                           | 110 ++++++++++++++++++++-
  7 files changed, 245 insertions(+), 22 deletions(-)
 
+
+## 2026-08-13T09:42:20.196Z — 1eb9aef test(cli-drift): stop reading the developer's real ~/.claude
+docs/chad/chad-handoff.md                          |  2 +-
+ .../global-cli-drift/global-cli-drift-handoff.md   | 11 ++++++++++
+ tests/cli-drift.test.mjs                           | 24 +++++++++++++++++++++-
+ 3 files changed, 35 insertions(+), 2 deletions(-)
+

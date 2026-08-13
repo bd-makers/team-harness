@@ -15,5 +15,8 @@
 - [x] `MAINTAINING.md`: 설치본 세 곳과 갱신 주체 표, 릴리스 10단계(`harness-team --version` 확인) 추가
 - [x] `CHANGELOG.md` `[Unreleased]` 기록
 - [x] 전체 스위트 270 pass, `docs:check` 최신
-- [x] Codex 외부 리뷰 → artifact.md `## Reviews`
-- [ ] 릴리스는 별도 판단 (이번 task 범위 밖)
+- [x] Codex 외부 리뷰 → artifact.md `## Reviews` (P2 3건 + P3 1건, 전부 반영)
+- [x] 리뷰 반영분 mutation 재검증 4건 (C는 1차에 안 잡혀 테스트를 `exit 127`로 교체 후 재확인)
+- [x] CI 실패 대응 — e2e 테스트가 개발 머신의 실제 `~/.claude`를 읽던 것을 fixture로 교체
+- [x] main push, CI green (Node 18·20)
+- [x] 릴리스는 별도 판단으로 남김 — `[Unreleased]`에 기록만, 태깅은 사용자 결정
