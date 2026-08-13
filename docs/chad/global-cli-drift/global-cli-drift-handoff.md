@@ -17,3 +17,14 @@ CHANGELOG.md                                       |   3 +
  tests/cli-drift.test.mjs                           | 214 +++++++++++++++++++++
  12 files changed, 502 insertions(+), 1 deletion(-)
 
+
+## 2026-08-13T09:38:53.147Z — 35a1c9c fix(doctor): correct the drift check per Codex review
+CHANGELOG.md                                       |   1 +
+ docs/chad/chad-handoff.md                          |   8 +-
+ .../global-cli-drift/global-cli-drift-artifact.md  |  58 ++++++++++-
+ .../global-cli-drift/global-cli-drift-handoff.md   |  16 +++
+ docs/harness-overview.html                         |   5 +
+ src/commands/doctor.mjs                            |  69 ++++++++++---
+ tests/cli-drift.test.mjs                           | 110 ++++++++++++++++++++-
+ 7 files changed, 245 insertions(+), 22 deletions(-)
+

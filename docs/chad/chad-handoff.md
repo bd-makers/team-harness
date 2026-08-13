@@ -4,7 +4,7 @@
 global-cli-drift
 
 ## Last Commit (2026-08-13)
-e5b832e fix(doctor,release): surface a global CLI that drifted from the install
+35a1c9c fix(doctor): correct the drift check per Codex review
 
 ## Full Context
 → docs/chad/global-cli-drift/global-cli-drift-handoff.md

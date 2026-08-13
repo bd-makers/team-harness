@@ -212,11 +212,17 @@ test('cli-drift: a missing or unreadable plugins root is not an error', async ()
 // leaving an agent with a problem and no command.
 test('cli-drift: doctor reports drift in a plugin-dev repo, with a remedy', async () => {
   const binDir = await mkdtemp(join(tmpdir(), 'harness-drift-e2e-'));
+  // Both sides of the comparison are supplied: a shimmed PATH CLI and a fixture
+  // plugins root. Reading the developer's real ~/.claude would make the result a
+  // property of the machine — on CI there is no installed_plugins.json at all,
+  // so the check correctly emits nothing and the assertions below would fail.
+  const pluginsRoot = await mkdtemp(join(tmpdir(), 'harness-drift-e2e-pr-'));
   try {
     const shim = join(binDir, 'harness-team');
     await writeFile(shim, '#!/bin/sh\necho 0.0.1\n');
     await chmod(shim, 0o755);
-    const env = { ...process.env, PATH: `${binDir}:${process.env.PATH}` };
+    await writeFile(join(pluginsRoot, 'installed_plugins.json'), JSON.stringify(installedFixture('9.9.9')));
+    const env = { ...process.env, PATH: `${binDir}:${process.env.PATH}`, CLAUDE_PLUGINS_ROOT: pluginsRoot };
     const bin = join(ROOT, 'bin/harness-team.mjs');
 
     const { stdout } = await pexec('node', [bin, 'doctor', '--json'], { env, timeout: 30000 })
@@ -239,6 +245,22 @@ test('cli-drift: doctor reports drift in a plugin-dev repo, with a remedy', asyn
     assert.doesNotMatch(text, /All checks passed/);
   } finally {
     await rm(binDir, { recursive: true, force: true });
+    await rm(pluginsRoot, { recursive: true, force: true });
+  }
+});
+
+// The CI shape: no plugins root at all. Nothing to compare against, so the check
+// must stay out of the envelope entirely rather than guess.
+test('cli-drift: doctor is silent where no plugin is installed', async () => {
+  const pluginsRoot = await mkdtemp(join(tmpdir(), 'harness-drift-none-'));
+  try {
+    const env = { ...process.env, CLAUDE_PLUGINS_ROOT: pluginsRoot };
+    const { stdout } = await pexec('node', [join(ROOT, 'bin/harness-team.mjs'), 'doctor', '--json'], { env, timeout: 30000 })
+      .catch(error => ({ stdout: error.stdout || '' }));
+    const envelope = JSON.parse(stdout);
+    assert.equal(envelope.checks.find(c => /drift/.test(c.label)), undefined);
+  } finally {
+    await rm(pluginsRoot, { recursive: true, force: true });
   }
 });
 
