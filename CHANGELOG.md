@@ -18,6 +18,8 @@ modified: 2026-08-13
 
 ## [Unreleased]
 
+## [0.15.1] - 2026-08-13
+
 ### Fixed
 - **`--help`가 명령을 실제로 실행하던 문제** — CLI는 `--help`를 **command 자리에 있을 때만** 인식했다. `harness-team release --help`는 `help`를 평범한 boolean 플래그로 파싱한 뒤 라우터로 내려가 **진짜 patch 릴리스를 수행**했다(매니페스트 4개 범프 + `~/.claude` 캐시·마켓플레이스·`installed_plugins.json` 쓰기). 처음 보는 CLI를 `--help`로 탐색하는 건 사람과 에이전트 모두의 기본 동작이라, 이 구멍은 우연이 아니라 반복해서 밟힌다. 같은 원인으로 **모르는 플래그가 조용히 `true`로 수용**돼 오탈자(`--dryrun`)도 기본값 릴리스가 됐고, 값이 빠진 `--target`은 boolean이 경로 해석에 도달해 무관한 TypeError로 죽었다. 이제 `src/cli-args.mjs`의 `resolveInvocation`이 argv 전체를 먼저 해석해 help/version 응답·미지 플래그 거부(exit 2)·값 누락 거부를 **라우터에 닿기 전에** 끝낸다. 명령 테이블이 help 문구와 허용 플래그의 단일 소스라 "허용되는 플래그"와 "문서화된 플래그"가 구조적으로 같아진다.
 - **`--no-symlinks` 죽은 문서** — `3ebbbc2`에서 구현이 사라졌는데 help 문구에만 남아 있었다. 엄격 검증이 들어오면서 실제로 거부되므로 help에서 제거했다.
