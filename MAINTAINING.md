@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-08-07
+modified: 2026-08-13
 ---
 
 # MAINTAINING.md — harness-aijient-team 운영 가이드
@@ -70,7 +70,7 @@ Codex manifest/skill을 수정했다면 Codex validator도 실행하세요. 로�
 
 > **주의:** `harness-team release`는 `installed_plugins.json`을 직접 수정합니다. Claude Code가 실행 중이면 경쟁 조건이 발생할 수 있으니, **가급적 Claude Code 종료 후** 실행하세요. 중단 시 복구는 명시적 버전으로 재실행하면 됩니다: `harness-team release X.Y.Z`.
 >
-> **함정:** `harness-team release`는 `--help`를 지원하지 않습니다 — 인자와 함께 실행하면 그대로 릴리스가 수행됩니다(탐색·확인 목적의 시험 실행이 아닙니다). 결과를 미리 보려면 반드시 `--dry-run`을 붙이고, 실제 실행은 검증이 끝난 뒤 의도적으로 한 번만 하세요.
+> 결과를 미리 보려면 `--dry-run`을 붙입니다. `harness-team release --help`는 사용법만 출력하고 릴리스를 수행하지 않으며, 오탈자 플래그(`--dryrun` 등)는 실행되지 않고 exit 2로 거부됩니다 (`src/cli-args.mjs`).
 
 1. 변경 작성 + `node --test tests/` 통과 확인
 2. `CHANGELOG.md`의 `## [Unreleased]` 항목 채우기
@@ -81,18 +81,21 @@ Codex manifest/skill을 수정했다면 Codex validator도 실행하세요. 로�
 5. `docs/what-changes-latest-version.html`을 새 버전의 변경·근거로 직접 갱신하고, 같은 내용을 `docs/what-changes-X.Y.Z.html` 스냅샷으로 남깁니다. 이어서 `npm test`, `npm run docs:generate`, `npm run docs:check`를 실행합니다.
    - 변경의 `왜`는 자동 생성하지 않습니다. 릴리스 범위를 검토해 사람이 작성합니다.
 6. `CHANGELOG.md`의 `## [Unreleased]`를 새 버전 헤딩(`## [X.Y.Z] - YYYY-MM-DD`)으로 이동
-7. 기능 브랜치에 릴리스 준비 커밋을 만들고 PR로 검토를 요청합니다. 기본 브랜치에 직접 push하거나 PR을 직접 merge하지 마세요.
+7. main에서 4~6단계의 결과를 **한 커밋**으로 만들어 push합니다. 기능 변경은 PR로 들어오지만, 릴리스 준비 커밋 자체는 그 PR들이 이미 병합된 main 위에 얹는 범프·문서 커밋입니다.
    ```bash
-   git commit -m "chore(release): 버전 X.Y.Z으로 범프"
-   git push -u origin <feature-branch>
+   git commit -am "chore(release): 버전 X.Y.Z으로 범프"
+   git push origin main
    ```
-8. PR이 병합된 뒤, 병합된 기본 브랜치에서 태그를 만들고 push합니다.
+   - **한 커밋이어야 하는 이유:** 9단계의 세 검사는 모두 *태그가 가리키는 커밋* 하나에서 실행됩니다. 매니페스트 범프와 CHANGELOG 이동이 서로 다른 커밋에 있으면, 태그가 이미 공개된 뒤에 워크플로우가 실패합니다.
+8. push된 main에서 태그를 만들고 push합니다. 태그 push 전에 커밋이 origin/main에 올라갔는지 확인하세요 — 원격에 없는 커밋을 가리키는 태그가 가장 정리하기 번거로운 실패입니다.
    ```bash
-   git switch main
-   git pull --ff-only origin main
    git tag vX.Y.Z
    git push origin vX.Y.Z
    ```
+   - 태그는 되돌리기 번거로우므로, push 전에 9단계의 세 검사를 로컬에서 그대로 확인하는 편이 낫습니다:
+     ```bash
+     node scripts/changelog-section.mjs X.Y.Z && node -p "require('./package.json').version" && npm test
+     ```
 9. 태그 push가 `release` 워크플로우를 실행해 GitHub Release를 자동 발행합니다 — 수동 발행은 하지 마세요.
    본문은 `CHANGELOG.md`의 `## [X.Y.Z]` 절 **내용**입니다 — 헤딩 줄은 빠지고 앞뒤 공백은 정리됩니다
    (`scripts/changelog-section.mjs`).
