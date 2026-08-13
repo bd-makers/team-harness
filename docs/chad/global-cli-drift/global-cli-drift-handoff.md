@@ -35,3 +35,15 @@ docs/chad/chad-handoff.md                          |  2 +-
  tests/cli-drift.test.mjs                           | 24 +++++++++++++++++++++-
  3 files changed, 35 insertions(+), 2 deletions(-)
 
+
+## 2026-08-13T09:43:55.502Z — c2e4112 docs(task): record the drift task's plan, review, and learnings
+docs/chad/chad-handoff.md                               | 2 +-
+ docs/chad/global-cli-drift/global-cli-drift-artifact.md | 9 +++++++++
+ docs/chad/global-cli-drift/global-cli-drift-handoff.md  | 7 +++++++
+ docs/chad/global-cli-drift/global-cli-drift-plan.md     | 7 +++++--
+ 4 files changed, 22 insertions(+), 3 deletions(-)
+
+
+## 2026-08-13T09:43:55.592Z — 완료
+
+태스크 종료.

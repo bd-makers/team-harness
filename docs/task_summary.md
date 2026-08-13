@@ -42,4 +42,4 @@
 | chad | codex-hooks-template | ✅ done | 2026-08-12 |
 | chad | cursor-rules-mirror | ✅ done | 2026-08-12 |
 | chad | cursor-rules-prune | ✅ done | 2026-08-12 |
-| chad | global-cli-drift | 🔄 open | 2026-08-13 |
+| chad | global-cli-drift | ✅ done | 2026-08-13 |

@@ -1,7 +1,7 @@
 # chad — Tasks
 
 ## Open
-- global-cli-drift (created 2026-08-13)
+
 
 
 
@@ -42,6 +42,7 @@
 
 
 ## Completed
+- ✅ global-cli-drift
 - ✅ cursor-rules-prune
 - ✅ cursor-rules-mirror
 - ✅ codex-hooks-template

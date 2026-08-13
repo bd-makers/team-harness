@@ -4,7 +4,7 @@
 global-cli-drift
 
 ## Last Commit (2026-08-13)
-1eb9aef test(cli-drift): stop reading the developer's real ~/.claude
+c2e4112 docs(task): record the drift task's plan, review, and learnings
 
 ## Full Context
 → docs/chad/global-cli-drift/global-cli-drift-handoff.md
