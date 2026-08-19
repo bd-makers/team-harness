@@ -7,7 +7,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { runTask, runDone } from '../src/commands/task.mjs';
 import {
-  collectTasks, renderTaskSummary, renderUserIndex, runSummary, readTaskMeta,
+  collectTasks, renderTaskSummary, renderUserIndex, runSummary, readTaskMeta, defaultBranchCandidates,
 } from '../src/commands/summary.mjs';
 
 const pexec = promisify(execFile);
@@ -189,6 +189,47 @@ test('--check는 원장이 어긋나면 실패하고 파일을 고치지 않는�
     assert.equal(process.exitCode, 1);
     const after = await readFile(join(dir, 'docs', 'task_summary.md'), 'utf8');
     assert.match(after, /stale/, '--check는 mutation을 하지 않는다');
+  } finally {
+    process.exitCode = exitCode;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('기본 브랜치 판정: origin/HEAD도 init.defaultBranch도 없으면 main/master 둘 다 인정한다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-summary-'));
+  try {
+    await git(dir, 'init', '-q', '-b', 'master');
+    await git(dir, 'config', 'user.email', 'test@example.com');
+    await git(dir, 'config', 'user.name', 'test');
+    // 로컬 전용 저장소는 origin/HEAD가 없다. master를 feature 브랜치로 오인하면 안 된다.
+    const bases = await defaultBranchCandidates(dir);
+    assert.ok(bases.includes('master'));
+    assert.ok(bases.includes('main'));
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('--write: origin 없는 master 저장소에서도 기본 브랜치로 인정한다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-summary-'));
+  const exitCode = process.exitCode;
+  try {
+    await git(dir, 'init', '-q', '-b', 'master');
+    await git(dir, 'config', 'user.email', 'test@example.com');
+    await git(dir, 'config', 'user.name', 'test');
+    await writeFile(join(dir, '.gitignore'), '.harness/\n');
+    await runTask({ targetDir: dir, flags: { member: 'chad' }, taskArgs: ['demo'] });
+
+    await runSummary({ targetDir: dir, flags: { write: true } });
+    assert.notEqual(process.exitCode, 1, 'master 기본 브랜치는 거부되면 안 된다');
+    const summary = await readFile(join(dir, 'docs', 'task_summary.md'), 'utf8');
+    assert.match(summary, /\| chad \| demo \|/);
+
+    await git(dir, 'add', '-A');
+    await git(dir, 'commit', '-qm', 'seed');
+    await git(dir, 'checkout', '-qb', 'feature');
+    await runSummary({ targetDir: dir, flags: { write: true } });
+    assert.equal(process.exitCode, 1, 'feature 브랜치는 여전히 거부되어야 한다');
   } finally {
     process.exitCode = exitCode;
     await rm(dir, { recursive: true, force: true });
