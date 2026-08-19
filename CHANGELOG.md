@@ -18,6 +18,8 @@ modified: 2026-08-19
 
 ## [Unreleased]
 
+## [0.16.1] - 2026-08-19
+
 ### Fixed
 - **`codex exec` 리뷰가 무한 blocking 되던 문제** — `codex exec`는 프롬프트를 인자로 받고도 stdin이 열려
   있으면 추가 입력을 기다린다. 출력에 `Reading additional input from stdin...` 한 줄만 남고 CPU 0.01~0.04s로
