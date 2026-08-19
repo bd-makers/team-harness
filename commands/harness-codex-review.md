@@ -36,12 +36,17 @@ Raw slash-command 인수:
 3. **실행** — 규모가 작으면(대략 파일 1~2개) 포그라운드, 그 외에는 Bash 백그라운드로
    실행한다:
 
+   > **`< /dev/null` 은 생략하지 말 것.** `codex exec` 는 프롬프트를 인자로 받고도 stdin 이
+   > 열려 있으면 추가 입력을 기다리며 무한 blocking 된다. 출력 파일에
+   > `Reading additional input from stdin...` 한 줄만 남고 CPU 는 거의 0인 채 멈춘다.
+   > 백그라운드로 돌리면 수십 분을 통째로 날린다.
+
    ```bash
    codex exec --sandbox read-only "You are performing an independent read-only code review of this repository.
    Scope: <working tree changes | diff against <base>>. Inspect the changes yourself with git (git status, git diff).
    Do not modify anything. Report findings ranked by severity (P1 blocking / P2 should-fix / P3 nit),
    each with file:line and a one-line rationale, then a final verdict.
-   If nothing significant is found, say so explicitly. <focus arguments, if any>"
+   If nothing significant is found, say so explicitly. <focus arguments, if any>" < /dev/null
    ```
 
 4. **발견 검증** — Codex의 지적은 주장이지 사실이 아니다. 각 발견을 코드에서 직접
@@ -59,10 +64,10 @@ Raw slash-command 인수:
 
 ```bash
 # working tree 리뷰 (uncommitted 변경)
-codex exec --sandbox read-only "Review the current working tree changes ..."
+codex exec --sandbox read-only "Review the current working tree changes ..." < /dev/null
 
 # 브랜치 리뷰 (origin/main 대비)
-codex exec --sandbox read-only "Review the diff against origin/main ..."
+codex exec --sandbox read-only "Review the diff against origin/main ..." < /dev/null
 ```
 
 적대적 프레이밍(설계 결정·가정에 대한 반박 시도)이 필요하면

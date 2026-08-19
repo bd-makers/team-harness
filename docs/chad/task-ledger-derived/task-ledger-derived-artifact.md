@@ -77,7 +77,29 @@ created도 원장에서 살려냈다. 마커만 믿었다면 2개가 open으로 
 
 **Gemini 리뷰: 미실행** — 이 머신에 `gemini` CLI 미설치.
 
-> 후속: codex 경합이 풀리면 `b8a0a6c..adbd6e9` 범위로 리뷰를 다시 돌리고 결과를 이 절에 append 한다.
+### 2026-08-19 — Codex 외부 리뷰 **실행 완료** (위 '미완료' 기록을 갱신)
+
+리뷰가 안 돌던 원인은 세션 경합이 아니었다. `codex exec`는 프롬프트를 인자로 받고도 **stdin이 열려 있으면
+추가 입력을 기다리며 무한 blocking**한다(kc-admin-web-3 진단). `< /dev/null`을 붙이자 정상 완료됐다.
+멈춰 있던 두 프로세스는 각각 38분·63분을 CPU 0.04s로 소모하고 있었다.
+
+결과: **HIGH 0 / MED 2 / LOW 1 — 3건 전부 실증 후 수정.**
+
+| 심각도 | 지적 | 실증 결과 | 조치 |
+| --- | --- | --- | --- |
+| MED | `--write` 가드가 fail-open — git 조회 실패 시 `branch === null`로 가드를 건너뜀 | **사실.** 게다가 내 1차 수정도 unborn HEAD(커밋 없는 새 저장소)를 오거부하는 반대 결함이 있었다 | 3-way 판정(저장소 아님/확인 실패/브랜치 확인)으로 교체. 저장소 여부는 파일시스템 `.git` 탐색으로 판정해 깨진 git이 "저장소 아님"으로 위장하지 못하게 함. `branch --show-current`로 unborn HEAD도 처리 |
+| MED | `marketplaceIsSource`가 문자열 비교라 심볼릭 링크를 놓침 | **사실.** 이 머신의 전역 CLI가 링크로 clone을 가리킨다 | `realpath` 비교로 교체 |
+| LOW | Map 키 구분자에 리터럴 NUL이 들어가 `summary.mjs`가 git에서 binary 취급 | **사실 — 내 첫 확인이 틀렸다.** macOS `grep -P` 미지원으로 "NUL 없음"이라 잘못 판정했고, 바이트 카운트로 다시 세니 6개였다. `git show --numstat`이 `- -`, `--stat`이 `Bin 0 -> 11223 bytes` | 구분자를 `/`로 교체, `key()` 헬퍼로 일원화, NUL 부재 회귀 테스트 추가 |
+
+이 LOW가 특히 뼈아프다 — **이 파일이 binary로 취급되는 바람에 앞서 돌린 리뷰들이 정작 핵심 파일을
+통째로 못 봤다.** 리뷰가 안 보이는 것을 리뷰할 수는 없다.
+
+추가로 stdin 결함의 전파 경로를 차단했다: `commands/harness-codex-review.md`와
+`harness-codex-adversarial-review.md`가 `< /dev/null` 없는 호출을 문서화하고 있었고 에이전트가 그대로
+복사하므로 **이 하네스를 쓰는 모든 프로젝트에서 재발**한다. 두 문서의 모든 예시를 고치고 생략 금지
+경고를 달았다. (`tests/sim/codex-agentloop.mjs`는 이미 `stdio: ['ignore', …]`라 무관.)
+
+이 수정들은 0.16.0 태깅 이후이므로 **0.16.1**로 낸다.
 
 ## Learnings
 

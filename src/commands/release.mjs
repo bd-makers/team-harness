@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir, cp, readdir, rm, stat } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, cp, readdir, rm, stat, realpath } from 'node:fs/promises';
 import path from 'node:path';
 import os from 'node:os';
 import { execFile } from 'node:child_process';
@@ -116,6 +116,15 @@ async function syncCommandsDir(srcCommands, dstCommands) {
   }
   for (const name of srcNames) {
     await cp(path.join(srcCommands, name), path.join(dstCommands, name));
+  }
+}
+
+async function sameDirectory(a, b) {
+  try {
+    const [ra, rb] = await Promise.all([realpath(a), realpath(b)]);
+    return ra === rb;
+  } catch {
+    return path.resolve(a) === path.resolve(b);
   }
 }
 
@@ -245,7 +254,10 @@ export async function release({
   // EINVAL and aborted the release after the manifests were already bumped,
   // leaving a half-applied tree. Nothing to sync in that case — the clone is
   // the source.
-  result.marketplaceIsSource = path.resolve(root) === path.resolve(marketplaceDir);
+  // realpath, not string equality: the source is often opened through a symlink
+  // (the global CLI links into this clone), and two different strings can name the
+  // same directory. A false negative here re-triggers the self-copy EINVAL.
+  result.marketplaceIsSource = await sameDirectory(root, marketplaceDir);
   if (!result.marketplaceIsSource) {
     const destMarketplaceJson = path.join(marketplaceDir, '.claude-plugin', 'marketplace.json');
     await mkdir(path.dirname(destMarketplaceJson), { recursive: true });

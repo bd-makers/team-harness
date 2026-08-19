@@ -18,6 +18,28 @@ modified: 2026-08-19
 
 ## [Unreleased]
 
+### Fixed
+- **`codex exec` 리뷰가 무한 blocking 되던 문제** — `codex exec`는 프롬프트를 인자로 받고도 stdin이 열려
+  있으면 추가 입력을 기다린다. 출력에 `Reading additional input from stdin...` 한 줄만 남고 CPU 0.01~0.04s로
+  멈춘 채 끝나지 않는다. `commands/harness-codex-review.md`와 `harness-codex-adversarial-review.md`가
+  `< /dev/null` 없는 호출을 문서화하고 있었고, 에이전트가 그대로 복사하므로 이 하네스를 쓰는 **모든
+  프로젝트에서 재발**했다. 실제로 리뷰 2건이 각각 38분·63분을 멈춘 채 소모했다. 두 명령 문서의 모든
+  호출 예시에 `< /dev/null`을 넣고 생략하지 말라는 경고를 달았다.
+  (`tests/sim/codex-agentloop.mjs`는 이미 `stdio: ['ignore', …]`라 영향 없음.)
+- **`summary --write` 가드가 fail-open이던 문제** — git 조회가 실패하면 `branch === null`이 되어 가드를
+  통째로 건너뛰고 원장을 썼다. git이 없거나 저장소를 읽을 수 없는 상황을 "브랜치가 없다"로 오해하는
+  것인데, 그때가 바로 어디에 있는지 모르는 상황이다. 이제 "저장소가 아님"(안전 — 충돌할 브랜치가 없다),
+  "브랜치 확인 실패"(거부), "브랜치 확인됨"을 구분한다. 저장소 여부는 두 번째 git 호출이 아니라
+  파일시스템에서 `.git`을 찾아 판정하므로, 깨진 git 바이너리가 "저장소 아님"으로 위장할 수 없다.
+  브랜치 조회도 `rev-parse --abbrev-ref HEAD` 대신 `branch --show-current`를 쓴다 — 전자는 커밋이 없는
+  새 저장소(unborn HEAD)에서 실패하는데, 그곳은 원장을 렌더링하기에 아무 문제 없는 자리다.
+- **`release`의 self-copy 판정이 심볼릭 링크를 놓치던 문제** — `path.resolve()` 문자열 비교라, source를
+  clone의 심볼릭 링크 경로로 열면 물리적으로 같은 디렉터리인데도 다르다고 봤다. `realpath`로 비교한다.
+- **`src/commands/summary.mjs`가 git에서 binary로 취급되던 문제** — Map 키 구분자로 리터럴 NUL 바이트가
+  들어가 있었다. 동작에는 문제가 없지만 `git diff`·`git show --stat`이 내용을 보여주지 못했고,
+  **이 파일을 대상으로 한 리뷰에서 정작 파일이 통째로 안 보였다.** 구분자를 `/`로 바꾸고
+  NUL 부재를 회귀 테스트로 고정했다.
+
 ## [0.16.0] - 2026-08-19
 
 ### Changed

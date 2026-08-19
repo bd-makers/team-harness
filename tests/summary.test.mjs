@@ -235,3 +235,44 @@ test('--write: origin 없는 master 저장소에서도 기본 브랜치로 인�
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+test('--write: 소스가 binary 로 취급되지 않도록 키 구분자는 텍스트다', async () => {
+  // 구분자로 리터럴 NUL 을 쓰면 git 이 파일 전체를 binary 로 보고 diff 가 사라진다.
+  // 리뷰에서 이 파일이 통째로 안 보였다.
+  const src = await readFile(new URL('../src/commands/summary.mjs', import.meta.url), 'utf8');
+  assert.equal(src.includes('\u0000'), false, 'summary.mjs 에 NUL 바이트가 있으면 안 된다');
+});
+
+test('--write: git 조회가 실패하면 fail-closed 로 거부한다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-summary-'));
+  const exitCode = process.exitCode;
+  const realPath = process.env.PATH;
+  try {
+    await initRepo(dir);
+    await runTask({ targetDir: dir, flags: { member: 'chad' }, taskArgs: ['demo'] });
+    // git 을 찾을 수 없게 만든다 — '브랜치 없음'으로 오해하고 써버리면 안 된다.
+    process.env.PATH = '/nonexistent';
+    await runSummary({ targetDir: dir, flags: { write: true } });
+    assert.equal(process.exitCode, 1, 'git 을 못 쓰면 거부해야 한다');
+    await assert.rejects(() => readFile(join(dir, 'docs', 'task_summary.md'), 'utf8'));
+  } finally {
+    process.env.PATH = realPath;
+    process.exitCode = exitCode;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('--write: git 저장소가 아니면 그대로 쓴다 (충돌할 브랜치가 없다)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-summary-'));
+  const exitCode = process.exitCode;
+  try {
+    await runTask({ targetDir: dir, flags: { member: 'chad' }, taskArgs: ['demo'] });
+    await runSummary({ targetDir: dir, flags: { write: true } });
+    assert.notEqual(process.exitCode, 1);
+    const summary = await readFile(join(dir, 'docs', 'task_summary.md'), 'utf8');
+    assert.match(summary, /\| chad \| demo \|/);
+  } finally {
+    process.exitCode = exitCode;
+    await rm(dir, { recursive: true, force: true });
+  }
+});

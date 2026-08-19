@@ -21,6 +21,11 @@ Raw slash-command 인수:
 `harness-codex-review.md`와 동일하다. 차이는 3단계의 리뷰 프롬프트뿐이며, 아래로
 교체한다:
 
+> **`< /dev/null` 은 생략하지 말 것.** `codex exec` 는 프롬프트를 인자로 받고도 stdin 이
+> 열려 있으면 추가 입력을 기다리며 무한 blocking 된다. 출력 파일에
+> `Reading additional input from stdin...` 한 줄만 남고 CPU 는 거의 0인 채 멈춘다.
+> 백그라운드로 돌리면 수십 분을 통째로 날린다.
+
 ```bash
 codex exec --sandbox read-only "You are performing an adversarial read-only code review of this repository.
 Scope: <working tree changes | diff against <base>>. Inspect the changes yourself with git (git status, git diff).
@@ -29,7 +34,7 @@ challenge the implementation approach and design choices, hunt for hidden assump
 missed edge cases, failure paths, concurrency and data-integrity hazards, and security exposure.
 For each objection state severity (P1 blocking / P2 should-fix / P3 nit), file:line, and what concrete
 scenario breaks. Separate real blockers from theoretical concerns in your verdict.
-If the approach survives your objections, say so explicitly. <focus arguments, if any>"
+If the approach survives your objections, say so explicitly. <focus arguments, if any>" < /dev/null
 ```
 
 ## 언제 이걸 쓰나
