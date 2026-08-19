@@ -18,6 +18,35 @@ modified: 2026-08-13
 
 ## [Unreleased]
 
+### Changed
+- **원장(`docs/task_summary.md`, `docs/<user>/<user>-task.md`)이 생성물이 되었다 — 병렬 브랜치 충돌 제거.**
+  이전에는 `task`가 요약표 끝에 행을 append하고 사용자 인덱스의 `## Open` 헤더 바로 아래에 항목을
+  insert했으며, `done`이 두 파일을 다시 고쳤다. 새 항목이 **항상 같은 위치**에 들어가므로 내용이 서로
+  겹치지 않는 브랜치끼리도 반드시 머지 충돌이 났다. 실제로 소비 프로젝트에서 MR 두 건이 이 두 파일
+  때문에 충돌해 수동 rebase와 force-push가 필요했고, 정작 각 MR의 실제 변경 파일은 겹치지 않았다.
+  이제 `task`/`done`은 자기 task 디렉터리의 `<name>-meta.json`만 쓰고 원장은 건드리지 않는다.
+  브랜치가 공유 파일을 수정하지 않으므로 충돌이 **구조적으로 불가능**하다.
+
+### Added
+- **`harness-team summary`** — task 디렉터리를 스캔해 원장을 렌더링한다. 인자 없이 실행하면 stdout으로
+  출력하고(읽기 전용), `--write`는 파일을 갱신하며, `--check`는 원장이 낡았으면 exit 1(mutation 없음, CI용).
+  `--write`는 **기본 브랜치에서만** 동작한다 — 이 가드가 없으면 누군가 feature 브랜치에서 실행해 방금
+  없앤 충돌을 되살린다(`--force`로 우회 가능). 렌더는 결정론적이라(요약표 created 오름차순, 인덱스 최신순)
+  재생성해도 diff가 튀지 않는다.
+- **`<name>-meta.json`** — task별 기계 소유 상태(`created`/`status`/`closedAt`). SSOT 4파일이 아니며 손으로
+  고치지 않는다. spec.md는 에이전트가 통째로 덮어쓰고 handoff.md는 post-commit hook이 다시 쓰므로
+  둘 다 harness가 읽어야 하는 상태를 담을 수 없다.
+- **`migrate`의 원장 → meta.json 백필** — 과거 task는 상태와 created가 디렉터리에서 파생되지 **않는다**.
+  실측: 한 저장소에서 원장의 `✅ done`은 6개인데 handoff의 `— 완료` 마커는 4개뿐이었고, `done`이 인덱스의
+  `- <name> (created …)`를 `- ✅ <name>`으로 덮어쓰기 때문에 완료된 task는 원장이 created의 유일한 출처였다.
+  백필 없이 전환하면 과거 task가 전부 open으로, 날짜 없이 표시된다.
+
+### Fixed
+- **`summary --write`가 `master` 기본 브랜치 저장소를 오거부하던 문제** — `origin/HEAD`가 없으면 기본
+  브랜치를 `main`으로 단정했다. 이제 `origin/HEAD`가 없을 때 `main`/`master` 둘 다 인정한다.
+  `init.defaultBranch`는 조회하지 않는다 — 대개 전역 설정이라 "새 repo를 만들 때의 선호"일 뿐이고,
+  `main` 선호를 가진 사용자가 `master` 저장소에서 작업하면 같은 오거부가 발생한다.
+
 ## [0.15.2] - 2026-08-13
 
 ### Fixed
