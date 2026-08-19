@@ -15,16 +15,17 @@ task별 디렉토리 하나에 SSOT 4개 파일과 비-SSOT Context Card 1개가
 
 ```
 docs/
-├── task_summary.md                   # 전체 task 요약 표 (모든 사용자)
+├── task_summary.md                   # 전체 task 요약 표 — 생성물 (harness-team summary)
 └── <user>/                           # git config user.name 또는 $USER
     ├── <user>-handoff.md             # 세션 시작 진입점 (현재 active task)
-    ├── <user>-task.md                # 이 사용자의 task 인덱스 (Active / Completed)
+    ├── <user>-task.md                # 이 사용자의 task 인덱스 — 생성물 (harness-team summary)
     └── <name>/                       # task 디렉토리
         ├── <name>-spec.md            # 요구사항 / 설계 (사람이 먼저 작성)
         ├── <name>-plan.md            # 단계별 체크리스트
         ├── <name>-handoff.md         # 세션 인수인계 (post-commit hook 자동 갱신)
         ├── <name>-artifact.md        # 실행 결과 / 학습 (task done·retro 시 append)
-        └── <name>-context.md         # Context Card — 현재 working set (비-SSOT)
+        ├── <name>-context.md         # Context Card — 현재 working set (비-SSOT)
+        └── <name>-meta.json          # created / status — harness 내부 상태 (기계 소유)
 ```
 
 ## 사용법
@@ -32,6 +33,9 @@ docs/
 ```bash
 harness-team task <name>      # task 생성 + active 전환 (이미 있으면 활성화만)
 harness-team list             # 전체 task 목록
+harness-team summary          # 원장을 task 디렉터리에서 렌더해 출력 (읽기 전용)
+harness-team summary --write  # 원장 파일 갱신 — 기본 브랜치에서만
+harness-team summary --check  # 원장이 최신인지 검사 (mutation 없음, CI용)
 harness-team done             # 활성 task 완료 처리 (artifact.md에 git log/diff 수집)
 harness-team retro "<메모>"    # 활성 task artifact.md에 학습/교정 내용 append
 harness-team context init     # 활성 task의 Context Card 생성 (없을 때만)
@@ -39,6 +43,19 @@ harness-team context check    # 활성 task의 Context Card 검사 (수정하지
 ```
 
 활성 task의 정보는 `.harness/active.json`에 저장됩니다.
+
+## 원장은 생성물입니다
+
+`docs/task_summary.md`와 `docs/<user>/<user>-task.md`는 **여러 task가 공유하는 집계 파일**입니다.
+예전에는 `task`/`done`이 이 두 파일을 직접 고쳤는데, 새 행이 항상 같은 위치(파일 끝, 헤더 바로 아래)에
+들어가므로 **브랜치를 병렬로 두면 반드시 머지 충돌**이 났습니다.
+
+이제 `task`/`done`은 자기 task 디렉터리의 `<name>-meta.json`만 쓰고 원장은 건드리지 않습니다.
+원장은 `harness-team summary`가 task 디렉터리를 스캔해 렌더링합니다.
+
+- 브랜치에서는 원장을 갱신하지 않습니다 — `--write`는 기본 브랜치에서만 동작합니다.
+- 렌더는 결정론적입니다(요약표는 created 오름차순, 사용자 인덱스는 최신순).
+- CI에서 `harness-team summary --check`로 원장이 낡았는지 검사할 수 있습니다.
 
 ## 규약
 

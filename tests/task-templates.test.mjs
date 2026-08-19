@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { taskSpecTemplate, taskPlanTemplate, taskArtifactTemplate, taskContextTemplate, runTask, runList, runDone } from '../src/commands/task.mjs';
 import { migrateTaskIndexLabels } from '../src/commands/migrate.mjs';
+import { collectTasks } from '../src/commands/summary.mjs';
 
 test('spec 템플릿은 4차원 Ambiguity 자가진단 섹션을 포함한다', () => {
   const out = taskSpecTemplate('demo');
@@ -119,44 +120,45 @@ test('runList는 task 마커(spec.md) 없는 디렉토리(superpowers 등)를 ta
 
 // --- task index "active" → "open" rename (+ backward-compat) ---
 
-test('runTask: 새 task는 인덱스에 "## Open" + summary에 "🔄 open"을 쓴다', async () => {
+test('runTask: 원장을 건드리지 않고 per-task meta만 쓴다', async () => {
   const tmpDir = await mkdtemp(join(tmpdir(), 'harness-open-'));
   try {
     await runTask({ targetDir: tmpDir, flags: { member: 'tester' }, taskArgs: ['demo'] });
-    const idx = await readFile(join(tmpDir, 'docs', 'tester', 'tester-task.md'), 'utf8');
-    const sum = await readFile(join(tmpDir, 'docs', 'task_summary.md'), 'utf8');
-    assert.match(idx, /## Open/);
-    assert.doesNotMatch(idx, /## Active/);
-    assert.match(sum, /\| tester \| demo \| 🔄 open \|/);
+    const meta = JSON.parse(await readFile(join(tmpDir, 'docs', 'tester', 'demo', 'demo-meta.json'), 'utf8'));
+    assert.equal(meta.status, 'open');
+    assert.equal(meta.task, 'demo');
+    // 공유 원장은 렌더링 대상이므로 task 생성이 만들지 않는다 — 이게 병렬 브랜치 충돌의 원인이었다.
+    await assert.rejects(() => readFile(join(tmpDir, 'docs', 'tester', 'tester-task.md'), 'utf8'));
+    await assert.rejects(() => readFile(join(tmpDir, 'docs', 'task_summary.md'), 'utf8'));
   } finally { await rm(tmpDir, { recursive: true, force: true }); }
 });
 
-test('runTask: 기존 "## Active" 인덱스에도 새 task를 삽입한다 (backward-compat)', async () => {
+test('runTask: 기존 "## Active" 인덱스가 있어도 덮어쓰지 않는다 (backward-compat)', async () => {
   const tmpDir = await mkdtemp(join(tmpdir(), 'harness-compat-'));
   try {
-    // Simulate a pre-rename install: index already has the old header.
+    // Simulate a pre-rename install: the old index stays untouched until `summary --write`.
+    const idxPath = join(tmpDir, 'docs', 'tester', 'tester-task.md');
+    const before = '# tester — Tasks\n\n## Active\n- older (created 2026-07-01)\n\n## Completed\n';
     await mkdir(join(tmpDir, 'docs', 'tester'), { recursive: true });
-    await writeFile(join(tmpDir, 'docs', 'tester', 'tester-task.md'), '# tester — Tasks\n\n## Active\n- older (created 2026-07-01)\n\n## Completed\n');
+    await writeFile(idxPath, before);
     await runTask({ targetDir: tmpDir, flags: { member: 'tester' }, taskArgs: ['fresh'] });
-    const idx = await readFile(join(tmpDir, 'docs', 'tester', 'tester-task.md'), 'utf8');
-    // inserted under the existing ## Active header — not lost
-    assert.match(idx, /## Active\n- fresh \(created/);
-    assert.match(idx, /- older/);
+    assert.equal(await readFile(idxPath, 'utf8'), before);
   } finally { await rm(tmpDir, { recursive: true, force: true }); }
 });
 
-test('runDone: 기존 "🔄 active" summary 행도 "✅ done"으로 처리한다 (backward-compat)', async () => {
+test('summary: 기존 "🔄 active" 행도 상태 복원에 쓰인다 (backward-compat)', async () => {
   const tmpDir = await mkdtemp(join(tmpdir(), 'harness-donecompat-'));
   try {
-    await runTask({ targetDir: tmpDir, flags: { member: 'tester' }, taskArgs: ['legacy'] });
-    // Rewrite the summary row to the pre-rename label, as an old install would have it.
-    const summaryPath = join(tmpDir, 'docs', 'task_summary.md');
-    const sum = (await readFile(summaryPath, 'utf8')).replace('🔄 open', '🔄 active');
-    await writeFile(summaryPath, sum);
-    await runDone({ targetDir: tmpDir, flags: { force: true } });
-    const after = await readFile(summaryPath, 'utf8');
-    assert.match(after, /\| tester \| legacy \| ✅ done \|/);
-    assert.doesNotMatch(after, /🔄 active/);
+    // A pre-rename install: legacy label, and no meta.json anywhere.
+    await mkdir(join(tmpDir, 'docs', 'tester', 'legacy'), { recursive: true });
+    await writeFile(join(tmpDir, 'docs', 'tester', 'legacy', 'legacy-spec.md'), '# legacy — Spec\n');
+    await writeFile(join(tmpDir, 'docs', 'task_summary.md'),
+      '# Task Summary\n\n| User | Task | Status | Created |\n|------|------|--------|---------|\n| tester | legacy | 🔄 active | 2026-07-01 |\n');
+
+    const tasks = await collectTasks(tmpDir);
+    assert.equal(tasks.length, 1);
+    assert.equal(tasks[0].status, 'open', '🔄 active 는 open 으로 읽혀야 한다');
+    assert.equal(tasks[0].created, '2026-07-01');
   } finally { await rm(tmpDir, { recursive: true, force: true }); }
 });
 

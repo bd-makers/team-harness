@@ -78,6 +78,13 @@
 
 활성 task는 `.harness/active.json`에 저장.
 
+`<name>-meta.json`은 harness가 소유하는 기계 상태(created·status)이며 SSOT 4파일에 포함되지 않는다.
+손으로 고치지 않는다.
+
+집계 파일 `docs/task_summary.md`와 `docs/<user>/<user>-task.md`는 **생성물**이다.
+`task`/`done`은 이 파일들을 건드리지 않으므로 브랜치를 병렬로 둬도 충돌하지 않는다.
+갱신은 기본 브랜치에서 `harness-team summary --write`로만 한다.
+
 ### Task Context Card (TCC)
 `docs/<user>/<name>/<name>-context.md`는 현재 작업을 위한 작은 **비-SSOT cache/workpad**다.
 기존 spec·plan·handoff·artifact 네 파일만 계속 SSOT이며, 영속 요구사항·결정은 spec/plan에,

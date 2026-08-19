@@ -5,12 +5,9 @@ import { promisify } from 'node:util';
 import { detectMember } from '../member.mjs';
 import { exists, writeText } from '../fsx.mjs';
 import { buildEnvelope, emitObservation } from '../observation.mjs';
+import { readTaskMeta, writeTaskMeta, taskMetaTemplate } from './summary.mjs';
 
 const pexec = promisify(execFile);
-
-function escapeRegex(s) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
 
 // "미완"의 단일 정의 — done-guard와 session-task-gate가 공유.
 // 줄 시작 체크박스만 매칭(인라인/산문 `- [ ]`는 미완 아님).
@@ -157,70 +154,6 @@ export function taskContextTemplate(name) {
 `;
 }
 
-function userTaskIndexTemplate(user) {
-  return `# ${user} — Tasks
-
-## Open
-
-## Completed
-`;
-}
-
-function taskSummaryTemplate() {
-  return `# Task Summary
-
-| User | Task | Status | Created |
-|------|------|--------|---------|
-`;
-}
-
-async function ensureUserTaskIndex(targetDir, user) {
-  const p = join(targetDir, 'docs', user, `${user}-task.md`);
-  if (!(await exists(p))) {
-    await mkdir(join(targetDir, 'docs', user), { recursive: true });
-    await writeFile(p, userTaskIndexTemplate(user));
-  }
-  return p;
-}
-
-async function ensureTaskSummary(targetDir) {
-  const p = join(targetDir, 'docs', 'task_summary.md');
-  if (!(await exists(p))) {
-    await mkdir(join(targetDir, 'docs'), { recursive: true });
-    await writeFile(p, taskSummaryTemplate());
-  }
-  return p;
-}
-
-async function addToUserTaskIndex(indexPath, name, date) {
-  let content = await readFile(indexPath, 'utf8');
-  if (content.split('\n').some(l => l === `- ${name}` || l.startsWith(`- ${name} (`))) return;
-  // Insert under the open-tasks header. Prefer the new `## Open`; fall back to a
-  // pre-rename `## Active` so existing installs keep working without a migrate.
-  const header = content.includes('## Open\n') ? '## Open\n' : '## Active\n';
-  content = content.replace(header, `${header}- ${name} (created ${date})\n`);
-  await writeFile(indexPath, content);
-}
-
-async function addToTaskSummary(summaryPath, user, name, date) {
-  let content = await readFile(summaryPath, 'utf8');
-  if (content.includes(`| ${user} | ${name} |`)) return;
-  content = content.trimEnd() + `\n| ${user} | ${name} | 🔄 open | ${date} |\n`;
-  await writeFile(summaryPath, content);
-}
-
-
-async function markDoneInTaskSummary(summaryPath, user, name) {
-  let content = await readFile(summaryPath, 'utf8');
-  // Match both the new `🔄 open` and the pre-rename `🔄 active` so `done` still
-  // resolves rows written by an older harness version.
-  content = content.replace(
-    new RegExp(`\\| ${escapeRegex(user)} \\| ${escapeRegex(name)} \\| 🔄 (?:open|active) \\|`),
-    `| ${user} | ${name} | ✅ done |`
-  );
-  await writeFile(summaryPath, content);
-}
-
 export async function runTask(ctx) {
   const json = !!(ctx.flags && ctx.flags.json);
   const name = (ctx.taskArgs || [])[0];
@@ -287,11 +220,10 @@ export async function runTask(ctx) {
     switchedAt: new Date().toISOString(),
   });
 
-  const indexPath = await ensureUserTaskIndex(ctx.targetDir, user);
-  await addToUserTaskIndex(indexPath, name, date);
-
-  const summaryPath = await ensureTaskSummary(ctx.targetDir);
-  await addToTaskSummary(summaryPath, user, name, date);
+  // Per-task state only. The shared ledger (docs/task_summary.md and the user index)
+  // is rendered by `harness-team summary`; writing it here is what made every parallel
+  // branch collide on the same line.
+  await writeText(join(dir, `${name}-meta.json`), taskMetaTemplate(user, name, date));
 
   if (json) {
     emitObservation(buildEnvelope({
@@ -305,6 +237,7 @@ export async function runTask(ctx) {
         `docs/${user}/${name}/${name}-handoff.md`,
         `docs/${user}/${name}/${name}-artifact.md`,
         `docs/${user}/${name}/${name}-context.md`,
+        `docs/${user}/${name}/${name}-meta.json`,
       ],
     }));
   } else {
@@ -443,21 +376,8 @@ export async function runDone(ctx) {
 
   await appendFile(handoffPath, `\n## ${ts} — 완료\n\n태스크 종료.\n`);
 
-  const indexPath = join(ctx.targetDir, 'docs', user, `${user}-task.md`);
-  if (await exists(indexPath)) {
-    let content = await readFile(indexPath, 'utf8');
-    const line = content.split('\n').find(l => l === `- ${task}` || l.startsWith(`- ${task} (`) || l.startsWith(`- ✅ ${task}`));
-    if (line) {
-      content = content.replace(line, '');
-      content = content.replace('## Completed\n', `## Completed\n- ✅ ${task}\n`);
-      await writeFile(indexPath, content);
-    }
-  }
-
-  const summaryPath = join(ctx.targetDir, 'docs', 'task_summary.md');
-  if (await exists(summaryPath)) {
-    await markDoneInTaskSummary(summaryPath, user, task);
-  }
+  const meta = (await readTaskMeta(ctx.targetDir, user, task)) || { user, task, created: today() };
+  await writeTaskMeta(ctx.targetDir, user, task, { ...meta, user, task, status: 'done', closedAt: ts });
 
   await writeActive(ctx.targetDir, null);
   console.log(`done: ${user}/${task}`);

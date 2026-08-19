@@ -1,6 +1,7 @@
 # chad — Tasks
 
 ## Open
+- task-ledger-derived (created 2026-08-19)
 
 
 

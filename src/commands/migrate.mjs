@@ -8,6 +8,7 @@ import { render } from '../render.mjs';
 import { confirm } from '../prompt.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
 import { taskArtifactTemplate } from './task.mjs';
+import { collectTasks, readTaskMeta, writeTaskMeta, metaRel } from './summary.mjs';
 import { settingsHasSessionGate } from './session-context.mjs';
 
 const USER_REGION_RE = /<!--\s*harness:user:begin\s*-->[\s\S]*?<!--\s*harness:user:end\s*-->/;
@@ -632,6 +633,37 @@ export async function migrateBoundaryCheckpointHook(ctx) {
   return true;
 }
 
+// --- Ledger → per-task meta.json backfill (0.15.x → 0.16.0) ---
+//
+// Before 0.16.0 the aggregate ledger was the only home for two facts, so the switch to
+// derived rendering cannot infer them from the task directory alone:
+//   - `created` — `done` overwrote `- <name> (created …)` with `- ✅ <name>`, so for a
+//     completed task docs/task_summary.md is the last surviving source.
+//   - done-ness — the `## <ISO> — 완료` handoff marker predates only some closures.
+//     Measured on a real install: 6 rows marked `✅ done`, 4 handoffs carrying the marker.
+// Without this backfill every pre-0.16.0 task renders as open with an empty date.
+async function backfillTaskMeta(ctx) {
+  const tasks = await collectTasks(ctx.targetDir);
+  const written = [];
+
+  for (const task of tasks) {
+    if (await readTaskMeta(ctx.targetDir, task.user, task.task)) continue;
+    await writeTaskMeta(ctx.targetDir, task.user, task.task, {
+      user: task.user,
+      task: task.task,
+      created: task.created || '',
+      status: task.status || 'open',
+      closedAt: null,
+    });
+    written.push(metaRel(task.user, task.task));
+  }
+
+  if (written.length) {
+    console.log(`  ✓ backfilled ${written.length} task meta file(s) from the ledger`);
+  }
+  return written.length > 0;
+}
+
 export async function runMigrate(ctx) {
   console.log(`harness-team migrate → ${ctx.targetDir}`);
 
@@ -645,13 +677,14 @@ export async function runMigrate(ctx) {
   const taskLabelsRenamed = await migrateTaskIndexLabels(ctx);
   const hookMigrated = await migrateSessionStartHook(ctx);
   const boundaryHookMigrated = await migrateBoundaryCheckpointHook(ctx);
+  const metaBackfilled = await backfillTaskMeta(ctx);
 
   if (boundaryHookMigrated === null) {
     console.log('\nMigration incomplete — resolve the PreToolUse boundary checkpoint issue and rerun.');
     return;
   }
 
-  if (!agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !claudeHooksRefreshed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated) {
+  if (!agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !claudeHooksRefreshed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated && !metaBackfilled) {
     console.log('\nNothing to migrate — project is already up to date.');
     return;
   }

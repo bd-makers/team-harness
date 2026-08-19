@@ -43,3 +43,4 @@
 | chad | cursor-rules-mirror | ✅ done | 2026-08-12 |
 | chad | cursor-rules-prune | ✅ done | 2026-08-12 |
 | chad | global-cli-drift | ✅ done | 2026-08-13 |
+| chad | task-ledger-derived | 🔄 open | 2026-08-19 |
