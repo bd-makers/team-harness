@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-08-13
+modified: 2026-08-19
 ---
 
 # Changelog
@@ -17,6 +17,8 @@ modified: 2026-08-13
 -->
 
 ## [Unreleased]
+
+## [0.16.0] - 2026-08-19
 
 ### Changed
 - **원장(`docs/task_summary.md`, `docs/<user>/<user>-task.md`)이 생성물이 되었다 — 병렬 브랜치 충돌 제거.**
@@ -42,6 +44,12 @@ modified: 2026-08-13
   백필 없이 전환하면 과거 task가 전부 open으로, 날짜 없이 표시된다.
 
 ### Fixed
+- **`release`가 개발 저장소와 marketplace clone이 같은 디렉터리일 때 중단되던 문제** — 메인테이너는 보통
+  marketplace clone 안에서 개발하므로 `root === marketplaceDir`이 된다. 8단계의 marketplace 동기화가
+  `marketplace.json`을 자기 자신에게 복사하려 해 `cp`가 `EINVAL (src and dest cannot be the same)`로
+  던졌고, 매니페스트 4개와 cache는 이미 새 버전으로 올라간 **반쯤 적용된 트리**가 남았다. 실제로 0.16.0
+  릴리스에서 발생했다. 이제 두 경로가 같으면 동기화를 건너뛴다(clone이 곧 source이므로 옮길 것이 없다).
+  같은 경우 stale clone 경고도 내지 않는다 — 자기 자신을 뒤처졌다고 경고하는 셈이었다.
 - **`summary --write`가 `master` 기본 브랜치 저장소를 오거부하던 문제** — `origin/HEAD`가 없으면 기본
   브랜치를 `main`으로 단정했다. 이제 `origin/HEAD`가 없을 때 `main`/`master` 둘 다 인정한다.
   `init.defaultBranch`는 조회하지 않는다 — 대개 전역 설정이라 "새 repo를 만들 때의 선호"일 뿐이고,

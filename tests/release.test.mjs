@@ -415,3 +415,33 @@ test('release: skipCache면 claude 감지 자체를 건너뜀 (installed_plugins
     await rm(pr, { recursive: true, force: true });
   }
 });
+
+test('개발 저장소가 곧 marketplace clone이어도 릴리스가 중단되지 않는다', async () => {
+  // 메인테이너는 보통 marketplace clone 안에서 개발한다. 그러면 root === marketplaceDir 이라
+  // marketplace.json 을 자기 자신에게 복사하게 되고, cp 가 EINVAL 로 던져 매니페스트만 올라간
+  // 반쯤 적용된 트리가 남았다.
+  const pr = await makePluginsRoot();
+  const root = join(pr, 'marketplaces', MARKET);
+  try {
+    await mkdir(join(root, '.claude-plugin'), { recursive: true });
+    await mkdir(join(root, '.codex-plugin'), { recursive: true });
+    await mkdir(join(root, 'commands'), { recursive: true });
+    await writeFile(join(root, 'package.json'), JSON.stringify({ name: PLUGIN, version: '1.2.3' }, null, 2) + '\n');
+    await writeFile(join(root, '.claude-plugin/plugin.json'),
+      JSON.stringify({ name: PLUGIN, version: '1.2.3', commands: ['./commands/harness-release.md'] }, null, 2) + '\n');
+    await writeFile(join(root, '.claude-plugin/marketplace.json'),
+      JSON.stringify({ name: MARKET, plugins: [{ name: PLUGIN, version: '1.2.3' }] }, null, 2) + '\n');
+    await writeFile(join(root, '.codex-plugin/plugin.json'),
+      JSON.stringify({ name: PLUGIN, version: '1.2.3', skills: './skills/' }, null, 2) + '\n');
+    await writeFile(join(root, 'commands/harness-release.md'), '# release\n');
+
+    const res = await release({ bump: 'minor', root, pluginsRoot: pr, skipCache: false, gitSha: 'deadbeef' });
+
+    assert.equal(res.newVersion, '1.3.0');
+    assert.equal(res.marketplaceIsSource, true, 'clone 이 곧 source 임을 인지해야 한다');
+    assert.equal(res.marketplaceStaleDir, undefined, 'source 자신을 stale 이라고 경고하면 안 된다');
+    assert.equal((await readJson(join(root, '.claude-plugin/marketplace.json'))).plugins[0].version, '1.3.0');
+  } finally {
+    await rm(pr, { recursive: true, force: true });
+  }
+});

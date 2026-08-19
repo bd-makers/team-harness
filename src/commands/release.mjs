@@ -239,12 +239,21 @@ export async function release({
   // 8. Marketplace sync. The authoritative marketplace manifest lives at
   // <marketplaceDir>/.claude-plugin/marketplace.json (matching every other
   // installed marketplace) — NOT the marketplace root.
-  const destMarketplaceJson = path.join(marketplaceDir, '.claude-plugin', 'marketplace.json');
-  await mkdir(path.dirname(destMarketplaceJson), { recursive: true });
-  await cp(marketplacePath, destMarketplaceJson);
-  const srcCommands = path.join(root, 'commands');
-  if (await exists(srcCommands)) {
-    await syncCommandsDir(srcCommands, path.join(marketplaceDir, 'commands'));
+  //
+  // A maintainer often develops *inside* the marketplace clone, so root and
+  // marketplaceDir are the same directory. Copying a file onto itself throws
+  // EINVAL and aborted the release after the manifests were already bumped,
+  // leaving a half-applied tree. Nothing to sync in that case — the clone is
+  // the source.
+  result.marketplaceIsSource = path.resolve(root) === path.resolve(marketplaceDir);
+  if (!result.marketplaceIsSource) {
+    const destMarketplaceJson = path.join(marketplaceDir, '.claude-plugin', 'marketplace.json');
+    await mkdir(path.dirname(destMarketplaceJson), { recursive: true });
+    await cp(marketplacePath, destMarketplaceJson);
+    const srcCommands = path.join(root, 'commands');
+    if (await exists(srcCommands)) {
+      await syncCommandsDir(srcCommands, path.join(marketplaceDir, 'commands'));
+    }
   }
 
   // The clone is a catalog: `/plugin marketplace update` (a git pull) owns its
@@ -255,7 +264,7 @@ export async function release({
   // run. Release cannot fix it (pulling someone else's checkout is not this
   // command's business) but it must not stay quiet about causing it.
   result.marketplaceStaleVersion = await readJsonVersion(path.join(marketplaceDir, 'package.json'));
-  if (result.marketplaceStaleVersion && result.marketplaceStaleVersion !== newVersion) {
+  if (!result.marketplaceIsSource && result.marketplaceStaleVersion && result.marketplaceStaleVersion !== newVersion) {
     result.marketplaceStaleDir = marketplaceDir;
   }
 
