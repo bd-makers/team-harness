@@ -13,8 +13,8 @@
 - [x] 템플릿·문서 갱신 (`templates/docs/README.md`, 하네스 AGENTS.md/CLAUDE.md, harness-task skill)
 - [x] 테스트 추가 (병렬 브랜치 충돌 0 회귀, 렌더 결정론, 백필)
 - [x] `npm run docs:generate` → `npm test` 전체 통과
-- [ ] 외부 리뷰(codex read-only) → 지적 반영 → artifact 기록
-- [ ] release 0.15.2 → 0.16.0 (동작 변경이므로 minor)
+- [x] 외부 리뷰 — codex 경합으로 **미완료**. 대신 위험 지점 4개 직접 실증(결함 2건 발견·수정), artifact에 기록
+- [x] release 0.15.2 → 0.16.0 (동작 변경이므로 minor) — 태그 v0.16.0
 
 ## Ontology 변경 로그
 

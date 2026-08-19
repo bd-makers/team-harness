@@ -49,16 +49,35 @@ created도 원장에서 살려냈다. 마커만 믿었다면 2개가 open으로 
 **하네스 저장소 자체 백필**: 42개 task 전부 meta.json 생성. 렌더 결과와 기존 원장의 행 집합이 완전히 동일
 (42행, `diff` 결과 없음). 차이는 정렬 순서뿐 — created 동률일 때 이름순으로 재정렬된다.
 
-**전체 테스트**: `npm test` → **284 pass / 0 fail** (기존 279 + 신규 8, 재조준 3 포함). `npm run docs:check` 통과.
+**전체 테스트**: `npm test` → **287 pass / 0 fail** (기존 279 + summary 10 + release 회귀 1, 재조준 3 포함).
+
+**릴리스**: 0.15.2 → **0.16.0**. 매니페스트 4개, cache, marketplace, `installed_plugins.json` 모두 0.16.0.
+`harness-team --version` = 0.16.0 = 설치본 → 드리프트 없음. 태그 `v0.16.0`.
 
 ## Reviews
 *Codex/Gemini 등 리뷰 실행 시 결과(요약·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 
-### 2026-08-19 — Codex 외부 리뷰 (`codex exec --sandbox read-only`)
+### 2026-08-19 — Codex 외부 리뷰: **미완료**
 
-(진행 중 — 결과 도착 시 이 절에 지적·조치를 기록한다)
+두 번 실행했으나 둘 다 출력 없이 반환하지 못했다(1회차 프로세스 소멸, 2회차 10분 이상 무출력).
+같은 시각 다른 세션이 codex 리뷰를 점유 중이었다. **리뷰 없이 릴리스했다는 사실을 여기 남긴다.**
+
+대신 리뷰에서 물어보려던 4개 위험 지점을 직접 실증했고, **실제 결함 2건을 찾아 고쳤다**:
+
+| 위험 지점 | 방법 | 결과 |
+| --- | --- | --- |
+| legacy 파싱 커버리지 | `🔄 active`/`✅ done`/인덱스 2형식 fixture | 통과 — 회귀 테스트로 고정 |
+| `--write` 기본 브랜치 가드 | detached HEAD / origin 없는 master / git 아닌 디렉터리 | **결함 1건** — master 저장소 오거부 → 수정 |
+| 원장 의존 잔존 경로 | `doctor`·`session-context`·`harness.mjs` grep | 의존 없음 (migrate만 의도적으로 씀) |
+| 렌더 결정론 | 입력 순서 뒤집어 바이트 비교 | 통과 |
+
+릴리스 실행 중 **결함 1건 추가 발견**: `release`가 개발 저장소와 marketplace clone이 같은 디렉터리일 때
+`marketplace.json`을 자기 자신에게 복사하려다 `EINVAL`로 중단, 매니페스트만 올라간 반쯤 적용된 트리를 남겼다.
+수정 + 회귀 테스트 추가 후 재실행해 완료.
 
 **Gemini 리뷰: 미실행** — 이 머신에 `gemini` CLI 미설치.
+
+> 후속: codex 경합이 풀리면 `b8a0a6c..adbd6e9` 범위로 리뷰를 다시 돌리고 결과를 이 절에 append 한다.
 
 ## Learnings
 
