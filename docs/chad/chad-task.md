@@ -1,52 +1,20 @@
 # chad — Tasks
 
 ## Open
-- task-ledger-derived (created 2026-08-19)
-
-
-
-
-
-
-
-
-- th-whatschanged-upkeep (created 2026-08-03)
-- th-release-0-12 (created 2026-08-03)
 - th-capsule-grammar (created 2026-08-03)
 - th-overview-mermaid (created 2026-08-03)
+- th-release-0-12 (created 2026-08-03)
+- th-whatschanged-upkeep (created 2026-08-03)
 - skilltest-skipstring (created 2026-07-30)
 - th-resident-verify (created 2026-07-30)
-
 - harness-comptest (created 2026-07-10)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ## Completed
+- ✅ task-ledger-derived
 - ✅ global-cli-drift
-- ✅ cursor-rules-prune
-- ✅ cursor-rules-mirror
 - ✅ codex-hooks-template
+- ✅ cursor-rules-mirror
+- ✅ cursor-rules-prune
 - ✅ release-publish-workflow
 - ✅ codex-review-commands
 - ✅ doctor-hookcli-tests
@@ -55,21 +23,21 @@
 - ✅ skilltest-ast-grader
 - ✅ harness-inttest
 - ✅ harness-unittest
-- ✅ update-comparison-html
+- ✅ codex-command-surface
 - ✅ codex-plugin-cache-refresh
 - ✅ codex-wrapper-skills
-- ✅ codex-command-surface
+- ✅ update-comparison-html
 - ✅ codex-l5-sim-plan
 - ✅ codex-plugin-sim-check
 - ✅ codex-plugin-support
-- ✅ harness-sim-guide
 - ✅ task-index-open-naming
 - ✅ plugin-hardening
 - ✅ pocock-merge
+- ✅ harness-sim-guide
 - ✅ sim-lifecycle-sc6
 - ✅ sim-stack-matrix
-- ✅ sim-agentloop-redesign
 - ✅ done-guard-handoff
+- ✅ sim-agentloop-redesign
 - ✅ harness-sim
 - ✅ e2e-apply-verification
 - ✅ doctor-sessionstart-check
