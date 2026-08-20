@@ -18,6 +18,24 @@ modified: 2026-08-19
 
 ## [Unreleased]
 
+### Added
+- **`/harness-ship` — PR/MR 직전 최종 갱신 커맨드.** 라이프사이클이 `harness-team done`에서 끝나
+  문서와 실제 머지 사이가 비어 있었다. 리뷰어가 문서를 읽는 시점은 PR인데 그때 spec·plan·artifact가
+  최신이라는 보장이 없었다. ship은 활성 task를 확인해 세 문서를 코드 현실과 맞춘 뒤 **"PR/MR 준비
+  완료" 상태를 보고하는 데서 멈춘다** — PR/MR 생성·푸시는 하지 않는다. `harness-team done`은 손대지
+  않았다(이 저장소의 릴리스 플로우는 PR 없이 main 직접 범프 커밋 → 태그 푸시이므로 done에 PR 단계를
+  끼우면 깨진다). 다이어그램 갱신·생성은 실행 시점에 한 번 묻는 **옵트인**이며 응답을 저장하지
+  않는다(설정 스키마·전용 doctor 체크 없음). `diagram-design`은 별도 마켓플레이스의 Claude Code 전용
+  플러그인이고 머신별 설치라 **하드 의존하지 않는다** — probe → degrade → record: 없으면 실패시키지
+  않고 건너뛴 뒤 artifact에 '미실행' 한 줄을 남긴다. 산출물
+  `docs/<user>/<name>/<name>-diagram.html`은 SSOT 4파일이 아닌 **생성물**이고, `docs/`가 Obsidian
+  볼트 안이라 script가 제거되므로 자립형 inline SVG HTML이어야 한다. Claude 전용 스킬 호출은
+  `commands/harness-ship.md`에만 두고 `AGENTS.md`에는 도구 중립 한 줄만 추가했다(Codex·Cursor·
+  OpenCode도 읽는 SSOT). 새 CLI 서브커맨드는 만들지 않았다 — ship은 에이전트 판단 작업이고,
+  `tests/manifest-sync.test.mjs`가 command 문서의 모든 `harness-team <sub>` 표기를 router case와
+  대조하므로 CLI 없는 서브커맨드는 애초에 문서화할 수 없다. Codex에서는
+  `skills/harness-ship/SKILL.md` 래퍼가 같은 command 계약을 SSOT로 읽는다.
+
 ### Changed
 - **AGENTS.md에 D5(2026-08-20) 결정 노트 추가 — 단일 스레드 쓰기 규칙의 범위 정정.** D4(2026-07-28)는
   "Claude·OpenCode는 동시에 병렬로 쓰지 않는다"고만 말하고 금지 범위를 적지 않아, 같은 파일의 작업
