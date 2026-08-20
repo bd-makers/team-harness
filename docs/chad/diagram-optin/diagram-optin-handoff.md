@@ -19,3 +19,9 @@ AGENTS.md                                         | 11 +++
  tests/agent-files.test.mjs                        | 26 ++++++
  14 files changed, 388 insertions(+)
 
+
+## 2026-08-20T10:06:25.529Z — 649694f chore(task): post-commit handoff 갱신
+docs/chad/chad-handoff.md                        |  6 +++---
+ docs/chad/diagram-optin/diagram-optin-handoff.md | 18 ++++++++++++++++++
+ 2 files changed, 21 insertions(+), 3 deletions(-)
+

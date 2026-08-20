@@ -16,9 +16,11 @@ LLM으로 task를 진행할 때 spec·planning 단계에서 다이어그램을 *
 ### 확정된 설계 결정
 
 - **별도 옵트인 저장소를 만들지 않는다.** `.harness/config.json` 스키마 추가·전용 doctor 체크·
-  상태 파일 모두 금지. "예"의 상태는 산출물 존재로 자명하고, "아니오"의 상태는 **plan.md에 그
-  단계가 없다**는 사실로 이미 표현된다. plan.md는 이미 SSOT이고 AGENTS.md 세션 시작 프로토콜
-  2번이 반드시 읽는 파일이다 — **plan.md가 곧 상태다.**
+  상태 파일 모두 금지. 두 상태를 모두 plan.md가 표현한다 — 그 단계가 있으면 옵트인, 없으면
+  옵트아웃이다. plan.md는 이미 SSOT이고 AGENTS.md 세션 시작 프로토콜 2번이 반드시 읽는
+  파일이다 — **plan.md가 곧 상태다.** (실행 여부는 별개 축이다: 도구가 없어 건너뛴 opted-in
+  task는 산출물이 없으므로, "산출물 존재 = 옵트인"으로 읽으면 오분류된다. 그래서 건너뛴 단계는
+  지우지 않고 `- [x] … — 미실행(도구 없음)`으로 닫아 옵트인 사실을 보존한다.)
 - **질문은 CLI가 아니라 command doc에서 한다.** `harness-team task`는 Node CLI라
   AskUserQuestion을 할 수 없다. 절차는 `commands/harness-task.md`가 소유하며,
   Codex 표면(`skills/harness-task/SKILL.md`)도 같은 문서를 SSOT로 읽으므로 두 에이전트 경로가

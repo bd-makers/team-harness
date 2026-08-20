@@ -43,6 +43,15 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task $ARGUMENTS
    먼저 확인하고, 없으면 설치 명령을 단정해 안내하지 말고(`harness-codex-review` Preflight와 같은
    계약) 다이어그램 단계를 건너뛴다. **도구가 없다고 task를 실패시키지 않는다.**
 
+   건너뛸 때 plan의 그 단계는 **지우지 말고** 사유를 붙여 닫는다:
+
+   ```markdown
+   - [x] spec/plan 다이어그램 — 미실행(도구 없음)
+   ```
+
+   지우면 옵트인했다는 사실 자체가 사라지고, `- [ ]`로 열어 두면 `harness-team done` 가드가
+   "plan.md에 미완 체크박스가 남아 있음"으로 완료를 막는다.
+
 5. **산출물** — `docs/<user>/<name>/<name>-diagram.html`. 자립형 **inline SVG**로 쓴다 —
    `docs/`는 Obsidian 볼트에서 열리고 Obsidian은 script를 제거하므로 mermaid 같은 런타임 JS
    다이어그램은 볼트에서 렌더되지 않는다. 이 파일은 `<name>-meta.json`과 마찬가지로 SSOT 4파일이
