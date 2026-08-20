@@ -25,3 +25,18 @@ docs/chad/chad-handoff.md                        |  6 +++---
  docs/chad/diagram-optin/diagram-optin-handoff.md | 18 ++++++++++++++++++
  2 files changed, 21 insertions(+), 3 deletions(-)
 
+
+## 2026-08-20T10:18:27.925Z — 3eb36ff fix(task): Codex 리뷰 P2 3건 조치 — 건너뛴 다이어그램 단계의 종결 규칙 추가
+AGENTS.md                                         |  3 ++-
+ CHANGELOG.md                                      |  7 ++---
+ CLAUDE.md                                         |  5 +++-
+ commands/harness-task.md                          |  9 +++++++
+ docs/chad/chad-handoff.md                         |  2 +-
+ docs/chad/diagram-optin/diagram-optin-artifact.md | 31 ++++++++++++++++++++---
+ docs/chad/diagram-optin/diagram-optin-handoff.md  |  6 +++++
+ docs/chad/diagram-optin/diagram-optin-spec.md     |  8 +++---
+ templates/AGENTS.md.hbs                           |  3 ++-
+ templates/CLAUDE.md.hbs                           |  5 +++-
+ tests/agent-files.test.mjs                        | 24 ++++++++++++++++++
+ 11 files changed, 89 insertions(+), 14 deletions(-)
+
