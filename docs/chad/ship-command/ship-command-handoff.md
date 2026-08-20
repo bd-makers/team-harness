@@ -49,3 +49,9 @@ CHANGELOG.md                                    | 15 +++++-
  tests/ship-command.test.mjs                     | 69 +++++++++++++++++++++++++
  12 files changed, 159 insertions(+), 27 deletions(-)
 
+
+## 2026-08-20T10:36:56.728Z — d04bb73 chore(task): post-commit handoff 갱신
+docs/chad/chad-handoff.md                      |  2 +-
+ docs/chad/ship-command/ship-command-handoff.md | 16 ++++++++++++++++
+ 2 files changed, 17 insertions(+), 1 deletion(-)
+

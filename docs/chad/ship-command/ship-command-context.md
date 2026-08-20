@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: `/harness-ship`(PR/MR 직전 spec·plan·artifact 최종 갱신 + 준비 완료 보고, 다이어그램 옵트인) 추가
-- Current atomic step: PR #25 열림·CI green. Codex 리뷰 P2/P3 조치 후 재검증·기록 (머지 금지)
+- Current atomic step: 완료 — PR #25 open·CI green(18/20), Codex 리뷰 P2/P3 조치·기록 끝. 머지는 사용자 몫
 - Stop / human-decision condition: PR 머지, `harness-team release` 실행, 버전 범프는 사용자 지시 없이 금지
 
 ## Constraints and settled decisions
@@ -26,3 +26,4 @@
 ## Resume checklist
 - 새 파일 추가 시 `git add` → `npm run docs:generate` 순서 (overview는 git ls-files 기반)
 - W2(다이어그램 옵트인)와 AGENTS.md·CHANGELOG.md 충돌 시 rebase로 해결하고 상대 변경을 지우지 않는다
+- 새 커맨드 추가 절차의 정본은 MAINTAINING.md '작업 규칙' 표(이번에 정정)
