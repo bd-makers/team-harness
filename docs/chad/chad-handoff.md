@@ -4,7 +4,7 @@
 diagram-optin
 
 ## Last Commit (2026-08-20)
-3d77f48 chore(task): post-commit handoff 갱신
+65a8c8b docs(task): plan 완료 체크 + artifact/TCC에 PR #26 기록
 
 ## Full Context
 → docs/chad/diagram-optin/diagram-optin-handoff.md

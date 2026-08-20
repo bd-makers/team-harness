@@ -46,3 +46,12 @@ docs/chad/chad-handoff.md                        |  2 +-
  docs/chad/diagram-optin/diagram-optin-handoff.md | 15 +++++++++++++++
  2 files changed, 16 insertions(+), 1 deletion(-)
 
+
+## 2026-08-20T10:19:34.378Z — 65a8c8b docs(task): plan 완료 체크 + artifact/TCC에 PR #26 기록
+docs/chad/chad-handoff.md                         | 2 +-
+ docs/chad/diagram-optin/diagram-optin-artifact.md | 3 +++
+ docs/chad/diagram-optin/diagram-optin-context.md  | 4 ++--
+ docs/chad/diagram-optin/diagram-optin-handoff.md  | 6 ++++++
+ docs/chad/diagram-optin/diagram-optin-plan.md     | 2 +-
+ 5 files changed, 13 insertions(+), 4 deletions(-)
+
