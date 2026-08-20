@@ -19,3 +19,11 @@
  templates/AGENTS.md.hbs                         |  2 +
  14 files changed, 343 insertions(+), 3 deletions(-)
 
+
+## 2026-08-20T10:06:45.419Z — 39def79 docs(task): ship-command plan 완료 체크 + artifact에 결과·학습 기록
+docs/chad/chad-handoff.md                       |  6 +--
+ docs/chad/ship-command/ship-command-artifact.md | 59 ++++++++++++++++++++++++-
+ docs/chad/ship-command/ship-command-handoff.md  | 18 ++++++++
+ docs/chad/ship-command/ship-command-plan.md     |  4 +-
+ 4 files changed, 81 insertions(+), 6 deletions(-)
+

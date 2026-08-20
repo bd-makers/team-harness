@@ -4,7 +4,7 @@
 ship-command
 
 ## Last Commit (2026-08-20)
-2ba91f2 feat(commands): PR/MR 직전 최종 갱신 커맨드 /harness-ship 추가
+39def79 docs(task): ship-command plan 완료 체크 + artifact에 결과·학습 기록
 
 ## Full Context
 → docs/chad/ship-command/ship-command-handoff.md
