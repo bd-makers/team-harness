@@ -15,8 +15,8 @@
 - [x] `CHANGELOG.md` `[Unreleased]`에 Added 항목 (버전 범프 없음)
 - [x] `git add` 후 `npm run docs:generate` → `docs/harness-overview.html` 갱신
 - [x] `npm run docs:check` + `npm run test` 전체 통과를 실제 출력으로 확인
-- [ ] 커밋 → PR 생성(머지하지 않음) → PR 번호 보고
-- [ ] artifact.md에 결과·학습 기록
+- [x] 커밋 → PR 생성(머지하지 않음) → PR 번호 보고 — PR #25
+- [x] artifact.md에 결과·학습 기록
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
