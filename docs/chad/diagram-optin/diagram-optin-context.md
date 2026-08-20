@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: spec/plan 다이어그램 옵트인을 문서 전용으로 추가 (질문 1회, plan.md가 상태)
-- Current atomic step: PR 생성 (main 대상, 머지 금지)
+- Current atomic step: PR #26 리뷰 대기 (머지 금지 — 사람 판단)
 - Stop / human-decision condition: PR 머지·릴리스는 사람 판단. `release`·main 직접 푸시 금지.
 
 ## Constraints and settled decisions
@@ -24,5 +24,5 @@
 (none — 미해결 실패 없음)
 
 ## Resume checklist
-- 브랜치 `ao/harness-aijient-team-plugin-3/diagram-optin`, main 대상 PR 확인
+- PR #26 상태·CI 확인 (브랜치 `ao/harness-aijient-team-plugin-3/diagram-optin`)
 - W3(`/harness-ship`)와 CHANGELOG `[Unreleased]`·AGENTS.md 충돌 시 rebase — 상대 변경 삭제 금지

@@ -19,7 +19,7 @@ spec/plan 단계 다이어그램을 **옵트인**으로 추가한다 — 신규 
       (AGENTS.md 도구 중립 = `diagram-design` 문자열 부재 / CLAUDE.md probe 계약 존재)
 - [x] `CHANGELOG.md` `[Unreleased]` 끝에 항목 추가 (W3 항목 보존, 버전 범프 금지)
 - [x] 검증: `npm run test` 전체 통과 + `npm run docs:check` + 샌드박스 apply 전파 확인 (실제 출력)
-- [ ] PR 생성 (main 대상, 머지 금지) + artifact.md 결과 기록
+- [x] PR 생성 (main 대상, 머지 금지) + artifact.md 결과 기록 — PR #26
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

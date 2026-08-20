@@ -6,6 +6,9 @@
 
 spec/plan 단계 다이어그램 옵트인을 **문서 전용 변경**으로 추가했다. `src/` 무변경.
 
+PR: [#26](https://github.com/bd-makers/team-harness/pull/26) (main 대상, **머지하지 않음** — 리뷰 대기).
+브랜치: `ao/harness-aijient-team-plugin-3/diagram-optin`
+
 | 파일 | 변경 |
 |---|---|
 | `AGENTS.md` + `templates/AGENTS.md.hbs` | protocol 절: `<name>-diagram.html`을 SSOT 제외 생성물로 선언(+inline SVG 근거), task 워크플로우에 옵트인 불릿 — **도구 중립** |
