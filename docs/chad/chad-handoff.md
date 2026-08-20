@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-global-cli-drift
+d5-parallel-pr-scope
 
-## Last Commit (2026-08-13)
-c2e4112 docs(task): record the drift task's plan, review, and learnings
+## Last Commit (2026-08-20)
+514c089 docs(agents): D5 결정 추가 — 단일 스레드 쓰기 범위를 같은 워킹트리로 정정
 
 ## Full Context
-→ docs/chad/global-cli-drift/global-cli-drift-handoff.md
+→ docs/chad/d5-parallel-pr-scope/d5-parallel-pr-scope-handoff.md
