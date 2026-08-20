@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-d5-parallel-pr-scope
+diagram-optin
 
 ## Last Commit (2026-08-20)
-4aba1b5 docs(task): d5-parallel-pr-scope plan 완료 체크 + artifact 기록
+70bea25 feat(task): spec/plan 단계 다이어그램 옵트인 추가
 
 ## Full Context
-→ docs/chad/d5-parallel-pr-scope/d5-parallel-pr-scope-handoff.md
+→ docs/chad/diagram-optin/diagram-optin-handoff.md
