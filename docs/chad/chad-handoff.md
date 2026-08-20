@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-global-cli-drift
+d5-parallel-pr-scope
 
-## Last Commit (2026-08-13)
-c2e4112 docs(task): record the drift task's plan, review, and learnings
+## Last Commit (2026-08-20)
+4aba1b5 docs(task): d5-parallel-pr-scope plan 완료 체크 + artifact 기록
 
 ## Full Context
-→ docs/chad/global-cli-drift/global-cli-drift-handoff.md
+→ docs/chad/d5-parallel-pr-scope/d5-parallel-pr-scope-handoff.md
