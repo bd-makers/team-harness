@@ -19,6 +19,25 @@ modified: 2026-08-19
 ## [Unreleased]
 
 ### Added
+- **spec/plan 단계 다이어그램 옵트인.** 신규 task를 만든 직후 다이어그램을 함께 만들지 **1회만**
+  묻고, "예"면 `<name>-plan.md` 단계에 체크박스를 추가하고 "아니오"면 아무것도 추가하지 않는다.
+  기존 task 재활성화 시에는 묻지 않는다 — 계획에 없는 단계를 다시 묻는 것은 계획을 무시하는 것이다.
+  **전용 설정 키(`.harness/config.json`)·doctor 체크·상태 파일을 만들지 않았다**: 두 상태를 모두
+  plan.md가 표현한다 — 그 단계가 있으면 옵트인, 없으면 옵트아웃이다. plan.md는 이미 SSOT이자 세션
+  시작 프로토콜이 반드시 읽는 파일이다 — **plan.md가 곧 상태다.** 실행 여부(만들었는지, 도구가 없어
+  건너뛰었는지)는 체크박스 사유와 artifact 기록이 말하며, 건너뛴 단계는 지우지 않고 닫는다.
+- **산출물 `docs/<user>/<name>/<name>-diagram.html`을 명시적 SSOT 제외 생성물로 선언.**
+  `AGENTS.md` 작업 프로토콜에서 `<name>-meta.json`·`<name>-context.md`와 같은 급으로 못 박아
+  다섯 번째 SSOT로 오해되지 않게 했다. 형식은 **자립형 inline SVG** — `docs/`는 Obsidian 볼트에서
+  열리고 Obsidian은 script를 제거하므로 mermaid 같은 런타임 JS 다이어그램은 렌더되지 않는다.
+- **문서 계층 분리와 하드 의존 금지.** `AGENTS.md`는 Codex·Cursor·OpenCode도 네이티브로 읽는
+  멀티에이전트 SSOT이므로 도구 중립적으로만 기술했고(특정 스킬 이름 없음), Claude 전용 호출은
+  `CLAUDE.md` §1-B와 `commands/harness-task.md`에만 뒀다. 실행 계약은
+  `commands/harness-codex-review.md`와 동일한 **probe → degrade → record** — 다이어그램 도구가
+  없는 머신에서는 실패시키지 않고 건너뛴 뒤 artifact에 "미실행"을 한 줄 남긴다.
+  `tests/agent-files.test.mjs`가 core에 Claude 전용 스킬 이름이 새는 회귀를 차단한다.
+- CLI(`src/`)는 변경하지 않았다 — Codex 표면(`skills/harness-task/SKILL.md`)도
+  `commands/harness-task.md`를 SSOT로 읽으므로 두 에이전트 경로가 한 문서로 커버된다.
 - **`/harness-ship` — PR/MR 직전 최종 갱신 커맨드.** 라이프사이클이 `harness-team done`에서 끝나
   문서와 실제 머지 사이가 비어 있었다. 리뷰어가 문서를 읽는 시점은 PR인데 그때 spec·plan·artifact가
   최신이라는 보장이 없었다. ship은 활성 task를 확인해 세 문서를 코드 현실과 맞춘 뒤 **"PR/MR 준비
@@ -28,13 +47,16 @@ modified: 2026-08-19
   않는다(설정 스키마·전용 doctor 체크 없음). `diagram-design`은 별도 마켓플레이스의 Claude Code 전용
   플러그인이고 머신별 설치라 **하드 의존하지 않는다** — probe → degrade → record: 없으면 실패시키지
   않고 건너뛴 뒤 artifact에 '미실행' 한 줄을 남긴다. 산출물
-  `docs/<user>/<name>/<name>-diagram.html`은 SSOT 4파일이 아닌 **생성물**이고, `docs/`가 Obsidian
-  볼트 안이라 script가 제거되므로 자립형 inline SVG HTML이어야 한다. Claude 전용 스킬 호출은
+  `docs/<user>/<name>/<name>-diagram.html`은 SSOT 4파일이 아닌 **생성물**이고, task 문서는 Obsidian
+  처럼 script를 제거하는 뷰어에서 열리는 경우가 많아 자립형 inline SVG HTML이 기본값이다. Claude 전용 스킬 호출은 배포되는 계약 문서 중
   `commands/harness-ship.md`에만 두고 `AGENTS.md`에는 도구 중립 한 줄만 추가했다(Codex·Cursor·
   OpenCode도 읽는 SSOT). 새 CLI 서브커맨드는 만들지 않았다 — ship은 에이전트 판단 작업이고,
   `tests/manifest-sync.test.mjs`가 command 문서의 모든 `harness-team <sub>` 표기를 router case와
   대조하므로 CLI 없는 서브커맨드는 애초에 문서화할 수 없다. Codex에서는
   `skills/harness-ship/SKILL.md` 래퍼가 같은 command 계약을 SSOT로 읽는다.
+- **`tests/ship-command.test.mjs` — ship 계약 회귀 가드.** manifest-sync는 등록·router 구조만 보므로
+  ship을 안전하게 만드는 두 가지(PR을 스스로 열지 않는다 / 다이어그램 도구에 하드 의존하지 않는다)와
+  `AGENTS.md` 쌍의 도구 중립성은 아무도 지키지 않았다. 5개 테스트로 고정한다.
 
 ### Changed
 - **AGENTS.md에 D5(2026-08-20) 결정 노트 추가 — 단일 스레드 쓰기 규칙의 범위 정정.** D4(2026-07-28)는
@@ -55,26 +77,14 @@ modified: 2026-08-19
 - 위 변경은 루트 파일과 `templates/*.hbs` 양쪽에 동일하게 반영되어 새로 scaffold 되는 프로젝트도
   같은 문서를 받는다(`README.md`는 이 저장소 전용이라 짝이 없다).
 
-### Added
-- **spec/plan 단계 다이어그램 옵트인.** 신규 task를 만든 직후 다이어그램을 함께 만들지 **1회만**
-  묻고, "예"면 `<name>-plan.md` 단계에 체크박스를 추가하고 "아니오"면 아무것도 추가하지 않는다.
-  기존 task 재활성화 시에는 묻지 않는다 — 계획에 없는 단계를 다시 묻는 것은 계획을 무시하는 것이다.
-  **전용 설정 키(`.harness/config.json`)·doctor 체크·상태 파일을 만들지 않았다**: 두 상태를 모두
-  plan.md가 표현한다 — 그 단계가 있으면 옵트인, 없으면 옵트아웃이다. plan.md는 이미 SSOT이자 세션
-  시작 프로토콜이 반드시 읽는 파일이다 — **plan.md가 곧 상태다.** 실행 여부(만들었는지, 도구가 없어
-  건너뛰었는지)는 체크박스 사유와 artifact 기록이 말하며, 건너뛴 단계는 지우지 않고 닫는다.
-- **산출물 `docs/<user>/<name>/<name>-diagram.html`을 명시적 SSOT 제외 생성물로 선언.**
-  `AGENTS.md` 작업 프로토콜에서 `<name>-meta.json`·`<name>-context.md`와 같은 급으로 못 박아
-  다섯 번째 SSOT로 오해되지 않게 했다. 형식은 **자립형 inline SVG** — `docs/`는 Obsidian 볼트에서
-  열리고 Obsidian은 script를 제거하므로 mermaid 같은 런타임 JS 다이어그램은 렌더되지 않는다.
-- **문서 계층 분리와 하드 의존 금지.** `AGENTS.md`는 Codex·Cursor·OpenCode도 네이티브로 읽는
-  멀티에이전트 SSOT이므로 도구 중립적으로만 기술했고(특정 스킬 이름 없음), Claude 전용 호출은
-  `CLAUDE.md` §1-B와 `commands/harness-task.md`에만 뒀다. 실행 계약은
-  `commands/harness-codex-review.md`와 동일한 **probe → degrade → record** — 다이어그램 도구가
-  없는 머신에서는 실패시키지 않고 건너뛴 뒤 artifact에 "미실행"을 한 줄 남긴다.
-  `tests/agent-files.test.mjs`가 core에 Claude 전용 스킬 이름이 새는 회귀를 차단한다.
-- CLI(`src/`)는 변경하지 않았다 — Codex 표면(`skills/harness-task/SKILL.md`)도
-  `commands/harness-task.md`를 SSOT로 읽으므로 두 에이전트 경로가 한 문서로 커버된다.
+
+### Fixed
+- **`MAINTAINING.md`의 "새 커맨드 추가" 표 정정.** 모든 커맨드에 `bin/harness-team.mjs` 서브커맨드
+  등록을 요구했지만 실제로는 **CLI를 감싸는 커맨드만** 해당한다(`harness-interview`·`harness-ship`처럼
+  절차가 전부 에이전트 판단인 커맨드는 CLI가 없다). 반대로 `manifest-sync`가 실제로 강제하는
+  `skills/<name>/SKILL.md` 래퍼와 `docs/harness-overview.html` 재생성은 표에서 빠져 있었다 —
+  재생성은 `git ls-files` 기반이라 **새 파일을 `git add` 한 뒤** 돌려야 한다는 함정까지 함께 적었다.
+- **`README.md`의 슬래시 커맨드 수 3곳 동기화** (21 → 22).
 
 ## [0.16.1] - 2026-08-19
 

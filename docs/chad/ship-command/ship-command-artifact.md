@@ -33,6 +33,14 @@ $ npm run test
 새로 apply 된 프로젝트의 `AGENTS.md`에 ship 한 줄이 들어가고, Claude 전용 `diagram-design`
 호출은 들어가지 않으며, `CLAUDE.md`가 protocol 절을 복제하지 않는다.
 
+### CI (PR #25)
+
+- `test (20)`: 3회 모두 pass. `test (18)`: 처음 2회 pass → 3번째 run에서 fail → **동일 커밋
+  재실행에서 pass**. 실패한 커밋(`e172bb6`)은 handoff 마크다운 2개만 바꾼 커밋이라 코드 델타가
+  없었다. 따라서 Node 18 러너의 flake로 판단한다. 실패 로그 원문은 확보하지 못했다 — GitHub의
+  로그 blob 호스트가 이 샌드박스에서 차단되어 `gh run view --log`·직접 다운로드·WebFetch가 모두
+  막혔다. 현재 PR 체크는 18/20 모두 green.
+
 ### 하지 않은 것 (의도적)
 
 - `harness-team done`·릴리스 플로우 무변경. `harness-team release` 미실행, main 직접 푸시 없음.
@@ -43,6 +51,29 @@ $ npm run test
 
 ## Reviews
 *Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
+
+### 2026-08-20 — Codex read-only 외부 리뷰 (`codex exec --sandbox read-only`, branch diff vs origin/main)
+
+**Gemini 병렬 리뷰는 미실행** — 이 머신에 `gemini` CLI가 설치되어 있지 않다(`command -v gemini` 없음).
+
+Verdict: **P1 blocking 없음. P2 수정 후 병합 권장.** 커맨드 자체에서 PR/MR 생성·push·`done`·
+release 실행 경로는 발견되지 않았고, CLI/release/version 변경 없음, AGENTS/template managed
+섹션 동기화 확인.
+
+발견별 판별과 조치:
+
+| # | 발견 | 판별 | 조치 |
+|---|---|---|---|
+| P2-1 | `MAINTAINING.md`가 새 커맨드마다 CLI 서브커맨드 등록을 요구해 no-new-CLI 설계와 충돌. `SKILL.md`는 ship에 없는 CLI 실행을 권함 | **진짜 결함** — MAINTAINING의 표는 `skills/<name>/SKILL.md`와 overview 재생성도 빠져 있었다(이번에 직접 밟은 함정) | MAINTAINING 표를 재작성: bin 등록은 **CLI를 감싸는 커맨드만**, skill 래퍼·overview 재생성·`git add` 선행 규칙 추가. SKILL.md의 "prefer the CLI" 문구를 ship 사실(CLI 서브커맨드 없음)로 교체 |
+| P2-2 | "`docs/`는 Obsidian 볼트라 script가 제거된다"를 일반 계약으로 고정 — 소비자 프로젝트에 보장되지 않고, 이 저장소의 `docs/harness-overview.html`은 실제로 mermaid JS(`vendor/mermaid.min.js`)를 쓴다 | **진짜 결함** — 근거를 확인함(`docs/harness-overview.html:7`) | 조건부 서술로 교체: "script를 제거하는 뷰어에서 열리는 경우가 많으므로 자립형 inline SVG가 **기본값**"이고, 뷰어가 script를 실행하는 것이 확실하면 다른 형식도 가능하되 근거를 artifact에 남긴다 |
+| P2-3 | `README.md:109`가 여전히 슬래시 커맨드 21개 | **진짜 결함** — 87·90행만 고치고 이 행을 놓쳤다 | 22개로 수정 |
+| P2-4 | "Claude 전용 호출은 commands에만"이라는 주장과 달리 spec에도 슬래시 토큰이 있음 | **부분 인정** — 제약의 대상은 *배포되는* 계약 문서(AGENTS/템플릿)이고 spec은 배포되지 않는 task 문서다. 다만 문장이 무조건적이었다 | spec·CHANGELOG 문구를 "배포되는 계약 문서 중에서는"으로 한정 |
+| P2-5 | no-PR/no-done·다이어그램 옵트인·AGENTS 도구 중립 계약의 회귀를 막는 테스트 없음 | **진짜 결함** — manifest-sync는 등록·router 구조만 본다 | `tests/ship-command.test.mjs` 신규 5개: PR 미생성·`done` 미실행, probe/degrade/record 옵트인, AGENTS 쌍의 도구 중립성(`diagram-design`·`/harness-ship` 토큰 금지), commands·skills 어디서도 `harness-team ship`을 만들지 않음 |
+| P3-1 | "PR/MR 전수 grep 0건"은 현재 `origin/main`과 다름 | **진짜 결함** — D5(PR #24)가 머지되며 AGENTS·README에 PR/MR 서술이 들어왔다. 브리프 작성 시점의 사실이 그 뒤 낡았다 | spec을 "라이프사이클 **커맨드**에 PR/MR 단계가 없다"로 정정하고 D5를 명시 |
+| P3-2 | PR·artifact 완료 후에도 TCC의 current step이 "PR 생성"으로 남음 | **진짜 결함** | TCC 갱신 |
+
+조치 후 재검증: `npm run docs:check` 통과, `npm run test` → tests 295 / pass 295 / fail 0
+(+ perf 1/1). 신규 테스트 5개 포함.
 
 
 ## Learnings

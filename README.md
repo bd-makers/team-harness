@@ -106,7 +106,7 @@ harness-team doctor
 
 | 에이전트 | hooks | 커맨드/적용 표면 | 경로 스코프 규칙 |
 |---|---|---|---|
-| Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 21개 슬래시 커맨드 | `.claude/rules` `paths:` — 매칭 파일 **Read 시** 로드 |
+| Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 22개 슬래시 커맨드 | `.claude/rules` `paths:` — 매칭 파일 **Read 시** 로드 |
 | Codex | SessionStart 1종 (신뢰 승인 필요) | 슬래시 커맨드는 없고 별도 `.codex-plugin` 설치 시 동명의 스킬 | 없음 — 하위 디렉터리 `AGENTS.md`로 대체 |
 | OpenCode | 0 | `new-feature` / `fix-bug` / `verify` 3개 | 없음 |
 | Gemini | 0 | `GEMINI.md` 텍스트만 | 없음 |

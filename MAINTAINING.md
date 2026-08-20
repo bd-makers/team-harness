@@ -38,16 +38,21 @@ modified: 2026-08-13
 
 ## 작업 규칙
 
-새 커맨드를 추가할 때 **반드시 아래 네 파일을 함께 수정**하세요:
+새 커맨드를 추가할 때 **반드시 아래를 함께 수정**하세요:
 
-| 파일 | 역할 |
-|---|---|
-| `commands/<name>.md` | 슬래시 커맨드 정의 (프롬프트) |
-| `bin/harness-team.mjs` | CLI 서브커맨드 등록 |
-| `.claude-plugin/plugin.json` | 플러그인 커맨드 목록 |
-| `README.md` | 명령어 레퍼런스 섹션 |
+| 파일 | 역할 | 강제 |
+|---|---|---|
+| `commands/<name>.md` | 슬래시 커맨드 정의 (프롬프트). frontmatter에 `description`·`phase` 필수 | `manifest-sync`, `generate-harness-overview` |
+| `skills/<name>/SKILL.md` | Codex command-equivalent 래퍼. `name: <name>` + `commands/<name>.md` 참조 필수 | `manifest-sync` |
+| `.claude-plugin/plugin.json` | 플러그인 커맨드 목록 (양방향 일치) | `manifest-sync` |
+| `docs/harness-overview.html` | `npm run docs:generate`로 재생성 — **새 파일을 `git add` 한 뒤에** 돌릴 것(`git ls-files` 기반) | `docs:check`, `documentation-inventory-pointers` |
+| `README.md` | 명령어 레퍼런스 섹션 (전체 목록이 아니라 부분 안내) | — |
+| `bin/harness-team.mjs` | **CLI를 감싸는 커맨드만.** 에이전트 판단만 하는 커맨드는 CLI 서브커맨드가 없다 | `manifest-sync` |
 
-네 파일 중 하나라도 누락되면 커맨드가 일부 컨텍스트에서 인식되지 않습니다.
+`bin` 등록은 선택이 아니라 **조건부**입니다: `commands/*.md`가 언급하는 모든
+`harness-team <sub>`는 router에 case가 있어야 하고(`manifest-sync`), 반대로 CLI 없는 커맨드는
+그런 표기를 문서에 쓰지 않으면 됩니다. `harness-interview`·`harness-ship`처럼 절차가 전부
+에이전트 판단인 커맨드가 여기 해당합니다.
 
 `templates/{AGENTS,CLAUDE,GEMINI}.md.hbs`의 managed 섹션(`<!-- harness:section="..." -->` 블록)을 수정할 때는 **이 레포 루트의 같은 파일**(`AGENTS.md`·`CLAUDE.md`·`GEMINI.md`)도 함께 갱신하세요 — `tests/agent-files.test.mjs`가 이 저장소 스택으로 렌더한 템플릿과 루트 적용본의 managed 섹션 내용 일치를 강제합니다. 마커 밖 텍스트(제목 등 저장소 고유 영역)는 검사 대상이 아닙니다.
 

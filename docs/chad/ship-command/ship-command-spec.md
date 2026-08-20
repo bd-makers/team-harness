@@ -6,9 +6,10 @@ PR/MR을 열기 직전에 그동안 작성한 `spec`·`plan`·`artifact`를 최�
 다이어그램은 **옵트인**으로 갱신·생성한 뒤 **"PR/MR 준비 완료" 상태를 보고하는**
 새 커맨드 `/harness-ship`을 추가한다.
 
-- 현재 하네스에는 PR/MR 개념이 전무하다(전수 grep 0건). 라이프사이클이 `harness-team done`에서
-  끝나 문서와 실제 머지 사이가 비어 있다. 리뷰어가 문서를 실제로 읽는 시점은 PR인데,
-  그 시점에 문서가 최신이라는 보장이 없다.
+- 하네스의 **라이프사이클 커맨드**에는 PR/MR 단계가 없다. D5(2026-08-20, PR #24)가 격리 브랜치·
+  worktree 병렬 작업을 PR/MR로 병합하는 경로를 허용했지만(`AGENTS.md`·`README.md`), **그 시점에
+  문서를 코드 현실과 맞추는 단계**는 없다. 라이프사이클이 `harness-team done`에서 끝나 문서와
+  실제 머지 사이가 비어 있고, 리뷰어가 문서를 읽는 시점은 PR인데 그때 문서가 최신이라는 보장이 없다.
 - 요구사항
   1. 활성 task 확인 → spec·plan·artifact 최종 갱신 → 다이어그램(옵트인) → 준비 완료 보고.
   2. **PR 생성·푸시는 하지 않는다.** 준비 완료 보고에서 멈추고 실제 PR은 사용자 지시로 별도 진행.
@@ -36,7 +37,9 @@ PR/MR을 열기 직전에 그동안 작성한 `spec`·`plan`·`artifact`를 최�
     그러면 옵트인의 의미가 사라진다.
 - **Claude 전용 호출의 위치.** `AGENTS.md`는 Codex·Cursor·OpenCode도 읽는 멀티에이전트 SSOT라
   Claude 전용 스킬 호출(`/diagram-design:diagram-design`)을 거기 박으면 안 된다.
-  AGENTS.md에는 도구 중립 한 줄만, 구체적 호출은 `commands/harness-ship.md`(및 Codex 래퍼 번역)에.
+  AGENTS.md에는 도구 중립 한 줄만, 구체적 호출은 **소비자에게 배포되는 계약 문서 중에서는**
+  `commands/harness-ship.md`(및 Codex 래퍼 번역)에만 둔다. 이 spec은 배포되지 않는 task 문서라
+  근거 서술을 위해 토큰을 인용한다.
 - **산출물 형식.** `docs/`는 Obsidian 볼트 안이라 **script 태그가 제거되어 mermaid JS가 렌더되지
   않는다.** 볼트에서 보이는 것은 **inline SVG 자립형 HTML** 뿐이므로 산출물은
   `docs/<user>/<name>/` 아래 `<name>-diagram.html` 하나의 자립형 HTML이며, **SSOT 4파일이 아닌

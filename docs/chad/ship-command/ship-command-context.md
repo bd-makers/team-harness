@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: `/harness-ship`(PR/MR 직전 spec·plan·artifact 최종 갱신 + 준비 완료 보고, 다이어그램 옵트인) 추가
-- Current atomic step: 커밋 → main 대상 PR 생성(머지 금지) → artifact 기록
+- Current atomic step: PR #25 열림·CI green. Codex 리뷰 P2/P3 조치 후 재검증·기록 (머지 금지)
 - Stop / human-decision condition: PR 머지, `harness-team release` 실행, 버전 범프는 사용자 지시 없이 금지
 
 ## Constraints and settled decisions

@@ -62,9 +62,11 @@ Raw slash-command 인수:
    - **Record** — 실행했든 건너뛰었든 결과를 artifact에 한 줄 남긴다. 예:
      `- 다이어그램: 미실행 (diagram-design 스킬이 이 머신에 없음 — 2026-08-20)`.
 
-   산출물은 `docs/<user>/<name>/<name>-diagram.html` 하나이며, **자립형 inline SVG HTML**이어야
-   한다 — `docs/`는 Obsidian 볼트 안이라 script 태그가 제거되어 mermaid JS 런타임은 렌더되지
-   않는다. 이 파일은 **SSOT 4파일(spec·plan·handoff·artifact)이 아닌 생성물**이며, 없어도 task는
+   산출물은 `docs/<user>/<name>/<name>-diagram.html` 하나이며, 기본값은 **자립형 inline SVG
+   HTML**이다 — task 문서는 Obsidian처럼 **script를 제거하는 뷰어**에서 열리는 경우가 많고, 그런
+   뷰어에서는 mermaid JS 런타임이 렌더되지 않는다(이 저장소의 `docs/`가 그런 환경이다). 뷰어가
+   script를 실행하는 것이 확실한 프로젝트라면 다른 형식을 써도 되지만, 판단 근거를 artifact에
+   남긴다. 이 파일은 **SSOT 4파일(spec·plan·handoff·artifact)이 아닌 생성물**이며, 없어도 task는
    유효하다.
 
 7. **준비 완료 보고** — 사용자에게 아래를 한 화면으로 보고하고 멈춘다: 브랜치와 base, 변경 파일

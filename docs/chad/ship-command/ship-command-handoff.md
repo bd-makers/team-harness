@@ -27,3 +27,9 @@ docs/chad/chad-handoff.md                       |  6 +--
  docs/chad/ship-command/ship-command-plan.md     |  4 +-
  4 files changed, 81 insertions(+), 6 deletions(-)
 
+
+## 2026-08-20T10:06:53.221Z — e172bb6 chore(task): post-commit handoff 갱신
+docs/chad/chad-handoff.md                      | 2 +-
+ docs/chad/ship-command/ship-command-handoff.md | 8 ++++++++
+ 2 files changed, 9 insertions(+), 1 deletion(-)
+
