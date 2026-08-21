@@ -22,6 +22,7 @@ modified: 2026-08-07
 - [왜 필요한가](#왜-필요한가)
 - [빠른 시작](#빠른-시작)
 - [설치](#설치)
+- [동반 플러그인 (선택)](#동반-플러그인-선택)
 - [명령어 레퍼런스](#명령어-레퍼런스)
 - [task 관리 (팀원·기능별)](#task-관리-팀원기능별)
 - [스크립트 3종 사용법](#스크립트-3종-사용법)
@@ -84,10 +85,10 @@ OS/네트워크 격리는 이 플러그인의 스코프 밖입니다 — devcont
 | 채널 | 대상/시점 | 제공하는 것 |
 |---|---|---|
 | `apply` | 프로젝트당 1회 | hooks·rules·AGENTS/CLAUDE/GEMINI·docs 구조·`opencode.json`·`.cursor/rules` |
-| Claude Code 플러그인 설치 | 사람·머신마다 | `/harness-*` 슬래시 커맨드 22개 |
+| Claude Code 플러그인 설치 | 사람·머신마다 | `/harness-*` 슬래시 커맨드 23개 |
 | 전역 `harness-team` CLI 링크 | 사람마다 | 터미널과 훅이 호출하는 `harness-team` CLI |
 
-**`apply`만으로는 `/harness-*` 슬래시 커맨드가 설치되지 않습니다.** `apply`는 `commands/*.md` 22개를 프로젝트에 복사하지 않으며, 해당 명령은 Claude Code 플러그인 설치 채널에서 제공됩니다.
+**`apply`만으로는 `/harness-*` 슬래시 커맨드가 설치되지 않습니다.** `apply`는 `commands/*.md` 23개를 프로젝트에 복사하지 않으며, 해당 명령은 Claude Code 플러그인 설치 채널에서 제공됩니다.
 
 이 패키지는 **npm 공개 저장소에 배포되지 않습니다** — 전역 CLI는 `/plugin install`이 만든
 로컬 마켓플레이스 클론을 `npm i -g`로 링크해 얻습니다. 이미 하네스가 적용된 저장소를 clone한
@@ -106,7 +107,7 @@ harness-team doctor
 
 | 에이전트 | hooks | 커맨드/적용 표면 | 경로 스코프 규칙 |
 |---|---|---|---|
-| Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 22개 슬래시 커맨드 | `.claude/rules` `paths:` — 매칭 파일 **Read 시** 로드 |
+| Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 23개 슬래시 커맨드 | `.claude/rules` `paths:` — 매칭 파일 **Read 시** 로드 |
 | Codex | SessionStart 1종 (신뢰 승인 필요) | 슬래시 커맨드는 없고 별도 `.codex-plugin` 설치 시 동명의 스킬 | 없음 — 하위 디렉터리 `AGENTS.md`로 대체 |
 | OpenCode | 0 | `new-feature` / `fix-bug` / `verify` 3개 | 없음 |
 | Gemini | 0 | `GEMINI.md` 텍스트만 | 없음 |
@@ -208,6 +209,37 @@ cd harness-aijient-team-plugin
 npm link          # 전역에 harness-team 명령 등록 (이 클론 경로를 가리킴)
 harness-team --help
 ```
+
+---
+
+## 동반 플러그인 (선택)
+
+이 마켓플레이스는 하네스가 **소유하지도 번들하지도 않는** 외부 플러그인을 커밋 sha로 **핀을 걸어**
+함께 등재합니다. 전부 **선택 사항**입니다 — 설치하지 않아도 하네스는 정상 동작합니다.
+
+| 플러그인 | 무엇을 하나 | 라이선스 | 핀 |
+|---|---|---|---|
+| `diagram-design` | spec/plan 다이어그램을 자립형 inline SVG HTML로 생성 | MIT © [Cathryn Lavery](https://github.com/cathrynlavery/diagram-design) | `0ab077f` |
+
+```
+/plugin marketplace add https://github.com/bd-makers/team-harness
+/plugin install diagram-design@harness-aijient-team-marketplace
+```
+
+`@<marketplace>`를 붙이는 이유: 같은 이름의 플러그인이 다른 마켓플레이스에도 있으면(업스트림
+저장소를 이미 추가해 뒀다면 실제로 그렇습니다) 이름만으로는 **핀이 걸린 이쪽**이 선택된다는 보장이
+없습니다.
+
+- **핀은 자동으로 따라가지 않습니다.** 업스트림이 갱신돼도 메인테이너가 sha를 올리기 전까지
+  설치본은 바뀌지 않습니다. 올리는 절차와 판단 기준은 `MAINTAINING.md`의 "동반 플러그인" 절에 있습니다.
+- **복사(vendoring)하지 않는 이유:** 업스트림이 활발히 갱신되고, 스킬이 `SKILL.md` + `references/` +
+  `assets/`로 구성돼 있으며, 브랜드 토큰이 스킬 디렉터리 안에 쓰이기 때문입니다. 사본을 들고 있으면
+  리싱크가 영구히 이 저장소의 일이 되고, 사용자의 브랜드 색이 릴리스에 실려 나갑니다.
+- **하네스 안에서의 호출:** 다이어그램은 `/harness-diagram`으로 실행합니다. 상류 스킬을 직접
+  부르면 산출물 경로·자립형 inline SVG 제약·artifact 기록 같은 하네스 규약이 적용되지 않으므로,
+  하네스는 어댑터 커맨드로 그 규약을 주입합니다(`commands/harness-diagram.md`).
+- **없을 때의 동작:** 다이어그램 단계는 옵트인이고 `probe → degrade → record` 계약을 따릅니다.
+  도구가 없으면 실패시키지 않고 건너뛴 뒤 활성 task의 artifact에 미실행 사실을 한 줄 남깁니다.
 
 ---
 
@@ -722,7 +754,9 @@ rsync -a \
 | `.codex-plugin/plugin.json` | Codex 플러그인 로드 메타 | Codex에서 구버전/skill 누락 가능 |
 | 로컬 캐시 rsync | 실행 코드 반영 | 새 명령어가 실제 구버전 코드로 실행됨 |
 
-> `/reload-plugins` 후에도 구버전이 보이면 `marketplace.json`의 `plugins[0].version` 확인.
+> `/reload-plugins` 후에도 구버전이 보이면 `marketplace.json`의 **자기 항목**(`plugins` 중
+> `name`이 `harness-aijient-team`인 항목)의 `version`을 확인합니다. 같은 배열의 동반 플러그인
+> 항목은 버전을 갖지 않습니다.
 
 ### 요구사항
 
