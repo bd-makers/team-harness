@@ -111,8 +111,12 @@ doctor(jq 없는 PATH) → ⚠️ jq (JSON processor)  (not found — Claude 훅
 - **배달 경로**: `skipExisting: true` 때문에 이미 훅 파일이 있는 기존 소비자 프로젝트는
   `harness-team apply`로 이 수정을 받지 못한다(훅 파일 갱신 정책 자체의 문제 — 범위 밖).
   이번 변경으로 `doctor`가 jq 부재를 경고하므로 최소한 저정밀 상태는 드러난다.
-- **GNU grep 미검증**: 폴백 추출은 로컬(BSD grep, macOS)에서만 실증했다. `[^"\\]` 는 POSIX
-  bracket expression이라 GNU grep도 동일하게 해석하지만(브래킷 안에서 `\` 는 리터럴), 이 머신에
-  GNU grep도 docker도 없어 **직접 실행하지 못했다** — CI(ubuntu-latest)가 그 검증이다.
+- **GNU grep 이식성 — 해소됨**: 폴백 추출은 로컬(BSD grep, macOS)에서만 실증했었다. `[^"\\]` 는
+  POSIX bracket expression이라 GNU grep도 동일 해석이지만(브래킷 안에서 `\` 는 리터럴) 이 머신에
+  GNU grep·docker가 없어 직접 돌리지 못했다 → **PR #29 CI(ubuntu-latest, Node 18·20) 통과로 확인**.
 - **W7 문서와의 정합**: `docs/prerequisites.md`가 jq fail-open을 표로 기술한다. 어느 쪽이 먼저
   머지되든 **나중 것이 리베이스하며 문구를 맞춘다**(이 PR은 W7 문서를 건드리지 않았다).
+
+## PR
+- **#29** — https://github.com/bd-makers/team-harness/pull/29 (base `main`, 머지하지 않음)
+- CI: `test (18)` pass · `test (20)` pass (2026-08-21)
