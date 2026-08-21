@@ -120,3 +120,8 @@ doctor(jq 없는 PATH) → ⚠️ jq (JSON processor)  (not found — Claude 훅
 ## PR
 - **#29** — https://github.com/bd-makers/team-harness/pull/29 (base `main`, 머지하지 않음)
 - CI: `test (18)` pass · `test (20)` pass (2026-08-21)
+- **PR #28 머지 후 리베이스 1회**(main이 앞서감). 충돌 2건 — `CHANGELOG.md`(양쪽 항목 모두 보존),
+  `docs/chad/chad-handoff.md`(생성물, 이 브랜치의 활성 task 쪽 채택). `src/commands/doctor.mjs`는
+  자동 병합됐고 W4의 `EXTERNAL_TOOLS` 변경과 충돌하지 않았다. 리베이스 후 재검증:
+  `npm run test` 342 tests / 341 pass / 0 fail / 1 skip · `docs:check` 최신 ·
+  CI 재실행 Node 18·20 pass · `mergeable=MERGEABLE / CLEAN`.
