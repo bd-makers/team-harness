@@ -16,7 +16,7 @@
 - [x] `npm run docs:generate` 재실행 (신규 테스트 파일이 source-tree 표에 들어감) + `docs:check` green
 - [x] `CHANGELOG.md` `[Unreleased]` 기존 절에 이어붙이기 (새 헤더 금지, 버전 범프 금지)
 - [x] `npm run test` + `npm run docs:check` 실제 출력으로 통과 확인
-- [ ] 커밋 → main 대상 PR open (머지 금지) → artifact.md 결과 기록
+- [x] 커밋 → main 대상 PR open (머지 금지) → artifact.md 결과 기록
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

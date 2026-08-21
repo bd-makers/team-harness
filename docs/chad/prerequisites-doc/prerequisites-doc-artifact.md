@@ -120,3 +120,30 @@ harness overview 생성 상태가 최신입니다.
 
 (외부 리뷰 미실행 — 이 변경은 문서 + 테스트 1개로, 코드 경로 변경은 `EXTERNAL_TOOLS` export
 한 줄뿐이다. `npm run test` 302/302로 회귀 없음을 확인했다.)
+
+## Rebase 기록 (2026-08-21)
+
+- **W4(#28) 머지 후 rebase.** `CHANGELOG.md` 2곳 충돌 — **양쪽 다 보존**해 해결했다(상대 항목
+  먼저). `README.md`·`docs/harness-overview.html`·`src/commands/doctor.mjs`는 auto-merge.
+  W4의 `## 동반 플러그인 (선택)` 절, `/harness-diagram` 어댑터, sha 핀 표는 전부 그대로다.
+- **diagram-design 표현을 W4 문서에 맞춰 정렬.** `docs/prerequisites.md` §5를 "옵트인 외부
+  플러그인" → "동반 플러그인 (선택)"으로 바꾸고, 설치·핀 갱신의 정본을 README 절로 넘긴 뒤
+  하네스 안에서는 `/harness-diagram` 어댑터로 실행한다는 사실을 추가했다. 계약(probe → degrade
+  → record, 건너뛴 단계를 닫는 형식)은 그대로다.
+- **핸드오프 churn 커밋 1개 drop.** post-commit 훅이 매 커밋마다 handoff를 재생성해 rebase가
+  물리는데, 그 커밋 내용은 handoff 자기참조뿐이라 `--skip` 했다.
+- **검증 재실행:** `npm run test` 311/311 pass(W4 테스트 9개 포함), `npm run docs:check` green.
+
+## W8(PR #29) 의존성
+
+PR #29 `fix(hooks): jq 부재 시 훅 4개가 조용히 무력화되던 fail-open 수정`이 **열려 있다** —
+오케스트레이터에 보낸 범위 확대 요청이 반영돼 4개 훅 전부를 다룬다.
+
+#29가 머지되면 이 문서에서 **다시 맞춰야 하는 곳**:
+- `docs/prerequisites.md` §3 실측 표 — fail-open → 저정밀 폴백 파서 동작으로 교체
+- `docs/prerequisites.md` §2 jq 행의 "doctor는 `optional`로 보고하지만" — #29가 jq를
+  `optional` → `warning`으로 승격하므로 문구 수정 필요
+- `README.md` 사전 준비 표의 jq 행 동일
+
+두 PR 모두 `src/commands/doctor.mjs`를 건드리므로(이쪽은 `EXTERNAL_TOOLS` export 한 줄,
+#29는 jq 표시 승격) 나중에 머지되는 쪽이 rebase한다. **결론은 어느 쪽이든 같다: jq를 설치하라.**
