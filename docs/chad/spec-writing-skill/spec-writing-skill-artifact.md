@@ -38,6 +38,14 @@
 
 Gemini 리뷰: gemini CLI 미설치로 **미실행**.
 
+### 2026-08-21 — 2차 외부 리뷰 (사용자 전달) — 변경 요청 2건 조치
+
+1. (P1) 전항목 체크 시 validator 우회 — writer가 자기 초안을 전부 체크하면 `/harness-interview` 없이
+   plan으로 넘어가는 경로가 계약 서두("게이트 판정은 validator 몫") 및 task 안내 순서와 모순
+   → 체크 상태 무관 **항상 `/harness-interview` 인계**로 수정 (자기 채점 차단) ✅
+2. (P3) handoff EOF 빈 줄로 `git diff --check` 실패 → 루트 코즈는 `runHandoffAuto`의 append 포맷
+   (항목 끝 여분 `\n` — 파일만 고치면 매 커밋 재발). 생성기에서 제거 + 기존 파일 꼬리 정리 ✅
+
 ### 검증 한계 (정직 보고)
 - 대화형 드라이런(실제 인터뷰/MCP fetch 경로)은 미수행 — 계약의 기계 검증 가능한 부분
   (manifest-sync 3중 동기화, 드리프트, next-actions 문자열)만 테스트로 확인.

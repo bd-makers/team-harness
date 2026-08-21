@@ -460,7 +460,9 @@ export async function runHandoffAuto(ctx) {
   } catch {}
 
   const taskHandoffPath = join(ctx.targetDir, 'docs', user, task, `${task}-handoff.md`);
-  const taskEntry = `\n## ${ts} — ${commitMsg}\n${diffStat ? diffStat + '\n' : ''}\n`;
+  // No trailing blank line: entries are separated by the next entry's leading
+  // newline, and a blank line at EOF trips `git diff --check` on every commit.
+  const taskEntry = `\n## ${ts} — ${commitMsg}\n${diffStat ? diffStat + '\n' : ''}`;
   await appendFile(taskHandoffPath, taskEntry);
 
   const userHandoffPath = join(ctx.targetDir, 'docs', user, `${user}-handoff.md`);

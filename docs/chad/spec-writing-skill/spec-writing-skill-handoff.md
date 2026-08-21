@@ -23,3 +23,8 @@
  tests/task-templates.test.mjs                      |  2 +-
  18 files changed, 303 insertions(+), 8 deletions(-)
 
+
+## 2026-08-21T06:15:15.139Z — 0b56684 chore(task): post-commit handoff 갱신
+docs/chad/chad-handoff.md                          |  8 ++++----
+ .../spec-writing-skill-handoff.md                  | 22 ++++++++++++++++++++++
+ 2 files changed, 26 insertions(+), 4 deletions(-)
