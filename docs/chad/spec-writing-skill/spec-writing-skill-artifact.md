@@ -46,6 +46,18 @@ Gemini 리뷰: gemini CLI 미설치로 **미실행**.
 2. (P3) handoff EOF 빈 줄로 `git diff --check` 실패 → 루트 코즈는 `runHandoffAuto`의 append 포맷
    (항목 끝 여분 `\n` — 파일만 고치면 매 커밋 재발). 생성기에서 제거 + 기존 파일 꼬리 정리 ✅
 
+### 2026-08-21 — 3차 Codex 리뷰 (P2) — 진단 인정, 처방은 대안 채택
+
+- 진단: post-commit 훅이 호출하는 전역 `harness-team`은 마켓플레이스 캐시(0.16.1 clean git clone,
+  `~/.claude/plugins/marketplaces/harness-aijient-team-marketplace`)로 연결돼 있어, 소스 수정과
+  무관하게 머지·릴리스 전까지 구 포맷(EOF 빈 줄)으로 append → **정확함** (재현 확인).
+- 처방 "전역 CLI를 이 브랜치로 갱신"은 미채택 — 전역 CLI가 임시 worktree를 가리키게 되어 머지 후
+  dangling 위험 + 릴리스 플로우가 모르는 out-of-band 상태. 캐시 직접 패치도 clean clone을 dirty로
+  만들어 플러그인 업데이트와 충돌 위험.
+- 채택(사용자 확정): **커밋 전 handoff 꼬리 트림 루틴 유지** — 커밋된 트리는 항상 clean, 영구 해결은
+  머지+릴리스의 캐시 동기화로. 이 결정으로 훅이 만드는 uncommitted append의 빈 줄은 브랜치 수명
+  동안 알려진 상태로 남는다.
+
 ### 검증 한계 (정직 보고)
 - 대화형 드라이런(실제 인터뷰/MCP fetch 경로)은 미수행 — 계약의 기계 검증 가능한 부분
   (manifest-sync 3중 동기화, 드리프트, next-actions 문자열)만 테스트로 확인.

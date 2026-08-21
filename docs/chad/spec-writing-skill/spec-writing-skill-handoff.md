@@ -28,3 +28,11 @@
 docs/chad/chad-handoff.md                          |  8 ++++----
  .../spec-writing-skill-handoff.md                  | 22 ++++++++++++++++++++++
  2 files changed, 26 insertions(+), 4 deletions(-)
+
+## 2026-08-21T06:31:42.074Z — b01c077 fix(commands,task): 리뷰 조치 — validator 우회 차단, handoff EOF 빈 줄 근절
+commands/harness-spec.md                                    | 9 +++++----
+ docs/chad/chad-handoff.md                                   | 2 +-
+ docs/chad/spec-writing-skill/spec-writing-skill-artifact.md | 8 ++++++++
+ docs/chad/spec-writing-skill/spec-writing-skill-handoff.md  | 5 +++++
+ src/commands/task.mjs                                       | 4 +++-
+ 5 files changed, 22 insertions(+), 6 deletions(-)
