@@ -12,10 +12,12 @@ const pexec = promisify(execFile);
 
 // gh/codex/gemini/opencode are optional integrations: absent means a feature is off.
 // jq is not in that class. The Claude hooks parse their stdin payload with it, and
-// while they now fall back to a grep extractor instead of failing open, that fallback
-// cannot decode JSON escapes — the guard keeps deciding, at lower precision. Report it
-// as a warning (never fail++, so the exit code contract is unchanged) rather than
-// telling the user it is optional.
+// current templates fall back to a grep extractor instead of failing open — but that
+// holds only for installed hooks that actually carry the fallback block. runDoctor
+// checks the install (jqFallbackGaps) and swaps this default detail for a fail-open
+// warning when the block is missing, so the report never claims "차단은 유지" about a
+// hook that would silently allow everything. Either way it is a warning (never fail++,
+// so the exit code contract is unchanged) rather than "optional".
 const EXTERNAL_TOOLS = [
   { cmd: 'gh', label: 'gh (GitHub CLI)' },
   { cmd: 'codex', label: 'codex (Codex CLI)' },
@@ -27,6 +29,30 @@ const EXTERNAL_TOOLS = [
     missingDetail: 'not found — Claude 훅이 저정밀 모드로 판정합니다 (차단은 유지, 정확도 하락). jq 설치를 권장합니다',
   },
 ];
+
+// PR #29's grep fallback exists only in hooks carrying this marker. An installed hook
+// without it predates the fix: with jq absent its parse comes back empty and the hook
+// silently allows everything (fail-open). migrate refreshes known stock hooks — doctor
+// only reports, so the two never disagree about who fixes what.
+export const JQ_FALLBACK_MARKER = 'harness:jq-fallback';
+export const JQ_HOOK_FILES = ['block-dangerous-git.sh', 'protect-files.sh', 'pre-commit-check.sh', 'auto-format.sh'];
+
+// Installed jq-parsing hooks that lack the fallback marker. Absent files are not gaps
+// (nothing runs → nothing fails open; the CHECKS table already grades hook presence).
+export async function jqFallbackGaps(targetDir) {
+  const gaps = [];
+  for (const name of JQ_HOOK_FILES) {
+    const body = await readFile(join(targetDir, '.claude/hooks', name), 'utf8').catch(() => null);
+    if (body !== null && !body.includes(JQ_FALLBACK_MARKER)) gaps.push(name);
+  }
+  return gaps;
+}
+
+// The jq warning's runnable remedy for next_actions — a warning without an action
+// reads as noise to an agent consuming the envelope (see cliDriftAction).
+export function jqInstallAction(platform = process.platform) {
+  return platform === 'darwin' ? 'brew install jq' : 'sudo apt-get install -y jq';
+}
 
 export async function checkCommand(cmd, args = ['--version'], env = process.env) {
   try {
@@ -412,8 +438,17 @@ export async function runDoctor(ctx) {
   // Run concurrently so a slow/hung tool doesn't serialize the worst-case wait.
   line('\nexternal tools:');
   const toolResults = await Promise.all(
-    EXTERNAL_TOOLS.map(({ cmd, label, missingDetail }) => checkCommand(cmd).then(ok => ({ ok, label, missingDetail }))),
+    EXTERNAL_TOOLS.map(({ cmd, label, missingDetail }) => checkCommand(cmd).then(ok => ({ cmd, ok, label, missingDetail }))),
   );
+  // jq honesty branch: the static detail's "차단은 유지" is only true of hooks that
+  // carry the fallback block. If the install predates it, say fail-open and route to
+  // migrate instead — the warning severity stays the same (never fail++).
+  const jqTool = toolResults.find(t => t.cmd === 'jq');
+  const jqMissing = !!jqTool && !jqTool.ok;
+  const jqGaps = jqMissing ? await jqFallbackGaps(ctx.targetDir) : [];
+  if (jqGaps.length) {
+    jqTool.missingDetail = `not found — 설치된 훅 ${jqGaps.length}개(${jqGaps.join(', ')})에 jq 폴백 블록이 없어 jq 없는 환경에서 조용히 무력화됩니다(fail-open). run: harness-team migrate (훅 갱신) + jq 설치`;
+  }
   for (const { ok, label, missingDetail } of toolResults) {
     if (ok) add(label, 'pass', undefined, `✓ ${label}`);
     else if (missingDetail) add(label, 'warning', missingDetail, `⚠️ ${label}  (${missingDetail})`);
@@ -492,13 +527,18 @@ export async function runDoctor(ctx) {
     if (legacyWarning) warnActions.push('harness-team migrate');
     if (specGateWarning) warnActions.push('harness-team task <name>');
     if (hookWarning || boundaryHookWarning) warnActions.push('harness-team apply');
+    // jq warning always carries its remedy; the fail-open branch additionally needs
+    // migrate — installing jq alone leaves the stale hooks' precision degraded forever.
+    if (jqGaps.length) warnActions.push('harness-team migrate');
+    if (jqMissing) warnActions.push(jqInstallAction());
     if (!pluginDev && !hookCliOk) warnActions.push(hookCliInstall);
     if (driftWarning) warnActions.push(cliDriftAction());
     emitObservation(buildEnvelope({
       command: 'doctor',
       status,
       summary: fail ? `${fail} problem(s)` : (warnCount ? `${warnCount} warning(s)` : okSummary),
-      nextActions: fail ? ['harness-team sync'] : warnActions,
+      // Set: legacy-structure and jq-gap warnings both route to migrate — one entry is enough.
+      nextActions: fail ? ['harness-team sync'] : [...new Set(warnActions)],
       // Keep the invariant status==='error' ⟺ error!=null uniform across commands.
       // Per-check detail still lives in checks[]; error is the top-level summary of it.
       error: fail ? {

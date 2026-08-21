@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-instruction-structure
+hook-jq-fallback-delivery
 
 ## Last Commit (2026-08-21)
-6ecd91b fix(agents): Codex 리뷰 P2 조치 — 게이트 예외 복원·check 메시지 힌트·정본 테스트 핀
+b00b937 docs(task): plan 완료 체크 + PR 링크, handoff 자동 갱신 반영
 
 ## Full Context
-→ docs/chad/instruction-structure/instruction-structure-handoff.md
+→ docs/chad/hook-jq-fallback-delivery/hook-jq-fallback-delivery-handoff.md

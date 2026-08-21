@@ -185,6 +185,33 @@ modified: 2026-08-21
   병합 당시 수동으로만 돌리던 매트릭스를 **jq 있는 PATH와 없는 PATH 양쪽**에서 돌린다 —
   차단 10종·허용 12종 + description 오탐 가드 + 알려진 잔여 리스크(커밋 메시지 오탐, `git -C`
   프리픽스 우회) 현재 동작 고정 + 4개 훅 공통 폴백 블록 동일성(복붙 드리프트) 가드.
+- **jq-fallback 보안 수정이 기존 설치에 도달하지 못하던 배달 갭 수정 (PR #29 후속 P1-1).**
+  훅 수정은 템플릿에만 실렸고 `copyStaticAssets`는 훅을 `skipExisting`으로 복사한다 — init/apply
+  어느 쪽도 설치본을 갱신하지 않아, 실측으로 구버전 설치본은 여전히 fail-open이었다.
+  `migrate`의 `refreshClaudeHooks`를 훅 4개로 확장했다: 설치본이 **과거에 배포된 버전과 바이트
+  동일**(sha256 테이블, 출처는 git blob 이력·`tests/fixtures/stock-hooks`)할 때만 confirm/`--yes`
+  후 최신 템플릿으로 갱신하고, 목록 밖(커스터마이즈)은 절대 덮지 않고 안내만 한다.
+  기존 pnpm-hardcoded 시그니처 분기는 바이트 드리프트한 초기 설치본용 그물로 보존.
+- **폴백 블록 없는 설치본에 "차단은 유지"라고 말하던 `doctor` 거짓 안내 수정 (P1-2).**
+  jq 부재 경고가 설치본 훅의 `harness:jq-fallback` 마커를 확인해 분기한다 — 마커 없는 훅이
+  있으면 "조용히 무력화(fail-open), `harness-team migrate` 필요"로, 전부 마커가 있으면 현행
+  저정밀 문구로. 어느 쪽이든 warning이며 `fail++`하지 않는다(exit code 계약 유지).
+- **jq 경고에 remedy 없던 `next_actions` 공백 수정 (P2-3).** jq 부재 시 플랫폼별 설치
+  명령(`jqInstallAction`)을, 마커 없는 훅이 있으면 `harness-team migrate`를 함께 push한다 —
+  "remedy 없는 경고는 노이즈" 원칙 준수. 중복 action은 Set으로 정리.
+- **extraction-failure 경로 행위 커버리지 추가 (P2-2).** 기존 32개 테스트는 정상 payload만
+  덮어서, tool_name 게이트의 `&&` 가드를 `;`로 바꾸거나 `|| COMMAND="$INPUT"` 폴백을
+  `|| COMMAND=""`로 무력화해도(원래의 fail-open 재현) 0 fail이었다. tool_name 추출 실패
+  payload 차단·command 추출 실패 시 전체 스캔 차단을 nojq 모드에서 고정 — mutation 2종
+  각각이 신규 테스트를 fail시키는 것을 실측 확인.
+- **폴백 한계 서술 일반화 + `\uXXXX` 우회 핀 (P2-1).** 우회는 `\t` 한 종류가 아니라 일반적이다
+  — 값 속 문자 하나만 `\uXXXX`로 인코딩해도 저정밀 매칭이 뚫린다(`--force` 실측).
+  블록 주석을 "이스케이프를 일절 디코드하지 않는다"로 고치고, nojq exit 0 / jq exit 2를
+  잔여 리스크 핀 테스트로 고정했다. bash 이스케이프 디코더는 구현하지 않는다(해법: jq 설치).
+- **폴백 추출을 `tool_input` 이후로 스코프 (P3-1).** 공유 블록에 `json_input_field()`를 추가해
+  command/file_path 추출을 `"tool_input"` 마커 뒤로 좁혔다 — 최상위 동명 키를 먼저 잡는
+  오인을 차단하고, 마커가 없으면 `${...#...}`가 원문을 그대로 돌려줘 전체 스캔이 유지된다
+  (fail-closed). tool_name은 tool_input 밖이므로 종전 그대로.
 
 ## [0.16.1] - 2026-08-19
 
