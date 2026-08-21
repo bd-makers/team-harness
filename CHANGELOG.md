@@ -18,6 +18,8 @@ modified: 2026-08-21
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-08-22
+
 ### Added
 - **`/harness-spec` — spec 초안 생성 커맨드/스킬 (writer).** 활성 task의 `<name>-spec.md` 초안을
   3소스에서 생성한다: ① Confluence(PRD·spec·policy) ② Figma(wireframe·design-spec) ③ task 이름 기반
@@ -29,6 +31,19 @@ modified: 2026-08-21
   인계한다 — writer/validator 역할 분리. 리서치 근거: OpenSpec(config context 주입, explore 톤),
   GSD Core(`--auto @prd.md` 문서 추출, spec-phase ambiguity 스코어링). Codex 래퍼
   `skills/harness-spec/` 동봉, `harness-task` 생성 안내와 CLAUDE.md Ambiguity 자가진단 게이트에 연결.
+
+### Deprecated
+- **옛 리뷰 이름 4개(`/harness-codex-review`·`/harness-codex-adversarial-review` 커맨드·스킬) 제거를
+  0.19.0으로 이월.** 0.17.0은 "다음 마이너 버전에서 제거"를 예고했으나, 이번 마이너는 `/harness-spec`
+  인도가 목적이고 제거의 선행 조건(팀원 머신 전역 CLAUDE.md의 새 이름 전환)이 아직 완료되지 않았다.
+  참조가 남은 채 제거하면 실패가 아니라 무반응으로 조용히 깨진다 — 포워딩은 0.18.x 동안 유지되며
+  제거는 0.19.0에서 수행한다.
+
+### Fixed
+- **post-commit handoff 생성기의 EOF 빈 줄 재발 근절.** `runHandoffAuto`의 append 포맷이 항목 끝에
+  빈 줄을 남겨 매 커밋 `git diff --check`에 걸렸다. 파일만 고치면 다음 커밋에서 재발하므로 생성기
+  포맷 자체에서 여분 개행을 제거하고 기존 handoff 꼬리를 정리했다 — 항목 구분은 다음 항목의 선행
+  개행이 담당한다. 설치본에는 이 릴리스의 캐시 동기화부터 반영된다(그 전까지는 수동 꼬리 트림 필요).
 
 ## [0.17.0] - 2026-08-22
 
