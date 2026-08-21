@@ -285,6 +285,33 @@ export async function checkCodexSessionHook(targetDir) {
   return '.codex/hooks.json에 harness SessionStart 훅 없음 — Codex 세션이 task context를 못 받음; run: harness-team apply';
 }
 
+// docs/decisions.md is scaffolded with skipExisting (copyStaticAssets), so a project
+// that already had the file when the D-log migration shipped never receives the
+// upstream D2/D4/D5 sections — and apply cannot deliver them without clobbering the
+// team's own log. Warn-level: a missing file is fixable by apply (scaffold copies it),
+// missing sections need a manual merge from the plugin's templates/docs/decisions.md.
+export const DECISION_LOG_PATH = 'docs/decisions.md';
+export const DECISION_HEADINGS = ['## D2', '## D4', '## D5'];
+
+export async function checkDecisionLog(targetDir) {
+  let body;
+  try {
+    body = await readFile(join(targetDir, DECISION_LOG_PATH), 'utf8');
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      return `${DECISION_LOG_PATH} 없음 — 팀 결정 로그(D2/D4/D5 전문)가 프로젝트에 없다; run: harness-team apply (플러그인 templates/docs/decisions.md를 스캐폴드)`;
+    }
+    // A directory or an unreadable file must stay a warning too — a warn-level
+    // check crashing doctor before it can emit its envelope defeats its purpose.
+    return `${DECISION_LOG_PATH} 읽기 실패(${error?.code ?? error?.message}) — 디렉터리이거나 권한 문제일 수 있다; 파일 상태를 확인하라`;
+  }
+  // Line-anchored with \b so `## D20` or a mid-line mention cannot satisfy `## D2`,
+  // while the template's dated form (`## D2 (2026-06-11) — …`) still matches.
+  const missing = DECISION_HEADINGS.filter(h => !new RegExp(`^${h}\\b`, 'm').test(body));
+  if (missing.length === 0) return null;
+  return `${DECISION_LOG_PATH}에 ${missing.join(', ')} 절 없음 — 스캐폴드는 기존 파일을 덮어쓰지 않으므로 플러그인 templates/docs/decisions.md에서 해당 절을 가져와 추가하라`;
+}
+
 export async function checkBoundaryCheckpointHook(targetDir) {
   let settings;
   try { settings = JSON.parse(await readFile(join(targetDir, '.claude/settings.json'), 'utf8')); }
@@ -487,6 +514,11 @@ export async function runDoctor(ctx) {
   const codexHookWarning = pluginDev ? null : await checkCodexSessionHook(ctx.targetDir);
   if (codexHookWarning) add('Codex SessionStart hook', 'warning', codexHookWarning, `\n⚠️ ${codexHookWarning}`);
 
+  // Deliberately NOT gated on pluginDev: the D-log migration puts docs/decisions.md
+  // in the source repo too, so its absence is real drift on either side.
+  const decisionLogWarning = await checkDecisionLog(ctx.targetDir);
+  if (decisionLogWarning) add('decision log', 'warning', decisionLogWarning, `\n⚠️ ${decisionLogWarning}`);
+
   // Like the hook-presence checks above, this is consumer-only. plugin-dev uses
   // `node bin/harness-team.mjs` and deliberately does not install consumer hooks.
   let hookCliOk = null;
@@ -527,9 +559,14 @@ export async function runDoctor(ctx) {
     // spec-gate bypass → create the task properly. A blanket 'migrate' would
     // misdirect an agent whose only warning is a pointer-shell spec.
     const warnActions = [];
+    // A decision log that is missing outright is delivered by apply's scaffold;
+    // one that exists without the D-sections is not (skipExisting) — no command
+    // fixes it, so only the missing-file case earns the apply action.
+    const decisionLogNeedsScaffold = decisionLogWarning
+      && !(await exists(join(ctx.targetDir, DECISION_LOG_PATH)));
     if (legacyWarning) warnActions.push('harness-team migrate');
     if (specGateWarning) warnActions.push('harness-team task <name>');
-    if (hookWarning || boundaryHookWarning) warnActions.push('harness-team apply');
+    if (hookWarning || boundaryHookWarning || decisionLogNeedsScaffold) warnActions.push('harness-team apply');
     // jq warning always carries its remedy; the fail-open branch additionally needs
     // migrate — installing jq alone leaves the stale hooks' precision degraded forever.
     if (jqGaps.length) warnActions.push('harness-team migrate');

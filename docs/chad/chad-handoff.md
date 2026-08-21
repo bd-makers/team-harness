@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-hook-jq-fallback-delivery
+doctor-decision-log
 
 ## Last Commit (2026-08-21)
-b00b937 docs(task): plan 완료 체크 + PR 링크, handoff 자동 갱신 반영
+ac67bc9 docs(task): rebase·PR #36 링크 기록
 
 ## Full Context
-→ docs/chad/hook-jq-fallback-delivery/hook-jq-fallback-delivery-handoff.md
+→ docs/chad/doctor-decision-log/doctor-decision-log-handoff.md
