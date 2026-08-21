@@ -26,3 +26,12 @@ docs/chad/chad-handoff.md                                    |  2 +-
  docs/chad/doctor-decision-log/doctor-decision-log-handoff.md | 11 +++++++++++
  2 files changed, 12 insertions(+), 1 deletion(-)
 
+
+## 2026-08-21T16:27:38.740Z — ac67bc9 docs(task): rebase·PR #36 링크 기록
+docs/chad/doctor-decision-log/doctor-decision-log-artifact.md | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+
+## 2026-08-21T16:27:38.831Z — 완료
+
+태스크 종료.
