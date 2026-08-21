@@ -54,3 +54,4 @@
 | chad | instruction-structure | ✅ done | 2026-08-21 |
 | chad | prerequisites-doc | 🔄 open | 2026-08-21 |
 | chad | review-restructure | ✅ done | 2026-08-21 |
+| chad | spec-writing-skill | 🔄 open | 2026-08-21 |

@@ -5,6 +5,7 @@
 - hook-jq-failclosed (created 2026-08-21)
 - hook-jq-fallback-delivery (created 2026-08-21)
 - prerequisites-doc (created 2026-08-21)
+- spec-writing-skill (created 2026-08-21)
 - d5-parallel-pr-scope (created 2026-08-20)
 - diagram-optin (created 2026-08-20)
 - ship-command (created 2026-08-20)
