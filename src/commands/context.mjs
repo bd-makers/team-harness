@@ -118,7 +118,7 @@ export function validateContextCard(content, task) {
       code: 'failure-capsules',
       actual: failureCapsules,
       limit: CONTEXT_MAX_FAILURE_CAPSULES,
-      message: `unresolved failure capsule count ${failureCapsules} exceeds ${CONTEXT_MAX_FAILURE_CAPSULES}`,
+      message: `unresolved failure capsule count ${failureCapsules} exceeds ${CONTEXT_MAX_FAILURE_CAPSULES} (a capsule spans from its '### F-*' heading to the next capsule or '#'/'##' heading; resolve capsules and move durable learnings to the artifact, then delete them)`,
     });
   }
 

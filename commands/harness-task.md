@@ -60,3 +60,7 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task $ARGUMENTS
 6. **기록** — 만들었으면 `<name>-artifact.md`에 산출물 경로를, 도구가 없어 건너뛰었으면
    "다이어그램 미실행 — 도구 없음"을 날짜와 함께 한 줄 남긴다. 기록하지 않으면 나중에
    "묻지 않은 것"과 "묻고 건너뛴 것"을 구분할 수 없다.
+
+7. **실행은 `/harness-diagram`이 담당한다** — 위 4~6번(probe·degrade·산출물·기록)을 실제로 수행하는
+   어댑터가 `commands/harness-diagram.md`다. task 생성 시점 이후 아무 때나 다시 실행해 산출물을
+   갱신할 수 있다. 이 문서는 **옵트인 계약**의 정본이고, 그 계약을 실행하는 절차는 그쪽에 있다.

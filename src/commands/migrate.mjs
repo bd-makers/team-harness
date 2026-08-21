@@ -1,5 +1,6 @@
 import { join, basename } from 'node:path';
 import { constants } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { unlink, rmdir, readdir, mkdir, lstat, stat, access } from 'node:fs/promises';
 import { readTextSafe, writeText, exists } from '../fsx.mjs';
 import { loadBackupDir, mergeClaudeSettings, settingsHasBoundaryCheckpoint } from '../harness.mjs';
@@ -329,39 +330,85 @@ async function refreshProjectScripts(ctx) {
   return true;
 }
 
-// --- Refresh installed .claude hooks (old pnpm-hardcoded → PM detection) ---
+// --- Refresh installed .claude hooks (known stock versions → current template) ---
 //
-// The pre-commit-check.sh shipped before this change hardcoded `pnpm`. Installed
-// copies are byte-identical to that old template, so we can refresh them safely.
-// If the installed hook has been customized (no longer the old signature) we skip
-// it rather than clobber the user's edits.
+// Template fixes never reach an existing install on their own: copyStaticAssets copies
+// hooks with skipExisting, so init/apply leave installed copies untouched. This is the
+// explicit opt-in delivery path — PR #29's jq-fallback fail-open fix ships through here.
+// An installed hook is refreshed ONLY when its bytes match a version we actually
+// shipped (sha256 table below). Anything else is treated as user-customized and never
+// overwritten; we print a notice and leave it for manual review.
 
-async function refreshClaudeHooks(ctx) {
+export const CLAUDE_HOOK_FILES = [
+  'block-dangerous-git.sh',
+  'protect-files.sh',
+  'pre-commit-check.sh',
+  'auto-format.sh',
+];
+
+// sha256 of every template version ever shipped per hook, EXCLUDING the current
+// template (that case is compared directly). Provenance: git history of
+// templates/.claude/hooks — the git blob sha is noted per entry, and
+// tests/fixtures/stock-hooks holds the same bodies so tests/migrate-hooks.test.mjs
+// can assert this table never drifts from them.
+export const KNOWN_STOCK_HOOK_SHA256 = {
+  'block-dangerous-git.sh': [
+    '7fe0735fee13b7e5ac2aeecff90b3463b080848a9509fe180376583b2c160433', // 9198ed24 2026-07-02 도입판
+    '4146387004a9139c4318ed75bcbfe41b838ca476caedea0361ddf9ffec0cee69', // 8367653a 상류 출처 표기판
+    '2c8671affb60fee88f1e16467a23a13dde4df2ff80cb9d102036536903ea11ac', // e1c87ee4 PR #29 (tool_input 스코프 이전)
+  ],
+  'protect-files.sh': [
+    '8031a9db866e2d79e9ed2837f6b12214e1a4cb3a91e510c1c89bbe0ac7962e63', // 286e227e initial
+    '2fb1c2ff7fbd956503634a641596039cf452ac07c8fa5c7fad5a003c7e8cbe42', // 75858c28 PR #29
+  ],
+  'pre-commit-check.sh': [
+    '97b4e1802c5ab75e463c8280d055e0a723390673bacf7116f98c63d3c87d4297', // 813a2212 initial (pnpm 하드코딩판)
+    '239cedf809c22cfcf09b07ac5f9d21a98da88bc85aaadd0cd577daadaf5de392', // d4662b9b detect_pm판
+    'f5b79e0c0fd2cd54a284a7c4f3139681ad95b761cf45738282523f1c85bdcf0d', // d2132caf PR #29
+  ],
+  'auto-format.sh': [
+    'ba2ab843b6609543748e66d96ba26dbb2982444e8f24c4af10910ab8546e8327', // 58c4fe2e initial
+    '11db4b4dc6f5a1f152d5bc7b7a9065c92ff07a7e4d30b06b549267e6363be019', // 775c0d56 PR #29
+  ],
+};
+
+export async function refreshClaudeHooks(ctx) {
   const { root, targetDir } = ctx;
-  const rel = '.claude/hooks/pre-commit-check.sh';
-  const installed = await readTextSafe(join(targetDir, rel));
-  if (installed === null) return false; // no installed hook — nothing to do
+  const stale = [];
+  for (const name of CLAUDE_HOOK_FILES) {
+    const rel = `.claude/hooks/${name}`;
+    const installed = await readTextSafe(join(targetDir, rel));
+    if (installed === null) continue; // not installed — nothing to refresh
 
-  const tpl = await readTextSafe(join(root, 'templates', rel));
-  if (!tpl) return false;
-  if (installed === tpl) return false; // already current
+    const tpl = await readTextSafe(join(root, 'templates', rel));
+    if (!tpl || installed === tpl) continue; // no template / already current
 
-  // Only refresh the known-old pnpm-hardcoded version; the new template defines
-  // detect_pm(), so its presence means already-new or a user's own PM logic.
-  const isOldHardcoded = installed.includes('pnpm tsc --noEmit') && !installed.includes('detect_pm');
-  if (!isOldHardcoded) {
-    console.log('  pre-commit hook: differs from template but looks customized — skipping (manual review)');
-    return false;
+    // The pnpm signature predates the sha table: it also catches byte-drifted copies
+    // of the very old pre-commit hook (the original refresh logic, kept as a net).
+    const sha256 = createHash('sha256').update(installed).digest('hex');
+    const knownStock = (KNOWN_STOCK_HOOK_SHA256[name] || []).includes(sha256)
+      || (name === 'pre-commit-check.sh'
+        && installed.includes('pnpm tsc --noEmit') && !installed.includes('detect_pm'));
+    if (knownStock) {
+      stale.push({ name, rel, tpl });
+    } else {
+      console.log(`  ${name}: differs from every known shipped version — looks customized, skipping (manual review; 최신 템플릿: templates/${rel})`);
+    }
   }
 
-  console.log('\nFound old pnpm-hardcoded pre-commit-check.sh:');
-  console.log('  → refresh to lockfile-based package-manager detection (npm/yarn/pnpm/bun)');
+  if (stale.length === 0) return false;
 
-  const ok = ctx.flags.yes || await confirm('\nRefresh pre-commit hook to current template?', { defaultYes: true });
+  console.log(`\nFound ${stale.length} stale Claude hook(s) — known shipped version, superseded:`);
+  for (const { name } of stale) console.log(`  ${name}`);
+  console.log('  → 최신 템플릿으로 갱신 (jq 부재 시 훅이 조용히 무력화되던 fail-open 수정 포함)');
+
+  const ok = ctx.flags.yes || await confirm('\nRefresh Claude hooks to current templates?', { defaultYes: true });
   if (!ok) { console.log('Skipped hook refresh.'); return false; }
 
-  await writeText(join(targetDir, rel), tpl, { mode: 0o755 });
-  console.log('  ✓ refreshed: .claude/hooks/pre-commit-check.sh');
+  for (const { rel, tpl } of stale) {
+    await writeText(join(targetDir, rel), tpl, { mode: 0o755 });
+    console.log(`  ✓ refreshed: ${rel}`);
+  }
   return true;
 }
 

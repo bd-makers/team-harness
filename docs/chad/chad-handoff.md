@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-review-restructure
+hook-jq-fallback-delivery
 
 ## Last Commit (2026-08-21)
-d6add52 feat(review): 리뷰 커맨드를 엔진 중립 /harness-review·/harness-adversarial-review로 재편
+b00b937 docs(task): plan 완료 체크 + PR 링크, handoff 자동 갱신 반영
 
 ## Full Context
-→ docs/chad/review-restructure/review-restructure-handoff.md
+→ docs/chad/hook-jq-fallback-delivery/hook-jq-fallback-delivery-handoff.md

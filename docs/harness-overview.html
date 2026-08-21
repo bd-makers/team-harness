@@ -436,6 +436,12 @@
             <td>PR/MR 직전 spec·plan·artifact를 최종 갱신하고 다이어그램(옵트인)까지 정리한 뒤 준비 완료 상태를 보고</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
           </tr>
+          <tr data-command-source="commands/harness-diagram.md">
+            <td><span class="cmd">/harness-diagram</span></td>
+            <td><code>commands/harness-diagram.md</code></td>
+            <td>활성 task의 spec/plan 다이어그램을 하네스 규약(경로·자립형 inline SVG·artifact 기록)대로 생성하거나 갱신</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
           <tr data-command-source="commands/harness-clone.md">
             <td><span class="cmd">/harness-clone</span></td>
             <td><code>commands/harness-clone.md</code></td>
@@ -1293,6 +1299,11 @@
             <td>project에서 harness symlink 제거</td>
           </tr>
           <tr>
+            <td><code>commands/harness-diagram.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>활성 task의 spec/plan 다이어그램을 하네스 규약(경로·자립형 inline SVG·artifact 기록)대로 생성하거나 갱신</td>
+          </tr>
+          <tr>
             <td><code>commands/harness-doctor.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
             <td>하네스 무결성 점검 (파일, hooks, CLI PATH)</td>
@@ -1516,6 +1527,11 @@
             <td><code>skills/harness-delete/agents/openai.yaml</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
             <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-diagram/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
           </tr>
           <tr>
             <td><code>skills/harness-doctor/SKILL.md</code></td>
@@ -1928,6 +1944,11 @@
             <td>소비자 프로젝트 scaffold 템플릿</td>
           </tr>
           <tr>
+            <td><code>templates/docs/decisions.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트 scaffold 템플릿</td>
+          </tr>
+          <tr>
             <td><code>templates/symlink.sh</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
             <td>소비자 프로젝트 scaffold 템플릿</td>
@@ -2028,6 +2049,61 @@
             <td>자동 회귀 검증</td>
           </tr>
           <tr>
+            <td><code>tests/fixtures/stock-hooks/README.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/jq-fallback-v1/auto-format.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/jq-fallback-v1/block-dangerous-git.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/jq-fallback-v1/pre-commit-check.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/jq-fallback-v1/protect-files.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/older/block-dangerous-git.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/older/pre-commit-check.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/pre-jq-fallback/auto-format.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/pre-jq-fallback/block-dangerous-git.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/pre-jq-fallback/pre-commit-check.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/pre-jq-fallback/protect-files.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
             <td><code>tests/harness-overview-generation.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
@@ -2038,12 +2114,22 @@
             <td>자동 회귀 검증</td>
           </tr>
           <tr>
+            <td><code>tests/hooks-jq-fallback.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
             <td><code>tests/manifest-sync.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>
           <tr>
             <td><code>tests/migrate-agents.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/migrate-hooks.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>
@@ -2074,6 +2160,11 @@
           </tr>
           <tr>
             <td><code>tests/perf/boundary-checkpoint.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/prerequisites-doc.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>

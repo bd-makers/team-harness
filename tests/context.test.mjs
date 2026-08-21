@@ -196,6 +196,10 @@ test('validateContextCard: size, line, heading, and capsule failures are determi
   assert.ok(first.metrics.bytes > CONTEXT_MAX_BYTES);
   assert.ok(first.metrics.nonblankLines > CONTEXT_MAX_NONBLANK_LINES);
   assert.equal(first.metrics.failureCapsules, CONTEXT_MAX_FAILURE_CAPSULES + 1);
+
+  const capsuleFailure = first.failures.find(failure => failure.code === 'failure-capsules');
+  assert.match(capsuleFailure.message, /'### F-\*' heading to the next capsule or '#'\/'##' heading/);
+  assert.match(capsuleFailure.message, /move durable learnings to the artifact/);
 });
 
 test('context init creates only a missing active-task card and then becomes a no-op', async () => {
