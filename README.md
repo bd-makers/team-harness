@@ -170,15 +170,16 @@ cd my-project
 | 도구 | 없으면 |
 |---|---|
 | Node.js ≥ 18 | `harness-team` CLI가 실행되지 않음 — 유일한 하드 요구사항 |
-| `jq` | **Claude Code 보안 훅이 조용히 fail-open** (`git push --force`·`.env` 편집이 통과) — doctor는 `optional`로 보고하지만 optional이 아닙니다 |
+| `jq` | Claude Code 훅이 **저정밀 모드**로 판정 — 차단은 유지되지만 정확도가 떨어짐. 다른 넷과 달리 doctor가 `warning`으로 알림 |
 | `git` | CLI는 동작하되 post-commit handoff·summary 브랜치 감지·task 전환 diff가 no-op |
 | `gh` | `/harness-ship` 이후 **사용자가 직접 여는** PR 단계용 — 하네스 명령은 영향 없음 |
 | `codex` | `/harness-codex-review`, `/harness-codex-adversarial-review`, Codex L5 시뮬레이션 |
 | `gemini` | 병렬 외부 리뷰 — 건너뛰되 artifact에 "미실행"을 기록 |
 | `opencode` | OpenCode 순차 드라이버 세션 (하네스는 설정 파일을 쓰기만 합니다) |
 
-> **⚠ jq를 먼저 확인하세요.** 없으면 에러도 doctor의 fail도 없이 훅이 통과합니다 —
-> 가드가 걸려 있다고 믿는 상태에서 아무것도 막히지 않습니다.
+> **⚠ jq를 먼저 확인하세요.** 없으면 훅이 grep 폴백으로 판정합니다 — 차단 자체는 유지되지만
+> JSON 이스케이프를 디코드하지 못해 일부 명령을 놓칠 수 있습니다. 자세한 한계는
+> [docs/prerequisites.md §3](./docs/prerequisites.md)에 있습니다.
 
 에이전트별 연동, 실측 근거, 호환성 주의(특히 `mattpocock-skills`의 `writing-for-agents`)는
 **[docs/prerequisites.md](./docs/prerequisites.md)** 를 보세요.

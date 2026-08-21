@@ -150,14 +150,14 @@ modified: 2026-08-21
 - **`README.md`에 "동반 플러그인 (선택)" 절 추가.** 없어도 하네스가 정상 동작한다는 사실, 설치 명령,
   MIT 저작자 표기(Cathryn Lavery), 핀이 자동으로 따라가지 않는다는 사실, vendoring 하지 않는 이유,
   하네스 안에서는 `/harness-diagram`으로 부른다는 사실을 함께 적었다.
-- **jq 부재 시 훅 fail-open을 문서에 명시.** `templates/.claude/hooks/`의 훅은 stdin JSON을 `jq -r`로
-  파싱하므로 jq가 없으면 `TOOL_NAME`/`FILE_PATH`가 빈 문자열이 되어 조기 `exit 0`으로 빠진다.
-  jq만 제거한 PATH로 실측한 결과 **보안 훅 2개가 조용히 무력화된다**: `block-dangerous-git.sh`는
-  `git push --force`를(exit 2 → 0), `protect-files.sh`는 `.env` 편집을 통과시키고,
-  `pre-commit-check.sh`는 commit 전 typecheck·test 게이트를 건너뛴다(`auto-format.sh`는 무해).
-  에러도 doctor의 fail도 없어 가드가 걸려 있다고 믿는 상태에서 아무것도 막히지 않는다.
-  **훅 코드는 이번 변경에서 손대지 않았다** — 사실만 `docs/prerequisites.md` §3과 README 요약표에
-  명시했고, fail-closed 수정은 별도 작업이다.
+- **jq 부재 시의 저정밀 모드를 문서에 명시.** `templates/.claude/hooks/`의 훅 넷은 stdin JSON을
+  파싱해 판단하는데, jq가 없으면 grep 폴백으로 `"key": "value"` 문자열만 잘라내 **같은 검사에**
+  넘긴다 — **차단은 유지되고 정밀도만 떨어진다.** 한계(JSON 이스케이프 미디코드, 같은 키의 첫
+  매치만 읽음, 값을 못 뽑으면 payload 전체 검사)와 "왜 무조건 차단이 아닌가"(훅은 매 도구
+  호출마다 돌기 때문에 파싱 실패를 전부 차단하면 어떤 bash 명령도 못 쓴다)를 `docs/prerequisites.md`
+  §3과 README 요약표에 적었다. 이 변경은 **훅 코드를 건드리지 않는다** — 동작 수정은 별도 작업이며
+  여기서는 사실만 기술한다. `doctor`가 jq만 `optional`이 아닌 `warning`으로 보고한다는 점도 함께
+  명시했다(다른 넷은 없으면 기능이 꺼질 뿐이지만 jq는 판정 정확도를 좌우한다).
 - **호환성 주의 — `mattpocock-skills`의 `writing-for-agents`.** 그 스킬의 description이
   *"Use when … modifying AGENTS.md or CLAUDE.md"* 라 이 저장소에서 자동 발동하는데, 여기의
   `AGENTS.md`·`CLAUDE.md`·`GEMINI.md`는 `templates/*.hbs`에서 생성되고 `harness:section` 마커 블록이

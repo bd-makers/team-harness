@@ -134,16 +134,62 @@ harness overview 생성 상태가 최신입니다.
   물리는데, 그 커밋 내용은 handoff 자기참조뿐이라 `--skip` 했다.
 - **검증 재실행:** `npm run test` 311/311 pass(W4 테스트 9개 포함), `npm run docs:check` green.
 
-## W8(PR #29) 의존성
+## W8(PR #29) 조정 — 오케스트레이터 결정 (2026-08-21)
 
-PR #29 `fix(hooks): jq 부재 시 훅 4개가 조용히 무력화되던 fail-open 수정`이 **열려 있다** —
-오케스트레이터에 보낸 범위 확대 요청이 반영돼 4개 훅 전부를 다룬다.
+오케스트레이터가 **#29 선머지**로 순서를 확정했다. #29는 `docs/prerequisites.md`를 건드리지
+않으므로, 이 문서의 jq 서술을 처음부터 **"#29 이후 상태"** 로 다시 썼다.
 
-#29가 머지되면 이 문서에서 **다시 맞춰야 하는 곳**:
-- `docs/prerequisites.md` §3 실측 표 — fail-open → 저정밀 폴백 파서 동작으로 교체
-- `docs/prerequisites.md` §2 jq 행의 "doctor는 `optional`로 보고하지만" — #29가 jq를
-  `optional` → `warning`으로 승격하므로 문구 수정 필요
-- `README.md` 사전 준비 표의 jq 행 동일
+paraphrase가 아니라 `gh pr diff 29`의 실제 훅·doctor diff를 읽고 맞췄다:
 
-두 PR 모두 `src/commands/doctor.mjs`를 건드리므로(이쪽은 `EXTERNAL_TOOLS` export 한 줄,
-#29는 jq 표시 승격) 나중에 머지되는 쪽이 rebase한다. **결론은 어느 쪽이든 같다: jq를 설치하라.**
+| 다시 쓴 곳 | 이전(#29 전) | 지금(#29 후) |
+|---|---|---|
+| `docs/prerequisites.md` §3 전체 | "fail-open — exit 0으로 조용히 통과" 4행 실측표 | "저정밀 모드 — 차단 유지, 정밀도 하락" 대조표 + 폴백 파서 한계 3가지 |
+| `docs/prerequisites.md` §2 jq 행 | "doctor는 optional로 보고하지만 optional이 아니다" | "다른 넷과 달리 doctor가 **warning**으로 보고" |
+| `docs/prerequisites.md` §6 | "doctor green이어도 optional로만 보고" | jq만 warning, 나머지 넷은 optional |
+| `README.md` jq 행 + 경고 | "조용히 fail-open" | "저정밀 모드 — 차단은 유지, 정확도 하락" |
+| `CHANGELOG.md` Changed 항목 | fail-open 실측 기록 | 저정밀 모드 계약 + 왜 무조건 차단이 아닌가 |
+
+#29 diff에서 확인한 사실(문서에 반영):
+- 폴백은 `json_field()` — `"key": "value"` 문자열만 grep으로 추출
+- `tool_name`을 못 뽑으면 Bash 게이트를 적용하지 않고, `command`를 못 뽑으면 **payload 전체를
+  검사한다** — 못 뽑았다는 이유로 통과시키지 않는 것이 이 수정의 핵심
+- 잔여 한계: JSON 이스케이프 미디코드(`git push\t--force` 통과 가능), 같은 키 첫 매치만 읽음
+- `doctor`는 jq 엔트리에 `missingDetail`을 붙여 `warning`으로 승격하되 `fail++`는 하지 않음
+  → **exit code 계약은 그대로**
+
+**최초 실측 기록의 가치는 남는다:** 이 task가 jq 부재 PATH로 훅 4개를 실측해 브리프의
+"1개"를 "3개(+무해 1)"로 정정했고, 그 범위 확대 요청이 #29의 remit(`훅 4개`)이 됐다.
+
+### #29 훅을 실제로 받아 문서 주장을 실측 검증
+
+diff 읽기만으로 쓰지 않았다. `git show FETCH_HEAD:templates/.claude/hooks/*.sh`로 #29 브랜치의
+훅을 받아 jq 없는 PATH(grep·cat은 정상)에서 직접 돌려 문서의 다섯 주장을 전부 확인했다.
+
+| 문서 주장 | jq 있음 | jq 없음 | 판정 |
+|---|---|---|---|
+| `git push --force` 차단 | exit 2 | **exit 2** | ✓ 차단 유지 |
+| `.env` 편집 차단 | exit 2 | **exit 2** | ✓ 차단 유지 |
+| 안전한 명령 통과 (`git status`, `git checkout -b feat/x`) | — | exit 0 | ✓ 오탐 없음 |
+| Bash 아닌 도구는 관여 안 함 | — | exit 0 | ✓ |
+| JSON 이스케이프 미디코드 (`git push\t--force`) | exit 2 | **exit 0** | ✓ 폴백만 놓침 |
+
+차단 메시지에 `⚠ jq가 PATH에 없어 저정밀 모드로 판정했습니다`가 실제로 찍히는 것도 확인했다.
+
+**측정 함정 2개를 밟고 고쳤다** — 둘 다 문서를 틀리게 만들 뻔했다:
+
+1. **jq-free PATH에 `grep`이 빠져 있었다.** `zsh`에서 `command -v grep`이 기대대로 절대경로를
+   주지 않아 symlink가 만들어지지 않았고, 훅이 폴백 파서조차 못 돌려 "차단 실패"로 보였다.
+   `/usr/bin`·`/bin`을 명시적으로 훑어 링크하도록 고치니 차단이 정상 동작했다.
+   → **격리 PATH를 만들 때는 필요한 바이너리가 실제로 링크됐는지 먼저 확인할 것.**
+2. **`\t`를 담은 JSON을 셸 따옴표로 만들면 이미 실제 탭이 된다.** 그러면 폴백도 매치해서
+   "이스케이프 한계가 없다"는 반대 결론이 나온다. `node -e 'JSON.stringify(...)'`로 **백슬래시+t
+   두 글자**를 가진 진짜 payload를 만들어야 한계가 재현된다(`od -c`로 바이트 확인).
+   → **인코딩이 쟁점인 테스트는 payload를 셸이 아니라 JSON 직렬화기로 만들 것.**
+
+### 남은 rebase 작업 (#29 머지 시)
+
+두 PR 모두 `src/commands/doctor.mjs`의 `EXTERNAL_TOOLS` **바로 위**를 건드린다 —
+이쪽은 `export` + 이유 주석, #29는 jq를 `warning`으로 승격하는 설명 주석. **충돌 확정**이며
+#29가 먼저 머지되므로 이 PR이 rebase한다. 양쪽 주석을 다 보존하고 `export`를 유지하면 된다
+(#29는 export하지 않는다). `tests/prerequisites-doc.test.mjs`는 `cmd`만 읽으므로 #29가 추가한
+`missingDetail` 키와 무관하게 그대로 통과한다.

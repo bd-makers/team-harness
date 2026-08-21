@@ -40,15 +40,16 @@ modified: 2026-08-21
      src/commands/doctor.mjs의 EXTERNAL_TOOLS와 양방향 대조합니다. 마커를 지우지 마세요. -->
 | 도구 | 켜지는 기능 | 없으면 |
 |---|---|---|
-| `jq` | Claude Code 훅의 입력 파싱 | **보안 훅이 조용히 무력화됩니다 — §3 참조.** doctor는 `optional`로 보고하지만 optional이 아닙니다. |
+| `jq` | Claude Code 훅의 정밀한 입력 파싱 | **차단은 유지되지만 판정 정확도가 떨어집니다 — §3 참조.** 다른 넷과 달리 doctor가 `optional`이 아니라 **`warning`** 으로 보고합니다. |
 | `gh` | GitHub PR 흐름 | 하네스 명령은 아무것도 깨지지 않습니다. `/harness-ship`은 **PR을 만들지 않고** 준비 완료 보고에서 멈추므로, `gh`는 그 다음에 **사용자가 직접 여는 PR** 단계용입니다. |
 | `codex` | `/harness-codex-review`, `/harness-codex-adversarial-review`, Codex L5 시뮬레이션(`tests/sim/codex-agentloop.mjs`) | 위 세 가지를 실행할 수 없습니다. 다른 명령은 영향 없음. |
 | `gemini` | 병렬 외부 리뷰 (규범 — 하네스 코드가 호출하지 않습니다) | 리뷰를 건너뛰되 활성 task의 `<name>-artifact.md`에 **"미실행"을 기록**합니다(`commands/harness-codex-review.md`). 기록 없는 미실행은 "안 한 것"입니다. |
 | `opencode` | OpenCode 순차 드라이버 세션 (`AGENTS.md` D4) | 하네스는 `.opencode/opencode.json`을 **쓰기만** 합니다 — CLI를 호출하지 않으므로 하네스 동작에는 영향이 없고, 그 세션을 열 수 없을 뿐입니다. |
 <!-- /prerequisites:external-tools -->
 
-**중요:** `doctor`는 이 다섯 개를 전부 `not found, optional`로 보고하며 **exit code에 반영하지
-않습니다.** 즉 *"doctor가 통과했다"가 "훅이 정상 동작한다"를 뜻하지 않습니다.* jq가 그 예외입니다.
+**중요:** 이 다섯 개는 없어도 **exit code에 반영되지 않습니다.** gh·codex·gemini·opencode는
+`not found, optional`(기능이 꺼질 뿐)로, **jq만 `warning`** 으로 보고됩니다 — 없으면 기능이
+꺼지는 게 아니라 훅의 **판정 정밀도**가 떨어지기 때문입니다(§3).
 
 ```bash
 harness-team doctor          # 도구 유무를 런타임에 확인
@@ -56,28 +57,42 @@ harness-team doctor          # 도구 유무를 런타임에 확인
 
 ---
 
-## 3. ⚠ jq는 optional이 아닙니다 — 보안 훅 fail-open
+## 3. ⚠ jq는 "있으면 좋은 것"이 아닙니다 — 없으면 훅이 저정밀 모드로 떨어집니다
 
-`templates/.claude/hooks/`의 훅 스크립트는 Claude Code가 stdin으로 넘기는 JSON을 `jq -r`로
-파싱합니다. **jq가 없으면** `jq: command not found`로 죽고 `TOOL_NAME`/`FILE_PATH`가 빈
-문자열이 되어, 훅이 "관여하지 않음" 분기로 빠져 **exit 0(허용)** 합니다.
+`templates/.claude/hooks/`의 훅 네 개(`block-dangerous-git.sh`, `protect-files.sh`,
+`pre-commit-check.sh`, `auto-format.sh`)는 Claude Code가 stdin으로 넘기는 JSON payload를
+파싱해서 판단합니다. jq가 있으면 정확히 파싱하고, **없으면 `"key": "value"` 문자열만 잘라내는
+grep 폴백**으로 같은 검사에 넘깁니다.
 
-jq만 제거한 PATH(다른 명령은 정상)로 실측한 결과:
+| | jq 있음 | jq 없음 (저정밀 모드) |
+|---|---|---|
+| 파싱 | `jq -r`로 정확히 추출 | `grep`으로 `"key": "value"` 문자열만 추출 |
+| `git push --force` | 차단 (exit 2) | **차단 (exit 2)** |
+| `.env` 편집 | 차단 (exit 2) | **차단 (exit 2)** |
+| 값을 못 뽑았을 때 | 해당 없음 | **통과시키지 않고** payload 전체를 검사 |
+| 알림 | 없음 | 차단 메시지에 저정밀 모드임을 명시 + `doctor`가 `warning` |
 
-| 훅 | jq 있을 때 | jq 없을 때 | 결과 |
-|---|---|---|---|
-| `block-dangerous-git.sh` | exit 2 (차단) | **exit 0 (통과)** | `git push --force`가 그대로 실행됩니다 |
-| `protect-files.sh` | exit 2 (차단) | **exit 0 (통과)** | `.env` · `.git/` 편집이 그대로 실행됩니다 |
-| `pre-commit-check.sh` | typecheck·test 게이트 | **exit 0 (통과)** | commit 전 검증이 조용히 건너뛰어집니다 |
-| `auto-format.sh` | 포맷 실행 | exit 0 | 무해 — 포매팅만 안 됩니다 |
+**차단은 유지됩니다.** 다만 폴백 파서에는 구조적 한계가 있습니다:
 
-**에러 메시지도, doctor의 fail도 없습니다.** 가드가 걸려 있다고 믿는 상태에서 아무것도 막히지
-않는 것이 가장 위험한 실패 방식이라, jq는 사실상 필수로 취급하세요.
+- **JSON 이스케이프를 디코드하지 않습니다** — `git push\t--force`처럼 구분자가 인코딩된
+  명령은 폴백에서 매치되지 않아 통과할 수 있습니다.
+- 같은 키가 payload에 여러 번 나오면 **첫 매치만** 읽습니다.
+- 값을 못 뽑아 payload 전체를 검사할 때는 검사 범위가 넓어져 정밀도가 떨어집니다.
+
+그래서 jq는 "없으면 기능 하나가 꺼지는" 도구가 아니라 **보안 훅의 판정 정확도를 결정하는
+도구**입니다. `doctor`가 다른 넷과 달리 `warning`으로 알리는 이유입니다(exit code는 그대로 —
+`fail++` 하지 않습니다).
 
 ```bash
-command -v jq || echo "jq 없음 — 보안 훅이 fail-open 상태입니다"
+command -v jq || echo "jq 없음 — 훅이 저정밀 모드로 판정합니다"
 # macOS: brew install jq   /   Debian·Ubuntu: apt-get install jq
 ```
+
+> **왜 "jq 없으면 무조건 차단"이 아닌가:** 훅은 **매 도구 호출마다** 돕니다. 파싱 실패를
+> 전부 차단으로 처리하면 어떤 bash 명령도 못 쓰는 상태가 됩니다. 반대로 payload 전체를
+> 항상 스캔하면 모델이 쓴 `description` 문구가 정규식을 완성시켜
+> `git checkout -b feat/x`(설명에 ` -- ` 포함) 같은 **안전한 명령이 차단**됩니다.
+> 저정밀 모드는 그 사이의 선택입니다.
 
 ---
 
@@ -145,11 +160,12 @@ plan의 해당 단계는 지우지 말고 `- [x] … — 미실행(도구 없음
 
 ```bash
 node --version              # ≥ 18 (유일한 하드 요구사항)
-command -v jq               # 없으면 §3 — 보안 훅 fail-open
+command -v jq               # 없으면 §3 — 훅이 저정밀 모드로 판정
 harness-team doctor         # 파일·훅·CLI PATH·외부 도구 종합 점검
 ```
 
-`doctor`가 green이어도 §2의 외부 도구는 `optional`로만 보고된다는 점을 기억하세요.
+`doctor`는 외부 도구가 없어도 **exit code를 올리지 않습니다.** jq만 `warning`으로 눈에 띄고
+나머지 넷은 `optional`로 조용히 지나가므로, doctor가 green이라고 전부 갖춰졌다는 뜻은 아닙니다.
 
 ---
 
