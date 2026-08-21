@@ -21,6 +21,7 @@
 - ✅ doctor-decision-log
 - ✅ instruction-structure
 - ✅ review-restructure
+- ✅ done-guard-evidence
 - ✅ task-ledger-derived
 - ✅ global-cli-drift
 - ✅ codex-hooks-template

@@ -43,6 +43,7 @@
 | chad | cursor-rules-mirror | ✅ done | 2026-08-12 |
 | chad | cursor-rules-prune | ✅ done | 2026-08-12 |
 | chad | global-cli-drift | ✅ done | 2026-08-13 |
+| chad | done-guard-evidence | ✅ done | 2026-08-19 |
 | chad | task-ledger-derived | ✅ done | 2026-08-19 |
 | chad | d5-parallel-pr-scope | 🔄 open | 2026-08-20 |
 | chad | diagram-optin | 🔄 open | 2026-08-20 |
