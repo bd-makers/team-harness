@@ -11,7 +11,7 @@ doctor에 `docs/decisions.md` 존재 + `## D2`/`## D4`/`## D5` 제목 검사(war
 - [x] `npm run test` 전체 green 확인 (313 + perf 1, fail 0)
 - [x] 외부 리뷰 (Codex read-only; Gemini 미실행 — CLI 미설치) → artifact ## Reviews 기록,
       P2 1건(읽기 오류 crash) 조치 + 회귀 테스트, 재실행 314 + perf 1 green
-- [ ] artifact 기록 + 커밋 (`feat(doctor): …` 한글 컨벤션)
+- [x] artifact 기록 + 커밋 (`feat(doctor)` f137448 · `docs(task)` 7426e02)
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

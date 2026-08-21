@@ -3,8 +3,8 @@
 
 ## Now
 - Goal: doctor에 docs/decisions.md 존재 + `## D2`/`## D4`/`## D5` 검사(warn) 추가 — P2-1 완화안
-- Current atomic step: Codex read-only 리뷰 결과 검증 → artifact ## Reviews 기록 → 커밋
-- Stop / human-decision condition: 리뷰에서 P1이 나오면 수정 전 보고; done 처리는 사용자 확인 필요
+- Current atomic step: 구현·테스트·리뷰·커밋 완료 (f137448) — 남은 것: 사용자 확인 후 `harness-team done`
+- Stop / human-decision condition: done 처리·push/PR 여부는 사용자 결정 (자율 세션이라 미실행)
 
 ## Constraints and settled decisions
 - warn 수준(실패 아님): 부재 → apply 유도(스캐폴드가 해결), 부분누락 → 템플릿 수동 병합 안내(skipExisting)

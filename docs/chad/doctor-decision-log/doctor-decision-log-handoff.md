@@ -20,3 +20,9 @@ docs/chad/chad-handoff.md                          |  6 +--
  .../doctor-decision-log-spec.md                    | 49 ++++++++++++++++++++++
  7 files changed, 163 insertions(+), 3 deletions(-)
 
+
+## 2026-08-21T06:54:43.256Z — 03a886e chore(task): post-commit handoff 갱신
+docs/chad/chad-handoff.md                                    |  2 +-
+ docs/chad/doctor-decision-log/doctor-decision-log-handoff.md | 11 +++++++++++
+ 2 files changed, 12 insertions(+), 1 deletion(-)
+
