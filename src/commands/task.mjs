@@ -76,6 +76,15 @@ export function taskSpecTemplate(name) {
 - [ ] **Context 명확도** (brownfield 한정) — 영향 받는 기존 코드/파일을 식별했는가?
 - [ ] **Ambiguity ≤ 0.2** — 위 항목 가중합 ≥ 0.8
 
+<!-- 선택 선언. 아래 주석을 벗기면 done 가드가 검사한다.
+     미선언 기본값: "tests": "required" (소스가 바뀌면 테스트 파일 변경을 요구), "review": "optional". -->
+## Done evidence
+<!--
+\`\`\`json
+{ "version": 1, "review": "required", "tests": "skip" }
+\`\`\`
+-->
+
 ## 참고
 -
 `;
@@ -117,6 +126,7 @@ export function taskArtifactTemplate(name) {
 
 ## Reviews
 *Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
+*기계 판독용 마커를 함께 남긴다: \`<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->\`*
 
 
 ## Learnings
@@ -288,9 +298,120 @@ export function parsePorcelainPaths(stdout) {
     });
 }
 
+// spec의 `## Done evidence` 선언. `boundary check`의 `not-configured` 전례를 따른다 —
+// 선언이 없으면 기본값을 쓰고, 깨져 있으면 invalid를 돌려 done이 차단 사유로 보고한다.
+// 조용히 기본값으로 폴백하면 선언 자체가 무력해진다.
+const DONE_EVIDENCE_RE = /^## Done evidence[ \t]*\r?\n(?:[ \t]*\r?\n)*```json[ \t]*\r?\n([\s\S]*?)^```[ \t]*$/m;
+// 닫는 fence가 없어도 "선언을 쓰려던 흔적"은 invalid로 잡는다 — fail-open 방지.
+// (템플릿처럼 섹션 전체가 <!-- --> 주석 안이면 ```json이 heading 바로 다음에 오지 않아 매치하지 않는다.)
+const DONE_EVIDENCE_OPEN_RE = /^## Done evidence[ \t]*\r?\n(?:[ \t]*\r?\n)*```json[ \t]*\r?\n/m;
+
+// tests는 git만으로 판정 가능하고 소스 변경이 있을 때만 발동하므로 기본 ON.
+// review는 마커 신뢰 기반이라 부분 검증뿐이고, 전체 강제는 `--force` 훈련이 되므로 기본 OFF.
+export const DONE_EVIDENCE_DEFAULT = { tests: 'required', review: 'optional' };
+
+const DONE_EVIDENCE_VALUES = { tests: ['required', 'skip'], review: ['required', 'optional'] };
+
+export function parseDoneEvidenceDeclaration(spec) {
+  const match = spec.match(DONE_EVIDENCE_RE);
+  if (!match) {
+    if (DONE_EVIDENCE_OPEN_RE.test(spec)) {
+      return { status: 'invalid', reason: '```json 블록이 닫히지 않음' };
+    }
+    return { status: 'not-configured', ...DONE_EVIDENCE_DEFAULT };
+  }
+
+  let declaration;
+  try {
+    declaration = JSON.parse(match[1]);
+  } catch (err) {
+    return { status: 'invalid', reason: `JSON 파싱 실패: ${err.message}` };
+  }
+  if (declaration === null || typeof declaration !== 'object' || Array.isArray(declaration)) {
+    return { status: 'invalid', reason: 'object가 아님' };
+  }
+  if (declaration.version !== 1) {
+    return { status: 'invalid', reason: '"version": 1 이 필요함' };
+  }
+
+  const unknown = Object.keys(declaration).filter(k => k !== 'version' && !(k in DONE_EVIDENCE_VALUES));
+  if (unknown.length) {
+    return { status: 'invalid', reason: `알 수 없는 키: ${unknown.join(', ')}` };
+  }
+
+  const resolved = { ...DONE_EVIDENCE_DEFAULT };
+  for (const [key, allowed] of Object.entries(DONE_EVIDENCE_VALUES)) {
+    if (declaration[key] === undefined) continue;
+    if (!allowed.includes(declaration[key])) {
+      return { status: 'invalid', reason: `"${key}"는 ${allowed.join(' | ')} 중 하나여야 함` };
+    }
+    resolved[key] = declaration[key];
+  }
+  return { status: 'configured', ...resolved };
+}
+
+// 언어 무관 분류. 확장자 화이트리스트라 문서(.md)·설정(.json/.yml)만 바뀐 task에서는
+// source=false가 되어 테스트 작성 체크가 아예 발동하지 않는다.
+const SOURCE_EXTENSIONS = new Set([
+  'js', 'mjs', 'cjs', 'ts', 'tsx', 'jsx', 'py', 'go', 'rb', 'java', 'kt', 'swift',
+  'c', 'h', 'cpp', 'cc', 'cs', 'rs', 'sh', 'php', 'scala', 'm', 'mm', 'dart',
+]);
+
+function isTestPath(path) {
+  if (/(^|\/)(tests?|__tests__|specs?)(\/|$)/i.test(path)) return true;
+  const base = path.slice(path.lastIndexOf('/') + 1);
+  // `foo.test.ts`, `foo_test.go`, `foo-spec.rb`, 그리고 `FooTests.swift` 류.
+  return /(^|[._-])(test|spec)s?\.[^.]+$/i.test(base) || /(Test|Tests|Spec|Specs)\.[^.]+$/.test(base);
+}
+
+// 테스트 판정이 소스 판정보다 우선한다 — `foo.test.ts`는 소스 변경으로 세지 않는다.
+export function classifyChangedPaths(paths) {
+  let source = false;
+  let test = false;
+  for (const raw of paths) {
+    // git이 non-ASCII 경로를 C-quote("...")로 감싸 출력해도 분류가 깨지지 않게 벗긴다.
+    const unquoted = raw.startsWith('"') && raw.endsWith('"') ? raw.slice(1, -1) : raw;
+    const path = unquoted.replace(/\\/g, '/');
+    if (isTestPath(path)) { test = true; continue; }
+    const dot = path.lastIndexOf('.');
+    const slash = path.lastIndexOf('/');
+    if (dot > slash + 1 && SOURCE_EXTENSIONS.has(path.slice(dot + 1).toLowerCase())) source = true;
+  }
+  return { source, test };
+}
+
+// artifact에 남는 리뷰 마커: <!-- harness:review kind=codex scope=worktree tip=<sha> at=<ISO> -->
+// 섹션 파싱은 취약하므로 파일 전체를 스캔한다. 형식이 깨진 마커는 없는 것과 같이 취급한다.
+const REVIEW_MARKER_RE = /<!--\s*harness:review\s+([^>]*?)-->/g;
+
+export function parseReviewMarkers(artifact) {
+  const markers = [];
+  for (const match of artifact.matchAll(REVIEW_MARKER_RE)) {
+    const attrs = {};
+    for (const kv of match[1].matchAll(/([a-z][a-z0-9-]*)=("[^"]*"|\S+)/gi)) {
+      attrs[kv[1].toLowerCase()] = kv[2].replace(/^"|"$/g, '');
+    }
+    // 계약은 ISO8601 — Date.parse는 '9999' 같은 비계약 값도 시각으로 받아들이므로 형태를 먼저 본다.
+    const at = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(attrs.at ?? '') ? Date.parse(attrs.at) : NaN;
+    if (!attrs.kind || Number.isNaN(at)) continue;
+    markers.push({ kind: attrs.kind, at, scope: attrs.scope ?? null, tip: attrs.tip ?? null });
+  }
+  return markers;
+}
+
 async function collectDoneIssues(targetDir, active) {
   const { user, task, switchedAt } = active;
   const issues = [];
+
+  // spec 선언 — 없으면 기본값(tests 검사 / review 미검사), 깨져 있으면 그 자체가 차단 사유.
+  let evidence = { status: 'not-configured', ...DONE_EVIDENCE_DEFAULT };
+  try {
+    const specPath = join(targetDir, 'docs', user, task, `${task}-spec.md`);
+    evidence = parseDoneEvidenceDeclaration(await readFile(specPath, 'utf8'));
+  } catch { /* spec.md 없음 → 기본값 유지 */ }
+  if (evidence.status === 'invalid') {
+    issues.push(`spec의 \`## Done evidence\` 선언이 올바르지 않음 (${evidence.reason})`);
+  }
 
   // plan.md: unchecked boxes remaining
   try {
@@ -305,12 +426,25 @@ async function collectDoneIssues(targetDir, active) {
 
   // artifact.md: missing or still the untouched template
   const artifactPath = join(targetDir, 'docs', user, task, `${task}-artifact.md`);
+  let artifactContent = null;
   if (!(await exists(artifactPath))) {
     issues.push('artifact.md가 없음 (결과/학습 미기록)');
   } else {
-    const artifactContent = await readFile(artifactPath, 'utf8');
+    artifactContent = await readFile(artifactPath, 'utf8');
     if (artifactContent.trim() === taskArtifactTemplate(task).trim()) {
       issues.push('artifact.md가 템플릿 그대로임 (내용 없음)');
+    }
+  }
+
+  // 리뷰 마커 — spec이 명시적으로 required를 선언한 task만 검사한다.
+  // "리뷰가 진짜 돌았는가"는 검증할 수 없다. 이 체크가 막는 것은 망각이다.
+  if (evidence.review === 'required') {
+    const since = switchedAt ? Date.parse(switchedAt) : NaN;
+    const markers = artifactContent ? parseReviewMarkers(artifactContent) : [];
+    // switchedAt이 없으면(구 active.json) 시각 비교를 포기하고 마커 존재만 본다.
+    const fresh = markers.filter(m => Number.isNaN(since) || m.at >= since);
+    if (!fresh.length) {
+      issues.push('spec이 `review: required`인데 이 task 기간의 리뷰 마커가 artifact에 없음 (`/harness-review` 실행 후 기록)');
     }
   }
 
@@ -344,6 +478,23 @@ async function collectDoneIssues(targetDir, active) {
       } catch {
         // HEAD-less repo (no commits at all) → git log throws → that IS zero commits.
         issues.push('task 활성화 이후 커밋이 0개임');
+      }
+
+      // 테스트 작성 체크 — 커밋 훅(pre-commit-check.sh)은 테스트를 *실행*하지만
+      // *작성*은 강제하지 못하고, Claude Code 세션 밖(OpenCode 등)에서는 아예 걸리지 않는다.
+      // 여기서는 git 이력만으로 판정하므로 어떤 드라이버가 커밋했든 동일하게 적용된다.
+      if (evidence.tests === 'required') {
+        try {
+          const { stdout } = await pexec(
+            'git',
+            ['-C', targetDir, '-c', 'core.quotepath=false', 'log', `--since=${switchedAt}`, '--name-only', '--pretty=format:'],
+            { maxBuffer: 8 * 1024 * 1024 },
+          );
+          const changed = classifyChangedPaths(stdout.split('\n').map(l => l.trim()).filter(Boolean));
+          if (changed.source && !changed.test) {
+            issues.push('소스는 바뀌었는데 테스트 파일 변경이 없음 (테스트 미작성 — 불필요하면 spec에 `"tests": "skip"` 선언)');
+          }
+        } catch { /* transient git error → don't fabricate a problem */ }
       }
     }
   }

@@ -5,7 +5,10 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { runDone, taskArtifactTemplate, taskPlanTemplate, parsePorcelainPaths } from '../src/commands/task.mjs';
+import {
+  runDone, taskArtifactTemplate, taskPlanTemplate, taskSpecTemplate, parsePorcelainPaths,
+  parseDoneEvidenceDeclaration, classifyChangedPaths, parseReviewMarkers, DONE_EVIDENCE_DEFAULT,
+} from '../src/commands/task.mjs';
 
 const pexec = promisify(execFile);
 
@@ -265,4 +268,216 @@ test('plan 본문 인라인/설명 텍스트의 `- [ ]`는 미완으로 카운�
     process.exitCode = prevExit;
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+// ─── Done evidence: 선언 파싱 (순수 함수) ───────────────────────────────────
+
+test('parseDoneEvidenceDeclaration: 선언 없음 → not-configured + 기본값', () => {
+  const r = parseDoneEvidenceDeclaration('# spec\n\n## 참고\n');
+  assert.deepEqual(r, { status: 'not-configured', ...DONE_EVIDENCE_DEFAULT });
+  assert.equal(r.tests, 'required');
+  assert.equal(r.review, 'optional');
+});
+
+test('parseDoneEvidenceDeclaration: spec 템플릿의 주석 처리된 예시는 미선언으로 취급', () => {
+  // 템플릿은 선언을 <!-- --> 주석 안에 두므로, 벗기기 전에는 발동하면 안 된다.
+  const r = parseDoneEvidenceDeclaration(taskSpecTemplate('demo'));
+  assert.equal(r.status, 'not-configured');
+});
+
+test('parseDoneEvidenceDeclaration: 유효 선언 → configured + 부분 override', () => {
+  const spec = '## Done evidence\n\n```json\n{ "version": 1, "review": "required" }\n```\n';
+  const r = parseDoneEvidenceDeclaration(spec);
+  assert.equal(r.status, 'configured');
+  assert.equal(r.review, 'required');
+  assert.equal(r.tests, 'required'); // 미지정 키는 기본값 유지
+});
+
+test('parseDoneEvidenceDeclaration: 깨진 선언은 invalid (조용한 폴백 금지)', () => {
+  const broken = '## Done evidence\n```json\n{ not json\n```\n';
+  assert.equal(parseDoneEvidenceDeclaration(broken).status, 'invalid');
+  const noVersion = '## Done evidence\n```json\n{ "review": "required" }\n```\n';
+  assert.equal(parseDoneEvidenceDeclaration(noVersion).status, 'invalid');
+  const badValue = '## Done evidence\n```json\n{ "version": 1, "tests": "maybe" }\n```\n';
+  assert.equal(parseDoneEvidenceDeclaration(badValue).status, 'invalid');
+  const notObject = '## Done evidence\n```json\n[1]\n```\n';
+  assert.equal(parseDoneEvidenceDeclaration(notObject).status, 'invalid');
+});
+
+test('parseDoneEvidenceDeclaration: 닫히지 않은 fence·미지 키도 invalid (fail-open 방지, codex 리뷰 P2)', () => {
+  // 닫는 ``` 없음 — 선언을 쓰려던 흔적이므로 조용히 not-configured로 넘어가면 안 된다
+  const unterminated = '## Done evidence\n```json\n{ "version": 1, "review": "required" }\n';
+  assert.equal(parseDoneEvidenceDeclaration(unterminated).status, 'invalid');
+  // 오타 키 — `rewiew`가 선언을 조용히 무력화하면 안 된다
+  const typoKey = '## Done evidence\n```json\n{ "version": 1, "rewiew": "required" }\n```\n';
+  assert.equal(parseDoneEvidenceDeclaration(typoKey).status, 'invalid');
+});
+
+// ─── Done evidence: 변경 경로 분류 (순수 함수) ──────────────────────────────
+
+test('classifyChangedPaths: 소스/테스트/문서 분류', () => {
+  assert.deepEqual(classifyChangedPaths(['src/app.mjs']), { source: true, test: false });
+  assert.deepEqual(classifyChangedPaths(['tests/app.test.mjs']), { source: false, test: true });
+  assert.deepEqual(classifyChangedPaths(['docs/a.md', 'config.json']), { source: false, test: false });
+  // 테스트 판정이 소스 판정보다 우선 — foo.test.ts는 소스로 세지 않는다
+  assert.deepEqual(classifyChangedPaths(['foo.test.ts']), { source: false, test: true });
+  // 언어별 파일명 관례
+  assert.deepEqual(classifyChangedPaths(['pkg/foo_test.go']), { source: false, test: true });
+  assert.deepEqual(classifyChangedPaths(['Sources/FooTests.swift']), { source: false, test: true });
+  // 윈도우 구분자 정규화
+  assert.deepEqual(classifyChangedPaths(['src\\app.ts']), { source: true, test: false });
+  // git이 non-ASCII 경로를 C-quote로 감싼 경우 — 확장자가 `mjs"`로 오분류되면 안 된다 (codex 리뷰 P2)
+  assert.deepEqual(classifyChangedPaths(['"docs/\\355\\225\\234.mjs"']), { source: true, test: false });
+});
+
+// ─── Done evidence: 리뷰 마커 파싱 (순수 함수) ──────────────────────────────
+
+test('parseReviewMarkers: 유효 마커 파싱, 깨진 마커는 무시', () => {
+  const artifact = [
+    '## Reviews',
+    '- 2026-08-20 codex: OK',
+    '<!-- harness:review kind=codex scope=worktree tip=abc123 at=2026-08-20T09:00:00Z -->',
+    '<!-- harness:review kind=gemini-adversarial at="2026-08-21T10:00:00Z" -->',
+    '<!-- harness:review kind=codex at=not-a-date -->', // 깨진 at → 무시
+    '<!-- harness:review at=2026-08-21T10:00:00Z -->',  // kind 없음 → 무시
+  ].join('\n');
+  const markers = parseReviewMarkers(artifact);
+  assert.equal(markers.length, 2);
+  assert.equal(markers[0].kind, 'codex');
+  assert.equal(markers[0].scope, 'worktree');
+  assert.equal(markers[0].tip, 'abc123');
+  assert.equal(markers[0].at, Date.parse('2026-08-20T09:00:00Z'));
+  assert.equal(markers[1].kind, 'gemini-adversarial'); // 따옴표 값 허용
+  assert.equal(markers[1].scope, null);
+});
+
+test('parseReviewMarkers: 비-ISO8601 at은 무시 — Date.parse의 관대한 파싱 차단 (codex 리뷰 P2)', () => {
+  // '9999'는 Date.parse로는 유효한 미래 시각이라 영구히 신선한 가짜 증거가 된다
+  const artifact = '<!-- harness:review kind=codex at=9999 -->';
+  assert.equal(parseReviewMarkers(artifact).length, 0);
+});
+
+// ─── Done evidence: 가드 통합 ───────────────────────────────────────────────
+
+// makeGitFixture 위에 spec/추가 파일을 얹는 헬퍼. 커밋까지 마쳐 dirty 차단을 배제한다.
+async function makeEvidenceFixture({ spec, files = {} } = {}) {
+  const { dir, taskDir } = await makeFixture({
+    plan: '# demo — Plan\n\n## 단계\n- [x] done\n',
+    artifact: taskArtifactTemplate('demo') + '\n- 실제 결과\n',
+  });
+  if (spec !== undefined) await writeFile(join(taskDir, 'demo-spec.md'), spec);
+  for (const [rel, content] of Object.entries(files)) {
+    const abs = join(dir, rel);
+    await mkdir(join(abs, '..'), { recursive: true });
+    await writeFile(abs, content);
+  }
+  await pexec('git', ['-C', dir, 'init', '-q']);
+  await pexec('git', ['-C', dir, 'config', 'user.email', 'demo@test.io']);
+  await pexec('git', ['-C', dir, 'config', 'user.name', 'demo']);
+  const activePath = join(dir, '.harness/active.json');
+  const active = JSON.parse(await readFile(activePath, 'utf8'));
+  active.switchedAt = new Date(Date.now() - 60_000).toISOString();
+  await writeFile(activePath, JSON.stringify(active));
+  await pexec('git', ['-C', dir, 'add', '-A']);
+  await pexec('git', ['-C', dir, 'commit', '-q', '-m', 'work']);
+  return { dir, taskDir };
+}
+
+async function runDoneCapture(dir, flags = {}) {
+  const prevExit = process.exitCode;
+  const { logs, restore } = captureLogs();
+  try {
+    await runDone({ targetDir: dir, flags });
+    return { logs, exitCode: process.exitCode };
+  } finally {
+    restore();
+    process.exitCode = prevExit;
+  }
+}
+
+test('소스 변경 + 테스트 미변경 → 차단 (tests 기본 required)', async () => {
+  const { dir } = await makeEvidenceFixture({ files: { 'src/app.mjs': 'export const x = 1;\n' } });
+  try {
+    const { logs, exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1, 'blocks');
+    assert.ok(logs.some(l => l.includes('테스트 파일 변경이 없음')), 'flags missing tests');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('소스 변경 + 테스트 동반 → 통과', async () => {
+  const { dir } = await makeEvidenceFixture({ files: {
+    'src/app.mjs': 'export const x = 1;\n',
+    'tests/app.test.mjs': 'import "node:test";\n',
+  } });
+  try {
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds');
+    assert.ok(!logs.some(l => l.includes('테스트 파일 변경이 없음')), 'no false positive');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('문서만 변경된 task는 테스트 체크 미발동', async () => {
+  const { dir } = await makeEvidenceFixture({ files: { 'docs/note.md': '# note\n' } });
+  try {
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds — no source change');
+    assert.ok(!logs.some(l => l.includes('테스트 파일 변경이 없음')), 'check not triggered');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('spec이 tests: skip 선언 → 소스만 바뀌어도 통과', async () => {
+  const spec = '# demo — Spec\n\n## Done evidence\n\n```json\n{ "version": 1, "tests": "skip" }\n```\n';
+  const { dir } = await makeEvidenceFixture({ spec, files: { 'src/app.mjs': 'export const x = 1;\n' } });
+  try {
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds — declared skip');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('review: required + 마커 없음 → 차단', async () => {
+  const spec = '# demo — Spec\n\n## Done evidence\n\n```json\n{ "version": 1, "review": "required", "tests": "skip" }\n```\n';
+  const { dir } = await makeEvidenceFixture({ spec });
+  try {
+    const { logs, exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1, 'blocks');
+    assert.ok(logs.some(l => l.includes('리뷰 마커가 artifact에 없음')), 'flags missing review');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('review: required + task 기간 내 마커 → 통과', async () => {
+  const spec = '# demo — Spec\n\n## Done evidence\n\n```json\n{ "version": 1, "review": "required", "tests": "skip" }\n```\n';
+  // 마커는 fixture 커밋 전에 artifact에 넣는다 — 커밋 후 수정하면 dirty-tree 가드에 걸린다.
+  const marker = `<!-- harness:review kind=codex scope=worktree tip=none at=${new Date().toISOString()} -->`;
+  const { dir } = await makeEvidenceFixture({ spec, files: {
+    'docs/tester/demo/demo-artifact.md': taskArtifactTemplate('demo') + `\n- 실제 결과\n\n${marker}\n`,
+  } });
+  try {
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds — fresh marker found');
+    assert.ok(!logs.some(l => l.includes('리뷰 마커')), 'no review issue');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('이전 task 기간의 마커(at < switchedAt)는 무효 → 차단', async () => {
+  const spec = '# demo — Spec\n\n## Done evidence\n\n```json\n{ "version": 1, "review": "required", "tests": "skip" }\n```\n';
+  const stale = new Date(Date.now() - 3_600_000).toISOString(); // switchedAt(-60s)보다 과거
+  const { dir } = await makeEvidenceFixture({ spec, files: {
+    'docs/tester/demo/demo-artifact.md':
+      taskArtifactTemplate('demo') + `\n- 실제 결과\n\n<!-- harness:review kind=codex at=${stale} -->\n`,
+  } });
+  try {
+    const { logs, exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1, 'blocks — marker predates this task');
+    assert.ok(logs.some(l => l.includes('리뷰 마커가 artifact에 없음')), 'stale marker rejected');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('Done evidence 선언이 깨져 있으면 그 자체가 차단 사유', async () => {
+  const spec = '# demo — Spec\n\n## Done evidence\n\n```json\n{ broken\n```\n';
+  const { dir } = await makeEvidenceFixture({ spec });
+  try {
+    const { logs, exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1, 'blocks');
+    assert.ok(logs.some(l => l.includes('선언이 올바르지 않음')), 'invalid declaration reported');
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });
