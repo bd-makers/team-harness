@@ -13,8 +13,9 @@
 - [x] 테스트 재작성: agent-files 새 설계 고정 + npm test green (302/302)
 - [x] README.md 참조 갱신 (D5 출처 → docs/decisions.md)
 - [x] 전역 ~/.claude/CLAUDE.md 드리프트 수정 (레포 밖, 커밋 없음 — hsonpro 머신 수동 반영 필요)
-- [ ] 외부 리뷰(/harness-codex-review) + artifact ## Reviews 기록
-- [ ] artifact.md 결과 기록
+- [x] 외부 리뷰(/harness-codex-review) + artifact ## Reviews 기록 — verdict: changes requested (P2 3건)
+- [x] artifact.md 결과 기록
+- [ ] 리뷰 P2 조치 (사용자 지시 대기): P2-2 예외 문구·guide 정합, P2-3 TCC 문구/메시지, (선택) P2-1 doctor 체크
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

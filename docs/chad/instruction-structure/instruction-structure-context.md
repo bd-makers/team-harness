@@ -3,8 +3,8 @@
 
 ## Now
 - Goal: 지시 구조 중복 제거 + lazy 정본 이관 (spec P1~P5)
-- Current atomic step: templates 편집 (decisions.md 신설 → AGENTS/CLAUDE hbs 슬림화)
-- Stop / human-decision condition: 테스트 의도(3표면 계약)를 새 설계로 바꿀 때 의도 훼손이 의심되면 중단
+- Current atomic step: Codex 리뷰 P2 조치 — 사용자 지시 대기 (P2-2 예외·guide, P2-3 TCC 문구/메시지)
+- Stop / human-decision condition: P2 수정 여부·범위는 사용자 결정 (review-only 계약)
 
 ## Constraints and settled decisions
 - 수정 기점 = templates/*.hbs; 루트 파일 마커 절은 템플릿과 동일해야 함 (drift 테스트)
