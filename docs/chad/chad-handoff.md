@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-ship-command
+diagram-companion-pin
 
-## Last Commit (2026-08-20)
-d04bb73 chore(task): post-commit handoff 갱신
+## Last Commit (2026-08-21)
+0d2dd89 feat(commands): /harness-diagram 어댑터 + 동반 플러그인 문서
 
 ## Full Context
-→ docs/chad/ship-command/ship-command-handoff.md
+→ docs/chad/diagram-companion-pin/diagram-companion-pin-handoff.md

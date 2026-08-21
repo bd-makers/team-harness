@@ -58,6 +58,12 @@ export async function checkHookCli(env = process.env) {
 // warning, JSON next_actions, and README cannot drift back to the broken form.
 export const HOOK_CLI_MARKETPLACE_DIR = 'harness-aijient-team-marketplace';
 
+// The plugin half of the installed-record key. Needed because the harness
+// marketplace also lists COMPANION plugins now (external, sha-pinned), so their
+// records share the marketplace half of the key and matching on it alone would
+// read a companion's version as the harness version.
+export const HOOK_CLI_PLUGIN_NAME = 'harness-aijient-team';
+
 // `--version` landed in 0.15.1. Before that the CLI answered `Unknown command`
 // and exited 1, so "no version reported" dates the binary rather than hiding it.
 export const VERSION_FLAG_SINCE = '0.15.1';
@@ -100,11 +106,21 @@ export async function readPathCliVersion(env = process.env) {
   }
 }
 
-// The installed record is keyed `<plugin>@<marketplace>`; the harness owns one
-// marketplace, so match on that half rather than hardcoding the plugin name.
-export function installedHarnessVersion(installed, marketplace = HOOK_CLI_MARKETPLACE_DIR) {
+// The installed record is keyed `<plugin>@<marketplace>`. Matching on the
+// marketplace half alone used to be safe because the harness owned exactly one
+// plugin in it — that stopped being true when the catalog started listing
+// sha-pinned companion plugins, whose records carry THEIR version under the same
+// marketplace suffix. Reading one of those as the harness version produces a
+// false CLI-drift warning, so match both halves of the key.
+export function installedHarnessVersion(
+  installed,
+  marketplace = HOOK_CLI_MARKETPLACE_DIR,
+  plugin = HOOK_CLI_PLUGIN_NAME,
+) {
   for (const [key, records] of Object.entries(installed?.plugins ?? {})) {
-    if (key.split('@').pop() !== marketplace) continue;
+    const at = key.lastIndexOf('@');
+    if (at === -1) continue;
+    if (key.slice(0, at) !== plugin || key.slice(at + 1) !== marketplace) continue;
     if (!Array.isArray(records) || records.length === 0) continue;
     const record = records.find(r => r.scope === 'user') ?? records[0];
     if (record?.version) return record.version;

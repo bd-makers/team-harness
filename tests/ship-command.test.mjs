@@ -28,8 +28,9 @@ test('ship: the command neither replaces nor runs harness-team done', async () =
   assert.match(command, /이 명령 안에서 done을 실행하지 않는다/);
 });
 
-// The diagram tool is a Claude Code-only plugin from a separate marketplace and
-// is installed per machine, so a hard dependency breaks ship on the other one.
+// The diagram tool is an external plugin installed per machine (it is not
+// Claude Code-only — the upstream repo ships .codex-plugin/plugin.json too), so a
+// hard dependency breaks ship on whichever machine has not installed it.
 test('ship: the diagram step is opt-in and degrades instead of failing', async () => {
   const command = await read('commands/harness-ship.md');
   assert.match(command, /다이어그램은 옵트인이고 하드 의존이 아니다/);
