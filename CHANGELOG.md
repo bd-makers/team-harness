@@ -18,6 +18,34 @@ modified: 2026-08-21
 
 ## [Unreleased]
 
+## [0.18.1] - 2026-08-22
+
+### Added
+- **`harness-team done` 증거 기반 종결 가드 2종** (PR #38, task `done-guard-evidence`).
+  ① **테스트 작성 체크(기본 ON)** — `git log --since=<switchedAt> --name-only`로 task 기간
+  변경을 분류해, 소스 변경이 있는데 테스트 파일 변경이 없으면 차단한다. 문서·설정만 바뀐
+  task는 발동하지 않으며, `core.quotepath=false` + C-quote 해제로 non-ASCII 경로도 정확히
+  분류한다. ② **리뷰 마커 체크(spec opt-in)** — spec이 `review: required`를 선언한 task는
+  artifact의 `<!-- harness:review kind=... at=... -->` 마커(`at >= switchedAt`, ISO8601 형태만
+  인정) 존재를 요구한다. 검증 강도는 정직하게 선언한다: 이 가드가 막는 것은 악의가 아니라
+  **망각**이며, 기존 4개 가드와 같은 등급이다.
+- **spec `## Done evidence` JSON 선언** — `{ "version": 1, "tests": "required|skip",
+  "review": "required|optional" }`. 미선언은 기본값(`tests: required` / `review: optional`)으로
+  동작하고, 깨진 선언·미종결 fence·미지 키는 **invalid로 차단 사유**가 된다(조용한 폴백 금지,
+  `boundary check`의 `not-configured` 전례). spec 템플릿에 주석 형태의 선언 자리를 추가했다.
+- **리뷰 마커 기록 계약** — `/harness-review` 5단계 기록에 기계 판독용 마커 한 줄을 append
+  하는 계약을 추가했다 (`/harness-adversarial-review`는 `kind=<engine>-adversarial`).
+  artifact 템플릿 `## Reviews` 안내문에도 마커 형식을 명시했다.
+
+### Fixed
+- codex 외부 리뷰(P1 1건·P2 4건) 전건 조치 — staged index 오염, 미종결 fence fail-open,
+  미지 키 미거부, C-quoted 경로 오분류, `Date.parse` 관대 파싱. 상세는
+  `docs/chad/done-guard-evidence/done-guard-evidence-artifact.md` `## Reviews`.
+
+### Notes
+- 이 릴리스는 0.18.0이 선언한 전환 창(0.18.x) 안의 patch다 — 옛 리뷰 이름 4개의 포워딩은
+  유지되며, 제거는 예정대로 **0.19.0**에서 수행한다(선행 조건: 팀원 머신 전역 CLAUDE.md 전환).
+
 ## [0.18.0] - 2026-08-22
 
 ### Added
