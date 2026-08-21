@@ -18,7 +18,7 @@ mutation 검증까지 통과시킨다.
 - [x] `npm run test` 전체 green + CHANGELOG 갱신 — 361/365 pass; 실패 3건은 전부 선재 환경 문제
       (e2e apply-smoke: 이 머신의 installed_plugins.json 0.15.2 vs 리포 0.16.1 drift 경고 —
       CLAUDE_PLUGINS_ROOT 격리 시 success 실측으로 본 작업 무관 증명)
-- [ ] artifact 기록 + 커밋(한국어 conventional) + PR 생성 (P1~P3 매핑 명시)
+- [x] artifact 기록 + 커밋(한국어 conventional) + PR 생성 (P1~P3 매핑 명시) — https://github.com/bd-makers/team-harness/pull/32
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

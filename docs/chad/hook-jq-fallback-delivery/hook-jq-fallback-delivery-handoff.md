@@ -32,3 +32,9 @@ CHANGELOG.md                                       |  27 ++++
  tests/migrate-hooks.test.mjs                       | 165 +++++++++++++++++++++
  27 files changed, 1303 insertions(+), 41 deletions(-)
 
+
+## 2026-08-21T13:11:54.968Z — 35d821e docs(task): post-commit hook handoff 자동 갱신 반영
+docs/chad/chad-handoff.md                          |  6 ++---
+ .../hook-jq-fallback-delivery-handoff.md           | 31 ++++++++++++++++++++++
+ 2 files changed, 34 insertions(+), 3 deletions(-)
+
