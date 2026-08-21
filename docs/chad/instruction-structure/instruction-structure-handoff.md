@@ -29,3 +29,22 @@ docs/chad/chad-handoff.md                          |  8 +++---
  .../instruction-structure-plan.md                  |  5 ++--
  5 files changed, 58 insertions(+), 8 deletions(-)
 
+
+## 2026-08-21T06:25:37.882Z — 6ecd91b fix(agents): Codex 리뷰 P2 조치 — 게이트 예외 복원·check 메시지 힌트·정본 테스트 핀
+CLAUDE.md                                                    |  2 +-
+ docs/chad/chad-handoff.md                                    |  2 +-
+ .../instruction-structure/instruction-structure-artifact.md  | 12 +++++++++++-
+ .../instruction-structure/instruction-structure-handoff.md   |  9 +++++++++
+ .../chad/instruction-structure/instruction-structure-plan.md |  5 ++++-
+ docs/harness-overview.html                                   |  5 +++++
+ docs/harness-task-guide.html                                 |  2 +-
+ src/commands/context.mjs                                     |  2 +-
+ templates/CLAUDE.md.hbs                                      |  2 +-
+ tests/agent-files.test.mjs                                   |  4 ++++
+ tests/context.test.mjs                                       |  4 ++++
+ 11 files changed, 42 insertions(+), 7 deletions(-)
+
+
+## 2026-08-21T06:30:56.398Z — 완료
+
+태스크 종료.
