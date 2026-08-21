@@ -76,6 +76,13 @@ modified: 2026-08-19
   명시했다.
 - 위 변경은 루트 파일과 `templates/*.hbs` 양쪽에 동일하게 반영되어 새로 scaffold 되는 프로젝트도
   같은 문서를 받는다(`README.md`는 이 저장소 전용이라 짝이 없다).
+- **`block-dangerous-git.sh`에 상류 출처 표기 추가 — 동작 변경 없음.** 이 훅은 Matt Pocock의
+  [mattpocock/skills](https://github.com/mattpocock/skills)(MIT) `skills/misc/git-guardrails-claude-code`에서
+  출발한 **파생물**이며 사본이 아니다. 훅 주석과 `docs/chad/pocock-merge/pocock-merge-artifact.md`에 상류
+  경로·대조 커밋(`885e2ca`)·정책 분기(상류는 `git push`를 전부 차단하지만 여기서는 force push만 차단하고
+  `checkout -- <file>`·워킹트리 `restore`를 추가로 막는다)를 기록했다. 상류를 핀 참조로 대체하려던 시도는
+  성립하지 않는다 — 상류 `plugin.json`이 노출하는 스킬 25개에 이 스크립트가 없고, 이 파일은 `copyTree`가
+  소비자 프로젝트의 `.claude/hooks/`로 배달하는 하네스 소유 코드다. 정규식·패턴·exit 코드는 그대로다.
 
 
 ### Fixed
