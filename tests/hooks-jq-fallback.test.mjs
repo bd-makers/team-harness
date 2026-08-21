@@ -316,6 +316,78 @@ for (const mode of MODES) {
   });
 }
 
+// ── extraction-failure 경로 (fail-closed 행위 고정) ───────────────────────────
+// 폴백의 핵심은 "추출 실패 ≠ 통과"다. 이 케이스들이 없으면 tool_name 게이트의 `&&`를
+// `;`로 바꾸거나(추출 실패 → exit 0) `|| COMMAND="$INPUT"`를 `|| COMMAND=""`로 바꿔도
+// (원래의 fail-open 재현) 어떤 테스트도 깨지지 않는다 — mutation 2종을 죽이는 커버리지.
+// jq 모드는 스키마 밖 payload를 허용하므로(정밀 파싱) 판정이 갈린다 — nojq 전용.
+test('block-dangerous-git [nojq]: tool_name 추출 실패 payload를 통과시키지 않는다 (fail-closed 게이트)', async () => {
+  const r = await runHook('block-dangerous-git.sh', { tool_input: { command: 'git push --force' } }, { mode: 'nojq' });
+  assert.equal(r.code, 2, 'tool_name을 못 뽑았다는 이유로 통과시키는 것이 원래의 fail-open이다');
+  const safe = await runHook('block-dangerous-git.sh', { tool_input: { command: 'git push origin main' } }, { mode: 'nojq' });
+  assert.equal(safe.code, 0, '게이트가 fail-closed여도 안전한 명령은 통과한다');
+});
+
+test('block-dangerous-git [nojq]: command 추출 실패 시 payload 전체 스캔으로 차단한다', async () => {
+  const r = await runHook('block-dangerous-git.sh',
+    { tool_name: 'Bash', tool_input: { script: 'git push --force origin main' } }, { mode: 'nojq' });
+  assert.equal(r.code, 2, 'command 필드를 못 뽑으면 payload 전체를 검사해야 한다 (COMMAND="" 회귀 금지)');
+  const safe = await runHook('block-dangerous-git.sh',
+    { tool_name: 'Bash', tool_input: { script: 'git push origin main' } }, { mode: 'nojq' });
+  assert.equal(safe.code, 0, `전체 스캔이어도 안전한 명령은 통과한다 — ${safe.stderr}`);
+});
+
+test('pre-commit-check [nojq]: 추출 실패에도 커밋 게이트를 건너뛰지 않는다', async () => {
+  const dir = await jsProject({ name: 'x', scripts: { test: 'node --test' } });
+  try {
+    for (const payload of [
+      { tool_input: { command: 'git commit -m "wip"' } },               // tool_name 추출 실패
+      { tool_name: 'Bash', tool_input: { cmd: 'git commit -m "wip"' } }, // command 추출 실패 → 전체 스캔
+    ]) {
+      const r = await runHook('pre-commit-check.sh', payload, { mode: 'nojq', cwd: dir });
+      assert.match(r.stderr, /커밋 전 검증 실행 중/, `게이트에 도달해야 한다: ${JSON.stringify(payload)}`);
+      assert.equal(r.code, 2, 'test 실행이 실패하면 커밋을 막는다');
+    }
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('protect-files [nojq]: file_path/command 추출 실패 시 payload 전체 스캔으로 차단한다', async () => {
+  const r = await runHook('protect-files.sh',
+    { tool_name: 'Write', tool_input: { path: '/proj/.env', content: 'X=1' } }, { mode: 'nojq' });
+  assert.equal(r.code, 2, '보호 대상이 다른 키에 있어도 전체 스캔이 잡아야 한다');
+});
+
+// ── \uXXXX 인코딩 잔여 리스크 ─────────────────────────────────────────────────
+// 저정밀 모드는 JSON 이스케이프를 디코드하지 않으므로 값 속 문자 하나만 \uXXXX로
+// 인코딩돼도 어떤 패턴이든 우회된다(\t 한 종류가 아니라 일반적). bash 디코더 구현은
+// 범위 밖 — remedy는 jq 설치다. "알려진 잔여 리스크의 현재 동작을 고정한다" 패턴.
+test('저정밀 모드의 알려진 잔여 리스크: \\uXXXX 인코딩 1글자가 매칭을 우회한다 (jq는 디코드 후 차단)', async () => {
+  const raw = '{"tool_name":"Bash","tool_input":{"command":"git push --\\u0066orce"}}';
+  const nojq = await runHook('block-dangerous-git.sh', raw, { mode: 'nojq' });
+  assert.equal(nojq.code, 0, '저정밀 모드는 \\u0066 → f 를 디코드하지 못한다 — 알려진 수용 리스크');
+  if (JQ) {
+    const withjq = await runHook('block-dangerous-git.sh', raw, { mode: 'withjq' });
+    assert.equal(withjq.code, 2, 'jq는 이스케이프를 디코드해 차단한다 — jq 설치가 remedy인 이유');
+  }
+});
+
+// ── tool_input 스코프 ─────────────────────────────────────────────────────────
+// json_input_field는 "tool_input" 이후로 좁혀 최상위 동명 키 오인을 막고,
+// 마커가 없으면 전체 스캔을 유지한다(fail-closed).
+for (const mode of MODES) {
+  test(`block-dangerous-git [${mode}]: tool_input 밖 동명 키에 낚이지 않는다`, async () => {
+    const raw = '{"command":"git push --force","tool_name":"Bash","tool_input":{"command":"git status"}}';
+    const r = await runHook('block-dangerous-git.sh', raw, { mode });
+    assert.equal(r.code, 0, `tool_input.command(git status)가 판정 대상이어야 한다 — ${r.stderr}`);
+  });
+}
+
+test('block-dangerous-git [nojq]: tool_input 마커가 없으면 전체 스캔을 유지한다 (fail-closed)', async () => {
+  const raw = '{"tool_name":"Bash","cmd":"git push --force"}';
+  const r = await runHook('block-dangerous-git.sh', raw, { mode: 'nojq' });
+  assert.equal(r.code, 2, '스코프 절단은 마커가 있을 때만 좁힌다 — 없으면 전체 스캔(fail-closed)');
+});
+
 // ── 드리프트 가드 ─────────────────────────────────────────────────────────────
 // 훅은 소비자 프로젝트로 파일 단위 복사(copyTree, skipExisting)되므로 공유 라이브러리를
 // source 하지 않고 자체 완결형으로 둔다. 대신 공통 블록이 갈라지지 않게 여기서 대조한다.
@@ -346,6 +418,13 @@ test('jq를 쓰는 훅은 모두 동일한 폴백 블록을 갖는다', async ()
   for (const [name, block] of rest) {
     assert.equal(block, first[1], `${name}의 폴백 블록이 ${first[0]}와 다르다 (복붙 드리프트)`);
   }
+});
+
+test('폴백 블록 주석은 이스케이프 미디코드 한계를 일반화해 서술한다', async () => {
+  const src = await readFile(join(HOOKS, 'block-dangerous-git.sh'), 'utf8');
+  const block = fallbackBlock(src);
+  assert.match(block, /\\uXXXX/, '한계 서술이 \\uXXXX 인코딩 우회 가능성을 명시해야 한다');
+  assert.match(block, /일절 디코드하지 않는다/, '특정 이스케이프 나열이 아니라 전면 미디코드로 서술해야 한다');
 });
 
 test('훅은 jq 부재를 command -v로 감지한다 (조기 exit 0 회귀 금지)', async () => {
