@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-doctor-decision-log
+spec-writing-skill
 
 ## Last Commit (2026-08-21)
-ac67bc9 docs(task): rebase·PR #36 링크 기록
+b2bde72 docs(task): P2 검토 기록 + handoff 꼬리 트림
 
 ## Full Context
-→ docs/chad/doctor-decision-log/doctor-decision-log-handoff.md
+→ docs/chad/spec-writing-skill/spec-writing-skill-handoff.md

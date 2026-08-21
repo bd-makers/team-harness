@@ -86,10 +86,10 @@ OS/네트워크 격리는 이 플러그인의 스코프 밖입니다 — devcont
 | 채널 | 대상/시점 | 제공하는 것 |
 |---|---|---|
 | `apply` | 프로젝트당 1회 | hooks·rules·AGENTS/CLAUDE/GEMINI·docs 구조·`opencode.json`·`.cursor/rules` |
-| Claude Code 플러그인 설치 | 사람·머신마다 | `/harness-*` 슬래시 커맨드 25개 |
+| Claude Code 플러그인 설치 | 사람·머신마다 | `/harness-*` 슬래시 커맨드 26개 |
 | 전역 `harness-team` CLI 링크 | 사람마다 | 터미널과 훅이 호출하는 `harness-team` CLI |
 
-**`apply`만으로는 `/harness-*` 슬래시 커맨드가 설치되지 않습니다.** `apply`는 `commands/*.md` 25개를 프로젝트에 복사하지 않으며, 해당 명령은 Claude Code 플러그인 설치 채널에서 제공됩니다.
+**`apply`만으로는 `/harness-*` 슬래시 커맨드가 설치되지 않습니다.** `apply`는 `commands/*.md` 26개를 프로젝트에 복사하지 않으며, 해당 명령은 Claude Code 플러그인 설치 채널에서 제공됩니다.
 
 이 패키지는 **npm 공개 저장소에 배포되지 않습니다** — 전역 CLI는 `/plugin install`이 만든
 로컬 마켓플레이스 클론을 `npm i -g`로 링크해 얻습니다. 이미 하네스가 적용된 저장소를 clone한
@@ -108,7 +108,7 @@ harness-team doctor
 
 | 에이전트 | hooks | 커맨드/적용 표면 | 경로 스코프 규칙 |
 |---|---|---|---|
-| Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 25개 슬래시 커맨드 | `.claude/rules` `paths:` — 매칭 파일 **Read 시** 로드 |
+| Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 26개 슬래시 커맨드 | `.claude/rules` `paths:` — 매칭 파일 **Read 시** 로드 |
 | Codex | SessionStart 1종 (신뢰 승인 필요) | 슬래시 커맨드는 없고 별도 `.codex-plugin` 설치 시 동명의 스킬 | 없음 — 하위 디렉터리 `AGENTS.md`로 대체 |
 | OpenCode | 0 | `new-feature` / `fix-bug` / `verify` 3개 | 없음 |
 | Gemini | 0 | `GEMINI.md` 텍스트만 | 없음 |
@@ -341,6 +341,13 @@ All checks passed.
 
 심볼: `✓` 정상, `✗` 실패(exit 1), `-` 선택 항목 없음(정상).
 소비자 프로젝트에서는 PATH의 `harness-team`이 `session-context`와 `handoff`를 지원하는지도 경고로 점검합니다. 플러그인 소스 저장소는 소비자 훅을 설치하지 않으므로 이 항목이 n/a로 건너뛰어집니다.
+
+### `/harness-spec` — spec 초안 생성 (writer)
+
+활성 task의 `<name>-spec.md` 초안을 3소스에서 생성합니다 — Confluence(PRD·spec·policy),
+Figma(wireframe·design-spec), task 이름 기반 인터뷰. 프로젝트별 소스 기본 위치는 첫 실행 시
+입력받아 `.harness/config.json`의 `specSources`에 저장하며, MCP 미연결 환경에서는 본문
+붙여넣기 폴백으로 동작합니다. 검증(validator)은 `/harness-interview`가 담당합니다.
 
 ### `/harness-task` — task 관리
 
