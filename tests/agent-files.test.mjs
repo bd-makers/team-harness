@@ -113,6 +113,56 @@ test('scaffold 되는 AGENTS.md/CLAUDE.md 쌍은 병렬 쓰기 서술에서 모�
     assert.doesNotMatch(row, /병렬/, `역할 표가 병렬 실행을 기술해 CLAUDE.md와 충돌: ${row}`);
 });
 
+// 다이어그램 옵트인 (2026-08-20) — AGENTS.md는 Codex·Cursor·OpenCode도 네이티브로 읽는
+// 멀티에이전트 SSOT다. Claude 전용 스킬 이름이 core로 새면 역할표의 다섯 에이전트 중 셋에게
+// 실행 불가능한 규칙이 된다. 도구 이름은 CLAUDE.md/commands 쪽에만 있어야 한다.
+test('AGENTS.md(core)는 다이어그램 산출물을 SSOT 제외 생성물로 선언하되 도구 중립적이다', async () => {
+  const out = render(await tpl('AGENTS.md.hbs'), VARS);
+  assert.match(out, /`<name>-diagram\.html`/, '다이어그램 산출물 선언');
+  assert.match(out, /옵트인이라 없는 task가 정상이다/, 'SSOT 4파일이 아니라 옵트인 생성물임을 명시');
+  assert.match(out, /inline SVG/, 'Obsidian이 script를 제거하므로 inline SVG여야 한다는 근거');
+  assert.doesNotMatch(out, /diagram-design/, 'Claude 전용 스킬 이름은 멀티에이전트 core에 박지 않는다');
+});
+
+// 옵트인 상태는 plan.md 체크박스의 존재/부재다 — 별도 저장소를 만들면 SSOT가 둘이 된다.
+test('AGENTS.md(core)는 옵트인 상태를 plan.md로 규정하고 별도 저장소를 만들지 않는다', async () => {
+  const out = render(await tpl('AGENTS.md.hbs'), VARS);
+  assert.match(out, /plan\.md에 그 단계가 있는지가 곧 상태다/, 'plan.md가 곧 상태');
+  assert.match(out, /활성화할 때는 묻지 않는다/, '재활성화 시 재질문 금지');
+});
+
+test('CLAUDE.md(thin)는 다이어그램 옵트인을 probe → degrade → record 계약으로 규정', async () => {
+  const out = render(await tpl('CLAUDE.md.hbs'), VARS);
+  assert.match(out, /### 1-B\. 다이어그램 옵트인/, '1-A 옆 spec 단계 게이트로 배치');
+  assert.match(out, /AskUserQuestion/, '질문은 CLI가 아니라 에이전트가 한다');
+  assert.match(out, /다이어그램 미실행 — 도구 없음/, '도구 부재 시 실패 대신 기록');
+  assert.doesNotMatch(out, /config\.json/, '전용 옵트인 설정 키를 만들지 않는다');
+});
+
+// 옵트인 계약은 AGENTS(도구 중립) · CLAUDE(§1-B) · commands/harness-task.md(절차) 세 표면에
+// 걸쳐 있다. 문구 존재만 보는 테스트는 세 표면이 서로 어긋나도 통과하므로, 실제 command 문서를
+// 읽어 (1) created/activated 분기와 (2) 건너뛴 단계의 종결 규칙을 확인한다. (2)가 빠지면
+// done-guard(planHasOpenBoxes)가 열린 체크박스에서 완료를 영구히 막는다 — 2026-08-20 Codex 리뷰 P2.
+test('commands/harness-task.md는 created/activated를 구분하고 건너뛴 단계의 종결 규칙을 준다', async () => {
+  const doc = await readFile(join(ROOT, 'commands', 'harness-task.md'), 'utf8');
+  assert.match(doc, /`created:`/, '신규 생성일 때만 묻는다');
+  assert.match(doc, /`activated:`/, '재활성화 분기를 명시');
+  assert.match(doc, /재활성화\)면 \*\*묻지 않는다\*\*/, '재활성화 시 재질문 금지');
+  assert.match(doc, /- \[x\] spec\/plan 다이어그램 — 미실행\(도구 없음\)/, '건너뛴 단계를 닫는 방법');
+  assert.match(doc, /지우면 옵트인했다는 사실 자체가 사라지고/, '단계 삭제 금지 근거');
+  assert.match(doc, /docs\/<user>\/<name>\/<name>-diagram\.html/, '산출물 경로');
+});
+
+// 세 표면이 같은 종결 규칙을 말해야 한다 — 하나만 알면 그 에이전트만 done-guard에 걸린다.
+test('AGENTS.md/CLAUDE.md 모두 건너뛴 다이어그램 단계를 지우지 않고 닫으라고 말한다', async () => {
+  const agents = render(await tpl('AGENTS.md.hbs'), VARS);
+  const claude = render(await tpl('CLAUDE.md.hbs'), VARS);
+  for (const [label, out] of [['AGENTS.md', agents], ['CLAUDE.md', claude]]) {
+    assert.match(out, /\*\*지우지 말고\*\*/, `${label}: 단계 삭제 금지`);
+    assert.match(out, /미실행\(도구 없음\)/, `${label}: 사유를 붙여 닫는 형식`);
+  }
+});
+
 test('AGENTS.md(core) stack 명령이 vars로 렌더된다', async () => {
   const out = render(await tpl('AGENTS.md.hbs'), VARS);
   assert.match(out, /npm test/, 'cmdTest 치환');

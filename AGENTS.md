@@ -90,6 +90,11 @@
 `<name>-meta.json`은 harness가 소유하는 기계 상태(created·status)이며 SSOT 4파일에 포함되지 않는다.
 손으로 고치지 않는다.
 
+`<name>-diagram.html`은 spec/plan 단계 다이어그램의 산출물이며, `<name>-meta.json`·`<name>-context.md`와
+마찬가지로 SSOT 4파일에 포함되지 않는다. 옵트인이라 없는 task가 정상이다. 만들 때는 **자립형 inline SVG**
+HTML로 쓴다 — `docs/`는 Obsidian 볼트에서 열리고 Obsidian은 script를 제거하므로 mermaid 같은 런타임 JS
+다이어그램은 볼트에서 렌더되지 않는다.
+
 집계 파일 `docs/task_summary.md`와 `docs/<user>/<user>-task.md`는 **생성물**이다.
 `task`/`done`은 이 파일들을 건드리지 않으므로 브랜치를 병렬로 둬도 충돌하지 않는다.
 갱신은 기본 브랜치에서 `harness-team summary --write`로만 한다.
@@ -130,6 +135,13 @@
 
 ### task 워크플로우
 - **시작**: `harness-team task <name>` — 생성 또는 활성화
+- **다이어그램(옵트인)**: 신규 task를 만든 직후 spec/plan 다이어그램을 함께 만들지 **1회만** 묻는다.
+  "예"면 `<name>-plan.md`의 단계에 다이어그램 체크박스를 추가하고, "아니오"면 아무것도 추가하지 않는다.
+  전용 설정 키·상태 파일은 없다 — **plan.md에 그 단계가 있는지가 곧 상태다.** 기존 task를 다시
+  활성화할 때는 묻지 않는다(계획에 없는 단계를 다시 묻는 것은 계획을 무시하는 것이다). 다이어그램을
+  만들 도구가 없는 환경이면 실패시키지 말고 건너뛴 뒤 `<name>-artifact.md`에 미실행 사실과 이유를
+  한 줄 남긴다. 이때 plan의 그 단계는 **지우지 말고** `- [x] … — 미실행(도구 없음)`처럼 사유를 붙여
+  닫는다 — 지우면 옵트인했다는 사실 자체가 사라지고, 열어 두면 `done` 가드가 완료를 막는다.
 - **진행**: `<name>-plan.md` 체크리스트 항목 완료 시 `- [x]`로 갱신
 - **경계 계약**: spec의 `## Boundary contracts` JSON 선언이 있으면 plan checkbox 완료 직전에
   `harness-team boundary check`가 생산자·소비자 JSON Schema의 필수 필드와 기본 type을 대조한다.

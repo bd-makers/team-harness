@@ -37,6 +37,27 @@ modified: 2026-08-19
 - 위 변경은 루트 파일과 `templates/*.hbs` 양쪽에 동일하게 반영되어 새로 scaffold 되는 프로젝트도
   같은 문서를 받는다(`README.md`는 이 저장소 전용이라 짝이 없다).
 
+### Added
+- **spec/plan 단계 다이어그램 옵트인.** 신규 task를 만든 직후 다이어그램을 함께 만들지 **1회만**
+  묻고, "예"면 `<name>-plan.md` 단계에 체크박스를 추가하고 "아니오"면 아무것도 추가하지 않는다.
+  기존 task 재활성화 시에는 묻지 않는다 — 계획에 없는 단계를 다시 묻는 것은 계획을 무시하는 것이다.
+  **전용 설정 키(`.harness/config.json`)·doctor 체크·상태 파일을 만들지 않았다**: 두 상태를 모두
+  plan.md가 표현한다 — 그 단계가 있으면 옵트인, 없으면 옵트아웃이다. plan.md는 이미 SSOT이자 세션
+  시작 프로토콜이 반드시 읽는 파일이다 — **plan.md가 곧 상태다.** 실행 여부(만들었는지, 도구가 없어
+  건너뛰었는지)는 체크박스 사유와 artifact 기록이 말하며, 건너뛴 단계는 지우지 않고 닫는다.
+- **산출물 `docs/<user>/<name>/<name>-diagram.html`을 명시적 SSOT 제외 생성물로 선언.**
+  `AGENTS.md` 작업 프로토콜에서 `<name>-meta.json`·`<name>-context.md`와 같은 급으로 못 박아
+  다섯 번째 SSOT로 오해되지 않게 했다. 형식은 **자립형 inline SVG** — `docs/`는 Obsidian 볼트에서
+  열리고 Obsidian은 script를 제거하므로 mermaid 같은 런타임 JS 다이어그램은 렌더되지 않는다.
+- **문서 계층 분리와 하드 의존 금지.** `AGENTS.md`는 Codex·Cursor·OpenCode도 네이티브로 읽는
+  멀티에이전트 SSOT이므로 도구 중립적으로만 기술했고(특정 스킬 이름 없음), Claude 전용 호출은
+  `CLAUDE.md` §1-B와 `commands/harness-task.md`에만 뒀다. 실행 계약은
+  `commands/harness-codex-review.md`와 동일한 **probe → degrade → record** — 다이어그램 도구가
+  없는 머신에서는 실패시키지 않고 건너뛴 뒤 artifact에 "미실행"을 한 줄 남긴다.
+  `tests/agent-files.test.mjs`가 core에 Claude 전용 스킬 이름이 새는 회귀를 차단한다.
+- CLI(`src/`)는 변경하지 않았다 — Codex 표면(`skills/harness-task/SKILL.md`)도
+  `commands/harness-task.md`를 SSOT로 읽으므로 두 에이전트 경로가 한 문서로 커버된다.
+
 ## [0.16.1] - 2026-08-19
 
 ### Fixed

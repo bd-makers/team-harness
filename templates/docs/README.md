@@ -25,6 +25,7 @@ docs/
         ├── <name>-handoff.md         # 세션 인수인계 (post-commit hook 자동 갱신)
         ├── <name>-artifact.md        # 실행 결과 / 학습 (task done·retro 시 append)
         ├── <name>-context.md         # Context Card — 현재 working set (비-SSOT)
+        ├── <name>-diagram.html       # spec/plan 다이어그램 — 옵트인 산출물 (비-SSOT, 없을 수 있음)
         └── <name>-meta.json          # created / status — harness 내부 상태 (기계 소유)
 ```
 
@@ -68,3 +69,7 @@ harness-team context check    # 활성 task의 Context Card 검사 (수정하지
 - **`<name>-context.md`**: 위 네 파일에서 파생된 현재 working set. **SSOT 아님** — 여기에만 있는
   요구사항·결정·학습은 없어야 한다. 예산·유지 규칙·failure capsule 규약은 `AGENTS.md`의
   **Task Context Card (TCC)** 섹션이 정본이다.
+- **`<name>-diagram.html`**: spec/plan 단계 다이어그램. **옵트인이라 없는 task가 정상이다** —
+  신규 task 생성 시 1회 묻고 "예"일 때만 `<name>-plan.md`에 그 단계가 생긴다(설정 키가 아니라
+  plan.md가 상태다). **SSOT 아님.** 자립형 inline SVG로 쓴다 — Obsidian이 script를 제거하므로
+  런타임 JS 다이어그램은 볼트에서 렌더되지 않는다.
