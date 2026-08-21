@@ -4,6 +4,17 @@
 
 ## 결과
 
+### 2026-08-22 — origin/main(0.17.0) rebase + PR #36
+
+- PR: https://github.com/bd-makers/team-harness/pull/36 (base main).
+- main이 #29 후속·#30·#31·#34·#35·0.17.0 범프까지 진행되어 rebase — 충돌 3건 해소:
+  `doctor.mjs` warnActions(jq 분기와 병합), `doctor.test.mjs` import·말미 테스트 append 경합,
+  `chad-handoff.md`(이 브랜치 task로). #30이 먼저 머지되어 `templates/docs/decisions.md`는
+  동일 바이트 예측대로 클린 병합(커밋에서 자연 탈락), overview는 최종 HEAD로 재생성.
+- rebase 후 `npm run test` 재확인: 371 pass / fail 0 + perf 1.
+- 도중 iCloud eviction으로 git worktree admin 파일(HEAD·commondir)이 두 번 소실 —
+  수동 재생성으로 복구, 유실 방지 위해 push 선행.
+
 ### 2026-08-21 — doctor decision-log 검사 추가 (instruction-structure Codex 리뷰 P2-1 완화안)
 
 - `src/commands/doctor.mjs`: `checkDecisionLog(targetDir)` 추가 — `docs/decisions.md` 존재 +
