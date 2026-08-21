@@ -29,8 +29,8 @@ PR/MR을 열기 직전에 그동안 작성한 `spec`·`plan`·`artifact`를 최�
   ship이 참조하는 CLI는 기존 router case인 `context`·`retro` 뿐이다.
 - **다이어그램 실행 계약: probe → degrade → record** (`commands/harness-codex-review.md`의
   Preflight·기록 문체를 그대로 따름).
-  - `diagram-design`은 이 플러그인 것이 아니라 별도 마켓플레이스의 **Claude Code 전용 플러그인**이며
-    **머신별 설치**다. 하드 의존하면 한쪽 머신에서 깨진다.
+  - `diagram-design`은 이 플러그인 것이 아니라 **별도로 설치되는 외부 플러그인**이며 머신마다
+    있을 수도 없을 수도 있다. 하드 의존하면 없는 머신에서 깨진다.
   - probe는 `command -v`로 할 수 없다 — 바이너리가 아니라 스킬이다. "스킬이 노출되지 않거나
     호출이 실패하면"이 판정 기준이며, 설치 명령을 단정해 안내하지 않는다.
   - 없으면 **건너뛰고 artifact에 '미실행' 한 줄**. 직접 인라인 SVG를 대신 그리지 않는다 —

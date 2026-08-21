@@ -20,9 +20,10 @@ Use this skill as the Codex equivalent of Claude Code `/harness-ship`.
   - `${CLAUDE_PLUGIN_ROOT}` means this installed plugin root or this repository root.
   - `AskUserQuestion` means ask one concise opt-in question; if this session cannot ask, skip the
     diagram step rather than guessing, and record that it was skipped.
-  - The `diagram-design` skill is a Claude Code-only plugin from a separate marketplace and is
-    installed per machine. It is not available in Codex, so treat the diagram step as not run,
-    record that one line in the artifact, and continue — never fail the pass over it.
+  - A diagram skill such as `diagram-design` is not owned by this harness: it is a separate
+    plugin installed per machine, so it may or may not be reachable from this session. Probe for
+    it, and when it is missing record the step as not run in the artifact and continue — never
+    fail the pass over it, and never assert an install command that may not exist.
 - The diagram output belongs at the active task directory and defaults to a self-contained
   inline-SVG HTML file: task documents are often read in viewers that strip script tags (Obsidian,
   for one), where a mermaid JS runtime never renders.

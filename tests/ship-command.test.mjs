@@ -46,7 +46,7 @@ test('ship: AGENTS.md carries the step tool-neutrally, in both halves of the pai
   for (const path of ['AGENTS.md', 'templates/AGENTS.md.hbs']) {
     const body = await read(path);
     assert.match(body, /- \*\*PR\/MR 직전\(ship\)\*\*:/, `${path}: ship 단계 한 줄`);
-    assert.doesNotMatch(body, /diagram-design/, `${path}: Claude 전용 스킬 이름 금지`);
+    assert.doesNotMatch(body, /diagram-design/, `${path}: 특정 도구 이름 금지 (도구 중립 SSOT)`);
     assert.doesNotMatch(body, /\/harness-ship/, `${path}: Claude 전용 슬래시 호출 금지`);
   }
 });

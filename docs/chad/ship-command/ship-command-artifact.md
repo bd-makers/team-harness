@@ -9,7 +9,7 @@
 - `commands/harness-ship.md` (신규) — 핵심 제약 → 실행 절차 7단계 → 예시.
   `commands/harness-codex-review.md`의 구조·문체를 따랐다.
 - `skills/harness-ship/SKILL.md` (신규) — Codex 래퍼. `skills/harness-task/SKILL.md` 형식대로
-  command 문서를 SSOT로 읽고 Claude 전용 참조(`AskUserQuestion`, `diagram-design`)를 번역한다.
+  command 문서를 SSOT로 읽고 Claude 전용 참조(`AskUserQuestion` 등)를 Codex 문맥으로 번역한다.
 - `.claude-plugin/plugin.json` commands 배열 등록 (version 필드 불변, 21 → 22개).
 - `AGENTS.md` ↔ `templates/AGENTS.md.hbs` — task 워크플로우에 **도구 중립 한 줄**만 추가(쌍 동일).
 - `README.md` — 커맨드 수 21 → 22, 빠른 시작에 ship 단계, `/harness-ship` 절 추가.
@@ -30,7 +30,7 @@ $ npm run test
 ```
 
 샌드박스(`tests/e2e/sandbox.mjs`의 `appliedSandbox`)로 실제 scaffold 결과도 확인:
-새로 apply 된 프로젝트의 `AGENTS.md`에 ship 한 줄이 들어가고, Claude 전용 `diagram-design`
+새로 apply 된 프로젝트의 `AGENTS.md`에 ship 한 줄이 들어가고, 특정 도구 이름(`diagram-design`)
 호출은 들어가지 않으며, `CLAUDE.md`가 protocol 절을 복제하지 않는다.
 
 ### CI (PR #25)
@@ -40,6 +40,27 @@ $ npm run test
   없었다. 따라서 Node 18 러너의 flake로 판단한다. 실패 로그 원문은 확보하지 못했다 — GitHub의
   로그 blob 호스트가 이 샌드박스에서 차단되어 `gh run view --log`·직접 다운로드·WebFetch가 모두
   막혔다. 현재 PR 체크는 18/20 모두 green.
+
+### main 리베이스 + 사실 수정 (2026-08-21)
+
+PR #26(spec/plan 단계 다이어그램 옵트인)이 main에 머지되어 `origin/main` 위로 리베이스했다.
+
+- **`AGENTS.md` task 워크플로우 목록** — #26의 "다이어그램(옵트인)" 불릿과 이 브랜치의
+  "PR/MR 직전(ship)" 불릿이 같은 목록에 들어간다. 양쪽 다 살렸고 순서는
+  시작 → 다이어그램 → 진행 → 경계 계약 → commit 시 → **ship** → 완료.
+- **`CHANGELOG.md` `[Unreleased]`** — #26의 Added 항목을 앞에, 이 브랜치 항목을 뒤에 두고
+  Keep a Changelog 순서(Added → Changed → Fixed)로 정리했다. 상대 항목은 지우지 않았다.
+- **`docs/chad/chad-handoff.md`** 충돌은 hook 생성물이라 이 브랜치의 활성 task(ship-command)
+  쪽을 취했다. 리베이스 중에는 post-commit hook이 매 커밋마다 handoff를 다시 써서 rebase가
+  멈추므로 `git -c core.hooksPath=<빈 디렉터리> rebase`로 훅을 끈 채 진행했다.
+- **사실 수정**: `diagram-design`을 "Claude Code 전용"이라고 단정한 서술이 **틀렸다.** 그
+  저장소에는 `.codex-plugin/plugin.json`이 있고 `"skills": "./skills/"`를 선언한다(이 머신의
+  `~/.claude/plugins/marketplaces/diagram-design/.codex-plugin/plugin.json`에서 직접 확인).
+  Codex도 접근할 수 있으므로 "별도로 설치되는 외부 플러그인이며 머신마다 있을 수도 없을 수도
+  있다"로 고쳤다 — `CLAUDE.md` §1-B(+템플릿 쌍), `commands/harness-task.md`(#26 파일),
+  `commands/harness-ship.md`, `skills/harness-ship/SKILL.md`, CHANGELOG·spec·TCC.
+  하드 의존 금지와 probe → degrade → record 계약 자체는 그대로다.
+- 재검증: `npm run docs:check` 통과, `npm run test` → tests 300 / pass 300 / fail 0 (+ perf 1/1).
 
 ### 하지 않은 것 (의도적)
 
@@ -94,8 +115,8 @@ release 실행 경로는 발견되지 않았고, CLI/release/version 변경 없�
 - **command 문서에 존재하지 않는 `harness-team <sub>`를 쓰면 CI가 막는다.** manifest-sync가 백틱·
   줄머리 표기를 모두 스캔해 router case와 대조하므로, 예시 코드펜스 안이라도 안 된다. 이것이
   "새 CLI를 만들지 않는다"는 결정의 실제 강제 지점이었다.
-- **probe 대상이 바이너리가 아니면 `command -v`를 쓸 수 없다.** `diagram-design`은 Claude Code
-  플러그인 스킬이라 존재 확인이 "스킬이 노출되는가 / 호출이 성공하는가"로 표현되어야 한다.
+- **probe 대상이 바이너리가 아니면 `command -v`를 쓸 수 없다.** `diagram-design`은 플러그인
+  스킬이라 존재 확인이 "스킬이 노출되는가 / 호출이 성공하는가"로 표현되어야 한다.
   codex-review에서 가져올 것은 문구가 아니라 **구조**(probe → 단정적 설치 안내 금지 → degrade →
   '미실행' 기록)였다.
 

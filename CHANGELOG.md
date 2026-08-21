@@ -44,8 +44,8 @@ modified: 2026-08-19
   완료" 상태를 보고하는 데서 멈춘다** — PR/MR 생성·푸시는 하지 않는다. `harness-team done`은 손대지
   않았다(이 저장소의 릴리스 플로우는 PR 없이 main 직접 범프 커밋 → 태그 푸시이므로 done에 PR 단계를
   끼우면 깨진다). 다이어그램 갱신·생성은 실행 시점에 한 번 묻는 **옵트인**이며 응답을 저장하지
-  않는다(설정 스키마·전용 doctor 체크 없음). `diagram-design`은 별도 마켓플레이스의 Claude Code 전용
-  플러그인이고 머신별 설치라 **하드 의존하지 않는다** — probe → degrade → record: 없으면 실패시키지
+  않는다(설정 스키마·전용 doctor 체크 없음). `diagram-design`은 별도로 설치되는 외부 플러그인이라
+  머신마다 있을 수도 없을 수도 있어 **하드 의존하지 않는다** — probe → degrade → record: 없으면 실패시키지
   않고 건너뛴 뒤 artifact에 '미실행' 한 줄을 남긴다. 산출물
   `docs/<user>/<name>/<name>-diagram.html`은 SSOT 4파일이 아닌 **생성물**이고, task 문서는 Obsidian
   처럼 script를 제거하는 뷰어에서 열리는 경우가 많아 자립형 inline SVG HTML이 기본값이다. Claude 전용 스킬 호출은 배포되는 계약 문서 중
@@ -85,6 +85,11 @@ modified: 2026-08-19
   `skills/<name>/SKILL.md` 래퍼와 `docs/harness-overview.html` 재생성은 표에서 빠져 있었다 —
   재생성은 `git ls-files` 기반이라 **새 파일을 `git add` 한 뒤** 돌려야 한다는 함정까지 함께 적었다.
 - **`README.md`의 슬래시 커맨드 수 3곳 동기화** (21 → 22).
+- **`diagram-design`을 "Claude Code 전용"이라고 단정한 서술 정정.** 그 저장소에는
+  `.codex-plugin/plugin.json`이 있고 `"skills": "./skills/"`를 선언한다 — Codex도 이 스킬에 접근할
+  수 있다. `CLAUDE.md` §1-B(및 템플릿 쌍), `commands/harness-task.md`, `commands/harness-ship.md`,
+  `skills/harness-ship/SKILL.md`의 표현을 "별도로 설치되는 외부 플러그인이며 머신마다 있을 수도
+  없을 수도 있다"로 바꿨다. 핵심(하드 의존 금지·probe → degrade → record)은 그대로다.
 
 ## [0.16.1] - 2026-08-19
 
