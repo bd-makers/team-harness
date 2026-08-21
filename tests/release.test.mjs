@@ -9,7 +9,19 @@ const PLUGIN = 'harness-aijient-team';
 const MARKET = 'harness-aijient-team-marketplace';
 const KEY = `${PLUGIN}@${MARKET}`;
 
-async function makeRoot(version = '1.2.3') {
+// A companion entry: an external plugin the catalog lists but does NOT own or
+// version. The pin lives in source.sha; deliberately no `version` field.
+const COMPANION = {
+  name: 'diagram-design',
+  source: {
+    source: 'url',
+    url: 'https://github.com/cathrynlavery/diagram-design.git',
+    sha: '0ab077f2291e9056554d48a90c4ff45f0b7029a5',
+  },
+  description: 'companion, not bundled',
+};
+
+async function makeRoot(version = '1.2.3', extraPlugins = []) {
   const root = await mkdtemp(join(tmpdir(), 'harness-rel-root-'));
   await mkdir(join(root, '.claude-plugin'), { recursive: true });
   await mkdir(join(root, '.codex-plugin'), { recursive: true });
@@ -24,7 +36,7 @@ async function makeRoot(version = '1.2.3') {
   );
   await writeFile(
     join(root, '.claude-plugin/marketplace.json'),
-    JSON.stringify({ name: MARKET, plugins: [{ name: PLUGIN, version }] }, null, 2) + '\n',
+    JSON.stringify({ name: MARKET, plugins: [{ name: PLUGIN, version }, ...extraPlugins] }, null, 2) + '\n',
   );
   await writeFile(
     join(root, '.codex-plugin/plugin.json'),
@@ -236,7 +248,7 @@ test('explicit version bump with skipCache skips cache + installed_plugins', asy
   }
 });
 
-test('schema guard: empty plugins array throws', async () => {
+test('schema guard: no self entry (empty plugins array) throws', async () => {
   const root = await makeRoot();
   const pr = await makePluginsRoot();
   try {
@@ -442,6 +454,99 @@ test('개발 저장소가 곧 marketplace clone이어도 릴리스가 중단되�
     assert.equal(res.marketplaceStaleDir, undefined, 'source 자신을 stale 이라고 경고하면 안 된다');
     assert.equal((await readJson(join(root, '.claude-plugin/marketplace.json'))).plugins[0].version, '1.3.0');
   } finally {
+    await rm(pr, { recursive: true, force: true });
+  }
+});
+
+// --- companion plugins (marketplace lists external, pinned plugins) ---------
+// The catalog can list plugins we neither own nor version. release must bump ONLY
+// the self entry (matched by name, not by index) and leave companions byte-intact.
+
+test('companion entry: release bumps only the self entry and leaves the companion untouched', async () => {
+  const root = await makeRoot('1.2.3', [COMPANION]);
+  const pr = await makePluginsRoot();
+  try {
+    const res = await release({ bump: 'minor', root, pluginsRoot: pr, skipCache: true, gitSha: 'x' });
+    assert.equal(res.newVersion, '1.3.0');
+
+    const mkt = await readJson(join(root, '.claude-plugin/marketplace.json'));
+    assert.equal(mkt.plugins.length, 2, 'companion entry must survive the release');
+
+    const self = mkt.plugins.filter(p => p.name === PLUGIN);
+    assert.equal(self.length, 1);
+    assert.equal(self[0].version, '1.3.0', 'self entry must be bumped');
+
+    const companion = mkt.plugins.find(p => p.name === COMPANION.name);
+    assert.deepEqual(companion, COMPANION, 'companion entry must be byte-for-byte unchanged');
+    assert.equal('version' in companion, false, 'companion must never gain a version field');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(pr, { recursive: true, force: true });
+  }
+});
+
+test('companion entry: self entry found by name even when it is NOT first in the array', async () => {
+  // Order is a convention, not the contract. A catalog that lists a companion
+  // first must still resolve OUR entry, never plugins[0].
+  const root = await mkdtemp(join(tmpdir(), 'harness-rel-order-'));
+  const pr = await makePluginsRoot();
+  try {
+    await mkdir(join(root, '.claude-plugin'), { recursive: true });
+    await mkdir(join(root, '.codex-plugin'), { recursive: true });
+    await writeFile(join(root, 'package.json'),
+      JSON.stringify({ name: PLUGIN, version: '1.2.3' }, null, 2) + '\n');
+    await writeFile(join(root, '.claude-plugin/plugin.json'),
+      JSON.stringify({ name: PLUGIN, version: '1.2.3', commands: [] }, null, 2) + '\n');
+    await writeFile(join(root, '.claude-plugin/marketplace.json'),
+      JSON.stringify({ name: MARKET, plugins: [COMPANION, { name: PLUGIN, version: '1.2.3' }] }, null, 2) + '\n');
+    await writeFile(join(root, '.codex-plugin/plugin.json'),
+      JSON.stringify({ name: PLUGIN, version: '1.2.3', skills: './skills/' }, null, 2) + '\n');
+
+    const res = await release({ bump: 'patch', root, pluginsRoot: pr, skipCache: true, gitSha: 'x' });
+    assert.equal(res.newVersion, '1.2.4');
+
+    const mkt = await readJson(join(root, '.claude-plugin/marketplace.json'));
+    assert.equal(mkt.plugins.find(p => p.name === PLUGIN).version, '1.2.4');
+    assert.deepEqual(mkt.plugins.find(p => p.name === COMPANION.name), COMPANION);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(pr, { recursive: true, force: true });
+  }
+});
+
+test('schema guard: a DUPLICATE self entry throws (guard is not weakened by allowing companions)', async () => {
+  const root = await makeRoot('1.2.3', [{ name: PLUGIN, version: '1.2.3' }]);
+  const pr = await makePluginsRoot();
+  try {
+    let err;
+    await assert.rejects(
+      () => release({ bump: 'patch', root, pluginsRoot: pr, skipCache: true, gitSha: 'x' }),
+      e => { err = e; return true; },
+    );
+    assert.equal(err.kind, 'schema');
+    assert.match(err.message, new RegExp(PLUGIN));
+    assert.match(err.message, /2개/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(pr, { recursive: true, force: true });
+  }
+});
+
+test('companion carrying a version equal to ours breaks the surgical bump — hence the no-version rule', async () => {
+  // Documents WHY companion entries must not declare `version`: surgicalVersionReplace
+  // requires the exact `"version": "<old>"` substring to occur exactly once per file.
+  const root = await makeRoot('1.2.3', [{ ...COMPANION, version: '1.2.3' }]);
+  const pr = await makePluginsRoot();
+  try {
+    let err;
+    await assert.rejects(
+      () => release({ bump: 'patch', root, pluginsRoot: pr, skipCache: true, gitSha: 'x' }),
+      e => { err = e; return true; },
+    );
+    assert.equal(err.kind, 'manifest-format');
+    assert.match(err.message, /marketplace\.json/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
     await rm(pr, { recursive: true, force: true });
   }
 });

@@ -23,6 +23,20 @@
       "author": {
         "name": "bd-makers"
       }
+    },
+    {
+      "name": "diagram-design",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/cathrynlavery/diagram-design.git",
+        "sha": "0ab077f2291e9056554d48a90c4ff45f0b7029a5"
+      },
+      "description": "Companion (optional, not bundled): technical and product diagrams as standalone HTML with inline SVG. Pinned by commit sha — see MAINTAINING.md for how the pin is raised. MIT, (c) Cathryn Lavery.",
+      "category": "workflow",
+      "homepage": "https://github.com/cathrynlavery/diagram-design",
+      "author": {
+        "name": "Cathryn Lavery"
+      }
     }
   ]
 }

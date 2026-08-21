@@ -722,7 +722,9 @@ rsync -a \
 | `.codex-plugin/plugin.json` | Codex 플러그인 로드 메타 | Codex에서 구버전/skill 누락 가능 |
 | 로컬 캐시 rsync | 실행 코드 반영 | 새 명령어가 실제 구버전 코드로 실행됨 |
 
-> `/reload-plugins` 후에도 구버전이 보이면 `marketplace.json`의 `plugins[0].version` 확인.
+> `/reload-plugins` 후에도 구버전이 보이면 `marketplace.json`의 **자기 항목**(`plugins` 중
+> `name`이 `harness-aijient-team`인 항목)의 `version`을 확인합니다. 같은 배열의 동반 플러그인
+> 항목은 버전을 갖지 않습니다.
 
 ### 요구사항
 

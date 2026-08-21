@@ -155,19 +155,24 @@ export async function release({
   const marketplace = JSON.parse(marketplaceText);
   const codexPlugin = JSON.parse(codexPluginText);
 
-  // 1. Marketplace schema guard (run first so the version check can safely read plugins[0]).
-  if (!Array.isArray(marketplace.plugins) || marketplace.plugins.length !== 1) {
+  // 1. Marketplace schema guard (run first so the version check can safely read the
+  // self entry). The catalog may also list COMPANION plugins we neither own nor
+  // version — external plugins pinned by `source.sha` (see MAINTAINING.md). So the
+  // invariant is not "exactly one entry" but "exactly one entry named like us":
+  // zero (empty array / renamed) and duplicates both still throw.
+  if (!Array.isArray(marketplace.plugins)) {
+    throw tagged('schema', 'release: marketplace.json.plugins 가 배열이 아님');
+  }
+  const selfEntries = marketplace.plugins.filter(p => p && p.name === plugin.name);
+  if (selfEntries.length !== 1) {
+    const listed = marketplace.plugins.map(p => p?.name ?? '(no name)').join(', ') || '(비어 있음)';
     throw tagged(
       'schema',
-      `release: marketplace.json.plugins 길이는 정확히 1이어야 함 — 현재 ${marketplace.plugins?.length ?? 0}`,
+      `release: marketplace.json.plugins 안에 "${plugin.name}" 항목이 정확히 1개여야 함 — ` +
+      `현재 ${selfEntries.length}개 (등재된 이름: ${listed})`,
     );
   }
-  if (marketplace.plugins[0].name !== plugin.name) {
-    throw tagged(
-      'schema',
-      `release: 플러그인 이름 불일치 — plugin.json.name=${plugin.name}, marketplace.json.plugins[0].name=${marketplace.plugins[0].name}`,
-    );
-  }
+  const selfEntry = selfEntries[0];
   if (codexPlugin.name !== plugin.name) {
     throw tagged(
       'schema',
@@ -178,7 +183,7 @@ export async function release({
   // 2. All manifests must agree on the current version.
   const pkgV = pkg.version;
   const pluginV = plugin.version;
-  const mktV = marketplace.plugins[0].version;
+  const mktV = selfEntry.version;
   const codexPluginV = codexPlugin.version;
   if (!(pkgV === pluginV && pluginV === mktV && mktV === codexPluginV)) {
     throw tagged(
@@ -431,9 +436,9 @@ const ERROR_ADVICE = {
     stop: '명시적 버전은 선행 0 없는 정수 3개여야 한다 (예: 1.2.3, not 01.02.03)',
   },
   schema: {
-    cause: '플러그인 매니페스트 스키마 위반 — marketplace plugins 길이가 1이 아니거나 Claude/Codex plugin name이 불일치',
-    retry: 'marketplace.json.plugins를 정확히 1개로 만들고 .claude-plugin/plugin.json 및 .codex-plugin/plugin.json의 name을 일치시킨 뒤 재실행',
-    stop: '스키마는 수동 점검이 필요하다 — 자동 수정하지 말 것',
+    cause: '플러그인 매니페스트 스키마 위반 — marketplace.json에 자기 항목(plugin.json.name과 같은 이름)이 정확히 1개가 아니거나 Claude/Codex plugin name이 불일치',
+    retry: 'marketplace.json.plugins 안에서 자기 항목을 정확히 1개로 만들고(동반 플러그인 항목은 그대로 둔다) .claude-plugin/plugin.json 및 .codex-plugin/plugin.json의 name을 일치시킨 뒤 재실행',
+    stop: '스키마는 수동 점검이 필요하다 — 자동 수정하지 말 것. 동반 항목에는 version 필드를 넣지 않는다(핀은 source.sha로 표현한다)',
   },
   'manifest-format': {
     cause: '매니페스트의 `"version": "x"` 필드가 정확히 1회 나타나지 않음 — 형식이 예상과 다름',
