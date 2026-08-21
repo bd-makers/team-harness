@@ -25,6 +25,8 @@
 남은 후속(릴리스 후, 이 task 범위 밖): 전역 CLAUDE.md 2대(회사 chadonpro·집 hsonpro)와
 메모리(codex-review-invocation)의 구명 참조를 새 이름으로 갱신, 다음 마이너에서 alias 제거.
 
+PR: https://github.com/bd-makers/team-harness/pull/35 (2026-08-22 open, base: main)
+
 
 ## Reviews
 *Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
