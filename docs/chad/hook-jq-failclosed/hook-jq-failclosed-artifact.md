@@ -125,3 +125,15 @@ doctor(jq 없는 PATH) → ⚠️ jq (JSON processor)  (not found — Claude 훅
   자동 병합됐고 W4의 `EXTERNAL_TOOLS` 변경과 충돌하지 않았다. 리베이스 후 재검증:
   `npm run test` 342 tests / 341 pass / 0 fail / 1 skip · `docs:check` 최신 ·
   CI 재실행 Node 18·20 pass · `mergeable=MERGEABLE / CLEAN`.
+
+### CI 플레이크 1건 (2026-08-21, 원인 미규명)
+- run `32454656528`(문서 전용 커밋 `1c1b0c6`)에서 **Node 18만** `Run tests` 실패, Node 20은 통과.
+- **동일 코드가 직전 run `32454555483`에서 Node 18·20 모두 통과**했고, 델타는 `artifact.md` 텍스트뿐이다.
+  같은 커밋을 **재실행하니 Node 18·20 모두 통과** → 플레이크로 판정.
+- **원인은 규명하지 못했다.** GitHub Actions 로그가 blob 스토리지로 리다이렉트되는데 이 샌드박스에서
+  `*.blob.core.windows.net` 접근이 Forbidden이고, Node 18을 로컬에 설치하려 해도 nodejs.org 접근이
+  막혀 재현할 수 없었다. **추정만 있고 증거가 없으므로 코드를 추측으로 고치지 않았다.**
+- 가설(미검증): `node --test`는 테스트 *파일*을 병렬 실행하고, 신규 매트릭스 파일이 훅 프로세스를
+  ~90회 spawn한다. 같은 시점에 도는 doctor/CLI 테스트는 짧은 서브프로세스 타임아웃
+  (`checkCommand` 3s·`checkSelfCli`/`checkHookCli` 5s)을 쓰므로 2코어 러너에서 느린 Node 18 쪽이
+  넘어갈 수 있다. 재발하면 이 가설부터 확인할 것(로그 확보가 선결).
