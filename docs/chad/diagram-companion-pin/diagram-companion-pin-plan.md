@@ -30,7 +30,7 @@
 - [x] `README.md` — 동반 플러그인 소개, 선택 사항 명시, MIT 저작자 표기
 - [x] `CHANGELOG.md` `[Unreleased]` 항목 추가
 - [x] `npm run test` 전체 통과를 실제 출력으로 확인
-- [ ] 격리 브랜치 커밋 → main 대상 PR 생성(머지하지 않음) → PR 번호 보고
+- [x] 격리 브랜치 커밋 → main 대상 PR 생성(머지하지 않음) → **PR #28** (머지하지 않음)
 - [x] artifact.md에 결과·네임스페이스 사실·후속 작업 기록
 
 ## Ontology 변경 로그

@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: diagram-design을 sha 핀 동반 플러그인으로 등재 + release 가드 일반화 + /harness-diagram 어댑터
-- Current atomic step: 커밋·푸시·PR 생성 (구현·테스트·문서 전부 완료)
+- Current atomic step: PR #28 open — CI 결과 확인 / 리뷰 대기
 - Stop / human-decision condition: PR 머지는 하지 않는다. 핀 sha를 5538b35로 올릴지는 사용자 결정.
 
 ## Constraints and settled decisions

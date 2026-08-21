@@ -4,6 +4,8 @@
 
 ## 결과
 
+**PR: https://github.com/bd-makers/team-harness/pull/28 (open, 머지하지 않음)**
+
 ### 1. `diagram-design`을 sha 핀 동반 플러그인으로 등재
 
 `.claude-plugin/marketplace.json`의 `plugins`가 **자기 항목 1개 + 동반 항목 N개** 구조가 됐다.
