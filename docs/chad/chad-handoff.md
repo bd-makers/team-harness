@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-d5-parallel-pr-scope
+spec-writing-skill
 
-## Last Commit (2026-08-20)
-4aba1b5 docs(task): d5-parallel-pr-scope plan 완료 체크 + artifact 기록
+## Last Commit (2026-08-21)
+8c570d2 feat(commands): /harness-spec 스펙 초안 생성 커맨드 추가 — Confluence·Figma·인터뷰 3소스
 
 ## Full Context
-→ docs/chad/d5-parallel-pr-scope/d5-parallel-pr-scope-handoff.md
+→ docs/chad/spec-writing-skill/spec-writing-skill-handoff.md
