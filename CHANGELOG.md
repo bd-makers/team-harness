@@ -19,6 +19,19 @@ modified: 2026-08-19
 ## [Unreleased]
 
 ### Added
+- **`/harness-review`·`/harness-adversarial-review` — 리뷰 커맨드의 엔진 중립 재편.** 엔진(codex·
+  claude·gemini·custom)과 프레이밍(통상/적대적)은 직교하는데 기존 이름은 엔진을 커맨드명에 박아
+  claude-only 팀원이 쓸 리뷰 경로가 없었고, 엔진이 늘 때마다 커맨드가 프레이밍 수만큼 곱으로
+  늘어날 구조였다. 절차(scope → 실행 → 발견 검증 → artifact 기록 → 보고)는 `harness-review.md`가
+  한 번만 소유하고 엔진 차이는 runner 표 한 줄이다. 엔진 인자 생략 시 **probe 폴백 체인**
+  (codex → gemini → claude)으로 첫 가용 엔진을 쓴다 — claude는 Claude Code 환경에 항상 존재하므로
+  어느 머신에서든 리뷰어가 보장된다. claude 엔진은 `claude -p --permission-mode plan`(쓰기 차단·
+  read-only git 허용·인증 상속, 2026-08-21 실측)이며 **컨텍스트 분리만 제공**(vendor 분리 없음)
+  한다는 한계를 문서에 명시했다 — 폴백 체인에서 마지막인 이유다. custom 엔진은 커밋 가능한 팀
+  공유 설정 `.harness/reviewers.json`의 `{"custom": {"command": "... {prompt} ..."}}` 템플릿을
+  치환해 실행하고, 미설정이면 실패시키지 않고 스키마 안내 후 종료한다. Codex 표면도 같은 체계로
+  재편했다(`skills/harness-review/`·`skills/harness-adversarial-review/`, command 문서를 SSOT로 읽음).
+
 - **spec/plan 단계 다이어그램 옵트인.** 신규 task를 만든 직후 다이어그램을 함께 만들지 **1회만**
   묻고, "예"면 `<name>-plan.md` 단계에 체크박스를 추가하고 "아니오"면 아무것도 추가하지 않는다.
   기존 task 재활성화 시에는 묻지 않는다 — 계획에 없는 단계를 다시 묻는 것은 계획을 무시하는 것이다.
@@ -57,6 +70,12 @@ modified: 2026-08-19
 - **`tests/ship-command.test.mjs` — ship 계약 회귀 가드.** manifest-sync는 등록·router 구조만 보므로
   ship을 안전하게 만드는 두 가지(PR을 스스로 열지 않는다 / 다이어그램 도구에 하드 의존하지 않는다)와
   `AGENTS.md` 쌍의 도구 중립성은 아무도 지키지 않았다. 5개 테스트로 고정한다.
+
+### Deprecated
+- **`/harness-codex-review`·`/harness-codex-adversarial-review` — 1개 마이너 버전 유지 후 제거.**
+  두 커맨드와 동명 스킬은 새 커맨드를 엔진 `codex`로 수행하는 얇은 포워딩 문서로 교체했고
+  plugin.json 등재는 유지한다. 전역 CLAUDE.md·팀원 워크플로우의 옛 이름 참조가 조용히 깨지는 것을
+  막기 위한 전환 창이며, 다음 마이너 버전에서 제거한다.
 
 ### Changed
 - **AGENTS.md에 D5(2026-08-20) 결정 노트 추가 — 단일 스레드 쓰기 규칙의 범위 정정.** D4(2026-07-28)는

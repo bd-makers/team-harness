@@ -26,6 +26,8 @@
     "./commands/harness-unittest.md",
     "./commands/harness-comptest.md",
     "./commands/harness-inttest.md",
+    "./commands/harness-review.md",
+    "./commands/harness-adversarial-review.md",
     "./commands/harness-codex-review.md",
     "./commands/harness-codex-adversarial-review.md"
   ],
