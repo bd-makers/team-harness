@@ -65,6 +65,17 @@ Raw slash-command 인수:
    미설치로 gemini 실행) 건너뛴 엔진과 사유도 명기한다. 활성 task가 없으면 기록할
    곳이 없다는 사실을 사용자에게 보고한다.
 
+   기록 끝에 기계 판독용 마커를 **한 줄로** append 한다 — `harness-team done`의
+   리뷰 가드(`review: required`)가 이 마커를 스캔한다:
+
+   ```text
+   <!-- harness:review kind=<engine> scope=<worktree|diff> tip=<HEAD sha|none> at=<ISO8601 UTC> -->
+   ```
+
+   `kind`는 실제 실행 엔진(`codex`·`claude`·`gemini`·`custom`), `scope`는 2단계에서
+   결정된 리뷰 대상, `tip`은 리뷰 시점의 `git rev-parse HEAD`(커밋이 없으면 `none`),
+   `at`은 리뷰 완료 시각이다. 마커 없는 기록은 가드에 보이지 않는다.
+
 6. **보고** — 사용자에게 실행 엔진, 심각도순 발견 목록과 판별 결과를 전달한다.
    수정 제안이 있으면 제안까지만 하고 멈춘다.
 

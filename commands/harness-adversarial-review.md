@@ -31,7 +31,9 @@ scenario breaks. Separate real blockers from theoretical concerns in your verdic
 If the approach survives your objections, say so explicitly. <focus arguments, if any>
 ```
 
-기록 시 artifact에는 실행 엔진과 함께 **적대적 리뷰**였음을 명기한다.
+기록 시 artifact에는 실행 엔진과 함께 **적대적 리뷰**였음을 명기하고,
+기계 판독용 마커의 `kind`는 `<engine>-adversarial`(예: `kind=codex-adversarial`)로 남긴다.
+마커 형식·나머지 필드는 `harness-review.md` 5단계와 동일하다.
 
 ## 언제 이걸 쓰나
 
