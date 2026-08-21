@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-diagram-companion-pin
+hook-jq-failclosed
 
 ## Last Commit (2026-08-21)
-0d2dd89 feat(commands): /harness-diagram 어댑터 + 동반 플러그인 문서
+78b8c7f fix(hooks): jq 부재 시 훅 4개가 조용히 무력화되던 fail-open 수정
 
 ## Full Context
-→ docs/chad/diagram-companion-pin/diagram-companion-pin-handoff.md
+→ docs/chad/hook-jq-failclosed/hook-jq-failclosed-handoff.md

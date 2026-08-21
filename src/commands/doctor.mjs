@@ -10,12 +10,22 @@ import { settingsHasSessionGate } from './session-context.mjs';
 
 const pexec = promisify(execFile);
 
+// gh/codex/gemini/opencode are optional integrations: absent means a feature is off.
+// jq is not in that class. The Claude hooks parse their stdin payload with it, and
+// while they now fall back to a grep extractor instead of failing open, that fallback
+// cannot decode JSON escapes — the guard keeps deciding, at lower precision. Report it
+// as a warning (never fail++, so the exit code contract is unchanged) rather than
+// telling the user it is optional.
 const EXTERNAL_TOOLS = [
   { cmd: 'gh', label: 'gh (GitHub CLI)' },
   { cmd: 'codex', label: 'codex (Codex CLI)' },
   { cmd: 'gemini', label: 'gemini (Gemini CLI)' },
   { cmd: 'opencode', label: 'opencode (OpenCode CLI)' },
-  { cmd: 'jq', label: 'jq (JSON processor)' },
+  {
+    cmd: 'jq',
+    label: 'jq (JSON processor)',
+    missingDetail: 'not found — Claude 훅이 저정밀 모드로 판정합니다 (차단은 유지, 정확도 하락). jq 설치를 권장합니다',
+  },
 ];
 
 export async function checkCommand(cmd, args = ['--version'], env = process.env) {
@@ -398,14 +408,15 @@ export async function runDoctor(ctx) {
     }
   }
 
-  // External tool healthchecks (all optional — missing → -, present → ✓, never fail++).
+  // External tool healthchecks (missing → - / ⚠️ per EXTERNAL_TOOLS, present → ✓, never fail++).
   // Run concurrently so a slow/hung tool doesn't serialize the worst-case wait.
   line('\nexternal tools:');
   const toolResults = await Promise.all(
-    EXTERNAL_TOOLS.map(({ cmd, label }) => checkCommand(cmd).then(ok => ({ ok, label }))),
+    EXTERNAL_TOOLS.map(({ cmd, label, missingDetail }) => checkCommand(cmd).then(ok => ({ ok, label, missingDetail }))),
   );
-  for (const { ok, label } of toolResults) {
+  for (const { ok, label, missingDetail } of toolResults) {
     if (ok) add(label, 'pass', undefined, `✓ ${label}`);
+    else if (missingDetail) add(label, 'warning', missingDetail, `⚠️ ${label}  (${missingDetail})`);
     else add(label, 'missing', 'not found, optional', `- ${label}  (not found, optional)`);
   }
 

@@ -15,8 +15,9 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const pexec = promisify(execFile);
 
 // Run the real doctor CLI against a target dir and return the parsed --json envelope.
-async function doctorJson(targetDir) {
-  const { stdout } = await pexec('node', [join(ROOT, 'bin/harness-team.mjs'), 'doctor', '--json', '--target', targetDir], { timeout: 20000 })
+async function doctorJson(targetDir, env) {
+  const opts = { timeout: 20000, ...(env ? { env } : {}) };
+  const { stdout } = await pexec('node', [join(ROOT, 'bin/harness-team.mjs'), 'doctor', '--json', '--target', targetDir], opts)
     .catch(e => ({ stdout: e.stdout || '' })); // doctor exits 1 on fail — keep the envelope
   return JSON.parse(stdout);
 }
@@ -330,5 +331,22 @@ test('runDoctor: boundary checkpoint가 settings에 없으면 apply 경고를 �
     const c = checkOf(env, 'PreToolUse boundary checkpoint');
     assert.equal(c?.status, 'warning');
     assert.match(c.detail, /harness-team apply/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// jq가 없으면 Claude 훅은 fail-open 대신 저정밀 모드로 내려간다(templates/.claude/hooks/*.sh).
+// "optional"이라고 보고하면 사용자가 그 사실을 알 방법이 없다 — 나머지 외부 도구와 구분해 경고한다.
+test('runDoctor: jq 부재는 optional이 아니라 warning으로 보고한다 (다른 외부 도구는 종전대로)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-nojq-'));
+  try {
+    // node만 있는 PATH — jq/gh/codex 등은 모두 미탐지 상태가 된다.
+    const env = { PATH: dirname(process.execPath), HOME: homedir() };
+    const envelope = await doctorJson(dir, env);
+    const jq = checkOf(envelope, 'jq (JSON processor)');
+    assert.equal(jq?.status, 'warning', 'jq는 보안 통제 정밀도에 영향을 주므로 경고여야 한다');
+    assert.match(jq.detail, /저정밀/);
+    const gh = checkOf(envelope, 'gh (GitHub CLI)');
+    assert.equal(gh?.status, 'missing', '나머지 외부 도구의 optional 표기는 그대로');
+    assert.match(gh.detail, /optional/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
