@@ -44,7 +44,15 @@ export async function createSandbox(stack) {
   const shim = join(binDir, 'harness-team');
   await writeFile(shim, `#!/bin/sh\nexec node ${JSON.stringify(BIN)} "$@"\n`);
   await chmod(shim, 0o755);
-  const env = { ...process.env, PATH: `${binDir}:${process.env.PATH}` };
+  // CLAUDE_PLUGINS_ROOT points doctor's checkCliDrift at a path inside the
+  // sandbox (nonexistent → drift check no-ops, same as CI). Without it the
+  // spawned CLI reads the dev machine's real ~/.claude/plugins/
+  // installed_plugins.json, and any version drift there fails these tests.
+  const env = {
+    ...process.env,
+    PATH: `${binDir}:${process.env.PATH}`,
+    CLAUDE_PLUGINS_ROOT: join(dir, '.plugins-isolated'),
+  };
 
   await writeFile(join(dir, 'package.json'), JSON.stringify(stack.pkg, null, 2));
   await run('git', ['init', '-q'], { cwd: dir, env });

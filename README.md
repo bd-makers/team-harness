@@ -21,7 +21,9 @@ modified: 2026-08-07
 ## 목차
 - [왜 필요한가](#왜-필요한가)
 - [빠른 시작](#빠른-시작)
+- [사전 준비](#사전-준비)
 - [설치](#설치)
+- [동반 플러그인 (선택)](#동반-플러그인-선택)
 - [명령어 레퍼런스](#명령어-레퍼런스)
 - [task 관리 (팀원·기능별)](#task-관리-팀원기능별)
 - [스크립트 3종 사용법](#스크립트-3종-사용법)
@@ -69,7 +71,7 @@ Anthropic·OpenAI·Cognition·12-Factor Agents 등 최근 1차 소스는 병렬�
 상충·신뢰성 위험으로 보고, 단일 스레드 실행 + 얇고 직접 소유한 제어흐름을 권장합니다. 이 플러그인의
 드라이버(Claude·OpenCode) → 리뷰어(Codex·Gemini, read-only) 순차 루프는 그 방향과 정합적입니다.
 단, 이 원칙이 금지하는 것은 **같은 워킹트리에 동시에 쓰는 것**입니다 — 각자 격리된 브랜치·git
-worktree에서 작업하고 PR/MR로 병합하는 병렬 경로는 허용되며 권장됩니다(`AGENTS.md` D5).
+worktree에서 작업하고 PR/MR로 병합하는 병렬 경로는 허용되며 권장됩니다(`docs/decisions.md` D5).
 반면 조사·탐색을 위한 **컨텍스트 격리 서브에이전트**(별도 창에서 조사 후 요약만 반환)는 이 원칙과
 무관하게 표준 실무이며 계속 활용합니다 — 자세한 구분은 [`CLAUDE.md` §2](./CLAUDE.md) 참고.
 OS/네트워크 격리는 이 플러그인의 스코프 밖입니다 — devcontainer·sandbox 등 운영
@@ -84,10 +86,10 @@ OS/네트워크 격리는 이 플러그인의 스코프 밖입니다 — devcont
 | 채널 | 대상/시점 | 제공하는 것 |
 |---|---|---|
 | `apply` | 프로젝트당 1회 | hooks·rules·AGENTS/CLAUDE/GEMINI·docs 구조·`opencode.json`·`.cursor/rules` |
-| Claude Code 플러그인 설치 | 사람·머신마다 | `/harness-*` 슬래시 커맨드 22개 |
+| Claude Code 플러그인 설치 | 사람·머신마다 | `/harness-*` 슬래시 커맨드 26개 |
 | 전역 `harness-team` CLI 링크 | 사람마다 | 터미널과 훅이 호출하는 `harness-team` CLI |
 
-**`apply`만으로는 `/harness-*` 슬래시 커맨드가 설치되지 않습니다.** `apply`는 `commands/*.md` 22개를 프로젝트에 복사하지 않으며, 해당 명령은 Claude Code 플러그인 설치 채널에서 제공됩니다.
+**`apply`만으로는 `/harness-*` 슬래시 커맨드가 설치되지 않습니다.** `apply`는 `commands/*.md` 26개를 프로젝트에 복사하지 않으며, 해당 명령은 Claude Code 플러그인 설치 채널에서 제공됩니다.
 
 이 패키지는 **npm 공개 저장소에 배포되지 않습니다** — 전역 CLI는 `/plugin install`이 만든
 로컬 마켓플레이스 클론을 `npm i -g`로 링크해 얻습니다. 이미 하네스가 적용된 저장소를 clone한
@@ -106,7 +108,7 @@ harness-team doctor
 
 | 에이전트 | hooks | 커맨드/적용 표면 | 경로 스코프 규칙 |
 |---|---|---|---|
-| Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 22개 슬래시 커맨드 | `.claude/rules` `paths:` — 매칭 파일 **Read 시** 로드 |
+| Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 26개 슬래시 커맨드 | `.claude/rules` `paths:` — 매칭 파일 **Read 시** 로드 |
 | Codex | SessionStart 1종 (신뢰 승인 필요) | 슬래시 커맨드는 없고 별도 `.codex-plugin` 설치 시 동명의 스킬 | 없음 — 하위 디렉터리 `AGENTS.md`로 대체 |
 | OpenCode | 0 | `new-feature` / `fix-bug` / `verify` 3개 | 없음 |
 | Gemini | 0 | `GEMINI.md` 텍스트만 | 없음 |
@@ -145,7 +147,10 @@ cd my-project
 # → task 파일 계약은 AGENTS.md의 작업 프로토콜 및 templates/docs/README.md 참조
 # → .harness/active.json이 이 task를 가리킴
 
-# 4. 세션 종료 전
+# 4. PR/MR 올리기 직전
+/harness-ship         # spec·plan·artifact 최종 갱신 + 준비 완료 보고 (PR 생성은 별도)
+
+# 5. 세션 종료 전
 /harness-task done    # 활성 task 완료 처리 (handoff.md 갱신, task_summary 반영)
 ```
 
@@ -153,6 +158,31 @@ cd my-project
 > `SessionStart` 훅이 활성 task 유무를 감지해 **재개 / 새 task / task 없이 진행** 중 하나를
 > 물어봅니다(block이 아닌 nudge — 판단은 Claude). "task로 시작" 규율을 강제가 아니라
 > 부드럽게 상기시킵니다.
+
+---
+
+## 사전 준비
+
+**하드 요구사항은 Node.js ≥ 18 하나뿐입니다** (`engines.node`, 런타임 npm 의존성 0개).
+나머지는 "있으면 켜지고 없으면 그 기능만 꺼지는" 능력 매트릭스입니다.
+`git` 아래 다섯 개는 `harness-team doctor`가 런타임에 유무를 확인해 줍니다.
+
+| 도구 | 없으면 |
+|---|---|
+| Node.js ≥ 18 | `harness-team` CLI가 실행되지 않음 — 유일한 하드 요구사항 |
+| `jq` | Claude Code 훅이 **저정밀 모드**로 판정 — 차단은 유지되지만 정확도가 떨어짐. 다른 넷과 달리 doctor가 `warning`으로 알림 |
+| `git` | CLI는 동작하되 post-commit handoff·summary 브랜치 감지·task 전환 diff가 no-op |
+| `gh` | `/harness-ship` 이후 **사용자가 직접 여는** PR 단계용 — 하네스 명령은 영향 없음 |
+| `codex` | `/harness-codex-review`, `/harness-codex-adversarial-review`, Codex L5 시뮬레이션 |
+| `gemini` | 병렬 외부 리뷰 — 건너뛰되 artifact에 "미실행"을 기록 |
+| `opencode` | OpenCode 순차 드라이버 세션 (하네스는 설정 파일을 쓰기만 합니다) |
+
+> **⚠ jq를 먼저 확인하세요.** 없으면 훅이 grep 폴백으로 판정합니다 — 차단 자체는 유지되지만
+> JSON 이스케이프를 디코드하지 못해 일부 명령을 놓칠 수 있습니다. 자세한 한계는
+> [docs/prerequisites.md §3](./docs/prerequisites.md)에 있습니다.
+
+에이전트별 연동, 실측 근거, 호환성 주의(특히 `mattpocock-skills`의 `writing-for-agents`)는
+**[docs/prerequisites.md](./docs/prerequisites.md)** 를 보세요.
 
 ---
 
@@ -205,6 +235,37 @@ cd harness-aijient-team-plugin
 npm link          # 전역에 harness-team 명령 등록 (이 클론 경로를 가리킴)
 harness-team --help
 ```
+
+---
+
+## 동반 플러그인 (선택)
+
+이 마켓플레이스는 하네스가 **소유하지도 번들하지도 않는** 외부 플러그인을 커밋 sha로 **핀을 걸어**
+함께 등재합니다. 전부 **선택 사항**입니다 — 설치하지 않아도 하네스는 정상 동작합니다.
+
+| 플러그인 | 무엇을 하나 | 라이선스 | 핀 |
+|---|---|---|---|
+| `diagram-design` | spec/plan 다이어그램을 자립형 inline SVG HTML로 생성 | MIT © [Cathryn Lavery](https://github.com/cathrynlavery/diagram-design) | `0ab077f` |
+
+```
+/plugin marketplace add https://github.com/bd-makers/team-harness
+/plugin install diagram-design@harness-aijient-team-marketplace
+```
+
+`@<marketplace>`를 붙이는 이유: 같은 이름의 플러그인이 다른 마켓플레이스에도 있으면(업스트림
+저장소를 이미 추가해 뒀다면 실제로 그렇습니다) 이름만으로는 **핀이 걸린 이쪽**이 선택된다는 보장이
+없습니다.
+
+- **핀은 자동으로 따라가지 않습니다.** 업스트림이 갱신돼도 메인테이너가 sha를 올리기 전까지
+  설치본은 바뀌지 않습니다. 올리는 절차와 판단 기준은 `MAINTAINING.md`의 "동반 플러그인" 절에 있습니다.
+- **복사(vendoring)하지 않는 이유:** 업스트림이 활발히 갱신되고, 스킬이 `SKILL.md` + `references/` +
+  `assets/`로 구성돼 있으며, 브랜드 토큰이 스킬 디렉터리 안에 쓰이기 때문입니다. 사본을 들고 있으면
+  리싱크가 영구히 이 저장소의 일이 되고, 사용자의 브랜드 색이 릴리스에 실려 나갑니다.
+- **하네스 안에서의 호출:** 다이어그램은 `/harness-diagram`으로 실행합니다. 상류 스킬을 직접
+  부르면 산출물 경로·자립형 inline SVG 제약·artifact 기록 같은 하네스 규약이 적용되지 않으므로,
+  하네스는 어댑터 커맨드로 그 규약을 주입합니다(`commands/harness-diagram.md`).
+- **없을 때의 동작:** 다이어그램 단계는 옵트인이고 `probe → degrade → record` 계약을 따릅니다.
+  도구가 없으면 실패시키지 않고 건너뛴 뒤 활성 task의 artifact에 미실행 사실을 한 줄 남깁니다.
 
 ---
 
@@ -291,6 +352,21 @@ Figma(wireframe·design-spec), task 이름 기반 인터뷰. 프로젝트별 소
 ### `/harness-task` — task 관리
 
 아래 [task 관리](#task-관리-팀원기능별) 섹션 참조.
+
+### `/harness-ship` — PR/MR 직전 최종 갱신
+
+활성 task의 spec·plan·artifact를 코드 현실과 맞춘 뒤 **PR/MR 준비 완료 상태를 보고**합니다.
+다이어그램 갱신·생성은 실행 시점에 한 번 묻는 **옵트인**이며, `diagram-design` 스킬이 없는
+머신에서는 실패하지 않고 건너뛴 뒤 artifact에 '미실행'으로 기록합니다.
+
+```bash
+/harness-ship
+/harness-ship --base origin/develop   # diff 기준 ref 지정
+/harness-ship --no-diagram            # 다이어그램 질문 없이 건너뛰기
+```
+
+**PR/MR을 만들지 않습니다** — 준비 완료 보고에서 멈추고 생성·푸시는 사용자 지시로 진행합니다.
+`harness-team done`(task 완료 처리)을 대체하지도, 실행하지도 않습니다.
 
 ### `/harness-clone` — project → backup dir 동기화
 
@@ -711,11 +787,13 @@ rsync -a \
 | `.codex-plugin/plugin.json` | Codex 플러그인 로드 메타 | Codex에서 구버전/skill 누락 가능 |
 | 로컬 캐시 rsync | 실행 코드 반영 | 새 명령어가 실제 구버전 코드로 실행됨 |
 
-> `/reload-plugins` 후에도 구버전이 보이면 `marketplace.json`의 `plugins[0].version` 확인.
+> `/reload-plugins` 후에도 구버전이 보이면 `marketplace.json`의 **자기 항목**(`plugins` 중
+> `name`이 `harness-aijient-team`인 항목)의 `version`을 확인합니다. 같은 배열의 동반 플러그인
+> 항목은 버전을 갖지 않습니다.
 
 ### 요구사항
 
-Node.js 18+. 외부 의존성 없음 (표준 라이브러리만).
+[사전 준비](#사전-준비) 참조 — 상세는 [docs/prerequisites.md](./docs/prerequisites.md).
 
 ---
 

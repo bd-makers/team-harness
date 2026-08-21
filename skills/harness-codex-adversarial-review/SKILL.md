@@ -1,16 +1,17 @@
 ---
 name: harness-codex-adversarial-review
-description: Codex wrapper for the adversarial variant of the harness Codex review - it challenges implementation approach and design choices of local git changes. Use when the user asks for /harness-codex-adversarial-review, adversarial review, or a review that tries to reject the change.
+description: Deprecated alias for the engine-neutral harness-adversarial-review skill - kept one minor version for compatibility. When the user asks for /harness-codex-adversarial-review, run the harness-adversarial-review procedure with the codex engine.
 ---
 
-# Harness Codex Adversarial Review
+# Harness Codex Adversarial Review (deprecated)
 
-Use this skill as the Codex equivalent of Claude Code `/harness-codex-adversarial-review`.
+This name was merged into the engine-neutral `harness-adversarial-review` and is kept
+for one minor version only. Its former contract lived at
+`../../commands/harness-codex-adversarial-review.md`, which now forwards the same way
+this skill does.
 
-## Source of Truth
-
-- Read `../../commands/harness-codex-adversarial-review.md` before acting; it inherits the full procedure from `../../commands/harness-codex-review.md` and swaps only the review prompt framing.
-- Follow that command contract, plus `AGENTS.md` review protocol and active task docs when present.
-- The review runner is the `codex exec --sandbox read-only` CLI invocation documented there — do not depend on openai-codex plugin internals.
-- Record results in the active task's artifact `## Reviews` section with a date; an unrecorded review counts as not done. If this session cannot write files (read-only reviewer context), output the dated review block verbatim so the driving session can append it instead.
-- Review-only: report objections and the verdict, then stop. Do not fix, commit, or patch unless the user explicitly asks afterwards.
+- Read `../../commands/harness-adversarial-review.md` and follow that procedure with engine `codex`.
+- Argument handling (`--base <ref>`, focus) is unchanged.
+- When reporting, add a one-line note that this name is deprecated and
+  `/harness-adversarial-review codex` (or engine auto-selection via
+  `/harness-adversarial-review`) should be used next time.

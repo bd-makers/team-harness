@@ -10,13 +10,52 @@ import { settingsHasSessionGate } from './session-context.mjs';
 
 const pexec = promisify(execFile);
 
-const EXTERNAL_TOOLS = [
+// gh/codex/gemini/opencode are optional integrations: absent means a feature is off.
+// jq is not in that class. The Claude hooks parse their stdin payload with it, and
+// current templates fall back to a grep extractor instead of failing open — but that
+// holds only for installed hooks that actually carry the fallback block. runDoctor
+// checks the install (jqFallbackGaps) and swaps this default detail for a fail-open
+// warning when the block is missing, so the report never claims "차단은 유지" about a
+// hook that would silently allow everything. Either way it is a warning (never fail++,
+// so the exit code contract is unchanged) rather than "optional".
+// Exported so docs/prerequisites.md cannot drift from what doctor actually checks:
+// tests/prerequisites-doc.test.mjs compares this list against the documented table
+// in both directions.
+export const EXTERNAL_TOOLS = [
   { cmd: 'gh', label: 'gh (GitHub CLI)' },
   { cmd: 'codex', label: 'codex (Codex CLI)' },
   { cmd: 'gemini', label: 'gemini (Gemini CLI)' },
   { cmd: 'opencode', label: 'opencode (OpenCode CLI)' },
-  { cmd: 'jq', label: 'jq (JSON processor)' },
+  {
+    cmd: 'jq',
+    label: 'jq (JSON processor)',
+    missingDetail: 'not found — Claude 훅이 저정밀 모드로 판정합니다 (차단은 유지, 정확도 하락). jq 설치를 권장합니다',
+  },
 ];
+
+// PR #29's grep fallback exists only in hooks carrying this marker. An installed hook
+// without it predates the fix: with jq absent its parse comes back empty and the hook
+// silently allows everything (fail-open). migrate refreshes known stock hooks — doctor
+// only reports, so the two never disagree about who fixes what.
+export const JQ_FALLBACK_MARKER = 'harness:jq-fallback';
+export const JQ_HOOK_FILES = ['block-dangerous-git.sh', 'protect-files.sh', 'pre-commit-check.sh', 'auto-format.sh'];
+
+// Installed jq-parsing hooks that lack the fallback marker. Absent files are not gaps
+// (nothing runs → nothing fails open; the CHECKS table already grades hook presence).
+export async function jqFallbackGaps(targetDir) {
+  const gaps = [];
+  for (const name of JQ_HOOK_FILES) {
+    const body = await readFile(join(targetDir, '.claude/hooks', name), 'utf8').catch(() => null);
+    if (body !== null && !body.includes(JQ_FALLBACK_MARKER)) gaps.push(name);
+  }
+  return gaps;
+}
+
+// The jq warning's runnable remedy for next_actions — a warning without an action
+// reads as noise to an agent consuming the envelope (see cliDriftAction).
+export function jqInstallAction(platform = process.platform) {
+  return platform === 'darwin' ? 'brew install jq' : 'sudo apt-get install -y jq';
+}
 
 export async function checkCommand(cmd, args = ['--version'], env = process.env) {
   try {
@@ -57,6 +96,12 @@ export async function checkHookCli(env = process.env) {
 // `/plugin install` creates. Keep the recovery command in one place so the doctor
 // warning, JSON next_actions, and README cannot drift back to the broken form.
 export const HOOK_CLI_MARKETPLACE_DIR = 'harness-aijient-team-marketplace';
+
+// The plugin half of the installed-record key. Needed because the harness
+// marketplace also lists COMPANION plugins now (external, sha-pinned), so their
+// records share the marketplace half of the key and matching on it alone would
+// read a companion's version as the harness version.
+export const HOOK_CLI_PLUGIN_NAME = 'harness-aijient-team';
 
 // `--version` landed in 0.15.1. Before that the CLI answered `Unknown command`
 // and exited 1, so "no version reported" dates the binary rather than hiding it.
@@ -100,11 +145,21 @@ export async function readPathCliVersion(env = process.env) {
   }
 }
 
-// The installed record is keyed `<plugin>@<marketplace>`; the harness owns one
-// marketplace, so match on that half rather than hardcoding the plugin name.
-export function installedHarnessVersion(installed, marketplace = HOOK_CLI_MARKETPLACE_DIR) {
+// The installed record is keyed `<plugin>@<marketplace>`. Matching on the
+// marketplace half alone used to be safe because the harness owned exactly one
+// plugin in it — that stopped being true when the catalog started listing
+// sha-pinned companion plugins, whose records carry THEIR version under the same
+// marketplace suffix. Reading one of those as the harness version produces a
+// false CLI-drift warning, so match both halves of the key.
+export function installedHarnessVersion(
+  installed,
+  marketplace = HOOK_CLI_MARKETPLACE_DIR,
+  plugin = HOOK_CLI_PLUGIN_NAME,
+) {
   for (const [key, records] of Object.entries(installed?.plugins ?? {})) {
-    if (key.split('@').pop() !== marketplace) continue;
+    const at = key.lastIndexOf('@');
+    if (at === -1) continue;
+    if (key.slice(0, at) !== plugin || key.slice(at + 1) !== marketplace) continue;
     if (!Array.isArray(records) || records.length === 0) continue;
     const record = records.find(r => r.scope === 'user') ?? records[0];
     if (record?.version) return record.version;
@@ -382,14 +437,24 @@ export async function runDoctor(ctx) {
     }
   }
 
-  // External tool healthchecks (all optional — missing → -, present → ✓, never fail++).
+  // External tool healthchecks (missing → - / ⚠️ per EXTERNAL_TOOLS, present → ✓, never fail++).
   // Run concurrently so a slow/hung tool doesn't serialize the worst-case wait.
   line('\nexternal tools:');
   const toolResults = await Promise.all(
-    EXTERNAL_TOOLS.map(({ cmd, label }) => checkCommand(cmd).then(ok => ({ ok, label }))),
+    EXTERNAL_TOOLS.map(({ cmd, label, missingDetail }) => checkCommand(cmd).then(ok => ({ cmd, ok, label, missingDetail }))),
   );
-  for (const { ok, label } of toolResults) {
+  // jq honesty branch: the static detail's "차단은 유지" is only true of hooks that
+  // carry the fallback block. If the install predates it, say fail-open and route to
+  // migrate instead — the warning severity stays the same (never fail++).
+  const jqTool = toolResults.find(t => t.cmd === 'jq');
+  const jqMissing = !!jqTool && !jqTool.ok;
+  const jqGaps = jqMissing ? await jqFallbackGaps(ctx.targetDir) : [];
+  if (jqGaps.length) {
+    jqTool.missingDetail = `not found — 설치된 훅 ${jqGaps.length}개(${jqGaps.join(', ')})에 jq 폴백 블록이 없어 jq 없는 환경에서 조용히 무력화됩니다(fail-open). run: harness-team migrate (훅 갱신) + jq 설치`;
+  }
+  for (const { ok, label, missingDetail } of toolResults) {
     if (ok) add(label, 'pass', undefined, `✓ ${label}`);
+    else if (missingDetail) add(label, 'warning', missingDetail, `⚠️ ${label}  (${missingDetail})`);
     else add(label, 'missing', 'not found, optional', `- ${label}  (not found, optional)`);
   }
 
@@ -465,13 +530,18 @@ export async function runDoctor(ctx) {
     if (legacyWarning) warnActions.push('harness-team migrate');
     if (specGateWarning) warnActions.push('harness-team task <name>');
     if (hookWarning || boundaryHookWarning) warnActions.push('harness-team apply');
+    // jq warning always carries its remedy; the fail-open branch additionally needs
+    // migrate — installing jq alone leaves the stale hooks' precision degraded forever.
+    if (jqGaps.length) warnActions.push('harness-team migrate');
+    if (jqMissing) warnActions.push(jqInstallAction());
     if (!pluginDev && !hookCliOk) warnActions.push(hookCliInstall);
     if (driftWarning) warnActions.push(cliDriftAction());
     emitObservation(buildEnvelope({
       command: 'doctor',
       status,
       summary: fail ? `${fail} problem(s)` : (warnCount ? `${warnCount} warning(s)` : okSummary),
-      nextActions: fail ? ['harness-team sync'] : warnActions,
+      // Set: legacy-structure and jq-gap warnings both route to migrate — one entry is enough.
+      nextActions: fail ? ['harness-team sync'] : [...new Set(warnActions)],
       // Keep the invariant status==='error' ⟺ error!=null uniform across commands.
       // Per-check detail still lives in checks[]; error is the top-level summary of it.
       error: fail ? {

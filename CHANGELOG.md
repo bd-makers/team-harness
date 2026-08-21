@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-08-19
+modified: 2026-08-21
 ---
 
 # Changelog
@@ -30,6 +30,116 @@ modified: 2026-08-19
   GSD Core(`--auto @prd.md` 문서 추출, spec-phase ambiguity 스코어링). Codex 래퍼
   `skills/harness-spec/` 동봉, `harness-task` 생성 안내와 CLAUDE.md §1-A 게이트에 연결.
 
+## [0.17.0] - 2026-08-22
+
+### Added
+- **`/harness-review`·`/harness-adversarial-review` — 리뷰 커맨드의 엔진 중립 재편.** 엔진(codex·
+  claude·gemini·custom)과 프레이밍(통상/적대적)은 직교하는데 기존 이름은 엔진을 커맨드명에 박아
+  claude-only 팀원이 쓸 리뷰 경로가 없었고, 엔진이 늘 때마다 커맨드가 프레이밍 수만큼 곱으로
+  늘어날 구조였다. 절차(scope → 실행 → 발견 검증 → artifact 기록 → 보고)는 `harness-review.md`가
+  한 번만 소유하고 엔진 차이는 runner 표 한 줄이다. 엔진 인자 생략 시 **probe 폴백 체인**
+  (codex → gemini → claude)으로 첫 가용 엔진을 쓴다 — claude는 Claude Code 환경에 항상 존재하므로
+  어느 머신에서든 리뷰어가 보장된다. claude 엔진은 `claude -p --permission-mode plan`(쓰기 차단·
+  read-only git 허용·인증 상속, 2026-08-21 실측)이며 **컨텍스트 분리만 제공**(vendor 분리 없음)
+  한다는 한계를 문서에 명시했다 — 폴백 체인에서 마지막인 이유다. custom 엔진은 커밋 가능한 팀
+  공유 설정 `.harness/reviewers.json`의 `{"custom": {"command": "... {prompt} ..."}}` 템플릿을
+  치환해 실행하고, 미설정이면 실패시키지 않고 스키마 안내 후 종료한다. Codex 표면도 같은 체계로
+  재편했다(`skills/harness-review/`·`skills/harness-adversarial-review/`, command 문서를 SSOT로 읽음).
+
+- **spec/plan 단계 다이어그램 옵트인.** 신규 task를 만든 직후 다이어그램을 함께 만들지 **1회만**
+  묻고, "예"면 `<name>-plan.md` 단계에 체크박스를 추가하고 "아니오"면 아무것도 추가하지 않는다.
+  기존 task 재활성화 시에는 묻지 않는다 — 계획에 없는 단계를 다시 묻는 것은 계획을 무시하는 것이다.
+  **전용 설정 키(`.harness/config.json`)·doctor 체크·상태 파일을 만들지 않았다**: 두 상태를 모두
+  plan.md가 표현한다 — 그 단계가 있으면 옵트인, 없으면 옵트아웃이다. plan.md는 이미 SSOT이자 세션
+  시작 프로토콜이 반드시 읽는 파일이다 — **plan.md가 곧 상태다.** 실행 여부(만들었는지, 도구가 없어
+  건너뛰었는지)는 체크박스 사유와 artifact 기록이 말하며, 건너뛴 단계는 지우지 않고 닫는다.
+- **산출물 `docs/<user>/<name>/<name>-diagram.html`을 명시적 SSOT 제외 생성물로 선언.**
+  `AGENTS.md` 작업 프로토콜에서 `<name>-meta.json`·`<name>-context.md`와 같은 급으로 못 박아
+  다섯 번째 SSOT로 오해되지 않게 했다. 형식은 **자립형 inline SVG** — `docs/`는 Obsidian 볼트에서
+  열리고 Obsidian은 script를 제거하므로 mermaid 같은 런타임 JS 다이어그램은 렌더되지 않는다.
+- **문서 계층 분리와 하드 의존 금지.** `AGENTS.md`는 Codex·Cursor·OpenCode도 네이티브로 읽는
+  멀티에이전트 SSOT이므로 도구 중립적으로만 기술했고(특정 스킬 이름 없음), Claude 전용 호출은
+  `CLAUDE.md` §1-B와 `commands/harness-task.md`에만 뒀다. 실행 계약은
+  `commands/harness-codex-review.md`와 동일한 **probe → degrade → record** — 다이어그램 도구가
+  없는 머신에서는 실패시키지 않고 건너뛴 뒤 artifact에 "미실행"을 한 줄 남긴다.
+  `tests/agent-files.test.mjs`가 core에 Claude 전용 스킬 이름이 새는 회귀를 차단한다.
+- CLI(`src/`)는 변경하지 않았다 — Codex 표면(`skills/harness-task/SKILL.md`)도
+  `commands/harness-task.md`를 SSOT로 읽으므로 두 에이전트 경로가 한 문서로 커버된다.
+- **`/harness-ship` — PR/MR 직전 최종 갱신 커맨드.** 라이프사이클이 `harness-team done`에서 끝나
+  문서와 실제 머지 사이가 비어 있었다. 리뷰어가 문서를 읽는 시점은 PR인데 그때 spec·plan·artifact가
+  최신이라는 보장이 없었다. ship은 활성 task를 확인해 세 문서를 코드 현실과 맞춘 뒤 **"PR/MR 준비
+  완료" 상태를 보고하는 데서 멈춘다** — PR/MR 생성·푸시는 하지 않는다. `harness-team done`은 손대지
+  않았다(이 저장소의 릴리스 플로우는 PR 없이 main 직접 범프 커밋 → 태그 푸시이므로 done에 PR 단계를
+  끼우면 깨진다). 다이어그램 갱신·생성은 실행 시점에 한 번 묻는 **옵트인**이며 응답을 저장하지
+  않는다(설정 스키마·전용 doctor 체크 없음). `diagram-design`은 별도로 설치되는 외부 플러그인이라
+  머신마다 있을 수도 없을 수도 있어 **하드 의존하지 않는다** — probe → degrade → record: 없으면 실패시키지
+  않고 건너뛴 뒤 artifact에 '미실행' 한 줄을 남긴다. 산출물
+  `docs/<user>/<name>/<name>-diagram.html`은 SSOT 4파일이 아닌 **생성물**이고, task 문서는 Obsidian
+  처럼 script를 제거하는 뷰어에서 열리는 경우가 많아 자립형 inline SVG HTML이 기본값이다. Claude 전용 스킬 호출은 배포되는 계약 문서 중
+  `commands/harness-ship.md`에만 두고 `AGENTS.md`에는 도구 중립 한 줄만 추가했다(Codex·Cursor·
+  OpenCode도 읽는 SSOT). 새 CLI 서브커맨드는 만들지 않았다 — ship은 에이전트 판단 작업이고,
+  `tests/manifest-sync.test.mjs`가 command 문서의 모든 `harness-team <sub>` 표기를 router case와
+  대조하므로 CLI 없는 서브커맨드는 애초에 문서화할 수 없다. Codex에서는
+  `skills/harness-ship/SKILL.md` 래퍼가 같은 command 계약을 SSOT로 읽는다.
+- **`tests/ship-command.test.mjs` — ship 계약 회귀 가드.** manifest-sync는 등록·router 구조만 보므로
+  ship을 안전하게 만드는 두 가지(PR을 스스로 열지 않는다 / 다이어그램 도구에 하드 의존하지 않는다)와
+  `AGENTS.md` 쌍의 도구 중립성은 아무도 지키지 않았다. 5개 테스트로 고정한다.
+- **`diagram-design`을 커밋 sha로 핀을 건 동반 플러그인으로 마켓플레이스에 등재.** 복사(vendoring)
+  하지 않는다 — 업스트림이 활발히 갱신되고, 스킬이 `SKILL.md` + `references/` + `assets/`로 구성돼
+  references가 assets를 다수 참조하며, 브랜드 토큰이 스킬 디렉터리 안 `references/style-guide.md`에
+  쓰이기 때문이다. 사본을 들면 리싱크가 영구히 이 저장소의 일이 되고 사용자의 브랜드 색이 릴리스에
+  실려 나간다. 이미 `doctor`의 `EXTERNAL_TOOLS`가 codex·gemini를 **번들하지 않고 탐지만** 하는 것과
+  같은 철학이다. 형식은 Anthropic 공식 카탈로그를 그대로 따랐다 —
+  `{"source": "url", "url": "...git", "sha": "<40hex>"}`. 공식 카탈로그의 `url` source 150개 중
+  146개가 정확히 이 세 키만 쓰고 `ref`를 쓰는 항목은 0개라 `ref`도 넣지 않았다(브랜치 출처는
+  `MAINTAINING.md` 표에 남긴다). 핀은 `0ab077f`(1.0.0)다. 업스트림 main(`5538b35`, 2.6.1)의 트리도
+  실제로 받아 확인했고 구조는 온전했지만, 저장소 루트에 `commands/`가 추가돼 `/doctor`·`/profile`
+  같은 **범용 이름의 슬래시 커맨드를 사용자 세션에 주입**하게 되고 major 2개 분량의 동작 변화가
+  미검증이라 이 머신에서 실제로 동작이 확인된 커밋을 핀했다. "구조가 온전함"은 "검증됨"이 아니다.
+  **doctor 체크는 넣지 않았다** — 스킬은 `command -v`로 잡히지 않고, 유일한 탐지 후보였던
+  `~/.claude/plugins/known_marketplaces.json`은 스키마도 `$schema`도 없는 Claude Code 내부 상태
+  파일이라 공개 계약으로 볼 근거가 없으며, 다이어그램은 옵트인이라 미설치를 결함으로 보고하면
+  오탐이다. 못 만들 체크를 약속하지 않는 편이 정직하다.
+- **`/harness-diagram` — 다이어그램 실행 어댑터.** 별칭이 아니라 **어댑터**다. 상류 스킬을 직접
+  부르면 산출물 경로(`docs/<user>/<name>/<name>-diagram.html`)도, 자립형 inline SVG 제약도, SSOT
+  4파일이 아닌 **생성물** 지위도, artifact 기록 의무도 하나도 적용되지 않는다 — 이 커맨드가 그
+  규약을 상류 호출에 실어 준다. `harness-codex-review`가 `codex exec`에 대해 하는 일과 같다.
+  계약을 네 번째로 복붙하지 않았다: **옵트인 계약의 정본은 `commands/harness-task.md`**(질문 시점,
+  plan.md가 곧 상태, 건너뛴 단계를 지우지 않고 닫는 형식)이고 이 문서는 그것을 참조하며 **실행**만
+  다룬다. `commands/harness-task.md`·`commands/harness-ship.md`·`CLAUDE.md` §1-B에는 실행 정본을
+  가리키는 한 줄씩만 더했다. `AGENTS.md`는 건드리지 않았다 — 도구 중립 SSOT이고
+  `tests/ship-command.test.mjs`가 그 중립성을 강제한다. Codex 표면은
+  `skills/harness-diagram/SKILL.md` 래퍼가 같은 command 계약을 SSOT로 읽으며, description은
+  상류 스킬과 트리거가 경합하지 않도록 **활성 harness task 문맥으로 한정**했다.
+- **동반 항목 계약 회귀 가드.** `tests/release.test.mjs`에 4건(동반 항목이 있어도 자기 항목만 범프되고
+  동반 항목은 그대로 / 자기 항목이 배열 첫 번째가 아니어도 이름으로 찾음 / 자기 항목 중복은 throw /
+  동반 항목이 `version`을 들면 `manifest-format`으로 throw)을 추가하고, `tests/manifest-sync.test.mjs`의
+  `plugins[0]` 인덱스 접근을 이름 조회로 강화한 뒤 "동반 항목은 40hex `source.sha`로 핀되고 `version`을
+  갖지 않으며 저작자를 표기한다"는 저장소 불변식을 새로 고정했다.
+- **`docs/prerequisites.md` — 사전 준비 문서.** README에 `## 설치`와 `## 빠른 시작`만 있고
+  "무엇이 없으면 무엇이 안 되는가"를 말하는 절이 없었다. 평평한 설치 목록이 아니라 **능력
+  매트릭스**로 썼다 — 하드 요구사항은 **Node ≥18 하나뿐**이고(`engines.node`, 런타임 의존성 0개)
+  나머지는 전부 degrade 대상이다. `git`조차 하드 요구사항이 아니다: `detectMember`는 `$USER` →
+  `unknown`으로 폴백하고 `handoff`는 git 실패를 catch하며 `installPostCommitHook`은 `.git/hooks`가
+  없으면 조용히 return한다 — 없으면 "아무것도 안 되는" 게 아니라 post-commit handoff·summary
+  브랜치 감지·task 전환 diff가 no-op이 된다. `gh`는 하네스 코드가 한 번도 호출하지 않고
+  (`/harness-ship`은 PR을 만들지 않고 멈춘다) `gemini`·`opencode`도 마찬가지다 — 셋 다 **사용자가
+  직접 쓰는** 도구지 하네스가 의존하는 도구가 아니다. 에이전트별 연동·확인 방법·호환성 주의
+  포함. `README.md`에는 요약표 한 절만 넣고 상세는 이 문서로 링크한다(기존 `### 요구사항`은
+  새 절과 모순되므로 포인터 한 줄로 축약).
+- **`tests/prerequisites-doc.test.mjs` — 문서↔doctor 드리프트 가드.** `harness-team doctor`가 이미
+  런타임 체커이므로 문서가 `EXTERNAL_TOOLS`와 어긋나는 순간 문서가 거짓말이 된다. `EXTERNAL_TOOLS`를
+  export하고 **양방향**으로 검사한다: doctor가 검사하는 도구가 문서에 없으면 실패하고, 문서가
+  나열한 도구를 doctor가 검사하지 않아도 실패한다. 한 방향만으로는 영원히 통과하므로 역방향이
+  실제로 잡아 주는 쪽이다. 표는 한국어 제목이 아니라 `<!-- prerequisites:external-tools -->` 주석
+  마커로 찾아 문구를 다듬어도 테스트가 깨지지 않는다.
+
+### Deprecated
+- **`/harness-codex-review`·`/harness-codex-adversarial-review` — 1개 마이너 버전 유지 후 제거.**
+  두 커맨드와 동명 스킬은 새 커맨드를 엔진 `codex`로 수행하는 얇은 포워딩 문서로 교체했고
+  plugin.json 등재는 유지한다. 전역 CLAUDE.md·팀원 워크플로우의 옛 이름 참조가 조용히 깨지는 것을
+  막기 위한 전환 창이며, 다음 마이너 버전에서 제거한다.
+
 ### Changed
 - **AGENTS.md에 D5(2026-08-20) 결정 노트 추가 — 단일 스레드 쓰기 규칙의 범위 정정.** D4(2026-07-28)는
   "Claude·OpenCode는 동시에 병렬로 쓰지 않는다"고만 말하고 금지 범위를 적지 않아, 같은 파일의 작업
@@ -48,6 +158,125 @@ modified: 2026-08-19
   명시했다.
 - 위 변경은 루트 파일과 `templates/*.hbs` 양쪽에 동일하게 반영되어 새로 scaffold 되는 프로젝트도
   같은 문서를 받는다(`README.md`는 이 저장소 전용이라 짝이 없다).
+- **`block-dangerous-git.sh`에 상류 출처 표기 추가 — 동작 변경 없음.** 이 훅은 Matt Pocock의
+  [mattpocock/skills](https://github.com/mattpocock/skills)(MIT) `skills/misc/git-guardrails-claude-code`에서
+  출발한 **파생물**이며 사본이 아니다. 훅 주석과 `docs/chad/pocock-merge/pocock-merge-artifact.md`에 상류
+  경로·대조 커밋(`885e2ca`)·정책 분기(상류는 `git push`를 전부 차단하지만 여기서는 force push만 차단하고
+  `checkout -- <file>`·워킹트리 `restore`를 추가로 막는다)를 기록했다. 상류를 핀 참조로 대체하려던 시도는
+  성립하지 않는다 — 상류 `plugin.json`이 노출하는 스킬 25개에 이 스크립트가 없고, 이 파일은 `copyTree`가
+  소비자 프로젝트의 `.claude/hooks/`로 배달하는 하네스 소유 코드다. 정규식·패턴·exit 코드는 그대로다.
+- **`release`의 marketplace 가드를 "배열 길이 1"에서 "이름으로 찾은 자기 항목이 정확히 1개"로 일반화.**
+  `marketplace.json.plugins`가 이제 **자기 항목 1개 + 동반 항목 N개**이므로 길이 가드는 동반 항목을
+  넣는 순간 릴리스를 깨뜨렸다. 버전 동기화 대상도 `plugins[0]`이 아니라 이름으로 찾은 자기 항목으로
+  바꿨다 — 배열 순서에 의존하지 않는다. **가드는 약해지지 않았다**: 자기 항목이 0개(빈 배열·이름
+  불일치)거나 2개 이상(중복 등재)이면 여전히 `schema`로 throw 하며, 등재된 이름 목록을 메시지에 싣는다.
+  동반 항목 개수를 하드코딩하지 않았으므로 항목이 더 늘어도 코드는 그대로다.
+  **동반 항목에는 `version` 필드를 넣지 않는다** — `surgicalVersionReplace`가 매니페스트당
+  `"version": "<현재버전>"` 문자열의 **1회 출현**을 가정하므로, 값이 겹치는 날 릴리스가
+  `manifest-format`으로 멈춘다. 핀은 `source.sha`로만 표현한다.
+- **`MAINTAINING.md`에 "동반 플러그인 — 핀을 올리는 절차" 절 추가.** 핀은 걸어놓고 올리는 법을 안 적으면
+  방치된 의존성이 된다. 언제 올리는가("최신이니까"는 이유가 아니다), 올리기 전에 확인할 것(임시
+  디렉터리에서 실제로 받아 스킬 표면 확인 / 저장소 루트에 `commands/`가 생겼는지 / major 점프면 동작
+  직접 확인), 형식 규칙(`ref`·`version` 금지), 그리고 **옛 clone으로 release를 돌리지 말 것**을 적었다 —
+  PATH의 `harness-team`은 보통 marketplace clone 심볼릭 링크라, 옛 길이 가드를 가진 clone은 정상적인
+  `marketplace.json`을 읽고도 `schema` 오류로 멈춘다.
+- **`README.md`에 "동반 플러그인 (선택)" 절 추가.** 없어도 하네스가 정상 동작한다는 사실, 설치 명령,
+  MIT 저작자 표기(Cathryn Lavery), 핀이 자동으로 따라가지 않는다는 사실, vendoring 하지 않는 이유,
+  하네스 안에서는 `/harness-diagram`으로 부른다는 사실을 함께 적었다.
+- **jq 부재 시의 저정밀 모드를 문서에 명시.** `templates/.claude/hooks/`의 훅 넷은 stdin JSON을
+  파싱해 판단하는데, jq가 없으면 grep 폴백으로 `"key": "value"` 문자열만 잘라내 **같은 검사에**
+  넘긴다 — **차단은 유지되고 정밀도만 떨어진다.** 한계(JSON 이스케이프 미디코드, 같은 키의 첫
+  매치만 읽음, 값을 못 뽑으면 payload 전체 검사)와 "왜 무조건 차단이 아닌가"(훅은 매 도구
+  호출마다 돌기 때문에 파싱 실패를 전부 차단하면 어떤 bash 명령도 못 쓴다)를 `docs/prerequisites.md`
+  §3과 README 요약표에 적었다. 이 변경은 **훅 코드를 건드리지 않는다** — 동작 수정은 별도 작업이며
+  여기서는 사실만 기술한다. `doctor`가 jq만 `optional`이 아닌 `warning`으로 보고한다는 점도 함께
+  명시했다(다른 넷은 없으면 기능이 꺼질 뿐이지만 jq는 판정 정확도를 좌우한다).
+- **호환성 주의 — `mattpocock-skills`의 `writing-for-agents`.** 그 스킬의 description이
+  *"Use when … modifying AGENTS.md or CLAUDE.md"* 라 이 저장소에서 자동 발동하는데, 여기의
+  `AGENTS.md`·`CLAUDE.md`·`GEMINI.md`는 `templates/*.hbs`에서 생성되고 `harness:section` 마커 블록이
+  루트와 템플릿 쌍으로 같아야 `tests/agent-files.test.mjs`·`tests/e2e/ssot-consistency.test.mjs`가
+  통과한다. 루트만 고치면 CI가 깨지고 원인을 찾기 어렵다. 나머지 중복(`diagnosing-bugs`↔`fix-bug`,
+  `tdd`↔`harness-unittest` 계열, `code-review`↔`harness-codex-review`, `grilling`↔`harness-interview`,
+  `domain-modeling`↔spec의 Ontology)은 **무해한 중복**이라 어느 쪽을 쓸지만 정하면 된다.
+
+
+### Fixed
+- **`MAINTAINING.md`의 "새 커맨드 추가" 표 정정.** 모든 커맨드에 `bin/harness-team.mjs` 서브커맨드
+  등록을 요구했지만 실제로는 **CLI를 감싸는 커맨드만** 해당한다(`harness-interview`·`harness-ship`처럼
+  절차가 전부 에이전트 판단인 커맨드는 CLI가 없다). 반대로 `manifest-sync`가 실제로 강제하는
+  `skills/<name>/SKILL.md` 래퍼와 `docs/harness-overview.html` 재생성은 표에서 빠져 있었다 —
+  재생성은 `git ls-files` 기반이라 **새 파일을 `git add` 한 뒤** 돌려야 한다는 함정까지 함께 적었다.
+- **`README.md`의 슬래시 커맨드 수 3곳 동기화** (21 → 22).
+- **`diagram-design`을 "Claude Code 전용"이라고 단정한 서술 정정.** 그 저장소에는
+  `.codex-plugin/plugin.json`이 있고 `"skills": "./skills/"`를 선언한다 — Codex도 이 스킬에 접근할
+  수 있다. `CLAUDE.md` §1-B(및 템플릿 쌍), `commands/harness-task.md`, `commands/harness-ship.md`,
+  `skills/harness-ship/SKILL.md`의 표현을 "별도로 설치되는 외부 플러그인이며 머신마다 있을 수도
+  없을 수도 있다"로 바꿨다. 핵심(하드 의존 금지·probe → degrade → record)은 그대로다.
+- **`README.md`의 슬래시 커맨드 수 3곳 동기화** (22 → 23, `/harness-diagram` 추가).
+- **`plugins[0]`을 가리키던 문서 2곳 정정.** `commands/harness-release.md`의 스키마 오류 대응 절과
+  `README.md`의 버전 확인 팁이 인덱스 0을 "우리 항목"으로 단정하고 있었다. 이름으로 찾는 **자기 항목**
+  기준으로 바꾸고, 동반 항목은 버전 동기화 대상이 아니므로 지우지 말라는 사실을 함께 적었다.
+- **`doctor`의 거짓 CLI-drift 경고 차단.** `installedHarnessVersion`이 installed record를
+  `<plugin>@<marketplace>` 키의 **marketplace 반쪽만으로** 찾고 있었다 — "하네스는 이 마켓플레이스에
+  플러그인 하나만 소유한다"는 전제였고, 동반 항목을 등재하는 순간 그 전제가 깨진다. 동반 플러그인
+  레코드가 먼저 열거되면 그 버전을 하네스 버전으로 읽어 실제로는 없는 drift를 경고한다. 키의 양쪽
+  반을 대조하도록 고치고 `HOOK_CLI_PLUGIN_NAME`을 노출했다.
+- **surgical 치환이 의도한 대상에 적중했는지 검증.** needle은 raw 문자열이라 "정확히 1회 출현"이
+  "우리 필드에 적중"을 뜻하지 않는다. 자기 항목이 `"version":"x"`(공백 없음)이고 동반 항목이
+  `"version": "x"`면 count는 1이고 **동반 항목이 범프되며 하네스 버전은 조용히 남는다.** 치환 후
+  파싱해 매니페스트 4개 각각의 의도한 필드가 실제로 새 버전이 됐는지 확인하고, 아니면
+  `manifest-format`으로 멈춘다.
+- **marketplace 카탈로그 유효성 검사 강화.** 자기 항목 개수만 세면 중복된 **동반** 이름이나
+  `null`/이름 없는 항목을 통과시킨 채 잘못된 카탈로그를 clone으로 복사한다. 모든 항목이 문자열
+  `name`을 가진 객체이고 이름이 유일해야 한다는 검사를 추가했다 — release는 그 복사 전 마지막 게이트다.
+- **`--dry-run`을 진짜 preflight로 만듦.** 형식 검증(surgical 치환 계산) 전에 반환하고 있어서,
+  실제 실행이 `manifest-format`으로 멈추는 트리에서도 dry-run은 성공을 보고했다. 계산·검증을 반환
+  앞으로 옮겼다. dry-run이 byte 무변경이라는 성질은 그대로다(테스트로 확인).
+- **jq가 없으면 Claude 훅 4개가 조용히 무력화되던 fail-open 수정.**
+  `auto-format.sh`·`block-dangerous-git.sh`·`pre-commit-check.sh`·`protect-files.sh`는 stdin
+  payload를 `jq -r`로 파싱했다. jq가 PATH에 없으면 `TOOL_NAME`/`FILE_PATH`가 빈 문자열이 되어
+  `!= "Bash"` 분기로 빠지고 **exit 0(허용)** 했다 — 통제된 PATH 실측: `git push --force`가
+  jq 있으면 exit 2, 없으면 exit 0. `.env` 편집도 마찬가지. 이제 jq 부재를 `command -v`로 감지해
+  `"key": "value"` 문자열만 잘라내 **같은 패턴·같은 판정**으로 검사한다(저정밀 모드).
+  "jq 없으면 무조건 차단"은 하지 않는다 — 훅은 매 도구 호출마다 돌기 때문에 그건 어떤 bash 명령도
+  못 쓰는 상태를 만든다. payload 전체 스캔도 채택하지 않았다: 모델이 쓴 `description` 문구가
+  정규식을 완성시켜 `git checkout -b feat/x`(설명에 ` -- ` 포함) 같은 **안전한 명령이 차단**된다.
+  차단 시 메시지와 `doctor`가 저정밀 모드임을 알린다. 잔여 한계: JSON 이스케이프를 디코드하지
+  않으므로 `git push\t--force`처럼 구분자가 인코딩된 명령은 폴백에서 통과한다.
+- **`doctor`의 jq 표시를 optional → warning으로 승격.** 나머지 4개(gh·codex·gemini·opencode)는
+  없으면 기능이 꺼질 뿐이지만 jq는 없으면 훅의 판정 정밀도가 떨어진다. `fail++`는 하지 않으므로
+  exit code 계약은 그대로다.
+- **훅 차단/허용 매트릭스 자동화 테스트 신규**(`tests/hooks-jq-fallback.test.mjs`). 2026-07-02
+  병합 당시 수동으로만 돌리던 매트릭스를 **jq 있는 PATH와 없는 PATH 양쪽**에서 돌린다 —
+  차단 10종·허용 12종 + description 오탐 가드 + 알려진 잔여 리스크(커밋 메시지 오탐, `git -C`
+  프리픽스 우회) 현재 동작 고정 + 4개 훅 공통 폴백 블록 동일성(복붙 드리프트) 가드.
+- **jq-fallback 보안 수정이 기존 설치에 도달하지 못하던 배달 갭 수정 (PR #29 후속 P1-1).**
+  훅 수정은 템플릿에만 실렸고 `copyStaticAssets`는 훅을 `skipExisting`으로 복사한다 — init/apply
+  어느 쪽도 설치본을 갱신하지 않아, 실측으로 구버전 설치본은 여전히 fail-open이었다.
+  `migrate`의 `refreshClaudeHooks`를 훅 4개로 확장했다: 설치본이 **과거에 배포된 버전과 바이트
+  동일**(sha256 테이블, 출처는 git blob 이력·`tests/fixtures/stock-hooks`)할 때만 confirm/`--yes`
+  후 최신 템플릿으로 갱신하고, 목록 밖(커스터마이즈)은 절대 덮지 않고 안내만 한다.
+  기존 pnpm-hardcoded 시그니처 분기는 바이트 드리프트한 초기 설치본용 그물로 보존.
+- **폴백 블록 없는 설치본에 "차단은 유지"라고 말하던 `doctor` 거짓 안내 수정 (P1-2).**
+  jq 부재 경고가 설치본 훅의 `harness:jq-fallback` 마커를 확인해 분기한다 — 마커 없는 훅이
+  있으면 "조용히 무력화(fail-open), `harness-team migrate` 필요"로, 전부 마커가 있으면 현행
+  저정밀 문구로. 어느 쪽이든 warning이며 `fail++`하지 않는다(exit code 계약 유지).
+- **jq 경고에 remedy 없던 `next_actions` 공백 수정 (P2-3).** jq 부재 시 플랫폼별 설치
+  명령(`jqInstallAction`)을, 마커 없는 훅이 있으면 `harness-team migrate`를 함께 push한다 —
+  "remedy 없는 경고는 노이즈" 원칙 준수. 중복 action은 Set으로 정리.
+- **extraction-failure 경로 행위 커버리지 추가 (P2-2).** 기존 32개 테스트는 정상 payload만
+  덮어서, tool_name 게이트의 `&&` 가드를 `;`로 바꾸거나 `|| COMMAND="$INPUT"` 폴백을
+  `|| COMMAND=""`로 무력화해도(원래의 fail-open 재현) 0 fail이었다. tool_name 추출 실패
+  payload 차단·command 추출 실패 시 전체 스캔 차단을 nojq 모드에서 고정 — mutation 2종
+  각각이 신규 테스트를 fail시키는 것을 실측 확인.
+- **폴백 한계 서술 일반화 + `\uXXXX` 우회 핀 (P2-1).** 우회는 `\t` 한 종류가 아니라 일반적이다
+  — 값 속 문자 하나만 `\uXXXX`로 인코딩해도 저정밀 매칭이 뚫린다(`--force` 실측).
+  블록 주석을 "이스케이프를 일절 디코드하지 않는다"로 고치고, nojq exit 0 / jq exit 2를
+  잔여 리스크 핀 테스트로 고정했다. bash 이스케이프 디코더는 구현하지 않는다(해법: jq 설치).
+- **폴백 추출을 `tool_input` 이후로 스코프 (P3-1).** 공유 블록에 `json_input_field()`를 추가해
+  command/file_path 추출을 `"tool_input"` 마커 뒤로 좁혔다 — 최상위 동명 키를 먼저 잡는
+  오인을 차단하고, 마커가 없으면 `${...#...}`가 원문을 그대로 돌려줘 전체 스캔이 유지된다
+  (fail-closed). tool_name은 tool_input 밖이므로 종전 그대로.
 
 ## [0.16.1] - 2026-08-19
 

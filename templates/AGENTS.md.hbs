@@ -43,24 +43,12 @@
 | **Gemini** | 리뷰어 (read-only) | Bash: `gemini --approval-mode default -p` |
 | **Cursor** | 보조 에디터 (IDE) | `.cursor/rules/*.mdc` 자동 적용 |
 
-> **D2 (2026-06-11):** drive 주체 = Claude·OpenCode, 리뷰어 = Codex·Gemini.
-> 독립 리뷰어의 가치는 작성자와의 분리에서 나오므로 리뷰 루프 정착을 우선한다.
-> (Codex 하네스 확장 시 D2 재평가 — 그때 driver 승격 검토.)
->
-> **D4 (2026-07-28):** 설정·상태 하네스로 재표방하며 쓰기는 단일 스레드로 못 박는다 — Claude·OpenCode는
-> **동시에 병렬로 쓰지 않는다.** OpenCode는 순차적으로 전환해 쓰는 별도 세션이며, D2의 "drive 주체" 지위는
-> 유지하되 그 실행이 병렬 작성으로 해석되지 않도록 정정한다. 근거: 병렬로 "쓰는" 에이전트를 상충·신뢰성
-> 위험으로 보고 단일 스레드 실행 + 얇고 직접 소유한 제어흐름을 권장하는 최근 1차 소스
-> (Anthropic, OpenAI, Cognition, 12-Factor Agents #8).
->
-> **D5 (2026-08-20):** D4의 단일 스레드 쓰기 규칙이 금지하는 범위는 **같은 워킹트리·브랜치 안에서의
-> 동시 쓰기**다. 격리된 브랜치 또는 git worktree에서 각자 작업하고 **PR/MR로 병합하는 것은 허용되며
-> 권장되는 병렬 경로**다. D4를 뒤집는 것이 아니라 범위를 정정하는 것이며, "OpenCode는 순차적으로
-> 전환해 쓰는 별도 세션"이라는 D4 규정은 **같은 워킹트리를 공유할 때의 기준**으로 그대로 유지된다.
-> 이때도 유지되는 제약: task SSOT 4파일은 각 task 디렉터리에 격리되고, `docs/task_summary.md`와
-> `docs/<user>/<user>-task.md`는 **생성물**이라 기본 브랜치에서 `harness-team summary --write`로만
-> 갱신한다(아래 "작업 프로토콜" 참조). 근거: 격리 작업공간 + 리뷰 게이트를 통한 병합은 병렬 쓰기의
-> 상충 위험을 제거하면서 병렬성을 얻는 표준 방식이다.
+> **결정 규범** — 전문·근거·이력은 `docs/decisions.md`가 정본이다.
+> - **D2**: drive = Claude·OpenCode, 리뷰어 = Codex·Gemini — 작성자와 리뷰어의 분리를 우선한다.
+> - **D4**: 같은 워킹트리·브랜치 안에서 쓰기는 단일 스레드다 — Claude·OpenCode는 **동시에 병렬로 쓰지 않는다.**
+> - **D5**: 격리된 브랜치·git worktree에서 작업하고 PR/MR로 병합하는 병렬 경로는 허용·권장이다.
+>   이때도 task SSOT 4파일은 각 task 디렉터리에 격리되고, 집계 파일(`docs/task_summary.md`,
+>   `docs/<user>/<user>-task.md`)은 생성물이라 기본 브랜치에서 `harness-team summary --write`로만 갱신한다.
 
 ### 리뷰 프로토콜
 중요한 변경(새 기능, 아키텍처, 복잡한 리팩토링, 보안, 스키마/API) 완료 후
@@ -99,16 +87,12 @@
 기존 spec·plan·handoff·artifact 네 파일만 계속 SSOT이며, 영속 요구사항·결정은 spec/plan에,
 결과·학습은 artifact에 기록한다. TCC는 이 파일들에서 파생된 현재 working set만 담는다.
 
-- UTF-8 6 KiB 이하, 비공백 100행 이하, 미해결 failure capsule 최대 3개를 유지한다.
-- failure capsule은 `### F-*`에서 시작해 다음 capsule 또는 `#`/`##` 절 제목 직전까지 이어진다.
-  CommonMark에서 허용하는 0~3칸 들여쓰기의 `####` 이하 하위 제목은 capsule 본문 범위에 남기되 제목 줄 자체는 실질 내용으로 세지 않는다.
-  4칸 이상 들여쓴 heading 유사 줄은 코드 블록이므로 실질 내용으로 센다.
-  따라서 상세 기록은 예산을 정직하게 소비하고, 빈 하위 제목만 있는 stub은 소비하지 않는다.
-  fenced code 안의 `# ...` 셸 주석도 절 제목이 아니므로 capsule을 종결하지 않는다.
-- task 생성 직후, 세션을 넘기기 전, plan의 atomic step이 바뀔 때, 재현 가능한 실패가 생기거나
-  해소될 때 에이전트가 직접 갱신한다. 반복 상세 이력은 제거하고 가치 있는 학습은 artifact로 옮긴다.
+- 한도: UTF-8 6 KiB 이하 · 비공백 100행 이하 · 미해결 failure capsule(`### F-*`) 최대 3개.
+- 갱신 시점: task 생성 직후 · 세션을 넘기기 전 · plan의 atomic step이 바뀔 때 · 재현 가능한
+  실패가 생기거나 해소될 때. 반복 상세 이력은 제거하고 가치 있는 학습은 artifact로 옮긴다.
 - raw stderr, 토큰, 비밀값, 전체 HTTP payload를 복사하지 않는다. 안전한 요약과 원문 source 위치만 남긴다.
-- harness는 `harness-team context check`로 결정론적으로 검사할 뿐 자동 요약·삭제·LLM 편집을 하지 않는다.
+- 검사는 `harness-team context check`가 결정론적으로 수행한다(자동 요약·삭제·LLM 편집 없음).
+  한도 계산의 세부(capsule 경계 규칙 등)는 외울 필요 없다 — 위반 시 check의 failure 메시지가 알려준다.
 
 ### 세션 시작 시 (반드시 수행)
 1. `docs/<user>/<user>-handoff.md` 읽기 — 현재 active task 확인
@@ -130,11 +114,23 @@
 
 ### task 워크플로우
 - **시작**: `harness-team task <name>` — 생성 또는 활성화
+- **다이어그램(옵트인)**: 신규 task 생성(`created:`) 직후 spec/plan 다이어그램을 함께 만들지 **1회만**
+  묻는다. "예"면 `<name>-plan.md`의 단계에 다이어그램 체크박스를 추가하고, "아니오"면 아무것도
+  추가하지 않는다 — 전용 설정 키·상태 파일은 없다. **plan.md에 그 단계가 있는지가 곧 상태다.**
+  기존 task를 다시 활성화할 때는 묻지 않는다. 도구가 없는 환경이면 실패시키지 말고 건너뛰되,
+  plan의 그 단계는 **지우지 말고** `- [x] … — 미실행(도구 없음)`처럼 사유를 붙여 닫고
+  `<name>-artifact.md`에 한 줄 남긴다 — 지우면 옵트인 사실이 사라지고, 열어 두면 `done` 가드가
+  완료를 막는다. 산출물 `<name>-diagram.html`은 SSOT 4파일에 포함되지 않는다 —
+  옵트인이라 없는 task가 정상이다. 만들 때는 **자립형 inline SVG** HTML로 쓴다(`docs/`는 Obsidian 볼트에서 열리고
+  Obsidian은 script를 제거하므로 런타임 JS 다이어그램은 렌더되지 않는다). 질문·분기·기록의 상세
+  절차는 `harness-task` 명령 문서가 정본이다.
 - **진행**: `<name>-plan.md` 체크리스트 항목 완료 시 `- [x]`로 갱신
 - **경계 계약**: spec의 `## Boundary contracts` JSON 선언이 있으면 plan checkbox 완료 직전에
   `harness-team boundary check`가 생산자·소비자 JSON Schema의 필수 필드와 기본 type을 대조한다.
   선언이 없으면 `boundary: not-configured`으로 통과한다.
 - **commit 시**: post-commit hook이 `<name>-handoff.md`와 `<user>-handoff.md` 자동 갱신
+- **PR/MR 직전(ship)**: spec·plan·artifact를 최종 갱신하고 준비 완료를 보고한다 — 다이어그램
+  갱신은 옵트인이며, 절차·산출물 계약은 ship 명령 문서가 정본이다(PR/MR 생성은 별도 지시).
 - **완료**: plan 전체 완료 감지 또는 사용자 신호 → AskUserQuestion → `harness-team done`
 
 ### 코드 리뷰 기준
@@ -158,5 +154,6 @@
 | `docs/<user>/<name>/` | task별 작업 문서 4종 (spec·plan·handoff·artifact) |
 | `.harness/active.json` | 현재 활성 task 포인터 |
 | `docs/<user>/<user>-handoff.md` | 세션 시작 진입점 |
+| `docs/decisions.md` | 팀 결정 로그 — 역할·프로토콜 규범의 근거·이력 정본 |
 | `.claude/rules/*.md` | 영역별 코딩 규칙 |
 <!-- harness:section="protocol" end -->

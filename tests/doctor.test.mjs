@@ -6,7 +6,7 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from 'node:fs
 import { tmpdir, homedir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, isPluginDevRepo } from '../src/commands/doctor.mjs';
+import { checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
 import { POST_COMMIT_HOOK } from '../src/git-hooks.mjs';
 import { cloudSyncPathWarning } from '../src/harness.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
@@ -15,8 +15,9 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const pexec = promisify(execFile);
 
 // Run the real doctor CLI against a target dir and return the parsed --json envelope.
-async function doctorJson(targetDir) {
-  const { stdout } = await pexec('node', [join(ROOT, 'bin/harness-team.mjs'), 'doctor', '--json', '--target', targetDir], { timeout: 20000 })
+async function doctorJson(targetDir, env) {
+  const opts = { timeout: 20000, ...(env ? { env } : {}) };
+  const { stdout } = await pexec('node', [join(ROOT, 'bin/harness-team.mjs'), 'doctor', '--json', '--target', targetDir], opts)
     .catch(e => ({ stdout: e.stdout || '' })); // doctor exits 1 on fail — keep the envelope
   return JSON.parse(stdout);
 }
@@ -330,5 +331,109 @@ test('runDoctor: boundary checkpoint가 settings에 없으면 apply 경고를 �
     const c = checkOf(env, 'PreToolUse boundary checkpoint');
     assert.equal(c?.status, 'warning');
     assert.match(c.detail, /harness-team apply/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// jq가 없으면 Claude 훅은 fail-open 대신 저정밀 모드로 내려간다(templates/.claude/hooks/*.sh).
+// "optional"이라고 보고하면 사용자가 그 사실을 알 방법이 없다 — 나머지 외부 도구와 구분해 경고한다.
+test('runDoctor: jq 부재는 optional이 아니라 warning으로 보고한다 (다른 외부 도구는 종전대로)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-nojq-'));
+  try {
+    // node만 있는 PATH — jq/gh/codex 등은 모두 미탐지 상태가 된다.
+    const env = { PATH: dirname(process.execPath), HOME: homedir() };
+    const envelope = await doctorJson(dir, env);
+    const jq = checkOf(envelope, 'jq (JSON processor)');
+    assert.equal(jq?.status, 'warning', 'jq는 보안 통제 정밀도에 영향을 주므로 경고여야 한다');
+    assert.match(jq.detail, /저정밀/);
+    const gh = checkOf(envelope, 'gh (GitHub CLI)');
+    assert.equal(gh?.status, 'missing', '나머지 외부 도구의 optional 표기는 그대로');
+    assert.match(gh.detail, /optional/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// --- jq 경고 정직성: 설치본 훅에 폴백 블록이 있는지에 따라 문구·처방이 갈린다 ---
+// "차단은 유지"는 harness:jq-fallback 마커가 있는 훅에서만 참이다. 마커 없는
+// pre-#29 설치본은 jq 부재 시 조용히 무력화(fail-open)되므로 migrate로 보낸다.
+
+test('jqFallbackGaps: 마커 없는 설치 훅만 나열한다 (마커 있음·미설치는 제외)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-gaps-'));
+  try {
+    await mkdir(join(dir, '.claude/hooks'), { recursive: true });
+    await writeFile(join(dir, '.claude/hooks/block-dangerous-git.sh'), '#!/bin/bash\n# old, no fallback\n');
+    await writeFile(join(dir, '.claude/hooks/auto-format.sh'), `#!/bin/bash\n# --- ${JQ_FALLBACK_MARKER} ---\n`);
+    // protect-files.sh / pre-commit-check.sh 미설치 — gap이 아니다 (실행될 훅이 없음)
+    assert.deepEqual(await jqFallbackGaps(dir), ['block-dangerous-git.sh']);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('jqFallbackGaps: 훅 미설치 프로젝트 → 빈 배열', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-nogaps-'));
+  try {
+    assert.deepEqual(await jqFallbackGaps(dir), []);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('jqInstallAction: 플랫폼별 실행 가능한 설치 명령을 준다', () => {
+  assert.equal(jqInstallAction('darwin'), 'brew install jq');
+  assert.match(jqInstallAction('linux'), /apt-get install/);
+});
+
+// fail이 하나라도 있으면 next_actions가 ['harness-team sync']로 대체되므로,
+// 경고 경로를 보려면 fail 0인 소비자 fixture가 필요하다 (CHECKS의 required 항목 충족).
+async function healthyConsumerFixture(hooks = {}) {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-jqhon-'));
+  await writeFile(join(dir, 'AGENTS.md'), '# core\n<!-- harness:section="protocol" -->\n');
+  await writeFile(join(dir, 'CLAUDE.md'), '@AGENTS.md\n');
+  await mkdir(join(dir, '.claude/hooks'), { recursive: true });
+  await writeFile(join(dir, '.claude/settings.json'), '{}\n');
+  for (const name of ['clone.sh', 'symlink.sh', 'delete.sh']) {
+    await writeFile(join(dir, name), '#!/bin/sh\n', { mode: 0o755 });
+  }
+  const backup = join(dir, 'backup-clone');
+  await mkdir(backup, { recursive: true });
+  await mkdir(join(dir, '.harness'), { recursive: true });
+  await writeFile(join(dir, '.harness/backup.json'), JSON.stringify({ dir: backup }));
+  for (const [name, body] of Object.entries(hooks)) {
+    await writeFile(join(dir, '.claude/hooks', name), body, { mode: 0o755 });
+  }
+  return dir;
+}
+
+const noJqEnvFor = (dir) => ({
+  PATH: dirname(process.execPath),
+  HOME: homedir(),
+  CLAUDE_PLUGINS_ROOT: join(dir, 'no-plugins-root'), // 머신의 실제 설치 기록과 격리
+});
+
+test('runDoctor: jq 부재 + 폴백 블록 없는 훅 → fail-open 경고와 migrate 처방 ("차단 유지" 주장 금지)', async () => {
+  const oldHook = await readFile(join(ROOT, 'tests/fixtures/stock-hooks/pre-jq-fallback/block-dangerous-git.sh'), 'utf8');
+  const dir = await healthyConsumerFixture({ 'block-dangerous-git.sh': oldHook });
+  try {
+    const envelope = await doctorJson(dir, noJqEnvFor(dir));
+    const failCount = (envelope.checks || []).filter(c => c.status === 'fail').length;
+    assert.equal(failCount, 0, 'fixture는 fail 0이어야 경고 next_actions가 노출된다');
+    const jq = checkOf(envelope, 'jq (JSON processor)');
+    assert.equal(jq?.status, 'warning', 'fail-open이어도 jq 경고는 warning (exit code 계약 유지)');
+    assert.match(jq.detail, /fail-open|무력화/, '무방비 상태를 명시해야 한다');
+    assert.match(jq.detail, /migrate/, '처방(migrate)을 함께 안내해야 한다');
+    assert.doesNotMatch(jq.detail, /차단은 유지/, '폴백 블록 없는 설치본에 "차단 유지" 주장은 거짓이다');
+    assert.ok(envelope.next_actions.includes('harness-team migrate'),
+      `next_actions에 migrate가 있어야 한다: ${JSON.stringify(envelope.next_actions)}`);
+    assert.ok(envelope.next_actions.includes(jqInstallAction()), 'jq 설치 명령도 함께 안내');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('runDoctor: jq 부재 + 폴백 블록 있는 훅 → 저정밀 문구 유지, next_actions는 jq 설치만', async () => {
+  const currentHook = await readFile(join(ROOT, 'templates/.claude/hooks/block-dangerous-git.sh'), 'utf8');
+  const dir = await healthyConsumerFixture({ 'block-dangerous-git.sh': currentHook });
+  try {
+    const envelope = await doctorJson(dir, noJqEnvFor(dir));
+    const jq = checkOf(envelope, 'jq (JSON processor)');
+    assert.equal(jq?.status, 'warning');
+    assert.match(jq.detail, /저정밀/, '폴백이 있으면 현행 저정밀 문구를 유지한다');
+    assert.ok(!envelope.next_actions.includes('harness-team migrate'),
+      '폴백이 있는 설치본에 migrate를 강요하지 않는다');
+    assert.ok(envelope.next_actions.includes(jqInstallAction()),
+      `jq 경고에는 항상 설치 remedy가 따른다: ${JSON.stringify(envelope.next_actions)}`);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

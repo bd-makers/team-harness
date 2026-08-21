@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-08-13
+modified: 2026-08-21
 ---
 
 # MAINTAINING.md — harness-aijient-team 운영 가이드
@@ -38,16 +38,21 @@ modified: 2026-08-13
 
 ## 작업 규칙
 
-새 커맨드를 추가할 때 **반드시 아래 네 파일을 함께 수정**하세요:
+새 커맨드를 추가할 때 **반드시 아래를 함께 수정**하세요:
 
-| 파일 | 역할 |
-|---|---|
-| `commands/<name>.md` | 슬래시 커맨드 정의 (프롬프트) |
-| `bin/harness-team.mjs` | CLI 서브커맨드 등록 |
-| `.claude-plugin/plugin.json` | 플러그인 커맨드 목록 |
-| `README.md` | 명령어 레퍼런스 섹션 |
+| 파일 | 역할 | 강제 |
+|---|---|---|
+| `commands/<name>.md` | 슬래시 커맨드 정의 (프롬프트). frontmatter에 `description`·`phase` 필수 | `manifest-sync`, `generate-harness-overview` |
+| `skills/<name>/SKILL.md` | Codex command-equivalent 래퍼. `name: <name>` + `commands/<name>.md` 참조 필수 | `manifest-sync` |
+| `.claude-plugin/plugin.json` | 플러그인 커맨드 목록 (양방향 일치) | `manifest-sync` |
+| `docs/harness-overview.html` | `npm run docs:generate`로 재생성 — **새 파일을 `git add` 한 뒤에** 돌릴 것(`git ls-files` 기반) | `docs:check`, `documentation-inventory-pointers` |
+| `README.md` | 명령어 레퍼런스 섹션 (전체 목록이 아니라 부분 안내) | — |
+| `bin/harness-team.mjs` | **CLI를 감싸는 커맨드만.** 에이전트 판단만 하는 커맨드는 CLI 서브커맨드가 없다 | `manifest-sync` |
 
-네 파일 중 하나라도 누락되면 커맨드가 일부 컨텍스트에서 인식되지 않습니다.
+`bin` 등록은 선택이 아니라 **조건부**입니다: `commands/*.md`가 언급하는 모든
+`harness-team <sub>`는 router에 case가 있어야 하고(`manifest-sync`), 반대로 CLI 없는 커맨드는
+그런 표기를 문서에 쓰지 않으면 됩니다. `harness-interview`·`harness-ship`처럼 절차가 전부
+에이전트 판단인 커맨드가 여기 해당합니다.
 
 `templates/{AGENTS,CLAUDE,GEMINI}.md.hbs`의 managed 섹션(`<!-- harness:section="..." -->` 블록)을 수정할 때는 **이 레포 루트의 같은 파일**(`AGENTS.md`·`CLAUDE.md`·`GEMINI.md`)도 함께 갱신하세요 — `tests/agent-files.test.mjs`가 이 저장소 스택으로 렌더한 템플릿과 루트 적용본의 managed 섹션 내용 일치를 강제합니다. 마커 밖 텍스트(제목 등 저장소 고유 영역)는 검사 대상이 아닙니다.
 
@@ -134,6 +139,83 @@ Codex manifest/skill을 수정했다면 Codex validator도 실행하세요. 로�
 > **왜 cache가 아니라 clone에 링크하나:** cache 경로는 버전별(`.../0.15.1/`)이라 심볼릭 링크가 그 버전에
 > 영구히 고정됩니다. clone이 안정적인 링크 대상인 게 맞고, 문제는 링크 대상이 아니라 clone의 코드를
 > 아무도 갱신하지 않는다는 점이었습니다.
+
+---
+
+## 동반 플러그인 (companion plugins) — 핀을 올리는 절차
+
+`.claude-plugin/marketplace.json`의 `plugins` 배열에는 **우리 항목(self entry)** 외에
+**동반 항목(companion entry)** 이 들어갈 수 있습니다. 동반 항목은 이 저장소가 소유하지도,
+번들하지도, 버전을 매기지도 않는 **외부 플러그인**이며, 카탈로그에 커밋 sha로 **핀을 걸어**
+등재만 합니다. 사용자에게는 **선택 사항**입니다 — 설치하지 않아도 하네스는 정상 동작합니다.
+
+현재 동반 항목:
+
+| 이름 | 업스트림 | 라이선스 | 핀 |
+|---|---|---|---|
+| `diagram-design` | https://github.com/cathrynlavery/diagram-design | MIT © Cathryn Lavery | `0ab077f2291e9056554d48a90c4ff45f0b7029a5` (branch `main`) |
+
+### 형식 규칙 (어기면 릴리스가 깨집니다)
+
+- 항목 형식은 Anthropic 공식 카탈로그를 그대로 따릅니다:
+  `{"source": "url", "url": "<repo>.git", "sha": "<40hex>"}`.
+  공식 카탈로그의 `url` source 150개 중 146개가 정확히 이 세 키만 쓰고, **`ref`를 쓰는 항목은 0개**입니다.
+  브랜치 출처는 JSON이 아니라 위 표에 남깁니다.
+- **동반 항목에 `version` 필드를 넣지 마세요.** `release`의 `surgicalVersionReplace`는 매니페스트 텍스트에
+  `"version": "<현재버전>"` 문자열이 **정확히 1회** 나온다고 가정합니다. 동반 항목이 version을 들고 있으면
+  언젠가 값이 겹쳐 릴리스가 `manifest-format` 오류로 멈춥니다. 핀은 `source.sha`로만 표현합니다.
+- 우리 항목은 배열 **첫 번째**로 유지합니다. `release`는 이름으로 자기 항목을 찾으므로 순서에 의존하지
+  않지만(`tests/release.test.mjs`가 순서 무관을 고정합니다), 사람이 읽을 때 카탈로그 주인이 먼저 오는 편이 낫습니다.
+- 위 규칙은 `tests/manifest-sync.test.mjs`의 `companion entries are sha-pinned and carry no version`이
+  CI에서 강제합니다.
+
+### 언제 올리나 (판단은 메인테이너가 합니다 — 자동 추적하지 않습니다)
+
+핀은 **자동으로 따라가지 않습니다.** 그것이 핀을 거는 이유입니다. 다음 중 하나일 때만 올립니다:
+
+- 업스트림에 이 하네스의 워크플로우가 실제로 필요로 하는 수정·기능이 들어왔을 때
+- 보안 문제가 공지됐을 때
+- 사용자가 특정 업스트림 기능을 요청했을 때
+
+"최신이니까"는 올릴 이유가 아닙니다.
+
+### 올리기 전에 확인할 것
+
+1. 새 sha를 **실제로 받아** 트리를 확인합니다(설치본을 건드리지 말고 임시 디렉터리에서):
+   ```bash
+   git init /tmp/dd-probe && git -C /tmp/dd-probe remote add origin https://github.com/cathrynlavery/diagram-design.git
+   git -C /tmp/dd-probe fetch --depth 1 --filter=blob:none origin <new-sha>
+   git -C /tmp/dd-probe ls-tree -r --name-only <new-sha> -- skills/
+   ```
+2. 스킬 표면이 온전한지 — `skills/diagram-design/SKILL.md`와 `references/`·`assets/`가 그대로인지.
+   references는 assets를 다수 참조하므로 assets가 사라지면 스킬이 깨집니다.
+3. **저장소 루트에 `commands/`가 생겼는지.** 동반 항목을 등재한다는 것은 그 플러그인의 슬래시 커맨드를
+   사용자 세션에 주입하는 것을 우리가 추천한다는 뜻입니다. 범용 이름(`/doctor`, `/profile` 등)이
+   추가됐다면 올리기 전에 그 영향을 따져야 합니다.
+4. major 버전이 올라갔다면 **동작을 직접 확인**합니다. "구조가 온전함"은 "검증됨"이 아닙니다.
+5. 업스트림 `.claude-plugin/plugin.json`의 `version`이 올라갔는지 확인합니다. 설치본은 버전별
+   디렉터리(`cache/<marketplace>/<plugin>/<version>/`)에 놓이므로, **sha만 바뀌고 version이 그대로면
+   이미 설치한 사람은 캐시된 옛 사본을 계속 쓸 수 있습니다.** 그런 경우 재설치가 필요하다는 사실을
+   릴리스 노트에 함께 적습니다.
+6. 확인 결과와 올린 근거를 활성 task의 artifact에 남깁니다 — 기록 없는 판단은 다음 사람에게 전달되지 않습니다.
+
+올릴 때 바꾸는 것은 `sha` 한 곳과 위 표의 값뿐입니다. 버전 범프와는 무관하며, `release`를 태우지 않아도 됩니다.
+
+### ⚠️ 옛 clone으로 release를 돌리지 마세요
+
+`release`는 "자기 항목이 정확히 1개" 가드를 쓰지만, **동반 항목 도입 이전(0.16.1까지)의 코드는
+"배열 길이가 정확히 1"** 을 요구했습니다. 위 "설치본 세 곳"이 설명하듯 PATH의 `harness-team`은 보통 marketplace clone을 가리키는
+심볼릭 링크이므로, **clone이 옛 코드에 머물러 있으면 정상적인 `marketplace.json`을 읽고도 릴리스가
+`schema` 오류로 멈춥니다.** 동반 항목을 추가한 뒤 처음 릴리스를 돌리기 전에 clone을 갱신하세요:
+
+**버전 비교로는 잡히지 않습니다** — 이 변경은 버전 범프 없이 들어왔으므로 옛 코드와 새 코드가 같은
+`0.16.1`을 보고합니다. 코드 자체를 확인하세요:
+
+```bash
+CLONE="${CLAUDE_PLUGINS_ROOT:-$HOME/.claude/plugins}/marketplaces/harness-aijient-team-marketplace"
+grep -c selfEntries "$CLONE/src/commands/release.mjs"   # 0 이면 옛 length-one 가드입니다
+git -C "$CLONE" pull                                     # 또는 /plugin marketplace update
+```
 
 ---
 

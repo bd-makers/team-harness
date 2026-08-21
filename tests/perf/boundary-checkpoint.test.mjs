@@ -62,38 +62,53 @@ async function fixture() {
   };
 }
 
-test('boundary performance: cold check <100ms and plan checkpoint <200ms for 10 x 10KiB local contracts', async () => {
+test('boundary performance: cold check <75ms and plan checkpoint <150ms over the bare node spawn floor for 10 x 10KiB local contracts', async t => {
   const setup = await fixture();
   try {
+    // A fixed wall-clock budget flakes under load: on a busy machine more than half of a
+    // cold run is bare `node` process spawn cost, which tracks machine load rather than
+    // anything this CLI does. Each attempt therefore brackets the CLI runs with `node -e ''`
+    // spawns, and the budgets bound the median cost *above* that spawn floor; the absolute
+    // ceilings at the end still catch a consistently or severely slow implementation.
+    const bareMeasurements = [];
     const coldMeasurements = [];
     const checkpointMeasurements = [];
+    const timed = async (measurements, work) => {
+      const started = performance.now();
+      const result = await work();
+      measurements.push(performance.now() - started);
+      return result;
+    };
+    const bare = () => run('node', ['-e', ''], '', { cwd: setup.dir, env: setup.env });
+    await bare(); // untimed warmup: the very first spawn pays one-off costs (fs cache, code signing)
     for (let attempt = 0; attempt < 3; attempt += 1) {
-      let started = performance.now();
-      const cold = await run('node', [BIN, 'boundary', 'check'], '', { cwd: setup.dir, env: setup.env });
-      coldMeasurements.push(performance.now() - started);
+      await timed(bareMeasurements, bare);
+      const cold = await timed(coldMeasurements, () =>
+        run('node', [BIN, 'boundary', 'check'], '', { cwd: setup.dir, env: setup.env }));
       assert.equal(cold.code, 0, cold.stderr);
       assert.match(cold.stdout, /boundary: pass \(10 checked\)/);
 
-      started = performance.now();
-      const checkpoint = await run('sh', [HOOK], JSON.stringify({
+      const checkpoint = await timed(checkpointMeasurements, () => run('sh', [HOOK], JSON.stringify({
         tool_name: 'Edit',
         tool_input: {
           file_path: join(setup.taskDir, 'demo-plan.md'),
           old_string: '- [ ] verify',
           new_string: '- [x] verify',
         },
-      }), { cwd: setup.dir, env: setup.env });
-      checkpointMeasurements.push(performance.now() - started);
+      }), { cwd: setup.dir, env: setup.env }));
       assert.equal(checkpoint.code, 0, checkpoint.stderr);
       assert.match(checkpoint.stdout, /boundary: pass \(10 checked\)/);
+      await timed(bareMeasurements, bare);
     }
-    // Three samples use the median for the normal ceiling so one scheduler outlier does not fail the test;
-    // the additional absolute ceiling still catches a consistently or severely slow implementation.
-    const median = measurements => [...measurements].sort((a, b) => a - b)[1];
+    // Medians so one scheduler outlier does not fail the test or distort the spawn floor.
+    const median = measurements => [...measurements].sort((a, b) => a - b)[Math.floor(measurements.length / 2)];
+    const spawnFloorMs = median(bareMeasurements);
     const coldMs = median(coldMeasurements);
     const checkpointMs = median(checkpointMeasurements);
-    assert.ok(coldMs < 100, `median cold boundary CLI was ${coldMs.toFixed(1)}ms (limit: 100ms; samples: ${coldMeasurements.map(ms => ms.toFixed(1)).join(', ')})`);
-    assert.ok(checkpointMs < 200, `median plan checkpoint was ${checkpointMs.toFixed(1)}ms (limit: 200ms; samples: ${checkpointMeasurements.map(ms => ms.toFixed(1)).join(', ')})`);
+    const samples = measurements => measurements.map(ms => ms.toFixed(1)).join(', ');
+    t.diagnostic(`spawn floor ${spawnFloorMs.toFixed(1)}ms (${samples(bareMeasurements)}); cold ${coldMs.toFixed(1)}ms (${samples(coldMeasurements)}); checkpoint ${checkpointMs.toFixed(1)}ms (${samples(checkpointMeasurements)})`);
+    assert.ok(coldMs - spawnFloorMs < 75, `median cold boundary CLI cost ${(coldMs - spawnFloorMs).toFixed(1)}ms over the ${spawnFloorMs.toFixed(1)}ms spawn floor (limit: 75ms; cold samples: ${samples(coldMeasurements)}; bare samples: ${samples(bareMeasurements)})`);
+    assert.ok(checkpointMs - spawnFloorMs < 150, `median plan checkpoint cost ${(checkpointMs - spawnFloorMs).toFixed(1)}ms over the ${spawnFloorMs.toFixed(1)}ms spawn floor (limit: 150ms; checkpoint samples: ${samples(checkpointMeasurements)}; bare samples: ${samples(bareMeasurements)})`);
     assert.ok(Math.max(...coldMeasurements) < 500, `cold boundary CLI exceeded the absolute 500ms ceiling (samples: ${coldMeasurements.map(ms => ms.toFixed(1)).join(', ')})`);
     assert.ok(Math.max(...checkpointMeasurements) < 800, `plan checkpoint exceeded the absolute 800ms ceiling (samples: ${checkpointMeasurements.map(ms => ms.toFixed(1)).join(', ')})`);
   } finally {

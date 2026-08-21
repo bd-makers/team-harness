@@ -430,6 +430,18 @@
             <td>task 관리 (task/list/done/handoff) — docs/&lt;user&gt;/&lt;name&gt;/ 구조</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
           </tr>
+          <tr data-command-source="commands/harness-ship.md">
+            <td><span class="cmd">/harness-ship</span></td>
+            <td><code>commands/harness-ship.md</code></td>
+            <td>PR/MR 직전 spec·plan·artifact를 최종 갱신하고 다이어그램(옵트인)까지 정리한 뒤 준비 완료 상태를 보고</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-diagram.md">
+            <td><span class="cmd">/harness-diagram</span></td>
+            <td><code>commands/harness-diagram.md</code></td>
+            <td>활성 task의 spec/plan 다이어그램을 하네스 규약(경로·자립형 inline SVG·artifact 기록)대로 생성하거나 갱신</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
           <tr data-command-source="commands/harness-clone.md">
             <td><span class="cmd">/harness-clone</span></td>
             <td><code>commands/harness-clone.md</code></td>
@@ -520,16 +532,28 @@
             <td>API 핸들러·DB 접근·캐시·아웃바운드 HTTP 등 프로세스 경계 코드에 Khorikov Part III 통합 테스트를 작성한다 (스택 감지 → managed/unmanaged 구분 강제 → 커버리지 → 검증)</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Testing</span></td>
           </tr>
+          <tr data-command-source="commands/harness-review.md">
+            <td><span class="cmd">/harness-review</span></td>
+            <td><code>commands/harness-review.md</code></td>
+            <td>엔진 중립 read-only 외부 리뷰(codex·claude·gemini·custom)를 로컬 git 상태에 실행하고 결과를 활성 task의 artifact ## Reviews에 기록</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-adversarial-review.md">
+            <td><span class="cmd">/harness-adversarial-review</span></td>
+            <td><code>commands/harness-adversarial-review.md</code></td>
+            <td>설계 결정과 가정에 반박을 시도하는 적대적 read-only 외부 리뷰 — 절차·엔진 표는 harness-review와 동일, 리뷰 프롬프트만 교체</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
           <tr data-command-source="commands/harness-codex-review.md">
             <td><span class="cmd">/harness-codex-review</span></td>
             <td><code>commands/harness-codex-review.md</code></td>
-            <td>Codex read-only 외부 리뷰를 로컬 git 상태에 실행하고 결과를 활성 task의 artifact ## Reviews에 기록</td>
+            <td>(deprecated) /harness-review codex 로 대체 — 다음 마이너 버전에서 제거 예정</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
           </tr>
           <tr data-command-source="commands/harness-codex-adversarial-review.md">
             <td><span class="cmd">/harness-codex-adversarial-review</span></td>
             <td><code>commands/harness-codex-adversarial-review.md</code></td>
-            <td>설계 결정과 가정에 반박을 시도하는 적대적 Codex read-only 리뷰 — 절차는 harness-codex-review와 동일, 프레이밍만 교체</td>
+            <td>(deprecated) /harness-adversarial-review codex 로 대체 — 다음 마이너 버전에서 제거 예정</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
           </tr>
         </tbody>
@@ -1241,6 +1265,11 @@
             <td>CLI 진입점과 command router</td>
           </tr>
           <tr>
+            <td><code>commands/harness-adversarial-review.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>설계 결정과 가정에 반박을 시도하는 적대적 read-only 외부 리뷰 — 절차·엔진 표는 harness-review와 동일, 리뷰 프롬프트만 교체</td>
+          </tr>
+          <tr>
             <td><code>commands/harness-apply.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
             <td>기존 프로젝트에 팀 하네스를 비파괴적으로 적용 (dry-run 후 병합)</td>
@@ -1253,12 +1282,12 @@
           <tr>
             <td><code>commands/harness-codex-adversarial-review.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
-            <td>설계 결정과 가정에 반박을 시도하는 적대적 Codex read-only 리뷰 — 절차는 harness-codex-review와 동일, 프레이밍만 교체</td>
+            <td>(deprecated) /harness-adversarial-review codex 로 대체 — 다음 마이너 버전에서 제거 예정</td>
           </tr>
           <tr>
             <td><code>commands/harness-codex-review.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
-            <td>Codex read-only 외부 리뷰를 로컬 git 상태에 실행하고 결과를 활성 task의 artifact ## Reviews에 기록</td>
+            <td>(deprecated) /harness-review codex 로 대체 — 다음 마이너 버전에서 제거 예정</td>
           </tr>
           <tr>
             <td><code>commands/harness-comptest.md</code></td>
@@ -1274,6 +1303,11 @@
             <td><code>commands/harness-delete.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
             <td>project에서 harness symlink 제거</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-diagram.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>활성 task의 spec/plan 다이어그램을 하네스 규약(경로·자립형 inline SVG·artifact 기록)대로 생성하거나 갱신</td>
           </tr>
           <tr>
             <td><code>commands/harness-doctor.md</code></td>
@@ -1309,6 +1343,16 @@
             <td><code>commands/harness-retro.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
             <td>현재(또는 지정) task의 artifact.md에 학습/교정 내용을 append. CLAUDE.md 자기개선 루프 정책 실행.</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-review.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>엔진 중립 read-only 외부 리뷰(codex·claude·gemini·custom)를 로컬 git 상태에 실행하고 결과를 활성 task의 artifact ## Reviews에 기록</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-ship.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>PR/MR 직전 spec·plan·artifact를 최종 갱신하고 다이어그램(옵트인)까지 정리한 뒤 준비 완료 상태를 보고</td>
           </tr>
           <tr>
             <td><code>commands/harness-sim.md</code></td>
@@ -1426,6 +1470,11 @@
             <td>다이어그램과 인벤토리를 한 번에 생성</td>
           </tr>
           <tr>
+            <td><code>skills/harness-adversarial-review/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
             <td><code>skills/harness-apply/SKILL.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
             <td>Codex용 harness workflow 지침</td>
@@ -1491,6 +1540,11 @@
             <td>Codex skill 표시 메타데이터</td>
           </tr>
           <tr>
+            <td><code>skills/harness-diagram/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
             <td><code>skills/harness-doctor/SKILL.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
             <td>Codex용 harness workflow 지침</td>
@@ -1554,6 +1608,16 @@
             <td><code>skills/harness-retro/agents/openai.yaml</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
             <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-review/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-ship/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
           </tr>
           <tr>
             <td><code>skills/harness-sim/SKILL.md</code></td>
@@ -1901,6 +1965,11 @@
             <td>소비자 프로젝트 scaffold 템플릿</td>
           </tr>
           <tr>
+            <td><code>templates/docs/decisions.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트 scaffold 템플릿</td>
+          </tr>
+          <tr>
             <td><code>templates/symlink.sh</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
             <td>소비자 프로젝트 scaffold 템플릿</td>
@@ -2001,6 +2070,61 @@
             <td>자동 회귀 검증</td>
           </tr>
           <tr>
+            <td><code>tests/fixtures/stock-hooks/README.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/jq-fallback-v1/auto-format.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/jq-fallback-v1/block-dangerous-git.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/jq-fallback-v1/pre-commit-check.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/jq-fallback-v1/protect-files.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/older/block-dangerous-git.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/older/pre-commit-check.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/pre-jq-fallback/auto-format.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/pre-jq-fallback/block-dangerous-git.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/pre-jq-fallback/pre-commit-check.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/pre-jq-fallback/protect-files.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
             <td><code>tests/harness-overview-generation.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
@@ -2011,12 +2135,22 @@
             <td>자동 회귀 검증</td>
           </tr>
           <tr>
+            <td><code>tests/hooks-jq-fallback.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
             <td><code>tests/manifest-sync.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>
           <tr>
             <td><code>tests/migrate-agents.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/migrate-hooks.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>
@@ -2051,6 +2185,11 @@
             <td>자동 회귀 검증</td>
           </tr>
           <tr>
+            <td><code>tests/prerequisites-doc.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
             <td><code>tests/release.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
@@ -2062,6 +2201,11 @@
           </tr>
           <tr>
             <td><code>tests/session-context.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/ship-command.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>

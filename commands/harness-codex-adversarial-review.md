@@ -1,46 +1,18 @@
 ---
-description: 설계 결정과 가정에 반박을 시도하는 적대적 Codex read-only 리뷰 — 절차는 harness-codex-review와 동일, 프레이밍만 교체
+description: (deprecated) /harness-adversarial-review codex 로 대체 — 다음 마이너 버전에서 제거 예정
 phase: Workflow
 argument-hint: '[--base <ref>] [focus ...]'
 ---
 
-이 명령은 `harness-codex-review`의 적대적 변형이다. openai-codex 플러그인의
-`/codex:adversarial-review`에 대응한다. 통상 리뷰가 "결함이 있는가"를 묻는다면,
-이 리뷰는 **"이 변경이 거부되어야 할 이유가 있는가"** 를 묻는다 — 구현 접근과
-설계 선택 자체에 반박을 시도한다.
+이 명령은 엔진 중립 재편으로 `/harness-adversarial-review`에 통합되었다. 이 이름은
+호환을 위해 1개 마이너 버전 동안만 유지된다 — 새 이름으로 전환하라.
 
-Raw slash-command 인수:
+지금 바로 `harness-adversarial-review.md`를 읽고 **엔진 `codex`** 로 그 절차를 그대로
+수행하라. 인수 해석(`--base <ref>`, focus)은 새 명령과 동일하며, Raw slash-command
+인수를 그대로 전달한다:
+
 `$ARGUMENTS`
 
-인수 해석은 `harness-codex-review.md`와 동일하다 — `--base <ref>`는 기준 ref,
-나머지 토큰은 focus 문구로 아래 프롬프트 끝에 전달한다.
-
-## 실행 절차
-
-전제·scope 결정·발견 검증·artifact 기록·review-only 제약을 포함한 전체 절차는
-`harness-codex-review.md`와 동일하다. 차이는 3단계의 리뷰 프롬프트뿐이며, 아래로
-교체한다:
-
-> **`< /dev/null` 은 생략하지 말 것.** `codex exec` 는 프롬프트를 인자로 받고도 stdin 이
-> 열려 있으면 추가 입력을 기다리며 무한 blocking 된다. 출력 파일에
-> `Reading additional input from stdin...` 한 줄만 남고 CPU 는 거의 0인 채 멈춘다.
-> 백그라운드로 돌리면 수십 분을 통째로 날린다.
-
-```bash
-codex exec --sandbox read-only "You are performing an adversarial read-only code review of this repository.
-Scope: <working tree changes | diff against <base>>. Inspect the changes yourself with git (git status, git diff).
-Do not modify anything. Actively try to find reasons this change should be REJECTED:
-challenge the implementation approach and design choices, hunt for hidden assumptions,
-missed edge cases, failure paths, concurrency and data-integrity hazards, and security exposure.
-For each objection state severity (P1 blocking / P2 should-fix / P3 nit), file:line, and what concrete
-scenario breaks. Separate real blockers from theoretical concerns in your verdict.
-If the approach survives your objections, say so explicitly. <focus arguments, if any>" < /dev/null
-```
-
-## 언제 이걸 쓰나
-
-- 비자명한 설계 결정·아키텍처 변경·보안 민감 변경의 머지 직전
-- `/harness-contrarian`이 spec/plan 층의 가정을 공격한다면, 이 명령은 **구현 diff 층**을
-  외부 리뷰어가 공격한다 — 층이 다르므로 서로 대체하지 않는다
-
-작은 버그·문서 수정에는 통상 리뷰(`harness-codex-review`)로 충분하다.
+보고 시 사용자에게 이 이름이 deprecated이며 다음부터는
+`/harness-adversarial-review codex`(또는 엔진 자동 선택 `/harness-adversarial-review`)를
+쓰라고 한 줄 안내한다.

@@ -22,18 +22,43 @@ async function manifestNames() {
 
 const sorted = (set) => [...set].sort();
 
-test('manifest-sync: package/Claude/Codex manifest versions agree', async () => {
+// The catalog may also list COMPANION plugins (external, pinned by source.sha),
+// so the self entry is found BY NAME — never by index. release.mjs enforces the
+// same invariant; this test keeps the shipped manifest honest about it.
+async function marketplaceEntries() {
   const pkg = JSON.parse(await readFile(join(ROOT, 'package.json'), 'utf8'));
-  const claude = JSON.parse(await readFile(join(ROOT, '.claude-plugin', 'plugin.json'), 'utf8'));
   const marketplace = JSON.parse(await readFile(join(ROOT, '.claude-plugin', 'marketplace.json'), 'utf8'));
+  const self = marketplace.plugins.filter(p => p.name === pkg.name);
+  const companions = marketplace.plugins.filter(p => p.name !== pkg.name);
+  return { pkg, marketplace, self, companions };
+}
+
+test('manifest-sync: package/Claude/Codex manifest versions agree', async () => {
+  const claude = JSON.parse(await readFile(join(ROOT, '.claude-plugin', 'plugin.json'), 'utf8'));
   const codex = JSON.parse(await readFile(join(ROOT, '.codex-plugin', 'plugin.json'), 'utf8'));
+  const { pkg, self } = await marketplaceEntries();
 
   assert.equal(claude.name, pkg.name);
   assert.equal(codex.name, pkg.name);
-  assert.equal(marketplace.plugins[0].name, pkg.name);
+  assert.equal(self.length, 1, 'marketplace must list exactly one entry named like this plugin');
   assert.equal(claude.version, pkg.version);
-  assert.equal(marketplace.plugins[0].version, pkg.version);
+  assert.equal(self[0].version, pkg.version);
   assert.equal(codex.version, pkg.version);
+});
+
+// Companion entries are NOT ours to version. A `version` field on one would also
+// break surgicalVersionReplace the day it happens to equal the current version,
+// so the pin must be expressed purely as a 40-hex source.sha.
+test('manifest-sync: companion entries are sha-pinned and carry no version', async () => {
+  const { companions } = await marketplaceEntries();
+  for (const entry of companions) {
+    assert.equal('version' in entry, false, `${entry.name}: companion entries must not declare a version`);
+    assert.equal(typeof entry.source, 'object', `${entry.name}: companion source must be an object`);
+    assert.match(entry.source.sha ?? '', /^[0-9a-f]{40}$/, `${entry.name}: companion must be pinned by a 40-hex sha`);
+    assert.match(entry.source.url ?? '', /^https:\/\/.*\.git$/, `${entry.name}: companion must point at an https git url`);
+    assert.ok(entry.description, `${entry.name}: companion needs a description`);
+    assert.ok(entry.author?.name, `${entry.name}: companion must credit its author (license attribution)`);
+  }
 });
 
 test('manifest-sync: npm package includes Codex plugin manifest', async () => {
