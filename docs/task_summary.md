@@ -44,3 +44,13 @@
 | chad | cursor-rules-prune | ✅ done | 2026-08-12 |
 | chad | global-cli-drift | ✅ done | 2026-08-13 |
 | chad | task-ledger-derived | ✅ done | 2026-08-19 |
+| chad | d5-parallel-pr-scope | 🔄 open | 2026-08-20 |
+| chad | diagram-optin | 🔄 open | 2026-08-20 |
+| chad | ship-command | 🔄 open | 2026-08-20 |
+| chad | diagram-companion-pin | 🔄 open | 2026-08-21 |
+| chad | doctor-decision-log | ✅ done | 2026-08-21 |
+| chad | hook-jq-failclosed | 🔄 open | 2026-08-21 |
+| chad | hook-jq-fallback-delivery | 🔄 open | 2026-08-21 |
+| chad | instruction-structure | ✅ done | 2026-08-21 |
+| chad | prerequisites-doc | 🔄 open | 2026-08-21 |
+| chad | review-restructure | ✅ done | 2026-08-21 |
