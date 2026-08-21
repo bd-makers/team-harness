@@ -98,3 +98,16 @@ CHANGELOG.md                                       |  18 ++
  tests/hooks-jq-fallback.test.mjs                   | 356 +++++++++++++++++++++
  16 files changed, 939 insertions(+), 24 deletions(-)
 
+
+## 2026-08-21T06:26:49.489Z — 954c9f6 docs(task): CI 결과 반영 — GNU grep 이식성 확인, PR #29 기록
+docs/chad/chad-handoff.md                            |  2 +-
+ .../hook-jq-failclosed-artifact.md                   | 10 +++++++---
+ .../hook-jq-failclosed/hook-jq-failclosed-handoff.md | 20 ++++++++++++++++++++
+ 3 files changed, 28 insertions(+), 4 deletions(-)
+
+
+## 2026-08-21T06:27:15.538Z — 774af5d chore(handoff): post-commit 자동 갱신 반영
+docs/chad/chad-handoff.md                                  | 2 +-
+ docs/chad/hook-jq-failclosed/hook-jq-failclosed-handoff.md | 7 +++++++
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
