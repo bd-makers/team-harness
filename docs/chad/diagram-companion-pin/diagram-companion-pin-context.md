@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: diagram-design을 sha 핀 동반 플러그인으로 등재 + release 가드 일반화 + /harness-diagram 어댑터
-- Current atomic step: PR #28 open — CI 결과 확인 / 리뷰 대기
+- Current atomic step: PR #28 open, CI green(18/20), Codex 리뷰 1라운드 조치 완료 — 사용자 결정 대기
 - Stop / human-decision condition: PR 머지는 하지 않는다. 핀 sha를 5538b35로 올릴지는 사용자 결정.
 
 ## Constraints and settled decisions
@@ -26,4 +26,5 @@
 ## Resume checklist
 - `git log --oneline -3` 로 두 커밋(A: 핀+가드, B: 어댑터+문서) 확인
 - PR 번호는 artifact.md 상단에 기록됨
-- 후속: #25 머지 후에도 harness-ship.md의 Probe/Degrade/Record 문구는 테스트로 고정돼 있어 축약 불가
+- 후속: harness-ship.md의 Probe/Degrade/Record 문구는 ship-command.test.mjs가 고정 — 포인터로 축약 불가
+- 후속: handoff 생성 코드의 EOF 공백(git diff --check)은 별도 task 대상
