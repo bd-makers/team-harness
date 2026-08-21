@@ -69,7 +69,7 @@ Anthropic·OpenAI·Cognition·12-Factor Agents 등 최근 1차 소스는 병렬�
 상충·신뢰성 위험으로 보고, 단일 스레드 실행 + 얇고 직접 소유한 제어흐름을 권장합니다. 이 플러그인의
 드라이버(Claude·OpenCode) → 리뷰어(Codex·Gemini, read-only) 순차 루프는 그 방향과 정합적입니다.
 단, 이 원칙이 금지하는 것은 **같은 워킹트리에 동시에 쓰는 것**입니다 — 각자 격리된 브랜치·git
-worktree에서 작업하고 PR/MR로 병합하는 병렬 경로는 허용되며 권장됩니다(`AGENTS.md` D5).
+worktree에서 작업하고 PR/MR로 병합하는 병렬 경로는 허용되며 권장됩니다(`docs/decisions.md` D5).
 반면 조사·탐색을 위한 **컨텍스트 격리 서브에이전트**(별도 창에서 조사 후 요약만 반환)는 이 원칙과
 무관하게 표준 실무이며 계속 활용합니다 — 자세한 구분은 [`CLAUDE.md` §2](./CLAUDE.md) 참고.
 OS/네트워크 격리는 이 플러그인의 스코프 밖입니다 — devcontainer·sandbox 등 운영
