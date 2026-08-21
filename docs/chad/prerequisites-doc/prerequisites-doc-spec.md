@@ -11,8 +11,8 @@
 
 반드시 담을 사실 2가지:
 
-1. **jq는 optional이 아니다.** `doctor`는 jq를 `not found, optional`로 보고하지만,
-   jq가 없으면 Claude Code 보안 훅 2개가 **조용히 fail-open** 한다(실측 근거는 아래 Ontology).
+1. **jq는 optional이 아니다.** 없으면 훅이 **저정밀 모드**로 판정한다 — 차단은 유지되지만
+   정확도가 떨어지고, `doctor`가 다른 넷과 달리 `warning`으로 알린다(경위는 아래 Ontology).
 2. **호환성 주의.** 팀원이 개별적으로 설치할 수 있는 `mattpocock-skills`의 `writing-for-agents`를
    이 저장소의 `AGENTS.md`/`CLAUDE.md`에 쓰면 CI가 깨진다 — 그 두 파일은 `templates/*.hbs`에서
    생성되고 루트↔템플릿을 쌍으로 고쳐야 `tests/e2e/ssot-consistency.test.mjs`·
@@ -63,20 +63,27 @@
   `src/git-hooks.mjs:13`의 `installPostCommitHook`은 `.git/hooks`가 없으면 조용히 return한다.
   즉 git은 "아무것도 안 됨"이 아니라 "post-commit handoff·summary 브랜치 감지·task 전환 diff가
   전부 no-op"이다.
-- **fail-open**: 보안 훅이 판단 불능 상태에서 "허용"(exit 0)으로 떨어지는 것. jq 부재 시
-  `jq -r` 호출이 `command not found`로 죽고 `TOOL_NAME`/`FILE_PATH`가 빈 문자열이 되어
-  조기 `exit 0` 분기로 빠진다. **실측(jq만 제거한 PATH, cat/grep은 정상):**
+- **fail-open** *(이 task 착수 시점의 상태 — PR #29로 해소됨)*: 보안 훅이 판단 불능 상태에서
+  "허용"(exit 0)으로 떨어지는 것. jq 부재 시 `jq -r`이 `command not found`로 죽고
+  `TOOL_NAME`/`FILE_PATH`가 빈 문자열이 되어 조기 `exit 0` 분기로 빠졌다.
+  **착수 시 실측(jq만 제거한 PATH):**
   | 훅 | jq 없을 때 | 결과 |
   |---|---|---|
   | `block-dangerous-git.sh` | exit 0 | `git push --force` 통과 |
   | `protect-files.sh` | exit 0 | `.env` 편집 통과 |
-  | `pre-commit-check.sh` | exit 0 | commit 전 typecheck/test 게이트 무시 |
-  | `auto-format.sh` | exit 0 | 무해 — 포매팅만 스킵 |
-  브리프는 `block-dangerous-git.sh` 하나로 봤으나 실측 범위는 셋(+무해 1)이다. 오케스트레이터에
-  전달 완료.
+  | `pre-commit-check.sh` | exit 0 | commit 전 게이트 무시 |
+  | `auto-format.sh` | exit 0 | 무해 |
+  브리프는 `block-dangerous-git.sh` 하나로 봤으나 실측 범위는 셋(+무해 1)이었다. 이 정정이
+  오케스트레이터를 거쳐 **PR #29의 remit(훅 4개)** 이 됐다.
+- **저정밀 모드** *(#29 이후 — 문서가 기술하는 현재 상태)*: jq가 없을 때 `"key": "value"`
+  문자열만 grep으로 잘라내 **같은 검사에** 넘기는 폴백. 값을 못 뽑으면 통과시키지 않고 payload
+  전체를 검사한다 — **차단은 유지되고 정밀도만 떨어진다.** 잔여 한계는 JSON 이스케이프 미디코드,
+  같은 키의 첫 매치만 읽음, payload 전체 검사 시 범위 확대. 오케스트레이터가 **#29 선머지**로
+  순서를 확정해, 이 문서의 jq 서술은 처음부터 이 상태로 쓴다.
 - **doctor `optional`**: `EXTERNAL_TOOLS` 5개(gh·codex·gemini·opencode·jq)를 `checkCommand`로
-  검사해 없으면 `not found, optional`로 보고하는 것. **exit code에 반영되지 않는다** —
-  즉 "doctor가 통과했다"가 "훅이 정상 동작한다"를 뜻하지 않는다. 이 문서의 존재 이유다.
+  검사해 없으면 보고하는 것. **어느 것도 exit code에 반영되지 않는다** — 즉 "doctor가 통과했다"가
+  "전부 갖춰졌다"를 뜻하지 않는다. #29 이후 gh·codex·gemini·opencode는 `optional`,
+  **jq만 `warning`** 이다(없으면 기능이 꺼지는 게 아니라 판정 정밀도가 떨어지므로).
 - **능력 매트릭스**: "이 도구를 설치하면 이 기능이 켜진다"의 표. 설치 목록과 달리 **없을 때의
   결과**를 열로 갖는다.
 

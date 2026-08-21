@@ -186,10 +186,41 @@ diff 읽기만으로 쓰지 않았다. `git show FETCH_HEAD:templates/.claude/ho
    두 글자**를 가진 진짜 payload를 만들어야 한계가 재현된다(`od -c`로 바이트 확인).
    → **인코딩이 쟁점인 테스트는 payload를 셸이 아니라 JSON 직렬화기로 만들 것.**
 
-### 남은 rebase 작업 (#29 머지 시)
+### 남은 rebase 작업 (#29 머지 시 — 오케스트레이터 신호 대기)
 
-두 PR 모두 `src/commands/doctor.mjs`의 `EXTERNAL_TOOLS` **바로 위**를 건드린다 —
-이쪽은 `export` + 이유 주석, #29는 jq를 `warning`으로 승격하는 설명 주석. **충돌 확정**이며
-#29가 먼저 머지되므로 이 PR이 rebase한다. 양쪽 주석을 다 보존하고 `export`를 유지하면 된다
-(#29는 export하지 않는다). `tests/prerequisites-doc.test.mjs`는 `cmd`만 읽으므로 #29가 추가한
-`missingDetail` 키와 무관하게 그대로 통과한다.
+오케스트레이터 지시: **지금 리베이스하지 않는다.** #29가 독립 리뷰 중이라 findings에 따라
+`doctor.mjs`가 더 바뀔 수 있어 두 번 하게 된다. 머지 후 신호를 받고 수행한다.
+
+1. **`src/commands/doctor.mjs` 충돌 해소** — 두 PR 모두 `EXTERNAL_TOOLS` **바로 위**를 건드린다
+   (이쪽은 `export` + 이유 주석, #29는 jq `warning` 승격 설명 주석). 방침 확정:
+   **양쪽 주석 보존 + `export` 유지**(#29는 export하지 않는다). `tests/prerequisites-doc.test.mjs`는
+   `cmd`만 읽으므로 #29가 추가한 `missingDetail` 키와 무관하게 통과한다.
+2. **훅 마커 가드 추가** — §3이 "차단은 유지된다"고 주장하는데 지금의 드리프트 테스트는
+   구조적(표 ↔ `EXTERNAL_TOOLS`)이라 그 주장을 검증하지 못한다. 리베이스 커밋에서
+   `tests/prerequisites-doc.test.mjs`에 **§3이 이름을 댄 훅 4개가 `# --- harness:jq-fallback`
+   마커 블록을 갖는지** 검사하는 assertion을 추가한다. `EXTERNAL_TOOLS`에 건 것과 같은 종류의
+   가드를 **실제로 중요한 주장**에 거는 것이다. 지금 넣으면 red이므로 리베이스 시점에 넣는다
+   (머지된 훅에서 마커 문자열을 먼저 확인할 것).
+3. **CHANGELOG 중복 정리 판단** — #29가 `### Fixed`에 fail-open 수정과 폴백 메커니즘을 이미
+   적는다. 이쪽 `### Changed` 항목이 같은 계약을 문서 관점에서 다시 설명하므로, 머지 후
+   `[Unreleased]`에 jq 서사가 둘 남는다. 리베이스 시 **의도적으로 결정**한다 — 이쪽을
+   "사전 준비 문서에 jq 저정밀 모드 계약을 명시" 한 줄로 줄이고 메커니즘 설명은 #29 항목에
+   맡기는 쪽이 유력하다. 머지된 파일에서 발견하지 말고 그때 판단할 것.
+
+### perf 테스트 간헐 실패 관측 기록 (리뷰어 세션 9로 전달)
+
+`tests/perf/boundary-checkpoint.test.mjs`가 **full suite 실행에서만** 간헐 실패했다.
+
+| | 결과 |
+|---|---|
+| `npm run test` (전체) | **5회 중 2회 실패** |
+| `node --test --test-concurrency=1 tests/perf/*.test.mjs` (단독) | 2회 중 0회 실패 (522.8ms / 573.1ms) |
+
+**실패 메시지 원문은 없다** — 출력을 `grep -E "^ℹ (tests|pass|fail)"`로 걸러 봐서 요약 카운트
+(`ℹ tests 1 / pass 0 / fail 1`)만 남았고 assertion 본문은 캡처하지 못했다. 재현은 리뷰어 몫이라
+새로 돌리지 않았다.
+
+정황: `npm test`는 unit+e2e(311개) 직후 같은 명령 안에서 perf를 돌리므로 머신이 이미 부하 상태다.
+임계값은 median cold <100ms / median checkpoint <200ms, 절대 상한 500ms / 800ms
+(`tests/perf/boundary-checkpoint.test.mjs:95-98`). 단독 실행에서 전부 통과하는 것으로 보아
+구현 회귀가 아니라 **부하 하 wall-clock 임계 문제**로 보인다.

@@ -26,6 +26,11 @@
 - **git 등급 정정** — 브리프의 "하드 필수"를 "degrade 대상"으로 내렸다. 소스상 git 실패는
   전부 catch되고 폴백이 있다. 하드 요구사항은 Node ≥18 하나뿐이다.
 
+- **jq 서술을 #29 이후 상태로 전환** (오케스트레이터 머지 순서 결정, 2026-08-21) — "fail-open
+  (조용히 통과)"은 **착수 시점의 상태**로 spec Ontology에 날짜와 함께 보존하고, 문서가 기술하는
+  현재 상태는 **"저정밀 모드"**(차단 유지·정밀도 하락·doctor warning)로 새 개념을 정의했다.
+  두 개념을 하나로 덮어쓰지 않은 이유: fail-open 실측이 #29의 remit을 넓힌 근거라 기록 가치가 있다.
+
 ## 참고
 - spec: `prerequisites-doc-spec.md`
 - 병렬 워커 W4(`...-plugin-5`)가 README·MAINTAINING을 동시 편집 중 — 충돌 시 rebase, 상대 변경 보존
