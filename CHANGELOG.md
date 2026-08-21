@@ -167,6 +167,24 @@ modified: 2026-08-21
 - **`--dry-run`을 진짜 preflight로 만듦.** 형식 검증(surgical 치환 계산) 전에 반환하고 있어서,
   실제 실행이 `manifest-format`으로 멈추는 트리에서도 dry-run은 성공을 보고했다. 계산·검증을 반환
   앞으로 옮겼다. dry-run이 byte 무변경이라는 성질은 그대로다(테스트로 확인).
+- **jq가 없으면 Claude 훅 4개가 조용히 무력화되던 fail-open 수정.**
+  `auto-format.sh`·`block-dangerous-git.sh`·`pre-commit-check.sh`·`protect-files.sh`는 stdin
+  payload를 `jq -r`로 파싱했다. jq가 PATH에 없으면 `TOOL_NAME`/`FILE_PATH`가 빈 문자열이 되어
+  `!= "Bash"` 분기로 빠지고 **exit 0(허용)** 했다 — 통제된 PATH 실측: `git push --force`가
+  jq 있으면 exit 2, 없으면 exit 0. `.env` 편집도 마찬가지. 이제 jq 부재를 `command -v`로 감지해
+  `"key": "value"` 문자열만 잘라내 **같은 패턴·같은 판정**으로 검사한다(저정밀 모드).
+  "jq 없으면 무조건 차단"은 하지 않는다 — 훅은 매 도구 호출마다 돌기 때문에 그건 어떤 bash 명령도
+  못 쓰는 상태를 만든다. payload 전체 스캔도 채택하지 않았다: 모델이 쓴 `description` 문구가
+  정규식을 완성시켜 `git checkout -b feat/x`(설명에 ` -- ` 포함) 같은 **안전한 명령이 차단**된다.
+  차단 시 메시지와 `doctor`가 저정밀 모드임을 알린다. 잔여 한계: JSON 이스케이프를 디코드하지
+  않으므로 `git push\t--force`처럼 구분자가 인코딩된 명령은 폴백에서 통과한다.
+- **`doctor`의 jq 표시를 optional → warning으로 승격.** 나머지 4개(gh·codex·gemini·opencode)는
+  없으면 기능이 꺼질 뿐이지만 jq는 없으면 훅의 판정 정밀도가 떨어진다. `fail++`는 하지 않으므로
+  exit code 계약은 그대로다.
+- **훅 차단/허용 매트릭스 자동화 테스트 신규**(`tests/hooks-jq-fallback.test.mjs`). 2026-07-02
+  병합 당시 수동으로만 돌리던 매트릭스를 **jq 있는 PATH와 없는 PATH 양쪽**에서 돌린다 —
+  차단 10종·허용 12종 + description 오탐 가드 + 알려진 잔여 리스크(커밋 메시지 오탐, `git -C`
+  프리픽스 우회) 현재 동작 고정 + 4개 훅 공통 폴백 블록 동일성(복붙 드리프트) 가드.
 
 ## [0.16.1] - 2026-08-19
 
