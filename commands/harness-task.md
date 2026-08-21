@@ -40,7 +40,7 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task $ARGUMENTS
 
 4. **Preflight(만들 때)** — 다이어그램 스킬(`/diagram-design:diagram-design` 등)은 이 플러그인
    소유가 아니라 별도로 설치되는 외부 플러그인이며 머신마다 설치 상태가 다르다. 사용 가능한지
-   먼저 확인하고, 없으면 설치 명령을 단정해 안내하지 말고(`harness-codex-review` Preflight와 같은
+   먼저 확인하고, 없으면 설치 명령을 단정해 안내하지 말고(`harness-review` 엔진 결정과 같은
    계약) 다이어그램 단계를 건너뛴다. **도구가 없다고 task를 실패시키지 않는다.**
 
    건너뛸 때 plan의 그 단계는 **지우지 말고** 사유를 붙여 닫는다:

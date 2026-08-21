@@ -526,16 +526,28 @@
             <td>API 핸들러·DB 접근·캐시·아웃바운드 HTTP 등 프로세스 경계 코드에 Khorikov Part III 통합 테스트를 작성한다 (스택 감지 → managed/unmanaged 구분 강제 → 커버리지 → 검증)</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Testing</span></td>
           </tr>
+          <tr data-command-source="commands/harness-review.md">
+            <td><span class="cmd">/harness-review</span></td>
+            <td><code>commands/harness-review.md</code></td>
+            <td>엔진 중립 read-only 외부 리뷰(codex·claude·gemini·custom)를 로컬 git 상태에 실행하고 결과를 활성 task의 artifact ## Reviews에 기록</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-adversarial-review.md">
+            <td><span class="cmd">/harness-adversarial-review</span></td>
+            <td><code>commands/harness-adversarial-review.md</code></td>
+            <td>설계 결정과 가정에 반박을 시도하는 적대적 read-only 외부 리뷰 — 절차·엔진 표는 harness-review와 동일, 리뷰 프롬프트만 교체</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
           <tr data-command-source="commands/harness-codex-review.md">
             <td><span class="cmd">/harness-codex-review</span></td>
             <td><code>commands/harness-codex-review.md</code></td>
-            <td>Codex read-only 외부 리뷰를 로컬 git 상태에 실행하고 결과를 활성 task의 artifact ## Reviews에 기록</td>
+            <td>(deprecated) /harness-review codex 로 대체 — 다음 마이너 버전에서 제거 예정</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
           </tr>
           <tr data-command-source="commands/harness-codex-adversarial-review.md">
             <td><span class="cmd">/harness-codex-adversarial-review</span></td>
             <td><code>commands/harness-codex-adversarial-review.md</code></td>
-            <td>설계 결정과 가정에 반박을 시도하는 적대적 Codex read-only 리뷰 — 절차는 harness-codex-review와 동일, 프레이밍만 교체</td>
+            <td>(deprecated) /harness-adversarial-review codex 로 대체 — 다음 마이너 버전에서 제거 예정</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
           </tr>
         </tbody>
@@ -1247,6 +1259,11 @@
             <td>CLI 진입점과 command router</td>
           </tr>
           <tr>
+            <td><code>commands/harness-adversarial-review.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>설계 결정과 가정에 반박을 시도하는 적대적 read-only 외부 리뷰 — 절차·엔진 표는 harness-review와 동일, 리뷰 프롬프트만 교체</td>
+          </tr>
+          <tr>
             <td><code>commands/harness-apply.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
             <td>기존 프로젝트에 팀 하네스를 비파괴적으로 적용 (dry-run 후 병합)</td>
@@ -1259,12 +1276,12 @@
           <tr>
             <td><code>commands/harness-codex-adversarial-review.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
-            <td>설계 결정과 가정에 반박을 시도하는 적대적 Codex read-only 리뷰 — 절차는 harness-codex-review와 동일, 프레이밍만 교체</td>
+            <td>(deprecated) /harness-adversarial-review codex 로 대체 — 다음 마이너 버전에서 제거 예정</td>
           </tr>
           <tr>
             <td><code>commands/harness-codex-review.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
-            <td>Codex read-only 외부 리뷰를 로컬 git 상태에 실행하고 결과를 활성 task의 artifact ## Reviews에 기록</td>
+            <td>(deprecated) /harness-review codex 로 대체 — 다음 마이너 버전에서 제거 예정</td>
           </tr>
           <tr>
             <td><code>commands/harness-comptest.md</code></td>
@@ -1320,6 +1337,11 @@
             <td><code>commands/harness-retro.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
             <td>현재(또는 지정) task의 artifact.md에 학습/교정 내용을 append. CLAUDE.md 자기개선 루프 정책 실행.</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-review.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>엔진 중립 read-only 외부 리뷰(codex·claude·gemini·custom)를 로컬 git 상태에 실행하고 결과를 활성 task의 artifact ## Reviews에 기록</td>
           </tr>
           <tr>
             <td><code>commands/harness-ship.md</code></td>
@@ -1435,6 +1457,11 @@
             <td><code>scripts/generate-harness-overview.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
             <td>다이어그램과 인벤토리를 한 번에 생성</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-adversarial-review/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
           </tr>
           <tr>
             <td><code>skills/harness-apply/SKILL.md</code></td>
@@ -1570,6 +1597,11 @@
             <td><code>skills/harness-retro/agents/openai.yaml</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
             <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-review/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
           </tr>
           <tr>
             <td><code>skills/harness-ship/SKILL.md</code></td>
