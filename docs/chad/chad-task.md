@@ -1,6 +1,13 @@
 # chad — Tasks
 
 ## Open
+- diagram-companion-pin (created 2026-08-21)
+- hook-jq-failclosed (created 2026-08-21)
+- hook-jq-fallback-delivery (created 2026-08-21)
+- prerequisites-doc (created 2026-08-21)
+- d5-parallel-pr-scope (created 2026-08-20)
+- diagram-optin (created 2026-08-20)
+- ship-command (created 2026-08-20)
 - th-capsule-grammar (created 2026-08-03)
 - th-overview-mermaid (created 2026-08-03)
 - th-release-0-12 (created 2026-08-03)
@@ -10,6 +17,9 @@
 - harness-comptest (created 2026-07-10)
 
 ## Completed
+- ✅ doctor-decision-log
+- ✅ instruction-structure
+- ✅ review-restructure
 - ✅ task-ledger-derived
 - ✅ global-cli-drift
 - ✅ codex-hooks-template

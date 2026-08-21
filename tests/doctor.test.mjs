@@ -6,7 +6,7 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from 'node:fs
 import { tmpdir, homedir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
+import { checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
 import { POST_COMMIT_HOOK } from '../src/git-hooks.mjs';
 import { cloudSyncPathWarning } from '../src/harness.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
@@ -160,6 +160,61 @@ test('checkActiveSpecGate: spec.md 부재 → 경고 문자열', async () => {
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+async function makeDecisionLogFixture(body) {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-dlog-'));
+  if (body !== undefined) {
+    await mkdir(join(dir, 'docs'), { recursive: true });
+    await writeFile(join(dir, 'docs/decisions.md'), body);
+  }
+  return dir;
+}
+
+// The shipped template is the strongest "존재" fixture: renaming a heading there
+// without touching DECISION_HEADINGS would silently warn on every fresh scaffold.
+test('checkDecisionLog: 템플릿 원본(D2/D4/D5 포함) → null (템플릿↔검사 계약)', async () => {
+  const dir = await makeDecisionLogFixture(await readFile(join(ROOT, 'templates/docs/decisions.md'), 'utf8'));
+  try {
+    assert.equal(await checkDecisionLog(dir), null);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkDecisionLog: docs/decisions.md 부재 → 경고 (apply 스캐폴드 유도)', async () => {
+  const dir = await makeDecisionLogFixture(undefined);
+  try {
+    const w = await checkDecisionLog(dir);
+    assert.ok(typeof w === 'string', 'returns a warning string');
+    assert.match(w, /없음/);
+    assert.match(w, /harness-team apply/, '부재는 apply 스캐폴드가 해결하므로 apply로 유도');
+    assert.match(w, /templates\/docs\/decisions\.md/, '가져올 원본 위치를 안내');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkDecisionLog: 일부 절 누락 → 누락 절만 나열 + 템플릿 병합 안내 (apply 아님)', async () => {
+  // 본문 중간의 `## D4` 언급과 `## D20` 제목은 각각 라인 앵커·\b 덕에 제목으로 안 쳐야 한다.
+  const dir = await makeDecisionLogFixture(
+    '# Team Decision Log\n\n## D2 (2026-06-11) — drive/리뷰어 역할 분리\n\n본문에서 ## D4 를 언급만 한다.\n\n## D20 (2027-01-01) — 별개 결정\n',
+  );
+  try {
+    const w = await checkDecisionLog(dir);
+    assert.ok(typeof w === 'string', 'returns a warning string');
+    assert.match(w, /## D4, ## D5 절 없음/, '누락된 절만 정확히 나열');
+    assert.doesNotMatch(w, /## D2/, '존재하는 D2는 누락 목록에 없어야 한다');
+    assert.doesNotMatch(w, /apply/, 'skipExisting이라 apply로는 해결 불가 — 수동 병합 안내만');
+    assert.match(w, /templates\/docs\/decisions\.md/, '가져올 원본 위치를 안내');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// Codex 리뷰 P2 회귀 방지: warn 수준 검사가 doctor를 crash 시키면 envelope 자체가 안 나온다.
+test('checkDecisionLog: docs/decisions.md가 디렉터리(읽기 불가) → 경고, throw 금지', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-dlog-'));
+  try {
+    await mkdir(join(dir, 'docs/decisions.md'), { recursive: true });
+    const w = await checkDecisionLog(dir);
+    assert.ok(typeof w === 'string', 'returns a warning string, not a throw');
+    assert.match(w, /읽기 실패/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
 test('detectLegacyStructure: AGENTS.md가 CLAUDE.md로의 symlink면 레거시 경고', async () => {
@@ -435,5 +490,15 @@ test('runDoctor: jq 부재 + 폴백 블록 있는 훅 → 저정밀 문구 유�
       '폴백이 있는 설치본에 migrate를 강요하지 않는다');
     assert.ok(envelope.next_actions.includes(jqInstallAction()),
       `jq 경고에는 항상 설치 remedy가 따른다: ${JSON.stringify(envelope.next_actions)}`);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('runDoctor: docs/decisions.md 없는 프로젝트 → decision log 경고 배선', async () => {
+  const dir = await makeDecisionLogFixture(undefined);
+  try {
+    const env = await doctorJson(dir);
+    const c = checkOf(env, 'decision log');
+    assert.equal(c?.status, 'warning');
+    assert.match(c.detail, /decisions\.md/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
