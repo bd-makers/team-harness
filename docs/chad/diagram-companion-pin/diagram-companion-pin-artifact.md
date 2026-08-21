@@ -106,7 +106,57 @@ marketplace.json unchanged: true
 
 ## Reviews
 
-*(외부 리뷰 미실행 — 실행 시 여기에 날짜와 함께 요약·발견·조치를 남긴다.)*
+### 2026-08-21 — Codex 독립 리뷰 (`codex exec --sandbox read-only`)
+
+판정 **REQUEST CHANGES** — P1 0건 / P2 8건 / P3 6건. Gemini 병렬 리뷰는 **미실행**(이 머신에
+`gemini` CLI 미설치). 각 지적을 코드에서 직접 재현·대조해 판별했다.
+
+#### 진짜 결함 → 수정함 (7건)
+
+| # | 지적 | 판별 | 조치 |
+|---|---|---|---|
+| P2 | `doctor.mjs` `installedHarnessVersion`이 installed record를 **marketplace 반쪽만으로** 찾는다 | **CONFIRMED — 내가 만든 회귀.** 함수 주석이 근거를 "하네스는 이 마켓플레이스에 플러그인 하나만 소유"라고 적어 뒀는데, 동반 항목을 넣는 순간 그 전제가 깨진다. `diagram-design@harness-aijient-team-marketplace` 레코드가 먼저 나오면 그 버전(1.0.0)을 하네스 버전으로 읽어 **거짓 CLI-drift 경고**를 낸다 | `HOOK_CLI_PLUGIN_NAME` 추가, 키의 **양쪽 반**을 대조. 전제가 왜 깨졌는지 주석에 기록 |
+| P2 | surgical 치환이 **자기 항목에 적중했다는 보장이 없다** | **CONFIRMED.** needle은 raw 문자열이라 "1회 출현"이 "우리 필드에 적중"을 뜻하지 않는다. 자기 항목이 `"version":"x"`(공백 없음)이고 동반 항목이 `"version": "x"`면 count는 1이고 **동반 항목이 범프되며 하네스 버전은 조용히 남는다** | 치환 후 파싱해 의도한 대상이 실제로 움직였는지 검증(`assertBumped`, 매니페스트 4개 전부). 회귀 테스트 추가 |
+| P2 | 새 가드가 **자기 항목 개수만** 세므로 중복 동반 이름·`null` 항목을 통과시킨다 | **CONFIRMED.** release는 카탈로그가 clone으로 복사되기 전 마지막 게이트다 | 모든 항목이 문자열 `name`을 가진 객체이고 이름이 **유일**해야 한다는 검사 추가. 테스트 2건 추가 |
+| P2 | `--dry-run`이 **형식 검증 전에 반환**한다 | **CONFIRMED.** dry-run은 문서상 릴리스 preflight인데, 검증을 건너뛰는 preflight는 실제 실행이 throw 하는 트리에서 성공을 보고한다 | 치환 계산·검증을 dry-run 반환 **앞으로** 이동. byte 무변경은 그대로(테스트로 확인) |
+| P2 | 어댑터가 **다시 묻고**, `--force` 경로엔 plan 단계 추가 지시가 없다 | **CONFIRMED.** 산출물은 있는데 plan엔 단계가 없는 상태 = "plan.md가 곧 상태" 계약 파괴 | `--force`는 **질문만** 건너뛴다고 명시. 위임 호출(ship)은 `--force`로 부르도록 양쪽 문서에 기록 |
+| P2 | inline SVG 금지를 선언한 직후 **다른 형식을 허용**해 자기 스킬 래퍼와 충돌 | **CONFIRMED — 내 문서 안의 자기모순.** 커맨드는 예외를 허용하는데 래퍼는 무조건이라고 썼다 | "기본값이 아니라 요구사항"으로 고치고 예외 조건(뷰어 확인 + artifact에 근거 기록)을 양쪽에 동일하게 |
+| P2 | `MAINTAINING.md`의 옛 clone 탐지가 **버전 비교** | **CONFIRMED.** 이 변경은 버전 범프 없이 들어가므로 옛/새 코드가 같은 `0.16.1`을 보고한다 | `grep -c selfEntries "$CLONE/src/commands/release.mjs"`라는 실제 판별자로 교체 |
+| P2 | 핀 올릴 때 **업스트림 `plugin.json.version` 확인 누락** | **CONFIRMED.** 설치본이 `cache/<marketplace>/<plugin>/<version>/`에 놓인다는 건 이 저장소 `release.mjs` 자체가 증거다 — sha만 바뀌고 version이 그대로면 기존 설치자는 캐시본을 유지한다 | 확인 항목 5번으로 추가 + 그런 경우 재설치 안내를 릴리스 노트에 적으라고 명시 |
+
+#### 진짜지만 사소 → 수정함 (3건)
+
+- `commands/harness-diagram.md` 5번이 기록 단계를 "6번"이라고 안내(실제 7번) → 정정.
+- README 설치 명령이 unqualified `diagram-design` → `diagram-design@harness-aijient-team-marketplace`로
+  바꾸고 **왜** 한정자가 필요한지(업스트림 마켓플레이스를 이미 추가해 뒀다면 이름만으로 이쪽이
+  선택된다는 보장이 없다) 함께 적었다.
+- `tests/ship-command.test.mjs:31` 주석이 `diagram-design`을 "Claude Code-only"라고 설명 →
+  핀 커밋에 `.codex-plugin/plugin.json`이 실재함을 확인하고 정정(#27이 산문에서 고친 것의 잔여).
+
+#### 수정하지 않음 (3건) — 근거
+
+- **P3 `plugins[0]` assertion 잔존(`release.test.mjs` 여러 곳, `cli-drift.test.mjs:339`).**
+  해당 픽스처는 **단일 항목 합성 루트**라 인덱스 0이 곧 자기 항목이고, 순서 무관 계약은
+  `self entry found by name even when it is NOT first in the array` 테스트가 직접 고정한다.
+  통과 중인 assertion을 의미 없이 바꾸는 것은 diff만 키운다.
+- **P3 `docs/superpowers/plans/*.md`의 옛 `jq '.plugins[0].version'` 절차.** 날짜가 박힌 **역사
+  문서**다. 지난 계획서를 현재 코드에 맞춰 고치면 그때의 판단 기록이 사라진다.
+- **P3 handoff 파일 EOF 공백(`git diff --check`).** post-commit hook이 생성하는 파일이라 손으로
+  고쳐도 다음 커밋에서 덮어써진다. 실제 원인은 handoff 생성 코드이며 이 PR의 범위가 아니다.
+
+#### 리뷰 후 검증
+
+```
+$ npm run test
+ℹ tests 309   ℹ pass 309   ℹ fail 0      (unit + e2e, 조치 전 305 → 신규 4건)
+ℹ tests 1     ℹ pass 1     ℹ fail 0      (perf)
+
+$ npm run docs:check
+harness overview 생성 상태가 최신입니다.
+
+$ release() dryRun (실제 저장소 루트, 파일 무변경)
+preflight passed: 0.16.1 -> 0.16.2 | files unchanged: true
+```
 
 ## Learnings
 

@@ -223,8 +223,12 @@ harness-team --help
 
 ```
 /plugin marketplace add https://github.com/bd-makers/team-harness
-/plugin install diagram-design
+/plugin install diagram-design@harness-aijient-team-marketplace
 ```
+
+`@<marketplace>`를 붙이는 이유: 같은 이름의 플러그인이 다른 마켓플레이스에도 있으면(업스트림
+저장소를 이미 추가해 뒀다면 실제로 그렇습니다) 이름만으로는 **핀이 걸린 이쪽**이 선택된다는 보장이
+없습니다.
 
 - **핀은 자동으로 따라가지 않습니다.** 업스트림이 갱신돼도 메인테이너가 sha를 올리기 전까지
   설치본은 바뀌지 않습니다. 올리는 절차와 판단 기준은 `MAINTAINING.md`의 "동반 플러그인" 절에 있습니다.

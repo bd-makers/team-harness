@@ -63,7 +63,9 @@ Raw slash-command 인수:
 
    실제 생성·갱신은 `/harness-diagram`(`commands/harness-diagram.md`)이 담당한다 — 그 어댑터가
    산출물 경로·자립형 inline SVG 제약·artifact 기록을 상류 스킬 호출에 실어 준다. 위 세 단계는
-   ship이 무엇을 보장하는지에 대한 계약이고, 그 실행은 어댑터에 위임한다.
+   ship이 무엇을 보장하는지에 대한 계약이고, 그 실행은 어댑터에 위임한다. 위임할 때는 `--force`로
+   호출한다 — 이미 여기서 한 번 물었으므로 어댑터가 다시 묻지 않게 한다(어댑터는 `--force`에서도
+   plan 단계는 그대로 추가한다).
 
    산출물은 `docs/<user>/<name>/<name>-diagram.html` 하나이며, 기본값은 **자립형 inline SVG
    HTML**이다 — task 문서는 Obsidian처럼 **script를 제거하는 뷰어**에서 열리는 경우가 많고, 그런

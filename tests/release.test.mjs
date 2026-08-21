@@ -525,7 +525,7 @@ test('schema guard: a DUPLICATE self entry throws (guard is not weakened by allo
     );
     assert.equal(err.kind, 'schema');
     assert.match(err.message, new RegExp(PLUGIN));
-    assert.match(err.message, /2개/);
+    assert.match(err.message, /중복된 이름/);
   } finally {
     await rm(root, { recursive: true, force: true });
     await rm(pr, { recursive: true, force: true });
@@ -545,6 +545,107 @@ test('companion carrying a version equal to ours breaks the surgical bump — he
     );
     assert.equal(err.kind, 'manifest-format');
     assert.match(err.message, /marketplace\.json/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(pr, { recursive: true, force: true });
+  }
+});
+
+test('schema guard: a duplicated COMPANION name throws too (catalog validity, not just our entry)', async () => {
+  // Counting only the self entry would wave this through and sync an invalid
+  // catalog to the marketplace clone. release is the last gate before that copy.
+  const root = await makeRoot('1.2.3', [COMPANION, { ...COMPANION }]);
+  const pr = await makePluginsRoot();
+  try {
+    let err;
+    await assert.rejects(
+      () => release({ bump: 'patch', root, pluginsRoot: pr, skipCache: true, gitSha: 'x' }),
+      e => { err = e; return true; },
+    );
+    assert.equal(err.kind, 'schema');
+    assert.match(err.message, /중복된 이름.*diagram-design/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(pr, { recursive: true, force: true });
+  }
+});
+
+test('schema guard: a null / nameless entry throws instead of being skipped', async () => {
+  const root = await makeRoot('1.2.3', [null]);
+  const pr = await makePluginsRoot();
+  try {
+    let err;
+    await assert.rejects(
+      () => release({ bump: 'patch', root, pluginsRoot: pr, skipCache: true, gitSha: 'x' }),
+      e => { err = e; return true; },
+    );
+    assert.equal(err.kind, 'schema');
+    assert.match(err.message, /plugins\[1\]/);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(pr, { recursive: true, force: true });
+  }
+});
+
+// The needle is a raw substring, so "exactly once" does not prove it matched OUR
+// field. Inconsistent spacing between the self entry and a companion could bump
+// the companion and leave the harness version stale — silently, until a user
+// reports the wrong version.
+test('surgical bump verifies it moved the SELF entry, not a look-alike', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'harness-rel-target-'));
+  const pr = await makePluginsRoot();
+  try {
+    await mkdir(join(root, '.claude-plugin'), { recursive: true });
+    await mkdir(join(root, '.codex-plugin'), { recursive: true });
+    await writeFile(join(root, 'package.json'),
+      JSON.stringify({ name: PLUGIN, version: '1.2.3' }, null, 2) + '\n');
+    await writeFile(join(root, '.claude-plugin/plugin.json'),
+      JSON.stringify({ name: PLUGIN, version: '1.2.3', commands: [] }, null, 2) + '\n');
+    // self written WITHOUT the canonical space; companion written WITH it.
+    await writeFile(join(root, '.claude-plugin/marketplace.json'),
+      '{\n  "name": "' + MARKET + '",\n  "plugins": [\n' +
+      '    { "name": "' + PLUGIN + '", "version":"1.2.3" },\n' +
+      '    { "name": "diagram-design", "version": "1.2.3" }\n' +
+      '  ]\n}\n');
+    await writeFile(join(root, '.codex-plugin/plugin.json'),
+      JSON.stringify({ name: PLUGIN, version: '1.2.3', skills: './skills/' }, null, 2) + '\n');
+
+    let err;
+    await assert.rejects(
+      () => release({ bump: 'patch', root, pluginsRoot: pr, skipCache: true, gitSha: 'x' }),
+      e => { err = e; return true; },
+    );
+    assert.equal(err.kind, 'manifest-format');
+    assert.match(err.message, /marketplace\.json/);
+
+    // and nothing was written: the harness entry is still 1.2.3
+    const text = await readFile(join(root, '.claude-plugin/marketplace.json'), 'utf8');
+    assert.match(text, /"version":"1\.2\.3"/, 'self entry must not have been left behind at the old version silently');
+    assert.doesNotMatch(text, /1\.2\.4/, 'no partial bump may be written');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(pr, { recursive: true, force: true });
+  }
+});
+
+// --dry-run is documented as the release preflight; a preflight that skips
+// format validation reports success on a tree where the real run throws.
+test('dry-run is a real preflight: it fails on a manifest the real run could not bump', async () => {
+  const root = await makeRoot();
+  const pr = await makePluginsRoot();
+  try {
+    const rawPkg = '{\n  "name": "' + PLUGIN + '",\n  "version":"1.2.3"\n}\n';
+    await writeFile(join(root, 'package.json'), rawPkg);
+
+    let err;
+    await assert.rejects(
+      () => release({ bump: 'patch', root, pluginsRoot: pr, dryRun: true, gitSha: 'x' }),
+      e => { err = e; return true; },
+    );
+    assert.equal(err.kind, 'manifest-format');
+
+    // still non-mutating
+    assert.equal(await readFile(join(root, 'package.json'), 'utf8'), rawPkg);
   } finally {
     await rm(root, { recursive: true, force: true });
     await rm(pr, { recursive: true, force: true });

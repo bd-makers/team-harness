@@ -193,7 +193,11 @@ Codex manifest/skill을 수정했다면 Codex validator도 실행하세요. 로�
    사용자 세션에 주입하는 것을 우리가 추천한다는 뜻입니다. 범용 이름(`/doctor`, `/profile` 등)이
    추가됐다면 올리기 전에 그 영향을 따져야 합니다.
 4. major 버전이 올라갔다면 **동작을 직접 확인**합니다. "구조가 온전함"은 "검증됨"이 아닙니다.
-5. 확인 결과와 올린 근거를 활성 task의 artifact에 남깁니다 — 기록 없는 판단은 다음 사람에게 전달되지 않습니다.
+5. 업스트림 `.claude-plugin/plugin.json`의 `version`이 올라갔는지 확인합니다. 설치본은 버전별
+   디렉터리(`cache/<marketplace>/<plugin>/<version>/`)에 놓이므로, **sha만 바뀌고 version이 그대로면
+   이미 설치한 사람은 캐시된 옛 사본을 계속 쓸 수 있습니다.** 그런 경우 재설치가 필요하다는 사실을
+   릴리스 노트에 함께 적습니다.
+6. 확인 결과와 올린 근거를 활성 task의 artifact에 남깁니다 — 기록 없는 판단은 다음 사람에게 전달되지 않습니다.
 
 올릴 때 바꾸는 것은 `sha` 한 곳과 위 표의 값뿐입니다. 버전 범프와는 무관하며, `release`를 태우지 않아도 됩니다.
 
@@ -204,9 +208,13 @@ Codex manifest/skill을 수정했다면 Codex validator도 실행하세요. 로�
 심볼릭 링크이므로, **clone이 옛 코드에 머물러 있으면 정상적인 `marketplace.json`을 읽고도 릴리스가
 `schema` 오류로 멈춥니다.** 동반 항목을 추가한 뒤 처음 릴리스를 돌리기 전에 clone을 갱신하세요:
 
+**버전 비교로는 잡히지 않습니다** — 이 변경은 버전 범프 없이 들어왔으므로 옛 코드와 새 코드가 같은
+`0.16.1`을 보고합니다. 코드 자체를 확인하세요:
+
 ```bash
-harness-team --version        # 이 저장소의 버전과 같아야 합니다
-# 다르면: /plugin marketplace update 또는 git -C <clone> pull
+CLONE="${CLAUDE_PLUGINS_ROOT:-$HOME/.claude/plugins}/marketplaces/harness-aijient-team-marketplace"
+grep -c selfEntries "$CLONE/src/commands/release.mjs"   # 0 이면 옛 length-one 가드입니다
+git -C "$CLONE" pull                                     # 또는 /plugin marketplace update
 ```
 
 ---
