@@ -13,6 +13,7 @@ Matt Pocock skills 2개 병합 완료 (2026-07-02).
 - 오탐 최소화: 모든 패턴이 `git`+subcommand 인접 요구(`(.*[[:space:]])?` 템플릿). `restore --staged`·`branch -d`·`checkout -b`·`clean -n`·`push --follow-tags`·커밋 메시지·non-Bash 도구는 통과.
 - 관례 통일: `jq // empty`, `TOOL_NAME != Bash` 방어, 한국어 사유+우회법 메시지, chmod 700.
 - 배선: `settings.json` 기존 Bash matcher hooks 배열에 block-first로 추가. JSON valid 확인.
+- **Provenance**: 상류 Matt Pocock, [mattpocock/skills](https://github.com/mattpocock/skills) (MIT), `skills/misc/git-guardrails-claude-code/scripts/block-dangerous-git.sh` — 대조 커밋 `885e2ca4d842d139e9aef4e48d366c63cb1b8013`. 사본이 아니라 파생이며, 정책 분기(상류 all-push 차단 → force push만 차단, `checkout -- <file>`·워킹트리 `restore` 추가)를 훅 주석에도 남겼다.
 
 ### #2 diagnosing-bugs → `templates/.claude/skills/fix-bug/SKILL.md` (보강)
 - 병렬 스킬 안 만들고 기존 Phase 1~3에 산문 흡수:
@@ -42,3 +43,12 @@ Matt Pocock skills 2개 병합 완료 (2026-07-02).
 - `(.*[[:space:]])?`는 공백으로 끝나야 해서 `--force`의 둘째 대시로 못 건너뜀 → clean은 `--force` 대안을 명시 추가.
 - 상류 스킬을 그대로 쓰지 말 것: Matt의 block-all-push는 우리 워크플로우와 모순, `checkout .`만 잡고 `checkout -- <file>` 누락. 정책·관례에 맞춘 재작성이 정답.
 
+## Follow-up
+
+### 2026-08-21 — "핀 참조로 전환" 요청 검증 (전환 안 함)
+- 요청: 벤더링된 matt-pocock 스킬을 핀 참조로 바꿔 달라. **검증 결과 전제가 성립하지 않아 전환하지 않았다.**
+- repo 전역 grep(`pocock|git-guardrails|diagnosing-bugs|grilling|wayfinder|to-spec|domain-modeling`, docs·.git 제외) 히트는 `templates/.claude/hooks/block-dangerous-git.sh` 하나뿐 — 상류 사본 없음.
+- **결정적 근거**: `mattpocock-skills` 플러그인의 `.claude-plugin/plugin.json`(sha `885e2ca`)이 노출하는 스킬 25개에 `skills/misc/git-guardrails-claude-code`가 **없다**. 상류는 repo에만 두고 플러그인으로 배포하지 않으므로 핀 참조로는 그 파일이 오지 않고, 가져오려면 다시 복사해야 한다(= 벗어나려던 벤더링).
+- 배달 경로도 다르다: 이 훅은 `src/harness.mjs:232` `copyTree`가 **소비자 프로젝트의 `.claude/hooks/`로 배달**한다. 마켓플레이스 핀은 `~/.claude/plugins` 설치일 뿐 scaffold 대상 `.claude/`를 채우지 못한다.
+- 네임스페이스 질문: `mattpocock-skills:*`와 `harness-aijient-team:*`는 접두어가 달라 공존 가능(사용자가 말한 `team-harness:`는 repo/마켓플레이스 이름). 템플릿 스킬 `fix-bug`/`new-feature`/`verify`도 상류 25개와 이름 충돌 없음. 실제 비용은 목적 중복(`diagnosing-bugs`↔`fix-bug`, `tdd`↔`harness-unittest`, `code-review`↔`harness-codex-review`, `grilling`↔`harness-interview`)과 always-on ~1.6k 토큰 — 설치 여부는 사용자 판단으로 남김.
+- 조치: 출처 표기만 적용(훅 주석 + 위 Provenance 줄). 훅 동작은 미변경 — 차단/허용 매트릭스 재실행으로 확인(force push·`reset --hard`·`checkout -- <file>`·워킹트리 `restore` = exit 2 / `push`·`restore --staged`·`branch -d` = exit 0).

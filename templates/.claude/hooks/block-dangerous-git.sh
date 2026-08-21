@@ -6,6 +6,15 @@
 # 정책: 모든 push가 아니라 "되돌릴 수 없는" 명령만 차단한다.
 # 오탐 최소화를 위해 모든 패턴은 git+subcommand 인접을 요구한다
 # (substring 휴리스틱 — 완전한 shell 파서는 아님).
+#
+# 출처(파생, 사본 아님): Matt Pocock — mattpocock/skills (MIT)
+#   https://github.com/mattpocock/skills
+#   skills/misc/git-guardrails-claude-code/scripts/block-dangerous-git.sh
+#   대조 커밋: 885e2ca4d842d139e9aef4e48d366c63cb1b8013
+# 정책 분기: 상류는 `git push`를 전부 차단하지만 여기서는 force push만 차단하고
+#   (요청 시 push는 승인된 워크플로우), 상류에 없는 `checkout -- <file>`과
+#   워킹트리 `restore`를 추가로 막는다. 상류 스크립트는 플러그인으로 배포되지
+#   않으므로(plugin.json skills 목록에 없음) 핀 참조로 대체할 수 없다.
 
 INPUT=$(cat)
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // empty')
