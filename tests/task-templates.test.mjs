@@ -53,7 +53,7 @@ test('runTask 평문 생성 출력은 spec부터 done까지 다음 단계 안내
   try {
     await runTask({ targetDir: tmpDir, flags: { member: 'tester' }, taskArgs: ['demo'] });
     const output = logs.join('\n');
-    assert.match(output, /demo-spec\.md 작성 \(Ambiguity 자가진단 포함\)/);
+    assert.match(output, /\/harness-spec으로 .*demo-spec\.md 초안 생성 \(또는 직접 작성, Ambiguity 자가진단 포함\)/);
     assert.match(output, /\/harness-interview → 구현 → 테스트 \(\/harness-unittest 계열\) → 리뷰 → \/harness-retro → done/);
   } finally {
     console.log = original;

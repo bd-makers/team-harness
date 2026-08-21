@@ -16,6 +16,7 @@
 
 ### 1-A. Ambiguity 게이트 (spec 우선)
 - 새 task 진입 시 `spec.md`의 "Ambiguity 자가진단" 4개 체크박스를 먼저 확인한다.
+- spec 본문이 비어 있으면 `/harness-spec`으로 초안을 먼저 생성한다 (Confluence·Figma·인터뷰 소스).
 - 3개 이상 미체크면 코드 작성 금지 — `/harness-interview`로 복귀해 모호성을 제거한다.
 - 게이트를 통과한 근거를 spec.md "Ontology" 섹션에 한 줄로 남긴다.
 - **Why:** 대부분의 재작업은 코드 능력이 아니라 입력 모호성에서 발생.

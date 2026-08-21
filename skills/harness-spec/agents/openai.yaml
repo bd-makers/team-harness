@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Spec"
+  short_description: "Draft the active task spec from sources."
+  default_prompt: "Use $harness-spec to draft the active task spec."

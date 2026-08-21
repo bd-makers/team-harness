@@ -18,6 +18,18 @@ modified: 2026-08-19
 
 ## [Unreleased]
 
+### Added
+- **`/harness-spec` — spec 초안 생성 커맨드/스킬 (writer).** 활성 task의 `<name>-spec.md` 초안을
+  3소스에서 생성한다: ① Confluence(PRD·spec·policy) ② Figma(wireframe·design-spec) ③ task 이름 기반
+  생성형 인터뷰(Goal/Constraint/Success/Ontology, 한 번에 질문 하나). 소스 접근은 MCP 우선 +
+  수동 붙여넣기 폴백이며, 프로젝트별 소스 기본 위치는 첫 실행 시 lazy로 입력받아
+  `.harness/config.json`의 `specSources`에 저장한다(task별 구체 URL은 실행 시 입력). 초안은
+  기존 taskSpecTemplate 골격을 유지하고 요구사항별 출처를 표기하며, 원문 덤프 대신 요약+링크만
+  남긴다. 자가진단은 근거 있는 항목만 체크하고 미달 항목은 `/harness-interview`(validator)로
+  인계한다 — writer/validator 역할 분리. 리서치 근거: OpenSpec(config context 주입, explore 톤),
+  GSD Core(`--auto @prd.md` 문서 추출, spec-phase ambiguity 스코어링). Codex 래퍼
+  `skills/harness-spec/` 동봉, `harness-task` 생성 안내와 CLAUDE.md §1-A 게이트에 연결.
+
 ### Changed
 - **AGENTS.md에 D5(2026-08-20) 결정 노트 추가 — 단일 스레드 쓰기 규칙의 범위 정정.** D4(2026-07-28)는
   "Claude·OpenCode는 동시에 병렬로 쓰지 않는다"고만 말하고 금지 범위를 적지 않아, 같은 파일의 작업
