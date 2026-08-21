@@ -18,25 +18,6 @@ modified: 2026-08-19
 
 ## [Unreleased]
 
-### Changed
-- **AGENTS.md에 D5(2026-08-20) 결정 노트 추가 — 단일 스레드 쓰기 규칙의 범위 정정.** D4(2026-07-28)는
-  "Claude·OpenCode는 동시에 병렬로 쓰지 않는다"고만 말하고 금지 범위를 적지 않아, 같은 파일의 작업
-  프로토콜 절("집계 파일은 생성물이므로 브랜치를 병렬로 둬도 충돌하지 않는다")과 긴장을 만들었다.
-  D5는 그 범위를 **같은 워킹트리·브랜치 안에서의 동시 쓰기 금지**로 명시하고, 격리된 브랜치 또는 git
-  worktree에서 작업해 **PR/MR로 병합하는 경로는 허용·권장**임을 못 박는다. D4를 뒤집지 않는다 —
-  D4의 "OpenCode는 순차 전환 세션" 규정은 같은 워킹트리를 공유할 때의 기준으로 유지되며, D4 원문도
-  그대로 보존된다(D2를 지우지 않은 D4와 같은 append-only 방식). task SSOT 4파일은 각 task 디렉터리에
-  격리되고 `docs/task_summary.md`·`docs/<user>/<user>-task.md`는 기본 브랜치에서
-  `summary --write`로만 갱신한다는 기존 제약은 그대로다.
-- **`CLAUDE.md` §2 서브에이전트 전략 불릿의 범위 명시.** "병렬 작성·결정 에이전트는 두지 않는다"가
-  격리 브랜치 병렬까지 금지하는 것으로 읽히지 않도록 "같은 워킹트리·브랜치 안에서"라는 한정을 넣고,
-  격리 병렬(브랜치·worktree + PR/MR 병합)이 허용됨을 별도 불릿으로 덧붙였다.
-- **`README.md` 설계 스코프 절에 D5 포인터 추가.** "단일 스레드 실행 + 얇은 제어흐름" 문단이 격리
-  브랜치 병렬까지 부정하는 것으로 읽히지 않도록, 금지 대상이 같은 워킹트리 동시 쓰기임을 한 문장으로
-  명시했다.
-- 위 변경은 루트 파일과 `templates/*.hbs` 양쪽에 동일하게 반영되어 새로 scaffold 되는 프로젝트도
-  같은 문서를 받는다(`README.md`는 이 저장소 전용이라 짝이 없다).
-
 ### Added
 - **spec/plan 단계 다이어그램 옵트인.** 신규 task를 만든 직후 다이어그램을 함께 만들지 **1회만**
   묻고, "예"면 `<name>-plan.md` 단계에 체크박스를 추가하고 "아니오"면 아무것도 추가하지 않는다.
@@ -57,6 +38,58 @@ modified: 2026-08-19
   `tests/agent-files.test.mjs`가 core에 Claude 전용 스킬 이름이 새는 회귀를 차단한다.
 - CLI(`src/`)는 변경하지 않았다 — Codex 표면(`skills/harness-task/SKILL.md`)도
   `commands/harness-task.md`를 SSOT로 읽으므로 두 에이전트 경로가 한 문서로 커버된다.
+- **`/harness-ship` — PR/MR 직전 최종 갱신 커맨드.** 라이프사이클이 `harness-team done`에서 끝나
+  문서와 실제 머지 사이가 비어 있었다. 리뷰어가 문서를 읽는 시점은 PR인데 그때 spec·plan·artifact가
+  최신이라는 보장이 없었다. ship은 활성 task를 확인해 세 문서를 코드 현실과 맞춘 뒤 **"PR/MR 준비
+  완료" 상태를 보고하는 데서 멈춘다** — PR/MR 생성·푸시는 하지 않는다. `harness-team done`은 손대지
+  않았다(이 저장소의 릴리스 플로우는 PR 없이 main 직접 범프 커밋 → 태그 푸시이므로 done에 PR 단계를
+  끼우면 깨진다). 다이어그램 갱신·생성은 실행 시점에 한 번 묻는 **옵트인**이며 응답을 저장하지
+  않는다(설정 스키마·전용 doctor 체크 없음). `diagram-design`은 별도로 설치되는 외부 플러그인이라
+  머신마다 있을 수도 없을 수도 있어 **하드 의존하지 않는다** — probe → degrade → record: 없으면 실패시키지
+  않고 건너뛴 뒤 artifact에 '미실행' 한 줄을 남긴다. 산출물
+  `docs/<user>/<name>/<name>-diagram.html`은 SSOT 4파일이 아닌 **생성물**이고, task 문서는 Obsidian
+  처럼 script를 제거하는 뷰어에서 열리는 경우가 많아 자립형 inline SVG HTML이 기본값이다. Claude 전용 스킬 호출은 배포되는 계약 문서 중
+  `commands/harness-ship.md`에만 두고 `AGENTS.md`에는 도구 중립 한 줄만 추가했다(Codex·Cursor·
+  OpenCode도 읽는 SSOT). 새 CLI 서브커맨드는 만들지 않았다 — ship은 에이전트 판단 작업이고,
+  `tests/manifest-sync.test.mjs`가 command 문서의 모든 `harness-team <sub>` 표기를 router case와
+  대조하므로 CLI 없는 서브커맨드는 애초에 문서화할 수 없다. Codex에서는
+  `skills/harness-ship/SKILL.md` 래퍼가 같은 command 계약을 SSOT로 읽는다.
+- **`tests/ship-command.test.mjs` — ship 계약 회귀 가드.** manifest-sync는 등록·router 구조만 보므로
+  ship을 안전하게 만드는 두 가지(PR을 스스로 열지 않는다 / 다이어그램 도구에 하드 의존하지 않는다)와
+  `AGENTS.md` 쌍의 도구 중립성은 아무도 지키지 않았다. 5개 테스트로 고정한다.
+
+### Changed
+- **AGENTS.md에 D5(2026-08-20) 결정 노트 추가 — 단일 스레드 쓰기 규칙의 범위 정정.** D4(2026-07-28)는
+  "Claude·OpenCode는 동시에 병렬로 쓰지 않는다"고만 말하고 금지 범위를 적지 않아, 같은 파일의 작업
+  프로토콜 절("집계 파일은 생성물이므로 브랜치를 병렬로 둬도 충돌하지 않는다")과 긴장을 만들었다.
+  D5는 그 범위를 **같은 워킹트리·브랜치 안에서의 동시 쓰기 금지**로 명시하고, 격리된 브랜치 또는 git
+  worktree에서 작업해 **PR/MR로 병합하는 경로는 허용·권장**임을 못 박는다. D4를 뒤집지 않는다 —
+  D4의 "OpenCode는 순차 전환 세션" 규정은 같은 워킹트리를 공유할 때의 기준으로 유지되며, D4 원문도
+  그대로 보존된다(D2를 지우지 않은 D4와 같은 append-only 방식). task SSOT 4파일은 각 task 디렉터리에
+  격리되고 `docs/task_summary.md`·`docs/<user>/<user>-task.md`는 기본 브랜치에서
+  `summary --write`로만 갱신한다는 기존 제약은 그대로다.
+- **`CLAUDE.md` §2 서브에이전트 전략 불릿의 범위 명시.** "병렬 작성·결정 에이전트는 두지 않는다"가
+  격리 브랜치 병렬까지 금지하는 것으로 읽히지 않도록 "같은 워킹트리·브랜치 안에서"라는 한정을 넣고,
+  격리 병렬(브랜치·worktree + PR/MR 병합)이 허용됨을 별도 불릿으로 덧붙였다.
+- **`README.md` 설계 스코프 절에 D5 포인터 추가.** "단일 스레드 실행 + 얇은 제어흐름" 문단이 격리
+  브랜치 병렬까지 부정하는 것으로 읽히지 않도록, 금지 대상이 같은 워킹트리 동시 쓰기임을 한 문장으로
+  명시했다.
+- 위 변경은 루트 파일과 `templates/*.hbs` 양쪽에 동일하게 반영되어 새로 scaffold 되는 프로젝트도
+  같은 문서를 받는다(`README.md`는 이 저장소 전용이라 짝이 없다).
+
+
+### Fixed
+- **`MAINTAINING.md`의 "새 커맨드 추가" 표 정정.** 모든 커맨드에 `bin/harness-team.mjs` 서브커맨드
+  등록을 요구했지만 실제로는 **CLI를 감싸는 커맨드만** 해당한다(`harness-interview`·`harness-ship`처럼
+  절차가 전부 에이전트 판단인 커맨드는 CLI가 없다). 반대로 `manifest-sync`가 실제로 강제하는
+  `skills/<name>/SKILL.md` 래퍼와 `docs/harness-overview.html` 재생성은 표에서 빠져 있었다 —
+  재생성은 `git ls-files` 기반이라 **새 파일을 `git add` 한 뒤** 돌려야 한다는 함정까지 함께 적었다.
+- **`README.md`의 슬래시 커맨드 수 3곳 동기화** (21 → 22).
+- **`diagram-design`을 "Claude Code 전용"이라고 단정한 서술 정정.** 그 저장소에는
+  `.codex-plugin/plugin.json`이 있고 `"skills": "./skills/"`를 선언한다 — Codex도 이 스킬에 접근할
+  수 있다. `CLAUDE.md` §1-B(및 템플릿 쌍), `commands/harness-task.md`, `commands/harness-ship.md`,
+  `skills/harness-ship/SKILL.md`의 표현을 "별도로 설치되는 외부 플러그인이며 머신마다 있을 수도
+  없을 수도 있다"로 바꿨다. 핵심(하드 의존 금지·probe → degrade → record)은 그대로다.
 
 ## [0.16.1] - 2026-08-19
 

@@ -84,10 +84,10 @@ OS/네트워크 격리는 이 플러그인의 스코프 밖입니다 — devcont
 | 채널 | 대상/시점 | 제공하는 것 |
 |---|---|---|
 | `apply` | 프로젝트당 1회 | hooks·rules·AGENTS/CLAUDE/GEMINI·docs 구조·`opencode.json`·`.cursor/rules` |
-| Claude Code 플러그인 설치 | 사람·머신마다 | `/harness-*` 슬래시 커맨드 21개 |
+| Claude Code 플러그인 설치 | 사람·머신마다 | `/harness-*` 슬래시 커맨드 22개 |
 | 전역 `harness-team` CLI 링크 | 사람마다 | 터미널과 훅이 호출하는 `harness-team` CLI |
 
-**`apply`만으로는 `/harness-*` 슬래시 커맨드가 설치되지 않습니다.** `apply`는 `commands/*.md` 21개를 프로젝트에 복사하지 않으며, 해당 명령은 Claude Code 플러그인 설치 채널에서 제공됩니다.
+**`apply`만으로는 `/harness-*` 슬래시 커맨드가 설치되지 않습니다.** `apply`는 `commands/*.md` 22개를 프로젝트에 복사하지 않으며, 해당 명령은 Claude Code 플러그인 설치 채널에서 제공됩니다.
 
 이 패키지는 **npm 공개 저장소에 배포되지 않습니다** — 전역 CLI는 `/plugin install`이 만든
 로컬 마켓플레이스 클론을 `npm i -g`로 링크해 얻습니다. 이미 하네스가 적용된 저장소를 clone한
@@ -106,7 +106,7 @@ harness-team doctor
 
 | 에이전트 | hooks | 커맨드/적용 표면 | 경로 스코프 규칙 |
 |---|---|---|---|
-| Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 21개 슬래시 커맨드 | `.claude/rules` `paths:` — 매칭 파일 **Read 시** 로드 |
+| Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 22개 슬래시 커맨드 | `.claude/rules` `paths:` — 매칭 파일 **Read 시** 로드 |
 | Codex | SessionStart 1종 (신뢰 승인 필요) | 슬래시 커맨드는 없고 별도 `.codex-plugin` 설치 시 동명의 스킬 | 없음 — 하위 디렉터리 `AGENTS.md`로 대체 |
 | OpenCode | 0 | `new-feature` / `fix-bug` / `verify` 3개 | 없음 |
 | Gemini | 0 | `GEMINI.md` 텍스트만 | 없음 |
@@ -145,7 +145,10 @@ cd my-project
 # → task 파일 계약은 AGENTS.md의 작업 프로토콜 및 templates/docs/README.md 참조
 # → .harness/active.json이 이 task를 가리킴
 
-# 4. 세션 종료 전
+# 4. PR/MR 올리기 직전
+/harness-ship         # spec·plan·artifact 최종 갱신 + 준비 완료 보고 (PR 생성은 별도)
+
+# 5. 세션 종료 전
 /harness-task done    # 활성 task 완료 처리 (handoff.md 갱신, task_summary 반영)
 ```
 
@@ -284,6 +287,21 @@ All checks passed.
 ### `/harness-task` — task 관리
 
 아래 [task 관리](#task-관리-팀원기능별) 섹션 참조.
+
+### `/harness-ship` — PR/MR 직전 최종 갱신
+
+활성 task의 spec·plan·artifact를 코드 현실과 맞춘 뒤 **PR/MR 준비 완료 상태를 보고**합니다.
+다이어그램 갱신·생성은 실행 시점에 한 번 묻는 **옵트인**이며, `diagram-design` 스킬이 없는
+머신에서는 실패하지 않고 건너뛴 뒤 artifact에 '미실행'으로 기록합니다.
+
+```bash
+/harness-ship
+/harness-ship --base origin/develop   # diff 기준 ref 지정
+/harness-ship --no-diagram            # 다이어그램 질문 없이 건너뛰기
+```
+
+**PR/MR을 만들지 않습니다** — 준비 완료 보고에서 멈추고 생성·푸시는 사용자 지시로 진행합니다.
+`harness-team done`(task 완료 처리)을 대체하지도, 실행하지도 않습니다.
 
 ### `/harness-clone` — project → backup dir 동기화
 

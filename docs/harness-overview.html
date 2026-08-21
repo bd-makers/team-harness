@@ -430,6 +430,12 @@
             <td>task 관리 (task/list/done/handoff) — docs/&lt;user&gt;/&lt;name&gt;/ 구조</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
           </tr>
+          <tr data-command-source="commands/harness-ship.md">
+            <td><span class="cmd">/harness-ship</span></td>
+            <td><code>commands/harness-ship.md</code></td>
+            <td>PR/MR 직전 spec·plan·artifact를 최종 갱신하고 다이어그램(옵트인)까지 정리한 뒤 준비 완료 상태를 보고</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
           <tr data-command-source="commands/harness-clone.md">
             <td><span class="cmd">/harness-clone</span></td>
             <td><code>commands/harness-clone.md</code></td>
@@ -1305,6 +1311,11 @@
             <td>현재(또는 지정) task의 artifact.md에 학습/교정 내용을 append. CLAUDE.md 자기개선 루프 정책 실행.</td>
           </tr>
           <tr>
+            <td><code>commands/harness-ship.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>PR/MR 직전 spec·plan·artifact를 최종 갱신하고 다이어그램(옵트인)까지 정리한 뒤 준비 완료 상태를 보고</td>
+          </tr>
+          <tr>
             <td><code>commands/harness-sim.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
             <td>설치된 하네스와 에이전트 워크플로우 스킬이 진짜 작동하는지 실제 claude -p 세션으로 검증 (L5 agent-in-the-loop) + 날짜 리포트 (harness-sim 스킬 위임)</td>
@@ -1543,6 +1554,11 @@
             <td><code>skills/harness-retro/agents/openai.yaml</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
             <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-ship/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
           </tr>
           <tr>
             <td><code>skills/harness-sim/SKILL.md</code></td>
@@ -2041,6 +2057,11 @@
           </tr>
           <tr>
             <td><code>tests/session-context.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/ship-command.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>

@@ -147,6 +147,8 @@ HTML로 쓴다 — `docs/`는 Obsidian 볼트에서 열리고 Obsidian은 script
   `harness-team boundary check`가 생산자·소비자 JSON Schema의 필수 필드와 기본 type을 대조한다.
   선언이 없으면 `boundary: not-configured`으로 통과한다.
 - **commit 시**: post-commit hook이 `<name>-handoff.md`와 `<user>-handoff.md` 자동 갱신
+- **PR/MR 직전(ship)**: spec·plan·artifact를 최종 갱신하고 준비 완료를 보고한다 — 다이어그램
+  갱신은 옵트인이며, 절차·산출물 계약은 ship 명령 문서가 정본이다(PR/MR 생성은 별도 지시).
 - **완료**: plan 전체 완료 감지 또는 사용자 신호 → AskUserQuestion → `harness-team done`
 
 ### 코드 리뷰 기준

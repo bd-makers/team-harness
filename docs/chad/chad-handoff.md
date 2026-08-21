@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-diagram-optin
+ship-command
 
 ## Last Commit (2026-08-20)
-65a8c8b docs(task): plan 완료 체크 + artifact/TCC에 PR #26 기록
+d04bb73 chore(task): post-commit handoff 갱신
 
 ## Full Context
-→ docs/chad/diagram-optin/diagram-optin-handoff.md
+→ docs/chad/ship-command/ship-command-handoff.md

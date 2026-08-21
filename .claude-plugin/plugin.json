@@ -11,6 +11,7 @@
     "./commands/harness-sync.md",
     "./commands/harness-doctor.md",
     "./commands/harness-task.md",
+    "./commands/harness-ship.md",
     "./commands/harness-clone.md",
     "./commands/harness-symlink.md",
     "./commands/harness-delete.md",
