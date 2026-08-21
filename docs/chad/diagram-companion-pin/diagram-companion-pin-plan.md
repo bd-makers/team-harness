@@ -9,29 +9,29 @@
 ## 단계
 
 ### A. 마켓플레이스 핀 + 릴리스 가드
-- [ ] 핀 sha 후보 2개(`0ab077f`, `5538b35`)의 트리를 실제로 받아 대조하고 선택 근거를 spec에 기록
-- [ ] Anthropic 공식 마켓플레이스 `marketplace.json`을 직접 파싱해 항목 형식 확정(ref/version 유무 포함)
-- [ ] `src/commands/release.mjs` — 가드를 "이름으로 찾은 자기 항목이 정확히 1개"로 교체
-- [ ] `src/commands/release.mjs` — 버전 동기화 대상을 `plugins[0]` → 자기 항목으로 교체
-- [ ] `src/commands/release.mjs` — `ERROR_ADVICE.schema` 문구를 새 계약에 맞게 갱신
-- [ ] `.claude-plugin/marketplace.json` — `diagram-design` 동반 항목 추가(자기 항목 뒤, `version` 없음)
-- [ ] `tests/release.test.mjs` — 새 계약 3건 고정(동반 항목 무해·중복 자기 항목 throw·동반 version이면 manifest-format throw)
-- [ ] `tests/manifest-sync.test.mjs` — `plugins[0]` 인덱스 접근을 이름 조회로 강화 + 저장소 불변식(동반 항목은 version 없음, source.sha는 40hex) 추가
-- [ ] `commands/harness-release.md` / `README.md` 의 `plugins[0]` 언급 갱신
+- [x] 핀 sha 후보 2개(`0ab077f`, `5538b35`)의 트리를 실제로 받아 대조하고 선택 근거를 spec에 기록
+- [x] Anthropic 공식 마켓플레이스 `marketplace.json`을 직접 파싱해 항목 형식 확정(ref/version 유무 포함)
+- [x] `src/commands/release.mjs` — 가드를 "이름으로 찾은 자기 항목이 정확히 1개"로 교체
+- [x] `src/commands/release.mjs` — 버전 동기화 대상을 `plugins[0]` → 자기 항목으로 교체
+- [x] `src/commands/release.mjs` — `ERROR_ADVICE.schema` 문구를 새 계약에 맞게 갱신
+- [x] `.claude-plugin/marketplace.json` — `diagram-design` 동반 항목 추가(자기 항목 뒤, `version` 없음)
+- [x] `tests/release.test.mjs` — 새 계약 3건 고정(동반 항목 무해·중복 자기 항목 throw·동반 version이면 manifest-format throw)
+- [x] `tests/manifest-sync.test.mjs` — `plugins[0]` 인덱스 접근을 이름 조회로 강화 + 저장소 불변식(동반 항목은 version 없음, source.sha는 40hex) 추가
+- [x] `commands/harness-release.md` / `README.md` 의 `plugins[0]` 언급 갱신
 
 ### B. 어댑터 커맨드
-- [ ] `commands/harness-diagram.md` 작성 — 실행 절차의 정본(probe→degrade→record, 산출물 경로·형식, artifact 기록)
-- [ ] `skills/harness-diagram/SKILL.md` 작성 — 커맨드를 SSOT로 읽는 Codex 래퍼, description은 하네스 task 문맥으로 한정
-- [ ] `.claude-plugin/plugin.json` commands 배열에 등록(#25와 충돌 시 rebase, 상대 항목 보존)
-- [ ] `CLAUDE.md` + `templates/CLAUDE.md.hbs` 1-B에 절차 정본 포인터 한 문장 추가(AGENTS.md는 건드리지 않음)
+- [x] `commands/harness-diagram.md` 작성 — 실행 절차의 정본(probe→degrade→record, 산출물 경로·형식, artifact 기록)
+- [x] `skills/harness-diagram/SKILL.md` 작성 — 커맨드를 SSOT로 읽는 Codex 래퍼, description은 하네스 task 문맥으로 한정
+- [x] `.claude-plugin/plugin.json` commands 배열에 등록(#25와 충돌 시 rebase, 상대 항목 보존)
+- [x] `CLAUDE.md` + `templates/CLAUDE.md.hbs` 1-B에 절차 정본 포인터 한 문장 추가(AGENTS.md는 건드리지 않음)
 
 ### C. 문서 · 검증
-- [ ] `MAINTAINING.md` — 동반 플러그인 핀 절차(언제·무엇을 확인·누가 결정 + 옛 가드 clone 경고)
-- [ ] `README.md` — 동반 플러그인 소개, 선택 사항 명시, MIT 저작자 표기
-- [ ] `CHANGELOG.md` `[Unreleased]` 항목 추가
-- [ ] `npm run test` 전체 통과를 실제 출력으로 확인
+- [x] `MAINTAINING.md` — 동반 플러그인 핀 절차(언제·무엇을 확인·누가 결정 + 옛 가드 clone 경고)
+- [x] `README.md` — 동반 플러그인 소개, 선택 사항 명시, MIT 저작자 표기
+- [x] `CHANGELOG.md` `[Unreleased]` 항목 추가
+- [x] `npm run test` 전체 통과를 실제 출력으로 확인
 - [ ] 격리 브랜치 커밋 → main 대상 PR 생성(머지하지 않음) → PR 번호 보고
-- [ ] artifact.md에 결과·네임스페이스 사실·후속 작업 기록
+- [x] artifact.md에 결과·네임스페이스 사실·후속 작업 기록
 
 ## Ontology 변경 로그
 

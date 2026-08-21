@@ -34,6 +34,9 @@
   지우면 옵트인 사실이 사라지고, 열어 둔 채로는 `harness-team done` 가드가 완료를 막는다.
 - 산출물은 `docs/<user>/<name>/<name>-diagram.html` — 자립형 inline SVG(Obsidian이 script를 제거하므로
   런타임 JS 다이어그램은 볼트에서 렌더되지 않는다).
+- 그 계약을 **실행**하는 절차는 `/harness-diagram`(`commands/harness-diagram.md`)이 정본이다 —
+  다이어그램 스킬은 마켓플레이스에 sha로 핀을 건 **동반 플러그인**(선택 사항)이며, 어댑터가 위
+  경로·형식·기록 규약을 상류 호출에 주입한다.
 - **Why:** 다이어그램은 spec의 모호성을 드러내지만 모든 task에 필요하진 않다. 강제하면 비용이 되고,
   특정 도구에 하드 의존하면 그 도구가 없는 머신에서 반드시 깨진다.
 - **How to apply:** 신규 task 생성 시 1회, 재활성화 시에는 묻지 않는다. 1-A·5-A와 달리 "작은
