@@ -36,7 +36,17 @@
     failure 메시지에 경계 규칙 힌트 1줄 추가 필요.
   - **P3** 3건(테스트가 apply 전달을 직접 검증 안 함 / command 정본 테스트가 AskUserQuestion·preflight 미고정 /
     드리프트 검사가 단방향) → 유효하나 기존 설계 패턴과 동일 수준. 후속 보강 후보.
-- 조치: review-only 계약에 따라 이 리뷰에서 수정하지 않음. P2-2·P2-3 수정안을 사용자에게 보고, 지시 대기.
+- 조치: review-only 계약에 따라 리뷰 시점에는 수정하지 않고 보고. 사용자 지시(2026-08-21,
+  "서브에이전트로 구현 + 메인 리뷰")로 아래와 같이 조치 완료:
+  - **P2-2 수정**: CLAUDE.md(템플릿+루트) §1에 "작은 버그·문서 수정에는 생략해도 된다" 복원,
+    harness-task-guide.html의 D-포맷 예시 출처를 `docs/decisions.md`로 정정.
+  - **P2-3 수정**: `context.mjs` failure-capsules 메시지에 capsule 경계 규칙·해소 방법 힌트 추가 + 테스트 고정.
+  - **P3-2 수정**: command 정본 테스트에 AskUserQuestion·preflight·inline SVG·artifact 기록 핀 4개 추가.
+  - **P2-1**: doctor 체크 후속 task로 분리 (spawn_task chip 발행).
+  - 구현: general-purpose 서브에이전트(Sonnet, 같은 워크트리 순차 쓰기 — D4 준수), 메인 세션이 diff 리뷰.
+  - 부수 발견: `harness-overview-generation` 테스트 실패는 서브에이전트 주장(기존 문제)과 달리
+    커밋 0c500c1이 `templates/docs/decisions.md`를 추적시켜 오버뷰의 `git ls-files` 파일 트리가
+    자란 것이 원인 — `npm run docs:generate` 재생성으로 해소. 최종 302/302 green.
 
 
 ## Learnings

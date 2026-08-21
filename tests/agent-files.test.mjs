@@ -175,6 +175,10 @@ test('commands/harness-task.md는 created/activated를 구분하고 건너뛴 �
   assert.match(doc, /- \[x\] spec\/plan 다이어그램 — 미실행\(도구 없음\)/, '건너뛴 단계를 닫는 방법');
   assert.match(doc, /지우면 옵트인했다는 사실 자체가 사라지고/, '단계 삭제 금지 근거');
   assert.match(doc, /docs\/<user>\/<name>\/<name>-diagram\.html/, '산출물 경로');
+  assert.match(doc, /`AskUserQuestion`으로 한 번만 묻는다/, 'AskUserQuestion으로 1회만 묻는 계약');
+  assert.match(doc, /설치 명령을 단정해 안내하지 말고/, 'preflight에서 설치 명령을 단정해 안내하지 않는 계약');
+  assert.match(doc, /자립형 \*\*inline SVG\*\*로 쓴다/, '산출물은 inline SVG 요구');
+  assert.match(doc, /"다이어그램 미실행 — 도구 없음"을 날짜와 함께 한 줄 남긴다/, '도구 없을 때 artifact 기록 계약');
 });
 
 // 두 표면이 같은 종결 규칙을 말해야 한다 — 요약(AGENTS)이 절차(command)와 어긋나면

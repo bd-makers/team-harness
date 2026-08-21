@@ -20,3 +20,12 @@ AGENTS.md                                          | 61 ++++++++--------------
  tests/agent-files.test.mjs                         | 55 +++++++++++++------
  15 files changed, 286 insertions(+), 145 deletions(-)
 
+
+## 2026-08-21T05:51:06.066Z — e1361d4 docs(task): instruction-structure 결과·Codex 리뷰 기록 (P2 3건, 조치 대기)
+docs/chad/chad-handoff.md                          |  8 +++---
+ .../instruction-structure-artifact.md              | 30 ++++++++++++++++++++++
+ .../instruction-structure-context.md               |  4 +--
+ .../instruction-structure-handoff.md               | 19 ++++++++++++++
+ .../instruction-structure-plan.md                  |  5 ++--
+ 5 files changed, 58 insertions(+), 8 deletions(-)
+

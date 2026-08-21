@@ -15,7 +15,10 @@
 - [x] 전역 ~/.claude/CLAUDE.md 드리프트 수정 (레포 밖, 커밋 없음 — hsonpro 머신 수동 반영 필요)
 - [x] 외부 리뷰(/harness-codex-review) + artifact ## Reviews 기록 — verdict: changes requested (P2 3건)
 - [x] artifact.md 결과 기록
-- [ ] 리뷰 P2 조치 (사용자 지시 대기): P2-2 예외 문구·guide 정합, P2-3 TCC 문구/메시지, (선택) P2-1 doctor 체크
+- [x] 리뷰 P2 조치 — 서브에이전트(Sonnet) 구현 + 메인 세션 리뷰 (사용자 지시 2026-08-21):
+  P2-2 예외 문구 복원·guide 정합, P2-3 check 메시지에 capsule 경계 힌트, P3-2 command 테스트 핀 보강
+- [x] P2-1 doctor 체크는 별도 후속 task로 분리 (spawn_task chip 발행됨)
+- [x] harness-overview 재생성 (`npm run docs:generate`) — 커밋으로 추적 파일 트리가 자란 것 반영
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
