@@ -18,6 +18,8 @@ modified: 2026-08-21
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-08-22
+
 ### Added
 - **`/harness-review`·`/harness-adversarial-review` — 리뷰 커맨드의 엔진 중립 재편.** 엔진(codex·
   claude·gemini·custom)과 프레이밍(통상/적대적)은 직교하는데 기존 이름은 엔진을 커맨드명에 박아
