@@ -214,7 +214,12 @@ diff 읽기만으로 쓰지 않았다. `git show FETCH_HEAD:templates/.claude/ho
 | | 결과 |
 |---|---|
 | `npm run test` (전체) | **5회 중 2회 실패** |
-| `node --test --test-concurrency=1 tests/perf/*.test.mjs` (단독) | 2회 중 0회 실패 (522.8ms / 573.1ms) |
+| `node --test --test-concurrency=1 tests/perf/*.test.mjs` (단독) | 2회 중 0회 실패 |
+
+> **522.8ms / 573.1ms는 측정값이 아니다.** `node --test`가 테스트 이름 뒤 괄호에 찍는
+> **테스트 전체 소요시간**이며, 샌드박스 setup + cold 3회·checkpoint 3회 CLI 스폰 + cleanup을
+> 전부 포함한다. 임계(cold 절대 상한 500ms)와 비교할 대상이 아니다 — CLI 스폰 6회가 522ms 안에
+> 들어갔다는 뜻이라 개별 샘플은 그보다 훨씬 작다.
 
 **실패 메시지 원문은 없다** — 출력을 `grep -E "^ℹ (tests|pass|fail)"`로 걸러 봐서 요약 카운트
 (`ℹ tests 1 / pass 0 / fail 1`)만 남았고 assertion 본문은 캡처하지 못했다. 재현은 리뷰어 몫이라
