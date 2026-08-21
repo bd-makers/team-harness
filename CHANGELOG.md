@@ -89,6 +89,23 @@ modified: 2026-08-21
   동반 항목이 `version`을 들면 `manifest-format`으로 throw)을 추가하고, `tests/manifest-sync.test.mjs`의
   `plugins[0]` 인덱스 접근을 이름 조회로 강화한 뒤 "동반 항목은 40hex `source.sha`로 핀되고 `version`을
   갖지 않으며 저작자를 표기한다"는 저장소 불변식을 새로 고정했다.
+- **`docs/prerequisites.md` — 사전 준비 문서.** README에 `## 설치`와 `## 빠른 시작`만 있고
+  "무엇이 없으면 무엇이 안 되는가"를 말하는 절이 없었다. 평평한 설치 목록이 아니라 **능력
+  매트릭스**로 썼다 — 하드 요구사항은 **Node ≥18 하나뿐**이고(`engines.node`, 런타임 의존성 0개)
+  나머지는 전부 degrade 대상이다. `git`조차 하드 요구사항이 아니다: `detectMember`는 `$USER` →
+  `unknown`으로 폴백하고 `handoff`는 git 실패를 catch하며 `installPostCommitHook`은 `.git/hooks`가
+  없으면 조용히 return한다 — 없으면 "아무것도 안 되는" 게 아니라 post-commit handoff·summary
+  브랜치 감지·task 전환 diff가 no-op이 된다. `gh`는 하네스 코드가 한 번도 호출하지 않고
+  (`/harness-ship`은 PR을 만들지 않고 멈춘다) `gemini`·`opencode`도 마찬가지다 — 셋 다 **사용자가
+  직접 쓰는** 도구지 하네스가 의존하는 도구가 아니다. 에이전트별 연동·확인 방법·호환성 주의
+  포함. `README.md`에는 요약표 한 절만 넣고 상세는 이 문서로 링크한다(기존 `### 요구사항`은
+  새 절과 모순되므로 포인터 한 줄로 축약).
+- **`tests/prerequisites-doc.test.mjs` — 문서↔doctor 드리프트 가드.** `harness-team doctor`가 이미
+  런타임 체커이므로 문서가 `EXTERNAL_TOOLS`와 어긋나는 순간 문서가 거짓말이 된다. `EXTERNAL_TOOLS`를
+  export하고 **양방향**으로 검사한다: doctor가 검사하는 도구가 문서에 없으면 실패하고, 문서가
+  나열한 도구를 doctor가 검사하지 않아도 실패한다. 한 방향만으로는 영원히 통과하므로 역방향이
+  실제로 잡아 주는 쪽이다. 표는 한국어 제목이 아니라 `<!-- prerequisites:external-tools -->` 주석
+  마커로 찾아 문구를 다듬어도 테스트가 깨지지 않는다.
 
 ### Changed
 - **AGENTS.md에 D5(2026-08-20) 결정 노트 추가 — 단일 스레드 쓰기 규칙의 범위 정정.** D4(2026-07-28)는
@@ -133,6 +150,21 @@ modified: 2026-08-21
 - **`README.md`에 "동반 플러그인 (선택)" 절 추가.** 없어도 하네스가 정상 동작한다는 사실, 설치 명령,
   MIT 저작자 표기(Cathryn Lavery), 핀이 자동으로 따라가지 않는다는 사실, vendoring 하지 않는 이유,
   하네스 안에서는 `/harness-diagram`으로 부른다는 사실을 함께 적었다.
+- **jq 부재 시 훅 fail-open을 문서에 명시.** `templates/.claude/hooks/`의 훅은 stdin JSON을 `jq -r`로
+  파싱하므로 jq가 없으면 `TOOL_NAME`/`FILE_PATH`가 빈 문자열이 되어 조기 `exit 0`으로 빠진다.
+  jq만 제거한 PATH로 실측한 결과 **보안 훅 2개가 조용히 무력화된다**: `block-dangerous-git.sh`는
+  `git push --force`를(exit 2 → 0), `protect-files.sh`는 `.env` 편집을 통과시키고,
+  `pre-commit-check.sh`는 commit 전 typecheck·test 게이트를 건너뛴다(`auto-format.sh`는 무해).
+  에러도 doctor의 fail도 없어 가드가 걸려 있다고 믿는 상태에서 아무것도 막히지 않는다.
+  **훅 코드는 이번 변경에서 손대지 않았다** — 사실만 `docs/prerequisites.md` §3과 README 요약표에
+  명시했고, fail-closed 수정은 별도 작업이다.
+- **호환성 주의 — `mattpocock-skills`의 `writing-for-agents`.** 그 스킬의 description이
+  *"Use when … modifying AGENTS.md or CLAUDE.md"* 라 이 저장소에서 자동 발동하는데, 여기의
+  `AGENTS.md`·`CLAUDE.md`·`GEMINI.md`는 `templates/*.hbs`에서 생성되고 `harness:section` 마커 블록이
+  루트와 템플릿 쌍으로 같아야 `tests/agent-files.test.mjs`·`tests/e2e/ssot-consistency.test.mjs`가
+  통과한다. 루트만 고치면 CI가 깨지고 원인을 찾기 어렵다. 나머지 중복(`diagnosing-bugs`↔`fix-bug`,
+  `tdd`↔`harness-unittest` 계열, `code-review`↔`harness-codex-review`, `grilling`↔`harness-interview`,
+  `domain-modeling`↔spec의 Ontology)은 **무해한 중복**이라 어느 쪽을 쓸지만 정하면 된다.
 
 
 ### Fixed

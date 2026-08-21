@@ -18,7 +18,10 @@ const pexec = promisify(execFile);
 // warning when the block is missing, so the report never claims "차단은 유지" about a
 // hook that would silently allow everything. Either way it is a warning (never fail++,
 // so the exit code contract is unchanged) rather than "optional".
-const EXTERNAL_TOOLS = [
+// Exported so docs/prerequisites.md cannot drift from what doctor actually checks:
+// tests/prerequisites-doc.test.mjs compares this list against the documented table
+// in both directions.
+export const EXTERNAL_TOOLS = [
   { cmd: 'gh', label: 'gh (GitHub CLI)' },
   { cmd: 'codex', label: 'codex (Codex CLI)' },
   { cmd: 'gemini', label: 'gemini (Gemini CLI)' },

@@ -21,6 +21,7 @@ modified: 2026-08-07
 ## 목차
 - [왜 필요한가](#왜-필요한가)
 - [빠른 시작](#빠른-시작)
+- [사전 준비](#사전-준비)
 - [설치](#설치)
 - [동반 플러그인 (선택)](#동반-플러그인-선택)
 - [명령어 레퍼런스](#명령어-레퍼런스)
@@ -157,6 +158,30 @@ cd my-project
 > `SessionStart` 훅이 활성 task 유무를 감지해 **재개 / 새 task / task 없이 진행** 중 하나를
 > 물어봅니다(block이 아닌 nudge — 판단은 Claude). "task로 시작" 규율을 강제가 아니라
 > 부드럽게 상기시킵니다.
+
+---
+
+## 사전 준비
+
+**하드 요구사항은 Node.js ≥ 18 하나뿐입니다** (`engines.node`, 런타임 npm 의존성 0개).
+나머지는 "있으면 켜지고 없으면 그 기능만 꺼지는" 능력 매트릭스입니다.
+`git` 아래 다섯 개는 `harness-team doctor`가 런타임에 유무를 확인해 줍니다.
+
+| 도구 | 없으면 |
+|---|---|
+| Node.js ≥ 18 | `harness-team` CLI가 실행되지 않음 — 유일한 하드 요구사항 |
+| `jq` | **Claude Code 보안 훅이 조용히 fail-open** (`git push --force`·`.env` 편집이 통과) — doctor는 `optional`로 보고하지만 optional이 아닙니다 |
+| `git` | CLI는 동작하되 post-commit handoff·summary 브랜치 감지·task 전환 diff가 no-op |
+| `gh` | `/harness-ship` 이후 **사용자가 직접 여는** PR 단계용 — 하네스 명령은 영향 없음 |
+| `codex` | `/harness-codex-review`, `/harness-codex-adversarial-review`, Codex L5 시뮬레이션 |
+| `gemini` | 병렬 외부 리뷰 — 건너뛰되 artifact에 "미실행"을 기록 |
+| `opencode` | OpenCode 순차 드라이버 세션 (하네스는 설정 파일을 쓰기만 합니다) |
+
+> **⚠ jq를 먼저 확인하세요.** 없으면 에러도 doctor의 fail도 없이 훅이 통과합니다 —
+> 가드가 걸려 있다고 믿는 상태에서 아무것도 막히지 않습니다.
+
+에이전트별 연동, 실측 근거, 호환성 주의(특히 `mattpocock-skills`의 `writing-for-agents`)는
+**[docs/prerequisites.md](./docs/prerequisites.md)** 를 보세요.
 
 ---
 
@@ -760,7 +785,7 @@ rsync -a \
 
 ### 요구사항
 
-Node.js 18+. 외부 의존성 없음 (표준 라이브러리만).
+[사전 준비](#사전-준비) 참조 — 상세는 [docs/prerequisites.md](./docs/prerequisites.md).
 
 ---
 
