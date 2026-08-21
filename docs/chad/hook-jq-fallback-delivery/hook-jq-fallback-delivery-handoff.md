@@ -38,3 +38,10 @@ docs/chad/chad-handoff.md                          |  6 ++---
  .../hook-jq-fallback-delivery-handoff.md           | 31 ++++++++++++++++++++++
  2 files changed, 34 insertions(+), 3 deletions(-)
 
+
+## 2026-08-21T13:13:06.893Z — b00b937 docs(task): plan 완료 체크 + PR 링크, handoff 자동 갱신 반영
+docs/chad/chad-handoff.md                                           | 2 +-
+ .../hook-jq-fallback-delivery/hook-jq-fallback-delivery-handoff.md  | 6 ++++++
+ .../hook-jq-fallback-delivery/hook-jq-fallback-delivery-plan.md     | 2 +-
+ 3 files changed, 8 insertions(+), 2 deletions(-)
+
