@@ -28,7 +28,7 @@ modified: 2026-08-21
   남긴다. 자가진단은 근거 있는 항목만 체크하고 미달 항목은 `/harness-interview`(validator)로
   인계한다 — writer/validator 역할 분리. 리서치 근거: OpenSpec(config context 주입, explore 톤),
   GSD Core(`--auto @prd.md` 문서 추출, spec-phase ambiguity 스코어링). Codex 래퍼
-  `skills/harness-spec/` 동봉, `harness-task` 생성 안내와 CLAUDE.md §1-A 게이트에 연결.
+  `skills/harness-spec/` 동봉, `harness-task` 생성 안내와 CLAUDE.md Ambiguity 자가진단 게이트에 연결.
 
 ## [0.17.0] - 2026-08-22
 

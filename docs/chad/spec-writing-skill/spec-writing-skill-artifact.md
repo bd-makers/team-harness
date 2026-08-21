@@ -63,6 +63,15 @@ Gemini 리뷰: gemini CLI 미설치로 **미실행**.
   (manifest-sync 3중 동기화, 드리프트, next-actions 문자열)만 테스트로 확인.
   실사용 첫 실행 또는 `/harness-sim` 확장에서 검증 필요.
 
+### 2026-08-22 — Codex read-only 리뷰 (main 0.17.0 머지 충돌 해소분)
+
+`codex exec --sandbox read-only`, 대상: 머지 커밋 780dbfc. 결과 P1 0 / P2 0 / P3 1.
+1. (P3) main에서 압축·제거된 CLAUDE.md `§1-A` 절을 가리키는 잔여 참조 3곳
+   (commands/harness-spec.md ×2, CHANGELOG Unreleased 항목) → "Ambiguity 자가진단 게이트"
+   참조로 교체 ✅ (0.12.0 릴리스 이력 항목의 1-A 언급은 당시 사실이므로 유지)
+- 그 외 확인: CHANGELOG 0.17.0 섹션 main과 byte-for-byte 동일 · README 26개 표기 = 실제
+  commands/*.md = manifest 등재 · chad-handoff EOF 정상(LF 1개) · 충돌 마커·중복 텍스트 없음.
+
 ## Learnings
 
 - **생성물은 커밋 시점까지 내다봐야 한다**: `generate-harness-overview.mjs`가 `git ls-files` 기반이라
