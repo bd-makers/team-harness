@@ -26,3 +26,9 @@ docs/chad/chad-handoff.md                          |  2 +-
  docs/what-changes-0.18.1.html                      |  4 +--
  docs/what-changes-latest-version.html              |  4 +--
  6 files changed, 55 insertions(+), 12 deletions(-)
+
+## 2026-08-24T09:36:18.563Z — 4953f9a chore(task): PR #40 CI 그린 반영 및 handoff 갱신
+docs/chad/chad-handoff.md                                        | 2 +-
+ docs/chad/release-0181-recovery/release-0181-recovery-handoff.md | 9 +++++++++
+ docs/chad/release-0181-recovery/release-0181-recovery-plan.md    | 2 +-
+ 3 files changed, 11 insertions(+), 2 deletions(-)

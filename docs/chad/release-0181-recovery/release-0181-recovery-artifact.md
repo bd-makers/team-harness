@@ -14,6 +14,11 @@
   브라우저 프리뷰(`ao preview` + `ao browser get text body`)로 렌더 확인 — nav·hero·release-brief·
   4개 섹션·footer 정상, 이스케이프한 HTML 주석 마커도 본문에 그대로 표시.
 - PR: [#40](https://github.com/bd-makers/team-harness/pull/40).
+- 태그 push 전 3검사(`MAINTAINING.md` 8단계)를 브랜치에서 선행 실행 — `changelog-section.mjs 0.18.1`
+  exit 0, `### Added`/`### Fixed`/`### Notes` 3개 서브섹션 출력, 헤딩 줄 제거·인접 절 미혼입 확인.
+  `CHANGELOG.md`를 이 PR이 건드리지 않으므로 머지 커밋에서 돌리는 것과 동치다.
+  → `release.yml` 4개 게이트 중 3개 실측 확인(버전 일치·npm test·노트 추출), 4번째는
+  v0.18.1 릴리스가 존재하지 않아 `gh release create` 충돌 없음.
 
 ## Reviews
 *Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*

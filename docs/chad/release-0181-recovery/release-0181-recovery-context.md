@@ -3,9 +3,9 @@
 
 ## Now
 - Goal: 빠진 `docs/what-changes-0.18.1.html`을 채워 main CI를 녹색으로 되돌리고 v0.18.1 릴리스를 발행한다.
-- Current atomic step: PR 생성 → CI 그린 확인 → 태그 처리 방안 보고
-- Stop / human-decision condition: 태그 `v0.18.1` 처리(강제 이동 vs 0.18.2 재범프)는 오케스트레이터
-  승인 전 실행 금지.
+- Current atomic step: PR #40 CI 그린 · 태그 방안 보고 완료 → **사람 승인 대기**
+- Stop / human-decision condition: 머지·태그 이동 모두 **사람 승인 전 실행 금지**. 오케스트레이터가
+  (a) 태그 강제 이동에 기술적으로 동의했고 사용자 승인만 남았다.
 
 ## Constraints and settled decisions
 - docs/는 Obsidian 볼트에서 열린다 → 자립형 정적 HTML만. 런타임 JS 다이어그램 금지.
@@ -20,11 +20,17 @@
 - Narrow globs: `docs/what-changes-*.html`, `.github/workflows/release.yml`
 - Read next: `MAINTAINING.md` 릴리스 절차 4~9단계 (한 커밋 계약의 근거)
 - Verification command: `npm run test` (388 tests / 387 pass / 1 skip) · `npm run docs:check`
+- 태그 push 전 3검사(MAINTAINING.md 8단계, 브랜치에서 선행 확인 완료 — 승인 후 main에서 재실행):
+  `node scripts/changelog-section.mjs 0.18.1 && node -p "require('./package.json').version" && npm test`
 
 ## Failure capsules (max 3 unresolved)
 (none)
 
 ## Resume checklist
-- `git log --oneline -3` 로 현재 브랜치 상태 확인
-- PR CI 상태 확인 → 머지 여부 확인
-- 태그 처리는 보고·승인 이후에만
+- 승인 도착 여부 확인 → 없으면 대기. 승인 없이 머지·태그 금지.
+- 승인 시: ① `gh pr merge 40 --merge` ② `git checkout main && git pull --ff-only`
+  ③ main에서 3검사 ④ `git push origin :refs/tags/v0.18.1` →
+  `git tag -f v0.18.1 "$(git rev-parse main)"` → `git push origin v0.18.1`
+  ⑤ main test 런 그린 + `gh release list`에 v0.18.1 Latest 확인
+- 릴리스 후: 기본 브랜치에서 `harness-team summary --write` (집계 2종은 생성물)
+- PR #39(worker-21)는 기다리지 않는다 — 이 릴리스 내용물이 아니다.
