@@ -29,8 +29,12 @@
 ## Resume checklist
 - 승인 도착 여부 확인 → 없으면 대기. 승인 없이 머지·태그 금지.
 - 승인 시: ① `gh pr merge 40 --merge` ② `git checkout main && git pull --ff-only`
-  ③ main에서 3검사 ④ `git push origin :refs/tags/v0.18.1` →
+  ③ **main push 런 그린 확인**(`gh run list --branch main --limit 1`) — run id를 artifact에 남긴다.
+  레드면 태그를 건드리지 말고 즉시 오케스트레이터에 보고.
+  ④ main에서 3검사 ⑤ `git push origin :refs/tags/v0.18.1` →
   `git tag -f v0.18.1 "$(git rev-parse main)"` → `git push origin v0.18.1`
-  ⑤ main test 런 그린 + `gh release list`에 v0.18.1 Latest 확인
-- 릴리스 후: 기본 브랜치에서 `harness-team summary --write` (집계 2종은 생성물)
-- PR #39(worker-21)는 기다리지 않는다 — 이 릴리스 내용물이 아니다.
+  ⑥ release 워크플로 그린 + `gh release list`에 v0.18.1 Latest 확인
+  ⑦ artifact 마무리 → `harness-team done` — **여기까지가 이 세션의 범위**
+- `harness-team summary --write`는 **하지 않는다**. 집계 2종은 meta status 파생 생성물이라
+  PR #39(worker-21) 머지·종결 후 오케스트레이터가 실행자를 지정한다.
+- PR #39는 기다리지 않는다 — 이 릴리스 내용물이 아니다.

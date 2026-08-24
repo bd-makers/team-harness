@@ -13,8 +13,9 @@
 - [x] `npm run test` 388/388 + `npm run docs:check` 그린 확인
 - [x] 리뷰 실행 (`/harness-review`) 후 artifact `## Reviews`에 마커 포함 기록
 - [x] 커밋 · push · PR 생성 → CI 그린 확인 (PR #40, test 18/20 SUCCESS)
-- [ ] 태그 처리 방안(강제 이동 vs 0.18.2 재범프) 근거와 함께 오케스트레이터에 보고
-- [ ] 승인 후 태그 처리 실행 → v0.18.1 릴리스 발행 확인
+- [x] 태그 push 전 3검사 선행 (changelog-section 0.18.1 · version · npm test) — 게이트 3/4 실측
+- [x] 태그 처리 방안(강제 이동 vs 0.18.2 재범프) 근거와 함께 오케스트레이터에 보고 — (a) 권고, 기술적 동의 받음
+- [ ] **사람 승인 후**: #40 머지 → main push 런 그린 확인(run id 기록) → 태그 이동 → 릴리스 발행
 - [ ] artifact 기록 · `harness-team done`
 
 ## Ontology 변경 로그

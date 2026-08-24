@@ -32,3 +32,10 @@ docs/chad/chad-handoff.md                                        | 2 +-
  docs/chad/release-0181-recovery/release-0181-recovery-handoff.md | 9 +++++++++
  docs/chad/release-0181-recovery/release-0181-recovery-plan.md    | 2 +-
  3 files changed, 11 insertions(+), 2 deletions(-)
+
+## 2026-08-24T09:39:02.083Z — 331ba5c chore(task): 태그 push 전 3검사 선행 결과 기록
+docs/chad/chad-handoff.md                              |  2 +-
+ .../release-0181-recovery-artifact.md                  |  5 +++++
+ .../release-0181-recovery-context.md                   | 18 ++++++++++++------
+ .../release-0181-recovery-handoff.md                   |  6 ++++++
+ 4 files changed, 24 insertions(+), 7 deletions(-)
