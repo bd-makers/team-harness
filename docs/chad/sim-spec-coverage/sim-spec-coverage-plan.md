@@ -13,11 +13,11 @@
 - [x] `runFull()`에 SC7 편입 + `sc7` 단독 서브커맨드 (SC6 관례)
 - [x] 리포트에 범위 밖 항목 N/A + 사유 렌더 (MCP fetch · 멀티턴 UX · replace/cancel)
 - [x] `tests/agentloop-spec-signals.test.mjs` 단위 테스트 (토큰 없이 CI 검증)
-- [x] `npm run test` — 405 tests · 403 pass · 1 skipped · **1 fail은 선재**
+- [x] `npm run test` — 409 tests · 407 pass · 1 skipped · **1 fail은 선재**
       (`docs/what-changes-0.18.1.html` 부재 — origin/main에도 없음, 워커 `-20` 소관)
-- [x] sim SC7 실제 실행 — 2026-08-24T1754 전 신호 PASS/N-A (artifact에 출력 전문)
+- [x] sim SC7 실제 실행 — 2026-08-24T1809 전 신호 PASS/N-A (리뷰 조치 후 재실행, artifact에 출력 전문)
 - [x] `spec-writing-skill` plan 마지막 항목 닫기 + artifact `### 검증 한계` 날짜 붙여 append
-- [ ] `/harness-review` 실행 → artifact `## Reviews`에 기록
+- [x] `/harness-review codex` 실행 → P1 2 / P2 4 전부 진짜 판별 → 조치 → artifact `## Reviews` 기록
 - [ ] PR 생성 → CI 그린
 
 ## Ontology 변경 로그

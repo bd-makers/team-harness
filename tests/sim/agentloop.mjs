@@ -529,15 +529,21 @@ function mergeSpecPrompt() {
   ].join('\n');
 }
 
+// heading부터 다음 heading 직전까지를 잘라낸다. `$`는 /m에서 줄 끝마다 맞아 절을 한 줄로
+// 잘라먹으므로 쓰지 않는다. 신호를 "문서 어딘가에 문자열이 있다"가 아니라 "그 절 안에 있다"로
+// 좁히는 데 쓴다 — 전자는 너무 쉽게 PASS한다.
+function sectionBody(md, headingRe) {
+  const start = md.search(headingRe);
+  if (start < 0) return '';
+  const rest = md.slice(start);
+  const next = rest.search(/\n#{2,3} /);
+  return next > 0 ? rest.slice(0, next) : rest;
+}
+
 // 자가진단 절 안의 체크 상태만 센다. 인계 문구 신호의 note에 붙여, "전 항목 체크에서도
 // 인계했는가"(2차 리뷰 P1 회귀)를 리포트만 보고 판정할 수 있게 한다.
 function ambiguityCounts(specBody) {
-  // 다음 heading까지 잘라 센다. `$`는 /m에서 줄 끝마다 맞아 절을 한 줄로 잘라먹으므로 쓰지 않는다.
-  const start = specBody.search(/^#{2,3} Ambiguity 자가진단/m);
-  if (start < 0) return { checked: 0, total: 0 };
-  const rest = specBody.slice(start);
-  const next = rest.search(/\n#{2,3} /);
-  const body = next > 0 ? rest.slice(0, next) : rest;
+  const body = sectionBody(specBody, /^#{2,3} Ambiguity 자가진단/m);
   const checked = (body.match(/^\s*- \[[xX]\]/gm) || []).length;
   const open = (body.match(/^\s*- \[ \]/gm) || []).length;
   return { checked, total: checked + open };
@@ -558,23 +564,36 @@ export function forceAllChecked(specBody) {
 
 // 순수 채점 — I/O 없음. sim 실행에는 토큰이 필요하지만 이 로직은 토큰 없이 `npm run test`가
 // 검증한다 (선례: codex-agentloop.mjs parseCodexJsonl + tests/codex-agentloop-parser.test.mjs).
-export function scoreSpecArtifacts({ specBody = '', configRaw = '', resultText = '' } = {}) {
+export function scoreSpecArtifacts({
+  specBody = '', configRaw = '', resultText = '', expectedUser = '', expectedConfluence = null,
+} = {}) {
   const { checked, total } = ambiguityCounts(specBody);
   let config = null, configErr = null;
   try { config = JSON.parse(configRaw); } catch (e) { configErr = String(e.message); }
   const src = config && typeof config === 'object' ? config.specSources : null;
-  const sourcesSaved = !!(src && (src.confluence || src.figma));
-  const userPreserved = typeof config?.user === 'string' && config.user.length > 0;
+  // 저장 "여부"가 아니라 저장된 "값"을 본다 — specSources.confluence = {} 로도 통과하면
+  // lazy 저장을 검증한 것이 아니다. 이 시나리오는 confluence를 골랐으므로 그 항목을 대조한다.
+  const conf = src && typeof src === 'object' ? src.confluence : null;
+  const sourcesSaved = !!(expectedConfluence && conf
+    && conf.baseUrl === expectedConfluence.baseUrl && conf.spaceKey === expectedConfluence.spaceKey);
+  // 비어있지 않은지가 아니라 원래 값 그대로인지를 본다 — 다른 값으로 덮어써도 통과하면
+  // read-modify-write 보존을 검증한 것이 아니다.
+  const userPreserved = !!expectedUser && config?.user === expectedUser;
+  // 요구사항 절 안의 항목에 태그가 붙었는지까지 본다. 문서 아무 데나 있으면 통과하는 검사로는
+  // "항목별 출처 표기"라는 계약을 확인할 수 없다.
+  const interviewTagged = /^\s*[-*] .*\(interview\)/m.test(sectionBody(specBody, /^#{2,3} 목적/m));
+  // 문자열 존재가 아니라 실제 heading + 체크박스 존재를 요구한다(total > 0).
+  const ambiguityOk = total > 0;
   // 인계 문구는 파일·git 어디에도 안 남아 에이전트 최종 메시지가 유일한 관측면이다(산문 예외).
   // transcript로 재면 확장된 커맨드 본문(commands/harness-spec.md가 /harness-interview를 여러 번
   // 언급한다)이 그대로 섞여 무조건 참이 된다 → result만 본다.
   const handoff = /harness-interview/.test(resultText);
   return [
-    sig('spec 요구사항에 (interview) 출처 태그', /\(interview\)/.test(specBody)),
-    sig('spec에 Ambiguity 자가진단 절 존재', /Ambiguity 자가진단/.test(specBody)),
+    sig('요구사항 항목에 (interview) 출처 태그', interviewTagged),
+    sig('Ambiguity 자가진단 절 + 체크박스 생성', ambiguityOk),
     sig('harness-interview 인계 [산문 예외]', handoff, `자가진단 ${checked}/${total} 체크 상태`),
-    sig('specSources lazy 저장 (.harness/config.json)', sourcesSaved, configErr ? `config JSON 파싱 실패: ${configErr}` : ''),
-    sig('config 기존 키 user 보존 (read-modify-write)', userPreserved, configErr ? 'config JSON 파싱 실패' : ''),
+    sig('specSources 저장값 일치 (.harness/config.json)', sourcesSaved, configErr ? `config JSON 파싱 실패: ${configErr}` : ''),
+    sig('config 기존 user 값 보존 (read-modify-write)', userPreserved, configErr ? 'config JSON 파싱 실패' : ''),
   ];
 }
 
@@ -595,72 +614,80 @@ export function aggregateTrials(perTrial) {
   });
 }
 
-async function sc7SpecWriter(token, draftTrials = 2) {
-  const { dir, env } = await makeSandbox('spec-writer', { pkg: CANONICAL_STACK.pkg });
+// trial 하나 = 자기 샌드박스 + 자기 apply + 자기 task. 샌드박스를 공유하고 config만 되돌리면
+// 앞 trial의 task 문서·git 상태가 남아 pass-rate가 독립 시행을 나타내지 못한다(codex 리뷰 P2).
+// 샌드박스 준비는 CLI라 저렴하다 — 비싼 건 에이전트 호출뿐이다.
+async function sc7DraftTrial(token, index) {
+  const { dir, env } = await makeSandbox(`spec-writer-${index + 1}`, { pkg: CANONICAL_STACK.pkg });
   const cli = (args) => run('node', [BIN, ...args], { cwd: dir, env });
   // apply --yes → ensureUsername이 git config에서 {"user":"simbot"}를 쓴다. 이게 read-modify-write
-  // 보존 검증의 "기존 키"다 — 인위적으로 심지 않는다.
+  // 보존 검증의 "기존 값"이다 — 인위적으로 심지 않는다.
   await cli(['apply', '--yes']);
   const configPath = join(dir, '.harness', 'config.json');
-  let baseUser = 'simbot';
-  try { baseUser = JSON.parse(await readFile(configPath, 'utf8')).user || baseUser; }
+  let expectedUser = '';
+  try { expectedUser = JSON.parse(await readFile(configPath, 'utf8')).user || ''; }
+  catch { /* 보존 신호가 FAIL로 드러난다 */ }
+
+  const slug = `sim-spec-${TS}-${index + 1}`;
+  await cli(['task', slug]);
+  let user = expectedUser || 'simbot';
+  try { user = JSON.parse(await readFile(join(dir, '.harness', 'active.json'), 'utf8')).user || user; }
   catch { /* keep default */ }
+  const specPath = join(dir, 'docs', user, slug, `${slug}-spec.md`);
 
-  const triggerRuns = [];
-  const draftOk = [];
-  const perTrial = [];
-  let lastSpecPath = null, lastDraft = '';
+  const a = await runHeadless(token, dir, freshSpecPrompt());
+  const draft = await readFile(specPath, 'utf8').catch(() => '');
+  const configRaw = await readFile(configPath, 'utf8').catch(() => '');
+  return {
+    // 트리거 판정에 a.ok를 넣는다 — 타임아웃·spawn 실패는 unknownCommand도 authFailed도
+    // 아니라서, 이게 없으면 죽은 실행이 트리거 PASS로 집계된다(codex 리뷰).
+    ok: a.ok && !a.authFailed,
+    triggerOk: a.ok && !a.unknownCommand && !a.authFailed,
+    signals: scoreSpecArtifacts({
+      specBody: draft, configRaw, resultText: a.result, expectedUser, expectedConfluence: SPEC_SOURCE,
+    }),
+    dir, specPath, draft,
+  };
+}
 
-  // (a) fresh 초안 — confluence(붙여넣기 폴백) + interview. trial마다 새 task로 전환해 매번
-  // "첫 실행"을 만든다.
-  for (let i = 0; i < draftTrials; i++) {
-    const slug = `sim-spec-${TS}-${i + 1}`;
-    await cli(['task', slug]);
-    // config도 apply 직후 상태로 되돌린다 — specSources가 남아 있으면 다음 trial의
-    // "첫 실행 lazy 저장"이 앞 trial의 결과로 위조된다.
-    await writeFile(configPath, `${JSON.stringify({ user: baseUser }, null, 2)}\n`);
-
-    let user = baseUser;
-    try { user = JSON.parse(await readFile(join(dir, '.harness', 'active.json'), 'utf8')).user || user; }
-    catch { /* keep default */ }
-    const specPath = join(dir, 'docs', user, slug, `${slug}-spec.md`);
-
-    const a = await runHeadless(token, dir, freshSpecPrompt());
-    triggerRuns.push(!a.unknownCommand && !a.authFailed);
-    draftOk.push(a.ok && !a.authFailed);
-    const draft = await readFile(specPath, 'utf8').catch(() => '');
-    const configRaw = await readFile(configPath, 'utf8').catch(() => '');
-    perTrial.push(scoreSpecArtifacts({ specBody: draft, configRaw, resultText: a.result }));
-    lastSpecPath = specPath;
-    lastDraft = draft;
-  }
+async function sc7SpecWriter(token, draftTrials = 2) {
+  // (a) fresh 초안 — confluence(붙여넣기 폴백) + interview. trial마다 독립 샌드박스.
+  const trials = [];
+  for (let i = 0; i < draftTrials; i++) trials.push(await sc7DraftTrial(token, i));
+  const last = trials[trials.length - 1];
 
   // (b) merge 분기 — 커맨드가 "항상 보존"을 약속한 알 수 없는 절을 심고 마지막 trial의 task에서
   // 재실행. 자가진단은 전 항목 체크로 강제해 P1(체크 상태와 무관하게 항상 인계) 회귀를 약한
   // 분기가 아닌 실제 분기에서 태운다.
-  const seeded = `${forceAllChecked(lastDraft)}\n## Boundary contracts\n\n${BOUNDARY_SENTINEL}\n`;
+  const seeded = `${forceAllChecked(last.draft)}\n## Boundary contracts\n\n${BOUNDARY_SENTINEL}\n`;
   const before = ambiguityCounts(seeded);
-  await writeFile(lastSpecPath, seeded);
-  const a2 = await runHeadless(token, dir, mergeSpecPrompt());
-  triggerRuns.push(!a2.unknownCommand && !a2.authFailed);
-  const merged = await readFile(lastSpecPath, 'utf8').catch(() => '');
+  await writeFile(last.specPath, seeded);
+  const a2 = await runHeadless(token, last.dir, mergeSpecPrompt());
+  const merged = await readFile(last.specPath, 'utf8').catch(() => '');
   const after = ambiguityCounts(merged);
+  // sentinel은 우리가 직접 심은 문자열이다. merge가 아예 안 돌아도 그대로 남아 있으므로,
+  // "보존됐다"를 주장하려면 merge가 실제로 spec을 건드렸다는 증거가 먼저 필요하다(codex 리뷰 P1).
+  const mergeRan = a2.ok && !a2.authFailed && merged !== '' && merged !== seeded;
 
+  const triggerRuns = [...trials.map((t) => t.triggerOk), a2.ok && !a2.unknownCommand && !a2.authFailed];
+  const draftOk = trials.map((t) => t.ok);
   const rate = (arr) => `${arr.filter(Boolean).length}/${arr.length}`;
   const signals = [
-    sig(`agent run 완주 (pass-rate ${rate(draftOk)})`, draftOk.every(Boolean),
-      draftOk.some((x) => !x) ? 'AUTH/parse 실패 포함' : ''),
+    sig(`fresh 초안 run 완주 (pass-rate ${rate(draftOk)})`, draftOk.every(Boolean),
+      draftOk.every(Boolean) ? '' : 'AUTH/실행 실패 포함'),
     sig(`네임스페이스 슬래시 해석 (pass-rate ${rate(triggerRuns)})`, triggerRuns.every(Boolean),
       triggerRuns.some(Boolean) && !triggerRuns.every(Boolean) ? 'FLAKY' : ''),
-    ...aggregateTrials(perTrial),
-    sig('merge 분기 — 알 수 없는 절 보존', merged.includes(BOUNDARY_SENTINEL) && merged.includes('Boundary contracts')),
-    sig('merge 후에도 인계 [산문 예외 · P1 회귀 감시]', /harness-interview/.test(a2.result),
+    ...aggregateTrials(trials.map((t) => t.signals)),
+    sig('merge 실행 완주 + spec 실제 갱신', mergeRan, mergeRan ? '' : 'merge가 spec을 바꾸지 않음'),
+    sig('merge 분기 — 알 수 없는 절 보존', mergeRan && merged.includes(BOUNDARY_SENTINEL) && merged.includes('Boundary contracts'),
+      mergeRan ? '' : 'merge 미실행 — 보존 판정 불가'),
+    sig('merge 후에도 인계 [산문 예외 · P1 회귀 감시]', a2.ok && !a2.authFailed && /harness-interview/.test(a2.result),
       `자가진단 사전 ${before.checked}/${before.total} → 사후 ${after.checked}/${after.total}`),
     na('Confluence/Figma MCP fetch', '라이브 MCP·실인증 필요 — 붙여넣기 폴백만 태움'),
     na('멀티턴 인터뷰 UX', 'runHeadless는 단발 claude -p — 답변 선주입으로 접음'),
     na('기존 spec replace/cancel 분기', 'AskUserQuestion 응답 필요 — merge 기본값만 검증'),
   ];
-  return { signals, dir, draftTrials, triggerRate: rate(triggerRuns) };
+  return { signals, dir: last.dir, draftTrials, triggerRate: rate(triggerRuns) };
 }
 
 // ── golden snapshot (P6b) — copy scaffold output for cross-version diff ────────
