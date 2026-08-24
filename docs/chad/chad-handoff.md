@@ -4,7 +4,7 @@
 sim-spec-coverage
 
 ## Last Commit (2026-08-24)
-4fc317f test(sim): SC7 추가 — /harness-spec 산출물 검증
+eeeacdb fix(sim): SC7 false-PASS 경로 6건 차단 (codex 리뷰 조치)
 
 ## Full Context
 → docs/chad/sim-spec-coverage/sim-spec-coverage-handoff.md

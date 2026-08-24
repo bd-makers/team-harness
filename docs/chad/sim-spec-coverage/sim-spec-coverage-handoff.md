@@ -14,3 +14,11 @@
  tests/agentloop-spec-signals.test.mjs              | 209 ++++++++++++++++++
  tests/sim/agentloop.mjs                            | 235 ++++++++++++++++++++-
  10 files changed, 746 insertions(+), 11 deletions(-)
+
+## 2026-08-24T09:17:38.209Z — eeeacdb fix(sim): SC7 false-PASS 경로 6건 차단 (codex 리뷰 조치)
+.../sim-spec-coverage-artifact.md                  |  67 +++++++---
+ .../sim-spec-coverage/sim-spec-coverage-plan.md    |   6 +-
+ docs/harness-overview.html                         |   5 +
+ tests/agentloop-spec-signals.test.mjs              | 128 ++++++++++++++-----
+ tests/sim/agentloop.mjs                            | 141 ++++++++++++---------
+ 5 files changed, 238 insertions(+), 109 deletions(-)
