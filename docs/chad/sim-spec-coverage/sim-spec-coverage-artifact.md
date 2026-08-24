@@ -63,7 +63,7 @@ SC1~SC6 매트릭스 비용 없이 돌릴 수 있다. fresh trial은 각자 **�
 
 ### 테스트
 - `node --test tests/agentloop-spec-signals.test.mjs` — 21/21 통과 (인증 불필요)
-- `npm run test` — **409 tests · 407 pass · 1 fail · 1 skipped**.
+- `npm run test` — **409 tests · 407 pass · 1 fail(main 상속) · 1 skipped**. 그린이 아니다.
   유일한 FAIL은 `tests/what-changes-latest-version.test.mjs`의
   `docs/what-changes-0.18.1.html` ENOENT로, **이 브랜치와 무관한 선재 실패**다
   (`git ls-tree origin/main docs/ | grep what-changes-0.18` → `0.18.0`만 존재).
@@ -73,7 +73,7 @@ SC1~SC6 매트릭스 비용 없이 돌릴 수 있다. fresh trial은 각자 **�
 - **CI (PR #39, Node 18·20)** — red. **main 상속 실패**이며 이 브랜치가 원인이 아니다:
   main의 `f8d6b6d`(0.18.1 범프) CI 자체가 `failure`이고(직전 `0f85bd9`·`a89d522`는 success),
   `docs/what-changes-0.18.1.html`이 `origin/main`에 없다. 로컬 Node 20 재현 결과도
-  `409 · 407 pass · 1 fail`로 동일한 단일 ENOENT뿐이다. 해당 경로는 병렬 세션
+  `409 · 407 pass · 1 fail(main 상속)`로 동일한 단일 ENOENT뿐이다. 해당 경로는 병렬 세션
   (`release-0181-recovery`) 소유라 의도적으로 건드리지 않았다 — 근거는 PR #39 코멘트에 기록.
 - `npm run docs:check` — 그린. 테스트 파일 추가가 `docs/harness-overview.html`의 테스트 인벤토리
   행을 바꾸므로 `npm run docs:generate`로 재생성했다.
@@ -81,8 +81,25 @@ SC1~SC6 매트릭스 비용 없이 돌릴 수 있다. fresh trial은 각자 **�
 ### 발견 — `/harness-spec`의 specSources 저장이 간헐적이다 (조치 안 함, 범위 밖)
 
 SC7을 여러 번 실행하는 동안 fresh 초안 실행 중 **1회에서 `specSources`가 `.harness/config.json`에
-저장되지 않았다** (`user` 키는 남아 있었으므로 파일 자체는 정상). 이후 실행은 모두 통과했으므로
-측정된 비율이 아니라 **간헐 관측 1건**으로 읽어야 한다.
+저장되지 않았다**. 이후 실행은 모두 통과했으므로 측정된 비율이 아니라 **간헐 관측 1건**으로 읽어야 한다.
+
+**재현 조건 (후속 task용 — 관측 시점의 정확한 상태)**
+
+- 관측 실행: 2026-08-24T1748 (`node tests/sim/agentloop.mjs sc7`, plugin v0.18.1 마켓플레이스 캐시)
+- **config 파일 상태: 존재했고 `{"user": "simbot"}` 만 있었다.** 파일 부재가 아니다 —
+  `harness-team apply --yes`의 `ensureUsername`이 직전에 만든 상태이고, 같은 실행의
+  `config 기존 키 user 보존` 신호가 PASS였다(= 파일이 읽혔고 `user`가 살아 있었다).
+  즉 **`specSources` 키만 끝내 추가되지 않았다.**
+- **프롬프트 형태: 값이 질문이 아니라 선주입으로 주어졌다.** 네임스페이스 슬래시 +
+  "Do NOT ask any questions" 지시 + `[소스 선택] confluence + interview` +
+  `[Confluence 기본 위치] baseUrl=… · spaceKey=…` 한 줄 + 본문 붙여넣기(MCP 미연결 폴백) +
+  인터뷰 답변 일괄 제공. `sc7DraftTrial`의 `freshSpecPrompt()`가 정본이다.
+- 같은 실행에서 spec 초안·출처 태그·자가진단·인계 문구는 모두 정상이었다 —
+  **커맨드 전체가 실패한 게 아니라 절차 4의 저장 단계만 건너뛴 것이다.**
+
+가설: 절차 4 문구가 `누락된 필드만 AskUserQuestion으로 lazy 수집해 저장한다`이므로,
+물어볼 필드가 없으면(선주입) "수집이 없었으니 저장도 없다"로 읽힐 수 있다.
+README·CHANGELOG는 "첫 실행 시 lazy로 입력받아 저장한다"고 적어 저장을 전제한다 — 두 문서가 어긋난다.
 
 근본 원인 후보는 계약 문구의 모호성이다 — `commands/harness-spec.md` 절차 4:
 
@@ -119,7 +136,7 @@ Gemini는 CLI 미설치로 **미실행**. 6건 전부 코드에서 재현·대�
 
 조치 후 재검증: `node --test tests/agentloop-spec-signals.test.mjs` 21/21 (강화된 술어의 반례
 테스트 4건 추가), `node tests/sim/agentloop.mjs sc7` 전 신호 PASS/N-A (위 실행 증거), `npm run test`
-407 pass / 1 선재 fail.
+**407 pass / 1 fail(main 상속) / 1 skipped** — 이 브랜치가 만든 실패는 0건이지만 스위트는 그린이 아니다.
 
 리뷰 프로토콜의 review-only 원칙과의 관계: 리뷰 실행 중에는 아무것도 고치지 않았고, 리뷰 종료 후
 발견을 판별한 뒤 별도로 조치했다. 조치 내용은 위 표와 커밋에 남긴다.

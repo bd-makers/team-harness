@@ -3,7 +3,8 @@
 
 ## Now
 - Goal: agentloop에 SC7(`/harness-spec` 산출물 검증)을 넣어 `spec-writing-skill` plan의 열린 항목을 닫는다.
-- Current atomic step: PR #39 대기 — worker-20의 what-changes 수정이 main에 들어오면 CI green.
+- Current atomic step: **대기**. worker-20 PR이 main에 머지되면 그때 #39에 main 반영 → green 확인 → 보고.
+  그 전에 main을 당기거나 worker-20 브랜치에 리베이스하지 않는다 (오케스트레이터 지시 2026-08-24).
 - Stop / human-decision condition: SC7이 FAIL을 내면 원인이 커맨드 계약인지 sim 채점인지 가려
   사용자에게 보고한다. 가짜 PASS를 만들지 않는다.
 
