@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: agentloop에 SC7(`/harness-spec` 산출물 검증)을 넣어 `spec-writing-skill` plan의 열린 항목을 닫는다.
-- Current atomic step: sim SC7 실제 실행 결과 확보 → 상위 task 문서 갱신 → 리뷰 → PR.
+- Current atomic step: PR #39 대기 — worker-20의 what-changes 수정이 main에 들어오면 CI green.
 - Stop / human-decision condition: SC7이 FAIL을 내면 원인이 커맨드 계약인지 sim 채점인지 가려
   사용자에게 보고한다. 가짜 PASS를 만들지 않는다.
 
@@ -21,11 +21,11 @@
 
 ## Failure capsules (max 3 unresolved)
 ### F-001
-- Signal: `npm run test` 1건 FAIL — `docs/what-changes-0.18.1.html` ENOENT
+- Signal: `npm run test` · PR #39 CI 1건 FAIL — `docs/what-changes-0.18.1.html` ENOENT
 - Tried: origin/main 트리 확인 — 해당 파일이 main에 없음
 - Compact finding / current hypothesis: 이 브랜치와 무관한 선재 실패. 0.18.1 범프가 what-changes
   문서 없이 나갔다. 워커 `-20`(release-0181-recovery)의 소관.
-- Next discriminator: 없음 — 범위 밖으로 확정. 리포트에 선재 실패로 명시한다.
+- Next discriminator: 없음 — main f8d6b6d CI도 failure로 확인. 범위 밖 확정, PR 코멘트에 근거 기록.
 - Source (safe path or command): `git ls-tree origin/main docs/ | grep what-changes-0.18`
 
 ## Resume checklist

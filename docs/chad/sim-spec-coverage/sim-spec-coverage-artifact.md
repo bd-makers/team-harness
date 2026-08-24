@@ -70,6 +70,11 @@ SC1~SC6 매트릭스 비용 없이 돌릴 수 있다. fresh trial은 각자 **�
   0.18.1 범프가 what-changes 문서 없이 나간 결과이며 병렬 워커 `-20`(release-0181-recovery) 소관이라
   건드리지 않았다.
 - `node tests/sim/agentloop.mjs sc6` — 회귀 없음 (엔트리 가드 추가 후 재확인, 전 신호 PASS/MANUAL)
+- **CI (PR #39, Node 18·20)** — red. **main 상속 실패**이며 이 브랜치가 원인이 아니다:
+  main의 `f8d6b6d`(0.18.1 범프) CI 자체가 `failure`이고(직전 `0f85bd9`·`a89d522`는 success),
+  `docs/what-changes-0.18.1.html`이 `origin/main`에 없다. 로컬 Node 20 재현 결과도
+  `409 · 407 pass · 1 fail`로 동일한 단일 ENOENT뿐이다. 해당 경로는 병렬 세션
+  (`release-0181-recovery`) 소유라 의도적으로 건드리지 않았다 — 근거는 PR #39 코멘트에 기록.
 - `npm run docs:check` — 그린. 테스트 파일 추가가 `docs/harness-overview.html`의 테스트 인벤토리
   행을 바꾸므로 `npm run docs:generate`로 재생성했다.
 

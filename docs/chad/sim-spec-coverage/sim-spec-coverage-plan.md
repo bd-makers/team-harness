@@ -18,7 +18,8 @@
 - [x] sim SC7 실제 실행 — 2026-08-24T1809 전 신호 PASS/N-A (리뷰 조치 후 재실행, artifact에 출력 전문)
 - [x] `spec-writing-skill` plan 마지막 항목 닫기 + artifact `### 검증 한계` 날짜 붙여 append
 - [x] `/harness-review codex` 실행 → P1 2 / P2 4 전부 진짜 판별 → 조치 → artifact `## Reviews` 기록
-- [ ] PR 생성 → CI 그린
+- [x] PR #39 생성 — CI는 **main 상속 실패**로 red (docs/what-changes-0.18.1.html 부재,
+      worker `-20` 소관). 로컬 Node 20/24 407 pass로 이 브랜치 무결함 확인 + PR 코멘트에 근거 기록
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
