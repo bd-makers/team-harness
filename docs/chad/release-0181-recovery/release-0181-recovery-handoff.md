@@ -17,3 +17,12 @@
 docs/chad/chad-handoff.md                                     |  8 ++++----
  .../release-0181-recovery/release-0181-recovery-handoff.md    | 11 +++++++++++
  2 files changed, 15 insertions(+), 4 deletions(-)
+
+## 2026-08-24T09:35:01.988Z — 797afbe docs(release): codex 리뷰 지적 반영 및 리뷰 기록 append
+docs/chad/chad-handoff.md                          |  2 +-
+ .../release-0181-recovery-artifact.md              | 40 +++++++++++++++++++++-
+ .../release-0181-recovery-handoff.md               |  5 +++
+ .../release-0181-recovery-plan.md                  | 12 +++----
+ docs/what-changes-0.18.1.html                      |  4 +--
+ docs/what-changes-latest-version.html              |  4 +--
+ 6 files changed, 55 insertions(+), 12 deletions(-)

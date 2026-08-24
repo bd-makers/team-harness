@@ -12,7 +12,7 @@
 - [x] `docs/what-changes-latest-version.html`을 스냅샷과 바이트 단위 동일하게 동기화
 - [x] `npm run test` 388/388 + `npm run docs:check` 그린 확인
 - [x] 리뷰 실행 (`/harness-review`) 후 artifact `## Reviews`에 마커 포함 기록
-- [ ] 커밋 · push · PR 생성 → CI 그린 확인
+- [x] 커밋 · push · PR 생성 → CI 그린 확인 (PR #40, test 18/20 SUCCESS)
 - [ ] 태그 처리 방안(강제 이동 vs 0.18.2 재범프) 근거와 함께 오케스트레이터에 보고
 - [ ] 승인 후 태그 처리 실행 → v0.18.1 릴리스 발행 확인
 - [ ] artifact 기록 · `harness-team done`
