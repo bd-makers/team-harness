@@ -63,6 +63,32 @@ Gemini 리뷰: gemini CLI 미설치로 **미실행**.
   (manifest-sync 3중 동기화, 드리프트, next-actions 문자열)만 테스트로 확인.
   실사용 첫 실행 또는 `/harness-sim` 확장에서 검증 필요.
 
+#### 2026-08-24 — sim SC7 커버리지로 갱신 (task `sim-spec-coverage`)
+
+위 항목은 `tests/sim/agentloop.mjs`의 **SC7**로 닫혔다. 무엇이 검증됐고 무엇이 아직 아닌지:
+
+**검증됨** (`node tests/sim/agentloop.mjs sc7`, 2026-08-24T1754 · v0.18.1 · 전 신호 PASS)
+- 네임스페이스 슬래시 `/harness-aijient-team:harness-spec` 해석 (pass-rate 3/3)
+- spec 초안 생성 + 요구사항 항목의 `(interview)` 출처 태그 (2/2)
+- Ambiguity 자가진단 절 생성 (2/2)
+- **체크 상태와 무관한 `/harness-interview` 인계** — 2차 리뷰 P1(writer 자기 채점 차단)의 회귀 감시.
+  실사용 초안은 계약상 마지막 가중합 항목을 스스로 체크하지 않아 2/5~4/5에 머물므로,
+  merge 재실행 전 자가진단을 **5/5로 강제**해 전 항목 체크 분기에서도 인계함을 확인했다.
+- `specSources` lazy 저장 + 기존 키(`user`) 보존 = read-modify-write (Codex 리뷰 3번 조치분)
+- 기존 spec 존재 시 **merge 분기**가 알 수 없는 절(`## Boundary contracts`)을 보존
+
+**여전히 미검증** (SC7 리포트에 `➖` N/A + 사유로 명시)
+- Confluence·Figma **라이브 MCP fetch** — 실 인증·MCP 서버 필요. SC7은 본문 붙여넣기 폴백만 태운다.
+- **실제 멀티턴 인터뷰 UX** — `runHeadless`가 단발 `claude -p`라 답변을 프롬프트에 선주입해
+  단일 턴으로 접었다. 주고받는 대화 자체는 재현 불가.
+- 기존 spec **replace / cancel** 분기 — AskUserQuestion 응답이 필요해 merge(기본값)만 검증.
+
+**미해결 관측** — fresh 초안 4회 중 1회에서 `specSources`가 저장되지 않았다.
+커맨드 계약 절차 4("누락된 필드만 AskUserQuestion으로 lazy 수집해 저장한다")가 값이 질문이 아닌
+**선주입으로 들어왔을 때**의 저장 여부를 명시하지 않은 것이 원인 후보다.
+`sim-spec-coverage` task 범위 밖이라 조치하지 않았고, SC7이 pass-rate로 접어 재발 시 FLAKY로 드러난다.
+상세: `docs/chad/sim-spec-coverage/sim-spec-coverage-artifact.md`
+
 ### 2026-08-22 — Codex read-only 리뷰 (main 0.17.0 머지 충돌 해소분)
 
 `codex exec --sandbox read-only`, 대상: 머지 커밋 780dbfc. 결과 P1 0 / P2 0 / P3 1.
