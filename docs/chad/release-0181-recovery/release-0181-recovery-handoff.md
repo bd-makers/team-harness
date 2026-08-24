@@ -12,3 +12,8 @@
  docs/what-changes-0.18.1.html                      | 287 +++++++++++++++++++++
  docs/what-changes-latest-version.html              |  95 ++++---
  8 files changed, 488 insertions(+), 43 deletions(-)
+
+## 2026-08-24T09:28:31.582Z — 03eea07 chore(task): handoff 자동 갱신 반영
+docs/chad/chad-handoff.md                                     |  8 ++++----
+ .../release-0181-recovery/release-0181-recovery-handoff.md    | 11 +++++++++++
+ 2 files changed, 15 insertions(+), 4 deletions(-)

@@ -247,10 +247,10 @@
           </dl>
         </article>
         <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Fixed</div><h3>fail-open 경로 3종 차단</h3></div>
+          <div class="card-head"><div class="kind">Fixed</div><h3>조용히 열리던 경로 4종 차단</h3></div>
           <dl>
             <div><dt>변경</dt><dd>외부 리뷰(codex, read-only)가 잡은 P2 4건을 전건 조치했습니다. ① 미종결 <code>```json</code> fence가 <em>미선언</em>으로 통과하던 경로 → 열린 fence 흔적이 있으면 invalid. ② <code>rewiew</code> 같은 오타 키를 무시하던 경로 → strict key 검증. ③ <code>Date.parse('9999')</code>가 먼 미래 시각으로 통과하던 경로 → ISO8601 형태 선검사. ④ C-quoted non-ASCII 경로의 확장자 오분류.</dd></div>
-            <div class="why"><dt>왜</dt><dd>세 경우 모두 사용자는 "선언했다"고 믿지만 가드는 꺼져 있습니다. 실패보다 나쁜 것은 <em>켜져 있다고 착각하게 만드는 통과</em>입니다.</dd></div>
+            <div class="why"><dt>왜</dt><dd>네 경우 모두 결과가 같습니다 — 사용자는 가드가 켜져 있다고 믿는데 실제로는 통과합니다. 실패보다 나쁜 것은 <em>켜져 있다고 착각하게 만드는 통과</em>입니다.</dd></div>
             <div class="effect"><dt>그래서</dt><dd>조치 전건에 회귀 테스트를 붙였습니다(신규 16케이스 — 순수 함수 8 + 가드 통합 8). 상세 발견·조치는 <code>docs/chad/done-guard-evidence/done-guard-evidence-artifact.md</code>의 <code>## Reviews</code>에 남아 있습니다.</dd></div>
           </dl>
         </article>
