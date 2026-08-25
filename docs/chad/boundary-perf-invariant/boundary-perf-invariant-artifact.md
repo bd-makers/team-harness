@@ -175,17 +175,52 @@ spawn floor 28.9ms (25.5, 28.9, 25.5, 29.7, 37.2); equal-work baseline 44.1ms (6
 ## 검증
 
 - `mise x node@20 -- npm test` → **415 tests, 0 fail** (1 skipped, 기존부터 skip)
-- node 24에서도 통과. 다만 이 머신의 node 24는 `node` 해석이 mise shim을 타서
-  checkpoint 비율이 무부하에서도 3.07까지 올라간다. CI는 `actions/setup-node`가
-  실제 바이너리를 PATH에 올리므로 해당하지 않는다(node 20 무부하 1.68).
-- node 18은 이 머신에 설치할 수 없다 — 프록시가 `nodejs.org`를 막는다. CI matrix가 커버한다.
+- node 24에서도 통과. 다만 checkpoint 비율이 무부하에서도 **3.07**까지 올라간다
+  (node 20은 1.68). 아래 "node 24 이상치" 참조.
+- **node 18은 이 머신에서 검증하지 못했다.** 설치 불가(프록시가 `nodejs.org` 차단),
+  docker 미설치, 로컬에 어떤 node 18 바이너리도 없다. 따라서 node 18에 대해 확보한 것은
+  **CI green 1회뿐이며 부하 특성은 측정되지 않았다.** 위 "CI green은 충분조건이 아니다"가
+  node 18에 그대로 적용된다 — 아래 리스크 항목에 남긴다.
+
+### node 24 이상치 — 추정을 세우고, 측정으로 뒤집었다
+
+처음에 "mise shim 때문"이라고 적었다. **틀렸다 — 측정으로 반증했다.**
+두 버전 모두 shim이 아닌 실제 바이너리를 쓴다
+(`installs/node/20/bin/node`, `installs/node/24/bin/node`).
+
+비용을 분해했다 (무부하, 중앙값):
+
+| 구간 | node 20 | node 24 |
+|---|---|---|
+| stdin 읽기 (`ckDirect − cold`) | 1.9ms | 4.0ms |
+| **sh + exec (`ck − ckDirect`)** | **4.4ms** | **70.2ms** |
+
+70ms는 전부 `sh HOOK` → `exec` 구간이다. 그런데 같은 경로를 `--version`으로 재면
+node 24에서도 오버헤드가 **거의 0**이다(`sh -c exec node BIN` 49ms vs
+`sh -c exec BIN` 46ms). 즉 shebang 해석도, `sh` 스폰도, PATH 탐색도 원인이 아니다.
+남는 유일한 차이는 **파이프 stdin을 `sh`를 거쳐 상속받았을 때의 처리**이며,
+node 24에서만 ~70ms가 붙는다. (`boundary checkpoint`는 stdin을 읽지만 `--version`은 읽지 않는다.)
+
+이것은 테스트가 아니라 **배포되는 hook 자체의 관측**이다 — node 24 + macOS에서
+checkpoint hook은 직접 호출(60ms) 대비 sh 경유(130ms)로 2배 이상 비싸다.
+이번 PR 범위 밖이라 고치지 않았고, 후속 후보로 남긴다.
 
 ## 남은 리스크 / 후속 후보
 
 - **CI green은 필요조건일 뿐 충분조건이 아니다.** 관측된 flake 빈도에서 green 1회는 증거가 되지
   못한다. 진짜 증거는 위 부하 재현 수치다. green을 기다리며 재실행하는 방식으로 검증하지 말 것.
-- checkpoint 비율은 hook의 `#!/usr/bin/env node` 해석 비용에 민감하다(node 24 관측).
-  CI 환경이 바뀌어 `node` 해석이 느려지면 이 예산부터 재검토할 것.
+- **node 18 부하 특성 미측정 (최대 잔여 리스크).** checkpoint는 여유가 가장 얇고
+  (관측 최댓값 3.65 vs 예산 5 = 1.37×) 버전 간 편차가 가장 큰 지표다. node 24가
+  무부하에서 3.07을 찍은 것을 감안하면, node 18이 비슷하다면 부하 하에서 예산을 넘을 수 있다.
+  **예산을 선제적으로 올리지 않았다** — 근거: (1) 이상치는 node 20 → 24로 **새 버전에서**
+  나타났고 node 18은 20보다 **오래된** 버전이라 새 버전의 회귀를 물려받을 기전이 없다,
+  (2) 기존 CI에서 관측된 실패 4건은 **전부 cold assertion**이었고 checkpoint(150ms 예산)는
+  node 18에서 한 번도 발화하지 않았다. 근거 없이 완화하는 것은 이 작업이 피하려던 실패 양식이다.
+  node 18에서 checkpoint가 실제로 깨지면 그때 이 기록을 근거로 올린다.
+- **checkpoint 예산의 민감도는 이 mutation table로 검증되지 않았다.** cold assertion이 먼저
+  발화해 중단되므로 표의 수치는 전부 cold 기준이다. checkpoint가 독립적으로 커버하는 것은
+  **hook dispatch 경로뿐**이며, `runBoundaryCheck` 내부의 회귀는 cold(+35ms 해상도)가
+  전부 지배한다. 따라서 필요 시 `CHECKPOINT_BUDGET`을 올리는 비용은 실질 커버리지 기준으로 매우 낮다.
 - 부하 재현 스크립트는 스크래치패드에만 두고 커밋하지 않았다. busy loop은 반드시 pidfile로
   회수할 것 — 조사 중 `trap EXIT`가 불발해 16개가 살아남아 "무부하" 측정을 오염시킨 적이 있다
   (load average 104에서 잰 값을 무부하로 착각했다).
