@@ -55,4 +55,6 @@
 | chad | instruction-structure | ✅ done | 2026-08-21 |
 | chad | prerequisites-doc | 🔄 open | 2026-08-21 |
 | chad | review-restructure | ✅ done | 2026-08-21 |
-| chad | spec-writing-skill | 🔄 open | 2026-08-21 |
+| chad | spec-writing-skill | ✅ done | 2026-08-21 |
+| chad | release-0181-recovery | ✅ done | 2026-08-24 |
+| chad | sim-spec-coverage | ✅ done | 2026-08-24 |
