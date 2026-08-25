@@ -67,7 +67,12 @@
   0.18.1 범프가 what-changes 문서 없이 나간 결과이며 병렬 워커 `-20`(release-0181-recovery) 소관이라
   건드리지 않았다.
 - `node tests/sim/agentloop.mjs sc6` — 회귀 없음 (엔트리 가드 추가 후 재확인, 전 신호 PASS/MANUAL)
-- **CI (PR #39, Node 18·20)** — red. **main 상속 실패**이며 이 브랜치가 원인이 아니다:
+- **CI (PR #39, Node 18·20)** — **그린** (run 32802290213). `origin/main`(PR #40, v0.18.1
+  what-changes 복구)을 merge 커밋 `5bd7e54`로 반영한 뒤 상속 실패가 사라졌다.
+  머지 후 로컬 Node 20 재검증: **415 tests · 414 pass · 0 fail · 1 skipped** (+ perf 1/1).
+  충돌은 `docs/chad/chad-handoff.md` 1건 — post-commit 훅 생성물 포인터라 양쪽을 합치지 않고
+  머지 후 활성 task(`sim-spec-coverage`) 기준으로 정리했다.
+- (이력) 머지 전까지 CI는 red였고, **main 상속 실패**로 이 브랜치가 원인이 아니었다:
   main의 `f8d6b6d`(0.18.1 범프) CI 자체가 `failure`이고(직전 `0f85bd9`·`a89d522`는 success),
   `docs/what-changes-0.18.1.html`이 `origin/main`에 없다. 로컬 Node 20 재현 결과도
   `413 pass · 1 fail(main 상속)`로 동일한 단일 ENOENT뿐이다. 해당 경로는 병렬 세션
