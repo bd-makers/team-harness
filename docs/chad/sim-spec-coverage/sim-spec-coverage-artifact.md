@@ -34,7 +34,7 @@
   선례: `codex-agentloop.mjs` `parseCodexJsonl` + `tests/codex-agentloop-parser.test.mjs`.
   같은 선례의 엔트리 가드를 `agentloop.mjs`에도 넣어 import 시 `probe`가 도는 것을 막았다.
 
-### 실행 증거 — `node tests/sim/agentloop.mjs sc7` (2026-08-24T1809, v0.18.1, codex 리뷰 조치 후)
+### 실행 증거 — `node tests/sim/agentloop.mjs sc7` (2026-08-24T1840, v0.18.1, 최종 코드)
 
 ```
 ### SC7 — /harness-spec 초안 생성 (프롬프트 접기)
@@ -42,28 +42,25 @@
 - ✅ 네임스페이스 슬래시 해석 (pass-rate 3/3)
 - ✅ 요구사항 항목에 (interview) 출처 태그 (pass-rate 2/2)
 - ✅ Ambiguity 자가진단 절 + 체크박스 생성 (pass-rate 2/2)
-- ✅ harness-interview 인계 [산문 예외] (pass-rate 2/2) — 자가진단 3/5 체크 상태 · 자가진단 3/5 체크 상태
+- ✅ harness-interview 인계 [산문 예외] (pass-rate 2/2)
 - ✅ specSources 저장값 일치 (.harness/config.json) (pass-rate 2/2)
 - ✅ config 기존 user 값 보존 (read-modify-write) (pass-rate 2/2)
 - ✅ merge 실행 완주 + spec 실제 갱신
 - ✅ merge 분기 — 알 수 없는 절 보존
-- ✅ merge 후에도 인계 [산문 예외 · P1 회귀 감시] — 자가진단 사전 5/5 → 사후 4/5
-- ➖ Confluence/Figma MCP fetch — 라이브 MCP·실인증 필요 — 붙여넣기 폴백만 태움
-- ➖ 멀티턴 인터뷰 UX — runHeadless는 단발 claude -p — 답변 선주입으로 접음
-- ➖ 기존 spec replace/cancel 분기 — AskUserQuestion 응답 필요 — merge 기본값만 검증
-
-(fresh 초안 2 trial + merge 1회 = 에이전트 3회 · 트리거 3/3)
+- ✅ merge 후에도 인계 [산문 예외 · P1 회귀 감시] — 자가진단 사전 5/5 → 사후 5/5
+- ➖ Confluence/Figma MCP fetch · ➖ 멀티턴 인터뷰 UX · ➖ replace/cancel 분기
 ```
 
-> `사후 4/5`는 merge 재실행이 마지막 가중합 항목을 다시 열었다는 뜻으로, 계약대로 writer가
-> 자기 채점을 하지 않은 결과다. 인계 문구는 **사전 5/5(전 항목 체크) 상태에서** 관측됐다.
+> **이 출력을 "SC7은 항상 그린"으로 읽지 말 것.** 총 4회 실행 중 2회는 출처 태그 신호가
+> `1/2 — FLAKY`로 떨어졌다(아래 발견 (2)). 에이전트 산출물 신호이므로 pass-rate가 곧 결과다.
 
-**실행 비용:** SC7 1회 = `claude -p` 3회(fresh 2 trial + merge 1). `sc7` 단독 서브커맨드로
-SC1~SC6 매트릭스 비용 없이 돌릴 수 있다. fresh trial은 각자 **독립 샌드박스**를 쓴다.
+**실행 비용:** SC7 1회 = `claude -p` 3회(fresh 2 trial + merge 1). trial마다 **독립 샌드박스**.
+`sc7` 단독 서브커맨드로 SC1~SC6 매트릭스 비용 없이 돌릴 수 있고,
+`SIM_KEEP_SANDBOX=1`이면 진단용으로 산출물을 남긴다.
 
 ### 테스트
-- `node --test tests/agentloop-spec-signals.test.mjs` — 21/21 통과 (인증 불필요)
-- `npm run test` — **409 tests · 407 pass · 1 fail(main 상속) · 1 skipped**. 그린이 아니다.
+- `node --test tests/agentloop-spec-signals.test.mjs` — 27/27 통과 (인증 불필요)
+- `npm run test` — **415 tests · 413 pass · 1 fail(main 상속) · 1 skipped**. 그린이 아니다.
   유일한 FAIL은 `tests/what-changes-latest-version.test.mjs`의
   `docs/what-changes-0.18.1.html` ENOENT로, **이 브랜치와 무관한 선재 실패**다
   (`git ls-tree origin/main docs/ | grep what-changes-0.18` → `0.18.0`만 존재).
@@ -73,12 +70,14 @@ SC1~SC6 매트릭스 비용 없이 돌릴 수 있다. fresh trial은 각자 **�
 - **CI (PR #39, Node 18·20)** — red. **main 상속 실패**이며 이 브랜치가 원인이 아니다:
   main의 `f8d6b6d`(0.18.1 범프) CI 자체가 `failure`이고(직전 `0f85bd9`·`a89d522`는 success),
   `docs/what-changes-0.18.1.html`이 `origin/main`에 없다. 로컬 Node 20 재현 결과도
-  `409 · 407 pass · 1 fail(main 상속)`로 동일한 단일 ENOENT뿐이다. 해당 경로는 병렬 세션
+  `413 pass · 1 fail(main 상속)`로 동일한 단일 ENOENT뿐이다. 해당 경로는 병렬 세션
   (`release-0181-recovery`) 소유라 의도적으로 건드리지 않았다 — 근거는 PR #39 코멘트에 기록.
 - `npm run docs:check` — 그린. 테스트 파일 추가가 `docs/harness-overview.html`의 테스트 인벤토리
   행을 바꾸므로 `npm run docs:generate`로 재생성했다.
 
-### 발견 — `/harness-spec`의 specSources 저장이 간헐적이다 (조치 안 함, 범위 밖)
+### 발견 2건 — `/harness-spec` 산출물의 비결정성 (조치 안 함, 범위 밖)
+
+#### (1) `specSources` 저장을 건너뛴 실행이 있다
 
 SC7을 여러 번 실행하는 동안 fresh 초안 실행 중 **1회에서 `specSources`가 `.harness/config.json`에
 저장되지 않았다**. 이후 실행은 모두 통과했으므로 측정된 비율이 아니라 **간헐 관측 1건**으로 읽어야 한다.
@@ -86,10 +85,13 @@ SC7을 여러 번 실행하는 동안 fresh 초안 실행 중 **1회에서 `spec
 **재현 조건 (후속 task용 — 관측 시점의 정확한 상태)**
 
 - 관측 실행: 2026-08-24T1748 (`node tests/sim/agentloop.mjs sc7`, plugin v0.18.1 마켓플레이스 캐시)
-- **config 파일 상태: 존재했고 `{"user": "simbot"}` 만 있었다.** 파일 부재가 아니다 —
-  `harness-team apply --yes`의 `ensureUsername`이 직전에 만든 상태이고, 같은 실행의
-  `config 기존 키 user 보존` 신호가 PASS였다(= 파일이 읽혔고 `user`가 살아 있었다).
-  즉 **`specSources` 키만 끝내 추가되지 않았다.**
+- **config 파일 상태: 실행 전 `{"user": "simbot"}` 만 있었고(파일 부재 아님 —
+  `harness-team apply --yes`의 `ensureUsername`이 직전에 만든 상태), 실행 후에도
+  `specSources` 키가 없었다.**
+- **커맨드가 config를 읽었는지는 판정 불가다.** 당시 보존 신호는 값 동등성만 봤는데,
+  기대값을 실행 직전 파일에서 읽으므로 *커맨드가 파일을 아예 건드리지 않아도* 참이 된다.
+  그 PASS는 "읽기는 됐다"의 증거가 아니었다(2026-08-24 오케스트레이터 지적 → 아래 조치).
+  **"읽기는 되는데 쓰기만 스킵"으로 단정하지 말 것** — 관측된 것은 위 두 줄뿐이다.
 - **프롬프트 형태: 값이 질문이 아니라 선주입으로 주어졌다.** 네임스페이스 슬래시 +
   "Do NOT ask any questions" 지시 + `[소스 선택] confluence + interview` +
   `[Confluence 기본 위치] baseUrl=… · spaceKey=…` 한 줄 + 본문 붙여넣기(MCP 미연결 폴백) +
@@ -100,6 +102,31 @@ SC7을 여러 번 실행하는 동안 fresh 초안 실행 중 **1회에서 `spec
 가설: 절차 4 문구가 `누락된 필드만 AskUserQuestion으로 lazy 수집해 저장한다`이므로,
 물어볼 필드가 없으면(선주입) "수집이 없었으니 저장도 없다"로 읽힐 수 있다.
 README·CHANGELOG는 "첫 실행 시 lazy로 입력받아 저장한다"고 적어 저장을 전제한다 — 두 문서가 어긋난다.
+
+#### (2) 요구사항 항목의 출처 태그가 매번 나오지는 않는다
+
+`요구사항 항목에 (interview) 출처 태그` 신호가 **fresh 초안 6회 중 2회 FAIL**
+(SC7 실행 3회: 1/2 · 1/2 · 2/2). 계약 절차 6은 "요구사항은 항목별로 출처를 표기한다"이다.
+
+처음엔 채점 술어가 지나치게 좁은 줄 알았다 — 리터럴 `(interview)`만 받고 결합 표기
+`(confluence, interview)`나 번호 목록을 못 받는 문제. 실제로 그 케이스가 있어 고쳤고
+(`\d+\.` 허용 · 괄호 안 `interview` 단어 매칭 · 절 제목 `목적|요구사항`), 반례 테스트도 붙였다.
+**그런데 고친 뒤에도 1/2가 재현됐다** — 술어 문제가 아니라 writer 출력의 비결정성이다.
+
+통과한 실행의 실제 표기는 두 형태 모두 계약을 지켰다:
+- `- 결제 실패 건을 자동 재시도해 … (interview)` — 항목 끝 태그
+- `1. (interview) **Goal**: …` — 항목 앞 태그, 번호 목록
+
+FAIL 실행의 산출물은 확보하지 못했다(당시 샌드박스가 정리됨). **추측하지 않는다.**
+대신 재발 시 증거가 자동으로 남도록 두 가지를 넣었다:
+- 신호 FAIL 시 note가 스스로 진단한다 — `요구사항 절 미검출` / `요구사항 절 항목 N개, 괄호 태그 미검출`
+- `SIM_KEEP_SANDBOX=1 node tests/sim/agentloop.mjs sc7` 로 샌드박스를 보존해 원문 확인
+
+**알려진 술어 한계:** 요구사항을 목록이 아니라 **표**로 쓰면 이 신호는 FAIL한다.
+계약이 "항목별"이라고만 하므로 표도 계약 위반은 아니다 — 재발 note에 `항목 0개`가 찍히면 이 경우다.
+
+이 신호는 pass-rate로 접히므로 조용히 초록이 되지 않는다. 커맨드 계약을 조일지는
+`spec-writing-skill` 소유자 판단이라 여기서는 조치하지 않았다.
 
 근본 원인 후보는 계약 문구의 모호성이다 — `commands/harness-spec.md` 절차 4:
 
@@ -143,6 +170,31 @@ Gemini는 CLI 미설치로 **미실행**. 6건 전부 코드에서 재현·대�
 
 <!-- harness:review kind=codex scope=diff tip=ebde207 at=2026-08-24T09:20:00Z -->
 
+### 2026-08-24 — 오케스트레이터 지적 (false-PASS 7번째) — 조치 완료
+
+`config 기존 user 값 보존 (read-modify-write)` 신호가 **쓰기가 없었던 경우와 보존한 경우를
+구분하지 못했다.** `expectedUser`를 실행 **직전 파일**에서 읽으므로 커맨드가 config를 아예
+건드리지 않아도 `config.user === expectedUser`가 참이 된다. 유닛 테스트
+(`specSources 미저장 → … user 보존은 PASS`)가 이 false-PASS를 **의도된 동작으로 못박고
+있었다** — 회귀 방지가 아니라 회귀 고정이었다.
+
+조치:
+1. 실행 전 config 원문(`configBefore`)을 채점기에 넘겨 **쓰기 발생을 먼저 확인**한다.
+   쓰기가 없으면 PASS가 아니라 `➖ N/A — 쓰기 미발생, 보존 여부 판정 불가`.
+2. 그 유닛 테스트를 정반대 단언으로 교체하고, "쓰기는 있었는데 specSources 값이 틀린 경우"
+   (쓰기가 있었으니 user가 날아갔을 수 있다 → 도망가지 않고 판정한다)와
+   "실행 전 원문 미확보 → N/A"를 반례로 추가했다.
+3. `aggregateTrials`가 N/A를 FAIL로 접던 것을 고쳤다 — 전부 N/A면 N/A, 일부만 N/A면
+   (FAIL이 없어도) "모든 trial에서 성립했다"를 주장할 수 없으므로 N/A, FAIL이 섞이면 FAIL.
+
+> **게이트 기준 선택 (지시와의 차이 명시):** 지시는 "`sourcesSaved`가 false면 N/A"였으나
+> **파일 변경 자체**를 증거로 삼았다. `sourcesSaved`는 값 일치 검사라, 커맨드가 `specSources`를
+> *틀린 값으로* 쓰면서 `user`를 날려도 false가 되어 N/A로 빠진다 — 쓰기가 일어났고 보존이
+> 깨진 진짜 결함을 판정 불가로 숨긴다. 파일 변경 기준은 "쓰기 없음"을 똑같이 N/A로 잡으면서
+> 그 구멍을 닫는다. 지시의 의도(쓰기 없이 보존을 주장하지 않는다)는 그대로 만족한다.
+
+<!-- harness:review kind=orchestrator scope=diff tip=d8d6076 at=2026-08-24T09:40:00Z -->
+
 ## Learnings
 
 - **정규식 `$`에 `/m`을 붙이면 절이 한 줄로 잘린다.** `ambiguityCounts`의 첫 구현이
@@ -165,3 +217,10 @@ Gemini는 CLI 미설치로 **미실행**. 6건 전부 코드에서 재현·대�
   앞 trial의 산출물이 남는다. 준비가 CLI라 저렴하면 그냥 매번 새로 만든다.
 - **테스트 파일 추가가 문서 생성물을 바꾼다.** `docs/harness-overview.html`은 테스트 인벤토리를
   포함하므로 `npm run docs:generate`가 커밋 전 체크리스트에 포함돼야 한다.
+- **기대값을 검사 직전 상태에서 읽으면 그 검사는 항상 참이다.** `expectedUser`를 실행 직전
+  config에서 읽고 실행 후 값과 비교했으니, 커맨드가 파일을 안 건드려도 통과했다.
+  **"보존됐다"를 주장하려면 먼저 "쓰기가 있었다"를 증명해야 한다** — sentinel 잔존 문제와 같은 형태다.
+  두 번 같은 함정을 밟았다는 게 요점이다: *테스트가 스스로 만든 상태를 증거로 재사용하지 말 것.*
+- **유닛 테스트가 false-PASS를 고정할 수 있다.** 지금 동작을 그대로 단언하면 회귀 방지가 아니라
+  회귀 고정이 된다. 신호를 고칠 때는 그 신호를 검증하던 테스트가 **무엇을 계약으로 못박고 있었는지**
+  먼저 읽어야 한다.

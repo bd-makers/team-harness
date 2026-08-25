@@ -33,10 +33,13 @@ const CONFIG_FULL = JSON.stringify({
   specSources: { confluence: { ...EXPECTED_CONFLUENCE } },
 });
 
-// 모든 테스트가 같은 기대값으로 채점하도록 감싼다 — 기대값 없이 부르면 두 config 신호는
-// 증거 없음으로 FAIL이 정상이다.
+// apply 직후 상태 — 커맨드 실행 전 config 원문. 이것과 실행 후 원문이 같으면 "쓰기 미발생"이다.
+const CONFIG_BEFORE = JSON.stringify({ user: EXPECTED_USER });
+
+// 모든 테스트가 같은 기대값으로 채점하도록 감싼다. configBefore 기본값은 CONFIG_BEFORE이라
+// configRaw가 그와 다르면 쓰기가 일어난 것으로 판정된다 — 보존 신호를 보려면 쓰기가 먼저 있어야 한다.
 const score = (over = {}) => scoreSpecArtifacts({
-  expectedUser: EXPECTED_USER, expectedConfluence: EXPECTED_CONFLUENCE, ...over,
+  expectedUser: EXPECTED_USER, expectedConfluence: EXPECTED_CONFLUENCE, configBefore: CONFIG_BEFORE, ...over,
 });
 
 const RESULT_HANDOFF = '초안을 저장했습니다. 이제 /harness-interview로 인계합니다.';
@@ -123,13 +126,40 @@ test('인계 신호는 spec 본문이 아니라 최종 메시지만 본다 (오�
   assert.equal(byLabel(signals, '인계').status, 'FAIL');
 });
 
-test('specSources 미저장 → 저장 신호만 FAIL, user 보존은 PASS', () => {
+test('쓰기 미발생(파일 그대로) → 저장은 FAIL, 보존은 PASS가 아니라 N/A', () => {
+  // 커맨드가 config를 아예 건드리지 않은 경우. expectedUser를 실행 직전 파일에서 읽으므로
+  // 값 비교는 자동으로 참이 된다 — 여기서 PASS를 내면 "보존했다"를 위조하는 것이다.
   const signals = score({
-    specBody: SPEC_FULL, configRaw: JSON.stringify({ user: 'simbot' }), resultText: RESULT_HANDOFF,
+    specBody: SPEC_FULL, configRaw: CONFIG_BEFORE, resultText: RESULT_HANDOFF,
+  });
+
+  assert.equal(byLabel(signals, 'specSources 저장값 일치').status, 'FAIL');
+  const preserved = byLabel(signals, 'user 값 보존');
+  assert.equal(preserved.status, 'N/A');
+  assert.match(preserved.note, /쓰기 미발생/);
+});
+
+test('쓰기는 있었으나 specSources 값이 틀린 경우 → 보존은 여전히 판정된다', () => {
+  // 쓰기가 일어났으면 user가 날아갔을 수 있으므로 N/A로 도망가지 않고 실제로 판정해야 한다.
+  const signals = score({
+    specBody: SPEC_FULL,
+    configRaw: JSON.stringify({ user: EXPECTED_USER, specSources: { confluence: {} } }),
+    resultText: RESULT_HANDOFF,
   });
 
   assert.equal(byLabel(signals, 'specSources 저장값 일치').status, 'FAIL');
   assert.equal(byLabel(signals, 'user 값 보존').status, 'PASS');
+});
+
+test('실행 전 config 원문이 없으면 보존은 N/A (쓰기 여부를 알 수 없다)', () => {
+  const signals = scoreSpecArtifacts({
+    specBody: SPEC_FULL, configRaw: CONFIG_FULL, resultText: RESULT_HANDOFF,
+    expectedUser: EXPECTED_USER, expectedConfluence: EXPECTED_CONFLUENCE,
+  });
+
+  const preserved = byLabel(signals, 'user 값 보존');
+  assert.equal(preserved.status, 'N/A');
+  assert.match(preserved.note, /미확보/);
 });
 
 test('무관한 figma 항목만 저장 → confluence 기대값 미충족으로 FAIL', () => {
@@ -194,11 +224,14 @@ test('config가 깨졌거나 없으면 두 config 신호 모두 FAIL + 사유 no
   assert.equal(byLabel(missing, 'user 값 보존').status, 'FAIL');
 });
 
-test('인자 없이 불러도 5개 신호를 FAIL로 돌려준다 (증거 없음 = 통과 아님)', () => {
+test('인자 없이 부르면 어떤 신호도 PASS가 아니다 (증거 없음 = 통과 아님)', () => {
   const signals = scoreSpecArtifacts();
 
   assert.equal(signals.length, 5);
-  assert.ok(signals.every((s) => s.status === 'FAIL'));
+  assert.ok(signals.every((s) => s.status !== 'PASS'));
+  // 보존만 N/A(쓰기 여부 미상), 나머지는 증거 부재로 FAIL.
+  assert.equal(signals.filter((s) => s.status === 'N/A').length, 1);
+  assert.equal(signals.filter((s) => s.status === 'FAIL').length, 4);
 });
 
 test('forceAllChecked — 자가진단 절만 전 항목 체크로 만든다', () => {
@@ -266,4 +299,65 @@ test('renderSignals — N/A는 ➖로 렌더되고 사유 note가 살아남는�
   assert.match(out, /^- ❌ 실패 — FLAKY$/m);
   assert.match(out, /^- ⚠️ 관찰 불가 — 헤드리스 재현 불가$/m);
   assert.match(out, /^- ➖ 범위 밖 — 라이브 MCP 필요$/m);
+});
+
+test('aggregateTrials — N/A는 FAIL로도 PASS로도 접히지 않는다', () => {
+  const judged = score({ specBody: SPEC_FULL, configRaw: CONFIG_FULL, resultText: RESULT_HANDOFF });
+  const unjudged = score({ specBody: SPEC_FULL, configRaw: CONFIG_BEFORE, resultText: RESULT_HANDOFF });
+
+  const allNa = aggregateTrials([unjudged, unjudged]);
+  assert.equal(byLabel(allNa, 'user 값 보존').status, 'N/A');
+
+  // PASS 1 + N/A 1: 모든 trial에서 성립했다고 주장할 수 없다.
+  const mixed = aggregateTrials([judged, unjudged]);
+  const preserved = byLabel(mixed, 'user 값 보존');
+  assert.equal(preserved.status, 'N/A');
+  assert.match(preserved.note, /판정 불가 1\/2/);
+
+  // FAIL이 섞이면 FAIL이 이긴다 — N/A가 실패를 가리지 않는다.
+  const failing = score({
+    specBody: SPEC_FULL,
+    configRaw: JSON.stringify({ user: 'someone-else', specSources: { confluence: { ...EXPECTED_CONFLUENCE } } }),
+    resultText: RESULT_HANDOFF,
+  });
+  assert.equal(byLabel(aggregateTrials([failing, unjudged]), 'user 값 보존').status, 'FAIL');
+});
+
+test('출처 태그 — 결합 표기·번호 목록·다른 절 제목도 계약을 지킨 것으로 받는다', () => {
+  const combined = score({
+    specBody: '# t\n\n## 목적 / 요구사항\n- 4회째부터 카드 변경 안내 (confluence, interview)\n\n## Ambiguity 자가진단\n- [x] a\n',
+    configRaw: CONFIG_FULL,
+  });
+  assert.equal(byLabel(combined, '(interview) 출처 태그').status, 'PASS');
+
+  const unresolved = score({
+    specBody: '# t\n\n## 요구사항\n1. 재시도 윈도우 12분 (interview, unresolved)\n\n## Ambiguity 자가진단\n- [x] a\n',
+    configRaw: CONFIG_FULL,
+  });
+  assert.equal(byLabel(unresolved, '(interview) 출처 태그').status, 'PASS');
+});
+
+test('출처 태그 — 괄호 없는 언급이나 목록 아닌 산문은 여전히 FAIL', () => {
+  const prose = score({
+    specBody: '# t\n\n## 목적 / 요구사항\ninterview 에서 받은 요구가 있다\n\n## Ambiguity 자가진단\n- [x] a\n',
+    configRaw: CONFIG_FULL,
+  });
+  assert.equal(byLabel(prose, '(interview) 출처 태그').status, 'FAIL');
+
+  const otherSection = score({
+    specBody: '# t\n\n## 목적 / 요구사항\n- 태그 없는 요구\n\n## 설계 / 접근\n- 뭔가 (interview)\n\n## Ambiguity 자가진단\n- [x] a\n',
+    configRaw: CONFIG_FULL,
+  });
+  assert.equal(byLabel(otherSection, '(interview) 출처 태그').status, 'FAIL');
+});
+
+test('출처 태그 FAIL은 note로 스스로 진단한다 (절 미검출 vs 항목은 있는데 태그 없음)', () => {
+  const noSection = score({ specBody: '# t\n\n## 설계\n- 뭔가\n', configRaw: CONFIG_FULL });
+  assert.match(byLabel(noSection, '(interview) 출처 태그').note, /요구사항 절 미검출/);
+
+  const untagged = score({
+    specBody: '# t\n\n## 목적 / 요구사항\n- 요구 하나\n- 요구 둘\n- 요구 셋\n',
+    configRaw: CONFIG_FULL,
+  });
+  assert.match(byLabel(untagged, '(interview) 출처 태그').note, /항목 3개, 괄호 태그 미검출/);
 });

@@ -566,6 +566,7 @@ export function forceAllChecked(specBody) {
 // 검증한다 (선례: codex-agentloop.mjs parseCodexJsonl + tests/codex-agentloop-parser.test.mjs).
 export function scoreSpecArtifacts({
   specBody = '', configRaw = '', resultText = '', expectedUser = '', expectedConfluence = null,
+  configBefore = null,
 } = {}) {
   const { checked, total } = ambiguityCounts(specBody);
   let config = null, configErr = null;
@@ -576,12 +577,21 @@ export function scoreSpecArtifacts({
   const conf = src && typeof src === 'object' ? src.confluence : null;
   const sourcesSaved = !!(expectedConfluence && conf
     && conf.baseUrl === expectedConfluence.baseUrl && conf.spaceKey === expectedConfluence.spaceKey);
-  // 비어있지 않은지가 아니라 원래 값 그대로인지를 본다 — 다른 값으로 덮어써도 통과하면
-  // read-modify-write 보존을 검증한 것이 아니다.
-  const userPreserved = !!expectedUser && config?.user === expectedUser;
-  // 요구사항 절 안의 항목에 태그가 붙었는지까지 본다. 문서 아무 데나 있으면 통과하는 검사로는
-  // "항목별 출처 표기"라는 계약을 확인할 수 없다.
-  const interviewTagged = /^\s*[-*] .*\(interview\)/m.test(sectionBody(specBody, /^#{2,3} 목적/m));
+  // 값 동등성만으로는 부족하다. expectedUser를 실행 직전 파일에서 읽으므로, 커맨드가 config를
+  // **아예 건드리지 않아도** 이 비교는 참이 된다 — "보존했다"와 "쓰기가 없었다"를 구분하지 못한다.
+  // 그래서 실행 전후 원문 비교로 쓰기 발생을 먼저 확인하고, 쓰기가 없었으면 PASS가 아니라
+  // 판정 불가(N/A)로 내보낸다. `specSources` 저장 여부가 아니라 **파일 변경 자체**를 증거로 삼는
+  // 이유는, 값이 틀리게 저장된 경우(쓰기는 일어났고 user가 날아갔을 수 있다)도 판정해야 하기 때문이다.
+  const wroteConfig = configBefore !== null && configRaw !== configBefore;
+  const userPreserved = wroteConfig && !!expectedUser && config?.user === expectedUser;
+  // 요구사항 절 안의 **목록 항목**에 괄호 출처 태그가 붙었는지를 본다. 문서 아무 데나 있으면
+  // 통과하는 검사로는 "항목별 출처 표기"라는 계약을 확인할 수 없다.
+  // 리터럴 `(interview)`만 받으면 안 된다 — 한 항목이 두 소스에서 왔을 때 writer는
+  // `(confluence, interview)`로 묶어 쓰고(실측), 충돌 항목엔 `(interview, unresolved)`가 붙는다.
+  // 둘 다 계약을 지킨 표기다. 절 제목도 `## 목적 / 요구사항`을 `## 요구사항`으로 쓸 수 있다.
+  const reqSection = sectionBody(specBody, /^#{2,3} .*(?:목적|요구사항)/m);
+  const reqItems = (reqSection.match(/^\s*(?:[-*]|\d+\.)\s/gm) || []).length;
+  const interviewTagged = /^\s*(?:[-*]|\d+\.)\s.*\([^)\n]*\binterview\b[^)\n]*\)/m.test(reqSection);
   // 문자열 존재가 아니라 실제 heading + 체크박스 존재를 요구한다(total > 0).
   const ambiguityOk = total > 0;
   // 인계 문구는 파일·git 어디에도 안 남아 에이전트 최종 메시지가 유일한 관측면이다(산문 예외).
@@ -589,11 +599,15 @@ export function scoreSpecArtifacts({
   // 언급한다)이 그대로 섞여 무조건 참이 된다 → result만 본다.
   const handoff = /harness-interview/.test(resultText);
   return [
-    sig('요구사항 항목에 (interview) 출처 태그', interviewTagged),
+    sig('요구사항 항목에 (interview) 출처 태그', interviewTagged,
+      interviewTagged ? '' : (reqSection ? `요구사항 절 항목 ${reqItems}개, 괄호 태그 미검출` : '요구사항 절 미검출')),
     sig('Ambiguity 자가진단 절 + 체크박스 생성', ambiguityOk),
     sig('harness-interview 인계 [산문 예외]', handoff, `자가진단 ${checked}/${total} 체크 상태`),
     sig('specSources 저장값 일치 (.harness/config.json)', sourcesSaved, configErr ? `config JSON 파싱 실패: ${configErr}` : ''),
-    sig('config 기존 user 값 보존 (read-modify-write)', userPreserved, configErr ? 'config JSON 파싱 실패' : ''),
+    wroteConfig
+      ? sig('config 기존 user 값 보존 (read-modify-write)', userPreserved, configErr ? 'config JSON 파싱 실패' : '')
+      : na('config 기존 user 값 보존 (read-modify-write)',
+        configBefore === null ? '실행 전 config 원문 미확보 — 판정 불가' : '쓰기 미발생 — 보존 여부 판정 불가'),
   ];
 }
 
@@ -604,12 +618,22 @@ export function aggregateTrials(perTrial) {
   return perTrial[0].map((_, i) => {
     const runs = perTrial.map((t) => t[i]);
     const passed = runs.filter((r) => r.status === 'PASS').length;
-    const flaky = passed > 0 && passed < runs.length;
+    const failed = runs.filter((r) => r.status === 'FAIL').length;
+    const nas = runs.filter((r) => r.status === 'N/A').length;
+    const flaky = passed > 0 && failed > 0;
     const notes = runs.map((r) => r.note).filter(Boolean);
+    // N/A는 통과도 실패도 아니다. 전부 N/A면 N/A로, 일부만 N/A면(그리고 FAIL이 없으면)
+    // "모든 trial에서 성립했다"를 주장할 수 없으므로 역시 N/A로 내보낸다 — FAIL로 접으면
+    // 없는 결함을 만들고, PASS로 접으면 판정 못 한 trial을 통과로 위조한다.
+    let status = 'PASS';
+    if (failed > 0) status = 'FAIL';
+    else if (nas > 0) status = 'N/A';
     return {
       label: `${runs[0].label} (pass-rate ${passed}/${runs.length})`,
-      status: passed === runs.length ? 'PASS' : 'FAIL',
-      note: sanitizeNote([flaky ? 'FLAKY' : '', ...notes].filter(Boolean).join(' · ')),
+      status,
+      note: sanitizeNote([
+        flaky ? 'FLAKY' : '', nas ? `판정 불가 ${nas}/${runs.length}` : '', ...notes,
+      ].filter(Boolean).join(' · ')),
     };
   });
 }
@@ -624,9 +648,10 @@ async function sc7DraftTrial(token, index) {
   // 보존 검증의 "기존 값"이다 — 인위적으로 심지 않는다.
   await cli(['apply', '--yes']);
   const configPath = join(dir, '.harness', 'config.json');
+  const configBefore = await readFile(configPath, 'utf8').catch(() => null);
   let expectedUser = '';
-  try { expectedUser = JSON.parse(await readFile(configPath, 'utf8')).user || ''; }
-  catch { /* 보존 신호가 FAIL로 드러난다 */ }
+  try { expectedUser = JSON.parse(configBefore).user || ''; }
+  catch { /* 보존 신호가 판정 불가로 드러난다 */ }
 
   const slug = `sim-spec-${TS}-${index + 1}`;
   await cli(['task', slug]);
@@ -644,7 +669,8 @@ async function sc7DraftTrial(token, index) {
     ok: a.ok && !a.authFailed,
     triggerOk: a.ok && !a.unknownCommand && !a.authFailed,
     signals: scoreSpecArtifacts({
-      specBody: draft, configRaw, resultText: a.result, expectedUser, expectedConfluence: SPEC_SOURCE,
+      specBody: draft, configRaw, configBefore, resultText: a.result,
+      expectedUser, expectedConfluence: SPEC_SOURCE,
     }),
     dir, specPath, draft,
   };
@@ -845,7 +871,9 @@ async function sc7Standalone() {
   const { signals, triggerRate, draftTrials } = await sc7SpecWriter(token);
   console.log(renderSignals('SC7 — /harness-spec 초안 생성 (프롬프트 접기)', signals));
   console.log(`(fresh 초안 ${draftTrials} trial + merge 1회 = 에이전트 ${draftTrials + 1}회 · 트리거 ${triggerRate})`);
-  await rm(join(PG, '.sim-tmp', TS), { recursive: true, force: true });
+  // FLAKY 신호를 진단하려면 실패한 trial의 산출물이 필요하다. 기본은 정리, SIM_KEEP_SANDBOX=1이면 보존.
+  if (process.env.SIM_KEEP_SANDBOX) console.log(`\n(sandbox 보존: ${join(PG, '.sim-tmp', TS)})`);
+  else await rm(join(PG, '.sim-tmp', TS), { recursive: true, force: true });
   const failed = signals.filter((s) => s.status === 'FAIL');
   if (failed.length) { console.error(`✗ ${failed.length} FAIL`); process.exit(1); }
   console.log('\n✓ SC7 all PASS/MANUAL/N-A');
