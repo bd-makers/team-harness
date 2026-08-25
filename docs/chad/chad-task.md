@@ -1,6 +1,7 @@
 # chad — Tasks
 
 ## Open
+- node-test-runner-flake (created 2026-08-25)
 - diagram-companion-pin (created 2026-08-21)
 - hook-jq-failclosed (created 2026-08-21)
 - hook-jq-fallback-delivery (created 2026-08-21)
@@ -17,6 +18,7 @@
 - harness-comptest (created 2026-07-10)
 
 ## Completed
+- ✅ boundary-perf-invariant
 - ✅ release-0181-recovery
 - ✅ sim-spec-coverage
 - ✅ doctor-decision-log
