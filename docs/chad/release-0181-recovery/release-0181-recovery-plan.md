@@ -15,8 +15,9 @@
 - [x] 커밋 · push · PR 생성 → CI 그린 확인 (PR #40, test 18/20 SUCCESS)
 - [x] 태그 push 전 3검사 선행 (changelog-section 0.18.1 · version · npm test) — 게이트 3/4 실측
 - [x] 태그 처리 방안(강제 이동 vs 0.18.2 재범프) 근거와 함께 오케스트레이터에 보고 — (a) 권고, 기술적 동의 받음
-- [ ] **사람 승인 후**: #40 머지 → main push 런 그린 확인(run id 기록) → 태그 이동 → 릴리스 발행
-- [ ] artifact 기록 · `harness-team done`
+- [x] **사람 승인 후**: #40 머지(d424407) → main 런 32801750964 그린(1차 실패 후 실패 job 재실행) →
+  태그 v0.18.1 이동 → release run 32802158249로 발행 확인
+- [x] artifact 기록 · `harness-team done`
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

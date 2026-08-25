@@ -3,9 +3,9 @@
 
 ## Now
 - Goal: 빠진 `docs/what-changes-0.18.1.html`을 채워 main CI를 녹색으로 되돌리고 v0.18.1 릴리스를 발행한다.
-- Current atomic step: PR #40 CI 그린 · 태그 방안 보고 완료 → **사람 승인 대기**
-- Stop / human-decision condition: 머지·태그 이동 모두 **사람 승인 전 실행 금지**. 오케스트레이터가
-  (a) 태그 강제 이동에 기술적으로 동의했고 사용자 승인만 남았다.
+- Current atomic step: v0.18.1 발행 완료 → task 종결(`harness-team done`)
+- Stop / human-decision condition: 없음 — 승인받은 범위(머지→main 그린→태그 이동→발행→done)를 완료했다.
+  `summary --write`는 내 범위 밖(PR #39 종결 후 오케스트레이터가 실행자 지정).
 
 ## Constraints and settled decisions
 - docs/는 Obsidian 볼트에서 열린다 → 자립형 정적 HTML만. 런타임 JS 다이어그램 금지.

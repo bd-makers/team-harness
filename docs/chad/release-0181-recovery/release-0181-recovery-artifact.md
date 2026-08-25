@@ -20,6 +20,24 @@
   → `release.yml` 4개 게이트 중 3개 실측 확인(버전 일치·npm test·노트 추출), 4번째는
   v0.18.1 릴리스가 존재하지 않아 `gh release create` 충돌 없음.
 
+### 릴리스 복구 실행 기록 (2026-08-25)
+
+- PR #40 머지 → merge commit `d424407` (tree `6874363…` = 브랜치 head와 **동일 트리**).
+- **main push 런 1차: run `32801750964` = failure** — `test (18)` PASS / `test (20)` FAIL.
+  같은 커밋·같은 트리인데 Node 20만 실패했고, PR CI에서는 18·20 모두 PASS였다.
+  CI 로그는 이 머신에서 확보 불가(`gh`·`gh-axi`·직접 curl 모두 blob storage에서 403 —
+  프록시가 `*.blob.core.windows.net` 을 막는다). **실패 테스트 이름은 끝내 미확정**이다.
+- 로컬 재현: merge commit(`d424407`) 체크아웃, Node 20.19.5로 전체 스위트 → 그린.
+  worker-21도 격리 worktree에서 같은 커밋·Node 20.19.5로 388/387 pass/0 fail/1 skip 확인.
+- **main push 런 재실행(실패 job만): run `32801750964` = success** (18·20 모두 PASS).
+  → 게이트 3(main 그린) 충족.
+- 게이트 4(로컬 3검사, merge commit 체크아웃 상태): `changelog-section.mjs 0.18.1` 25줄·3서브섹션,
+  `package.json` 0.18.1, `npm test` 388/387 pass/0 fail/1 skip.
+- 게이트 5(태그 이동): `git push origin :refs/tags/v0.18.1` → `git tag -f v0.18.1 d424407` →
+  `git push origin v0.18.1`.
+- 게이트 6(발행): release run `32802158249` 전 단계 success →
+  **v0.18.1 릴리스 발행, Latest** (2026-08-25T02:38:33Z). 노트 본문은 CHANGELOG `## [0.18.1]` 절.
+
 ## Reviews
 *Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 
@@ -52,6 +70,18 @@
   태그는 되돌리기 번거롭다 — 태그 push 전 로컬 3검사는 선택이 아니라 절차다.
 - **`latest`는 편집 대상이 아니라 복사 대상이다.** 두 파일을 각각 손으로 고치면 완전 일치 계약이
   깨지기 쉽다. 스냅샷을 정본으로 쓰고 `cp`로 맞춘 뒤 `cmp`로 확인하는 편이 안전하다.
+- **워크트리에서 `git rev-parse main`은 신뢰할 수 없다.** 이 세션은 git worktree에서 돌고
+  `main`은 다른 워크트리에 체크아웃돼 있어, 로컬 `main` ref가 머지 후에도 `f8d6b6d`(= 깨진
+  범프 커밋)에 머물러 있었다. 합의된 절차의 `git tag -f v0.18.1 "$(git rev-parse main)"`을
+  그대로 실행했다면 **정확히 그 깨진 커밋에 다시 태그가 붙었을 것**이다. 실제로는
+  `origin/main` · `gh pr view 40 --json mergeCommit` · detached HEAD 세 값이 모두
+  `d424407`로 일치함을 확인하고 그 sha를 썼다. 워크트리에서는 fetch 직후의 `origin/<branch>`가
+  단일 진실이다.
+- **`tests/perf/boundary-checkpoint.test.mjs:112-113`의 절대 상한이 상대 예산을 무효화한다** —
+  같은 파일 :68 주석은 "고정 wall-clock 예산은 부하에서 깨진다"며 중앙값 기준 상대 예산을
+  도입해 놓고, 마지막 두 assertion은 `Math.max(...)` 대비 고정 500ms/800ms를 건다.
+  샘플 하나만 느려도 FAIL이라 부하 민감 flake가 남는다. 후속 후보:
+  중앙값 기준으로 옮기거나 상한을 스폰 바닥값의 배수로 바꾼다. **이번 릴리스 범위 밖.**
 - **artifact 템플릿이 EOF 빈 줄을 남긴다** (`src/commands/task.mjs:120`, `## Learnings\n\n`).
   0.18.0이 handoff 생성기에서 고친 것과 같은 계열의 결함이다 — 본문을 채우면 가려지지만,
   생성 직후 커밋하면 `git diff --check`에 걸린다. 별도 task 후보.
