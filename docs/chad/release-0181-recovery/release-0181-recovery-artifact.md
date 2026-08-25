@@ -77,11 +77,24 @@
   `origin/main` · `gh pr view 40 --json mergeCommit` · detached HEAD 세 값이 모두
   `d424407`로 일치함을 확인하고 그 sha를 썼다. 워크트리에서는 fetch 직후의 `origin/<branch>`가
   단일 진실이다.
-- **`tests/perf/boundary-checkpoint.test.mjs:112-113`의 절대 상한이 상대 예산을 무효화한다** —
-  같은 파일 :68 주석은 "고정 wall-clock 예산은 부하에서 깨진다"며 중앙값 기준 상대 예산을
-  도입해 놓고, 마지막 두 assertion은 `Math.max(...)` 대비 고정 500ms/800ms를 건다.
-  샘플 하나만 느려도 FAIL이라 부하 민감 flake가 남는다. 후속 후보:
-  중앙값 기준으로 옮기거나 상한을 스폰 바닥값의 배수로 바꾼다. **이번 릴리스 범위 밖.**
+- **`tests/perf/boundary-checkpoint.test.mjs`는 부하에 민감한 flake다 — 내용 무관 확증.**
+  CI에서 3회 관측했고 **전부 `test (20)`** 이다: main `32801750964`(1차), PR #41
+  `32802292903`, 그리고 그중 #41은 diff가 task 문서(md/json)뿐이라 테스트를 깨는 것이
+  원리적으로 불가능하다. 재실행하면 통과한다.
+  **실패 테스트를 실행으로 특정했다** (CI 로그는 blob storage 403으로 끝내 확보 불가):
+  merge commit 체크아웃 + Node 20.19.5 + CPU 부하(busy loop 16개, 12코어 머신)에서
+  3회 중 2회 실패했고, 실패한 것은 오직
+  `boundary performance: cold check <75ms and plan checkpoint <150ms …` 하나다.
+  실패 메시지: `median cold boundary CLI cost 97.1ms over the 43.5ms spawn floor
+  (limit: 75ms; cold samples: 360.3, 140.6, 83.3; bare samples: 42.4, 43.5, 57.3, …)`.
+  → 무부하에서는 로컬·격리 worktree 모두 그린(스폰 바닥값 17ms / cold 33ms).
+  **정정할 점**: 깨진 것은 `:112-113`의 `Math.max` 절대 상한이 아니라 **:110의 중앙값 상대
+  예산**이었다. 부하가 걸리면 CLI 본체 작업(20 × 10KiB 스키마 read+JSON.parse)이
+  bare `node -e ''` 스폰보다 훨씬 크게 늘어나 차이값 자체가 예산을 넘는다 —
+  상대 예산은 스폰 비용 변동만 상쇄할 뿐 **작업량 비례 지연은 상쇄하지 못한다**.
+  후속 후보(범위 밖): ① 상대 예산의 분모를 bare 스폰이 아니라 동일 작업량의 기준 실행으로
+  바꾸거나 ② 부하 감지 시 skip, ③ 최소한 `Math.max` 절대 상한도 중앙값 기준으로 이동.
+  심각도: PR 내용과 무관하게 재실행을 요구하므로 **후속 후보가 아니라 실무 차단 요인**이다.
 - **artifact 템플릿이 EOF 빈 줄을 남긴다** (`src/commands/task.mjs:120`, `## Learnings\n\n`).
   0.18.0이 handoff 생성기에서 고친 것과 같은 계열의 결함이다 — 본문을 채우면 가려지지만,
   생성 직후 커밋하면 `git diff --check`에 걸린다. 별도 task 후보.
