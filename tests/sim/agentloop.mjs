@@ -19,6 +19,7 @@
 //     node tests/sim/agentloop.mjs probe     # verify the headless contract (run first)
 //     node tests/sim/agentloop.mjs run        # full sim + dated report
 //     node tests/sim/agentloop.mjs sc6        # task-lifecycle only (CLI-driven, NO auth)
+//     node tests/sim/agentloop.mjs sc7        # /harness-spec 초안 생성만 (auth 필요)
 //
 // HONESTY: signals unobservable even via transcript stay ⚠️manual. No prose PASS.
 
@@ -27,7 +28,7 @@ import { mkdir, writeFile, rm, chmod, readFile, stat, readdir } from 'node:fs/pr
 import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { STACKS } from '../e2e/sandbox.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -249,6 +250,8 @@ function sig(label, ok, note = '') {
   return { label, status: ok ? 'PASS' : 'FAIL', note: sanitizeNote(note) };
 }
 function manual(label, note) { return { label, status: 'MANUAL', note: sanitizeNote(note) }; }
+// 범위 밖은 조용히 빼지 않는다 — 사유와 함께 N/A로 리포트에 남긴다.
+function na(label, note) { return { label, status: 'N/A', note: sanitizeNote(note) }; }
 
 const NS = '/harness-aijient-team'; // verified namespaced slash prefix
 const SLUG = `sim-${TS}`;
@@ -472,6 +475,247 @@ async function sc6Lifecycle() {
   return { signals, dir, usedForce };
 }
 
+// ── SC7 /harness-spec 초안 생성 (전용 샌드박스, 프롬프트 접기) ─────────────────
+// `/harness-spec`은 writer다 — 돌리면 spec.md와 .harness/config.json을 쓴다. 그래서 SC5
+// (canon.dir 공유)에 얹지 않고 자기 샌드박스를 쓴다. 진짜 멀티턴 인터뷰는 runHeadless가
+// 단발 `claude -p`라 재현할 수 없으므로, 사람이 할 답변을 프롬프트에 미리 심어 단일 턴으로
+// 접고(프롬프트 접기) 커맨드의 **결정적 산출물**만 채점한다. 접히지 않는 것(라이브 MCP
+// fetch · 대화 UX · replace/cancel 분기)은 조용히 빼지 않고 N/A + 사유로 남긴다.
+const SPEC_SOURCE = {
+  baseUrl: 'https://sim-example.atlassian.net/wiki',
+  spaceKey: 'SIMSPEC',
+  pageUrl: 'https://sim-example.atlassian.net/wiki/spaces/SIMSPEC/pages/1/payment-retry',
+};
+// merge 분기가 "알 수 없는 절은 항상 보존"을 지켰는지 보는 표식.
+const BOUNDARY_SENTINEL = 'SIM_UNKNOWN_SECTION_SENTINEL';
+// SC1이 쓰는 비대화 관용구와 같은 계약 — 헤드리스에는 답할 사람이 없다.
+const NONINTERACTIVE = 'Run NON-INTERACTIVELY. This is an automated context with no human to answer prompts. Do NOT ask any questions — every answer you would ask for is supplied below. Use it verbatim and finish in one turn.';
+
+function freshSpecPrompt() {
+  return [
+    `${NS}:harness-spec`,
+    '',
+    NONINTERACTIVE,
+    '',
+    '[소스 선택] confluence + interview',
+    `[Confluence 기본 위치] baseUrl=${SPEC_SOURCE.baseUrl} · spaceKey=${SPEC_SOURCE.spaceKey}`,
+    `[Confluence 페이지] ${SPEC_SOURCE.pageUrl}`,
+    '[Confluence MCP] 연결돼 있지 않다. 아래 본문을 그 페이지에서 가져온 내용으로 써라(붙여넣기 폴백).',
+    '--- 본문 시작 ---',
+    '결제 실패 시 최대 3회 재시도한다. 간격은 30초 / 2분 / 10분.',
+    '4회째부터는 재시도하지 않고 카드 변경을 안내한다.',
+    '--- 본문 끝 ---',
+    '[인터뷰 답변 — 아래가 전부다. 더 묻지 말고 이대로 써라]',
+    '- Goal: 결제 실패 건을 자동 재시도해 결제 이탈률을 낮춘다.',
+    '- Constraint: 기존 PaymentService만 수정한다. DB 스키마 변경 금지. 2주 내.',
+    '- Success: 재시도 성공률 30% 이상 · 중복 청구 0건.',
+    '- Context(brownfield): src/payment/payment-service.ts · src/payment/retry-policy.ts',
+    '- Ontology: 재시도 윈도우 = 최초 실패 후 12분 · 종결 실패 = 4회 시도 후 상태.',
+    '- 충분하다. 추가 질문 없이 초안을 써라.',
+  ].join('\n');
+}
+
+function mergeSpecPrompt() {
+  return [
+    `${NS}:harness-spec`,
+    '',
+    NONINTERACTIVE,
+    '',
+    '[기존 spec 처리] merge — 기본값. 기존 절을 보존하고 빈 부분만 채운다.',
+    '[소스 선택] interview',
+    '[인터뷰 답변 — 아래가 전부다]',
+    '- 추가 요구: 재시도 중에는 같은 주문의 새 결제 요청을 막는다(멱등 키 재사용).',
+    '- 나머지는 기존 spec 그대로 두면 된다. 충분하다.',
+  ].join('\n');
+}
+
+// heading부터 다음 heading 직전까지를 잘라낸다. `$`는 /m에서 줄 끝마다 맞아 절을 한 줄로
+// 잘라먹으므로 쓰지 않는다. 신호를 "문서 어딘가에 문자열이 있다"가 아니라 "그 절 안에 있다"로
+// 좁히는 데 쓴다 — 전자는 너무 쉽게 PASS한다.
+function sectionBody(md, headingRe) {
+  const start = md.search(headingRe);
+  if (start < 0) return '';
+  const rest = md.slice(start);
+  const next = rest.search(/\n#{2,3} /);
+  return next > 0 ? rest.slice(0, next) : rest;
+}
+
+// 자가진단 절 안의 체크 상태만 센다. 인계 문구 신호의 note에 붙여, "전 항목 체크에서도
+// 인계했는가"(2차 리뷰 P1 회귀)를 리포트만 보고 판정할 수 있게 한다.
+function ambiguityCounts(specBody) {
+  const body = sectionBody(specBody, /^#{2,3} Ambiguity 자가진단/m);
+  const checked = (body.match(/^\s*- \[[xX]\]/gm) || []).length;
+  const open = (body.match(/^\s*- \[ \]/gm) || []).length;
+  return { checked, total: checked + open };
+}
+
+// 자가진단 절만 전 항목 체크로 강제한다. 계약상 writer는 마지막 가중합 항목을 스스로 체크하지
+// 않으므로(그건 validator 몫) 실사용 초안은 5/5에 도달하지 못한다. P1 회귀("전 항목 체크여도
+// 인계하는가")를 실제로 태우려면 merge 재실행 전에 이 상태를 인위적으로 만들어야 한다.
+export function forceAllChecked(specBody) {
+  const start = specBody.search(/^#{2,3} Ambiguity 자가진단/m);
+  if (start < 0) return specBody;
+  const rest = specBody.slice(start);
+  const next = rest.search(/\n#{2,3} /);
+  const end = next > 0 ? start + next : specBody.length;
+  const section = specBody.slice(start, end).replace(/^(\s*)- \[ \]/gm, '$1- [x]');
+  return specBody.slice(0, start) + section + specBody.slice(end);
+}
+
+// 순수 채점 — I/O 없음. sim 실행에는 토큰이 필요하지만 이 로직은 토큰 없이 `npm run test`가
+// 검증한다 (선례: codex-agentloop.mjs parseCodexJsonl + tests/codex-agentloop-parser.test.mjs).
+export function scoreSpecArtifacts({
+  specBody = '', configRaw = '', resultText = '', expectedUser = '', expectedConfluence = null,
+  configBefore = null,
+} = {}) {
+  const { checked, total } = ambiguityCounts(specBody);
+  let config = null, configErr = null;
+  try { config = JSON.parse(configRaw); } catch (e) { configErr = String(e.message); }
+  const src = config && typeof config === 'object' ? config.specSources : null;
+  // 저장 "여부"가 아니라 저장된 "값"을 본다 — specSources.confluence = {} 로도 통과하면
+  // lazy 저장을 검증한 것이 아니다. 이 시나리오는 confluence를 골랐으므로 그 항목을 대조한다.
+  const conf = src && typeof src === 'object' ? src.confluence : null;
+  const sourcesSaved = !!(expectedConfluence && conf
+    && conf.baseUrl === expectedConfluence.baseUrl && conf.spaceKey === expectedConfluence.spaceKey);
+  // 값 동등성만으로는 부족하다. expectedUser를 실행 직전 파일에서 읽으므로, 커맨드가 config를
+  // **아예 건드리지 않아도** 이 비교는 참이 된다 — "보존했다"와 "쓰기가 없었다"를 구분하지 못한다.
+  // 그래서 실행 전후 원문 비교로 쓰기 발생을 먼저 확인하고, 쓰기가 없었으면 PASS가 아니라
+  // 판정 불가(N/A)로 내보낸다. `specSources` 저장 여부가 아니라 **파일 변경 자체**를 증거로 삼는
+  // 이유는, 값이 틀리게 저장된 경우(쓰기는 일어났고 user가 날아갔을 수 있다)도 판정해야 하기 때문이다.
+  const wroteConfig = configBefore !== null && configRaw !== configBefore;
+  const userPreserved = wroteConfig && !!expectedUser && config?.user === expectedUser;
+  // 요구사항 절 안의 **목록 항목**에 괄호 출처 태그가 붙었는지를 본다. 문서 아무 데나 있으면
+  // 통과하는 검사로는 "항목별 출처 표기"라는 계약을 확인할 수 없다.
+  // 리터럴 `(interview)`만 받으면 안 된다 — 한 항목이 두 소스에서 왔을 때 writer는
+  // `(confluence, interview)`로 묶어 쓰고(실측), 충돌 항목엔 `(interview, unresolved)`가 붙는다.
+  // 둘 다 계약을 지킨 표기다. 절 제목도 `## 목적 / 요구사항`을 `## 요구사항`으로 쓸 수 있다.
+  const reqSection = sectionBody(specBody, /^#{2,3} .*(?:목적|요구사항)/m);
+  const reqItems = (reqSection.match(/^\s*(?:[-*]|\d+\.)\s/gm) || []).length;
+  const interviewTagged = /^\s*(?:[-*]|\d+\.)\s.*\([^)\n]*\binterview\b[^)\n]*\)/m.test(reqSection);
+  // 문자열 존재가 아니라 실제 heading + 체크박스 존재를 요구한다(total > 0).
+  const ambiguityOk = total > 0;
+  // 인계 문구는 파일·git 어디에도 안 남아 에이전트 최종 메시지가 유일한 관측면이다(산문 예외).
+  // transcript로 재면 확장된 커맨드 본문(commands/harness-spec.md가 /harness-interview를 여러 번
+  // 언급한다)이 그대로 섞여 무조건 참이 된다 → result만 본다.
+  const handoff = /harness-interview/.test(resultText);
+  return [
+    sig('요구사항 항목에 (interview) 출처 태그', interviewTagged,
+      interviewTagged ? '' : (reqSection ? `요구사항 절 항목 ${reqItems}개, 괄호 태그 미검출` : '요구사항 절 미검출')),
+    sig('Ambiguity 자가진단 절 + 체크박스 생성', ambiguityOk),
+    sig('harness-interview 인계 [산문 예외]', handoff, `자가진단 ${checked}/${total} 체크 상태`),
+    sig('specSources 저장값 일치 (.harness/config.json)', sourcesSaved, configErr ? `config JSON 파싱 실패: ${configErr}` : ''),
+    wroteConfig
+      ? sig('config 기존 user 값 보존 (read-modify-write)', userPreserved, configErr ? 'config JSON 파싱 실패' : '')
+      : na('config 기존 user 값 보존 (read-modify-write)',
+        configBefore === null ? '실행 전 config 원문 미확보 — 판정 불가' : '쓰기 미발생 — 보존 여부 판정 불가'),
+  ];
+}
+
+// 같은 라벨의 신호를 trial 전체로 접어 pass-rate로 만든다 (SC5 관용구). 에이전트 산출물은
+// 결정적이지 않다 — 한 번 통과했다고 PASS로 굳히면 리포트가 실제보다 강해 보인다.
+export function aggregateTrials(perTrial) {
+  if (!perTrial.length) return [];
+  return perTrial[0].map((_, i) => {
+    const runs = perTrial.map((t) => t[i]);
+    const passed = runs.filter((r) => r.status === 'PASS').length;
+    const failed = runs.filter((r) => r.status === 'FAIL').length;
+    const nas = runs.filter((r) => r.status === 'N/A').length;
+    const flaky = passed > 0 && failed > 0;
+    const notes = runs.map((r) => r.note).filter(Boolean);
+    // N/A는 통과도 실패도 아니다. 전부 N/A면 N/A로, 일부만 N/A면(그리고 FAIL이 없으면)
+    // "모든 trial에서 성립했다"를 주장할 수 없으므로 역시 N/A로 내보낸다 — FAIL로 접으면
+    // 없는 결함을 만들고, PASS로 접으면 판정 못 한 trial을 통과로 위조한다.
+    let status = 'PASS';
+    if (failed > 0) status = 'FAIL';
+    else if (nas > 0) status = 'N/A';
+    return {
+      label: `${runs[0].label} (pass-rate ${passed}/${runs.length})`,
+      status,
+      note: sanitizeNote([
+        flaky ? 'FLAKY' : '', nas ? `판정 불가 ${nas}/${runs.length}` : '', ...notes,
+      ].filter(Boolean).join(' · ')),
+    };
+  });
+}
+
+// trial 하나 = 자기 샌드박스 + 자기 apply + 자기 task. 샌드박스를 공유하고 config만 되돌리면
+// 앞 trial의 task 문서·git 상태가 남아 pass-rate가 독립 시행을 나타내지 못한다(codex 리뷰 P2).
+// 샌드박스 준비는 CLI라 저렴하다 — 비싼 건 에이전트 호출뿐이다.
+async function sc7DraftTrial(token, index) {
+  const { dir, env } = await makeSandbox(`spec-writer-${index + 1}`, { pkg: CANONICAL_STACK.pkg });
+  const cli = (args) => run('node', [BIN, ...args], { cwd: dir, env });
+  // apply --yes → ensureUsername이 git config에서 {"user":"simbot"}를 쓴다. 이게 read-modify-write
+  // 보존 검증의 "기존 값"이다 — 인위적으로 심지 않는다.
+  await cli(['apply', '--yes']);
+  const configPath = join(dir, '.harness', 'config.json');
+  const configBefore = await readFile(configPath, 'utf8').catch(() => null);
+  let expectedUser = '';
+  try { expectedUser = JSON.parse(configBefore).user || ''; }
+  catch { /* 보존 신호가 판정 불가로 드러난다 */ }
+
+  const slug = `sim-spec-${TS}-${index + 1}`;
+  await cli(['task', slug]);
+  let user = expectedUser || 'simbot';
+  try { user = JSON.parse(await readFile(join(dir, '.harness', 'active.json'), 'utf8')).user || user; }
+  catch { /* keep default */ }
+  const specPath = join(dir, 'docs', user, slug, `${slug}-spec.md`);
+
+  const a = await runHeadless(token, dir, freshSpecPrompt());
+  const draft = await readFile(specPath, 'utf8').catch(() => '');
+  const configRaw = await readFile(configPath, 'utf8').catch(() => '');
+  return {
+    // 트리거 판정에 a.ok를 넣는다 — 타임아웃·spawn 실패는 unknownCommand도 authFailed도
+    // 아니라서, 이게 없으면 죽은 실행이 트리거 PASS로 집계된다(codex 리뷰).
+    ok: a.ok && !a.authFailed,
+    triggerOk: a.ok && !a.unknownCommand && !a.authFailed,
+    signals: scoreSpecArtifacts({
+      specBody: draft, configRaw, configBefore, resultText: a.result,
+      expectedUser, expectedConfluence: SPEC_SOURCE,
+    }),
+    dir, specPath, draft,
+  };
+}
+
+async function sc7SpecWriter(token, draftTrials = 2) {
+  // (a) fresh 초안 — confluence(붙여넣기 폴백) + interview. trial마다 독립 샌드박스.
+  const trials = [];
+  for (let i = 0; i < draftTrials; i++) trials.push(await sc7DraftTrial(token, i));
+  const last = trials[trials.length - 1];
+
+  // (b) merge 분기 — 커맨드가 "항상 보존"을 약속한 알 수 없는 절을 심고 마지막 trial의 task에서
+  // 재실행. 자가진단은 전 항목 체크로 강제해 P1(체크 상태와 무관하게 항상 인계) 회귀를 약한
+  // 분기가 아닌 실제 분기에서 태운다.
+  const seeded = `${forceAllChecked(last.draft)}\n## Boundary contracts\n\n${BOUNDARY_SENTINEL}\n`;
+  const before = ambiguityCounts(seeded);
+  await writeFile(last.specPath, seeded);
+  const a2 = await runHeadless(token, last.dir, mergeSpecPrompt());
+  const merged = await readFile(last.specPath, 'utf8').catch(() => '');
+  const after = ambiguityCounts(merged);
+  // sentinel은 우리가 직접 심은 문자열이다. merge가 아예 안 돌아도 그대로 남아 있으므로,
+  // "보존됐다"를 주장하려면 merge가 실제로 spec을 건드렸다는 증거가 먼저 필요하다(codex 리뷰 P1).
+  const mergeRan = a2.ok && !a2.authFailed && merged !== '' && merged !== seeded;
+
+  const triggerRuns = [...trials.map((t) => t.triggerOk), a2.ok && !a2.unknownCommand && !a2.authFailed];
+  const draftOk = trials.map((t) => t.ok);
+  const rate = (arr) => `${arr.filter(Boolean).length}/${arr.length}`;
+  const signals = [
+    sig(`fresh 초안 run 완주 (pass-rate ${rate(draftOk)})`, draftOk.every(Boolean),
+      draftOk.every(Boolean) ? '' : 'AUTH/실행 실패 포함'),
+    sig(`네임스페이스 슬래시 해석 (pass-rate ${rate(triggerRuns)})`, triggerRuns.every(Boolean),
+      triggerRuns.some(Boolean) && !triggerRuns.every(Boolean) ? 'FLAKY' : ''),
+    ...aggregateTrials(trials.map((t) => t.signals)),
+    sig('merge 실행 완주 + spec 실제 갱신', mergeRan, mergeRan ? '' : 'merge가 spec을 바꾸지 않음'),
+    sig('merge 분기 — 알 수 없는 절 보존', mergeRan && merged.includes(BOUNDARY_SENTINEL) && merged.includes('Boundary contracts'),
+      mergeRan ? '' : 'merge 미실행 — 보존 판정 불가'),
+    sig('merge 후에도 인계 [산문 예외 · P1 회귀 감시]', a2.ok && !a2.authFailed && /harness-interview/.test(a2.result),
+      `자가진단 사전 ${before.checked}/${before.total} → 사후 ${after.checked}/${after.total}`),
+    na('Confluence/Figma MCP fetch', '라이브 MCP·실인증 필요 — 붙여넣기 폴백만 태움'),
+    na('멀티턴 인터뷰 UX', 'runHeadless는 단발 claude -p — 답변 선주입으로 접음'),
+    na('기존 spec replace/cancel 분기', 'AskUserQuestion 응답 필요 — merge 기본값만 검증'),
+  ];
+  return { signals, dir: last.dir, draftTrials, triggerRate: rate(triggerRuns) };
+}
+
 // ── golden snapshot (P6b) — copy scaffold output for cross-version diff ────────
 async function snapshot(version, scenario, srcDir) {
   const dest = join(PG, 'sim-snapshots', version, scenario);
@@ -483,8 +727,8 @@ async function snapshot(version, scenario, srcDir) {
 }
 
 // ── report ────────────────────────────────────────────────────────────────────
-const ICO = (s) => (s === 'PASS' ? '✅' : s === 'FAIL' ? '❌' : '⚠️');
-function renderSignals(title, signals) {
+const ICO = (s) => (s === 'PASS' ? '✅' : s === 'FAIL' ? '❌' : s === 'N/A' ? '➖' : '⚠️');
+export function renderSignals(title, signals) {
   const lines = signals.map((s) => `- ${ICO(s.status)} ${s.label}${s.note ? ` — ${s.note}` : ''}`);
   return `### ${title}\n${lines.join('\n')}\n`;
 }
@@ -544,6 +788,8 @@ async function runFull() {
   // SC6 runs LAST + in its own applied sandbox (it nulls active.json → would pollute
   // canon.dir). CLI-driven + auth-independent (hand-proven).
   const sc6 = await sc6Lifecycle();
+  // SC7도 자기 샌드박스에서 돈다 — /harness-spec은 writer라 canon.dir를 오염시킨다.
+  const sc7 = await sc7SpecWriter(token);
 
   const sections = [
     renderMatrix('SC1 — init (stack matrix)', sc1PerStack),
@@ -552,11 +798,12 @@ async function runFull() {
     renderSignals(`SC4 — installed-hook firing 2번 (canonical: ${CANONICAL_STACK.id})`, sc4.signals),
     renderSignals(`SC5 — slash/skill trigger reliability (canonical: ${CANONICAL_STACK.id})`, sc5.signals),
     renderSignals(`SC6 — task 풀 라이프사이클 (CLI 결정적, 전용 샌드박스)`, sc6.signals),
+    renderSignals(`SC7 — /harness-spec 초안 생성 (전용 샌드박스, 프롬프트 접기 · fresh ${sc7.draftTrials} trial + merge 1)`, sc7.signals),
   ];
   const allSig = [
     ...sc1PerStack.flatMap((p) => p.signals),
     ...sc2PerStack.flatMap((p) => p.signals),
-    ...sc3.signals, ...sc4.signals, ...sc5.signals, ...sc6.signals,
+    ...sc3.signals, ...sc4.signals, ...sc5.signals, ...sc6.signals, ...sc7.signals,
   ];
   const counts = allSig.reduce((m, s) => ((m[s.status] = (m[s.status] || 0) + 1), m), {});
 
@@ -572,10 +819,14 @@ async function runFull() {
     `| plugin 버전 | ${version} |`,
     `| plugin git SHA | ${sha} |`,
     `| 측정 레이어 | L5 agent-in-the-loop (설치된 하네스 = 2번) |`,
-    `| stack 매트릭스 | ${STACKS.map((s) => s.id).join(' · ')} (SC1/SC2) · canonical=${CANONICAL_STACK.id} (SC3/4/5) · CLI 결정적 (SC6) |`,
-    `| 신호 집계 | PASS ${counts.PASS || 0} · FAIL ${counts.FAIL || 0} · MANUAL ${counts.MANUAL || 0} |`,
+    `| stack 매트릭스 | ${STACKS.map((s) => s.id).join(' · ')} (SC1/SC2) · canonical=${CANONICAL_STACK.id} (SC3/4/5) · CLI 결정적 (SC6) · 전용 샌드박스 (SC7) |`,
+    `| 신호 집계 | PASS ${counts.PASS || 0} · FAIL ${counts.FAIL || 0} · MANUAL ${counts.MANUAL || 0} · N/A ${counts['N/A'] || 0} |`,
     '',
-    '> 신호는 파일/git/transcript 증거 기반. 산문 응답은 신호가 아니다. ⚠️=관찰 불가(정직).',
+    '> 신호는 파일/git/transcript 증거 기반. 산문 응답은 신호가 아니다. ⚠️=관찰 불가(정직). ➖=범위 밖(N/A, 사유 명시).',
+    '>',
+    '> **산문 예외 (SC7 2건):** `/harness-interview` 인계 문구는 파일·git 어디에도 남지 않아 에이전트'
+    + ' **최종 메시지**가 유일한 관측면이다. transcript로 재면 확장된 커맨드 본문이 섞여 항상 참이 되므로'
+    + ' `result`만 본다. 라벨에 `[산문 예외]`로 표시했다.',
     '>',
     '> **검증 범위(전제 정정):** 현재 코드에서 stack별로 갈리는 산출물은 AGENTS.md `## 기술 스택`',
     '> 섹션의 stackLabel뿐이다(rules·settings·permissions는 stack 무관). 이 매트릭스는 ①init/apply',
@@ -613,7 +864,26 @@ async function sc6Standalone() {
   console.log('\n✓ SC6 all PASS/MANUAL');
 }
 
+// Standalone SC7: /harness-spec만 — auth는 필요하지만 SC1~SC6 매트릭스 비용은 안 낸다.
+async function sc7Standalone() {
+  console.log(`# agentloop sc7 (/harness-spec) — ${TS}\n`);
+  const token = await loadTokenOptional();
+  const { signals, triggerRate, draftTrials } = await sc7SpecWriter(token);
+  console.log(renderSignals('SC7 — /harness-spec 초안 생성 (프롬프트 접기)', signals));
+  console.log(`(fresh 초안 ${draftTrials} trial + merge 1회 = 에이전트 ${draftTrials + 1}회 · 트리거 ${triggerRate})`);
+  // FLAKY 신호를 진단하려면 실패한 trial의 산출물이 필요하다. 기본은 정리, SIM_KEEP_SANDBOX=1이면 보존.
+  if (process.env.SIM_KEEP_SANDBOX) console.log(`\n(sandbox 보존: ${join(PG, '.sim-tmp', TS)})`);
+  else await rm(join(PG, '.sim-tmp', TS), { recursive: true, force: true });
+  const failed = signals.filter((s) => s.status === 'FAIL');
+  if (failed.length) { console.error(`✗ ${failed.length} FAIL`); process.exit(1); }
+  console.log('\n✓ SC7 all PASS/MANUAL/N-A');
+}
+
 const cmd = process.argv[2] ?? 'probe';
-const dispatch = { probe, run: runFull, sc6: sc6Standalone };
-if (!dispatch[cmd]) { console.error(`unknown subcommand: ${cmd} (probe|run|sc6)`); process.exit(64); }
-dispatch[cmd]().catch((e) => { console.error(`✗ ${e.message}`); process.exit(1); });
+const dispatch = { probe, run: runFull, sc6: sc6Standalone, sc7: sc7Standalone };
+// import 시 자동 실행을 막는 엔트리 가드 — 순수 채점 함수를 단위 테스트에서 import 하기 위함
+// (codex-agentloop.mjs와 동일한 형태).
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  if (!dispatch[cmd]) { console.error(`unknown subcommand: ${cmd} (probe|run|sc6|sc7)`); process.exit(64); }
+  dispatch[cmd]().catch((e) => { console.error(`✗ ${e.message}`); process.exit(1); });
+}

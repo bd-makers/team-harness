@@ -13,7 +13,7 @@ Confluence · Figma · Interview 3소스에서 활성 task의 spec 초안을 생
 - [x] `README.md` 커맨드 표 한 줄 + `CHANGELOG.md` Unreleased 기재
 - [x] `npm run test` 전체 통과
 - [x] codex 리뷰 실행 + 10건 조치 → artifact.md 기록 (Gemini는 CLI 미설치로 미실행)
-- [ ] 대화형 드라이런 (실사용 첫 실행 또는 /harness-sim 확장에서 검증 — artifact 검증 한계 참조)
+- [x] 대화형 드라이런 — sim SC7로 트리거·산출물 검증 (MCP fetch·멀티턴 UX·replace/cancel은 범위 밖, artifact 검증 한계 참조)
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
