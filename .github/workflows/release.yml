@@ -18,6 +18,9 @@ jobs:
 
       # Matches the tested runtime and `engines.node` — publishing must not run
       # on a version the suite never exercises (this was node 20, which is EOL).
+      # Kept as a floating major for the same reason as test.yml: it tracks the
+      # latest 24.x, so it picks up 24.20.0 (the node:test deserialization fix)
+      # and later security patches without a manual bump.
       - uses: actions/setup-node@v5
         with:
           node-version: 24

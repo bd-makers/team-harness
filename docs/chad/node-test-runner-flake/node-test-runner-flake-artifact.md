@@ -210,6 +210,52 @@ CI(Linux)의 node 24 시작 비용은 macOS와 전혀 달랐다. 같은 hosted �
 **의도적으로 미통과 상태**로 남겨 뒀다 — 남은 모호성이 기술이 아니라 정책이기 때문이다.
 
 ## Reviews
+
+### 2026-08-25 — AO 내부 리뷰어 (@hsleedevelop, PR #45 review 5016619553)
+
+**결과:** changes_requested — P1 1건 · P2 1건. **둘 다 유효한 지적이었고 둘 다 조치했다.**
+
+**[P2] `MAINTAINING.md:235`가 "Node.js 18+"로 남아 있다 — 타당, 수정함.**
+내 초기 grep 범위가 `README.md templates/ skills/ commands/`로 **좁았던 것이 원인**이다.
+이번엔 저장소 전체를 훑어 재확인했고, 살아 있는 문서 중 남은 것은 이 한 곳뿐이었다.
+`Node.js 24+ … (package.json의 engines.node와 일치)`로 고쳤다.
+나머지 히트(`docs/chad/prerequisites-doc/`, `docs/superpowers/plans/*`)는 **종결된 task의 SSOT와
+과거 plan 문서**라 그 시점 사실의 historical record다 — 건드리지 않았다.
+
+**[P1] 패치된 런타임을 보장하기 전에 flake 해소를 선언하지 말 것 — 핵심은 타당, 다만 제안된
+수단 중 "24.20.0 pin"은 오늘 불가능하다.**
+
+지적의 사실관계는 맞다: 2026-08-25 현재 `node-version: 24`는 **24.19.0(미패치)** 으로 해석되므로
+이 PR은 오늘 flake를 없애지 못한다. **그러나 pin은 채택할 수 없다** — 측정으로 확인:
+
+```
+$ gh api repos/nodejs/node/pulls/65461 --jq '.state, .merged'   → "open", false
+$ gh api ".../contents/lib/internal/test_runner/runner.js?ref=v24.x" | grep -c '>>> 0)'  → 0
+$ gh api repos/nodejs/node/git/ref/tags/v24.20.0                → 404 Not Found
+```
+
+24.20.0은 **아직 존재하지 않는다.** 지금 `node-version: 24.20.0`으로 고정하면 `setup-node`가
+해석에 실패해 **CI가 즉시 깨진다** — flake보다 나쁜 결과다.
+26.7.0으로 옮기는 대안도 검토했으나, 26은 Current(LTS 승격 2026-10월)이고
+`engines: ">=24"`의 **최소 지원 런타임을 시험하지 않게 되는** 문제가 있어 택하지 않았다.
+
+그래서 리뷰어가 함께 제시한 **다른 선택지("defer the flake-resolution claim")를 채택**했다:
+- PR 제목에서 "flake 해소"를 뺐다 — 오늘 이 PR이 실제로 주는 것은 **EOL 탈출**이다.
+- `test.yml` 주석에 현재 24.19.0이 미패치라는 것, pin이 불가능한 이유, 24.20.0이 나오면
+  `24`가 자동으로 집는다는 것을 명시했다.
+- **CI가 실제 런타임을 annotation으로 남기게 했다** (`::notice::runtime vX.Y.Z`).
+  "패치된 런타임에서 돌았는가"를 추정이 아니라 사후 확인 가능하게 만든 것이며,
+  리뷰어가 요구한 "repeatedly verified"의 전제다.
+- plan에 **해소 선언 게이트**를 명시적 미완 단계로 남겼다 — 24.20.0 릴리스 후 패치된
+  런타임에서 **반복** 통과를 확인하기 전에는 해소를 선언하지 않는다.
+
+**한 가지는 수용하지 않았다: "tighten `engines.node` to the version actually required".**
+이 버그는 `node --test`(테스트 러너) 안에 있고 **소비자는 그 코드를 실행하지 않는다** —
+소비자가 쓰는 것은 `harness-team` CLI다. `engines.node`는 소비자 대상 지원 정책 선언이므로,
+테스트 러너 버그를 이유로 소비자에게 24.20.0 이상을 요구하는 것은 근거가 맞지 않는다.
+`">=24"`(= EOL이 아닌 최소 LTS)가 정확한 선언이라고 판단했다.
+
+<!-- harness:review kind=ao-internal scope=diff tip=74d1e8a at=2026-08-25T09:05:00Z -->
 *Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
 

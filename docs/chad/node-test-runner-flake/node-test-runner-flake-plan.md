@@ -27,9 +27,12 @@
 - [x] 사용자 대면 문서 갱신 — `README.md`(2곳) · `docs/prerequisites.md`(3곳) · `CHANGELOG.md` Unreleased
       · 종결된 task의 spec(`docs/chad/prerequisites-doc/...`)은 **건드리지 않았다** — 당시 사실의
         historical record이며 다른 task의 SSOT다
-- [ ] 선택한 버전에서 스위트 반복 통과 확인 (annotation으로 수치·실패 수집)
-      · 24를 고른 경우 **24.20.0 릴리스(2026-08-26) 이후에** 검증할 것 —
-        24.19.0으로 검증하면 여전히 취약해 잘못된 결론이 나온다
+- [ ] **[대기] 24.20.0 릴리스 후 flake 해소 검증** — 이것이 완료되기 전까지
+      "flake가 해소됐다"고 선언하지 않는다 (AO 리뷰 P1 수용).
+      · 2026-08-25 현재 `node-version: 24` → **24.19.0(미패치)**. 릴리스 PR nodejs/node#65461은
+        아직 open이고 태그 `v24.20.0`은 존재하지 않는다(404) — **지금 pin하면 CI가 깨진다**
+      · 릴리스되면 `24`가 자동으로 집는다. CI annotation의 `runtime vX.Y.Z` 줄로 확인
+      · 패치된 런타임에서 **반복** 통과를 확인한 뒤에 해소 선언 — 확률적 flake라 1회 green은 증거가 아니다
 - [ ] artifact에 결정 근거와 검증 결과 기록
 
 ## Ontology 변경 로그

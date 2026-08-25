@@ -232,5 +232,5 @@ README에서 이 문서를 연결해 실제 독자가 도달할 수 있게 합�
 ## 참고
 
 - 테스트: `tests/` 디렉토리, Node.js 내장 `node:test` 사용
-- 외부 의존성 없음 — Node.js 18+ 표준 라이브러리만 사용
+- 외부 의존성 없음 — Node.js 24+ 표준 라이브러리만 사용 (`package.json`의 `engines.node`와 일치)
 - 커밋 메시지는 한국어 + Conventional Commits 형식 (`feat/fix/chore/docs/refactor`)
