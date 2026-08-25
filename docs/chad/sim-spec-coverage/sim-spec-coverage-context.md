@@ -3,8 +3,19 @@
 
 ## Now
 - Goal: agentloop에 SC7(`/harness-spec` 산출물 검증)을 넣어 `spec-writing-skill` plan의 열린 항목을 닫는다.
-- Current atomic step: **대기**. worker-20 PR이 main에 머지되면 그때 #39에 main 반영 → green 확인 → 보고.
-  그 전에 main을 당기거나 worker-20 브랜치에 리베이스하지 않는다 (오케스트레이터 지시 2026-08-24).
+- Current atomic step: **신호 대기 (STANDBY)**. 오케스트레이터 신호 없이 main을 당기지 않는다.
+  신호 조건 2가지(오케스트레이터가 확인 후 통보): ① main 런 그린 ② v0.18.1 태그가 머지 커밋으로 이동.
+  2026-08-25 02:5x 기준 미충족 — main=d424407이지만 태그는 아직 f8d6b6d, main CI는 perf flake로 red.
+  신호 후: ① merge 커밋으로 main 반영 ② CI green 확인 ③ 보고. 머지는 스스로 하지 않는다.
+  머지 후 harness-team done만, summary --write는 금지.
+- main 반영 방식: 이 레포 관례는 **merge 커밋**이다 (rebase 아님) —
+  `git merge origin/main`, 메시지 `Merge origin/main into <branch> (PR #40 반영)`.
+  선례: d70e7d6 · 780dbfc · f7ceae2.
+- 충돌은 `docs/chad/chad-handoff.md` **1개뿐**. post-commit 훅 생성물 포인터라 양쪽을 억지로 합치지 말고
+  머지 후 상태에 맞게 정리한다 — 훅이 다음 커밋에서 다시 쓴다.
+- 범위 밖(섞지 말 것): `tests/perf/boundary-checkpoint.test.mjs:112-113`의 절대 상한(500/800ms)이
+  같은 파일 :68의 중앙값 상대예산 설계를 무효화하는 진짜 결함 — worker-20 artifact의 후속 후보다.
+  이 task의 발견 2건과 별개다.
 - Stop / human-decision condition: SC7이 FAIL을 내면 원인이 커맨드 계약인지 sim 채점인지 가려
   사용자에게 보고한다. 가짜 PASS를 만들지 않는다.
 
