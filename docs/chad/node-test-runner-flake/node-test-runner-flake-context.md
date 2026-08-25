@@ -3,10 +3,12 @@
 
 ## Now
 - Goal: `node:test` 업스트림 역직렬화 버그로 CI가 간헐 실패하는 것을 멈춘다.
-- Current atomic step: **[결정 대기] 지원 Node 범위** — EOL 탈출과 flake 해소를 분리해
-  답을 받아야 한다. flake까지 없애려면 22는 답이 아니고 24(24.20.0 이후)/26이어야 한다.
-- Stop / human-decision condition: **지금이 그 지점이다.** 하위 호환을 깨는 정책 결정이라
-  사용자 답 없이 구현에 진입하지 않는다. spec의 Ambiguity 게이트도 이 항목 때문에 미통과 상태다.
+- **정책 결정은 끝났다 (2026-08-25): `engines: ">=24"` + matrix `[24]`. 구현·리뷰 대응 완료(PR #45).
+  Ambiguity 게이트 통과. 다시 열지 말 것.**
+- Current atomic step: **[대기] Node 24.20.0 릴리스 후 flake 해소 검증.**
+  릴리스되면 `node-version: 24`가 자동 승계 → 패치된 런타임에서 **반복** 통과 확인 후 해소 선언.
+- Stop / human-decision condition: 없음. 남은 것은 외부 릴리스 대기이며 판단이 필요한 지점이 아니다.
+  (24.20.0이 지연되거나 백포트가 빠지면 그때 재판단.)
 
 ## Constraints and settled decisions
 - 원인 확정: `#processRawBuffer`가 payload 길이를 **부호 있는 정수**로 읽는다 (nodejs/node#64061).
@@ -31,6 +33,8 @@
 - (none unresolved — 원인은 확정됐고 남은 것은 정책 결정이다)
 
 ## Resume checklist
+- **먼저 확인:** CI annotation의 `runtime vX.Y.Z` 줄. `v24.19.x` 이하면 아직 미패치라
+  green이어도 해소 증거가 아니다. `v24.20.0` 이상이어야 검증 대상이다.
 - 재현은 **CI에서만** 가능하다 — 이 머신에 node 18 없음(프록시가 nodejs.org 차단), docker 없음.
 - CI 로그는 403이다. `gh run view --log-failed`에 시간 쓰지 말 것 — annotation API를 쓴다.
 - 결정이 나면 spec의 Ambiguity 자가진단 Constraint 항목부터 갱신하고 게이트를 다시 평가한다.
