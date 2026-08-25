@@ -29,5 +29,32 @@ jobs:
 
       # Zero runtime deps and no lockfile, so there is nothing to install —
       # run the suite directly (unit + e2e).
+      #
+      # The output is echoed back as annotations because raw CI logs are not
+      # reachable from the machines that maintain this repo: they are served
+      # from *.blob.core.windows.net, which the proxy answers with 403, so
+      # `gh run view --log-failed` fails. The annotations REST API is
+      # reachable, so a failure that only reproduces on CI stays diagnosable
+      # without asking someone to open a browser. Perf diagnostics are
+      # surfaced on every run, not just failures, because the useful signal
+      # for a timing flake is the numbers from the runs that passed.
       - name: Run tests
-        run: npm test
+        run: |
+          set +e
+          npm test 2>&1 | tee test-output.txt
+          status="${PIPESTATUS[0]}"
+          set -e
+          annotate() {
+            local level="$1" line
+            while IFS= read -r line; do
+              line="${line//$'\r'/}"
+              if [ -n "$line" ]; then printf '::%s::%s\n' "$level" "$line"; fi
+            done
+            return 0
+          }
+          grep -E '^# spawn floor' test-output.txt | annotate notice || true
+          if [ "$status" -ne 0 ]; then
+            grep -E '^not ok |error: |exceeded the absolute ' test-output.txt \
+              | head -40 | annotate error || true
+          fi
+          exit "$status"
