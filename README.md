@@ -163,13 +163,13 @@ cd my-project
 
 ## 사전 준비
 
-**하드 요구사항은 Node.js ≥ 18 하나뿐입니다** (`engines.node`, 런타임 npm 의존성 0개).
+**하드 요구사항은 Node.js ≥ 24 하나뿐입니다** (`engines.node`, 런타임 npm 의존성 0개).
 나머지는 "있으면 켜지고 없으면 그 기능만 꺼지는" 능력 매트릭스입니다.
 `git` 아래 다섯 개는 `harness-team doctor`가 런타임에 유무를 확인해 줍니다.
 
 | 도구 | 없으면 |
 |---|---|
-| Node.js ≥ 18 | `harness-team` CLI가 실행되지 않음 — 유일한 하드 요구사항 |
+| Node.js ≥ 24 | `harness-team` CLI가 실행되지 않음 — 유일한 하드 요구사항 |
 | `jq` | Claude Code 훅이 **저정밀 모드**로 판정 — 차단은 유지되지만 정확도가 떨어짐. 다른 넷과 달리 doctor가 `warning`으로 알림 |
 | `git` | CLI는 동작하되 post-commit handoff·summary 브랜치 감지·task 전환 diff가 no-op |
 | `gh` | `/harness-ship` 이후 **사용자가 직접 여는** PR 단계용 — 하네스 명령은 영향 없음 |

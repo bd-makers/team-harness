@@ -10,8 +10,22 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      # Single entry on purpose. Node 18 (EOL 2025-04-30) and 20 (EOL 2026-04-30)
+      # were both past end-of-life, and the node:test runner bug that made this
+      # suite flake (nodejs/node#64061 — the result-payload length was read as a
+      # signed int) is never reaching them. The fix landed in 26.7.0 and was
+      # backported to the v24 line only; v22 did not get it, so adding "22 for
+      # LTS coverage" would reintroduce the flake rather than broaden coverage.
+      # `24` resolves to the latest 24.x. NOTE: as of 2026-08-25 that is 24.19.0,
+      # which does NOT yet carry the fix — it ships in 24.20.0 (2026-08-26), and
+      # this job picks it up automatically once released. Until then this matrix
+      # buys the EOL escape, not the flake fix; the run's actual runtime is
+      # annotated below so which one a given run used is answerable after the
+      # fact rather than assumed. Pinning 24.20.0 here is not possible before it
+      # exists — setup-node fails to resolve an unreleased version.
+      # Add versions back here when they are both supported and carry the fix.
       matrix:
-        node: [18, 20]
+        node: [24]
     steps:
       - uses: actions/checkout@v5
 
@@ -40,6 +54,10 @@ jobs:
       # for a timing flake is the numbers from the runs that passed.
       - name: Run tests
         run: |
+          # Which runtime actually ran decides whether this run could still hit
+          # the node:test deserialization bug (nodejs/node#64061, fixed in
+          # 24.20.0), so record it rather than infer it from the matrix entry.
+          printf '::notice::runtime %s\n' "$(node -v)"
           set +e
           npm test 2>&1 | tee test-output.txt
           status="${PIPESTATUS[0]}"
@@ -52,9 +70,14 @@ jobs:
             done
             return 0
           }
-          grep -E '^# spawn floor' test-output.txt | annotate notice || true
+          # Match on content, not on a reporter prefix: node <=20 defaults to the
+          # TAP reporter ("# diagnostic", "not ok 1 - name", "  error: '...'")
+          # while node >=22 defaults to spec ("i diagnostic", "x name",
+          # "AssertionError [ERR_ASSERTION]: ..."). Anchoring on "^# " silently
+          # produced empty annotations the first time this ran on node 24.
+          grep -E 'spawn floor .*equal-work baseline' test-output.txt | annotate notice || true
           if [ "$status" -ne 0 ]; then
-            grep -E '^not ok |error: |exceeded the absolute ' test-output.txt \
+            grep -E '^not ok |^✖ |AssertionError|^ *error: |exceeded the absolute ' test-output.txt \
               | head -40 | annotate error || true
           fi
           exit "$status"

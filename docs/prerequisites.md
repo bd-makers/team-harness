@@ -10,7 +10,7 @@ modified: 2026-08-21
 # 사전 준비 (Prerequisites)
 
 이 하네스는 **설치 목록이 아니라 능력 매트릭스**로 읽어야 합니다.
-하드 요구사항은 **Node.js ≥ 18 하나뿐**이고(`package.json`의 `engines.node`, 런타임 npm
+하드 요구사항은 **Node.js ≥ 24 하나뿐**이고(`package.json`의 `engines.node`, 런타임 npm
 의존성 0개 — `dependencies` 없음), 나머지는 전부 **"있으면 켜지고, 없으면 그 기능만 꺼지는"**
 선택 도구입니다. 무엇을 설치하느냐가 아니라 **무엇을 안 하면 무엇이 꺼지느냐**를 보세요.
 
@@ -23,7 +23,7 @@ modified: 2026-08-21
 
 | 요구 | 확인 | 없으면 |
 |---|---|---|
-| Node.js ≥ 18 | `node --version` | `harness-team` CLI가 실행되지 않음. 이것 하나뿐입니다. |
+| Node.js ≥ 24 | `node --version` | `harness-team` CLI가 실행되지 않음. 이것 하나뿐입니다. |
 
 런타임 의존성이 0개이므로 `npm install` 없이도 CLI가 동작합니다. `npm install`은 이 저장소를
 **개발**할 때(테스트 실행) 필요한 devDependencies용입니다.
@@ -159,7 +159,7 @@ plan의 해당 단계는 지우지 말고 `- [x] … — 미실행(도구 없음
 ## 6. 설치 확인
 
 ```bash
-node --version              # ≥ 18 (유일한 하드 요구사항)
+node --version              # ≥ 24 (유일한 하드 요구사항)
 command -v jq               # 없으면 §3 — 훅이 저정밀 모드로 판정
 harness-team doctor         # 파일·훅·CLI PATH·외부 도구 종합 점검
 ```
