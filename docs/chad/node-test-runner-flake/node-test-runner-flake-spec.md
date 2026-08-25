@@ -41,10 +41,13 @@ not ok 38 - tests/task-templates.test.mjs
 "로컬에서는 간헐적, CI에서는 재현이 잘 된다"는 특성도 보고 내용과 일치한다 —
 동시 실행되는 여러 worker가 결과를 스트리밍할 때 payload가 커지면 잘 터진다.
 
-### 결정적 제약 — 우리 matrix는 전부 지원 종료(EOL) 런타임이다
+### 결정적 제약 — 우리 matrix가 전부 지원 종료(EOL) 런타임이었다
 
-`.github/workflows/test.yml`의 matrix는 `node: [18, 20]`이고, `package.json`은 `engines.node: ">=18"`이다.
-nodejs/Release 공식 스케줄 기준(2026-08-25 현재):
+> **진단 시점(구현 전)의 상태다.** 이 제약이 곧 결정의 근거가 됐고,
+> 현재는 `matrix: [24]` · `engines: ">=24"`로 해소됐다 (PR #45).
+
+당시 `.github/workflows/test.yml`의 matrix는 `node: [18, 20]`, `package.json`은
+`engines.node: ">=18"`이었다. nodejs/Release 공식 스케줄 기준(2026-08-25):
 
 | 버전 | EOL | 상태 |
 |---|---|---|
