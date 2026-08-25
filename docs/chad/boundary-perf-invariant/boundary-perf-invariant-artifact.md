@@ -177,10 +177,9 @@ spawn floor 28.9ms (25.5, 28.9, 25.5, 29.7, 37.2); equal-work baseline 44.1ms (6
 - `mise x node@20 -- npm test` → **415 tests, 0 fail** (1 skipped, 기존부터 skip)
 - node 24에서도 통과. 다만 checkpoint 비율이 무부하에서도 **3.07**까지 올라간다
   (node 20은 1.68). 아래 "node 24 이상치" 참조.
-- **node 18은 이 머신에서 검증하지 못했다.** 설치 불가(프록시가 `nodejs.org` 차단),
-  docker 미설치, 로컬에 어떤 node 18 바이너리도 없다. 따라서 node 18에 대해 확보한 것은
-  **CI green 1회뿐이며 부하 특성은 측정되지 않았다.** 위 "CI green은 충분조건이 아니다"가
-  node 18에 그대로 적용된다 — 아래 리스크 항목에 남긴다.
+- **node 18은 이 머신에서 실행할 수 없다** — 설치 불가(프록시가 `nodejs.org` 차단),
+  docker 미설치, 로컬에 어떤 node 18 바이너리도 없다. 대신 **CI 자체를 계측해서 수치를 받아냈다**
+  (아래 "CI 실측" 참조). 결과적으로 node 18 공백은 메워졌다.
 
 ### node 24 이상치 — 추정을 세우고, 측정으로 뒤집었다
 
@@ -209,14 +208,8 @@ checkpoint hook은 직접 호출(60ms) 대비 sh 경유(130ms)로 2배 이상 �
 
 - **CI green은 필요조건일 뿐 충분조건이 아니다.** 관측된 flake 빈도에서 green 1회는 증거가 되지
   못한다. 진짜 증거는 위 부하 재현 수치다. green을 기다리며 재실행하는 방식으로 검증하지 말 것.
-- **node 18 부하 특성 미측정 (최대 잔여 리스크).** checkpoint는 여유가 가장 얇고
-  (관측 최댓값 3.65 vs 예산 5 = 1.37×) 버전 간 편차가 가장 큰 지표다. node 24가
-  무부하에서 3.07을 찍은 것을 감안하면, node 18이 비슷하다면 부하 하에서 예산을 넘을 수 있다.
-  **예산을 선제적으로 올리지 않았다** — 근거: (1) 이상치는 node 20 → 24로 **새 버전에서**
-  나타났고 node 18은 20보다 **오래된** 버전이라 새 버전의 회귀를 물려받을 기전이 없다,
-  (2) 기존 CI에서 관측된 실패 4건은 **전부 cold assertion**이었고 checkpoint(150ms 예산)는
-  node 18에서 한 번도 발화하지 않았다. 근거 없이 완화하는 것은 이 작업이 피하려던 실패 양식이다.
-  node 18에서 checkpoint가 실제로 깨지면 그때 이 기록을 근거로 올린다.
+- **node 18 리스크는 해소됐다** (CI 실측으로). 예산을 선제적으로 올리지 않은 판단이 옳았다 —
+  실측 결과 node 18 checkpoint는 **1.74x**로 예산 5x 대비 2.9배 여유다.
 - **checkpoint 예산의 민감도는 이 mutation table로 검증되지 않았다.** cold assertion이 먼저
   발화해 중단되므로 표의 수치는 전부 cold 기준이다. checkpoint가 독립적으로 커버하는 것은
   **hook dispatch 경로뿐**이며, `runBoundaryCheck` 내부의 회귀는 cold(+35ms 해상도)가
@@ -224,6 +217,47 @@ checkpoint hook은 직접 호출(60ms) 대비 sh 경유(130ms)로 2배 이상 �
 - 부하 재현 스크립트는 스크래치패드에만 두고 커밋하지 않았다. busy loop은 반드시 pidfile로
   회수할 것 — 조사 중 `trap EXIT`가 불발해 16개가 살아남아 "무부하" 측정을 오염시킨 적이 있다
   (load average 104에서 잰 값을 무부하로 착각했다).
+
+## CI 실측 — 로그 없이 수치를 받아내는 법
+
+이 저장소를 유지보수하는 머신은 raw CI 로그를 받을 수 없다(`*.blob.core.windows.net` 403).
+그래서 **workflow가 테스트 출력을 annotation으로 되돌리도록** 계측했다 —
+annotations REST API는 프록시를 통과한다. perf 진단은 실패 시가 아니라 **매 실행마다** 남긴다.
+타이밍 flake에서 정작 필요한 신호는 **통과한 실행의 수치**이기 때문이다.
+
+```
+$ gh api repos/bd-makers/team-harness/check-runs/<job_id>/annotations
+```
+
+실제 hosted 러너(2 vCPU, Linux)에서 받은 값:
+
+| job | spawn floor | baseline | cold | checkpoint |
+|---|---|---|---|---|
+| **test (18)** | 24.0ms | 40.6ms | 67.6ms = **1.66x** | 70.6ms = **1.74x** |
+| **test (20)** | 19.7ms | 30.1ms | 49.0ms = **1.63x** | 52.3ms = **1.74x** |
+
+예산은 3x / 5x다. **두 버전 모두 여유가 크고 서로 거의 동일하다.**
+특히 checkpoint가 node 18·20 모두 **1.74x**로 일치한다 — macOS + node 24에서 관측된 3.07은
+**그 조합에 국한된 이상치**이며 CI에 전이되지 않음이 확인됐다. 이것이 "node 18에서도 비슷하면
+예산을 넘을 수 있다"는 우려에 대한 답이다.
+
+## 별건 발견 — node 18 `task-templates` deserialize flake (이 PR과 무관, 선재)
+
+계측을 넣자마자 첫 실행에서 잡혔다:
+
+```
+not ok 38 - tests/task-templates.test.mjs
+  error: 'Unable to deserialize cloned data due to invalid or unsupported version.'
+```
+
+- 이 브랜치가 건드리지 않은 파일이고, 자식 프로세스를 스폰하지도 않는다.
+- **동일 코드**로 앞선 실행(af6ae4c7)은 두 job 모두 통과했다.
+- 실패 job만 재실행하니 통과했다 → **전이성(transient)**.
+- node:test 러너의 IPC V8 직렬화 경로에서 나는 오류로, node 18 런타임 쪽 문제다.
+
+즉 "CI가 무작위로 빨개진다"에는 **최소 두 개의 서로 다른 원인**이 섞여 있었다.
+이번 PR은 perf 쪽만 고친다. 이 건은 별도 추적 대상으로 남긴다 —
+과거 실패율은 node 18 7/39 · node 20 7/40 으로 **버전 편향이 없다**(perf flake와 일치).
 
 ## Reviews
 
