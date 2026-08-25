@@ -234,4 +234,4 @@ warmup으로 버려, 깨끗한 캐시 상태에서만 나타나는 시작 회귀
 
 **조치 요약:** 코드 동작 변경 없음(명명·주석만). 리뷰 후 전체 스위트 재실행 통과.
 
-<!-- harness:review kind=codex scope=diff tip=1cffe0f at=2026-08-25T05:35:00Z -->
+<!-- harness:review kind=codex scope=diff tip=c1f4656 at=2026-08-25T05:35:00Z -->

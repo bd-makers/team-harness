@@ -16,3 +16,10 @@
 .../boundary-perf-invariant/boundary-perf-invariant-handoff.md | 10 ++++++++++
  docs/chad/chad-handoff.md                                      |  6 +++---
  2 files changed, 13 insertions(+), 3 deletions(-)
+
+## 2026-08-25T05:19:56.055Z — c1f4656 docs(review): codex read-only 리뷰 결과·판별 기록, steady-state 명세 명확화
+.../boundary-perf-invariant-artifact.md            | 44 ++++++++++++++++++++++
+ .../boundary-perf-invariant-handoff.md             |  5 +++
+ docs/chad/chad-handoff.md                          |  2 +-
+ tests/perf/boundary-checkpoint.test.mjs            | 25 ++++++++----
+ 4 files changed, 68 insertions(+), 8 deletions(-)

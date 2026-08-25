@@ -4,7 +4,7 @@
 boundary-perf-invariant
 
 ## Last Commit (2026-08-25)
-c158b0c docs(handoff): post-commit hook 갱신 반영
+c1f4656 docs(review): codex read-only 리뷰 결과·판별 기록, steady-state 명세 명확화
 
 ## Full Context
 → docs/chad/boundary-perf-invariant/boundary-perf-invariant-handoff.md
