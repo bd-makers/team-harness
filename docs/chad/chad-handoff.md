@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-release-0181-recovery
+sim-spec-coverage
 
-## Last Commit (2026-08-24)
-331ba5c chore(task): 태그 push 전 3검사 선행 결과 기록
+## Last Commit (2026-08-25)
+3a72534 chore(task): 대기 프로토콜·신호 조건 기록
 
 ## Full Context
-→ docs/chad/release-0181-recovery/release-0181-recovery-handoff.md
+→ docs/chad/sim-spec-coverage/sim-spec-coverage-handoff.md
