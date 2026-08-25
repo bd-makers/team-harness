@@ -108,6 +108,24 @@ v26.x-staging=1  v24.x-staging=1  v22.x-staging=0
 - `[24]`는 `actions/setup-node`가 최신 24.x를 집으므로 **2026-08-26 이후 자동으로** 해소된다.
   그 전에 검증하면 24.19.0(취약)이라 잘못된 결론이 나온다.
 
+### 2회차 관측 — PR #44 머지 직후 main이 이 flake로 빨개졌다
+
+2026-08-25, PR #44가 main에 머지된 직후 `test (18)`이 실패했다. annotation이 즉시 원인을 알려줬다:
+
+```
+not ok 38 - tests/task-templates.test.mjs
+  error: 'Unable to deserialize cloned data due to invalid or unsupported version.'
+```
+
+같은 run의 `test (20)`은 통과했고 perf 수치도 정상이었다
+(`cold 1.70x / checkpoint 1.76x`, 예산 3x/5x). 즉 **#44의 회귀가 아니라 이 task가 다루는
+바로 그 node 18 flake**이며, 이번에는 **main을 빨갛게 만들었다.**
+
+두 가지가 확인된다:
+1. 계측이 제 값을 했다 — 이전이라면 "exit code 1"만 보였을 실패가 **한 번에** 특정됐다.
+2. 이 flake는 산발적 불편이 아니라 **기본 브랜치를 막는다.** 관측 2회차이고
+   `[24]` 이동(이 PR)이 그대로 해소책이다 — node 18 job이 사라지기 때문이다.
+
 ### 결정 및 구현 (2026-08-25)
 
 **결정: `engines: ">=24"` + CI matrix `[24]`** — spec 후보표의 (A2). 하위 호환 파기를 수용하고
