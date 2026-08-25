@@ -61,9 +61,14 @@ jobs:
             done
             return 0
           }
-          grep -E '^# spawn floor' test-output.txt | annotate notice || true
+          # Match on content, not on a reporter prefix: node <=20 defaults to the
+          # TAP reporter ("# diagnostic", "not ok 1 - name", "  error: '...'")
+          # while node >=22 defaults to spec ("i diagnostic", "x name",
+          # "AssertionError [ERR_ASSERTION]: ..."). Anchoring on "^# " silently
+          # produced empty annotations the first time this ran on node 24.
+          grep -E 'spawn floor .*equal-work baseline' test-output.txt | annotate notice || true
           if [ "$status" -ne 0 ]; then
-            grep -E '^not ok |error: |exceeded the absolute ' test-output.txt \
+            grep -E '^not ok |^✖ |AssertionError|^ *error: |exceeded the absolute ' test-output.txt \
               | head -40 | annotate error || true
           fi
           exit "$status"
