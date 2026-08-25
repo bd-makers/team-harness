@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-done-guard-evidence
+release-0181-recovery
 
-## Last Commit (2026-08-21)
-1eac180 feat(done-guard): 증거 기반 체크 2종 추가 (테스트 작성 / 리뷰 마커)
+## Last Commit (2026-08-24)
+331ba5c chore(task): 태그 push 전 3검사 선행 결과 기록
 
 ## Full Context
-→ docs/chad/done-guard-evidence/done-guard-evidence-handoff.md
+→ docs/chad/release-0181-recovery/release-0181-recovery-handoff.md
