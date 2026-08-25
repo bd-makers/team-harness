@@ -39,3 +39,13 @@ docs/chad/chad-handoff.md                              |  2 +-
  .../release-0181-recovery-context.md                   | 18 ++++++++++++------
  .../release-0181-recovery-handoff.md                   |  6 ++++++
  4 files changed, 24 insertions(+), 7 deletions(-)
+
+## 2026-08-25T02:39:51.393Z — 7a90ad4 docs(task): v0.18.1 릴리스 복구 실행 기록 및 후속 후보 정리
+.../release-0181-recovery-artifact.md              | 30 ++++++++++++++++++++++
+ .../release-0181-recovery-context.md               |  6 ++---
+ .../release-0181-recovery-plan.md                  |  5 ++--
+ 3 files changed, 36 insertions(+), 5 deletions(-)
+
+## 2026-08-25T02:39:51.511Z — 완료
+
+태스크 종료.
