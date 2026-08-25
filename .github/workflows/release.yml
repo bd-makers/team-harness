@@ -16,9 +16,11 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Matches the tested runtime and `engines.node` — publishing must not run
+      # on a version the suite never exercises (this was node 20, which is EOL).
       - uses: actions/setup-node@v5
         with:
-          node-version: 20
+          node-version: 24
 
       # A tag on a commit whose manifests were never bumped would publish a
       # release that does not match what the plugin reports as its version.

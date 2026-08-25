@@ -108,9 +108,56 @@ v26.x-staging=1  v24.x-staging=1  v22.x-staging=0
 - `[24]`는 `actions/setup-node`가 최신 24.x를 집으므로 **2026-08-26 이후 자동으로** 해소된다.
   그 전에 검증하면 24.19.0(취약)이라 잘못된 결론이 나온다.
 
-### 남은 것
+### 결정 및 구현 (2026-08-25)
 
-지원 Node 범위 결정. `engines`를 `>=22`로 올리는 것은 **하위 호환을 깨는** 변경이라
+**결정: `engines: ">=24"` + CI matrix `[24]`** — spec 후보표의 (A2). 하위 호환 파기를 수용하고
+EOL 탈출과 flake 해소를 동시에 얻는 선택이다. **22를 넣지 않는 것이 핵심**이다 —
+"활성 LTS 두 개"로 보이는 `[22, 24]`는 22 job에 flake를 남긴다.
+
+변경 지점 (grep 전수 확인):
+
+| 파일 | 전 | 후 |
+|---|---|---|
+| `package.json:20` | `"node": ">=18"` | `">=24"` |
+| `.github/workflows/test.yml` | `node: [18, 20]` | `node: [24]` (+ 사유 주석) |
+| `.github/workflows/release.yml` | `node-version: 20` | `24` (+ 사유 주석) |
+| `README.md` | "Node.js ≥ 18" ×2 | ≥ 24 |
+| `docs/prerequisites.md` | "Node.js ≥ 18" ×3 | ≥ 24 |
+| `CHANGELOG.md` | — | `[Unreleased] ### Changed` BREAKING 항목 |
+
+종결된 task의 spec(`docs/chad/prerequisites-doc/`)에 남은 "≥ 18" 서술은 **건드리지 않았다** —
+그 시점 사실의 historical record이고 다른 task의 SSOT다.
+
+### 검증
+
+`mise x node@24 -- npm test` → **415 tests, 0 fail** (1 skipped, 기존부터).
+
+### 주의 1 — 이 변경만으로는 아직 flake가 사라지지 않는다
+
+`node-version: 24`는 최신 24.x로 해석되는데, 2026-08-25 현재 최신은 **24.19.0이고 백포트가
+아직 없다.** 수정이 들어간 **24.20.0은 2026-08-26 릴리스 예정**이다.
+따라서 오늘 CI가 green이어도 그것은 flake가 고쳐졌다는 증거가 아니다 —
+확률적 flake이므로 통과 1회는 원래 증거가 되지 못한다. **2026-08-26 이후에 판단할 것.**
+
+### 주의 2 — perf 가드의 민감도가 node 24에서 낮아진다
+
+perf 테스트(PR #44)의 비율 예산은 node 18/20 실측으로 산정됐다. node 24는 **프로세스 시작
+비용 자체가 크다**(bare spawn: node 20 ≈ 17ms vs node 24 ≈ 37ms, 같은 머신 무부하 기준).
+분모(equal-work baseline)가 시작 비용을 포함하므로 분모가 부풀고, 비율이 1.0 쪽으로 압축된다:
+
+| | node 20 | node 24 |
+|---|---|---|
+| bare spawn | ~17ms | ~37ms |
+| baseline | ~23ms | ~42ms |
+| cold | ~33ms | ~56ms |
+| cold/baseline | 1.43 | **1.34** |
+| 3x 예산까지 허용되는 추가 비용 | +46ms | **+69ms** |
+
+즉 같은 `3x` 예산이 node 24에서는 **더 느슨하게** 작동한다. 이것은 예산이 틀렸다는 뜻이
+아니라 **런타임을 바꾸면 비율 예산의 실효 민감도가 함께 바뀐다**는 뜻이다.
+위 수치는 macOS 실측이고 CI(Linux)의 시작 비용은 다를 수 있으므로,
+**CI annotation으로 실측한 뒤** 필요하면 예산을 재산정한다. 추정으로 미리 조이지 않는다.
+(관련: PR #44 artifact의 "CI 실측" 절 — 같은 방법으로 수치를 받는다.) `engines`를 `>=22`로 올리는 것은 **하위 호환을 깨는** 변경이라
 이 task 단독으로 결정할 수 없다. spec의 Ambiguity 게이트는 이 항목 때문에
 **의도적으로 미통과 상태**로 남겨 뒀다 — 남은 모호성이 기술이 아니라 정책이기 때문이다.
 

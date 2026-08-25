@@ -14,17 +14,19 @@
       · v22: **백포트 없음** (staging에도 없음) → 22로 옮겨도 flake 잔존
       · v24: cherry-pick `9ed7146851` → `v24.x-staging`, 릴리스 PR #65461 → **24.20.0(2026-08-26)부터** 해소
       · v26: 26.7.0에 이미 포함 (단 Current, LTS 승격 2026-10월)
-- [ ] **[결정 필요] 지원 Node 범위 확정** — 사용자 판단. 두 축을 **분리해서** 답해야 한다:
+- [x] **[결정 완료 2026-08-25] 지원 Node 범위 확정 — `engines: ">=24"` + matrix `[24]` 채택** — 사용자 판단. 두 축을 **분리해서** 답해야 한다:
       · (a) EOL 런타임(18·20)을 계속 지원할 것인가? → `engines` 하위 호환 파기 여부
       · (b) flake까지 없앨 것인가? → **그렇다면 22는 답이 아니다.** `[24]`(24.20.0 이후)
         또는 `[24, 26]`이어야 한다. "활성 LTS니까 22"는 flake를 남긴다
       · 둘 다 못 한다 → (D) `--test-concurrency=1`로 확률만 낮추고 잔여 리스크를 문서화
-- [ ] spec의 Ambiguity 자가진단 갱신 (Constraint 항목 해소 후 재평가)
-- [ ] 결정에 따라 아래 3곳을 수정 (grep으로 전수 확인함)
+- [x] spec의 Ambiguity 자가진단 갱신 — Constraint 해소, 게이트 통과
+- [x] 결정에 따라 아래 3곳을 수정 (grep으로 전수 확인함)
       · `.github/workflows/test.yml:14` — `node: [18, 20]`
       · `.github/workflows/release.yml:21` — `node-version: 20` (**릴리스 발행도 EOL 런타임에서 돈다**)
       · `package.json:20` — `"node": ">=18"`
-- [ ] `docs/chad/prerequisites-doc/prerequisites-doc-spec.md:9`의 `engines.node >= 18` 서술 갱신
+- [x] 사용자 대면 문서 갱신 — `README.md`(2곳) · `docs/prerequisites.md`(3곳) · `CHANGELOG.md` Unreleased
+      · 종결된 task의 spec(`docs/chad/prerequisites-doc/...`)은 **건드리지 않았다** — 당시 사실의
+        historical record이며 다른 task의 SSOT다
 - [ ] 선택한 버전에서 스위트 반복 통과 확인 (annotation으로 수치·실패 수집)
       · 24를 고른 경우 **24.20.0 릴리스(2026-08-26) 이후에** 검증할 것 —
         24.19.0으로 검증하면 여전히 취약해 잘못된 결론이 나온다

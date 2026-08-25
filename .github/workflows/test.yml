@@ -10,8 +10,17 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      # Single entry on purpose. Node 18 (EOL 2025-04-30) and 20 (EOL 2026-04-30)
+      # were both past end-of-life, and the node:test runner bug that made this
+      # suite flake (nodejs/node#64061 — the result-payload length was read as a
+      # signed int) is never reaching them. The fix landed in 26.7.0 and was
+      # backported to the v24 line only; v22 did not get it, so adding "22 for
+      # LTS coverage" would reintroduce the flake rather than broaden coverage.
+      # `24` resolves to the latest 24.x, which carries the fix from 24.20.0
+      # (2026-08-26) onward. Add versions back here when they are both supported
+      # and carry the fix.
       matrix:
-        node: [18, 20]
+        node: [24]
     steps:
       - uses: actions/checkout@v5
 

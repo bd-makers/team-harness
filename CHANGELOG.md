@@ -18,6 +18,24 @@ modified: 2026-08-21
 
 ## [Unreleased]
 
+### Changed
+- **BREAKING: 최소 Node 버전을 18 → 24로 올렸다** (`engines.node: ">=24"`, task
+  `node-test-runner-flake`). 두 가지가 겹친 결과다. ① Node 18(2025-04-30)·20(2026-04-30)이
+  **둘 다 지원 종료**라 CI가 EOL 런타임만 시험하고 있었고, 릴리스 발행 job도 node 20에서
+  돌고 있었다. ② `node:test` 러너의 결과 payload 길이를 **부호 있는 정수로 읽는 버그**
+  (nodejs/node#64061)가 CI를 간헐적으로 빨갛게 만들었는데, 수정(nodejs/node#64706)은
+  26.7.0에 들어간 뒤 **v24 라인에만 백포트**됐다 — v22는 활성 LTS인데도 받지 못했다.
+  그래서 "활성 LTS 두 개(22·24)"가 아니라 **24 단독**이다. 22를 넣으면 flake가 되돌아온다.
+- CI 테스트 matrix를 `[18, 20]` → `[24]`로, 릴리스 발행 런타임을 20 → 24로 옮겼다.
+  README·`docs/prerequisites.md`의 "Node.js ≥ 18" 서술도 함께 갱신했다.
+
+### Notes
+- 이 수정이 실제로 flake를 없애는 것은 **Node 24.20.0(2026-08-26) 이후**다. `node-version: 24`는
+  최신 24.x로 해석되는데, 그 이전 최신인 24.19.0에는 아직 백포트가 반영돼 있지 않다.
+- CI 워크플로우가 테스트 출력을 **annotation으로 되돌린다** — 이 저장소를 유지보수하는
+  머신은 raw CI 로그를 받을 수 없어(blob storage 403) `gh run view --log-failed`가 실패한다.
+  `gh api repos/<owner>/<repo>/check-runs/<job_id>/annotations`로 읽는다.
+
 ## [0.18.1] - 2026-08-22
 
 ### Added
