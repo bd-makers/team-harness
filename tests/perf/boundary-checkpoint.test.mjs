@@ -105,7 +105,7 @@ async function fixture() {
   };
 }
 
-test(`boundary performance: cold check <${COLD_BUDGET}x and plan checkpoint <${CHECKPOINT_BUDGET}x an equal-work baseline for 10 x 10KiB local contracts`, async t => {
+test(`boundary performance: steady-state cold-process check <${COLD_BUDGET}x and plan checkpoint <${CHECKPOINT_BUDGET}x an equal-work baseline for 10 x 10KiB local contracts`, async t => {
   const setup = await fixture();
   try {
     // A fixed wall-clock budget flakes under load, and so does one measured
@@ -146,12 +146,23 @@ test(`boundary performance: cold check <${COLD_BUDGET}x and plan checkpoint <${C
     const cold = () => run('node', [BIN, 'boundary', 'check'], '', options);
     const checkpoint = () => run('sh', [HOOK], checkpointInput, options);
 
-    // Untimed warmup of every spawn shape. The first run of each pays one-off
-    // costs — fs cache, code signing, compiling this repo's module graph — that
-    // say nothing about steady-state cost. The bare spawn was already warmed
-    // for this reason; the CLI needs it far more, and without it the first cold
-    // sample measured 453-541ms under load against 60-90ms steady, enough to
-    // trip the absolute ceiling below on its own.
+    // Untimed warmup of every spawn shape, which is what makes this a
+    // steady-state measurement: every timed sample below runs in a fresh
+    // process, but against a warm page cache.
+    //
+    // The bare spawn was already warmed for this reason; the CLI needs it far
+    // more. Without it the first cold sample measured 453-541ms under load
+    // against 60-90ms steady — enough to trip the 500ms ceiling below on its
+    // own, so that ceiling was reporting ambient load, not this code.
+    //
+    // What the warmup drops is the machine's one-off cost: populating the page
+    // cache with this repo's sources, and code signing. It does NOT hide
+    // startup-weight regressions, because node re-parses and re-compiles the
+    // module graph in every process — measured, the CLI's ~9ms cost over the
+    // baseline is present in every post-warmup sample, not just the first. A
+    // heavier import graph or slower startup therefore still shows up in the
+    // ratio, which resolves ~35ms of added cost (see COLD_BUDGET above) —
+    // far finer than any first-run ceiling loose enough not to flake could.
     const warmups = await Promise.all([bare(), baseline(), cold(), checkpoint()]
       .map((promise, index) => promise.then(result => [['bare', 'baseline', 'cold', 'checkpoint'][index], result])));
     for (const [name, result] of warmups) assert.equal(result.code, 0, `${name} warmup failed: ${result.stderr}`);

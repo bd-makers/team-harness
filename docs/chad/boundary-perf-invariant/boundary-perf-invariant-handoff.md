@@ -11,3 +11,8 @@
  .../boundary-perf-invariant-spec.md                | 103 +++++++++++
  tests/perf/boundary-checkpoint.test.mjs            | 140 +++++++++++----
  7 files changed, 472 insertions(+), 32 deletions(-)
+
+## 2026-08-25T05:15:34.514Z — c158b0c docs(handoff): post-commit hook 갱신 반영
+.../boundary-perf-invariant/boundary-perf-invariant-handoff.md | 10 ++++++++++
+ docs/chad/chad-handoff.md                                      |  6 +++---
+ 2 files changed, 13 insertions(+), 3 deletions(-)
