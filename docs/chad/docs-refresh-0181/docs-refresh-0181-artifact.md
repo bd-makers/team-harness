@@ -1,0 +1,184 @@
+# docs-refresh-0181 — Artifact
+
+*최종 결과물과 학습 내용을 기록한다.*
+
+## 결과
+
+첨부된 HTML 3종을 0.18.1 기준으로 갱신하고, 스냅샷 관례가 있는 2종에 버전 스냅샷을 남겼다.
+
+| 파일 | 전 | 후 | 성격 |
+|---|---|---|---|
+| `docs/harness-fleet-guide.html` | 0.14.0 | 0.18.1 | 직접 편집 |
+| `docs/harness-workflow-simulation.html` | 0.13.0 | 0.18.1 | 직접 편집 |
+| `docs/harness-overview.template.html` | 0.14.0 | 0.18.1 | 직접 편집 (생성 소스) |
+| `docs/harness-overview.html` | 0.14.0 | 0.18.1 | `npm run docs:generate` 재생성 |
+| `docs/harness-overview-0.18.1.html` | — | 신규 | 스냅샷 |
+| `docs/harness-workflow-simulation-0.18.1.html` | — | 신규 | 스냅샷 |
+| `docs/harness-task-guide.html` | 0.14.0 | 0.18.1 | 직접 편집 (범위 확장) |
+
+### 반영한 사실 교정 8건
+
+버전 표기만 바꾼 것이 아니라, 0.13/0.14 이후 **실제로 틀려진 서술**을 소스로 확인해 고쳤다.
+
+1. **원장이 생성물이 됐다 (0.16.0)** — `task`/`done`이 `docs/task_summary.md`·`docs/<user>/<user>-task.md`를
+   쓰지 않는다(`src/commands/task.mjs:238-247`). 세 문서 모두 옛 동작으로 서술하고 있었다.
+   시뮬레이션 S2/S4의 산출물 트리, fleet guide §6 충돌 지도가 여기에 걸려 있었다.
+2. **병렬 충돌원이 3개에서 1개로 줄었다** — 남은 것은 `<user>-handoff.md`뿐. fleet guide §6 전면 재작성.
+3. **`release --help` 사고는 0.15.1에서 수정됐다** (`src/cli-args.mjs:203-224`) — fleet guide §7의
+   핵심 경고 블록이 통째로 낡아 있었다. "고쳐졌다"로 뒤집되 ① 전역 CLI 드리프트가 있으면 옛 동작이
+   그대로라는 점, ② 하네스 밖 CLI에는 이 수정이 없다는 점을 남겼다.
+4. **`done` 가드가 4종 → 6종** (`src/commands/task.mjs:413-525`) — 테스트 미작성(기본 ON)과
+   리뷰 마커(spec opt-in) 추가, 그리고 `## Done evidence` 선언 자체의 유효성 검사.
+5. **task 디렉터리에 `<name>-meta.json`이 생겼다 (0.16.0)** — SSOT 4파일이 아닌 기계 상태.
+6. **리뷰 커맨드가 엔진 중립으로 재편됐다 (0.17.0)** — `/harness-codex-review` → `/harness-review`.
+   옛 이름은 alias이며 0.19.0에서 제거되므로, 브리프에 박아 두면 그때 깨진다는 함정을 추가했다.
+7. **task 생성 직후 흐름이 바뀌었다** — 다이어그램 옵트인 1회 질문(0.17.0) + `/harness-spec` writer(0.18.0).
+8. **라이프사이클에 ship이 생겼다 (0.17.0)** — 시뮬레이션에 시나리오 7 신설, fleet 부트스트랩 6단계로 삽입.
+
+### 범위 확장 — `harness-task-guide.html` (2026-08-26)
+
+첫 라운드에서 "후속 (범위 밖)"으로 남겼던 4번째 낡은 문서를 사용자 지시로 포함했다.
+이 문서는 개발자가 실제로 첫 task를 만들어 닫을 때 읽는 가이드라 낡은 서술의 비용이 가장 크다.
+
+- **§1 흐름 SVG를 9단계 → 10단계**로 재작업(손으로 쓴 inline SVG라 좌표까지 조정). 9 · ship을
+  회고와 done 사이에 넣고, done 박스를 x=780으로 옮기고, 화살표·게이트 라벨·commit lane 경로를
+  다시 계산했다. 리뷰 박스의 `/harness-codex-review` → `/harness-review`, 게이트 라벨의
+  "종결 가드 4종" → "6종 + 선언 유효성".
+- **생성 파일 5개 → 6개** — `<name>-meta.json` 행 추가(비-SSOT 기계 상태).
+- **원장 생성물화**를 §1과 §8 두 곳에 넣었다. 특히 §8의 마지막 문단은
+  "닫히면 `<user>-task.md`의 `## Completed`와 `docs/task_summary.md`가 갱신된다"고
+  **명시적으로 틀린 사실**을 말하고 있었다 — 이 문서에서 가장 위험한 한 줄이었다.
+- **§3에 `## Done evidence` 절 신설** — 템플릿에 자리가 생겼는데 설명이 없어서, `tests`/`review`
+  두 키와 "선언이 깨지면 그 자체로 차단" 규칙을 적었다.
+- **§6에 리뷰 엔진 표 신설** — codex/gemini/claude/custom과 각각의 분리 수준, 탐지 폴백 체인
+  (codex → gemini → claude), 그리고 claude 엔진은 **컨텍스트 분리만** 제공한다는 한계.
+- **§7의 "훅은 Claude Code 전용 메커니즘" 서술 정정** — 0.15.0이 `.codex/hooks.json`을 추가해
+  Codex도 SessionStart 훅을 받는다. 정확한 표현은 "전용"이 아니라 **"훅 표면의 넓이가 다르다"**.
+  Codex의 신뢰 등록(`[hooks.state]`) 단계도 함께 적었다.
+- **§0에 전역 CLI 버전 드리프트**(0.15.2·`--version` 0.15.1) 문단 추가.
+- **§9 함정 표에 6행 추가** — 원장 미갱신 · `summary --write` 거부 · 테스트 가드 · 리뷰 마커 ·
+  옛 리뷰 커맨드 제거 예고 · Codex 훅 신뢰 등록.
+- fleet guide가 이 문서를 가리키며 달아 두었던 **"⚠ 아직 0.14 기준" 경고를 제거**했다 —
+  경고 자체가 낡은 정보가 됐다.
+
+### origin/main 병합 (2026-08-26)
+
+작업 중 main이 14커밋 앞서 나가 `docs/chad/chad-handoff.md` 한 곳에서 충돌했다.
+이 문서군이 스스로 규정한 절차대로 처리했다 — **어느 쪽이든 취해 닫고 재생성한다, 손으로 병합하지 않는다.**
+이 브랜치의 활성 task 쪽(`docs-refresh-0181`)을 취해 닫고 post-commit 훅이 재생성하게 뒀다.
+나머지 12개 파일(`src/commands/task.mjs`·`tests/done-guard.test.mjs`·원장·신규 task 문서)은 자동 병합됐다.
+
+주의해서 재확인한 것: main이 가져온 `testpath-extension-gate`가 `isTestPath()`를 고쳤다
+(문서를 테스트로 오분류해 **테스트 증거 가드가 사실상 죽어 있던** 문제). 이 문서들이 그 가드를
+"기본 ON"이라고 서술하므로 서술이 깨졌는지 확인했는데, 세 문서 모두 판정 **알고리즘**이 아니라
+**계약**("소스가 바뀌면 테스트도 바뀌어야 한다 · 문서·설정만 바뀐 task엔 발동하지 않는다")을
+서술하고 있어 그대로 유효했다. 병합 후 `npm test` 429 pass / 0 fail.
+
+### 판단 두 가지
+
+- **스냅샷은 계열이 있는 문서에만.** `harness-fleet-guide.html`에는 버전별 스냅샷 계열이 없어
+  `-0.18.1.html`을 만들지 않았다. 없는 관례를 이 task에서 발명하지 않는다.
+  누락된 `harness-workflow-simulation-0.13.0.html`도 백필하지 않았다(범위 밖).
+- **기준선은 릴리스된 0.18.1, 단 Node 축은 예외.** `## [Unreleased]`의 두 변경은 본문 기준으로
+  삼지 않되, `engines.node: ">=24"`와 `docs/prerequisites.md`가 이미 같은 트리에서 `≥24`를 말하고
+  있어 overview 배지를 `≥18`로 두면 문서끼리 반박한다. 배지는 `≥24`로 맞추고 같은 블록에
+  **"다음 릴리스 예고 (BREAKING)"**로 명시했다 — `firstActivatedAt` 전환도 같은 자리에 예고로만.
+
+### 검증
+
+```
+npm run docs:generate  → generated docs/harness-overview.html
+npm run docs:check     → harness overview 생성 상태가 최신입니다.
+npm test               → tests 422 · pass 421 · fail 0 · skipped 1
+```
+
+`docs/harness-overview.html`은 손대지 않고 템플릿 경유로만 바꿨다 — `docs:check`가 CI 게이트다.
+
+### 후속 (이 task 범위 밖)
+
+- `harness-workflow-simulation-0.13.0.html` 스냅샷 누락 (백필 안 함).
+- `docs/harness-task-guide.html`·`docs/harness-fleet-guide.html`에는 버전별 스냅샷 계열이 없다.
+  둘 다 만들 가치가 있는지는 별도 결정 사항이라 이 task에서 정하지 않았다.
+
+## Reviews
+*Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
+*기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
+
+### 2026-08-26 — codex (`codex exec --sandbox read-only`, scope: `origin/main...HEAD`)
+
+Gemini 병렬 리뷰는 **미실행** — 이 머신에 `gemini` CLI가 없다(`command -v gemini` 실패).
+
+판정: **Request changes** (P1 0건 · P2 2건 · P3 2건). 네 건 모두 소스와 대조해 **진짜 결함으로 확인**했고 전건 조치했다.
+
+| # | 발견 | 판별 | 조치 |
+|---|---|---|---|
+| P2-1 | overview의 생성 다이어그램이 여전히 `task`/`done`이 원장을 갱신한다고 그린다 (`task-lifecycle.mmd:31-32`, `task-files.mmd:7-8`) | **진짜 결함.** 본문은 고쳤는데 다이어그램 원본을 놓쳤다 — 같은 문서 안에서 글과 그림이 서로 반박하고 있었다 | 두 `.mmd`를 재작성: `task-files`는 `meta.json` → `summary --write` → 생성물 2개 경로로, `task-lifecycle`은 Done 상태를 `가드 6종 → handoff append → meta status=done → active null`로. Created 상태에 빠져 있던 artifact·context·meta도 추가. `npm run docs:generate` 재실행 |
+| P2-2 | "가드 6종"이 비망라적 — `## Done evidence` 선언이 invalid면 그 자체로 차단된다 (`src/commands/task.mjs:427-435`) | **진짜 결함.** 시뮬레이션은 별도 항목으로 적었지만 제목이 "6종"이라 모호했고, fleet guide는 아예 빠져 있었다 | 시뮬레이션 트리 제목을 "가드 6종 + 선언 유효성"으로, fleet guide §7·부트스트랩·브리프 3곳에 선언 유효성 항목 추가 |
+| P3-1 | fleet §6에서 `meta.json`을 "`task`·`done`만 쓴다"고 단정 — `migrate`도 백필로 쓴다 (`src/commands/migrate.mjs:698`) | **진짜 결함** (사실 오류) | "`task`·`done`과 `migrate`(과거 task 백필)만 쓴다"로 정정 |
+| P3-2 | artifact EOF 여분 빈 줄 (`git diff --check`) | 진짜 | 제거. `git diff --check` clean 확인 |
+
+#### 리뷰 이후 자체 점검에서 추가로 고친 것
+
+codex가 잡은 P2-1은 "본문은 고쳤는데 **생성 동반물**을 놓쳤다"는 유형이다. 같은 유형이
+하나 더 있는지 되짚어 두 곳을 더 고쳤다.
+
+- **시뮬레이션의 사전 렌더 inline SVG.** `docs/` 레이아웃 다이어그램은 손으로 고치기 위험한
+  사전 렌더 SVG라 그대로 뒀는데, 그림의 화살표가 원장 → task 관계를 그리고 있어 본문(생성물)과
+  어긋나 보인다. SVG를 다시 그리는 대신 **캡션**에 "이 화살표는 참조이지 쓰기 방향이 아니다"를
+  명시했다 — 가장 싼 정합 수단이다.
+- **`task-files.mmd`의 dotted+label 엣지.** `-.->|스캔|`는 이 다이어그램 세트에 전례가 없는
+  조합이었다(`-->|label|`과 `-.->`는 각각 전례가 있지만 둘의 결합은 없다). mermaid 문법 오류는
+  `docs:check`를 **초록으로 통과**하고 렌더 시점에만 에러 박스로 드러나므로, 라벨을 노드 텍스트로
+  옮겨 `-.->`(전례 있음)만 쓰도록 바꿨다. 결과적으로 이번에 쓴 mermaid 구문 중 이 세트에
+  전례가 없는 것은 **하나도 없다**.
+
+리뷰어가 확인해 준 사실(교차 검증에 사용): `task`/`done`은 원장을 쓰지 않고 `summary --write`가 기본 브랜치에서 렌더한다 · `release --help`는 dispatch 없이 help로 해석된다 · `docs/harness-overview.html`은 생성기 출력과 바이트 단위로 일치한다.
+리뷰어 샌드박스가 macOS 임시 디렉터리 생성을 `EPERM`으로 막아 `done`/`summary` 테스트는 리뷰어 쪽에서 실행되지 못했다 — 이 세션에서 `npm test` 전량(422 pass / 0 fail)으로 대신 확인했다.
+
+### 2026-08-26 (2차) — codex, 범위 확장분(`harness-task-guide.html`) 집중
+
+판정: **Request changes** (P1 0건 · P2 4건 · P3 3건). 전건 확인 후 조치.
+
+| # | 발견 | 판별 | 조치 |
+|---|---|---|---|
+| P2-1 | §1이 "stdout이 이 체인을 그대로 안내한다"고 하는데 `printTaskNextActions`는 ship도 다이어그램 질문도 출력하지 않는다 | **진짜 결함.** 9단계였을 때는 맞는 문장이었는데 ship을 끼워 넣으면서 틀려졌다 | §1 문구를 "다음 칸을 알려 준다 + ship만은 CLI 안내에 없다"로 정정. §2 표의 '시작' 행도 **CLI 출력**과 **커맨드 절차(다이어그램 질문)**를 분리해 표기 |
+| P2-2 | `## Done evidence` 예시에 ` ```json ` 코드펜스가 없어, 복사하면 선언이 인식되지 않는다 | **진짜 결함.** 주석으로 "코드펜스 안에"라고만 썼는데, 예시는 복사되는 물건이다 | 예시에 펜스를 실제로 넣고 "생략할 수 없다 / 안 닫으면 invalid로 차단" 한 줄 추가 |
+| P2-3 | §8 도입부 "`done`은 상태를 바꾸는 명령이 아니라 검사"가 같은 절 끝의 "handoff·meta·active를 바꾼다"와 모순 | **진짜 결함.** 수사적 표현이었지만 새 문단을 넣으면서 문자 그대로 모순이 됐다 | "먼저 검사 — 통과하지 못하면 아무것도 바꾸지 않는다. 통과한 뒤에야 상태를 옮긴다"로 재작성 |
+| P2-4 | meta 스키마에서 `firstActivatedAt` 누락 — `AGENTS.md`가 "판정 창의 시작점"으로 경고하는 필드다 | **진짜 결함(범위 판단 오류).** 릴리스 기준선 원칙으로 뺐는데, 같은 트리의 `AGENTS.md`가 이미 이 필드를 경고한다 — Node 배지와 같은 상황이다 | `(다음 릴리스)` 표기와 함께 추가하고 "밀면 가드가 오탐" 경고를 붙였다 |
+| P3-1 | 같은 문서 안에서 "6종"과 "6종 + 선언 유효성"이 섞임 | 진짜 | §8 제목을 "가드 6종 + 선언 유효성"으로. 선언 유효성은 **6종을 읽기 전에 걸리는 관문**임을 명시 |
+| P3-2 | 생성 다이어그램의 "종결 가드 6종 통과"도 같은 비망라 | 진짜 | `task-lifecycle.mmd`를 "가드 6종 + 선언 유효성 통과"로 고치고 재생성 |
+| P3-3 | nav 로고가 `Harness 0.14`로 남음 | 진짜(놓친 표기) | `Harness 0.18.1`로 |
+
+리뷰어가 확인해 준 것: **10박스 inline SVG에 viewBox 이탈·겹침·미아 화살표·라벨 불일치가 없다**(손으로 좌표를 옮긴 부분이라 이 확인이 핵심이었다) · 인용한 `done` 5-cause 출력이 구현과 일치한다 · 원장 생성물화·ship 의미론·다이어그램 옵트인·리뷰 폴백 체인·Codex 훅 서술이 소스와 일치한다.
+
+<!-- harness:review kind=codex scope=diff tip=4364bcf263239518d437c65c7c6b68af85a7af99 at=2026-08-26T04:20:00Z -->
+
+<!-- harness:review kind=codex scope=diff tip=e4bc852f75b54c0edc7780011f588d39d42eee4e at=2026-08-26T03:05:00Z -->
+
+
+## Learnings
+
+### 검증하지 못한 것 (정직한 공백)
+
+**mermaid 다이어그램을 실제로 렌더해 확인하지 못했다.** 이 세션에서 `ao browser`는
+capability 미설정으로, `chrome-devtools-axi`는 브리지 기동 실패로 쓸 수 없었다.
+`npm run docs:check`는 생성기 출력의 **바이트 일치**만 보고 mermaid 문법은 보지 않으므로,
+문법 오류가 있어도 모든 검사가 초록으로 통과한다. 대신 **구문 전례 대조**로 대체했다 —
+이번에 쓴 모든 구문(`-->|"label"|`·`-.->`·`state X { direction LR }`·`a --> b : text`)이
+이미 렌더되고 있는 같은 세트의 다른 `.mmd`에 그대로 존재한다. 새 식별자
+(`artifact`·`context`·`meta_json`·`guards`·`meta_done`)는 stateDiagram-v2 예약어가 아니다.
+**브라우저가 있는 머신에서 `docs/harness-overview.html`의 다이어그램 2개를 눈으로 한 번
+확인하는 것이 남은 일이다.**
+
+### 학습
+
+- **생성물의 "동반물"까지 따라가라.** 본문 HTML을 고치면 끝이 아니다. 이 문서군에는
+  ① 생성 소스(`.mmd` → `docs:generate`), ② 사전 렌더 inline SVG, ③ 버전 스냅샷 사본이
+  각각 딸려 있고 셋 다 본문과 따로 논다. codex가 잡은 유일한 실질 결함이 정확히 이것이었다.
+  다음에 이 계열 문서를 고칠 때는 **먼저 동반물 목록부터 세운다.**
+- **초록 통과 ≠ 검증.** `docs:check`가 초록인데 다이어그램은 깨질 수 있다. 어떤 검사가
+  무엇을 보지 *않는지*를 먼저 확인해야 한다.
+- **낡은 문서를 고칠 때 가장 위험한 것은 "옛 사실을 강하게 주장하는 문단"이다.**
+  fleet guide §7의 `release --help` 경고는 문서에서 가장 눈에 띄는 블록이었는데
+  0.15.1에서 이미 수정된 버그를 현재형으로 경고하고 있었다. 표기(버전 배지)만 올렸다면
+  이 블록은 그대로 남아 독자를 잘못된 방어로 이끌었을 것이다.
