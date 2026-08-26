@@ -354,15 +354,48 @@ export function parseDoneEvidenceDeclaration(spec) {
   return { status: 'configured', ...resolved };
 }
 
-// 언어 무관 분류. 확장자 화이트리스트라 문서(.md)·설정(.json/.yml)만 바뀐 task에서는
+// 언어 무관 소스 확장자 화이트리스트. 문서(.md)·설정(.json/.yml)만 바뀐 task에서는
 // source=false가 되어 테스트 작성 체크가 아예 발동하지 않는다.
 const SOURCE_EXTENSIONS = new Set([
-  'js', 'mjs', 'cjs', 'ts', 'tsx', 'jsx', 'py', 'go', 'rb', 'java', 'kt', 'swift',
+  'js', 'mjs', 'cjs', 'ts', 'mts', 'cts', 'tsx', 'jsx', 'py', 'go', 'rb', 'java', 'kt', 'swift',
   'c', 'h', 'cpp', 'cc', 'cs', 'rs', 'sh', 'php', 'scala', 'm', 'mm', 'dart',
 ]);
 
+// 산문 문서 확장자. `tests/`·`specs/` 아래여도 산문은 테스트 정의가 아니다.
+// 기준은 "**문서로만** 쓰이는 포맷인가"다 — `json`/`yml`/`txt`는 `tests/fixtures/expected.txt`처럼
+// golden·fixture로도 흔히 쓰이므로 일부러 뺐다. 제외하면 fixture만 고친 정직한 작업이 차단된다.
+// `md`는 예외적으로 넣는다: 실제로 막아야 하는 `docs/**/specs/*.md`가 md이기 때문이며,
+// 그 대가로 markdown golden fixture는 증거에서 빠진다(통과가 아니라 차단 쪽 대가 — 아래 주석 참조).
+const PROSE_EXTENSIONS = new Set([
+  'md', 'mdx', 'markdown', 'rst', 'adoc', 'asciidoc', 'textile', 'org', 'tex', 'typ',
+]);
+
+// 확장자만 뽑는다. 확장자 없는 파일(`Makefile`)과 dotfile(`.eslintrc`)은 null.
+// 끝의 점은 떼고 본다 — `README.md.`이 확장자 없는 파일로 보여 산문 판정을 빠져나가면 안 된다.
+function fileExtension(path) {
+  const base = path.slice(path.lastIndexOf('/') + 1).replace(/\.+$/, '');
+  const dot = base.lastIndexOf('.');
+  return dot > 0 ? base.slice(dot + 1).toLowerCase() : null;
+}
+
+// dotfile은 도구 설정이지 테스트 정의가 아니다 — `tests/.gitignore`가 테스트 증거로 세어지면 안 된다.
+function isDotfile(path) {
+  return path.slice(path.lastIndexOf('/') + 1).startsWith('.');
+}
+
+// 두 규칙은 신호의 세기가 달라 확장자 조건도 다르다 — 같은 조건을 쓰면 한쪽이 반드시 틀린다.
 function isTestPath(path) {
-  if (/(^|\/)(tests?|__tests__|specs?)(\/|$)/i.test(path)) return true;
+  const ext = fileExtension(path);
+  // (1) 디렉터리 규칙 — 경로가 스스로 "테스트"라고 말하는 **강한** 신호다. 여기서는 산문 문서만
+  // 걷어낸다. 코드 확장자 화이트리스트로 좁히면 `tests/foo.test.mts`·`tests/run-e2e`처럼
+  // 목록 밖 확장자·무확장자 테스트가 증거에서 빠져 **정직한 작업을 차단**한다(codex 리뷰 P2).
+  if (/(^|\/)(tests?|__tests__|specs?)(\/|$)/i.test(path)) {
+    if (isDotfile(path)) return false;
+    return !(ext !== null && PROSE_EXTENSIONS.has(ext));
+  }
+  // (2) basename 규칙 — 이름의 우연한 일치라 **약한** 신호다. 코드 확장자만 인정한다.
+  // 이 조건이 없으면 모든 task가 커밋하는 `<name>-spec.md`가 테스트로 세어져 가드가 죽는다.
+  if (ext === null || !SOURCE_EXTENSIONS.has(ext)) return false;
   const base = path.slice(path.lastIndexOf('/') + 1);
   // `foo.test.ts`, `foo_test.go`, `foo-spec.rb`, 그리고 `FooTests.swift` 류.
   return /(^|[._-])(test|spec)s?\.[^.]+$/i.test(base) || /(Test|Tests|Spec|Specs)\.[^.]+$/.test(base);
@@ -377,9 +410,8 @@ export function classifyChangedPaths(paths) {
     const unquoted = raw.startsWith('"') && raw.endsWith('"') ? raw.slice(1, -1) : raw;
     const path = unquoted.replace(/\\/g, '/');
     if (isTestPath(path)) { test = true; continue; }
-    const dot = path.lastIndexOf('.');
-    const slash = path.lastIndexOf('/');
-    if (dot > slash + 1 && SOURCE_EXTENSIONS.has(path.slice(dot + 1).toLowerCase())) source = true;
+    const ext = fileExtension(path);
+    if (ext !== null && SOURCE_EXTENSIONS.has(ext)) source = true;
   }
   return { source, test };
 }
