@@ -15,6 +15,7 @@
 ## Completed
 - ✅ adversarial-verify-rubric
 - ✅ docs-refresh-0181
+- ✅ persona-external-verify
 - ✅ testpath-extension-gate
 - ✅ boundary-perf-invariant
 - ✅ done-guard-window
