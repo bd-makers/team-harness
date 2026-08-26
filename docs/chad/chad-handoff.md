@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-docs-refresh-0181
+adversarial-verify-rubric
 
 ## Last Commit (2026-08-26)
-04f6db8 chore(handoff): post-commit hook 출력 반영
+5b985d7 feat(d6): 적대적 검증 규범(D6)과 testcritic·shipcheck 루브릭 도입
 
 ## Full Context
-→ docs/chad/docs-refresh-0181/docs-refresh-0181-handoff.md
+→ docs/chad/adversarial-verify-rubric/adversarial-verify-rubric-handoff.md
