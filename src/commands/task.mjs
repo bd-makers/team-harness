@@ -354,13 +354,16 @@ export function parseDoneEvidenceDeclaration(spec) {
   return { status: 'configured', ...resolved };
 }
 
-// 언어 무관 분류. 이 화이트리스트는 **소스·테스트 판정 양쪽을 지배한다.**
-// 소스 쪽: 문서(.md)·설정(.json/.yml)만 바뀐 task에서는 source=false가 되어 체크가 발동하지 않는다.
-// 테스트 쪽: 이름·위치가 test/spec 관례여도 코드가 아니면 테스트 증거로 세지 않는다.
+// 언어 무관 소스 확장자 화이트리스트. 문서(.md)·설정(.json/.yml)만 바뀐 task에서는
+// source=false가 되어 테스트 작성 체크가 아예 발동하지 않는다.
 const SOURCE_EXTENSIONS = new Set([
-  'js', 'mjs', 'cjs', 'ts', 'tsx', 'jsx', 'py', 'go', 'rb', 'java', 'kt', 'swift',
+  'js', 'mjs', 'cjs', 'ts', 'mts', 'cts', 'tsx', 'jsx', 'py', 'go', 'rb', 'java', 'kt', 'swift',
   'c', 'h', 'cpp', 'cc', 'cs', 'rs', 'sh', 'php', 'scala', 'm', 'mm', 'dart',
 ]);
+
+// 산문 문서 확장자. `tests/`·`specs/` 아래여도 산문은 테스트 정의가 아니다.
+// 설정·데이터(json/yml)는 일부러 넣지 않는다 — `tests/` 아래에서는 진짜 테스트 fixture일 수 있다.
+const PROSE_EXTENSIONS = new Set(['md', 'mdx', 'markdown', 'txt', 'rst', 'adoc']);
 
 // 확장자만 뽑는다. 확장자 없는 파일(`Makefile`)과 dotfile(`.eslintrc`)은 null.
 function fileExtension(path) {
@@ -369,13 +372,16 @@ function fileExtension(path) {
   return dot > 0 ? base.slice(dot + 1).toLowerCase() : null;
 }
 
+// 두 규칙은 신호의 세기가 달라 확장자 조건도 다르다 — 같은 조건을 쓰면 한쪽이 반드시 틀린다.
 function isTestPath(path) {
-  // 테스트 파일은 테스트 *코드*다. 이 게이트는 아래 디렉터리 규칙보다 **반드시 앞**에 있어야 한다 —
-  // 뒤로 밀리면 `docs/**/specs/*.md` 같은 문서가 다시 테스트 증거로 세어져 가드가 죽는다.
-  // (모든 task가 커밋하는 `<name>-spec.md`가 basename 규칙에 걸린 것이 이 게이트를 만든 계기다.)
   const ext = fileExtension(path);
+  // (1) 디렉터리 규칙 — 경로가 스스로 "테스트"라고 말하는 **강한** 신호다. 여기서는 산문 문서만
+  // 걷어낸다. 코드 확장자 화이트리스트로 좁히면 `tests/foo.test.mts`·`tests/run-e2e`처럼
+  // 목록 밖 확장자·무확장자 테스트가 증거에서 빠져 **정직한 작업을 차단**한다(codex 리뷰 P2).
+  if (/(^|\/)(tests?|__tests__|specs?)(\/|$)/i.test(path)) return !(ext !== null && PROSE_EXTENSIONS.has(ext));
+  // (2) basename 규칙 — 이름의 우연한 일치라 **약한** 신호다. 코드 확장자만 인정한다.
+  // 이 조건이 없으면 모든 task가 커밋하는 `<name>-spec.md`가 테스트로 세어져 가드가 죽는다.
   if (ext === null || !SOURCE_EXTENSIONS.has(ext)) return false;
-  if (/(^|\/)(tests?|__tests__|specs?)(\/|$)/i.test(path)) return true;
   const base = path.slice(path.lastIndexOf('/') + 1);
   // `foo.test.ts`, `foo_test.go`, `foo-spec.rb`, 그리고 `FooTests.swift` 류.
   return /(^|[._-])(test|spec)s?\.[^.]+$/i.test(base) || /(Test|Tests|Spec|Specs)\.[^.]+$/.test(base);

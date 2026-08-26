@@ -341,14 +341,25 @@ test('classifyChangedPaths: 문서·설정은 이름·위치가 test/spec 관례
   assert.deepEqual(classifyChangedPaths(['tests/fixtures/stock-hooks/README.md']), { source: false, test: false });
   // 설정 파일도 마찬가지 — `test.yml`은 CI 설정이지 테스트가 아니다
   assert.deepEqual(classifyChangedPaths(['.github/workflows/test.yml']), { source: false, test: false });
-  // 순서 계약: 확장자 게이트가 디렉터리 규칙보다 **앞**에 있어야 한다.
-  // 뒤로 밀리면 아래가 { source: true, test: true }가 되어 구멍 2가 조용히 되살아난다.
+  // 소스가 함께 바뀌어도 문서는 증거가 되지 않는다 — 이 줄이 무너지면 가드가 다시 죽는다
   assert.deepEqual(
     classifyChangedPaths(['src/app.mjs', 'docs/superpowers/specs/x.md']),
     { source: true, test: false },
   );
-  // 게이트가 진짜 테스트를 떨어뜨리지 않는다 — 이름 관례가 없어도 tests/ 아래 코드는 테스트다
+});
+
+// 디렉터리 규칙은 basename 규칙보다 **강한** 신호다. 두 규칙에 같은 확장자 조건(코드 화이트리스트)을
+// 걸면 `tests/foo.test.mts`·`tests/run-e2e`처럼 목록 밖 테스트가 증거에서 빠져 정직한 작업이
+// 차단되고, 워커는 `--force`로 밀게 된다 — 가드가 죽는 것과 같은 결말이다 (codex 리뷰 P2).
+test('classifyChangedPaths: tests/ 아래는 확장자가 화이트리스트 밖이어도 테스트다 (산문만 제외)', () => {
   assert.deepEqual(classifyChangedPaths(['tests/helpers/setup.mjs']), { source: false, test: true });
+  assert.deepEqual(classifyChangedPaths(['tests/foo.test.mts']), { source: false, test: true });
+  assert.deepEqual(classifyChangedPaths(['tests/e2e/login.feature']), { source: false, test: true });
+  assert.deepEqual(classifyChangedPaths(['tests/run-e2e']), { source: false, test: true });
+  assert.deepEqual(classifyChangedPaths(['tests/fixtures/case.json']), { source: false, test: true });
+  // 반대로 tests/ 밖의 이름 관례는 **약한** 신호라 코드 확장자만 인정한다
+  assert.deepEqual(classifyChangedPaths(['src/app.mts', 'src/app.test.mts']), { source: true, test: true });
+  assert.deepEqual(classifyChangedPaths(['notes-spec.txt']), { source: false, test: false });
 });
 
 // ─── Done evidence: 리뷰 마커 파싱 (순수 함수) ──────────────────────────────
@@ -467,6 +478,20 @@ test('소스 변경 + specs/ 하위 문서만 동반 → 여전히 차단 (디�
     const { logs, exitCode } = await runDoneCapture(dir);
     assert.equal(exitCode, 1, 'blocks — a doc under specs/ is not a test file');
     assert.ok(logs.some(l => l.includes('테스트 파일 변경이 없음')), 'flags missing tests');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// codex 리뷰 P2 회귀 그물 — 화이트리스트 밖 확장자로 쓴 테스트도 증거로 인정되어야 한다.
+// 이게 깨지면 가드가 정직한 작업을 막고 `--force`를 표준 절차로 만든다.
+test('소스 변경 + tests/ 하위 비화이트리스트 확장자 테스트 → 통과', async () => {
+  const { dir } = await makeEvidenceFixture({ files: {
+    'src/app.ts': 'export const x = 1;\n',
+    'tests/app.test.mts': 'import "node:test";\n',
+  } });
+  try {
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds');
+    assert.ok(!logs.some(l => l.includes('테스트 파일 변경이 없음')), 'no false positive');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

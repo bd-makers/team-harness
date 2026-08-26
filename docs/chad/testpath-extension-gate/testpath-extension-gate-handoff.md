@@ -10,3 +10,12 @@
  .../testpath-extension-gate-plan.md                | 27 +++++++
  .../testpath-extension-gate-spec.md                | 83 ++++++++++++++++++++++
  6 files changed, 159 insertions(+)
+
+## 2026-08-26T02:45:57.255Z — c82515f fix(done): 테스트 판정에 코드 확장자 게이트 추가 — 문서 오분류로 죽어 있던 가드 복구
+CHANGELOG.md                                       | 13 ++++++
+ docs/chad/chad-handoff.md                          |  6 +--
+ .../testpath-extension-gate-handoff.md             |  9 ++++
+ .../testpath-extension-gate-plan.md                | 10 ++---
+ src/commands/task.mjs                              | 22 +++++++---
+ tests/done-guard.test.mjs                          | 48 ++++++++++++++++++++++
+ 6 files changed, 95 insertions(+), 13 deletions(-)
