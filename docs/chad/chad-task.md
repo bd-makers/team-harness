@@ -17,6 +17,7 @@
 - ✅ docs-refresh-0181
 - ✅ persona-external-verify
 - ✅ testpath-extension-gate
+- ✅ verify-evidence-gate
 - ✅ boundary-perf-invariant
 - ✅ done-guard-window
 - ✅ release-0181-recovery
