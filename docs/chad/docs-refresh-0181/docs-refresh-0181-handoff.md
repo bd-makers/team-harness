@@ -35,3 +35,8 @@ docs/chad/chad-handoff.md                          |  2 +-
  docs/harness-workflow-simulation-0.18.1.html       |  2 +-
  docs/harness-workflow-simulation.html              |  2 +-
  11 files changed, 81 insertions(+), 30 deletions(-)
+
+## 2026-08-26T03:07:52.135Z — 8df10c6 chore(handoff): post-commit hook 출력 반영
+docs/chad/chad-handoff.md                                |  2 +-
+ docs/chad/docs-refresh-0181/docs-refresh-0181-handoff.md | 14 ++++++++++++++
+ 2 files changed, 15 insertions(+), 1 deletion(-)
