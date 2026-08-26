@@ -18,3 +18,8 @@ CHANGELOG.md                                       |  20 +++
  tests/sim/agentloop.mjs                            | 136 ++------------------
  tests/sim/rules.mjs                                | 138 +++++++++++++++++++++
  14 files changed, 523 insertions(+), 137 deletions(-)
+
+## 2026-08-26T14:09:59.015Z — f64358e chore(verify-evidence-gate): post-commit handoff 갱신 반영
+docs/chad/chad-handoff.md                               |  6 +++---
+ .../verify-evidence-gate-handoff.md                     | 17 +++++++++++++++++
+ 2 files changed, 20 insertions(+), 3 deletions(-)

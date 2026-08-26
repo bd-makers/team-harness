@@ -37,6 +37,22 @@
 *Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
 
+2026-08-26 — Codex read-only 외부 리뷰 (`codex exec --sandbox read-only`, probe 체인 1순위,
+origin/main 대비 전체 변경 + working tree)
+- 요약: **P1/P2/P3 발견 0건 — Approve** (병합 차단·수정 권고 없음).
+- 리뷰어 확인 사항: `verify: required`가 allowlist 접미사와 판정 창을 함께 확인하며 기존
+  `review` 동작 불변, sim rule 분리의 기존 호출이 전부 새 모듈 import로 연결됨(정적
+  syntax/import smoke 통과). 리뷰어는 read-only 샌드박스라 테스트 스위트는 미실행 —
+  작성 세션에서 `npm run test:unit` 429/428/0 + `npm run test:e2e` 10/10으로 보완.
+- 조치: 발견 없음 → 반영 사항 없음.
+
+<!-- harness:review kind=codex scope=worktree tip=f64358e91b6450a2a40dfafaf3f01a6c8e0c16d4 at=2026-08-26T14:13:36Z -->
+
 
 ## Learnings
 
+- post-commit 훅의 handoff 재생성은 그것을 커밋해도 다음 훅이 다시 써서 **항상 1커밋
+  지연 dirty**다 — done 가드는 이를 제외하지만, 리뷰 scope 결정(dirty→worktree 규칙)
+  때는 "handoff 2개는 훅 노이즈"를 리뷰 프롬프트에 명시하고 진행하면 된다.
+- 신 evidence 키(verify)는 설치된 구버전 CLI의 unknown-key 거부에 걸린다 — 키를 추가한
+  task 자신의 spec에는 선언하지 못하고, 실사용은 다음 릴리스 이후다(dogfooding 함정).

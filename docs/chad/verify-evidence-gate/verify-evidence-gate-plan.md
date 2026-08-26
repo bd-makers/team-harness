@@ -24,8 +24,8 @@ sim 순수 채점 함수를 tests/sim/rules.mjs로 승격하며, AO 워커 §8�
       (100행 초과는 기존 상태 — 보고만)
 - [x] CHANGELOG `[Unreleased]` 갱신
 - [x] 검증: `npm run test:unit` green (429/428/0/1 skip) + `npm run docs:check` 최신
-- [ ] 외부 리뷰 `/harness-review` (probe 체인) → 발견 판별·반영 → artifact
-      `## Reviews` 기록
+- [x] 외부 리뷰 `/harness-review` (probe 체인 1순위 codex) → P1/P2/P3 0건 Approve →
+      artifact `## Reviews` 기록 (마커 tip=f64358e)
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
