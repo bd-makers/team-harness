@@ -56,3 +56,6 @@ origin/main 대비 전체 변경 + working tree)
   때는 "handoff 2개는 훅 노이즈"를 리뷰 프롬프트에 명시하고 진행하면 된다.
 - 신 evidence 키(verify)는 설치된 구버전 CLI의 unknown-key 거부에 걸린다 — 키를 추가한
   task 자신의 spec에는 선언하지 못하고, 실사용은 다음 릴리스 이후다(dogfooding 함정).
+- (CI #55 1차 실패 교훈) `docs:generate`의 파일 인벤토리는 **git-tracked 파일**만 센다 —
+  새 소스 파일을 만든 커밋 **후**(tracked 상태)에 `docs:check`를 다시 돌려야 한다.
+  커밋 전 check 통과는 신 파일이 표에 안 잡힌 거짓 최신일 수 있다.
