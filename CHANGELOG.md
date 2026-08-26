@@ -18,6 +18,29 @@ modified: 2026-08-26
 
 ## [Unreleased]
 
+### Added
+- **D6 — 적대적 검증(작업 단위 read-only 검증자 + 루브릭) 규범** (task `adversarial-verify-rubric`).
+  결정론적 가드는 "기록했는가"만 강제하고 품질 판단은 작업자 자신에게 남아 있었다 —
+  0.19.0 조사에서 비평 목적의 서브에이전트·외부 엔진 사용이 review·sim 계열 밖에는 0곳으로
+  확인됐다. D6는 이를 D2(작성자·리뷰어 분리)의 작업 단위 적용으로 규범화한다.
+  - `docs/decisions.md`·`templates/docs/decisions.md`(byte-identical)에 D6 전문 —
+    finding 스키마(id·항목·심각도 BLOCKER/MAJOR/MINOR·판정·근거), 정직성 규칙(산문은 신호가
+    아니다), 검증자→작업자 자동 수정 루프 금지. `AGENTS.md`·`templates/AGENTS.md.hbs` 결정
+    규범에 요약 1줄 짝수정.
+  - `commands/harness-review.md` 마커 계약에 `kind=<engine>-<프레이밍>` 접미사 규약 명문화
+    (`-adversarial`·`-testcritic`·`-shipcheck`) — done 가드가 kind를 목록 대조하지 않아
+    코드 변경 없이 오늘 동작하는 확장점임을 문서화.
+  - 테스트 3형제(`harness-unittest`·`harness-comptest`·`harness-inttest`) 6단계에
+    **검증자 인계(옵트인)** + testcritic 루브릭 — 기존 자가점검(뮤테이션 사고실험·mock 반향·
+    tautological)을 finding 표로 승격하고, 중요한 변경이면 별도 컨텍스트 검증자가 채점한다.
+  - `commands/harness-ship.md`에 7번 **정합 검증** 단계 + shipcheck 루브릭 — PR 직전 문서↔diff
+    정합(spec 대응 구현·plan 체크 실재·스코프 밖 변경·리뷰 기록·증거 인용)을 별도 검증자가
+    반박한다. 준비 완료 보고는 8번으로 재번호, 보고 항목에 정합 검증 상태 추가.
+  - 회귀 고정: `tests/agent-files.test.mjs`에 D6 전문/요약 보존과 kind 접미사 소비 표면
+    4곳 일치 테스트 추가.
+  - 범위 제외(후속): contrarian/simplifier external 엔진 옵션, interview 채점 선행,
+    done 가드 `verify` evidence 키·kind allowlist(src 변경), AO 워커 §8 검증 슬롯.
+
 ## [0.19.0] - 2026-08-26
 
 ### Added

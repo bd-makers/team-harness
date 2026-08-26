@@ -111,6 +111,34 @@ test('templates/docs/decisions.md는 D2/D4/D5 전문(날짜 포함)을 보존한
     '레포 docs/decisions.md는 템플릿과 동일해야 함');
 });
 
+// D6 (2026-08-26) — 적대적 검증. 규범(decisions 전문 + AGENTS 요약)과 소비 표면(리뷰 마커
+// kind 접미사)이 함께 움직여야 한다 — 어느 한쪽만 남으면 규범 없는 마커 또는 마커 없는 규범이 된다.
+test('AGENTS.md(core)는 D6 요약을 담고 decisions.md는 D6 전문을 보존한다', async () => {
+  const out = render(await tpl('AGENTS.md.hbs'), VARS);
+  assert.match(out, /\*\*D6\*\*/, 'D6 규범 요약');
+  assert.match(out, /read-only 검증자/, '검증자는 read-only');
+  assert.doesNotMatch(out, /## D6 \(2026-08-26\)/, 'D-log 전문은 코어로 오지 않는다');
+  const log = await readFile(join(ROOT, 'templates', 'docs', 'decisions.md'), 'utf8');
+  assert.match(log, /## D6 \(2026-08-26\)/, 'D6 전문 보존');
+  assert.match(log, /자동 수정 루프 금지/, '검증자→작업자 자동 반영 금지 규칙 보존');
+});
+
+test('검증 프레이밍 kind 접미사는 리뷰 마커 계약과 소비 표면 4곳에서 일치한다', async () => {
+  const review = await readFile(join(ROOT, 'commands', 'harness-review.md'), 'utf8');
+  assert.match(review, /kind=<engine>-<프레이밍>/, '접미사 규약 명문화');
+  for (const [file, kind] of [
+    ['harness-unittest.md', 'testcritic'],
+    ['harness-comptest.md', 'testcritic'],
+    ['harness-inttest.md', 'testcritic'],
+    ['harness-ship.md', 'shipcheck'],
+  ]) {
+    const doc = await readFile(join(ROOT, 'commands', file), 'utf8');
+    assert.match(doc, new RegExp(`kind=<engine>-${kind}`), `${file}: 마커 kind`);
+    assert.match(doc, /BLOCKER/, `${file}: 루브릭 심각도`);
+    assert.match(doc, /발견은 주장이다/, `${file}: 자동 반영 금지(재현·판별 후 반영)`);
+  }
+});
+
 test('CLAUDE.md(thin) §2는 컨텍스트 격리 서브에이전트는 유지, 병렬 작성·결정은 금지', async () => {
   const out = render(await tpl('CLAUDE.md.hbs'), VARS);
   assert.match(out, /컨텍스트 격리 서브에이전트/, '조사용 서브에이전트는 표준 실무로 유지');
