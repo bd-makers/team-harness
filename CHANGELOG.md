@@ -57,6 +57,26 @@ modified: 2026-08-26
     `tests/agent-files.test.mjs` 소비 표면 pin 4→6곳 확장 + interview 선행 채점 pin.
   - 범위 제외(후속 = 4단계): done 가드 `verify` evidence 키·kind allowlist 등 src 변경,
     sim 순수 채점 함수 rule 층 승격, AO 워커 §8 검증 슬롯.
+- **D6 4단계(최종) — 검증 증거의 결정론적 게이트 연결** (task `verify-evidence-gate`).
+  1–3단계가 문서 층에 심은 검증 마커 계약을 src + 유닛테스트로 닫는다.
+  - done 가드에 **`verify` evidence 키** (`src/commands/task.mjs`): Done evidence 선언에
+    `verify: required|optional`(기본 optional — review와 같은 근거) 추가. required면 판정 창
+    안에 **검증 프레이밍 kind** 마커가 artifact에 있어야 done을 통과한다.
+  - **verify kind allowlist**: `VERIFY_KIND_SUFFIXES`(`-adversarial`·`-testcritic`·
+    `-shipcheck`·`-contrarian`·`-simplifier`) 접미사로 끝나는 마커만 verify 증거로 센다 —
+    일반 `review` 증거는 현행대로 kind 비대조. 검증 마커는 review 증거를 겸하지만 역은
+    성립하지 않는다. 열거의 정본은 `commands/harness-review.md` 5단계이며 src 상수와의
+    양방향 동기화를 pin 테스트로 고정. 가드는 마커 존재·kind·시각만 읽는다(D6: finding 내용
+    판정은 결정론 게이트 밖). spec 템플릿 주석에 `verify` 키 문서화.
+  - **sim 순수 채점 함수 rule 층 승격**: `tests/sim/rules.mjs` 신설 — `agentloop.mjs`의
+    순수 채점 함수(sig·na·manual·scoreSpecArtifacts·aggregateTrials·renderSignals 등)를
+    이동해 하네스(I/O)와 규칙(순수)을 층으로 분리, 동작 불변.
+    `codex-agentloop.mjs`·`skilltest.mjs`의 유사 헬퍼는 구현이 달라(절단 한도·ico 폴백·
+    sanitize 유무) 통일하지 않고 차이만 기록.
+  - **AO 워커 §8 검증 슬롯** (`docs/ao-worker-rules.md`): 보고 계약에 외부 검증 항목
+    (kind·요약 또는 미실행 사유) 최소 추가.
+  - 회귀 고정: `tests/done-guard.test.mjs`에 verify 케이스 6종(일반 마커 차단·allowlist 전
+    접미사 통과·review 겸용·창 밖 무효·기본 optional·선언 검증) + allowlist↔문서 동기화 pin.
 
 ## [0.19.0] - 2026-08-26
 
