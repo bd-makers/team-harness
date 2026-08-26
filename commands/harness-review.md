@@ -74,14 +74,18 @@ Raw slash-command 인수:
 
    `kind`는 실행 엔진과 검증 프레이밍을 식별한다 — 이 문서의 기본 리뷰 프레이밍에서는
    엔진 이름 그대로(`codex`·`claude`·`gemini`·`custom`), 다른 프레이밍에서는 아래 접미사
-   형태가 유효한 kind 값이다. `scope`는 2단계에서 결정된 리뷰 대상, `tip`은 리뷰 시점의
-   `git rev-parse HEAD`(커밋이 없으면 `none`), `at`은 리뷰 완료 시각이다. 마커 없는
-   기록은 가드에 보이지 않는다.
+   형태가 유효한 kind 값이다. `scope`는 리뷰 대상이다 — 이 문서의 절차에서는 2단계에서
+   결정된 값(`worktree`|`diff`)이고, 리뷰 대상이 다른 프레이밍은 자기 대상 값(예: 페르소나
+   외부 엔진 모드의 `task-docs`)이 유효한 scope 값이다(가드는 scope 값도 목록 대조하지
+   않는다). `tip`은 리뷰 시점의 `git rev-parse HEAD`(커밋이 없으면 `none`), `at`은 리뷰
+   완료 시각이다. 마커 없는 기록은 가드에 보이지 않는다.
 
    이 절차를 재사용하는 다른 검증 프레이밍(D6 적대적 검증)은 `kind=<engine>-<프레이밍>`
    접미사로 구분한다 — `<engine>-adversarial`(harness-adversarial-review),
    `<engine>-testcritic`(테스트 3형제 6단계 검증자 인계), `<engine>-shipcheck`(ship
-   정합 검증). 가드는 kind 값을 목록 대조하지 않으므로 어떤 접미사든 마커로 인정된다.
+   정합 검증), `<engine>-contrarian`·`<engine>-simplifier`(페르소나 외부 엔진 모드 —
+   대상이 diff가 아니라 활성 task의 spec/plan 문서라 `scope=task-docs`로 남긴다).
+   가드는 kind 값을 목록 대조하지 않으므로 어떤 접미사든 마커로 인정된다.
 
 6. **보고** — 사용자에게 실행 엔진, 심각도순 발견 목록과 판별 결과를 전달한다.
    수정 제안이 있으면 제안까지만 하고 멈춘다.

@@ -40,6 +40,23 @@ modified: 2026-08-26
     4곳 일치 테스트 추가.
   - 범위 제외(후속): contrarian/simplifier external 엔진 옵션, interview 채점 선행,
     done 가드 `verify` evidence 키·kind allowlist(src 변경), AO 워커 §8 검증 슬롯.
+- **D6 3단계 — 페르소나 층 외부 검증** (task `persona-external-verify`). 1–2단계가 코드·ship
+  층에 검증자를 붙였다면, 이번에는 spec/plan **문서 층**이다 — 반론자·제거자가 문서를 쓴
+  세션 자신이면 sunk-cost 편향이 비평을 무디게 한다.
+  - `commands/harness-contrarian.md`·`commands/harness-simplifier.md`에 **외부 엔진 모드**
+    (옵트인): 첫 토큰이 엔진(`codex`·`claude`·`gemini`·`custom`)이면 4각도 반론(A1–A4)·
+    4체크 제거 후보(R1–R4)를 별도 컨텍스트의 read-only 검증자가 D6 finding 스키마로 채점한다.
+    절차·엔진 표는 `/harness-review` 재사용, scope 결정만 제외(대상이 diff가 아니라 task
+    문서) — 마커는 `kind=<engine>-contrarian|-simplifier scope=task-docs`. 반영은 대화형과
+    동일하게 driver가 사용자와 판별 후 수행한다(자동 수정 루프 금지).
+  - `commands/harness-interview.md`에 **선행 채점** 단계: 질문 전에 spec 텍스트 증거만으로
+    4차원을 pass/fail/na로 채점하고, fail/na 차원만 질문하며, Ambiguity 체크박스는 채점표에서
+    pass가 된 항목만 갱신한다(증거 없는 pass는 na — D6 정직성 규칙). 외부 엔진은 쓰지 않는다 —
+    문답은 여전히 사용자와의 대화다.
+  - `commands/harness-review.md` kind 접미사 열거에 `-contrarian`·`-simplifier` 추가,
+    `tests/agent-files.test.mjs` 소비 표면 pin 4→6곳 확장 + interview 선행 채점 pin.
+  - 범위 제외(후속 = 4단계): done 가드 `verify` evidence 키·kind allowlist 등 src 변경,
+    sim 순수 채점 함수 rule 층 승격, AO 워커 §8 검증 슬롯.
 
 ## [0.19.0] - 2026-08-26
 

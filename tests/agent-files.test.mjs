@@ -123,20 +123,42 @@ test('AGENTS.md(core)는 D6 요약을 담고 decisions.md는 D6 전문을 보존
   assert.match(log, /자동 수정 루프 금지/, '검증자→작업자 자동 반영 금지 규칙 보존');
 });
 
-test('검증 프레이밍 kind 접미사는 리뷰 마커 계약과 소비 표면 4곳에서 일치한다', async () => {
+test('검증 프레이밍 kind 접미사는 리뷰 마커 계약과 소비 표면 6곳에서 일치한다', async () => {
   const review = await readFile(join(ROOT, 'commands', 'harness-review.md'), 'utf8');
   assert.match(review, /kind=<engine>-<프레이밍>/, '접미사 규약 명문화');
+  // 접미사 열거도 계약의 일부다 — 목록에서 지우면 소비 표면과 어긋난다 (codex 리뷰 P2).
+  assert.match(review, /<engine>-contrarian/, '접미사 열거: contrarian');
+  assert.match(review, /<engine>-simplifier/, '접미사 열거: simplifier');
   for (const [file, kind] of [
     ['harness-unittest.md', 'testcritic'],
     ['harness-comptest.md', 'testcritic'],
     ['harness-inttest.md', 'testcritic'],
     ['harness-ship.md', 'shipcheck'],
+    ['harness-contrarian.md', 'contrarian'],
+    ['harness-simplifier.md', 'simplifier'],
   ]) {
     const doc = await readFile(join(ROOT, 'commands', file), 'utf8');
     assert.match(doc, new RegExp(`kind=<engine>-${kind}`), `${file}: 마커 kind`);
     assert.match(doc, /BLOCKER/, `${file}: 루브릭 심각도`);
     assert.match(doc, /발견은 주장이다/, `${file}: 자동 반영 금지(재현·판별 후 반영)`);
   }
+  // 페르소나 외부 엔진 모드의 대상은 diff가 아니라 task 문서다 — scope 값이 이를 구분한다.
+  for (const file of ['harness-contrarian.md', 'harness-simplifier.md']) {
+    const doc = await readFile(join(ROOT, 'commands', file), 'utf8');
+    assert.match(doc, /scope=task-docs/, `${file}: task 문서 scope`);
+  }
+});
+
+// interview의 판정 주체는 그대로 세션이지만, 판정 근거를 산문에서 채점표로 뒤집는다(D6 정직성 규칙).
+// 이 순서(채점 → 질문 → 채점표 갱신 → 체크박스)가 빠지면 "감으로 체크"로 되돌아간다.
+test('harness-interview는 선행 채점이 질문 선별과 체크박스 갱신을 지배한다', async () => {
+  const doc = await readFile(join(ROOT, 'commands', 'harness-interview.md'), 'utf8');
+  // 단계 번호로 순서를 고정한다 — 채점(2번)이 질문(3번)보다 앞이어야 scoring-first다 (codex 리뷰 P3).
+  assert.match(doc, /2\. \*\*선행 채점\*\*/, '채점이 절차 2번(질문 전)에 존재');
+  assert.match(doc, /3\. \*\*fail\/na 차원만\*\*/, '질문 생성은 절차 3번, fail/na 차원으로 제한');
+  assert.match(doc, /Context\(brownfield 한정/, 'spec 체크박스와 짝 — Context 차원 포함(codex 리뷰 P2)');
+  assert.match(doc, /pass가 아니라 na/, '증거 없는 pass 금지(D6 정직성 규칙)');
+  assert.match(doc, /채점표에 없는 근거로 체크박스를 바꾸지 않는다/, '체크박스 갱신은 채점표에만 근거');
 });
 
 test('CLAUDE.md(thin) §2는 컨텍스트 격리 서브에이전트는 유지, 병렬 작성·결정은 금지', async () => {
