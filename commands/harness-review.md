@@ -85,7 +85,11 @@ Raw slash-command 인수:
    `<engine>-testcritic`(테스트 3형제 6단계 검증자 인계), `<engine>-shipcheck`(ship
    정합 검증), `<engine>-contrarian`·`<engine>-simplifier`(페르소나 외부 엔진 모드 —
    대상이 diff가 아니라 활성 task의 spec/plan 문서라 `scope=task-docs`로 남긴다).
-   가드는 kind 값을 목록 대조하지 않으므로 어떤 접미사든 마커로 인정된다.
+   가드의 대조 규칙은 증거 키에 따라 다르다 — `review: required`는 kind를 목록 대조하지
+   않아 어떤 kind든 마커로 인정하지만, `verify: required`는 kind가 **위 접미사 열거로
+   끝나는 마커만** 검증 증거로 센다(이 열거가 verify kind allowlist의 정본이고,
+   `src/commands/task.mjs`의 상수는 pin 테스트로 동기화된다). 검증 마커는 review 증거를
+   겸하지만 역은 성립하지 않는다.
 
 6. **보고** — 사용자에게 실행 엔진, 심각도순 발견 목록과 판별 결과를 전달한다.
    수정 제안이 있으면 제안까지만 하고 멈춘다.

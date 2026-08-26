@@ -77,7 +77,8 @@ export function taskSpecTemplate(name) {
 - [ ] **Ambiguity ≤ 0.2** — 위 항목 가중합 ≥ 0.8
 
 <!-- 선택 선언. 아래 주석을 벗기면 done 가드가 검사한다.
-     미선언 기본값: "tests": "required" (소스가 바뀌면 테스트 파일 변경을 요구), "review": "optional". -->
+     미선언 기본값: "tests": "required" (소스가 바뀌면 테스트 파일 변경을 요구), "review": "optional",
+     "verify": "optional" ("required"면 검증 프레이밍 kind 마커 — -adversarial 등 — 를 요구). -->
 ## Done evidence
 <!--
 \`\`\`json
@@ -312,9 +313,14 @@ const DONE_EVIDENCE_OPEN_RE = /^## Done evidence[ \t]*\r?\n(?:[ \t]*\r?\n)*```js
 
 // tests는 git만으로 판정 가능하고 소스 변경이 있을 때만 발동하므로 기본 ON.
 // review는 마커 신뢰 기반이라 부분 검증뿐이고, 전체 강제는 `--force` 훈련이 되므로 기본 OFF.
-export const DONE_EVIDENCE_DEFAULT = { tests: 'required', review: 'optional' };
+// verify도 같은 이유로 기본 OFF — review와 달리 검증 프레이밍 kind 접미사 마커만 센다.
+export const DONE_EVIDENCE_DEFAULT = { tests: 'required', review: 'optional', verify: 'optional' };
 
-const DONE_EVIDENCE_VALUES = { tests: ['required', 'skip'], review: ['required', 'optional'] };
+const DONE_EVIDENCE_VALUES = {
+  tests: ['required', 'skip'],
+  review: ['required', 'optional'],
+  verify: ['required', 'optional'],
+};
 
 export function parseDoneEvidenceDeclaration(spec) {
   const match = spec.match(DONE_EVIDENCE_RE);
@@ -428,6 +434,12 @@ function parseIsoInstant(value) {
 // 섹션 파싱은 취약하므로 파일 전체를 스캔한다. 형식이 깨진 마커는 없는 것과 같이 취급한다.
 const REVIEW_MARKER_RE = /<!--\s*harness:review\s+([^>]*?)-->/g;
 
+// verify 증거로 인정되는 검증 프레이밍 kind 접미사. 열거의 정본은 commands/harness-review.md
+// 5단계다 — src 상수와의 동기화는 pin 테스트가 강제한다. 엔진 자리는 custom 엔진 이름이 올 수
+// 있어 열거할 수 없으므로 접미사만 대조한다. 일반 review 증거는 현행대로 kind 비대조다.
+export const VERIFY_KIND_SUFFIXES = ['adversarial', 'testcritic', 'shipcheck', 'contrarian', 'simplifier'];
+const VERIFY_KIND_RE = new RegExp(`-(?:${VERIFY_KIND_SUFFIXES.join('|')})$`);
+
 export function parseReviewMarkers(artifact) {
   const markers = [];
   for (const match of artifact.matchAll(REVIEW_MARKER_RE)) {
@@ -489,14 +501,19 @@ async function collectDoneIssues(targetDir, active) {
     }
   }
 
-  // 리뷰 마커 — spec이 명시적으로 required를 선언한 task만 검사한다.
+  // 리뷰·검증 마커 — spec이 명시적으로 required를 선언한 task만 검사한다.
   // "리뷰가 진짜 돌았는가"는 검증할 수 없다. 이 체크가 막는 것은 망각이다.
-  if (evidence.review === 'required') {
+  if (evidence.review === 'required' || evidence.verify === 'required') {
     const markers = artifactContent ? parseReviewMarkers(artifactContent) : [];
     // 창을 모르면(구 task) 시각 비교를 포기하고 마커 존재만 본다.
     const fresh = markers.filter(m => windowStart === null || m.at >= windowStart);
-    if (!fresh.length) {
+    if (evidence.review === 'required' && !fresh.length) {
       issues.push('spec이 `review: required`인데 이 task 기간의 리뷰 마커가 artifact에 없음 (`/harness-review` 실행 후 기록)');
+    }
+    // verify는 검증 프레이밍 kind만 센다 — 검증 마커는 review도 겸하지만 역은 성립하지 않는다.
+    // 가드는 마커 존재·kind·시각만 읽는다(D6: finding 내용 판정은 결정론 게이트 밖).
+    if (evidence.verify === 'required' && !fresh.some(m => VERIFY_KIND_RE.test(m.kind))) {
+      issues.push(`spec이 \`verify: required\`인데 이 task 기간의 검증 마커가 artifact에 없음 (kind 접미사 ${VERIFY_KIND_SUFFIXES.map(s => `-${s}`).join('·')} — 검증 프레이밍 리뷰 실행 후 기록)`);
     }
   }
 

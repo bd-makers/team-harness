@@ -8,6 +8,7 @@ import { promisify } from 'node:util';
 import {
   runDone, taskArtifactTemplate, taskPlanTemplate, taskSpecTemplate, parsePorcelainPaths,
   parseDoneEvidenceDeclaration, classifyChangedPaths, parseReviewMarkers, DONE_EVIDENCE_DEFAULT,
+  VERIFY_KIND_SUFFIXES,
 } from '../src/commands/task.mjs';
 
 const pexec = promisify(execFile);
@@ -311,6 +312,19 @@ test('parseDoneEvidenceDeclaration: 닫히지 않은 fence·미지 키도 invali
   // 오타 키 — `rewiew`가 선언을 조용히 무력화하면 안 된다
   const typoKey = '## Done evidence\n```json\n{ "version": 1, "rewiew": "required" }\n```\n';
   assert.equal(parseDoneEvidenceDeclaration(typoKey).status, 'invalid');
+});
+
+// D6 4단계 — verify 키. review와 같은 required|optional 도메인이지만, 판정 시
+// 검증 프레이밍 kind 접미사 allowlist를 대조하는 검증 전용 증거다.
+test('parseDoneEvidenceDeclaration: verify 키 (기본 optional, 유효 선언, 잘못된 값은 invalid)', () => {
+  assert.equal(parseDoneEvidenceDeclaration('# spec\n').verify, 'optional');
+  const declared = '## Done evidence\n```json\n{ "version": 1, "verify": "required", "tests": "skip" }\n```\n';
+  const d = parseDoneEvidenceDeclaration(declared);
+  assert.equal(d.status, 'configured');
+  assert.equal(d.verify, 'required');
+  assert.equal(d.review, 'optional'); // 미지정 키는 기본값 유지
+  const bad = '## Done evidence\n```json\n{ "version": 1, "verify": "always" }\n```\n';
+  assert.equal(parseDoneEvidenceDeclaration(bad).status, 'invalid');
 });
 
 // ─── Done evidence: 변경 경로 분류 (순수 함수) ──────────────────────────────
@@ -697,6 +711,94 @@ test('firstActivatedAt이 ISO8601이 아니면 창으로 쓰지 않고 degrade�
       assert.ok(logs.some(l => l.startsWith('done:')), `proceeds — ${bogus}는 창이 될 수 없다`);
       assert.ok(!logs.some(l => l.includes('커밋이 0개')), `${bogus}가 미래 창으로 해석되지 않는다`);
     } finally { await rm(dir, { recursive: true, force: true }); }
+  }
+});
+
+// ─── Done evidence: verify (검증 프레이밍 kind allowlist) — D6 4단계 ─────────
+
+const VERIFY_SPEC =
+  '# demo — Spec\n\n## Done evidence\n\n```json\n{ "version": 1, "verify": "required", "tests": "skip" }\n```\n';
+
+// verify의 존재 이유: 일반 리뷰를 검증으로 오인 기록하는 것을 막는다. kind 비대조인
+// review와 달리, 접미사 allowlist에 없는 마커는 있어도 증거가 아니다.
+test('verify: required + 일반 리뷰 마커만 → 차단 (검증 프레이밍 kind가 아니다)', async () => {
+  const { dir } = await makeEvidenceFixture({ spec: VERIFY_SPEC, files: {
+    'docs/tester/demo/demo-artifact.md':
+      taskArtifactTemplate('demo') + `\n- 실제 결과\n\n<!-- harness:review kind=codex at=${new Date().toISOString()} -->\n`,
+  } });
+  try {
+    const { logs, exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1, 'blocks — plain review marker is not verify evidence');
+    assert.ok(logs.some(l => l.includes('검증 마커가 artifact에 없음')), 'flags missing verify');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('verify: required + 창 내 검증 프레이밍 마커 → 통과 (allowlist 전 접미사)', async () => {
+  for (const suffix of VERIFY_KIND_SUFFIXES) {
+    const marker = `<!-- harness:review kind=codex-${suffix} scope=worktree tip=none at=${new Date().toISOString()} -->`;
+    const { dir } = await makeEvidenceFixture({ spec: VERIFY_SPEC, files: {
+      'docs/tester/demo/demo-artifact.md': taskArtifactTemplate('demo') + `\n- 실제 결과\n\n${marker}\n`,
+    } });
+    try {
+      const { logs } = await runDoneCapture(dir);
+      assert.ok(logs.some(l => l.startsWith('done:')), `proceeds — -${suffix} 마커 인정`);
+      assert.ok(!logs.some(l => l.includes('검증 마커')), `-${suffix}: no verify issue`);
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  }
+});
+
+// 검증 마커도 리뷰 마커다(parseReviewMarkers가 모두 돌려준다) — 역만 성립하지 않는다.
+test('verify 마커 하나가 review+verify 동시 required를 만족한다', async () => {
+  const both =
+    '# demo — Spec\n\n## Done evidence\n\n```json\n{ "version": 1, "review": "required", "verify": "required", "tests": "skip" }\n```\n';
+  const marker = `<!-- harness:review kind=gemini-adversarial at=${new Date().toISOString()} -->`;
+  const { dir } = await makeEvidenceFixture({ spec: both, files: {
+    'docs/tester/demo/demo-artifact.md': taskArtifactTemplate('demo') + `\n- 실제 결과\n\n${marker}\n`,
+  } });
+  try {
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds — one verify marker satisfies both');
+    assert.ok(!logs.some(l => l.includes('리뷰 마커')) && !logs.some(l => l.includes('검증 마커')), 'no issue');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('창 밖(이전 task 기간)의 검증 마커는 무효 → 차단', async () => {
+  const stale = new Date(Date.now() - 3_600_000).toISOString();
+  const { dir } = await makeEvidenceFixture({ spec: VERIFY_SPEC, files: {
+    'docs/tester/demo/demo-artifact.md':
+      taskArtifactTemplate('demo') + `\n- 실제 결과\n\n<!-- harness:review kind=codex-adversarial at=${stale} -->\n`,
+  } });
+  try {
+    const { logs, exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1, 'blocks — verify marker predates this task');
+    assert.ok(logs.some(l => l.includes('검증 마커가 artifact에 없음')), 'stale verify marker rejected');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// verify 기본값은 optional — 미선언 task에 검증을 강제하면 --force 훈련이 된다(review와 같은 근거).
+test('verify 미선언(기본 optional) → 검증 마커 없어도 미검사', async () => {
+  const { dir } = await makeEvidenceFixture({ spec: REVIEW_ONLY_SPEC, files: {
+    'docs/tester/demo/demo-artifact.md':
+      taskArtifactTemplate('demo') + `\n- 실제 결과\n\n<!-- harness:review kind=codex at=${new Date().toISOString()} -->\n`,
+  } });
+  try {
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds');
+    assert.ok(!logs.some(l => l.includes('검증 마커')), 'verify check not triggered');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// allowlist의 정본은 commands/harness-review.md 5단계 열거다(마커 계약 문서). src 상수가
+// 문서와 어긋나면 가드가 문서에 없는 계약을 강제하거나 문서의 계약을 놓친다 — 양방향 대조.
+test('VERIFY_KIND_SUFFIXES ↔ harness-review.md 접미사 열거 양방향 동기화', async () => {
+  const doc = await readFile(new URL('../commands/harness-review.md', import.meta.url), 'utf8');
+  for (const s of VERIFY_KIND_SUFFIXES) {
+    assert.match(doc, new RegExp(`<engine>-${s}`), `문서 열거에 -${s} 존재`);
+  }
+  const enumerated = [...doc.matchAll(/<engine>-([a-z]+)/g)].map(m => m[1]);
+  assert.ok(enumerated.length >= VERIFY_KIND_SUFFIXES.length, '문서 열거가 비어 있지 않다');
+  for (const t of enumerated) {
+    assert.ok(VERIFY_KIND_SUFFIXES.includes(t), `문서 열거 -${t}가 src allowlist에 존재`);
   }
 });
 

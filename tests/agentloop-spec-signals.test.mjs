@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { scoreSpecArtifacts, forceAllChecked, aggregateTrials, renderSignals } from './sim/agentloop.mjs';
+// rule 층(순수 채점)을 직접 import한다 — agentloop.mjs를 거치면 하네스 I/O 모듈까지 로드된다.
+import { scoreSpecArtifacts, forceAllChecked, aggregateTrials, renderSignals } from './sim/rules.mjs';
 
 // SC7의 채점 로직만 떼어낸 단위 테스트. sim 실행 자체는 OAuth 토큰이 필요하지만, 신호가
 // 무엇을 증거로 삼는지는 토큰 없이 CI에서 고정된다.
