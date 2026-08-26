@@ -12,6 +12,8 @@
 - [x] 스냅샷 2종 생성 (`harness-overview-0.18.1.html`, `harness-workflow-simulation-0.18.1.html`)
 - [x] `npm run docs:check` · `npm test` 통과 확인 (422 tests · 0 fail)
 - [x] 외부 리뷰(`/harness-review` codex) 실행 후 artifact `## Reviews`에 기록 — P2 2건·P3 2건 전건 조치
+- [x] (범위 확장) `docs/harness-task-guide.html` 갱신 — 사용자 지시로 4번째 문서 포함
+- [x] (범위 확장) 2차 외부 리뷰 실행 후 artifact `## Reviews`에 기록
 - [x] artifact `## 결과` 작성
 
 ## Ontology 변경 로그

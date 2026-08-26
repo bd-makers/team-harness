@@ -14,6 +14,7 @@
 | `docs/harness-overview.html` | 0.14.0 | 0.18.1 | `npm run docs:generate` 재생성 |
 | `docs/harness-overview-0.18.1.html` | — | 신규 | 스냅샷 |
 | `docs/harness-workflow-simulation-0.18.1.html` | — | 신규 | 스냅샷 |
+| `docs/harness-task-guide.html` | 0.14.0 | 0.18.1 | 직접 편집 (범위 확장) |
 
 ### 반영한 사실 교정 8건
 
@@ -33,6 +34,32 @@
    옛 이름은 alias이며 0.19.0에서 제거되므로, 브리프에 박아 두면 그때 깨진다는 함정을 추가했다.
 7. **task 생성 직후 흐름이 바뀌었다** — 다이어그램 옵트인 1회 질문(0.17.0) + `/harness-spec` writer(0.18.0).
 8. **라이프사이클에 ship이 생겼다 (0.17.0)** — 시뮬레이션에 시나리오 7 신설, fleet 부트스트랩 6단계로 삽입.
+
+### 범위 확장 — `harness-task-guide.html` (2026-08-26)
+
+첫 라운드에서 "후속 (범위 밖)"으로 남겼던 4번째 낡은 문서를 사용자 지시로 포함했다.
+이 문서는 개발자가 실제로 첫 task를 만들어 닫을 때 읽는 가이드라 낡은 서술의 비용이 가장 크다.
+
+- **§1 흐름 SVG를 9단계 → 10단계**로 재작업(손으로 쓴 inline SVG라 좌표까지 조정). 9 · ship을
+  회고와 done 사이에 넣고, done 박스를 x=780으로 옮기고, 화살표·게이트 라벨·commit lane 경로를
+  다시 계산했다. 리뷰 박스의 `/harness-codex-review` → `/harness-review`, 게이트 라벨의
+  "종결 가드 4종" → "6종 + 선언 유효성".
+- **생성 파일 5개 → 6개** — `<name>-meta.json` 행 추가(비-SSOT 기계 상태).
+- **원장 생성물화**를 §1과 §8 두 곳에 넣었다. 특히 §8의 마지막 문단은
+  "닫히면 `<user>-task.md`의 `## Completed`와 `docs/task_summary.md`가 갱신된다"고
+  **명시적으로 틀린 사실**을 말하고 있었다 — 이 문서에서 가장 위험한 한 줄이었다.
+- **§3에 `## Done evidence` 절 신설** — 템플릿에 자리가 생겼는데 설명이 없어서, `tests`/`review`
+  두 키와 "선언이 깨지면 그 자체로 차단" 규칙을 적었다.
+- **§6에 리뷰 엔진 표 신설** — codex/gemini/claude/custom과 각각의 분리 수준, 탐지 폴백 체인
+  (codex → gemini → claude), 그리고 claude 엔진은 **컨텍스트 분리만** 제공한다는 한계.
+- **§7의 "훅은 Claude Code 전용 메커니즘" 서술 정정** — 0.15.0이 `.codex/hooks.json`을 추가해
+  Codex도 SessionStart 훅을 받는다. 정확한 표현은 "전용"이 아니라 **"훅 표면의 넓이가 다르다"**.
+  Codex의 신뢰 등록(`[hooks.state]`) 단계도 함께 적었다.
+- **§0에 전역 CLI 버전 드리프트**(0.15.2·`--version` 0.15.1) 문단 추가.
+- **§9 함정 표에 6행 추가** — 원장 미갱신 · `summary --write` 거부 · 테스트 가드 · 리뷰 마커 ·
+  옛 리뷰 커맨드 제거 예고 · Codex 훅 신뢰 등록.
+- fleet guide가 이 문서를 가리키며 달아 두었던 **"⚠ 아직 0.14 기준" 경고를 제거**했다 —
+  경고 자체가 낡은 정보가 됐다.
 
 ### 판단 두 가지
 
@@ -56,10 +83,9 @@ npm test               → tests 422 · pass 421 · fail 0 · skipped 1
 
 ### 후속 (이 task 범위 밖)
 
-- `docs/harness-task-guide.html`이 아직 **0.14 기준**이다. 이 계열의 네 번째 낡은 문서이며,
-  fleet guide가 "단일 세션 절차의 정본"으로 이 문서를 가리킨다. fleet guide 각주에 경고를 달아
-  두었지만 근본 해결은 그 문서를 갱신하는 것이다.
-- `harness-workflow-simulation-0.13.0.html` 스냅샷 누락.
+- `harness-workflow-simulation-0.13.0.html` 스냅샷 누락 (백필 안 함).
+- `docs/harness-task-guide.html`·`docs/harness-fleet-guide.html`에는 버전별 스냅샷 계열이 없다.
+  둘 다 만들 가치가 있는지는 별도 결정 사항이라 이 task에서 정하지 않았다.
 
 ## Reviews
 *Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*

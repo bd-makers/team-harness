@@ -9,6 +9,11 @@
 | attachment-1 | `docs/harness-fleet-guide.html` | 0.14.0 | 0.14.0 |
 | attachment-2 | `docs/harness-overview.html` (생성물) | 0.14.0 | 0.14.0 |
 | attachment-3 | `docs/harness-workflow-simulation.html` | 0.12.0 | 0.13.0 |
+| (추가 지시) | `docs/harness-task-guide.html` | — | 0.14.0 |
+
+**범위 확장 (2026-08-26):** 첨부 3종을 갱신하면서 `docs/harness-task-guide.html`도 같은 계열의
+낡은 문서(0.14.0)임을 확인해 후속으로 남겼는데, 사용자가 "그것도 업데이트 해줘"로 범위에
+포함시켰다. 아래 요구사항·교정 표는 이 문서에도 동일하게 적용된다.
 
 요구사항:
 
@@ -54,13 +59,17 @@
   §9 함정 표를 0.18.1 사실로 교정.
 - **`docs/harness-overview.template.html`** — 버전 태그·footer·스냅샷 목록·히스토리 블록을
   고치고 `npm run docs:generate`로 `harness-overview.html` 재생성.
+- **`docs/harness-task-guide.html`** — 직접 편집. §1 흐름 SVG(9단계 → 10단계, ship 삽입),
+  생성 파일 5개 → 6개(meta.json), 원장 생성물화, §2 프롬프팅 표(`/harness-spec`·`/harness-ship`
+  행 추가 + 리뷰 커맨드 이름), §3 `## Done evidence` 절 신설, §6 리뷰 엔진 표 신설,
+  §7 "훅은 Claude 전용" 서술 정정(Codex SessionStart 훅), §8 종결 절 재작성, §9 함정 6행 추가.
 
 ### 스냅샷 정책
 
 - 만든다: `docs/harness-overview-0.18.1.html`, `docs/harness-workflow-simulation-0.18.1.html`
   (두 파일 모두 기존 버전별 스냅샷 계열이 있다)
-- 만들지 않는다: `docs/harness-fleet-guide-0.18.1.html` — 스냅샷 계열이 없다.
-  없는 관례를 이 task에서 발명하지 않는다.
+- 만들지 않는다: `docs/harness-fleet-guide-0.18.1.html`, `docs/harness-task-guide-0.18.1.html` —
+  두 문서 모두 스냅샷 계열이 없다. 없는 관례를 이 task에서 발명하지 않는다.
 - 백필하지 않는다: `harness-workflow-simulation-0.13.0.html` (누락돼 있으나 이 task 범위 밖)
 
 ## Ontology
