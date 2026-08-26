@@ -225,16 +225,20 @@ export async function runTask(ctx) {
   await writeText(join(dir, `${name}-artifact.md`), taskArtifactTemplate(name));
   await writeText(join(dir, `${name}-context.md`), taskContextTemplate(name));
 
+  // 판정 창의 시작점. 생성 시 1회만 찍고 meta에 굳힌다 — 재활성화(위 분기)는 `switchedAt`만
+  // 갱신하고 이 값은 건드리지 않는다. 둘이 갈라지는 순간이 done 가드 오탐의 원인이었다.
+  const firstActivatedAt = new Date().toISOString();
+
   await writeActive(ctx.targetDir, {
     user, task: name,
     path: `docs/${user}/${name}`,
-    switchedAt: new Date().toISOString(),
+    switchedAt: firstActivatedAt,
   });
 
   // Per-task state only. The shared ledger (docs/task_summary.md and the user index)
   // is rendered by `harness-team summary`; writing it here is what made every parallel
   // branch collide on the same line.
-  await writeText(join(dir, `${name}-meta.json`), taskMetaTemplate(user, name, date));
+  await writeText(join(dir, `${name}-meta.json`), taskMetaTemplate(user, name, date, firstActivatedAt));
 
   if (json) {
     emitObservation(buildEnvelope({
@@ -400,8 +404,18 @@ export function parseReviewMarkers(artifact) {
 }
 
 async function collectDoneIssues(targetDir, active) {
-  const { user, task, switchedAt } = active;
+  const { user, task } = active;
   const issues = [];
+
+  // 판정 창(evidence window) — "이 task의 작업 구간"의 시작.
+  // active.json의 `switchedAt`은 *마지막 활성화* 시각이라 재활성화·task 전환이 창을 초기화하고,
+  // 이미 만족된 증거를 창 밖으로 밀어냈다. `meta.firstActivatedAt`은 생성 시 1회만 기록되므로
+  // 몇 번을 오가도 창이 움직이지 않는다.
+  const meta = await readTaskMeta(targetDir, user, task);
+  const parsedStart = meta && meta.firstActivatedAt ? Date.parse(meta.firstActivatedAt) : NaN;
+  // 필드가 없거나(구 task) 값이 깨졌으면 창을 모른다 → 다른 시각으로 대체하지 않고 시각 비교를 포기한다.
+  const windowStart = Number.isNaN(parsedStart) ? null : parsedStart;
+  const windowStartIso = windowStart === null ? null : meta.firstActivatedAt;
 
   // spec 선언 — 없으면 기본값(tests 검사 / review 미검사), 깨져 있으면 그 자체가 차단 사유.
   let evidence = { status: 'not-configured', ...DONE_EVIDENCE_DEFAULT };
@@ -439,10 +453,9 @@ async function collectDoneIssues(targetDir, active) {
   // 리뷰 마커 — spec이 명시적으로 required를 선언한 task만 검사한다.
   // "리뷰가 진짜 돌았는가"는 검증할 수 없다. 이 체크가 막는 것은 망각이다.
   if (evidence.review === 'required') {
-    const since = switchedAt ? Date.parse(switchedAt) : NaN;
     const markers = artifactContent ? parseReviewMarkers(artifactContent) : [];
-    // switchedAt이 없으면(구 active.json) 시각 비교를 포기하고 마커 존재만 본다.
-    const fresh = markers.filter(m => Number.isNaN(since) || m.at >= since);
+    // 창을 모르면(구 task) 시각 비교를 포기하고 마커 존재만 본다.
+    const fresh = markers.filter(m => windowStart === null || m.at >= windowStart);
     if (!fresh.length) {
       issues.push('spec이 `review: required`인데 이 task 기간의 리뷰 마커가 artifact에 없음 (`/harness-review` 실행 후 기록)');
     }
@@ -471,13 +484,16 @@ async function collectDoneIssues(targetDir, active) {
       if (realDirty.length) issues.push('커밋되지 않은 변경이 있음');
     } catch { /* transient git error → don't fabricate a problem */ }
 
-    if (switchedAt) {
+    // 창을 모르는 구 task에서는 이 두 가드를 통째로 건너뛴다. 대체 시각을 지어내면 창이 넓어져
+    // `git log --since`가 *다른* task의 커밋까지 세게 되고, 가드가 "이 task를 했는가"가 아니라
+    // "리포가 활발했는가"를 재게 된다.
+    if (windowStartIso) {
       try {
-        const { stdout } = await pexec('git', ['-C', targetDir, 'log', `--since=${switchedAt}`, '--oneline'], { maxBuffer: 1024 * 1024 });
-        if (!stdout.trim()) issues.push('task 활성화 이후 커밋이 0개임');
+        const { stdout } = await pexec('git', ['-C', targetDir, 'log', `--since=${windowStartIso}`, '--oneline'], { maxBuffer: 1024 * 1024 });
+        if (!stdout.trim()) issues.push('task 시작 이후 커밋이 0개임');
       } catch {
         // HEAD-less repo (no commits at all) → git log throws → that IS zero commits.
-        issues.push('task 활성화 이후 커밋이 0개임');
+        issues.push('task 시작 이후 커밋이 0개임');
       }
 
       // 테스트 작성 체크 — 커밋 훅(pre-commit-check.sh)은 테스트를 *실행*하지만
@@ -487,7 +503,7 @@ async function collectDoneIssues(targetDir, active) {
         try {
           const { stdout } = await pexec(
             'git',
-            ['-C', targetDir, '-c', 'core.quotepath=false', 'log', `--since=${switchedAt}`, '--name-only', '--pretty=format:'],
+            ['-C', targetDir, '-c', 'core.quotepath=false', 'log', `--since=${windowStartIso}`, '--name-only', '--pretty=format:'],
             { maxBuffer: 8 * 1024 * 1024 },
           );
           const changed = classifyChangedPaths(stdout.split('\n').map(l => l.trim()).filter(Boolean));

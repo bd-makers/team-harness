@@ -4,7 +4,7 @@
 
 ## 결과
 
-**조사·설계까지 완료 · 구현 미착수.** (2026-08-25)
+**구현 완료.** (2026-08-26)
 
 | 항목 | 상태 |
 |---|---|
@@ -12,8 +12,38 @@
 | 원인 확정 | ✅ `switchedAt`이 "마지막 활성화"라 재활성화가 판정 창을 초기화 |
 | 영향 범위 특정 | ✅ `collectDoneIssues()` 의존 가드 3종 (`:442`·`:474`·`:486`) |
 | 설계 긴장 확인 | ✅ `tests/done-guard.test.mjs:461`이 "옛 마커 차단"을 의도로 고정 |
-| 창 기준 결정 | ⏳ (A) `firstActivatedAt` 유력, 미확정 |
-| 구현·테스트 | ⏳ 미착수 |
+| 창 기준 결정 | ✅ **(A) `firstActivatedAt` 단독**, (D) 기각 |
+| 구현·테스트 | ✅ 재현 테스트 선행 → 구현 → 421 tests green |
+
+### 무엇을 바꿨나
+
+판정 창의 시작이 `active.json`의 `switchedAt`에서 `<name>-meta.json`의 새 필드
+`firstActivatedAt`으로 옮겨졌다. 후자는 **task 생성 시 1회만 기록**되고 재활성화·전환이
+건드리지 않는다. `switchedAt`은 판정에서 완전히 빠졌다.
+
+| 파일 | 변경 |
+|---|---|
+| `src/commands/summary.mjs` | `taskMetaTemplate`에 `firstActivatedAt` 추가 |
+| `src/commands/task.mjs` | 생성 시 `firstActivatedAt` 기록(재활성화 경로는 무변경) · `collectDoneIssues`가 `switchedAt` 대신 창을 계산 |
+| `AGENTS.md` | meta.json 필드 목록에 반영 |
+
+### 검증
+
+- **차분 증명:** 재현 테스트 3건을 구현 **전에** 작성해 실패를 확인했고(리뷰 마커 오탐·커밋 0개
+  오탐·구 task 차단), 구현 후 전부 통과했다.
+- **회귀:** `:461` 옛 마커 차단 테스트는 assertion 수정 없이 계속 통과한다.
+- **요구사항 2 그물:** "창이 넓어져도 창 안에 증거가 없으면 여전히 차단" 2건을 새로 추가했다
+  (리뷰·테스트 각각). 이 둘은 구현 전후 모두 통과하는 **그물**이지 재현이 아니다.
+- **불변식:** `재활성화는 meta.firstActivatedAt을 덮어쓰지 않는다` (`tests/summary.test.mjs`).
+- **E2E:** 실제 CLI로 task 생성 → 커밋 → 다른 task 전환 → 복귀 → `done` 이 `--force` 없이 통과.
+- 전체 스위트 **421 tests / 0 fail** (node 24).
+
+### fixture를 고쳐야 했던 이유 (검토 포인트)
+
+`makeEvidenceFixture`와 HEAD-less 테스트의 fixture에 `demo-meta.json`을 추가했다.
+판정 창의 **입력이 바뀌었으므로**, 창을 선언하지 않는 fixture는 "구 task"가 되어 시각 기반
+가드가 아예 돌지 않는다. 기본값을 기존 `switchedAt`과 같은 시각(`now-60s`)으로 둬서
+**기존 27개 테스트의 판정은 하나도 변하지 않는다.** assertion은 손대지 않았다.
 
 한 줄 요약: `done` 가드가 증거를 찾는 창이 `[switchedAt, now]`인데, `switchedAt`은
 **마지막 활성화 시각**이라 재활성화하면 이미 만족된 증거가 창 밖으로 밀려난다.
@@ -73,6 +103,19 @@ cause: task 활성화 이후 커밋이 0개임
 (E) 종결 시에만 완화 — 증상만 가림, 전환 케이스 미해결.
 
 상세·평가는 spec의 "후보" 표가 정본이다.
+
+## 발견 — 범위 밖 (후속 과제)
+
+1. **`<name>-spec.md`가 테스트 파일로 오분류된다.** `isTestPath()`의 basename 규칙
+   `/(^|[._-])(test|spec)s?\.[^.]+$/i`에 `demo-spec.md`의 `-spec.md`가 걸린다.
+   모든 task는 자기 spec.md를 커밋하므로, **소스만 바꾸고 테스트를 안 써도 테스트 가드가
+   통과한다.** 이 task의 창 문제와 독립된 별개 결함이라 여기서 고치지 않았고,
+   대신 요구사항 2 그물 테스트가 이 quirk에 의존하지 않도록 spec 파일 없이 구성했다.
+   → 가드 힘에 직접 영향이 크므로 별도 task로 다룰 값어치가 있다.
+2. **기존 task의 `firstActivatedAt` 백필.** git 이력에서 유도하는 것은 가드 실행 경로가 아니라
+   `migrate`의 일이다. 지금은 degrade로 흡수된다.
+3. **이 task 자신도 구 task다.** `done-guard-window`의 meta는 구 하네스가 만들어
+   `firstActivatedAt`이 없다 — 종결 시 degrade 경로를 탄다(설계대로).
 
 ## Reviews
 

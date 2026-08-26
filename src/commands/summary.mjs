@@ -19,8 +19,11 @@ export const metaRel = (user, task) => join('docs', user, task, `${task}-meta.js
 // Machine-owned per-task state. Lives beside the four SSOT files but is not one of
 // them: agents rewrite spec.md wholesale and the post-commit hook rewrites handoff.md,
 // so neither can hold data the harness must be able to read back.
-export function taskMetaTemplate(user, task, created) {
-  return JSON.stringify({ user, task, created, status: 'open', closedAt: null }, null, 2) + '\n';
+// `firstActivatedAt`은 done 가드의 판정 창 시작점이다. 생성 시 1회만 기록하고 이후 누구도
+// 덮어쓰지 않는다 — active.json의 `switchedAt`은 재활성화마다 갱신되므로 창 기준이 될 수 없다.
+// 없이 쓰인 meta(구 task·migrate 복원분)는 키가 빠지고, 가드는 시각 비교를 포기한다.
+export function taskMetaTemplate(user, task, created, firstActivatedAt) {
+  return JSON.stringify({ user, task, created, firstActivatedAt, status: 'open', closedAt: null }, null, 2) + '\n';
 }
 
 export async function readTaskMeta(targetDir, user, task) {
