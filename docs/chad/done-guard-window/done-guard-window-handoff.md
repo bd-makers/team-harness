@@ -28,3 +28,12 @@ docs/chad/chad-handoff.md                          |  2 +-
  src/commands/task.mjs                              | 13 ++++++--
  tests/done-guard.test.mjs                          | 21 ++++++++++++
  6 files changed, 76 insertions(+), 6 deletions(-)
+
+## 2026-08-26T00:24:55.179Z — 9e57d32 chore(handoff): post-commit hook 출력 반영
+docs/chad/chad-handoff.md                                | 2 +-
+ docs/chad/done-guard-window/done-guard-window-handoff.md | 9 +++++++++
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+## 2026-08-26T00:48:43.510Z — 완료
+
+태스크 종료.
