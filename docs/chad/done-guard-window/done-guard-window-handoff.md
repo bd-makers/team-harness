@@ -19,3 +19,12 @@ AGENTS.md                                          |   5 +-
 docs/chad/chad-handoff.md                                |  8 ++++----
  docs/chad/done-guard-window/done-guard-window-handoff.md | 13 +++++++++++++
  2 files changed, 17 insertions(+), 4 deletions(-)
+
+## 2026-08-26T00:24:50.990Z — a5b4b9b fix(done): 판정 창의 firstActivatedAt을 ISO8601 형태로 먼저 검사
+docs/chad/chad-handoff.md                          |  2 +-
+ .../done-guard-window-artifact.md                  | 37 ++++++++++++++++++++++
+ .../done-guard-window/done-guard-window-handoff.md |  5 +++
+ .../done-guard-window/done-guard-window-plan.md    |  4 +--
+ src/commands/task.mjs                              | 13 ++++++--
+ tests/done-guard.test.mjs                          | 21 ++++++++++++
+ 6 files changed, 76 insertions(+), 6 deletions(-)
