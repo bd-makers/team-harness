@@ -13,6 +13,7 @@
 - harness-comptest (created 2026-07-10)
 
 ## Completed
+- ✅ adversarial-verify-rubric
 - ✅ docs-refresh-0181
 - ✅ testpath-extension-gate
 - ✅ boundary-perf-invariant
