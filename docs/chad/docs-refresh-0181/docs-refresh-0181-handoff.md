@@ -71,3 +71,18 @@ docs/chad/chad-handoff.md                          |   2 +-
 docs/chad/chad-handoff.md                                |  2 +-
  docs/chad/docs-refresh-0181/docs-refresh-0181-handoff.md | 10 ++++++++++
  2 files changed, 11 insertions(+), 1 deletion(-)
+
+## 2026-08-26T04:23:45.167Z — 3323c6f Merge remote-tracking branch 'origin/main' into ao/harness-aijient-team-plugin-28/docs-0181
+CHANGELOG.md                                       |  14 +++
+ docs/ao-worker-rules.md                            | 100 +++++++++++++++++++
+ docs/chad/chad-task.md                             |   3 +-
+ .../testpath-extension-gate-artifact.md            | 107 +++++++++++++++++++++
+ .../testpath-extension-gate-context.md             |  25 +++++
+ .../testpath-extension-gate-handoff.md             |  61 ++++++++++++
+ .../testpath-extension-gate-meta.json              |   8 ++
+ .../testpath-extension-gate-plan.md                |  29 ++++++
+ .../testpath-extension-gate-spec.md                | 104 ++++++++++++++++++++
+ docs/task_summary.md                               |   3 +-
+ src/commands/task.mjs                              |  44 +++++++--
+ tests/done-guard.test.mjs                          | 106 ++++++++++++++++++++
+ 12 files changed, 596 insertions(+), 8 deletions(-)
