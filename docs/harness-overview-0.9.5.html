@@ -210,21 +210,30 @@
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #a78bfa;background:rgba(167,139,250,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
     <strong>🆕 0.9.x — SessionStart task-gate (nudge):</strong>
     세션 시작 시 활성 task 유무를 주입해 "task로 시작" 규율을 <em>강제가 아닌 nudge</em>로 상기한다.
-    <code>0.9.0</code> SessionStart 훅 + <code>harness-team session-context</code> 서브커맨드 ·
-    <code>0.9.1</code> <code>migrate</code> 훅 보강(구버전 비파괴 주입) ·
+    <br>
+    <code>0.9.0</code> SessionStart 훅 + <code>harness-team session-context</code> 서브커맨드
+    <br>
+    <code>0.9.1</code> <code>migrate</code> 훅 보강(구버전 비파괴 주입)
+    <br>
     <code>0.9.2</code> <code>doctor</code>가 훅 누락을 ⚠ 경고(soft — CI 비파괴). block이 아닌 inject, 판단은 Claude 몫.
     <br><br>
     <strong>🆕 0.9.3–0.9.5 — 검증 인프라 &amp; 마찰 제거:</strong>
-    <code>0.9.3</code> <code>harness-sim</code> 시뮬레이션 스킬(설치된 하네스를 영속 <code>harness-playground</code> 3스택에서 실제로 굴려 L4 시뮬레이션 + 날짜 리포트) + <code>tests/e2e/</code> 3스택 E2E 하네스(<code>bin/harness-team.mjs</code>를 spawn해 ephemeral sandbox에 적용·검증 — L1 apply+<code>doctor</code> · L2 task 라이프사이클+post-commit 훅 · L3 <code>AGENTS.md</code> SSOT <code>@import</code> 일관성) ·
-    <code>0.9.4</code> <code>harness-sim</code> 커맨드 래퍼(<code>commands/harness-sim.md</code> — 다른 harness-*와 동일 프리픽스로 노출, 절차 SSOT는 스킬 본문) ·
+    <br>
+    <code>0.9.3</code> <code>harness-sim</code> 시뮬레이션 스킬(설치된 하네스를 영속 <code>harness-playground</code> 3스택에서 실제로 굴려 L4 시뮬레이션 + 날짜 리포트) + <code>tests/e2e/</code> 3스택 E2E 하네스(<code>bin/harness-team.mjs</code>를 spawn해 ephemeral sandbox에 적용·검증 — L1 apply+<code>doctor</code> · L2 task 라이프사이클+post-commit 훅 · L3 <code>AGENTS.md</code> SSOT <code>@import</code> 일관성)
+    <br>
+    <code>0.9.4</code> <code>harness-sim</code> 커맨드 래퍼(<code>commands/harness-sim.md</code> — 다른 harness-*와 동일 프리픽스로 노출, 절차 SSOT는 스킬 본문)
+    <br>
     <code>0.9.5</code> <strong>done-guard post-commit 마찰 제거</strong> — <code>done</code>의 "미커밋 변경" 가드가 post-commit 훅이 자동 재생성하는 handoff 2개를 제외하도록 좁힘(handoff만 dirty면 통과).
     (E2E는 배포 산출물 <code>files</code>에 미포함 — 내부 도구)
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #4df0aa;background:rgba(77,240,170,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
     <strong>✅ 0.8.0 — 세 축:</strong>
-    <strong>P0 강제 전환</strong>(선언→강제: <code>done</code> 종결 가드 · <code>doctor</code> spec-gate) ·
-    <strong>P1 SSOT 역전</strong>(<code>CLAUDE.md</code> → <code>AGENTS.md</code> 오픈 표준 코어) ·
+    <br>
+    <strong>P0 강제 전환</strong>(선언→강제: <code>done</code> 종결 가드 · <code>doctor</code> spec-gate)
+    <br>
+    <strong>P1 SSOT 역전</strong>(<code>CLAUDE.md</code> → <code>AGENTS.md</code> 오픈 표준 코어)
+    <br>
     <strong>P2 <code>--json</code> 계약</strong>(에이전트 구동용 observation 엔벨로프).
     <br><br>
     <strong>SSOT 역전 상세:</strong> 단일 진실의 원천이 <code>CLAUDE.md</code>(벤더 master + alias symlink)에서

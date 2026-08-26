@@ -213,6 +213,7 @@
       border-radius: 8px; padding: 1rem 1.2rem;
       font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.82rem;
       line-height: 2;
+      white-space: pre-wrap;
     }
     .tree-dir { color: var(--accent2); }
     .tree-file { color: var(--muted); }
@@ -261,8 +262,11 @@
     plan 단계를 완료하기 전에는 선언된 생산자·소비자 JSON Schema를 <code>harness-team boundary check</code>가 결정론적으로 대조한다.
     <br><br>
     <strong>🆕 0.9.3–0.9.5 — 이 워크플로우의 검증 &amp; 마찰 제거:</strong>
-    <code>0.9.3</code> 이 흐름 전체(apply → task → commit/post-commit → done 가드)를 3스택 ephemeral sandbox로 자동 재현하는 <code>tests/e2e/</code> + 설치된 하네스를 실제로 굴리는 영속 <code>harness-playground</code> · <code>harness-sim</code> 스킬 ·
+    <br>
+    <code>0.9.3</code> 이 흐름 전체(apply → task → commit/post-commit → done 가드)를 3스택 ephemeral sandbox로 자동 재현하는 <code>tests/e2e/</code> + 설치된 하네스를 실제로 굴리는 영속 <code>harness-playground</code> · <code>harness-sim</code> 스킬
+    <br>
     <code>0.9.5</code> <strong>done-guard 마찰 제거</strong> — 아래 <strong>S4</strong>의 "미커밋 변경" 가드가 post-commit 훅이 자동 재생성하는 handoff 2개(<code>&lt;task&gt;-handoff.md</code>·<code>&lt;user&gt;-handoff.md</code>)를 제외하도록 좁혀, 커밋 직후 <code>done</code>이 항상 <code>--force</code>를 요구하던 마찰을 해소.
+    <br>
     이전 버전 산출물은 같은 디렉터리의 버전별 스냅샷을 참조한다.
   </div>
 

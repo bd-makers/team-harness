@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ko"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>harness-aijient-team-plugin — Docs Index</title>
+
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3350;
+      --accent: #7c6af5;
+      --accent2: #50c8f5;
+      --accent3: #4df0aa;
+      --text: #e2e6f0;
+      --muted: #7a82a0;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    main { max-width: 960px; margin: 0 auto; padding: 3rem 2rem 5rem; }
+    h1 { font-size: 1.6rem; margin-bottom: 0.4rem; }
+    .subtitle { color: var(--muted); font-size: 0.95rem; margin-bottom: 2.5rem; }
+    section { margin-bottom: 2.5rem; }
+    h2 {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--accent2);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+      margin-bottom: 0.9rem;
+    }
+    ul { list-style: none; }
+    li { margin-bottom: 0.15rem; }
+    a {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      color: var(--text);
+      text-decoration: none;
+      padding: 0.5rem 0.7rem;
+      border-radius: 6px;
+      border: 1px solid transparent;
+    }
+    a:hover { background: var(--surface); border-color: var(--border); }
+    a .name { font-weight: 500; }
+    a .desc { color: var(--muted); font-size: 0.85rem; text-align: right; white-space: nowrap; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.4rem; }
+    .grid a { flex-direction: column; align-items: flex-start; gap: 0.15rem; }
+    .grid a .desc { white-space: normal; text-align: left; }
+    footer { color: var(--muted); font-size: 0.8rem; margin-top: 3rem; }
+    code { background: var(--surface2); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.85em; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>harness-aijient-team-plugin</h1>
+    <div class="subtitle">Documentation index — guides, release notes, and task records under <code>docs/</code>.</div>
+
+    <section>
+      <h2>Guides</h2>
+      <ul>
+        <li><a href="harness-overview.html"><span class="name">harness-overview.html</span><span class="desc">Architecture overview (latest)</span></a></li>
+        <li><a href="harness-fleet-guide.html"><span class="name">harness-fleet-guide.html</span><span class="desc">Multi-agent fleet guide</span></a></li>
+        <li><a href="harness-task-guide.html"><span class="name">harness-task-guide.html</span><span class="desc">Task workflow guide</span></a></li>
+        <li><a href="harness-workflow-simulation.html"><span class="name">harness-workflow-simulation.html</span><span class="desc">Workflow simulation walkthrough (latest)</span></a></li>
+        <li><a href="loop-graph-workflow-qna-0.13.html"><span class="name">loop-graph-workflow-qna-0.13.html</span><span class="desc">Loop/graph workflow Q&amp;A (0.13)</span></a></li>
+        <li><a href="prerequisites.md"><span class="name">prerequisites.md</span><span class="desc">Setup prerequisites</span></a></li>
+        <li><a href="ao-worker-rules.md"><span class="name">ao-worker-rules.md</span><span class="desc">AO worker standing rules</span></a></li>
+        <li><a href="decisions.md"><span class="name">decisions.md</span><span class="desc">Team decision log (SSOT for role/protocol rationale)</span></a></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Release notes — what-changes</h2>
+      <div class="grid">
+        <a href="what-changes-latest-version.html"><span class="name">latest-version</span></a>
+        <a href="what-changes-0.18.1.html"><span class="name">0.18.1</span></a>
+        <a href="what-changes-0.18.0.html"><span class="name">0.18.0</span></a>
+        <a href="what-changes-0.17.0.html"><span class="name">0.17.0</span></a>
+        <a href="what-changes-0.16.1.html"><span class="name">0.16.1</span></a>
+        <a href="what-changes-0.16.0.html"><span class="name">0.16.0</span></a>
+        <a href="what-changes-0.15.2.html"><span class="name">0.15.2</span></a>
+        <a href="what-changes-0.15.1.html"><span class="name">0.15.1</span></a>
+        <a href="what-changes-0.15.0.html"><span class="name">0.15.0</span></a>
+        <a href="what-changes-0.14.0.html"><span class="name">0.14.0</span></a>
+        <a href="what-changes-0.13.0.html"><span class="name">0.13.0</span></a>
+        <a href="what-changes-0.12.0.html"><span class="name">0.12.0</span></a>
+      </div>
+    </section>
+
+    <section>
+      <h2>Architecture overview — by version</h2>
+      <div class="grid">
+        <a href="harness-overview-0.18.1.html"><span class="name">0.18.1</span></a>
+        <a href="harness-overview-0.14.0.html"><span class="name">0.14.0</span></a>
+        <a href="harness-overview-0.12.0.html"><span class="name">0.12.0</span></a>
+        <a href="harness-overview-0.9.5.html"><span class="name">0.9.5</span></a>
+        <a href="harness-overview-0.9.2.html"><span class="name">0.9.2</span></a>
+        <a href="harness-overview-0.8.0.html"><span class="name">0.8.0</span></a>
+        <a href="harness-overview-0.7.0.html"><span class="name">0.7.0</span></a>
+        <a href="harness-overview.template.html"><span class="name">template</span></a>
+      </div>
+    </section>
+
+    <section>
+      <h2>Workflow simulation — by version</h2>
+      <div class="grid">
+        <a href="harness-workflow-simulation-0.18.1.html"><span class="name">0.18.1</span></a>
+        <a href="harness-workflow-simulation-0.12.0.html"><span class="name">0.12.0</span></a>
+        <a href="harness-workflow-simulation-0.9.5.html"><span class="name">0.9.5</span></a>
+        <a href="harness-workflow-simulation-0.9.2.html"><span class="name">0.9.2</span></a>
+        <a href="harness-workflow-simulation-0.8.0.html"><span class="name">0.8.0</span></a>
+        <a href="harness-workflow-simulation-0.7.0.html"><span class="name">0.7.0</span></a>
+      </div>
+    </section>
+
+    <section>
+      <h2>Diagram sources</h2>
+      <ul>
+        <li><a href="diagrams/harness-overview/architecture.mmd"><span class="name">architecture.mmd</span></a></li>
+        <li><a href="diagrams/harness-overview/core.mmd"><span class="name">core.mmd</span></a></li>
+        <li><a href="diagrams/harness-overview/workflow.mmd"><span class="name">workflow.mmd</span></a></li>
+        <li><a href="diagrams/harness-overview/task-lifecycle.mmd"><span class="name">task-lifecycle.mmd</span></a></li>
+        <li><a href="diagrams/harness-overview/task-files.mmd"><span class="name">task-files.mmd</span></a></li>
+        <li><a href="diagrams/harness-overview/subagents.mmd"><span class="name">subagents.mmd</span></a></li>
+        <li><a href="diagrams/harness-overview/skills.mmd"><span class="name">skills.mmd</span></a></li>
+        <li><a href="diagrams/harness-overview/rules.mmd"><span class="name">rules.mmd</span></a></li>
+        <li><a href="diagrams/harness-overview/plugin.mmd"><span class="name">plugin.mmd</span></a></li>
+        <li><a href="diagrams/harness-overview/hooks.mmd"><span class="name">hooks.mmd</span></a></li>
+        <li><a href="diagrams/harness-overview/backup-layout.mmd"><span class="name">backup-layout.mmd</span></a></li>
+        <li><a href="diagrams/harness-overview/backup-resolution.mmd"><span class="name">backup-resolution.mmd</span></a></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Task records</h2>
+      <ul>
+        <li><a href="task_summary.md"><span class="name">task_summary.md</span><span class="desc">All tasks, all users — status &amp; created date</span></a></li>
+        <li><a href="chad/chad-task.md"><span class="name">chad/chad-task.md</span><span class="desc">chad's task aggregate</span></a></li>
+        <li><a href="chad/chad-handoff.md"><span class="name">chad/chad-handoff.md</span><span class="desc">chad's session handoff (entry point)</span></a></li>
+      </ul>
+      <p style="color:var(--muted); font-size:0.85rem; margin-top:0.8rem;">
+        Individual task detail (spec / plan / handoff / artifact) lives under <code>chad/&lt;task-name&gt;/</code> — see task_summary.md for the full list.
+      </p>
+    </section>
+
+    <footer>Generated by hand for local navigation — not a build artifact. Update links here if files move.</footer>
+  </main>
+</body>
+</html>

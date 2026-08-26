@@ -211,11 +211,15 @@
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #a78bfa;background:rgba(167,139,250,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
     <strong>🆕 0.9.x — SessionStart task-gate (nudge):</strong>
     세션 시작 시 활성 task 유무를 주입해 "task로 시작" 규율을 <em>강제가 아닌 nudge</em>로 상기한다.
-    <code>0.9.0</code> SessionStart 훅 + <code>harness-team session-context</code> 서브커맨드 ·
-    <code>0.9.1</code> <code>migrate</code> 훅 보강(구버전 비파괴 주입) ·
+    <br/>
+    <code>0.9.0</code> SessionStart 훅 + <code>harness-team session-context</code> 서브커맨드
+    <br/>
+    <code>0.9.1</code> <code>migrate</code> 훅 보강(구버전 비파괴 주입)
+    <br/>
     <code>0.9.2</code> <code>doctor</code>가 훅 누락을 ⚠ 경고(soft — CI 비파괴). block이 아닌 inject, 판단은 Claude 몫.
     <br/><br/>
     <strong>Unreleased — 검증 인프라:</strong>
+    <br/>
     <code>tests/e2e/</code> — 실제 <code>bin/harness-team.mjs</code>를 spawn해 ephemeral sandbox에 적용·검증하는 3스택(bare-node·next·react-native) E2E
     (L1 apply 스모크+<code>doctor</code> · L2 task 라이프사이클+post-commit 훅 · L3 <code>AGENTS.md</code> SSOT <code>@import</code> 일관성) ·
     소비자 프로젝트에서 플로우를 손으로 드라이브하는 영속 <code>harness-playground</code>.
@@ -224,8 +228,11 @@
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #4df0aa;background:rgba(77,240,170,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
     <strong>✅ 0.8.0 — 세 축:</strong>
-    <strong>P0 강제 전환</strong>(선언→강제: <code>done</code> 종결 가드 · <code>doctor</code> spec-gate) ·
-    <strong>P1 SSOT 역전</strong>(<code>CLAUDE.md</code> → <code>AGENTS.md</code> 오픈 표준 코어) ·
+    <br/>
+    <strong>P0 강제 전환</strong>(선언→강제: <code>done</code> 종결 가드 · <code>doctor</code> spec-gate)
+    <br/>
+    <strong>P1 SSOT 역전</strong>(<code>CLAUDE.md</code> → <code>AGENTS.md</code> 오픈 표준 코어)
+    <br/>
     <strong>P2 <code>--json</code> 계약</strong>(에이전트 구동용 observation 엔벨로프).
     <br/><br/>
     <strong>SSOT 역전 상세:</strong> 단일 진실의 원천이 <code>CLAUDE.md</code>(벤더 master + alias symlink)에서
