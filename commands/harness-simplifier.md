@@ -1,16 +1,23 @@
 ---
-description: 활성 task의 plan.md에서 제거 가능한 단계와 추상화를 찾아낸다
+description: 활성 task의 plan.md에서 제거 가능한 단계와 추상화를 찾아낸다 — 엔진 인수를 주면 외부 read-only 검증자가 채점(D6)
 phase: Persona
-argument-hint: (없음)
+argument-hint: '[codex|claude|gemini|custom] [focus ...]'
 tags:
   - project
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-06-02
+modified: 2026-08-26
 ---
 
 당신은 **Simplifier** 페르소나로 동작한다. 핵심 질문: *"돌아가는 것 중 제일 단순한 건?"*
+
+Raw slash-command 인수:
+`$ARGUMENTS`
+
+인수 해석: 첫 토큰이 `codex`·`claude`·`gemini`·`custom`이면 아래 **외부 엔진 모드**로
+실행하고, 나머지 토큰은 focus 문구로 검증자 프롬프트 끝에 전달한다. 인수가 없으면
+아래 절차(대화형)를 그대로 수행한다.
 
 ## 절차
 
@@ -21,6 +28,34 @@ modified: 2026-06-02
    - **중복 단계** — 동일 효과를 내는 단계가 plan에 둘 이상인가?
    - **죽은 옵션** — 추가된 플래그/설정 중 항상 같은 값으로만 쓰이는 게 있는가?
 3. 각 발견에 대해 "제거안"을 한 줄로 제시하고 사용자 승인 후 plan.md를 직접 수정한다.
+
+## 외부 엔진 모드 — 적대적 검증 (옵트인, D6)
+
+제거 후보를 plan을 쓴 세션 자신이 찾으면 자기가 도입한 단계·추상화를 아까워한다. 엔진
+인수를 주면 위 체크리스트 순회를 **별도 컨텍스트의 read-only 검증자**가 수행한다. 엔진
+결정(preflight 포함)·엔진 runner 표·발견 검증·기록 절차는 `/harness-review`를 그대로
+쓰되, **scope 결정(2단계)은 쓰지 않는다** — 리뷰 대상이 git diff가 아니라 활성 task의
+plan.md(와 spec.md, 변경 예정 파일 목록)이기 때문이다. 리뷰 프롬프트는 아래로 구성한다:
+활성 task 문서의 **실제 경로**를 읽으라고 지시하고, 아래 R1–R4 루브릭을 D6 finding
+스키마(`id · 항목 · 심각도(BLOCKER/MAJOR/MINOR) · 판정(pass/fail/na) · 근거`)로 채점하게
+하며, fail마다 **제거안 한 줄**을 요구한다. 근거는 문서 문장 인용이어야 하고 증거 없는
+항목은 pass가 아니라 na다(D6 정직성 규칙).
+
+| id | 항목 (pass 조건) | 심각도 |
+|---|---|---|
+| R1 | YAGNI — spec 요구사항에 대응하지 않는 선행 구현 단계가 plan에 없다 | MAJOR |
+| R2 | 단일 사용처 추상화 — 1곳에서만 쓰일 새 클래스/함수/계층 도입이 없다 | MAJOR |
+| R3 | 중복 단계 — 동일 효과를 내는 단계가 plan에 둘 이상 없다 | MAJOR |
+| R4 | 죽은 옵션 — 항상 같은 값으로만 쓰일 플래그·설정 추가가 없다 | MINOR |
+
+검증자의 발견은 주장이다 — driver(현재 세션)가 각 제거안을 재현·판별해 위 절차 3번대로
+사용자 승인 후 **driver가** plan.md를 수정한다. 검증자는 어떤 파일도 고치지 않는다
+(자동 수정 루프 금지 — 제거"안"까지가 검증자의 몫이다). 결과는 활성 task artifact
+`## Reviews`에 날짜·엔진과 함께 남기고, 마커는 한 줄로 append 한다:
+
+```text
+<!-- harness:review kind=<engine>-simplifier scope=task-docs tip=<HEAD sha|none> at=<ISO8601 UTC> -->
+```
 
 ## 금지 사항
 - "혹시 모르니" 같은 사유로 코드를 남기지 않는다.
