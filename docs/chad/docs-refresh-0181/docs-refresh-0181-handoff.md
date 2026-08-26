@@ -101,3 +101,8 @@ docs/chad/chad-handoff.md                          |  2 +-
  docs/harness-overview.html                         |  2 +-
  docs/harness-task-guide.html                       | 19 +++++++------
  7 files changed, 51 insertions(+), 12 deletions(-)
+
+## 2026-08-26T04:27:44.109Z — 04f6db8 chore(handoff): post-commit hook 출력 반영
+docs/chad/chad-handoff.md                                |  2 +-
+ docs/chad/docs-refresh-0181/docs-refresh-0181-handoff.md | 10 ++++++++++
+ 2 files changed, 11 insertions(+), 1 deletion(-)
