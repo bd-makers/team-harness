@@ -28,3 +28,14 @@ CHANGELOG.md                                       | 11 +++--
  src/commands/task.mjs                              | 22 +++++----
  tests/done-guard.test.mjs                          | 31 +++++++++++--
  6 files changed, 92 insertions(+), 36 deletions(-)
+
+## 2026-08-26T03:06:16.351Z — b14489c fix(done): 산문 판정 회피 경로 차단 — codex 2차 리뷰 P2·P3 반영
+docs/chad/chad-handoff.md                          |  2 +-
+ .../testpath-extension-gate-artifact.md            | 72 +++++++++++++++++++++-
+ .../testpath-extension-gate-context.md             |  7 ++-
+ .../testpath-extension-gate-handoff.md             |  9 +++
+ .../testpath-extension-gate-plan.md                |  6 +-
+ .../testpath-extension-gate-spec.md                |  8 ++-
+ src/commands/task.mjs                              | 17 ++++-
+ tests/done-guard.test.mjs                          | 17 +++++
+ 8 files changed, 124 insertions(+), 14 deletions(-)
