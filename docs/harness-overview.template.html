@@ -202,11 +202,30 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Gemini, Cursor, OpenCode를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.14.0</span>
+      <span class="tag tag-purple">v0.18.1</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
-      <span class="tag tag-green">ESM · Node ≥18</span>
+      <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
     </div>
+  </div>
+
+  <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.16.0–0.18.1 — 원장 분리 · 리뷰 재편 · 증거 기반 종결:</strong>
+    <code>0.16.0</code> <strong>원장이 생성물이 됐다</strong> — <code>docs/task_summary.md</code>·<code>docs/&lt;user&gt;/&lt;user&gt;-task.md</code>를 <code>task</code>·<code>done</code>이 더 이상 쓰지 않고, 기본 브랜치에서 <code>harness-team summary --write</code>가 task 디렉터리를 스캔해 렌더한다(모든 병렬 브랜치가 같은 줄에서 충돌하던 원인 제거). task별 기계 상태는 새 <code>&lt;name&gt;-meta.json</code>이 들고, <code>migrate</code>가 과거 task를 백필한다 ·
+    <code>0.16.1</code> <code>summary --write</code> 가드의 fail-open·<code>codex exec</code> 무한 blocking·<code>release</code> symlink 오판 수정 ·
+    <code>0.17.0</code> 리뷰 커맨드를 <strong>엔진 중립</strong> <code>/harness-review</code>·<code>/harness-adversarial-review</code>로 재편(엔진은 인수: codex·claude·gemini·custom) + PR/MR 직전 단계 <code>/harness-ship</code> + 다이어그램 어댑터 <code>/harness-diagram</code>과 <strong>spec/plan 다이어그램 옵트인</strong>(plan.md에 그 단계가 있는지가 곧 상태) + <code>diagram-design</code> 동반 플러그인 sha 핀 등재 + <code>docs/prerequisites.md</code> ·
+    <code>0.18.0</code> spec 초안 writer <code>/harness-spec</code>(Confluence·Figma·인터뷰 3소스, 검증은 <code>/harness-interview</code>) ·
+    <code>0.18.1</code> <code>done</code> <strong>증거 기반 종결 가드 2종</strong> — 테스트 미작성 체크(기본 ON)와 리뷰 마커 체크(spec <code>## Done evidence</code>에서 opt-in).
+    <br><br>
+    <strong>⚠️ 다음 릴리스 예고 (현재 <code>## [Unreleased]</code>):</strong>
+    <strong>BREAKING — 최소 Node 18 → 24.</strong> Node 18(2025-04-30)·20(2026-04-30)이 모두 지원 종료라 CI가 EOL 런타임만 시험하고 있었다.
+    위 <code>Node ≥24</code> 배지와 <code>docs/prerequisites.md</code>는 이미 이 값(<code>package.json</code>의 <code>engines.node</code>)을 따른다.
+    함께: <code>done</code> 판정 창의 시작점이 <code>active.json</code>의 <code>switchedAt</code>에서 <code>&lt;name&gt;-meta.json</code>의 <code>firstActivatedAt</code>으로 바뀐다(재활성화가 창을 초기화해 이미 만족된 증거를 밀어내던 오탐 제거).
+    <br><br>
+    <strong>🆕 0.15.x — Codex 훅 · CLI 안전:</strong>
+    <code>0.15.0</code> Codex SessionStart 훅 템플릿(<code>templates/.codex/hooks.json</code>)을 신설해 Codex 세션도 Context Card를 주입받는다 + <code>.codex</code>를 백업 아키텍처 관리 대상에 포함 + Cursor 규칙 미러의 경로 스코프 파괴 수정 ·
+    <code>0.15.1</code> <strong><code>--help</code>가 명령을 실제로 실행하던 문제 수정</strong> — <code>harness-team release --help</code>가 진짜 patch 릴리스를 수행했다. 이제 argv 어디에 있든 usage만 출력하고, 오탈자 플래그는 dispatch 전에 <code>exit 2</code>로 거부된다. <code>harness-team --version</code> 신설 ·
+    <code>0.15.2</code> 전역 CLI가 조용히 구버전으로 남던 문제 + <code>doctor</code>가 warning 뒤에도 <code>All checks passed</code>를 출력하던 문제 수정.
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #a78bfa;background:rgba(167,139,250,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
@@ -233,7 +252,7 @@
     <code>AGENTS.md</code>(Linux Foundation 오픈 표준 · 공유 코어 <em>실파일</em>)로 역전되었습니다.
     <code>CLAUDE.md</code> / <code>GEMINI.md</code>는 <code>@AGENTS.md</code>를 import하는 얇은 파일이고, Cursor·OpenCode는 <code>AGENTS.md</code>를 네이티브로 읽습니다.
     alias symlink(<code>.cursorrules</code> 포함)는 폐기됐습니다. 아래 다이어그램은 이 신구조를 반영합니다.
-    (이전 버전 스냅샷: <code>harness-overview-0.9.2.html</code> · <code>harness-overview-0.8.0.html</code> · <code>harness-overview-0.7.0.html</code>)
+    (이전 버전 스냅샷: <code>harness-overview-0.14.0.html</code> · <code>harness-overview-0.12.0.html</code> · <code>harness-overview-0.9.5.html</code> · <code>harness-overview-0.9.2.html</code> · <code>harness-overview-0.8.0.html</code> · <code>harness-overview-0.7.0.html</code>)
   </div>
 
   <!-- ARCHITECTURE -->
@@ -736,7 +755,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.14.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.18.1 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

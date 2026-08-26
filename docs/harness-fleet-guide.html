@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Harness 0.14 — firstmate · Orca 크루에서 task 운용하기</title>
+  <title>Harness 0.18.1 — firstmate · Orca 크루에서 task 운용하기</title>
   <style>
     :root {
       --bg: #0f1117;
@@ -229,7 +229,7 @@
 
   <main>
     <header class="hero">
-      <div class="eyebrow">Fleet guide · 0.14.0</div>
+      <div class="eyebrow">Fleet guide · 0.18.1</div>
       <h1>크루가 여러 명일 때<br>하네스 task는 이렇게 굴린다</h1>
       <p>단일 세션용 절차는 <code>docs/harness-task-guide.html</code>에 있습니다. 이 문서는 <strong>firstmate</strong>가 크루메이트를 워크트리에 띄우고 <strong>Orca</strong>가 그 워크트리와 터미널을 소유하는 환경에서, 하네스 task 계약이 어디서 끊기고 무엇으로 이어 붙이는지를 다룹니다. 결론부터: <strong>활성 포인터는 git을 타고 오지 않으므로 크루메이트의 첫 명령은 task 활성화</strong>입니다.</p>
       <div class="tags">
@@ -254,7 +254,7 @@
 git rev-parse --show-toplevel; test -f .git &amp;&amp; echo "linked worktree OK"
 
 <span class="c"># 2. 하네스 task 활성화 — .harness/active.json은 gitignore라 따라오지 않는다</span>
-<span class="c">#    docs/&lt;user&gt;/&lt;name&gt;/ 이 이미 있으면 '활성화', 없으면 파일 5개 생성</span>
+<span class="c">#    docs/&lt;user&gt;/&lt;name&gt;/ 이 이미 있으면 '활성화', 없으면 md 5개 + &lt;name&gt;-meta.json 생성</span>
 harness-team task &lt;name&gt; --member &lt;user&gt;
 
 <span class="c"># 3. 카드와 경계 확인</span>
@@ -266,7 +266,10 @@ harness-team boundary check        <span class="c"># 선언 없으면 not-config
 <span class="c"># 5. handoff — 훅이 있으면 커밋 때 이미 돌았고, 없거나 확신이 없으면 직접</span>
 harness-team handoff
 
-<span class="c"># 6. 종결은 캡틴/배송 경로 승인 이후 (가드 4종을 통과해야 닫힌다)</span>
+<span class="c"># 6. PR/MR 직전 문서 정합 (0.17.0) — spec·plan·artifact를 코드 현실과 맞춘다</span>
+<span class="c">#    /harness-ship 은 PR/MR을 만들지 않는다. "준비 완료" 보고에서 멈춘다.</span>
+
+<span class="c"># 7. 종결은 캡틴/배송 경로 승인 이후 (가드 6종을 통과해야 닫힌다)</span>
 harness-team done</code></pre>
 
       <div class="callout bad">
@@ -274,6 +277,7 @@ harness-team done</code></pre>
         <div>
           <h5>워크트리에서 절대 돌리지 않는 것</h5>
           <p><code>harness-team apply</code> · <code>init</code> · <code>sync</code> · <code>migrate</code> · <code>upgrade</code> · <code>backup</code> — 관리 구역(<code>AGENTS.md</code> 마커 섹션, <code>.claude/</code>, rules)을 재생성해 브랜치를 오염시킵니다. 하네스 적용은 <strong>별도 task</strong>의 일이고, 크루메이트의 기본 자세는 "이미 적용된 하네스를 쓴다"입니다.</p>
+          <p><strong>0.16.0 이후 하나 더:</strong> <code>harness-team summary --write</code>. 원장은 <strong>기본 브랜치에서만</strong> 렌더합니다 — 피처 브랜치에서 쓰면 0.16.0이 없앤 병렬 충돌이 그대로 돌아옵니다. CLI가 기본 브랜치가 아닐 때 거부하지만(0.16.1에서 fail-open도 닫혔습니다 <span class="pill pill-src">소스</span>), <code>--force</code>로 뚫지 마세요. 확인만 필요하면 <code>--check</code>, 눈으로만 보려면 인자 없이 실행합니다.</p>
         </div>
       </div>
     </section>
@@ -416,8 +420,11 @@ harness-team task th-token-refresh --member chad</code></pre>
 - 첫 명령: `harness-team task th-token-refresh --member chad`
   <span class="c"># 활성 포인터는 gitignore라 이 워크트리에 없다. 이걸 건너뛰면 handoff·done이 조용히 무력화된다.</span>
 - 커밋 후: `harness-team handoff`
-- 금지: `apply` / `init` / `sync` / `migrate` / `upgrade` / `backup`
-- 완료 보고 전: `harness-team done`이 통과해야 한다 (미완 박스·artifact 템플릿·미커밋·커밋 0개)</code></pre>
+- 금지: `apply` / `init` / `sync` / `migrate` / `upgrade` / `backup` / `summary --write`
+- PR/MR 직전: `/harness-ship` — spec·plan·artifact를 코드 현실과 맞춘다 (PR은 만들지 않는다)
+- 완료 보고 전: `harness-team done`이 통과해야 한다
+  <span class="c"># 6종: 미완 박스 · artifact 템플릿 · 미커밋 · 커밋 0개 · 테스트 미작성 · 리뷰 마커(spec opt-in)</span>
+  <span class="c"># 테스트가 불필요한 task면 spec의 `## Done evidence`에 {"tests":"skip"}을 선언한다 — 무시하지 말고 선언한다.</span></code></pre>
 
       <p>그 위에 이 저장소에서 이미 검증된 브리프 3절 패턴을 얹습니다 — <strong>이미 확인된 사실(다시 조사하지 말 것)</strong> · <strong>하지 말 것</strong> · <strong>검증(증거 없이 완료 처리 금지)</strong>. 첫 절이 재조사를 막고, 둘째 절이 관리 구역 훼손을 막고, 셋째 절이 "보고서는 상세한데 산출물이 없는" 실패를 막습니다.</p>
 
@@ -443,13 +450,21 @@ harness-team task th-token-refresh --member chad</code></pre>
         <table>
           <thead><tr><th>모드</th><th>리뷰 주인</th><th><code>## Reviews</code>에 적는 것</th><th>하지 않는 것</th></tr></thead>
           <tbody>
-            <tr><td><code>no-mistakes</code></td><td>파이프라인</td><td>파이프라인 판정 · risk 등급 · ask-user 결정과 조치 · PR URL</td><td><code>/harness-codex-review</code>를 위에 덧붙이지 않는다 <span class="pill pill-no">금지</span></td></tr>
-            <tr><td><code>direct-PR</code></td><td>하네스 외부 리뷰가 <strong>유일한</strong> 리뷰</td><td><code>/harness-codex-review</code> 요약·발견·조치(날짜)</td><td>파이프라인을 흉내내는 수동 게이트를 새로 만들지 않는다</td></tr>
+            <tr><td><code>no-mistakes</code></td><td>파이프라인</td><td>파이프라인 판정 · risk 등급 · ask-user 결정과 조치 · PR URL</td><td><code>/harness-review</code>를 위에 덧붙이지 않는다 <span class="pill pill-no">금지</span></td></tr>
+            <tr><td><code>direct-PR</code></td><td>하네스 외부 리뷰가 <strong>유일한</strong> 리뷰</td><td><code>/harness-review</code> 요약·발견·조치(날짜) + 마커 한 줄</td><td>파이프라인을 흉내내는 수동 게이트를 새로 만들지 않는다</td></tr>
             <tr><td><code>local-only</code></td><td>동일</td><td>동일 + 병합 승인자와 시각</td><td>가드 없는 저수준 merge 명령을 직접 부르지 않는다</td></tr>
           </tbody>
         </table>
       </div>
       <p>어느 모드든 <strong>기록 없는 리뷰는 안 한 리뷰</strong>라는 하네스 규칙은 그대로입니다. Gemini 병렬 리뷰가 불가능한 머신에서는 "미실행" 사실을 남깁니다.</p>
+      <div class="callout warn">
+        <div class="mark">🔀</div>
+        <div>
+          <h5>리뷰 커맨드가 엔진 중립으로 재편됐다 (0.17.0) — 그리고 기록이 기계 판독 대상이 됐다 (0.18.1)</h5>
+          <p>이름은 <code>/harness-review</code>·<code>/harness-adversarial-review</code>이고, 엔진(<code>codex</code>·<code>claude</code>·<code>gemini</code>·<code>custom</code>)은 <strong>인수</strong>로 고릅니다. 옛 이름 <code>/harness-codex-review</code>·<code>/harness-codex-adversarial-review</code>는 deprecated alias로 살아 있지만 <strong>0.19.0에서 제거</strong>됩니다 — 브리프에 옛 이름을 박아 두면 그때 조용히 깨집니다.</p>
+          <p>0.18.1부터 <code>/harness-review</code>는 artifact <code>## Reviews</code>에 <code>&lt;!-- harness:review kind=&lt;engine&gt; at=&lt;ISO8601&gt; --&gt;</code> 마커 한 줄을 append합니다. spec이 <code>review: required</code>를 선언한 task는 <strong><code>done</code>이 이 마커를 찾습니다</strong>. 즉 리뷰를 돌리고도 기록하지 않으면 이제 종결이 막힙니다 — "기록 없는 리뷰는 안 한 리뷰"가 규범에서 <strong>가드</strong>가 됐습니다.</p>
+        </div>
+      </div>
 
       <h3 class="sub">scout에는 하네스 task를 만들지 않는다</h3>
       <p>scout의 산출물은 <code>data/&lt;id&gt;/report.md</code>이고 워크트리는 scratch로 폐기됩니다 <span class="pill pill-doc">문서</span>. 거기서 하네스 task를 만들면 <strong>폐기될 워크트리에 SSOT를 쓰는</strong> 셈입니다. 규칙:</p>
@@ -525,16 +540,17 @@ harness-team task th-token-refresh --member chad</code></pre>
 
     <section id="conflict">
       <h2 class="section-title">6. 병렬 충돌 지도 — 어느 하네스 파일이 실제로 깨지나</h2>
-      <p class="section-sub">task 문서는 task별로 갈라져 있어 안전하지만, <strong>사용자 단위 집계 파일 3개</strong>는 브랜치마다 갈립니다.</p>
+      <p class="section-sub">0.16.0 이후 실제로 깨지는 파일은 <strong>하나</strong>입니다. 원장 2개가 생성물이 되면서 병렬 충돌의 주 원인이 사라졌습니다.</p>
 
       <div class="table-wrap">
         <table>
           <thead><tr><th>파일</th><th>병렬에서 어떻게 깨지나</th><th>해결</th></tr></thead>
           <tbody>
             <tr><td><code>docs/&lt;user&gt;/&lt;name&gt;/*</code></td><td>task별 디렉터리라 서로 닿지 않는다</td><td>1 워크트리 = 1 task 규칙만 지키면 충돌 없음</td></tr>
-            <tr><td><code>docs/&lt;user&gt;/&lt;user&gt;-handoff.md</code></td><td><strong>매 커밋마다 전체가 덮어써진다</strong>(<code>writeFile</code>) → 브랜치마다 다른 내용 → 병합 시 거의 항상 충돌 <span class="pill pill-src">소스</span></td><td>어느 쪽이든 취해 충돌을 닫고 <code>harness-team handoff</code>로 재생성한다. 손으로 병합하지 않는다</td></tr>
-            <tr><td><code>docs/task_summary.md</code></td><td>표 끝에 행 append → 같은 자리에 두 행</td><td>양쪽 행을 모두 살린다(정보 손실 없음)</td></tr>
-            <tr><td><code>docs/&lt;user&gt;/&lt;user&gt;-task.md</code></td><td><code>## Open</code> 아래 삽입, <code>done</code> 시 <code>## Completed</code>로 이동</td><td>양쪽 항목 유지 후 실제 done 상태만 정리</td></tr>
+            <tr><td><code>docs/&lt;user&gt;/&lt;name&gt;/&lt;name&gt;-meta.json</code></td><td>task별 파일이라 서로 닿지 않는다. <strong>손으로 고치지 않는다</strong> <span class="pill pill-src">소스</span></td><td><code>task</code>·<code>done</code>만 쓴다. 병합 충돌이 나면 실제 상태(<code>status</code>·<code>closedAt</code>)를 기준으로 고른다</td></tr>
+            <tr><td><code>docs/&lt;user&gt;/&lt;user&gt;-handoff.md</code></td><td><strong>매 커밋마다 전체가 덮어써진다</strong>(<code>writeFile</code>) → 브랜치마다 다른 내용 → 병합 시 거의 항상 충돌 <span class="pill pill-src">소스</span>. <strong>0.18.1 기준 이것이 유일하게 남은 충돌원</strong></td><td>어느 쪽이든 취해 충돌을 닫고 <code>harness-team handoff</code>로 재생성한다. 손으로 병합하지 않는다</td></tr>
+            <tr><td><code>docs/task_summary.md</code></td><td><strong>더 이상 충돌하지 않는다 (0.16.0)</strong> — <code>task</code>·<code>done</code>이 이 파일을 건드리지 않는다 <span class="pill pill-src">소스</span></td><td>기본 브랜치에서 <code>harness-team summary --write</code>로만 렌더한다. 워크트리에서는 쓰지 않는다</td></tr>
+            <tr><td><code>docs/&lt;user&gt;/&lt;user&gt;-task.md</code></td><td>동일 — 생성물이다</td><td>동일</td></tr>
             <tr><td><code>.harness/active.json</code></td><td>추적되지 않아 충돌 자체가 불가능</td><td>—</td></tr>
           </tbody>
         </table>
@@ -544,6 +560,7 @@ harness-team task th-token-refresh --member chad</code></pre>
         <div class="mark">🧭</div>
         <div>
           <p>충돌을 줄이는 배치 규칙: <strong>서로 다른 task는 서로 다른 워크트리에서, 같은 task의 후속 단계는 같은 워크트리에서</strong>. 파일이 겹치는 것 자체는 직렬화 이유가 못 됩니다 — 진짜 이유는 의미적 의존, 공유 가변 외부 상태, 양립 불가한 마이그레이션입니다 <span class="pill pill-doc">문서</span>.</p>
+          <p style="margin-top:0.6rem"><strong>0.16.0이 무엇을 바꿨나:</strong> 예전에는 <code>task</code>가 원장에 행을 append하고 <code>done</code>이 그 행을 고쳤습니다. 모든 브랜치가 같은 줄을 건드리니 병렬 PR마다 충돌이 났고, 그 충돌을 손으로 푸는 과정에서 상태가 유실됐습니다. 지금은 상태가 task별 <code>&lt;name&gt;-meta.json</code>에 있고 원장은 그것을 스캔해 렌더합니다 — <strong>충돌할 공유 상태 자체가 없어졌습니다.</strong> 이 문서가 예전에 "집계 파일 3개"라고 부르던 것은 이제 <strong>handoff 1개</strong>입니다.</p>
         </div>
       </div>
     </section>
@@ -552,12 +569,13 @@ harness-team task th-token-refresh --member chad</code></pre>
       <h2 class="section-title">7. 안전 — "확인 목적"으로 실행하면 안 되는 것</h2>
       <p class="section-sub">감독자가 상태를 확인하려고 프로젝트 명령을 돌리는 순간이 가장 위험합니다. <code>--help</code>가 없는 명령은 인자를 그대로 실행으로 받습니다.</p>
 
-      <div class="callout bad">
-        <div class="mark">💥</div>
+      <div class="callout good">
+        <div class="mark">🩹</div>
         <div>
-          <h5><code>harness-team release --help</code>는 도움말이 아니라 실제 patch 릴리스다</h5>
-          <p>CLI는 <code>help</code>/<code>--help</code>/<code>-h</code>를 <strong>명령 위치에서만</strong> 처리합니다. <code>release</code> 뒤의 <code>--help</code>는 플래그로 파싱되고, bump는 <code>taskArgs[0] || 'patch'</code>로 결정됩니다 <span class="pill pill-src">소스</span> — 즉 4개 매니페스트가 실제로 올라가고 캐시·마켓플레이스가 동기화됩니다. 실제 사고 기록이 있습니다(2026-08-07) <span class="pill pill-doc">문서</span>.</p>
-          <p>절차는 <strong>문서로 읽고</strong>(<code>MAINTAINING.md</code> 릴리스 절차) 실행은 작업자에게 맡기세요. 확인이 꼭 필요하면 안전한 형태는 <code>harness-team release --dry-run</code>입니다 — 이 플래그는 실제로 존재하며 변경 전에 결과만 돌려줍니다 <span class="pill pill-src">소스</span>.</p>
+          <h5><code>harness-team release --help</code>는 <strong>0.15.1에서 고쳐졌다</strong> — 이제 usage만 출력한다</h5>
+          <p>0.14.0까지 CLI는 <code>help</code>/<code>--help</code>/<code>-h</code>를 <strong>명령 위치에서만</strong> 처리했습니다. <code>release</code> 뒤의 <code>--help</code>는 평범한 boolean 플래그로 파싱됐고 bump는 <code>taskArgs[0] || 'patch'</code>로 결정돼, <strong>실제 patch 릴리스가 수행됐습니다</strong>(매니페스트 4개 범프 + 캐시·마켓플레이스 동기화). 실제 사고 기록이 있습니다(2026-08-07) <span class="pill pill-doc">문서</span>.</p>
+          <p>0.15.1부터는 argv 어디에 있든 help로 해석돼 <strong>usage만 출력하고 명령을 실행하지 않습니다</strong>. 덤으로 오탈자 플래그(<code>--dryrun</code> 등)도 dispatch <em>전에</em> <code>exit 2</code>로 거부되고, 없던 <code>harness-team --version</code>이 생겼습니다 <span class="pill pill-src">소스</span>.</p>
+          <p><strong>그래도 남는 규칙:</strong> ① 이 수정은 <strong>새 코드가 실제로 실행될 때만</strong> 유효합니다 — 아래 "두 채널" 카드대로 PATH의 <code>harness-team</code>이 옛 클론을 가리키면 <strong>옛 동작 그대로</strong>입니다. 확인은 <code>harness-team --version</code>으로 합니다(0.15.1 미만이면 이 명령 자체가 <code>Unknown command</code>로 떨어지는 것이 곧 신호입니다). ② 하네스 밖의 낯선 CLI에는 이 수정이 없습니다 — <strong><code>--help</code>를 붙여 탐색하지 말고 소스·문서를 먼저 읽는</strong> 습관은 그대로 유지하세요. ③ 릴리스 절차는 <code>MAINTAINING.md</code>로 읽고 실행은 작업자에게 맡깁니다. 결과만 보려면 <code>--dry-run</code>입니다.</p>
         </div>
       </div>
 
@@ -581,7 +599,8 @@ harness-team task th-token-refresh --member chad</code></pre>
         <li>칸반·crew-state의 "done"을 병합 근거로 쓰지 않는다 <span class="pill pill-doc">문서</span>.</li>
         <li>워커 보고서는 <strong>증거를 확인</strong>한다 — <code>ls</code> 한 번, 파일 한 번 열기. 상세하고 일관된 보고서가 산출물의 존재 증명은 아니다.</li>
         <li>반대로 워커가 <strong>스스로 신고한 간극</strong>은 대개 진짜다 — 확인하고 닫는다.</li>
-        <li>하네스 쪽 증거는 <code>done</code> 가드다: 미완 박스 0, artifact 내용 있음, 미커밋 없음, 활성화 이후 커밋 ≥ 1.</li>
+        <li>하네스 쪽 증거는 <code>done</code> 가드 <strong>6종</strong>이다: 미완 박스 0 · artifact 내용 있음 · 미커밋 없음 · task 시작 이후 커밋 ≥ 1 · <strong>소스가 바뀌었으면 테스트도 바뀜</strong>(0.18.1, 기본 ON — 문서·설정만 바뀐 task엔 발동하지 않는다) · <strong>spec이 <code>review: required</code>면 리뷰 마커 존재</strong>(0.18.1, spec opt-in).</li>
+            <li>가드가 막는 것은 악의가 아니라 <strong>망각</strong>이다. <code>--force</code>로 뚫었다면 <strong>그 이유가 artifact에 있어야</strong> 하고, 없으면 그 <code>done</code>은 증거가 아니다.</li>
       </ul>
     </section>
 
@@ -594,9 +613,11 @@ harness-team task th-token-refresh --member chad</code></pre>
             <li>워크트리 격리 assertion 통과했다</li>
             <li><code>harness-team task &lt;name&gt; --member &lt;user&gt;</code>로 활성화했다</li>
             <li>plan 체크박스가 실제 상태와 일치한다(위장 체크 없음)</li>
-            <li>artifact <code>## 결과</code>를 썼고, 모드에 맞는 <code>## Reviews</code>를 남겼다</li>
+            <li>artifact <code>## 결과</code>를 썼고, 모드에 맞는 <code>## Reviews</code>를 남겼다 — <code>/harness-review</code>를 돌렸다면 <strong>마커 한 줄</strong>까지</li>
             <li><code>context check</code> green, <code>boundary check</code> pass 또는 not-configured</li>
+            <li>소스를 고쳤다면 테스트도 고쳤다 — 불필요하면 spec <code>## Done evidence</code>에 <code>"tests": "skip"</code>을 <strong>선언</strong>했다</li>
             <li>커밋했고 <code>harness-team handoff</code>가 handoff를 갱신했다</li>
+            <li>PR/MR을 열기 직전이라면 <code>/harness-ship</code>으로 spec·plan·artifact를 코드 현실과 맞췄다</li>
             <li>status는 <code>done: …</code> 형식으로, 증거 경로를 포함해 보고했다</li>
           </ul>
         </div>
@@ -604,9 +625,10 @@ harness-team task th-token-refresh --member chad</code></pre>
           <h4>캡틴/코디네이터 — 병합 승인 전</h4>
           <ul>
             <li>PR이 <strong>전체 URL</strong>로 왔고 CI가 green이다(red 병합 금지)</li>
-            <li>diff에 task 문서 5종의 갱신이 들어 있다</li>
+            <li>diff에 task 문서 5종(+ <code>&lt;name&gt;-meta.json</code>)의 갱신이 들어 있다</li>
             <li>artifact가 템플릿 그대로가 아니다 — 한 번 열어서 확인했다</li>
-            <li>집계 파일 3개의 충돌을 <code>handoff</code> 재생성으로 닫았다</li>
+            <li><code>&lt;user&gt;-handoff.md</code> 충돌을 <code>harness-team handoff</code> 재생성으로 닫았다 (원장 2개는 0.16.0부터 충돌하지 않는다)</li>
+            <li>병합 후 기본 브랜치에서 <code>harness-team summary --write</code>로 원장을 갱신했다</li>
             <li><code>harness-team done</code>이 <code>--force</code> 없이 통과했다(우회했다면 이유가 artifact에 있다)</li>
             <li>병합은 기록되는 경로로 했다(가드 없는 저수준 merge 금지)</li>
           </ul>
@@ -624,10 +646,15 @@ harness-team task th-token-refresh --member chad</code></pre>
             <tr><td><code>done</code>이 "no active task"라고 한다</td><td>같은 원인</td><td>활성화 후 다시 <code>done</code></td></tr>
             <tr><td><code>docs/&lt;다른-이름&gt;/&lt;task&gt;/</code>가 생겼다</td><td><code>config.json</code>이 추적되지 않아 member가 <code>git config user.name</code>/<code>$USER</code>로 갈렸다</td><td>잘못된 트리 제거, 브리프에 <code>--member</code> 고정</td></tr>
             <tr><td>브랜치를 병합할 때마다 handoff 충돌</td><td><code>&lt;user&gt;-handoff.md</code>는 전체 덮어쓰기 파일</td><td>어느 쪽이든 취하고 <code>harness-team handoff</code> 재생성</td></tr>
+            <tr><td>병합했는데 <code>task_summary.md</code>가 그대로다</td><td>0.16.0부터 원장은 <strong>생성물</strong>이라 <code>task</code>·<code>done</code>이 쓰지 않는다</td><td>기본 브랜치에서 <code>harness-team summary --write</code> 실행 후 커밋</td></tr>
+            <tr><td>워크트리에서 <code>summary --write</code>가 거부됐다</td><td>가드가 기본 브랜치만 허용한다(의도된 동작)</td><td>거부가 맞다. <code>--force</code>로 뚫지 말고 기본 브랜치에서 돌린다</td></tr>
+            <tr><td><code>done</code>이 "테스트 파일 변경이 없음"으로 막힌다</td><td>0.18.1 테스트 증거 가드. 소스는 바뀌었는데 테스트가 안 바뀌었다</td><td>테스트를 쓰거나, 정말 불필요하면 spec <code>## Done evidence</code>에 <code>"tests": "skip"</code>을 선언한다</td></tr>
+            <tr><td><code>done</code>이 "리뷰 마커가 없음"으로 막힌다</td><td>spec이 <code>review: required</code>인데 artifact에 마커가 없다 — 리뷰를 안 했거나 <strong>기록을 빠뜨렸다</strong></td><td><code>/harness-review</code>를 돌리고 <code>## Reviews</code>에 결과 + 마커를 남긴다</td></tr>
+            <tr><td>브리프의 <code>/harness-codex-review</code>가 어느 날 사라진다</td><td>0.17.0에서 <code>/harness-review</code>로 재편, 옛 이름은 alias이며 <strong>0.19.0에서 제거</strong></td><td>브리프·문서의 커맨드 이름을 지금 <code>/harness-review</code>로 바꾼다</td></tr>
             <tr><td>워크트리에서 <code>apply</code>를 돌려 diff가 폭발했다</td><td>관리 구역 재생성</td><td>해당 파일들 <code>git checkout</code>으로 되돌리고, 하네스 갱신은 전용 task로 분리</td></tr>
             <tr><td>리뷰가 두 번 쌓였다</td><td><code>no-mistakes</code> 위에 수동 리뷰를 얹었다</td><td>모드별 리뷰 주인 표를 따르고, 파이프라인 결과를 <code>## Reviews</code>에 기록</td></tr>
             <tr><td>scout 워크트리와 함께 task 문서가 사라졌다</td><td>scratch 워크트리에 하네스 task를 만들었다</td><td>scout엔 task를 만들지 않고, ship promote 시 생성 + 리포트 경로 인용</td></tr>
-            <tr><td>"버전 확인"이 릴리스를 일으켰다</td><td><code>release --help</code>가 실제 patch bump</td><td>절차는 문서로 읽고 실행은 작업자에게. <code>--dry-run</code>만 안전</td></tr>
+            <tr><td>"버전 확인"이 릴리스를 일으켰다</td><td>0.14.0까지 <code>release --help</code>가 실제 patch bump였다. <strong>0.15.1에서 수정</strong>됐지만, PATH의 CLI가 옛 클론이면 옛 동작 그대로다</td><td><code>harness-team --version</code>으로 채널부터 확인. 절차는 문서로 읽고 실행은 작업자에게. 결과만 보려면 <code>--dry-run</code></td></tr>
             <tr><td>워커가 조용해서 종료시켰다</td><td>timeout/idle을 실패로 오독</td><td>rolling <code>check --wait</code>를 유지. <code>worker_done</code>·escalation·종료 외에는 살아있는 것으로 본다</td></tr>
           </tbody>
         </table>
@@ -641,10 +668,10 @@ harness-team task th-token-refresh --member chad</code></pre>
         </div>
       </div>
 
-      <p class="section-sub" style="margin-top:2rem">정본: 단일 세션 절차는 <code>docs/harness-task-guide.html</code> · 하네스 작업 프로토콜은 <code>AGENTS.md</code> · firstmate 라이프사이클과 브리프 계약은 그 <code>AGENTS.md §7·§11</code>과 <code>bin/fm-brief.sh --help</code> · Orca 명령 표면은 <code>orca skills get orca-cli</code>와 <code>orca skills get orchestration</code>.</p>
+      <p class="section-sub" style="margin-top:2rem">정본: 단일 세션 절차는 <code>docs/harness-task-guide.html</code> <span style="color:var(--warning)">(⚠ 이 문서는 아직 0.14 기준입니다 — 원장·리뷰 커맨드·<code>done</code> 가드는 이 페이지를 따르세요)</span> · 하네스 작업 프로토콜은 <code>AGENTS.md</code> · firstmate 라이프사이클과 브리프 계약은 그 <code>AGENTS.md §7·§11</code>과 <code>bin/fm-brief.sh --help</code> · Orca 명령 표면은 <code>orca skills get orca-cli</code>와 <code>orca skills get orchestration</code>.</p>
     </section>
   </main>
 
-  <footer>Harness Aijient Team Plugin 0.14.0 · firstmate · Orca 크루 운용 가이드 · 실측 표기는 2026-08-11 확인</footer>
+  <footer>Harness Aijient Team Plugin 0.18.1 · firstmate · Orca 크루 운용 가이드 · 실측 표기는 2026-08-11 확인 · 0.18.1 기준 갱신 2026-08-26</footer>
 </body>
 </html>
