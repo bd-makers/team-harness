@@ -21,3 +21,17 @@
 docs/chad/chad-handoff.md                                |  6 +++---
  docs/chad/docs-refresh-0181/docs-refresh-0181-handoff.md | 15 +++++++++++++++
  2 files changed, 18 insertions(+), 3 deletions(-)
+
+## 2026-08-26T03:07:37.655Z — 013fb3d docs(review): codex 리뷰 P2 2건·P3 2건 조치
+docs/chad/chad-handoff.md                          |  2 +-
+ .../docs-refresh-0181-artifact.md                  | 19 +++++++++++++++++-
+ .../docs-refresh-0181/docs-refresh-0181-handoff.md |  5 +++++
+ .../docs-refresh-0181/docs-refresh-0181-plan.md    |  4 ++--
+ docs/diagrams/harness-overview/task-files.mmd      | 10 ++++++++--
+ docs/diagrams/harness-overview/task-lifecycle.mmd  | 13 +++++++-----
+ docs/harness-fleet-guide.html                      |  8 +++++---
+ docs/harness-overview-0.18.1.html                  | 23 +++++++++++++++-------
+ docs/harness-overview.html                         | 23 +++++++++++++++-------
+ docs/harness-workflow-simulation-0.18.1.html       |  2 +-
+ docs/harness-workflow-simulation.html              |  2 +-
+ 11 files changed, 81 insertions(+), 30 deletions(-)
