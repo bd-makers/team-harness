@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-persona-external-verify
+verify-evidence-gate
 
 ## Last Commit (2026-08-26)
-e5ac9ea feat(d6): 페르소나 층 외부 검증(3단계) — contrarian/simplifier 외부 엔진 모드 + interview 선행 채점
+87bc561 feat(d6): 검증 증거 결정론 게이트(4단계) — done 가드 verify 키·kind allowlist + sim rule 층 승격 + AO §8 검증 슬롯
 
 ## Full Context
-→ docs/chad/persona-external-verify/persona-external-verify-handoff.md
+→ docs/chad/verify-evidence-gate/verify-evidence-gate-handoff.md
