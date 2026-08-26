@@ -17,8 +17,8 @@
 - [x] 구현 — 창 기준 교체 + 재활성화가 창 시작을 덮어쓰지 않게
 - [x] **회귀 확인** — `:461` 옛 마커 재사용 차단 테스트가 **계속 통과**하는지가 핵심 판정
 - [x] 하위 호환 — 새 필드 없는 기존 task는 degrade(차단하지 않음) 확인
-- [ ] spec Ambiguity 게이트 닫고 artifact 기록
-- [ ] 외부 리뷰(`/harness-review`) 후 `## Reviews` 기록 (spec이 `review: required`)
+- [x] spec Ambiguity 게이트 닫고 artifact 기록
+- [x] 외부 리뷰(`/harness-review`) 후 `## Reviews` 기록 (spec이 `review: required`)
 
 ## Ontology 변경 로그
 - **판정 창(evidence window)** 개념을 `switchedAt`과 분리해 신설. 둘을 같은 것으로 다룬 것이

@@ -573,6 +573,27 @@ test('구 task(firstActivatedAt 없음) → 시각 기반 git 가드는 건너�
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+// `Date.parse('9999')`는 9999년으로, `'1'`은 2000-12-31로 성공한다. 형태 검사 없이 받으면
+// 깨진 값이 degrade가 아니라 미래/과거로 어긋난 창이 된다 — 전자는 모든 커밋을 창 밖으로
+// 밀어 전면 오탐, 후자는 리포 전체 이력을 창에 넣어 가드를 무력화한다.
+test('firstActivatedAt이 ISO8601이 아니면 창으로 쓰지 않고 degrade한다', async () => {
+  for (const bogus of ['9999', '1', 'yesterday']) {
+    const { dir } = await makeEvidenceFixture({
+      spec: REVIEW_ONLY_SPEC,
+      firstActivatedAt: bogus,
+      files: {
+        'docs/tester/demo/demo-artifact.md':
+          taskArtifactTemplate('demo') + `\n- 실제 결과\n\n<!-- harness:review kind=codex at=${ago(30 * 86_400_000)} -->\n`,
+      },
+    });
+    try {
+      const { logs } = await runDoneCapture(dir);
+      assert.ok(logs.some(l => l.startsWith('done:')), `proceeds — ${bogus}는 창이 될 수 없다`);
+      assert.ok(!logs.some(l => l.includes('커밋이 0개')), `${bogus}가 미래 창으로 해석되지 않는다`);
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  }
+});
+
 test('Done evidence 선언이 깨져 있으면 그 자체가 차단 사유', async () => {
   const spec = '# demo — Spec\n\n## Done evidence\n\n```json\n{ broken\n```\n';
   const { dir } = await makeEvidenceFixture({ spec });

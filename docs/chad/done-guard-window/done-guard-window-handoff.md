@@ -14,3 +14,8 @@ AGENTS.md                                          |   5 +-
  tests/done-guard.test.mjs                          | 121 +++++++++++++++++++--
  tests/summary.test.mjs                             |  23 ++++
  10 files changed, 282 insertions(+), 44 deletions(-)
+
+## 2026-08-26T00:16:36.843Z — 2c9922f chore(handoff): post-commit hook 출력 반영
+docs/chad/chad-handoff.md                                |  8 ++++----
+ docs/chad/done-guard-window/done-guard-window-handoff.md | 13 +++++++++++++
+ 2 files changed, 17 insertions(+), 4 deletions(-)

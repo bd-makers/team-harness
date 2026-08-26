@@ -4,7 +4,7 @@
 done-guard-window
 
 ## Last Commit (2026-08-26)
-db7afa4 fix(done): 판정 창을 switchedAt → meta.firstActivatedAt 으로 교체
+2c9922f chore(handoff): post-commit hook 출력 반영
 
 ## Full Context
 → docs/chad/done-guard-window/done-guard-window-handoff.md

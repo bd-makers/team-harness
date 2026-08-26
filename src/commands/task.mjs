@@ -384,6 +384,14 @@ export function classifyChangedPaths(paths) {
   return { source, test };
 }
 
+// 계약은 ISO8601 — Date.parse는 '1'(→2000-12-31)이나 '9999'(→9999년) 같은 비계약 값도
+// 시각으로 받아들인다. 형태를 먼저 보지 않으면 깨진 값이 degrade가 아니라 엉뚱한 창이 된다.
+const ISO_INSTANT_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+
+function parseIsoInstant(value) {
+  return ISO_INSTANT_RE.test(value ?? '') ? Date.parse(value) : NaN;
+}
+
 // artifact에 남는 리뷰 마커: <!-- harness:review kind=codex scope=worktree tip=<sha> at=<ISO> -->
 // 섹션 파싱은 취약하므로 파일 전체를 스캔한다. 형식이 깨진 마커는 없는 것과 같이 취급한다.
 const REVIEW_MARKER_RE = /<!--\s*harness:review\s+([^>]*?)-->/g;
@@ -395,8 +403,7 @@ export function parseReviewMarkers(artifact) {
     for (const kv of match[1].matchAll(/([a-z][a-z0-9-]*)=("[^"]*"|\S+)/gi)) {
       attrs[kv[1].toLowerCase()] = kv[2].replace(/^"|"$/g, '');
     }
-    // 계약은 ISO8601 — Date.parse는 '9999' 같은 비계약 값도 시각으로 받아들이므로 형태를 먼저 본다.
-    const at = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(attrs.at ?? '') ? Date.parse(attrs.at) : NaN;
+    const at = parseIsoInstant(attrs.at);
     if (!attrs.kind || Number.isNaN(at)) continue;
     markers.push({ kind: attrs.kind, at, scope: attrs.scope ?? null, tip: attrs.tip ?? null });
   }
@@ -412,7 +419,7 @@ async function collectDoneIssues(targetDir, active) {
   // 이미 만족된 증거를 창 밖으로 밀어냈다. `meta.firstActivatedAt`은 생성 시 1회만 기록되므로
   // 몇 번을 오가도 창이 움직이지 않는다.
   const meta = await readTaskMeta(targetDir, user, task);
-  const parsedStart = meta && meta.firstActivatedAt ? Date.parse(meta.firstActivatedAt) : NaN;
+  const parsedStart = parseIsoInstant(meta && meta.firstActivatedAt);
   // 필드가 없거나(구 task) 값이 깨졌으면 창을 모른다 → 다른 시각으로 대체하지 않고 시각 비교를 포기한다.
   const windowStart = Number.isNaN(parsedStart) ? null : parsedStart;
   const windowStartIso = windowStart === null ? null : meta.firstActivatedAt;
