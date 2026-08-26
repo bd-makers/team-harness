@@ -219,7 +219,7 @@
 </head>
 <body>
   <nav aria-label="문서 섹션">
-    <div class="nav-logo">Harness 0.14 · task guide</div>
+    <div class="nav-logo">Harness 0.18.1 · task guide</div>
     <div class="nav-links">
       <a href="#start">시작 전 확인</a>
       <a href="#loop">하루의 루프</a>
@@ -291,7 +291,7 @@ harness-team doctor</code></pre>
 
     <section id="loop">
       <h2 class="section-title">1. 하루의 루프 — task 하나가 열리고 닫히는 길</h2>
-      <p class="section-sub">0.13부터 <code>task</code>를 만들면 stdout이 이 체인을 그대로 안내합니다. 외울 필요 없이 출력이 다음 칸을 알려줍니다.</p>
+      <p class="section-sub">0.13부터 <code>task</code>를 만들면 stdout이 <strong>다음 칸</strong>을 알려 줍니다 — 아래 아홉 번째 칸(<code>ship</code>)만은 예외로, PR/MR을 여는 경우에만 밟는 선택 단계라 CLI 안내에 들어 있지 않습니다.</p>
 
       <figure class="figure">
         <svg viewBox="0 0 960 300" role="img" aria-labelledby="loop-title">
@@ -410,7 +410,7 @@ active: chad/auth-refresh
             <tr><td><code>&lt;name&gt;-handoff.md</code></td><td><strong>SSOT</strong></td><td>세션 인수인계 — post-commit 훅이 자동 append</td></tr>
             <tr><td><code>&lt;name&gt;-artifact.md</code></td><td><strong>SSOT</strong></td><td>결과 · <code>## Reviews</code> · <code>## Learnings</code></td></tr>
             <tr><td><code>&lt;name&gt;-context.md</code></td><td>비-SSOT <em>캐시</em></td><td>지금 필요한 working set만 (Task Context Card, §5 참고)</td></tr>
-            <tr><td><code>&lt;name&gt;-meta.json</code></td><td>비-SSOT <em>기계 상태</em> <span class="pill pill-auto">0.16.0</span></td><td><code>created</code>·<code>status</code>·<code>closedAt</code>. harness가 소유하므로 <strong>손으로 고치지 않습니다</strong></td></tr>
+            <tr><td><code>&lt;name&gt;-meta.json</code></td><td>비-SSOT <em>기계 상태</em> <span class="pill pill-auto">0.16.0</span></td><td><code>created</code>·<code>status</code>·<code>closedAt</code>, 그리고 <code>firstActivatedAt</code>(<em>다음 릴리스</em>). harness가 소유하므로 <strong>손으로 고치지 않습니다</strong> — 특히 <code>firstActivatedAt</code>은 <code>done</code> 가드가 증거를 찾는 <strong>판정 창의 시작점</strong>이라 이 값을 밀면 가드가 오탐을 냅니다</td></tr>
           </tbody>
         </table>
       </div>
@@ -434,7 +434,7 @@ harness-team summary --write   <span class="c"># 기본 브랜치에서만 허�
         <table>
           <thead><tr><th>단계</th><th>프롬프트 예</th><th>발동되는 것</th></tr></thead>
           <tbody>
-            <tr><td>시작</td><td><code>/harness-task auth-refresh</code> + 요구사항 2~3문장</td><td>파일 6개 + 활성 포인터 + 다이어그램 옵트인 질문 + 다음 단계 안내 출력</td></tr>
+            <tr><td>시작</td><td><code>/harness-task auth-refresh</code> + 요구사항 2~3문장</td><td><strong>CLI가</strong> 파일 6개 + 활성 포인터 + 다음 단계 두 줄을 출력하고, 이어서 <strong>커맨드가</strong> 다이어그램 옵트인을 1회 묻습니다(질문은 CLI stdout이 아니라 커맨드 절차입니다)</td></tr>
             <tr><td>spec 초안</td><td><code>/harness-spec</code> <span class="pill pill-auto">0.18.0</span></td><td>Confluence(PRD·정책) · Figma(와이어프레임) · task 이름 기반 인터뷰 <strong>3소스</strong>에서 초안 생성. 소스 접근은 MCP 우선 + 수동 붙여넣기 폴백이고, 원문 덤프 대신 <strong>요약 + 출처 링크</strong>만 남깁니다</td></tr>
             <tr><td>spec 검증</td><td><code>/harness-interview</code></td><td>소크라테스식 질문으로 숨은 가정 노출 — 통과 근거를 spec <code>## Ontology</code>에 한 줄. <strong>writer(<code>/harness-spec</code>)와 validator를 나눈 것이 핵심</strong>입니다</td></tr>
             <tr><td>plan 다듬기</td><td><code>/harness-contrarian</code> → <code>/harness-simplifier</code></td><td>가정 반박 → 단계·추상화 축소</td></tr>
@@ -487,7 +487,10 @@ harness-team summary --write   <span class="c"># 기본 브랜치에서만 허�
       <h3 class="sub"><code>## Done evidence</code> — 종결의 증거 기준을 task마다 선언한다 <span class="pill pill-auto">0.18.1</span></h3>
       <p>템플릿에는 주석 처리된 자리만 있습니다. 주석을 벗기면 <code>done</code> 가드가 이 선언을 읽습니다.</p>
       <pre><code><span class="c">## Done evidence</span>
-{ "version": 1, "tests": "required", "review": "optional" }   <span class="c">← json 코드펜스 안에</span></code></pre>
+```json
+{ "version": 1, "tests": "required", "review": "optional" }
+```</code></pre>
+      <p><code>```json</code> 코드펜스는 <strong>생략할 수 없습니다</strong> — 펜스 없이 JSON만 두면 선언이 인식되지 않아 조용히 기본값으로 남고, 펜스를 열고 닫지 않으면 <strong>invalid로 차단</strong>됩니다.</p>
       <ul class="tight">
         <li><code>tests</code> — <code>required</code>(기본): task 기간에 <strong>소스가 바뀌었는데 테스트 파일이 안 바뀌면 차단</strong>합니다. 문서·설정만 바뀐 task에는 발동하지 않습니다. 정말 테스트가 불필요하면 <code>"skip"</code>을 <strong>선언</strong>하세요 — 무시가 아니라 선언입니다.</li>
         <li><code>review</code> — <code>optional</code>(기본) / <code>required</code>: <code>required</code>면 artifact에 <strong>이 task 기간의 리뷰 마커</strong>가 있어야 닫힙니다. 마커는 <code>/harness-review</code>가 기록 단계에서 남기는 <code>&lt;!-- harness:review kind=… at=… --&gt;</code> 한 줄입니다.</li>
@@ -753,8 +756,8 @@ unresolved-failure-capsules: 0/3</code></pre>
     </section>
 
     <section id="done">
-      <h2 class="section-title">8. 종결 — 가드 6종을 통과해야 닫힌다</h2>
-      <p class="section-sub"><code>done</code>은 상태 플래그를 바꾸는 명령이 아니라 <strong>검사</strong>입니다. 통과하지 못하면 닫히지 않습니다.</p>
+      <h2 class="section-title">8. 종결 — 가드 6종 + 선언 유효성을 통과해야 닫힌다</h2>
+      <p class="section-sub"><code>done</code>은 <strong>먼저 검사</strong>입니다 — 통과하지 못하면 아무것도 바꾸지 않고 멈춥니다. 통과한 뒤에야 상태를 옮깁니다(handoff append · <code>meta.json</code> <code>status</code>/<code>closedAt</code> · 활성 포인터 비우기).</p>
 
       <pre><code>$ harness-team done
 <span class="r">✗ done: 종결 가드에 걸림 (5개)</span>
@@ -765,7 +768,7 @@ cause: task 활성화 이후 커밋이 0개임
 cause: 소스는 바뀌었는데 테스트 파일 변경이 없음 (테스트 미작성 — 불필요하면 spec에 `"tests": "skip"` 선언)
 retry: 위 항목을 해소한 뒤 다시 `harness-team done` 실행
 stop: 의도적으로 무시하려면 `harness-team done --force`</code></pre>
-      <p>0.18.1에서 <strong>증거 기반 가드 2종</strong>이 붙어 총 6종이 됐습니다. 위 출력에는 마지막 하나(테스트)가 보이고, 여섯 번째(리뷰 마커)는 spec이 <code>review: required</code>를 선언한 task에서만 나옵니다.</p>
+      <p>0.18.1에서 <strong>증거 기반 가드 2종</strong>이 붙어 총 6종이 됐습니다. 위 출력에는 다섯 번째(테스트)가 보이고, 여섯 번째(리뷰 마커)는 spec이 <code>review: required</code>를 선언한 task에서만 나옵니다. 여기에 <strong>선언 유효성</strong>이 따로 붙습니다 — <code>## Done evidence</code>가 깨져 있으면 그 자체로 차단되므로, 가드 6종과 나란히 세는 항목이 아니라 <strong>6종을 읽기 전에 걸리는 관문</strong>입니다.</p>
 
       <div class="table-wrap">
         <table>

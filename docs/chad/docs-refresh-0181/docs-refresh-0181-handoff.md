@@ -86,3 +86,8 @@ CHANGELOG.md                                       |  14 +++
  src/commands/task.mjs                              |  44 +++++++--
  tests/done-guard.test.mjs                          | 106 ++++++++++++++++++++
  12 files changed, 596 insertions(+), 8 deletions(-)
+
+## 2026-08-26T04:23:52.812Z — 4364bcf chore(handoff): post-commit hook 출력 반영
+docs/chad/chad-handoff.md                                |  2 +-
+ docs/chad/docs-refresh-0181/docs-refresh-0181-handoff.md | 15 +++++++++++++++
+ 2 files changed, 16 insertions(+), 1 deletion(-)

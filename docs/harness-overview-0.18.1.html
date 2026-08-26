@@ -1035,7 +1035,7 @@
 
     state Done {
         direction LR
-        [*] --> guards : 종결 가드 6종 통과
+        [*] --> guards : 가드 6종 + 선언 유효성 통과
         guards --> handoff_final : handoff.md 완료 append
         handoff_final --> meta_done : &lt;name&gt;-meta.json status=done
         meta_done --> clear : active.json → null
