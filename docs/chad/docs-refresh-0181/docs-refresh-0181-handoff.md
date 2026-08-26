@@ -40,3 +40,14 @@ docs/chad/chad-handoff.md                          |  2 +-
 docs/chad/chad-handoff.md                                |  2 +-
  docs/chad/docs-refresh-0181/docs-refresh-0181-handoff.md | 14 ++++++++++++++
  2 files changed, 15 insertions(+), 1 deletion(-)
+
+## 2026-08-26T03:13:33.068Z — 30535d5 docs(review): 사전 렌더 SVG 캡션 정합 + mermaid 전례 없는 구문 제거
+docs/chad/chad-handoff.md                          |  2 +-
+ .../docs-refresh-0181-artifact.md                  | 40 ++++++++++++++++++++++
+ .../docs-refresh-0181/docs-refresh-0181-handoff.md |  5 +++
+ docs/diagrams/harness-overview/task-files.mmd      |  2 +-
+ docs/harness-overview-0.18.1.html                  |  2 +-
+ docs/harness-overview.html                         |  2 +-
+ docs/harness-workflow-simulation-0.18.1.html       |  2 +-
+ docs/harness-workflow-simulation.html              |  2 +-
+ 8 files changed, 51 insertions(+), 6 deletions(-)
