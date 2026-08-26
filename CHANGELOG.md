@@ -18,7 +18,7 @@ modified: 2026-08-26
 
 ## [Unreleased]
 
-## [0.19.0] - Unreleased
+## [0.19.0] - 2026-08-26
 
 ### Added
 - **`harness-sim` SC7 — `/harness-spec` 산출물 검증 시나리오** (task `sim-spec-coverage`).
@@ -135,9 +135,18 @@ modified: 2026-08-26
   머신은 raw CI 로그를 받을 수 없어(blob storage 403) `gh run view --log-failed`가 실패한다.
   `gh api repos/<owner>/<repo>/check-runs/<job_id>/annotations`로 읽는다.
 - 0.18.0이 0.19.0으로 이월한 **옛 리뷰 이름 4개**(`/harness-codex-review`·
-  `/harness-codex-adversarial-review`의 커맨드·스킬) 제거는 이 항목을 쓰는 시점까지 **수행되지
-  않았다** — 포워딩 4개가 트리에 그대로 있다. 선행 조건(팀원 머신 전역 CLAUDE.md의 새 이름
-  전환)이 확인되면 이 릴리스에서 제거하고, 다시 이월한다면 그 사실을 이 절에 적는다.
+  `/harness-codex-adversarial-review`의 커맨드·스킬) 제거는 이 릴리스에서도 **수행하지 않고
+  0.20.0으로 다시 이월한다.** 제거 대상은 `commands/harness-codex-review.md`·
+  `commands/harness-codex-adversarial-review.md`와 동명의 스킬 2개(포워딩 4개)이며, 이월 사유는
+  선행 조건인 **팀원 머신 전역 `CLAUDE.md`의 새 이름 전환이 아직 확인되지 않았기 때문**이다 —
+  릴리스 시점에도 이 머신의 전역 `CLAUDE.md`가 여전히 `/harness-codex-review`를 안내하고 있었다.
+  아직 옛 이름을 부르는 안내가 살아 있는 동안 포워딩을 지우면 **그 안내가 그대로 실패**한다.
+  포워딩 4개는 0.19.0 트리에 그대로 남으며, 전환이 확인되는 시점에 0.20.0에서 제거한다.
+  다시 이월한다면 그 사실을 그 릴리스의 이 절에 적는다.
+- 이번 릴리스에서 `README.md`의 전제 조건 표가 안내하던 **옛 리뷰 이름을 새 이름으로 고쳤다**
+  (`/harness-codex-review`·`/harness-codex-adversarial-review` → `/harness-review codex`·
+  `/harness-adversarial-review codex`). 포워딩은 남기되 **문서가 옛 이름을 권하지는 않는다** —
+  이월된 것은 하위 호환이지 권장 경로가 아니다.
 
 ## [0.18.1] - 2026-08-22
 

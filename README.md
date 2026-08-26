@@ -173,7 +173,7 @@ cd my-project
 | `jq` | Claude Code 훅이 **저정밀 모드**로 판정 — 차단은 유지되지만 정확도가 떨어짐. 다른 넷과 달리 doctor가 `warning`으로 알림 |
 | `git` | CLI는 동작하되 post-commit handoff·summary 브랜치 감지·task 전환 diff가 no-op |
 | `gh` | `/harness-ship` 이후 **사용자가 직접 여는** PR 단계용 — 하네스 명령은 영향 없음 |
-| `codex` | `/harness-codex-review`, `/harness-codex-adversarial-review`, Codex L5 시뮬레이션 |
+| `codex` | `/harness-review codex`, `/harness-adversarial-review codex`, Codex L5 시뮬레이션 |
 | `gemini` | 병렬 외부 리뷰 — 건너뛰되 artifact에 "미실행"을 기록 |
 | `opencode` | OpenCode 순차 드라이버 세션 (하네스는 설정 파일을 쓰기만 합니다) |
 
