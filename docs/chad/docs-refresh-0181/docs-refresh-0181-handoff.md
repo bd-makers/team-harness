@@ -56,3 +56,13 @@ docs/chad/chad-handoff.md                          |  2 +-
 docs/chad/chad-handoff.md                                |  2 +-
  docs/chad/docs-refresh-0181/docs-refresh-0181-handoff.md | 11 +++++++++++
  2 files changed, 12 insertions(+), 1 deletion(-)
+
+## 2026-08-26T04:14:32.521Z — 7d1e566 docs: harness-task-guide를 0.18.1 기준으로 갱신
+docs/chad/chad-handoff.md                          |   2 +-
+ .../docs-refresh-0181-artifact.md                  |  34 +++++-
+ .../docs-refresh-0181/docs-refresh-0181-handoff.md |   5 +
+ .../docs-refresh-0181/docs-refresh-0181-plan.md    |   2 +
+ .../docs-refresh-0181/docs-refresh-0181-spec.md    |  13 +-
+ docs/harness-fleet-guide.html                      |   2 +-
+ docs/harness-task-guide.html                       | 133 ++++++++++++++++-----
+ 7 files changed, 154 insertions(+), 37 deletions(-)
