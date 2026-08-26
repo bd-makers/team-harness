@@ -19,6 +19,19 @@ modified: 2026-08-21
 ## [Unreleased]
 
 ### Fixed
+- **`done`의 테스트 증거 가드를 실제로 동작하게 했다** (task `testpath-extension-gate`).
+  `isTestPath()`가 **문서를 테스트 파일로 오분류**해 "소스는 바뀌었는데 테스트 파일 변경이
+  없음" 검사가 사실상 죽어 있었다. 두 경로였다 — ① basename 규칙(`(^|[._-])(test|spec)s?\.`)에
+  `<name>-spec.md`의 `-spec.md`가 걸렸고, **모든 task가 자기 spec을 커밋하므로 소스만 바꾸고
+  테스트를 한 줄도 안 써도 가드가 통과했다.** ② 디렉터리 규칙(`specs?/`)에 `docs/**/specs/*.md`가
+  걸렸다(이 리포에도 2개 있다). 이제 `isTestPath()`는 **맨 앞에서 코드 확장자를 확인**한다 —
+  확장자가 `SOURCE_EXTENSIONS`에 없으면 이름·위치를 보지 않고 테스트가 아니다. 게이트가
+  디렉터리 규칙보다 **앞**이라는 순서가 계약이며(뒤로 밀리면 ②가 되살아난다) 테스트로 고정했다.
+  기존 언어별 관례 판정(`foo.test.ts`·`foo_test.go`·`FooTests.swift`·`tests/` 하위 코드)은 그대로다.
+  판정 목록을 소스·테스트가 공유하므로 `source=true`인데 `test=false`가 되는 비대칭 오탐이
+  구조적으로 생기지 않는다.
+  ⚠️ 이 수정으로 가드가 **처음으로 실제 발동**한다. 소스를 바꾸고 테스트를 쓰지 않은 task는
+  이제 `done`에서 막힌다 — 불필요한 경우 spec에 `"tests": "skip"`을 선언한다(`--force` 상습화 금지).
 - **`done` 가드의 판정 창 오탐 제거** (task `done-guard-window`). 가드가 증거를 찾는 창의
   시작점이 `active.json`의 `switchedAt`이었는데, 이 값은 "**마지막 활성화 시각**"이지
   "이 task의 작업 구간"이 아니다. `done`은 활성 task만 대상이라 끝난 task를 닫으려면

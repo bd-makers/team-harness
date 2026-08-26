@@ -354,14 +354,27 @@ export function parseDoneEvidenceDeclaration(spec) {
   return { status: 'configured', ...resolved };
 }
 
-// 언어 무관 분류. 확장자 화이트리스트라 문서(.md)·설정(.json/.yml)만 바뀐 task에서는
-// source=false가 되어 테스트 작성 체크가 아예 발동하지 않는다.
+// 언어 무관 분류. 이 화이트리스트는 **소스·테스트 판정 양쪽을 지배한다.**
+// 소스 쪽: 문서(.md)·설정(.json/.yml)만 바뀐 task에서는 source=false가 되어 체크가 발동하지 않는다.
+// 테스트 쪽: 이름·위치가 test/spec 관례여도 코드가 아니면 테스트 증거로 세지 않는다.
 const SOURCE_EXTENSIONS = new Set([
   'js', 'mjs', 'cjs', 'ts', 'tsx', 'jsx', 'py', 'go', 'rb', 'java', 'kt', 'swift',
   'c', 'h', 'cpp', 'cc', 'cs', 'rs', 'sh', 'php', 'scala', 'm', 'mm', 'dart',
 ]);
 
+// 확장자만 뽑는다. 확장자 없는 파일(`Makefile`)과 dotfile(`.eslintrc`)은 null.
+function fileExtension(path) {
+  const base = path.slice(path.lastIndexOf('/') + 1);
+  const dot = base.lastIndexOf('.');
+  return dot > 0 ? base.slice(dot + 1).toLowerCase() : null;
+}
+
 function isTestPath(path) {
+  // 테스트 파일은 테스트 *코드*다. 이 게이트는 아래 디렉터리 규칙보다 **반드시 앞**에 있어야 한다 —
+  // 뒤로 밀리면 `docs/**/specs/*.md` 같은 문서가 다시 테스트 증거로 세어져 가드가 죽는다.
+  // (모든 task가 커밋하는 `<name>-spec.md`가 basename 규칙에 걸린 것이 이 게이트를 만든 계기다.)
+  const ext = fileExtension(path);
+  if (ext === null || !SOURCE_EXTENSIONS.has(ext)) return false;
   if (/(^|\/)(tests?|__tests__|specs?)(\/|$)/i.test(path)) return true;
   const base = path.slice(path.lastIndexOf('/') + 1);
   // `foo.test.ts`, `foo_test.go`, `foo-spec.rb`, 그리고 `FooTests.swift` 류.
@@ -377,9 +390,8 @@ export function classifyChangedPaths(paths) {
     const unquoted = raw.startsWith('"') && raw.endsWith('"') ? raw.slice(1, -1) : raw;
     const path = unquoted.replace(/\\/g, '/');
     if (isTestPath(path)) { test = true; continue; }
-    const dot = path.lastIndexOf('.');
-    const slash = path.lastIndexOf('/');
-    if (dot > slash + 1 && SOURCE_EXTENSIONS.has(path.slice(dot + 1).toLowerCase())) source = true;
+    const ext = fileExtension(path);
+    if (ext !== null && SOURCE_EXTENSIONS.has(ext)) source = true;
   }
   return { source, test };
 }

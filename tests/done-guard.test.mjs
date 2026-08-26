@@ -330,6 +330,27 @@ test('classifyChangedPaths: 소스/테스트/문서 분류', () => {
   assert.deepEqual(classifyChangedPaths(['"docs/\\355\\225\\234.mjs"']), { source: true, test: false });
 });
 
+// 테스트 파일은 테스트 *코드*다. 이름·위치 관례만으로 문서를 테스트로 세면 "테스트 미작성"
+// 가드가 죽는다 — 모든 task가 자기 `<name>-spec.md`를 커밋하기 때문이다.
+test('classifyChangedPaths: 문서·설정은 이름·위치가 test/spec 관례여도 테스트가 아니다', () => {
+  // 구멍 1 — basename 규칙의 `-spec.md`
+  assert.deepEqual(classifyChangedPaths(['docs/chad/demo/demo-spec.md']), { source: false, test: false });
+  // 구멍 2 — 디렉터리 규칙의 `specs/`. 구멍 1만 고치면 이 경로가 남는다
+  assert.deepEqual(classifyChangedPaths(['docs/superpowers/specs/2026-04-23-design.md']), { source: false, test: false });
+  // tests/ 아래여도 문서는 테스트 정의가 아니다
+  assert.deepEqual(classifyChangedPaths(['tests/fixtures/stock-hooks/README.md']), { source: false, test: false });
+  // 설정 파일도 마찬가지 — `test.yml`은 CI 설정이지 테스트가 아니다
+  assert.deepEqual(classifyChangedPaths(['.github/workflows/test.yml']), { source: false, test: false });
+  // 순서 계약: 확장자 게이트가 디렉터리 규칙보다 **앞**에 있어야 한다.
+  // 뒤로 밀리면 아래가 { source: true, test: true }가 되어 구멍 2가 조용히 되살아난다.
+  assert.deepEqual(
+    classifyChangedPaths(['src/app.mjs', 'docs/superpowers/specs/x.md']),
+    { source: true, test: false },
+  );
+  // 게이트가 진짜 테스트를 떨어뜨리지 않는다 — 이름 관례가 없어도 tests/ 아래 코드는 테스트다
+  assert.deepEqual(classifyChangedPaths(['tests/helpers/setup.mjs']), { source: false, test: true });
+});
+
 // ─── Done evidence: 리뷰 마커 파싱 (순수 함수) ──────────────────────────────
 
 test('parseReviewMarkers: 유효 마커 파싱, 깨진 마커는 무시', () => {
@@ -418,6 +439,33 @@ test('소스 변경 + 테스트 미변경 → 차단 (tests 기본 required)', a
   try {
     const { logs, exitCode } = await runDoneCapture(dir);
     assert.equal(exitCode, 1, 'blocks');
+    assert.ok(logs.some(l => l.includes('테스트 파일 변경이 없음')), 'flags missing tests');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 이 리포의 모든 task는 자기 `<name>-spec.md`를 커밋한다. 그 basename이 테스트 파일로
+// 오분류되면 소스만 바꾸고 테스트를 한 줄도 안 써도 가드가 통과한다 — 가드가 이름만 남는다.
+test('소스 변경 + 자기 spec.md만 동반 → 여전히 차단 (spec.md는 테스트 증거가 아니다)', async () => {
+  const { dir } = await makeEvidenceFixture({
+    spec: '# demo — Spec\n\n## 목적 / 요구사항\n- 데모\n',
+    files: { 'src/app.mjs': 'export const x = 1;\n' },
+  });
+  try {
+    const { logs, exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1, 'blocks — spec.md is not a test file');
+    assert.ok(logs.some(l => l.includes('테스트 파일 변경이 없음')), 'flags missing tests');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 구멍 2 — 디렉터리 이름이 `specs/`인 문서. spec.md 규칙만 고치면 이 경로로 같은 오탐이 남는다.
+test('소스 변경 + specs/ 하위 문서만 동반 → 여전히 차단 (디렉터리 이름은 테스트 증거가 아니다)', async () => {
+  const { dir } = await makeEvidenceFixture({ files: {
+    'src/app.mjs': 'export const x = 1;\n',
+    'docs/superpowers/specs/2026-04-23-design.md': '# design\n',
+  } });
+  try {
+    const { logs, exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1, 'blocks — a doc under specs/ is not a test file');
     assert.ok(logs.some(l => l.includes('테스트 파일 변경이 없음')), 'flags missing tests');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
