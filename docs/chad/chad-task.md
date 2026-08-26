@@ -1,7 +1,6 @@
 # chad — Tasks
 
 ## Open
-- done-guard-window (created 2026-08-25)
 - node-test-runner-flake (created 2026-08-25)
 - diagram-companion-pin (created 2026-08-21)
 - hook-jq-failclosed (created 2026-08-21)
@@ -20,6 +19,7 @@
 
 ## Completed
 - ✅ boundary-perf-invariant
+- ✅ done-guard-window
 - ✅ release-0181-recovery
 - ✅ sim-spec-coverage
 - ✅ doctor-decision-log
