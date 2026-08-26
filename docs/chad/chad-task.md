@@ -9,15 +9,11 @@
 - d5-parallel-pr-scope (created 2026-08-20)
 - diagram-optin (created 2026-08-20)
 - ship-command (created 2026-08-20)
-- th-capsule-grammar (created 2026-08-03)
-- th-overview-mermaid (created 2026-08-03)
-- th-release-0-12 (created 2026-08-03)
-- th-whatschanged-upkeep (created 2026-08-03)
 - skilltest-skipstring (created 2026-07-30)
-- th-resident-verify (created 2026-07-30)
 - harness-comptest (created 2026-07-10)
 
 ## Completed
+- ✅ docs-refresh-0181
 - ✅ testpath-extension-gate
 - ✅ boundary-perf-invariant
 - ✅ done-guard-window
@@ -38,6 +34,11 @@
 - ✅ doctor-hookcli-tests
 - ✅ release-0-13
 - ✅ harness-activation
+- ✅ th-capsule-grammar
+- ✅ th-overview-mermaid
+- ✅ th-release-0-12
+- ✅ th-whatschanged-upkeep
+- ✅ th-resident-verify
 - ✅ skilltest-ast-grader
 - ✅ harness-inttest
 - ✅ harness-unittest

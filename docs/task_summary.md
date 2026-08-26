@@ -29,11 +29,11 @@
 | chad | harness-inttest | ✅ done | 2026-07-11 |
 | chad | skilltest-ast-grader | ✅ done | 2026-07-29 |
 | chad | skilltest-skipstring | 🔄 open | 2026-07-30 |
-| chad | th-resident-verify | 🔄 open | 2026-07-30 |
-| chad | th-capsule-grammar | 🔄 open | 2026-08-03 |
-| chad | th-overview-mermaid | 🔄 open | 2026-08-03 |
-| chad | th-release-0-12 | 🔄 open | 2026-08-03 |
-| chad | th-whatschanged-upkeep | 🔄 open | 2026-08-03 |
+| chad | th-resident-verify | ✅ done | 2026-07-30 |
+| chad | th-capsule-grammar | ✅ done | 2026-08-03 |
+| chad | th-overview-mermaid | ✅ done | 2026-08-03 |
+| chad | th-release-0-12 | ✅ done | 2026-08-03 |
+| chad | th-whatschanged-upkeep | ✅ done | 2026-08-03 |
 | chad | harness-activation | ✅ done | 2026-08-06 |
 | chad | codex-review-commands | ✅ done | 2026-08-07 |
 | chad | doctor-hookcli-tests | ✅ done | 2026-08-07 |
@@ -61,4 +61,5 @@
 | chad | boundary-perf-invariant | ✅ done | 2026-08-25 |
 | chad | done-guard-window | ✅ done | 2026-08-25 |
 | chad | node-test-runner-flake | 🔄 open | 2026-08-25 |
+| chad | docs-refresh-0181 | ✅ done | 2026-08-26 |
 | chad | testpath-extension-gate | ✅ done | 2026-08-26 |
