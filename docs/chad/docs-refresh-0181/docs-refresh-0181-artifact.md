@@ -65,6 +65,23 @@ npm test               → tests 422 · pass 421 · fail 0 · skipped 1
 *Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
 
+### 2026-08-26 — codex (`codex exec --sandbox read-only`, scope: `origin/main...HEAD`)
+
+Gemini 병렬 리뷰는 **미실행** — 이 머신에 `gemini` CLI가 없다(`command -v gemini` 실패).
+
+판정: **Request changes** (P1 0건 · P2 2건 · P3 2건). 네 건 모두 소스와 대조해 **진짜 결함으로 확인**했고 전건 조치했다.
+
+| # | 발견 | 판별 | 조치 |
+|---|---|---|---|
+| P2-1 | overview의 생성 다이어그램이 여전히 `task`/`done`이 원장을 갱신한다고 그린다 (`task-lifecycle.mmd:31-32`, `task-files.mmd:7-8`) | **진짜 결함.** 본문은 고쳤는데 다이어그램 원본을 놓쳤다 — 같은 문서 안에서 글과 그림이 서로 반박하고 있었다 | 두 `.mmd`를 재작성: `task-files`는 `meta.json` → `summary --write` → 생성물 2개 경로로, `task-lifecycle`은 Done 상태를 `가드 6종 → handoff append → meta status=done → active null`로. Created 상태에 빠져 있던 artifact·context·meta도 추가. `npm run docs:generate` 재실행 |
+| P2-2 | "가드 6종"이 비망라적 — `## Done evidence` 선언이 invalid면 그 자체로 차단된다 (`src/commands/task.mjs:427-435`) | **진짜 결함.** 시뮬레이션은 별도 항목으로 적었지만 제목이 "6종"이라 모호했고, fleet guide는 아예 빠져 있었다 | 시뮬레이션 트리 제목을 "가드 6종 + 선언 유효성"으로, fleet guide §7·부트스트랩·브리프 3곳에 선언 유효성 항목 추가 |
+| P3-1 | fleet §6에서 `meta.json`을 "`task`·`done`만 쓴다"고 단정 — `migrate`도 백필로 쓴다 (`src/commands/migrate.mjs:698`) | **진짜 결함** (사실 오류) | "`task`·`done`과 `migrate`(과거 task 백필)만 쓴다"로 정정 |
+| P3-2 | artifact EOF 여분 빈 줄 (`git diff --check`) | 진짜 | 제거. `git diff --check` clean 확인 |
+
+리뷰어가 확인해 준 사실(교차 검증에 사용): `task`/`done`은 원장을 쓰지 않고 `summary --write`가 기본 브랜치에서 렌더한다 · `release --help`는 dispatch 없이 help로 해석된다 · `docs/harness-overview.html`은 생성기 출력과 바이트 단위로 일치한다.
+리뷰어 샌드박스가 macOS 임시 디렉터리 생성을 `EPERM`으로 막아 `done`/`summary` 테스트는 리뷰어 쪽에서 실행되지 못했다 — 이 세션에서 `npm test` 전량(422 pass / 0 fail)으로 대신 확인했다.
+
+<!-- harness:review kind=codex scope=diff tip=e4bc852f75b54c0edc7780011f588d39d42eee4e at=2026-08-26T03:05:00Z -->
+
 
 ## Learnings
-

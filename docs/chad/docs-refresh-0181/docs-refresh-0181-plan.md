@@ -11,8 +11,8 @@
 - [x] `docs/harness-overview.template.html` 갱신 후 `npm run docs:generate`로 재생성
 - [x] 스냅샷 2종 생성 (`harness-overview-0.18.1.html`, `harness-workflow-simulation-0.18.1.html`)
 - [x] `npm run docs:check` · `npm test` 통과 확인 (422 tests · 0 fail)
-- [ ] 외부 리뷰(`/harness-review`) 실행 후 artifact `## Reviews`에 기록
-- [ ] artifact `## 결과` 작성
+- [x] 외부 리뷰(`/harness-review` codex) 실행 후 artifact `## Reviews`에 기록 — P2 2건·P3 2건 전건 조치
+- [x] artifact `## 결과` 작성
 
 ## Ontology 변경 로그
 

@@ -269,7 +269,7 @@ harness-team handoff
 <span class="c"># 6. PR/MR 직전 문서 정합 (0.17.0) — spec·plan·artifact를 코드 현실과 맞춘다</span>
 <span class="c">#    /harness-ship 은 PR/MR을 만들지 않는다. "준비 완료" 보고에서 멈춘다.</span>
 
-<span class="c"># 7. 종결은 캡틴/배송 경로 승인 이후 (가드 6종을 통과해야 닫힌다)</span>
+<span class="c"># 7. 종결은 캡틴/배송 경로 승인 이후 (증거 가드 6종 + 선언 유효성을 통과해야 닫힌다 — §7)</span>
 harness-team done</code></pre>
 
       <div class="callout bad">
@@ -424,7 +424,8 @@ harness-team task th-token-refresh --member chad</code></pre>
 - PR/MR 직전: `/harness-ship` — spec·plan·artifact를 코드 현실과 맞춘다 (PR은 만들지 않는다)
 - 완료 보고 전: `harness-team done`이 통과해야 한다
   <span class="c"># 6종: 미완 박스 · artifact 템플릿 · 미커밋 · 커밋 0개 · 테스트 미작성 · 리뷰 마커(spec opt-in)</span>
-  <span class="c"># 테스트가 불필요한 task면 spec의 `## Done evidence`에 {"tests":"skip"}을 선언한다 — 무시하지 말고 선언한다.</span></code></pre>
+  <span class="c"># + spec의 `## Done evidence` 선언이 깨져 있으면 그 자체로 차단된다 (조용한 폴백 없음)</span>
+  <span class="c"># 테스트가 불필요한 task면 {"tests":"skip"}을 선언한다 — 무시하지 말고 선언한다.</span></code></pre>
 
       <p>그 위에 이 저장소에서 이미 검증된 브리프 3절 패턴을 얹습니다 — <strong>이미 확인된 사실(다시 조사하지 말 것)</strong> · <strong>하지 말 것</strong> · <strong>검증(증거 없이 완료 처리 금지)</strong>. 첫 절이 재조사를 막고, 둘째 절이 관리 구역 훼손을 막고, 셋째 절이 "보고서는 상세한데 산출물이 없는" 실패를 막습니다.</p>
 
@@ -547,7 +548,7 @@ harness-team task th-token-refresh --member chad</code></pre>
           <thead><tr><th>파일</th><th>병렬에서 어떻게 깨지나</th><th>해결</th></tr></thead>
           <tbody>
             <tr><td><code>docs/&lt;user&gt;/&lt;name&gt;/*</code></td><td>task별 디렉터리라 서로 닿지 않는다</td><td>1 워크트리 = 1 task 규칙만 지키면 충돌 없음</td></tr>
-            <tr><td><code>docs/&lt;user&gt;/&lt;name&gt;/&lt;name&gt;-meta.json</code></td><td>task별 파일이라 서로 닿지 않는다. <strong>손으로 고치지 않는다</strong> <span class="pill pill-src">소스</span></td><td><code>task</code>·<code>done</code>만 쓴다. 병합 충돌이 나면 실제 상태(<code>status</code>·<code>closedAt</code>)를 기준으로 고른다</td></tr>
+            <tr><td><code>docs/&lt;user&gt;/&lt;name&gt;/&lt;name&gt;-meta.json</code></td><td>task별 파일이라 서로 닿지 않는다. <strong>손으로 고치지 않는다</strong> <span class="pill pill-src">소스</span></td><td><code>task</code>·<code>done</code>과 <code>migrate</code>(과거 task 백필)만 쓴다 <span class="pill pill-src">소스</span>. 병합 충돌이 나면 실제 상태(<code>status</code>·<code>closedAt</code>)를 기준으로 고른다</td></tr>
             <tr><td><code>docs/&lt;user&gt;/&lt;user&gt;-handoff.md</code></td><td><strong>매 커밋마다 전체가 덮어써진다</strong>(<code>writeFile</code>) → 브랜치마다 다른 내용 → 병합 시 거의 항상 충돌 <span class="pill pill-src">소스</span>. <strong>0.18.1 기준 이것이 유일하게 남은 충돌원</strong></td><td>어느 쪽이든 취해 충돌을 닫고 <code>harness-team handoff</code>로 재생성한다. 손으로 병합하지 않는다</td></tr>
             <tr><td><code>docs/task_summary.md</code></td><td><strong>더 이상 충돌하지 않는다 (0.16.0)</strong> — <code>task</code>·<code>done</code>이 이 파일을 건드리지 않는다 <span class="pill pill-src">소스</span></td><td>기본 브랜치에서 <code>harness-team summary --write</code>로만 렌더한다. 워크트리에서는 쓰지 않는다</td></tr>
             <tr><td><code>docs/&lt;user&gt;/&lt;user&gt;-task.md</code></td><td>동일 — 생성물이다</td><td>동일</td></tr>
@@ -600,6 +601,7 @@ harness-team task th-token-refresh --member chad</code></pre>
         <li>워커 보고서는 <strong>증거를 확인</strong>한다 — <code>ls</code> 한 번, 파일 한 번 열기. 상세하고 일관된 보고서가 산출물의 존재 증명은 아니다.</li>
         <li>반대로 워커가 <strong>스스로 신고한 간극</strong>은 대개 진짜다 — 확인하고 닫는다.</li>
         <li>하네스 쪽 증거는 <code>done</code> 가드 <strong>6종</strong>이다: 미완 박스 0 · artifact 내용 있음 · 미커밋 없음 · task 시작 이후 커밋 ≥ 1 · <strong>소스가 바뀌었으면 테스트도 바뀜</strong>(0.18.1, 기본 ON — 문서·설정만 바뀐 task엔 발동하지 않는다) · <strong>spec이 <code>review: required</code>면 리뷰 마커 존재</strong>(0.18.1, spec opt-in).</li>
+            <li>여기에 <strong>선언 유효성</strong>이 하나 더 붙는다 — spec의 <code>## Done evidence</code> JSON이 깨졌거나 미지 키를 담고 있으면 <strong>그것만으로 차단</strong>된다 <span class="pill pill-src">소스</span>. 조용히 기본값으로 폴백하지 않는 것이 의도다(<code>boundary check</code>의 <code>not-configured</code> 전례).</li>
             <li>가드가 막는 것은 악의가 아니라 <strong>망각</strong>이다. <code>--force</code>로 뚫었다면 <strong>그 이유가 artifact에 있어야</strong> 하고, 없으면 그 <code>done</code>은 증거가 아니다.</li>
       </ul>
     </section>

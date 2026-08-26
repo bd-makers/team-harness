@@ -6,7 +6,10 @@ stateDiagram-v2
         [*] --> spec : &lt;name&gt;-spec.md 생성
         spec --> plan : &lt;name&gt;-plan.md 생성
         plan --> handoff : &lt;name&gt;-handoff.md 생성
-        handoff --> active_json : .harness/active.json 갱신
+        handoff --> artifact : &lt;name&gt;-artifact.md 생성
+        artifact --> context : &lt;name&gt;-context.md 생성
+        context --> meta_json : &lt;name&gt;-meta.json 생성
+        meta_json --> active_json : .harness/active.json 갱신
     }
 
     Created --> Active : 자동 활성화
@@ -27,10 +30,10 @@ stateDiagram-v2
 
     state Done {
         direction LR
-        [*] --> handoff_final : handoff.md 완료 append
-        handoff_final --> index : &lt;user&gt;-task.md 갱신
-        index --> summary : task_summary.md 갱신
-        summary --> clear : active.json → null
+        [*] --> guards : 종결 가드 6종 통과
+        guards --> handoff_final : handoff.md 완료 append
+        handoff_final --> meta_done : &lt;name&gt;-meta.json status=done
+        meta_done --> clear : active.json → null
     }
 
     Done --> [*]

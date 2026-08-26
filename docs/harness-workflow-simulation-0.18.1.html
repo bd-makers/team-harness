@@ -601,7 +601,7 @@ stop:  의도적으로 무시하려면 `harness-team done --force`
             </div>
             <div class="step-detail">"결과를 증명하지 않은 done"을 코드가 거부 — dogfooding이 입증한 강제 갭을 메움 (P0). <strong>0.9.5</strong>: 커밋 직후 post-commit 훅이 handoff를 더럽혀 <code>done</code>이 항상 <code>--force</code>를 요구하던 마찰을 가드 측에서 해소(<code>parsePorcelainPaths</code> 헬퍼) — handoff 외 실제 미커밋 작업이 있을 때만 차단.</div>
             <div class="tree" style="margin-top:0.6rem">
-<span class="tree-dir">가드 6종 (0.18.1 기준)</span>
+<span class="tree-dir">가드 6종 + 선언 유효성 (0.18.1 기준)</span>
 1. plan.md에 미완 체크박스(- [ ])                 <span style="color:var(--border)"># 0.7~</span>
 2. artifact.md 미작성 / 템플릿 그대로              <span style="color:var(--border)"># 0.7~</span>
 3. 미커밋 변경 존재                                <span style="color:var(--border)"># handoff 2개는 제외 (0.9.5)</span>
