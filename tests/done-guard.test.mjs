@@ -357,6 +357,8 @@ test('classifyChangedPaths: tests/ 아래는 확장자가 화이트리스트 밖
   assert.deepEqual(classifyChangedPaths(['tests/e2e/login.feature']), { source: false, test: true });
   assert.deepEqual(classifyChangedPaths(['tests/run-e2e']), { source: false, test: true });
   assert.deepEqual(classifyChangedPaths(['tests/fixtures/case.json']), { source: false, test: true });
+  // golden 파일 — `txt`를 산문 목록에 넣으면 fixture만 고친 정직한 작업이 차단된다
+  assert.deepEqual(classifyChangedPaths(['tests/fixtures/expected.txt']), { source: false, test: true });
   // 반대로 tests/ 밖의 이름 관례는 **약한** 신호라 코드 확장자만 인정한다
   assert.deepEqual(classifyChangedPaths(['src/app.mts', 'src/app.test.mts']), { source: true, test: true });
   assert.deepEqual(classifyChangedPaths(['src/app.cts', 'src/app.test.cts']), { source: true, test: true });

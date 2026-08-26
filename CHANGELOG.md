@@ -25,8 +25,8 @@ modified: 2026-08-21
   `<name>-spec.md`의 `-spec.md`가 걸렸고, **모든 task가 자기 spec을 커밋하므로 소스만 바꾸고
   테스트를 한 줄도 안 써도 가드가 통과했다.** ② 디렉터리 규칙(`specs?/`)에 `docs/**/specs/*.md`가
   걸렸다(이 리포에도 2개 있다). 이제 두 규칙이 **신호의 세기에 맞는 확장자 조건**을 각각 쓴다 —
-  디렉터리 규칙(경로가 스스로 "테스트"라고 말하는 **강한** 신호)은 산문 문서(`md`·`txt`·`rst` 등)만
-  걷어내고, basename 규칙(이름의 우연한 일치라 **약한** 신호)은 코드 확장자(`SOURCE_EXTENSIONS`)만
+  디렉터리 규칙(경로가 스스로 "테스트"라고 말하는 **강한** 신호)은 산문 문서(`md`·`rst`·`org` 등)와
+  dotfile만 걷어내고(`json`·`yml`·`txt`는 golden·fixture일 수 있어 남긴다), basename 규칙(이름의 우연한 일치라 **약한** 신호)은 코드 확장자(`SOURCE_EXTENSIONS`)만
   인정한다. 두 규칙에 같은 화이트리스트를 걸면 `tests/foo.test.mts`·`tests/run-e2e`처럼 목록 밖
   확장자·무확장자 테스트가 증거에서 빠져 **정직한 작업이 차단**된다(codex 리뷰 P2에서 반증).
   `SOURCE_EXTENSIONS`에 `mts`·`cts`를 추가했다.

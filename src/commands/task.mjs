@@ -362,9 +362,12 @@ const SOURCE_EXTENSIONS = new Set([
 ]);
 
 // 산문 문서 확장자. `tests/`·`specs/` 아래여도 산문은 테스트 정의가 아니다.
-// 설정·데이터(json/yml)는 일부러 넣지 않는다 — `tests/` 아래에서는 진짜 테스트 fixture일 수 있다.
+// 기준은 "**문서로만** 쓰이는 포맷인가"다 — `json`/`yml`/`txt`는 `tests/fixtures/expected.txt`처럼
+// golden·fixture로도 흔히 쓰이므로 일부러 뺐다. 제외하면 fixture만 고친 정직한 작업이 차단된다.
+// `md`는 예외적으로 넣는다: 실제로 막아야 하는 `docs/**/specs/*.md`가 md이기 때문이며,
+// 그 대가로 markdown golden fixture는 증거에서 빠진다(통과가 아니라 차단 쪽 대가 — 아래 주석 참조).
 const PROSE_EXTENSIONS = new Set([
-  'md', 'mdx', 'markdown', 'txt', 'rst', 'adoc', 'asciidoc', 'textile', 'org', 'tex', 'typ',
+  'md', 'mdx', 'markdown', 'rst', 'adoc', 'asciidoc', 'textile', 'org', 'tex', 'typ',
 ]);
 
 // 확장자만 뽑는다. 확장자 없는 파일(`Makefile`)과 dotfile(`.eslintrc`)은 null.

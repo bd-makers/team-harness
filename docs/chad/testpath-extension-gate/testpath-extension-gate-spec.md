@@ -31,8 +31,12 @@
 
 - 구멍 1(`<name>-spec.md`)은 basename 규칙의 화이트리스트가 닫는다.
 - 구멍 2(`docs/**/specs/*.md`)는 디렉터리 규칙의 산문 제외가 닫는다.
-- 디렉터리 규칙에 설정·데이터 확장자(`json`/`yml`)는 **일부러 넣지 않는다** —
-  `tests/fixtures/case.json`은 진짜 테스트 데이터일 수 있다.
+- 산문 목록의 기준은 "**문서로만** 쓰이는 포맷인가"다. `json`·`yml`·`txt`는 넣지 않는다 —
+  `tests/fixtures/case.json`·`tests/fixtures/expected.txt`는 진짜 golden·fixture이고,
+  제외하면 **fixture만 고친 정직한 작업이 차단**된다(아래 비대칭에서 비싼 쪽).
+- `md`는 이 기준의 **의도적 예외**다. 실제로 막아야 하는 구멍 2가 `docs/**/specs/*.md`이기 때문이다.
+  대가로 markdown golden fixture(`tests/fixtures/input.md`)를 쓰는 프로젝트는 그 변경이
+  증거로 세어지지 않는다 — 목록에서 유일하게 값을 지불하는 항목이고, 그만큼 실측 근거가 있다.
 - `SOURCE_EXTENSIONS`에 `mts`·`cts`를 추가했다. TypeScript ESM/CJS 모듈은 소스이자
   테스트 파일로 실제로 쓰인다(`src/app.test.mts`).
 

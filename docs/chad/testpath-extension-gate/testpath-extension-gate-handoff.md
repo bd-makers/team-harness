@@ -39,3 +39,9 @@ docs/chad/chad-handoff.md                          |  2 +-
  src/commands/task.mjs                              | 17 ++++-
  tests/done-guard.test.mjs                          | 17 +++++
  8 files changed, 124 insertions(+), 14 deletions(-)
+
+## 2026-08-26T03:07:07.877Z — 94ff366 docs(task): plan 최종 단계 완료 표시 (PR #49)
+docs/chad/chad-handoff.md                                     |  2 +-
+ .../testpath-extension-gate-handoff.md                        | 11 +++++++++++
+ .../testpath-extension-gate/testpath-extension-gate-plan.md   |  2 +-
+ 3 files changed, 13 insertions(+), 2 deletions(-)
