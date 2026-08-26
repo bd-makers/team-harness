@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-adversarial-verify-rubric
+persona-external-verify
 
 ## Last Commit (2026-08-26)
-5b985d7 feat(d6): 적대적 검증 규범(D6)과 testcritic·shipcheck 루브릭 도입
+e5ac9ea feat(d6): 페르소나 층 외부 검증(3단계) — contrarian/simplifier 외부 엔진 모드 + interview 선행 채점
 
 ## Full Context
-→ docs/chad/adversarial-verify-rubric/adversarial-verify-rubric-handoff.md
+→ docs/chad/persona-external-verify/persona-external-verify-handoff.md
