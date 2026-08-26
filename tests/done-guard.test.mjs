@@ -359,7 +359,24 @@ test('classifyChangedPaths: tests/ 아래는 확장자가 화이트리스트 밖
   assert.deepEqual(classifyChangedPaths(['tests/fixtures/case.json']), { source: false, test: true });
   // 반대로 tests/ 밖의 이름 관례는 **약한** 신호라 코드 확장자만 인정한다
   assert.deepEqual(classifyChangedPaths(['src/app.mts', 'src/app.test.mts']), { source: true, test: true });
+  assert.deepEqual(classifyChangedPaths(['src/app.cts', 'src/app.test.cts']), { source: true, test: true });
   assert.deepEqual(classifyChangedPaths(['notes-spec.txt']), { source: false, test: false });
+});
+
+// 산문 판정을 빠져나가는 경로들 — 목록이 md 하나로 줄거나 정규화가 빠지면 여기서 걸린다.
+test('classifyChangedPaths: tests/ 아래 산문·설정의 회피 경로도 테스트가 아니다', () => {
+  // 산문 목록은 markdown 하나가 아니다
+  assert.deepEqual(classifyChangedPaths(['tests/guide.rst']), { source: false, test: false });
+  assert.deepEqual(classifyChangedPaths(['tests/notes.org']), { source: false, test: false });
+  assert.deepEqual(classifyChangedPaths(['docs/specs/design.typ']), { source: false, test: false });
+  // 대문자 확장자
+  assert.deepEqual(classifyChangedPaths(['tests/GUIDE.MD']), { source: false, test: false });
+  // 끝의 점 — 정규화가 없으면 "확장자 없는 파일"로 보여 산문 판정을 빠져나간다
+  assert.deepEqual(classifyChangedPaths(['tests/README.md.']), { source: false, test: false });
+  // dotfile은 도구 설정이지 테스트 정의가 아니다
+  assert.deepEqual(classifyChangedPaths(['tests/.gitignore']), { source: false, test: false });
+  // 소스와 함께 바뀌어도 증거가 되지 않는다 (가드가 통과하면 안 된다)
+  assert.deepEqual(classifyChangedPaths(['src/app.ts', 'tests/.gitignore']), { source: true, test: false });
 });
 
 // ─── Done evidence: 리뷰 마커 파싱 (순수 함수) ──────────────────────────────

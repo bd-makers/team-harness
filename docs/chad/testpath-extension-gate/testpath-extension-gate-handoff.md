@@ -19,3 +19,12 @@ CHANGELOG.md                                       | 13 ++++++
  src/commands/task.mjs                              | 22 +++++++---
  tests/done-guard.test.mjs                          | 48 ++++++++++++++++++++++
  6 files changed, 95 insertions(+), 13 deletions(-)
+
+## 2026-08-26T02:55:27.310Z — fdb0a9c fix(done): 디렉터리 규칙은 산문만 제외 — codex 리뷰 P2(정직한 작업 차단) 반영
+CHANGELOG.md                                       | 11 +++--
+ docs/chad/chad-handoff.md                          |  2 +-
+ .../testpath-extension-gate-handoff.md             |  9 ++++
+ .../testpath-extension-gate-spec.md                | 53 ++++++++++++++--------
+ src/commands/task.mjs                              | 22 +++++----
+ tests/done-guard.test.mjs                          | 31 +++++++++++--
+ 6 files changed, 92 insertions(+), 36 deletions(-)

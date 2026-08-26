@@ -363,13 +363,21 @@ const SOURCE_EXTENSIONS = new Set([
 
 // 산문 문서 확장자. `tests/`·`specs/` 아래여도 산문은 테스트 정의가 아니다.
 // 설정·데이터(json/yml)는 일부러 넣지 않는다 — `tests/` 아래에서는 진짜 테스트 fixture일 수 있다.
-const PROSE_EXTENSIONS = new Set(['md', 'mdx', 'markdown', 'txt', 'rst', 'adoc']);
+const PROSE_EXTENSIONS = new Set([
+  'md', 'mdx', 'markdown', 'txt', 'rst', 'adoc', 'asciidoc', 'textile', 'org', 'tex', 'typ',
+]);
 
 // 확장자만 뽑는다. 확장자 없는 파일(`Makefile`)과 dotfile(`.eslintrc`)은 null.
+// 끝의 점은 떼고 본다 — `README.md.`이 확장자 없는 파일로 보여 산문 판정을 빠져나가면 안 된다.
 function fileExtension(path) {
-  const base = path.slice(path.lastIndexOf('/') + 1);
+  const base = path.slice(path.lastIndexOf('/') + 1).replace(/\.+$/, '');
   const dot = base.lastIndexOf('.');
   return dot > 0 ? base.slice(dot + 1).toLowerCase() : null;
+}
+
+// dotfile은 도구 설정이지 테스트 정의가 아니다 — `tests/.gitignore`가 테스트 증거로 세어지면 안 된다.
+function isDotfile(path) {
+  return path.slice(path.lastIndexOf('/') + 1).startsWith('.');
 }
 
 // 두 규칙은 신호의 세기가 달라 확장자 조건도 다르다 — 같은 조건을 쓰면 한쪽이 반드시 틀린다.
@@ -378,7 +386,10 @@ function isTestPath(path) {
   // (1) 디렉터리 규칙 — 경로가 스스로 "테스트"라고 말하는 **강한** 신호다. 여기서는 산문 문서만
   // 걷어낸다. 코드 확장자 화이트리스트로 좁히면 `tests/foo.test.mts`·`tests/run-e2e`처럼
   // 목록 밖 확장자·무확장자 테스트가 증거에서 빠져 **정직한 작업을 차단**한다(codex 리뷰 P2).
-  if (/(^|\/)(tests?|__tests__|specs?)(\/|$)/i.test(path)) return !(ext !== null && PROSE_EXTENSIONS.has(ext));
+  if (/(^|\/)(tests?|__tests__|specs?)(\/|$)/i.test(path)) {
+    if (isDotfile(path)) return false;
+    return !(ext !== null && PROSE_EXTENSIONS.has(ext));
+  }
   // (2) basename 규칙 — 이름의 우연한 일치라 **약한** 신호다. 코드 확장자만 인정한다.
   // 이 조건이 없으면 모든 task가 커밋하는 `<name>-spec.md`가 테스트로 세어져 가드가 죽는다.
   if (ext === null || !SOURCE_EXTENSIONS.has(ext)) return false;

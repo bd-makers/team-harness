@@ -14,8 +14,10 @@
 - [x] 구현 — `isTestPath()` 맨 앞에 `SOURCE_EXTENSIONS` 확장자 게이트 추가,
       `SOURCE_EXTENSIONS` 주석을 "판정 양쪽을 지배한다"로 갱신
 - [x] 회귀 확인 — 기존 판정 8건(R3) assertion 무수정 통과 + 전체 스위트 0 fail
-- [x] 순서 계약 고정 — 게이트가 디렉터리 규칙보다 앞에 있음을 테스트로 못 박음(구멍 2 재발 방지)
-- [ ] 외부 리뷰 `/harness-review codex` 실행 → artifact `## Reviews`에 마커와 함께 기록
+- [x] 두 규칙의 확장자 조건을 테스트로 못 박음 — 디렉터리(산문·dotfile 제외) · basename(코드 화이트리스트)
+- [x] 외부 리뷰 `/harness-review codex` 1차 → **P2 진짜 결함**(정직한 작업 차단) 반영해 설계 변경
+      (단일 화이트리스트 → 규칙별 조건), artifact `## Reviews`에 마커와 함께 기록
+- [x] 외부 리뷰 2차(수정 후 재검토) → P2(회피 경로 3종) · P3(테스트 커버리지) 반영, 기록
 - [ ] artifact 결과·학습 기록 → PR 생성
 
 ## Ontology 변경 로그
