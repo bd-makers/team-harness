@@ -59,5 +59,6 @@
 | chad | release-0181-recovery | ✅ done | 2026-08-24 |
 | chad | sim-spec-coverage | ✅ done | 2026-08-24 |
 | chad | boundary-perf-invariant | ✅ done | 2026-08-25 |
-| chad | done-guard-window | 🔄 open | 2026-08-25 |
+| chad | done-guard-window | ✅ done | 2026-08-25 |
 | chad | node-test-runner-flake | 🔄 open | 2026-08-25 |
+| chad | testpath-extension-gate | ✅ done | 2026-08-26 |
