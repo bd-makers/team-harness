@@ -128,17 +128,17 @@ test('artifact.md 없음 → 차단 사유에 포함', async () => {
 });
 
 test('git 레포에 커밋이 0개면 차단 사유에 포함 (HEAD-less repo)', async () => {
-  const { dir } = await makeFixture({
+  const { dir, taskDir } = await makeFixture({
     plan: '# demo — Plan\n\n## 단계\n- [x] done\n',
     artifact: taskArtifactTemplate('demo') + '\n- 실제 결과\n', // plan/artifact pass → only git signals remain
   });
   // git repo with NO commits at all → `git log` is HEAD-less.
   await pexec('git', ['-C', dir, 'init', '-q']);
-  // switchedAt is needed for the zero-commit check; add it to active.json.
-  const activePath = join(dir, '.harness/active.json');
-  const active = JSON.parse(await readFile(activePath, 'utf8'));
-  active.switchedAt = new Date().toISOString();
-  await writeFile(activePath, JSON.stringify(active));
+  // 판정 창이 있어야 커밋 0개 체크가 돈다 — 창의 기준은 meta.firstActivatedAt이다.
+  await writeFile(join(taskDir, 'demo-meta.json'), JSON.stringify({
+    user: 'tester', task: 'demo', created: '2026-08-25',
+    firstActivatedAt: new Date().toISOString(), status: 'open', closedAt: null,
+  }, null, 2) + '\n');
 
   const prevExit = process.exitCode;
   const { logs, restore } = captureLogs();
@@ -360,12 +360,25 @@ test('parseReviewMarkers: 비-ISO8601 at은 무시 — Date.parse의 관대한 �
 // ─── Done evidence: 가드 통합 ───────────────────────────────────────────────
 
 // makeGitFixture 위에 spec/추가 파일을 얹는 헬퍼. 커밋까지 마쳐 dirty 차단을 배제한다.
-async function makeEvidenceFixture({ spec, files = {} } = {}) {
+const ago = (ms) => new Date(Date.now() - ms).toISOString();
+
+// 판정 창(evidence window)의 기준은 meta.firstActivatedAt이다. 새 하네스가 만든 task는
+// 이 필드를 갖는다 — 기본값은 switchedAt과 같은 시각이라 기존 케이스의 판정이 변하지 않는다.
+//   firstActivatedAt: null  → 필드 없는 구 task 재현(시각 비교 포기 경로)
+//   switchedAt              → 재활성화 시각(가드가 더 이상 보지 않아야 하는 값)
+//   commitDate              → 커밋을 백데이트해 "작업은 재활성화 이전에 끝났다"를 재현
+async function makeEvidenceFixture({ spec, files = {}, firstActivatedAt, switchedAt, commitDate } = {}) {
   const { dir, taskDir } = await makeFixture({
     plan: '# demo — Plan\n\n## 단계\n- [x] done\n',
     artifact: taskArtifactTemplate('demo') + '\n- 실제 결과\n',
   });
   if (spec !== undefined) await writeFile(join(taskDir, 'demo-spec.md'), spec);
+  const first = firstActivatedAt === undefined ? ago(60_000) : firstActivatedAt;
+  await writeFile(join(taskDir, 'demo-meta.json'), JSON.stringify({
+    user: 'tester', task: 'demo', created: '2026-08-25',
+    ...(first === null ? {} : { firstActivatedAt: first }),
+    status: 'open', closedAt: null,
+  }, null, 2) + '\n');
   for (const [rel, content] of Object.entries(files)) {
     const abs = join(dir, rel);
     await mkdir(join(abs, '..'), { recursive: true });
@@ -376,10 +389,15 @@ async function makeEvidenceFixture({ spec, files = {} } = {}) {
   await pexec('git', ['-C', dir, 'config', 'user.name', 'demo']);
   const activePath = join(dir, '.harness/active.json');
   const active = JSON.parse(await readFile(activePath, 'utf8'));
-  active.switchedAt = new Date(Date.now() - 60_000).toISOString();
+  active.switchedAt = switchedAt ?? ago(60_000);
   await writeFile(activePath, JSON.stringify(active));
   await pexec('git', ['-C', dir, 'add', '-A']);
-  await pexec('git', ['-C', dir, 'commit', '-q', '-m', 'work']);
+  // 커밋 이후에는 active.json/meta.json을 못 고친다 — dirty-tree 가드에 걸린다.
+  // 시각 차이는 항상 분 단위 이상으로 둔다: `--since` 경계는 초 단위 동등에서 git 버전마다 다르다.
+  const env = commitDate
+    ? { ...process.env, GIT_AUTHOR_DATE: commitDate, GIT_COMMITTER_DATE: commitDate }
+    : process.env;
+  await pexec('git', ['-C', dir, 'commit', '-q', '-m', 'work'], { env });
   return { dir, taskDir };
 }
 
@@ -458,7 +476,7 @@ test('review: required + task 기간 내 마커 → 통과', async () => {
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('이전 task 기간의 마커(at < switchedAt)는 무효 → 차단', async () => {
+test('이전 task 기간의 마커(at < 판정 창 시작)는 무효 → 차단', async () => {
   const spec = '# demo — Spec\n\n## Done evidence\n\n```json\n{ "version": 1, "review": "required", "tests": "skip" }\n```\n';
   const stale = new Date(Date.now() - 3_600_000).toISOString(); // switchedAt(-60s)보다 과거
   const { dir } = await makeEvidenceFixture({ spec, files: {
@@ -470,6 +488,110 @@ test('이전 task 기간의 마커(at < switchedAt)는 무효 → 차단', async
     assert.equal(exitCode, 1, 'blocks — marker predates this task');
     assert.ok(logs.some(l => l.includes('리뷰 마커가 artifact에 없음')), 'stale marker rejected');
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+const REVIEW_ONLY_SPEC =
+  '# demo — Spec\n\n## Done evidence\n\n```json\n{ "version": 1, "review": "required", "tests": "skip" }\n```\n';
+
+// 이 task(done-guard-window)의 핵심 재현. `done`은 활성 task만 대상이라 끝난 task를 닫으려면
+// 재활성화해야 하는데, 그 재활성화가 switchedAt을 현재 시각으로 밀어 원래 창의 증거를 밖으로 냈다.
+// 판정 창이 firstActivatedAt 기준이면 재활성화는 창을 건드리지 못한다.
+test('재활성화해도 원래 작업 구간의 증거가 인정된다 (창 = firstActivatedAt)', async () => {
+  const { dir } = await makeEvidenceFixture({
+    spec: REVIEW_ONLY_SPEC,
+    firstActivatedAt: ago(2 * 3_600_000), // task 작업 시작: 2시간 전
+    switchedAt: ago(60_000),              // 종결하려고 방금 재활성화
+    commitDate: ago(90 * 60_000),         // 실제 작업 커밋: 재활성화 이전
+    files: {
+      'docs/tester/demo/demo-artifact.md':
+        taskArtifactTemplate('demo') + `\n- 실제 결과\n\n<!-- harness:review kind=codex at=${ago(80 * 60_000)} -->\n`,
+    },
+  });
+  try {
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds — 재활성화가 증거를 무효화하지 않는다');
+    assert.ok(!logs.some(l => l.includes('리뷰 마커')), '리뷰 마커 오탐 없음');
+    assert.ok(!logs.some(l => l.includes('커밋이 0개')), '커밋 0개 오탐 없음');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 창을 넓힌 대가로 진짜 누락까지 통과시키면 실패다(spec 요구사항 2). 아래 두 개가 그 그물이다.
+test('창이 넓어져도 창 안에 리뷰 마커가 없으면 여전히 차단', async () => {
+  const { dir } = await makeEvidenceFixture({
+    spec: REVIEW_ONLY_SPEC,
+    firstActivatedAt: ago(2 * 3_600_000),
+  });
+  try {
+    const { logs, exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1, 'blocks');
+    assert.ok(logs.some(l => l.includes('리뷰 마커가 artifact에 없음')), '리뷰 누락은 계속 잡는다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('창이 넓어져도 창 안에 테스트 변경이 없으면 여전히 차단', async () => {
+  // spec 파일을 두지 않는다 — `demo-spec.md`의 basename이 test 경로 규칙(`-spec.md`)에
+  // 걸려 테스트 변경으로 오분류되기 때문(이 task 범위 밖의 별개 결함, artifact에 기록).
+  const { dir } = await makeEvidenceFixture({
+    firstActivatedAt: ago(2 * 3_600_000),
+    files: { 'src/app.mjs': 'export const x = 1;\n' },
+  });
+  try {
+    const { logs, exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1, 'blocks');
+    assert.ok(logs.some(l => l.includes('테스트 파일 변경이 없음')), '테스트 누락은 계속 잡는다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 하위 호환: firstActivatedAt이 없는 기존 task는 창을 모른다. 다른 시각으로 대체하지 않고
+// 시각 비교 자체를 포기한다(구 active.json에 switchedAt이 없을 때와 같은 degrade).
+test('구 task(firstActivatedAt 없음) → 리뷰 마커는 존재만 확인', async () => {
+  const { dir } = await makeEvidenceFixture({
+    spec: REVIEW_ONLY_SPEC,
+    firstActivatedAt: null,
+    files: {
+      'docs/tester/demo/demo-artifact.md':
+        taskArtifactTemplate('demo') + `\n- 실제 결과\n\n<!-- harness:review kind=codex at=${ago(30 * 86_400_000)} -->\n`,
+    },
+  });
+  try {
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds — 창을 모르면 시각 비교를 포기한다');
+    assert.ok(!logs.some(l => l.includes('리뷰 마커')), '옛 마커라도 존재하면 통과');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('구 task(firstActivatedAt 없음) → 시각 기반 git 가드는 건너뜀', async () => {
+  const { dir } = await makeEvidenceFixture({
+    firstActivatedAt: null,
+    files: { 'src/app.mjs': 'export const x = 1;\n' },
+  });
+  try {
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds — 구 task를 차단하지 않는다');
+    assert.ok(!logs.some(l => l.includes('테스트 파일 변경이 없음')), '테스트 가드 건너뜀');
+    assert.ok(!logs.some(l => l.includes('커밋이 0개')), '커밋 가드 건너뜀');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// `Date.parse('9999')`는 9999년으로, `'1'`은 2000-12-31로 성공한다. 형태 검사 없이 받으면
+// 깨진 값이 degrade가 아니라 미래/과거로 어긋난 창이 된다 — 전자는 모든 커밋을 창 밖으로
+// 밀어 전면 오탐, 후자는 리포 전체 이력을 창에 넣어 가드를 무력화한다.
+test('firstActivatedAt이 ISO8601이 아니면 창으로 쓰지 않고 degrade한다', async () => {
+  for (const bogus of ['9999', '1', 'yesterday']) {
+    const { dir } = await makeEvidenceFixture({
+      spec: REVIEW_ONLY_SPEC,
+      firstActivatedAt: bogus,
+      files: {
+        'docs/tester/demo/demo-artifact.md':
+          taskArtifactTemplate('demo') + `\n- 실제 결과\n\n<!-- harness:review kind=codex at=${ago(30 * 86_400_000)} -->\n`,
+      },
+    });
+    try {
+      const { logs } = await runDoneCapture(dir);
+      assert.ok(logs.some(l => l.startsWith('done:')), `proceeds — ${bogus}는 창이 될 수 없다`);
+      assert.ok(!logs.some(l => l.includes('커밋이 0개')), `${bogus}가 미래 창으로 해석되지 않는다`);
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  }
 });
 
 test('Done evidence 선언이 깨져 있으면 그 자체가 차단 사유', async () => {

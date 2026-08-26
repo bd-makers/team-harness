@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-boundary-perf-invariant
+done-guard-window
 
-## Last Commit (2026-08-25)
-c1f4656 docs(review): codex read-only 리뷰 결과·판별 기록, steady-state 명세 명확화
+## Last Commit (2026-08-26)
+9e57d32 chore(handoff): post-commit hook 출력 반영
 
 ## Full Context
-→ docs/chad/boundary-perf-invariant/boundary-perf-invariant-handoff.md
+→ docs/chad/done-guard-window/done-guard-window-handoff.md

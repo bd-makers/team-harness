@@ -84,6 +84,29 @@ test('task/done은 공유 원장을 건드리지 않고 per-task meta만 쓴다'
   }
 });
 
+// done 가드의 판정 창은 이 값 하나에 걸려 있다. 재활성화가 이 값을 밀면 오탐이 되돌아온다.
+test('재활성화는 meta.firstActivatedAt을 덮어쓰지 않는다 (switchedAt만 갱신)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-summary-'));
+  try {
+    const flags = { member: 'chad' };
+    await runTask({ targetDir: dir, flags, taskArgs: ['demo'] });
+    const created = await readTaskMeta(dir, 'chad', 'demo');
+    assert.ok(created.firstActivatedAt, '생성 시 firstActivatedAt이 기록되어야 한다');
+
+    const activePath = join(dir, '.harness', 'active.json');
+    const before = JSON.parse(await readFile(activePath, 'utf8'));
+    await new Promise(r => setTimeout(r, 5));
+    await runTask({ targetDir: dir, flags, taskArgs: ['demo'] }); // 재활성화
+
+    const after = await readTaskMeta(dir, 'chad', 'demo');
+    assert.equal(after.firstActivatedAt, created.firstActivatedAt, '판정 창 시작은 불변이어야 한다');
+    const active = JSON.parse(await readFile(activePath, 'utf8'));
+    assert.notEqual(active.switchedAt, before.switchedAt, 'switchedAt은 재활성화마다 갱신된다');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('done은 meta의 status를 done으로 바꾸고 closedAt을 남긴다', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'harness-summary-'));
   try {

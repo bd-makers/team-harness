@@ -1,3 +1,39 @@
 # done-guard-window — Handoff
 
 (세션 종료 시 post-commit hook이 자동 갱신합니다)
+
+## 2026-08-26T00:16:23.268Z — db7afa4 fix(done): 판정 창을 switchedAt → meta.firstActivatedAt 으로 교체
+AGENTS.md                                          |   5 +-
+ CHANGELOG.md                                       |  16 +++
+ .../done-guard-window-artifact.md                  |  49 ++++++++-
+ .../done-guard-window/done-guard-window-plan.md    |  14 ++-
+ .../done-guard-window/done-guard-window-spec.md    |  48 ++++++--
+ src/commands/summary.mjs                           |   7 +-
+ src/commands/task.mjs                              |  38 +++++--
+ templates/AGENTS.md.hbs                            |   5 +-
+ tests/done-guard.test.mjs                          | 121 +++++++++++++++++++--
+ tests/summary.test.mjs                             |  23 ++++
+ 10 files changed, 282 insertions(+), 44 deletions(-)
+
+## 2026-08-26T00:16:36.843Z — 2c9922f chore(handoff): post-commit hook 출력 반영
+docs/chad/chad-handoff.md                                |  8 ++++----
+ docs/chad/done-guard-window/done-guard-window-handoff.md | 13 +++++++++++++
+ 2 files changed, 17 insertions(+), 4 deletions(-)
+
+## 2026-08-26T00:24:50.990Z — a5b4b9b fix(done): 판정 창의 firstActivatedAt을 ISO8601 형태로 먼저 검사
+docs/chad/chad-handoff.md                          |  2 +-
+ .../done-guard-window-artifact.md                  | 37 ++++++++++++++++++++++
+ .../done-guard-window/done-guard-window-handoff.md |  5 +++
+ .../done-guard-window/done-guard-window-plan.md    |  4 +--
+ src/commands/task.mjs                              | 13 ++++++--
+ tests/done-guard.test.mjs                          | 21 ++++++++++++
+ 6 files changed, 76 insertions(+), 6 deletions(-)
+
+## 2026-08-26T00:24:55.179Z — 9e57d32 chore(handoff): post-commit hook 출력 반영
+docs/chad/chad-handoff.md                                | 2 +-
+ docs/chad/done-guard-window/done-guard-window-handoff.md | 9 +++++++++
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+## 2026-08-26T00:48:43.510Z — 완료
+
+태스크 종료.

@@ -75,8 +75,9 @@
 
 활성 task는 `.harness/active.json`에 저장.
 
-`<name>-meta.json`은 harness가 소유하는 기계 상태(created·status)이며 SSOT 4파일에 포함되지 않는다.
-손으로 고치지 않는다.
+`<name>-meta.json`은 harness가 소유하는 기계 상태(created·firstActivatedAt·status)이며
+SSOT 4파일에 포함되지 않는다. 손으로 고치지 않는다 — 특히 `firstActivatedAt`은 `done` 가드가
+증거를 찾는 **판정 창의 시작점**이라 이 값을 밀면 가드가 오탐을 낸다.
 
 집계 파일 `docs/task_summary.md`와 `docs/<user>/<user>-task.md`는 **생성물**이다.
 `task`/`done`은 이 파일들을 건드리지 않으므로 브랜치를 병렬로 둬도 충돌하지 않는다.
