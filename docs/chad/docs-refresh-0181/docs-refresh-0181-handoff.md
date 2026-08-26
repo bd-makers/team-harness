@@ -91,3 +91,13 @@ CHANGELOG.md                                       |  14 +++
 docs/chad/chad-handoff.md                                |  2 +-
  docs/chad/docs-refresh-0181/docs-refresh-0181-handoff.md | 15 +++++++++++++++
  2 files changed, 16 insertions(+), 1 deletion(-)
+
+## 2026-08-26T04:27:40.414Z — b3e852c docs(review): codex 2차 리뷰 P2 4건·P3 3건 조치
+docs/chad/chad-handoff.md                          |  2 +-
+ .../docs-refresh-0181-artifact.md                  | 31 ++++++++++++++++++++++
+ .../docs-refresh-0181/docs-refresh-0181-handoff.md |  5 ++++
+ docs/diagrams/harness-overview/task-lifecycle.mmd  |  2 +-
+ docs/harness-overview-0.18.1.html                  |  2 +-
+ docs/harness-overview.html                         |  2 +-
+ docs/harness-task-guide.html                       | 19 +++++++------
+ 7 files changed, 51 insertions(+), 12 deletions(-)
