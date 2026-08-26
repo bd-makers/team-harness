@@ -55,3 +55,7 @@ CHANGELOG.md                                                      | 4 ++--
  src/commands/task.mjs                                             | 7 +++++--
  tests/done-guard.test.mjs                                         | 2 ++
  7 files changed, 29 insertions(+), 7 deletions(-)
+
+## 2026-08-26T04:09:29.965Z — 완료
+
+태스크 종료.

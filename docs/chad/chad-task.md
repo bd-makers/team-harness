@@ -18,6 +18,7 @@
 - harness-comptest (created 2026-07-10)
 
 ## Completed
+- ✅ testpath-extension-gate
 - ✅ boundary-perf-invariant
 - ✅ done-guard-window
 - ✅ release-0181-recovery
