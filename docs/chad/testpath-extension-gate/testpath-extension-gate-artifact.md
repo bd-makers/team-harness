@@ -74,6 +74,24 @@ dotfile 제외, `fileExtension()`의 끝점 정규화, 산문 목록에 `org`·`
 
 <!-- harness:review kind=codex scope=diff tip=fdb0a9cd6a1168f20b8605cb39e6aa870dddb205 at=2026-08-26T03:05:40Z -->
 
+### 2026-08-26 — AO 내장 리뷰어 (PR #49, review 5026426845)
+
+- **Scope:** `origin/main...1bf6413` 정적 diff (테스트·빌드 미실행)
+- **P2 "숨김 파일을 소스 분류에서 제외하라" — 오탐 · 코드 변경 없음.**
+  전제가 사실이 아니다. 구 로직의 `dot > slash + 1`은 basename의 **마지막** 점을 봤으므로
+  `.eslintrc.js`는 `dot=9 > slash+1=0` 으로 **예전에도 `source:true`** 였다. 이 조건이 걸러낸 것은
+  점이 하나뿐인 `.env`·`.eslintrc`(= 확장자 없음)뿐이고, 새 `fileExtension()`도 이들을 null로 낸다.
+  구 모듈(`git show origin/main:src/commands/task.mjs`)과 새 모듈을 30개 경로에 대해 **차분 실행**해
+  확인했다 — 차이는 7건이고 전부 의도된 것이다(구멍 1·2, `test.yml`, `tests/.gitignore`, 끝점 정규화,
+  `mts`·`cts` 추가). 숨김 파일 소스 판정의 차이는 **0건**.
+- **조치:** 코드는 그대로 두고, dotfile 소스 판정을 못 박는 회귀 테스트를 추가했다.
+  동작이 비직관적이라 리뷰에서 두 번 오인될 수 있는 지점이다.
+- **별개로 관찰한 기존 동작(이 PR의 회귀 아님):** `.eslintrc.js`만 바꾼 task는 `source:true`가 되어
+  테스트를 요구받는다. 가드가 이제 실제로 발동하므로 **이 기존 동작에 처음 이빨이 생긴다.**
+  config-as-code를 소스에서 뺄지는 판정 의미를 바꾸는 별도 결정이라 이 task에서 하지 않았다.
+
+<!-- harness:review kind=ao-reviewer scope=diff tip=1bf64134a57a1fa6f8fb1db228d0701861b3dca4 at=2026-08-26T03:30:00Z -->
+
 ## Learnings
 
 - **"구조적으로 불가능"은 증명이 필요한 주장이다.** 초안 spec은 소스·테스트가 같은 확장자

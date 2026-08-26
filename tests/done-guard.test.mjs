@@ -365,6 +365,20 @@ test('classifyChangedPaths: tests/ 아래는 확장자가 화이트리스트 밖
   assert.deepEqual(classifyChangedPaths(['notes-spec.txt']), { source: false, test: false });
 });
 
+// dotfile의 **소스** 판정은 이 변경 이전과 동일하다. `dot > slash + 1`은 basename의 *마지막* 점을
+// 봤으므로 `.eslintrc.js`는 예전에도 소스였다("숨김 파일은 소스가 아니었다"는 직관은 틀렸다).
+// 비직관적이라 리뷰에서 회귀로 오인된 적이 있어 못 박아 둔다.
+test('classifyChangedPaths: dotfile의 소스 판정은 변경 전과 동일하다', () => {
+  assert.deepEqual(classifyChangedPaths(['.eslintrc.js']), { source: true, test: false });
+  assert.deepEqual(classifyChangedPaths(['config/.babelrc.js']), { source: true, test: false });
+  assert.deepEqual(classifyChangedPaths(['.prettierrc.mjs']), { source: true, test: false });
+  // 점 하나뿐인 dotfile은 확장자가 없다 — 예전에도 지금도 소스가 아니다
+  assert.deepEqual(classifyChangedPaths(['.env']), { source: false, test: false });
+  assert.deepEqual(classifyChangedPaths(['foo/.env']), { source: false, test: false });
+  // 단, `tests/` 아래 dotfile은 도구 설정이라 테스트 증거가 아니다 (이건 이 변경으로 바뀐 것)
+  assert.deepEqual(classifyChangedPaths(['tests/.gitignore']), { source: false, test: false });
+});
+
 // 산문 판정을 빠져나가는 경로들 — 목록이 md 하나로 줄거나 정규화가 빠지면 여기서 걸린다.
 test('classifyChangedPaths: tests/ 아래 산문·설정의 회피 경로도 테스트가 아니다', () => {
   // 산문 목록은 markdown 하나가 아니다

@@ -45,3 +45,13 @@ docs/chad/chad-handoff.md                                     |  2 +-
  .../testpath-extension-gate-handoff.md                        | 11 +++++++++++
  .../testpath-extension-gate/testpath-extension-gate-plan.md   |  2 +-
  3 files changed, 13 insertions(+), 2 deletions(-)
+
+## 2026-08-26T03:11:21.008Z — 1bf6413 fix(done): 산문 목록에서 txt 제외 — golden 파일이 차단되지 않게
+CHANGELOG.md                                                      | 4 ++--
+ docs/chad/chad-handoff.md                                         | 2 +-
+ .../testpath-extension-gate/testpath-extension-gate-artifact.md   | 7 +++++++
+ .../testpath-extension-gate/testpath-extension-gate-handoff.md    | 6 ++++++
+ docs/chad/testpath-extension-gate/testpath-extension-gate-spec.md | 8 ++++++--
+ src/commands/task.mjs                                             | 7 +++++--
+ tests/done-guard.test.mjs                                         | 2 ++
+ 7 files changed, 29 insertions(+), 7 deletions(-)
