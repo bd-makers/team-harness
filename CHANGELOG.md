@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-08-21
+modified: 2026-08-26
 ---
 
 # Changelog
@@ -17,6 +17,22 @@ modified: 2026-08-21
 -->
 
 ## [Unreleased]
+
+## [0.19.0] - Unreleased
+
+### Added
+- **`harness-sim` SC7 — `/harness-spec` 산출물 검증 시나리오** (task `sim-spec-coverage`).
+  0.18.0이 인도한 `/harness-spec`은 시뮬레이션 커버리지가 **0건**이었다 — 커맨드가 실제로
+  spec 초안을 쓰는지, `.harness/config.json`의 `specSources`를 read-modify-write 하는지
+  아무도 굴려본 적이 없었다. SC5를 일반화하는 대신 전용 시나리오를 둔 이유는 두 가지다 —
+  SC5는 `canon.dir`를 SC3·SC4와 공유하는데 `harness-spec`은 **writer**라 그 자리에 spec과
+  config를 쓰고, SC4가 `active.json`을 null로 만든 뒤라 그대로 돌리면 "활성 task 없음"으로
+  조기 종료해 아무것도 검증하지 못한다. `runHeadless`가 단발 `claude -p`라 멀티턴이 없으므로
+  사람이 할 답변을 프롬프트에 심어 한 턴으로 접고 **결정적 산출물만 채점**한다(트리거 해석·
+  `(interview)` 출처 태그·자가진단 절·`specSources` read-modify-write·merge 시 알 수 없는 절
+  보존). 접히지 않는 것(라이브 MCP fetch·대화 UX·replace/cancel)은 PASS로 위조하지 않고
+  **N/A + 사유**로 리포트에 남긴다. 채점을 순수 함수로 분리해 export했으므로 토큰 없이 CI에서
+  검증된다 — `tests/agentloop-spec-signals.test.mjs`.
 
 ### Fixed
 - **`done`의 테스트 증거 가드를 실제로 동작하게 했다** (task `testpath-extension-gate`).
@@ -47,6 +63,38 @@ modified: 2026-08-21
   창을 넓히면 *다른* task의 커밋·테스트가 이 task의 가드를 만족시켜, 가드가 "이 task를 했는가"가
   아니라 "리포가 활발했는가"를 재게 된다.
 - 커밋 0개 가드의 메시지를 "task 활성화 이후" → "task 시작 이후"로 바꿨다(판정 기준과 일치).
+- **`harness-sim` SC7의 false-PASS 경로 7건 차단** (task `sim-spec-coverage`, codex 리뷰 +
+  오케스트레이터 지적). 형태는 전부 하나였다 — **신호는 PASS인데 정작 검증하려던 일은
+  일어나지 않았을 수 있다.** ① 기존 `user` 값 보존을 "비어 있지 않음"으로 봤고 ② merge 보존을
+  우리가 심은 sentinel의 잔존만으로 봤으며 ③ `specSources`는 저장 여부만, ④ `(interview)` 출처
+  태그는 문서 어디든 있으면, ⑤ 자가진단은 문자열이 있으면 PASS였고 ⑥ trial들이 샌드박스를
+  공유해 앞 trial의 산출물이 뒤 trial을 통과시켰다. 이제 원래 값과의 동등성·merge가 spec을
+  실제로 갱신했다는 증거·프롬프트로 준 `baseUrl`/`spaceKey` 값 대조·요구사항 절의 목록 항목
+  한정·실제 heading + 체크박스 존재·trial마다 독립 샌드박스로 판정하며, 트리거·인계 판정에
+  `a.ok`를 더해 **타임아웃·spawn 실패가 PASS로 집계**되던 경로도 닫았다.
+  ⑦번째가 가장 미묘했다 — "보존했다"와 "**쓰기가 아예 없었다**"를 구분하지 못했다. 기대값을
+  실행 직전 파일에서 읽으므로 커맨드가 config를 아예 건드리지 않아도 비교가 참이 되는데,
+  유닛 테스트가 그 false-PASS를 의도된 동작으로 못박고 있어 회귀 방지가 아니라 **회귀 고정**
+  이었다. 이제 실행 전 원문과 대조해 쓰기가 없으면 PASS가 아니라 N/A로 접고, N/A를 FAIL로
+  접던 `aggregateTrials`도 함께 고쳤다(전부 N/A → N/A, 일부 N/A → N/A, FAIL이 섞이면 FAIL).
+- **boundary perf 가드가 CI에서 무작위로 빨개지던 문제** (task `boundary-perf-invariant`).
+  예산이 bare `node -e ''` 스폰을 분모로 삼은 **차(ms)** 였는데, 그 분모는 스폰 비용 변동만
+  상쇄한다. 부하에서는 CLI 본체 작업(20 × 10KiB 스키마 read+parse + ~20개 모듈 그래프)도 함께
+  느려지고 그 작업량 비례 지연은 분모가 흡수하지 못한다. wall time ≈ 작업량 × 감속계수이므로
+  차는 감속계수를 남기지만 **비(배수)는 소거한다** — 이제 분모는 `boundary check`가 읽는 것과
+  같은 21개 파일을 같은 방식으로 읽고 파싱하되 `src/`를 import 하지 않는 **동일 작업량
+  baseline**이고, 예산은 cold 3배·checkpoint 5배다. 절대 상한 500/800ms는 값 그대로 두되 모든
+  스폰 shape에 untimed warmup을 붙였다 — 부하 중 첫 cold 샘플이 453~541ms(정상 60~90ms)로 튀어
+  **상한 자체가 flake 발생원**이었다. matrix 경합설은 기각했다: `gh api .../jobs`로 확인한 결과
+  두 job은 서로 다른 hosted 러너 VM에서 돌아 `max-parallel: 1`이 no-op이고, 실제 부하원은 제거할
+  수 없는 호스트의 noisy neighbour다. 탐지력은 낮추지 않았다 — CPU burn 주입 mutation test에서
+  신규 가드가 잡는 회귀 임계는 +58ms → **+35ms**로 오히려 좁아졌다.
+- **CI annotation이 실패 없이 조용히 비어 있던 문제.** 계측 패턴이 `^# spawn floor`처럼 **TAP
+  접두사에 앵커**돼 있었는데, node ≤20은 기본 리포터가 TAP이고 ≥22는 spec(`ℹ`·`✖`·
+  `AssertionError`)이다. matrix를 `[24]`로 옮긴 첫 실행은 green이었지만 annotation은 한 줄도
+  나오지 않았다 — raw 로그를 못 읽는 머신에게는 가장 나쁜 형태의 침묵이다. 이제 접두사가 아니라
+  **내용으로** 매칭하고 실패 패턴에 두 리포터를 모두 넣었다. 이번에는 추정하지 않고 네
+  조합(node 20·24 × 통과·실패)의 실제 출력을 캡처해 패턴을 검증했다.
 
 ### Changed
 - **BREAKING: 최소 Node 버전을 18 → 24로 올렸다** (`engines.node: ">=24"`, task
@@ -58,6 +106,27 @@ modified: 2026-08-21
   그래서 "활성 LTS 두 개(22·24)"가 아니라 **24 단독**이다. 22를 넣으면 flake가 되돌아온다.
 - CI 테스트 matrix를 `[18, 20]` → `[24]`로, 릴리스 발행 런타임을 20 → 24로 옮겼다.
   README·`docs/prerequisites.md`의 "Node.js ≥ 18" 서술도 함께 갱신했다.
+- **`MAINTAINING.md`의 "Node.js 18+"도 24+로 정정하고, CI가 실제 런타임을 기록하게 했다.**
+  위 항목의 1차 grep 범위가 README·templates·skills·commands로 좁아 이 파일을 놓쳤다(저장소
+  전체로 재확인했고, 남은 히트는 종결 task SSOT와 과거 plan 문서라 historical record로 두었다).
+  함께 워크플로우가 매 실행마다 `::notice::runtime vX.Y.Z`를 남긴다 — 아래 Notes의 "24.20.0
+  이후에야 flake가 사라진다"를 **추정이 아니라 사후 확인**으로 만들기 위해서다. 24.20.0 pin은
+  그 시점(2026-08-25)에 불가능했다(릴리스 PR open·태그 404 → `setup-node` 해석 실패로 CI 즉사).
+  26.7.0 이동도 택하지 않았다 — 26은 Current라 그쪽으로 옮기면 `engines`가 선언한 **최소 지원
+  런타임을 더 이상 시험하지 않게** 된다.
+- **소비자용 HTML 문서 4종을 0.18.1 기준으로 갱신하고 0.18.1 스냅샷 2종을 남겼다**
+  (task `docs-refresh-0181`). `harness-fleet-guide`·`harness-task-guide`는 0.14, `harness-workflow-simulation`은
+  0.13.0에 멈춰 있어 **문서가 틀린 말을 하고 있었다** — task-guide §8의 "task가 닫히면
+  `<user>-task.md`와 `task_summary.md`가 갱신된다"는 0.16.0의 원장 생성물화 이후 명시적으로
+  거짓이고, fleet guide는 0.15.1에서 고쳐진 `release --help` 사고를 아직 경고로 띄우고 있었으며,
+  "훅은 Claude Code 전용"은 0.15.0의 `.codex/hooks.json`으로 틀렸다. 갱신 범위는 원장 생성물화,
+  `<name>-meta.json`(+`firstActivatedAt`), done 가드 4종 → 6종 + 선언 유효성, 리뷰 커맨드 엔진
+  중립 재편, ship 단계 삽입(§1 흐름 SVG 9 → 10단계), `## Done evidence` 절, Node 배지 ≥24다.
+  본문만 고치고 **그림을 놓치면 같은 문서 안에서 글과 그림이 서로 반박**하므로 다이어그램
+  원본(`task-files.mmd`·`task-lifecycle.mmd`)도 다시 쓰고 재생성했으며, 재작성이 어려운 사전 렌더
+  SVG는 캡션에 "참조이지 쓰기 방향이 아니다"를 명시했다. 이 세트에 전례 없는 mermaid 구문
+  (`-.->|라벨|`)은 걷어냈다 — 문법 오류가 `docs:check`를 초록으로 통과하고 **렌더 시점에만**
+  드러나기 때문이다.
 
 ### Notes
 - 이 수정이 실제로 flake를 없애는 것은 **Node 24.20.0(2026-08-26) 이후**다. `node-version: 24`는
@@ -65,6 +134,10 @@ modified: 2026-08-21
 - CI 워크플로우가 테스트 출력을 **annotation으로 되돌린다** — 이 저장소를 유지보수하는
   머신은 raw CI 로그를 받을 수 없어(blob storage 403) `gh run view --log-failed`가 실패한다.
   `gh api repos/<owner>/<repo>/check-runs/<job_id>/annotations`로 읽는다.
+- 0.18.0이 0.19.0으로 이월한 **옛 리뷰 이름 4개**(`/harness-codex-review`·
+  `/harness-codex-adversarial-review`의 커맨드·스킬) 제거는 이 항목을 쓰는 시점까지 **수행되지
+  않았다** — 포워딩 4개가 트리에 그대로 있다. 선행 조건(팀원 머신 전역 CLAUDE.md의 새 이름
+  전환)이 확인되면 이 릴리스에서 제거하고, 다시 이월한다면 그 사실을 이 절에 적는다.
 
 ## [0.18.1] - 2026-08-22
 
