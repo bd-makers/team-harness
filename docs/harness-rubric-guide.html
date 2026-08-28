@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Harness 0.20.0 — 루브릭 평가 가이드 (D6 적대적 검증)</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3350;
+      --accent: #7c6af5;
+      --accent2: #50c8f5;
+      --accent3: #4df0aa;
+      --warning: #f5a623;
+      --danger: #f5566a;
+      --text: #e2e6f0;
+      --muted: #9aa2bf;
+      --tag-blue: #1e3a5f;
+      --tag-green: #0e3d30;
+      --tag-purple: #2a1f5c;
+      --tag-orange: #3d2700;
+      --tag-red: #46101c;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      height: 54px;
+      padding: 0 2rem;
+      background: rgba(15, 17, 23, 0.95);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+    .nav-logo { flex: 0 0 auto; margin-right: 1.5rem; color: var(--accent); font-weight: 750; white-space: nowrap; }
+    .nav-links { display: flex; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+    .nav-links::-webkit-scrollbar { display: none; }
+    .nav-links a {
+      display: flex; align-items: center; height: 54px; padding: 0 0.8rem;
+      color: var(--muted); border-bottom: 2px solid transparent;
+      font-size: 0.84rem; text-decoration: none; white-space: nowrap;
+    }
+    .nav-links a:hover { color: var(--text); border-bottom-color: var(--accent); }
+
+    main { width: min(1120px, 100%); margin: 0 auto; padding: 2.5rem 2rem 5rem; }
+    .hero { padding: 3.5rem 0 2.5rem; text-align: center; }
+    .eyebrow { margin-bottom: 0.75rem; color: var(--accent3); font-size: 0.78rem; font-weight: 750; letter-spacing: 0.12em; text-transform: uppercase; }
+    h1 {
+      margin: 0 0 1rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      font-size: clamp(2rem, 6vw, 3.1rem);
+      line-height: 1.18;
+    }
+    .hero > p { max-width: 800px; margin: 0 auto 1.4rem; color: var(--muted); }
+    .tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+    .tag { padding: 4px 12px; border-radius: 999px; font-size: 0.78rem; font-weight: 650; }
+    .tag-purple { background: var(--tag-purple); color: #a99cf8; }
+    .tag-blue { background: var(--tag-blue); color: var(--accent2); }
+    .tag-green { background: var(--tag-green); color: var(--accent3); }
+    .tag-orange { background: var(--tag-orange); color: var(--warning); }
+    .tag-red { background: var(--tag-red); color: var(--danger); }
+
+    .release-brief {
+      display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px;
+      overflow: hidden; margin: 0 0 4rem;
+      border: 1px solid var(--border); border-radius: 14px; background: var(--border);
+    }
+    .release-brief > div { min-width: 0; padding: 1.2rem 1.3rem; background: var(--surface); }
+    .release-brief dt { color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; }
+    .release-brief dd { margin: 0.25rem 0 0; font-size: 0.95rem; overflow-wrap: anywhere; }
+
+    section { margin-bottom: 4.5rem; scroll-margin-top: 76px; }
+    .section-title { display: flex; align-items: center; gap: 0.65rem; margin: 0 0 0.35rem; font-size: 1.5rem; }
+    .section-title::before { width: 4px; height: 1.5rem; border-radius: 2px; background: var(--accent); content: ""; }
+    .section-sub { margin: 0 0 1.4rem; color: var(--muted); font-size: 0.92rem; }
+    h3.sub { margin: 2.2rem 0 0.5rem; color: var(--accent2); font-size: 1.05rem; }
+    p { overflow-wrap: anywhere; }
+
+    code {
+      padding: 2px 6px; border-radius: 4px;
+      background: var(--surface2); color: var(--accent2);
+      font-family: "SF Mono", "Fira Code", monospace; font-size: 0.83em;
+      overflow-wrap: anywhere;
+    }
+    pre {
+      overflow-x: auto; margin: 0.9rem 0; padding: 1rem 1.1rem;
+      border: 1px solid var(--border); border-radius: 10px;
+      background: #14161f; font-size: 0.82rem; line-height: 1.6;
+    }
+    pre code { padding: 0; background: none; color: #cbd1e3; font-size: 0.82rem; }
+    pre .c { color: var(--muted); }
+    pre .g { color: var(--accent3); }
+    pre .r { color: var(--danger); }
+    pre .y { color: var(--warning); }
+    pre .b { color: var(--accent2); }
+
+    .table-wrap { overflow-x: auto; margin: 1rem 0; border: 1px solid var(--border); border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.87rem; }
+    th, td { padding: 0.7rem 0.9rem; text-align: left; vertical-align: top; border-bottom: 1px solid var(--border); }
+    th { background: var(--surface2); color: var(--muted); font-size: 0.76rem; font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase; white-space: nowrap; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:nth-child(even) { background: rgba(34, 38, 58, 0.35); }
+    td strong { color: var(--text); }
+
+    .sev { display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.72rem; font-weight: 700; white-space: nowrap; }
+    .sev-blocker { background: var(--tag-red); color: var(--danger); }
+    .sev-major { background: var(--tag-orange); color: var(--warning); }
+    .sev-minor { background: var(--tag-blue); color: var(--accent2); }
+
+    .callout {
+      display: grid; grid-template-columns: 2.1rem minmax(0, 1fr); gap: 0.5rem;
+      margin: 1.2rem 0; padding: 1rem 1.2rem;
+      border: 1px solid var(--border); border-left: 3px solid var(--accent);
+      border-radius: 10px; background: var(--surface); font-size: 0.88rem;
+    }
+    .callout .mark { font-size: 1.05rem; line-height: 1.4; }
+    .callout p { margin: 0 0 0.4rem; }
+    .callout p:last-child { margin-bottom: 0; }
+    .callout.warn { border-left-color: var(--warning); }
+    .callout.bad { border-left-color: var(--danger); }
+    .callout.good { border-left-color: var(--accent3); }
+    .callout h5 { margin: 0 0 0.35rem; font-size: 0.9rem; }
+
+    .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    .card { min-width: 0; padding: 1.15rem 1.25rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+    .card h4 { margin: 0 0 0.45rem; font-size: 0.95rem; }
+    .card p { margin: 0; color: var(--muted); font-size: 0.86rem; }
+    .card.ok { border-top: 3px solid var(--accent3); }
+    .card.no { border-top: 3px solid var(--danger); }
+    .card.note { border-top: 3px solid var(--accent2); }
+
+    .figure { overflow-x: auto; margin: 1.4rem 0 0.6rem; padding: 1.1rem; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+    .figure svg { display: block; width: 100%; min-width: 720px; height: auto; }
+    figcaption { margin: 0.4rem 0 0; color: var(--muted); font-size: 0.8rem; }
+    .svg-box { fill: var(--surface2); stroke: var(--border); }
+    .svg-box-accent { fill: #221d47; stroke: var(--accent); }
+    .svg-box-green { fill: #10281f; stroke: var(--accent3); }
+    .svg-box-warn { fill: #2b1e05; stroke: var(--warning); }
+    .svg-label { fill: var(--text); font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 13px; font-weight: 650; }
+    .svg-sub { fill: var(--muted); font-family: "SF Mono", monospace; font-size: 10px; }
+    .svg-note { fill: var(--muted); font-family: -apple-system, sans-serif; font-size: 10.5px; }
+    .svg-line { stroke: var(--accent2); stroke-width: 1.6; fill: none; }
+    .svg-line-green { stroke: var(--accent3); stroke-width: 1.6; fill: none; }
+    .svg-line-dash { stroke: var(--danger); stroke-width: 1.4; fill: none; stroke-dasharray: 5 4; }
+
+    ol.steps { margin: 1rem 0; padding-left: 1.3rem; }
+    ol.steps > li { margin-bottom: 0.6rem; font-size: 0.9rem; }
+    ul.tight { margin: 0.6rem 0; padding-left: 1.2rem; font-size: 0.9rem; }
+    ul.tight li { margin-bottom: 0.35rem; }
+
+    footer { padding: 2rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.8rem; text-align: center; }
+
+    @media (max-width: 780px) {
+      nav { padding: 0 1rem; }
+      main { padding: 1.5rem 1rem 4rem; }
+      .hero { padding-top: 2.5rem; }
+      .release-brief, .grid2, .grid3 { grid-template-columns: minmax(0, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <nav aria-label="문서 섹션">
+    <div class="nav-logo">Harness 0.20.0 · rubric guide</div>
+    <div class="nav-links">
+      <a href="#why">왜 루브릭인가</a>
+      <a href="#schema">finding 스키마</a>
+      <a href="#loop">검증 루프</a>
+      <a href="#framings">5 + 1 프레이밍</a>
+      <a href="#lifecycle">라이프사이클</a>
+      <a href="#engines">엔진 층</a>
+      <a href="#marker">마커·증거 게이트</a>
+      <a href="#pitfalls">함정</a>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Verification guide · 0.20.0</div>
+      <h1>루브릭 평가 —<br>자기 채점을 믿지 않는 방법</h1>
+      <p>0.20.0의 <strong>D6(적대적 검증)</strong>은 작업 산출물의 품질 판정을 작업자 자신에게서 떼어내 <strong>별도 컨텍스트의 read-only 검증자</strong>에게 맡깁니다. 검증자는 루브릭(finding 스키마)으로 <em>반박만</em> 하고, 반영은 작성 세션이 재현·판별한 뒤 단일 스레드로 수행합니다. 이 문서는 그 전체 계약 — 스키마·프레이밍·엔진·마커·게이트 — 을 한 장에 담습니다.</p>
+      <div class="tags">
+        <span class="tag tag-purple">0.20.0 기준</span>
+        <span class="tag tag-blue">D6 = D2의 작업 단위 적용</span>
+        <span class="tag tag-green">read-only 검증자</span>
+        <span class="tag tag-orange">루브릭 5 + 1</span>
+        <span class="tag tag-red">자동 수정 루프 금지</span>
+      </div>
+    </header>
+
+    <dl class="release-brief" aria-label="문서 요약">
+      <div><dt>대상</dt><dd>하네스에서 검증 프레이밍(<code>/harness-review</code> 계열·페르소나 외부 엔진 모드)을 쓰거나 설계하는 사람</dd></div>
+      <div><dt>정본</dt><dd><code>docs/decisions.md</code> D6 · <code>commands/harness-review.md</code> 5단계(kind 열거) · 각 커맨드 문서의 루브릭 표</dd></div>
+      <div><dt>강제 지점</dt><dd><code>harness-team done</code>의 <code>verify</code> 증거 가드 (<code>src/commands/task.mjs</code>)</dd></div>
+    </dl>
+
+    <!-- ============================================================ -->
+    <section id="why">
+      <h2 class="section-title">1. 왜 루브릭인가 — 결정론 가드가 못 하는 일</h2>
+      <p class="section-sub">하네스의 가드는 두 층으로 나뉩니다. 이 구분을 모르면 "가드가 있는데 왜 또 검증자냐"가 됩니다.</p>
+
+      <div class="grid2">
+        <div class="card note">
+          <h4>결정론 게이트가 강제하는 것 — "기록했는가"</h4>
+          <p><code>harness-team done</code>은 판정 창 안의 커밋·테스트 파일 변경·리뷰 마커의 <strong>존재</strong>를 검사합니다. 빠르고 반박 불가능하지만, 마커 뒤의 리뷰가 대충이었는지는 알 수 없습니다. 가드 스스로 "이 체크가 막는 것은 망각이다"라고 명시합니다.</p>
+        </div>
+        <div class="card no">
+          <h4>자기 채점이 새는 곳 — "품질 판정"</h4>
+          <p>품질 판정을 작업자 자신의 자가 채점에 두면 <strong>낙관적 체크가 게이트를 무력화</strong>합니다. spec을 쓴 세션이 자기 spec의 가정을 반박하면 sunk-cost 편향이 반론을 무디게 하고, 테스트를 쓴 세션은 tautological 테스트를 알아보지 못합니다.</p>
+        </div>
+      </div>
+
+      <p style="margin-top:1.2rem">D6의 답은 새 메커니즘이 아니라 <strong>기존 원칙의 재사용</strong>입니다 — D2(작성자·리뷰어 분리)를 릴리스 단위가 아닌 <strong>작업 단위</strong>에 적용하고, 실행 경로는 <code>/harness-review</code>의 엔진 runner 표와 마커 계약을 그대로 씁니다. 검증자는 읽기만 하므로 D4(단일 스레드 쓰기)를 위반하지 않습니다.</p>
+
+      <div class="callout good">
+        <div class="mark">✅</div>
+        <div>
+          <h5>판정 주체 분리 + 실행 표면 최소화</h5>
+          <p>"판정 주체를 분리하되 실행 메커니즘은 기존 리뷰 경로를 재사용해 표면 증가를 최소화한다" — <code>docs/decisions.md</code> D6. 새 CLI 서브커맨드도, 새 훅도 없습니다. 커맨드 문서의 프롬프트 교체 + 마커 접미사가 전부입니다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="schema">
+      <h2 class="section-title">2. finding 스키마 — 모든 프레이밍이 공유하는 5필드</h2>
+      <p class="section-sub">검증자의 산출물은 산문 감상이 아니라 <strong>finding 표</strong>입니다. 각 행은 다섯 필드를 갖습니다.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>필드</th><th>값</th><th>규칙</th></tr></thead>
+          <tbody>
+            <tr><td><strong>id</strong></td><td><code>A1</code>·<code>T3</code>·<code>S5</code> …</td><td>루브릭 표의 행 식별자 — 어느 항목을 채점했는지 추적 가능해야 한다</td></tr>
+            <tr><td><strong>항목</strong></td><td>pass 조건 서술</td><td>루브릭이 정의한 검사 내용</td></tr>
+            <tr><td><strong>심각도</strong></td><td><span class="sev sev-blocker">BLOCKER</span> <span class="sev sev-major">MAJOR</span> <span class="sev sev-minor">MINOR</span></td><td>BLOCKER fail이 하나라도 남으면 해당 게이트(완료 선언·준비 완료 선언)를 통과하지 못한다</td></tr>
+            <tr><td><strong>판정</strong></td><td><code>pass</code> / <code>fail</code> / <code>na</code></td><td><strong>증거 없는 항목은 pass가 아니라 na</strong> — 정직성 규칙</td></tr>
+            <tr><td><strong>근거</strong></td><td>파일·git·실행 출력 인용</td><td>산문은 신호가 아니다. spec/plan 문장 인용, <code>file:line</code>, 명령 출력만 근거가 된다</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="grid3">
+        <div class="card ok">
+          <h4>정직성 규칙</h4>
+          <p>pass 판정은 파일·git·실행 출력 증거에만 근거한다. 증거를 인용할 수 없으면 <code>na</code>다. sim 루브릭의 "프로즈 신뢰 금지" 결정을 상속했다.</p>
+        </div>
+        <div class="card no">
+          <h4>자동 수정 루프 금지</h4>
+          <p>검증자의 발견은 <strong>주장이지 사실이 아니다</strong>. 검증자에게 쓰기·자동 반영 권한을 주면 read-only 리뷰 원칙과 D4가 동시에 무너진다.</p>
+        </div>
+        <div class="card note">
+          <h4>BLOCKER 게이트</h4>
+          <p>BLOCKER fail이 남아 있는 동안 testcritic은 "완료"를, shipcheck는 "준비 완료"를, contrarian(A1)은 "구현 진입"을 선언하지 못한다.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="loop">
+      <h2 class="section-title">3. 검증 루프 — 누가 읽고, 누가 쓰는가</h2>
+      <p class="section-sub">모든 프레이밍이 같은 루프를 돕니다. 쓰기는 항상 driver(작성 세션) 한 곳에서만 일어납니다.</p>
+
+      <figure class="figure">
+        <svg viewBox="0 0 980 330" role="img" aria-label="D6 검증 루프: driver가 검증자에게 루브릭 프롬프트를 전달하고, 검증자의 finding 표를 driver가 재현·판별한 뒤 단일 스레드로 반영하고 artifact에 마커를 남기면 done 가드가 검사한다">
+          <defs>
+            <marker id="ar1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+              <path d="M0,0 L8,4 L0,8 z" fill="#50c8f5"></path>
+            </marker>
+            <marker id="ar2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+              <path d="M0,0 L8,4 L0,8 z" fill="#4df0aa"></path>
+            </marker>
+            <marker id="ar3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+              <path d="M0,0 L8,4 L0,8 z" fill="#f5566a"></path>
+            </marker>
+          </defs>
+
+          <!-- row 1 -->
+          <rect class="svg-box" x="30" y="40" width="230" height="60" rx="10"></rect>
+          <text class="svg-label" x="145" y="65" text-anchor="middle">driver — 작성 세션</text>
+          <text class="svg-sub" x="145" y="84" text-anchor="middle">spec·plan·코드를 쓴 당사자</text>
+
+          <rect class="svg-box-accent" x="380" y="40" width="250" height="60" rx="10"></rect>
+          <text class="svg-label" x="505" y="65" text-anchor="middle">read-only 검증자</text>
+          <text class="svg-sub" x="505" y="84" text-anchor="middle">별도 컨텍스트 · 엔진 runner 표</text>
+
+          <rect class="svg-box" x="740" y="40" width="210" height="60" rx="10"></rect>
+          <text class="svg-label" x="845" y="65" text-anchor="middle">finding 표</text>
+          <text class="svg-sub" x="845" y="84" text-anchor="middle">id·항목·심각도·판정·근거</text>
+
+          <path class="svg-line" d="M260,70 L372,70" marker-end="url(#ar1)"></path>
+          <text class="svg-note" x="316" y="60" text-anchor="middle">루브릭 프롬프트</text>
+          <path class="svg-line" d="M630,70 L732,70" marker-end="url(#ar1)"></path>
+          <text class="svg-note" x="681" y="60" text-anchor="middle">채점</text>
+
+          <!-- row 2 -->
+          <rect class="svg-box" x="740" y="180" width="210" height="60" rx="10"></rect>
+          <text class="svg-label" x="845" y="205" text-anchor="middle">driver 재현·판별</text>
+          <text class="svg-sub" x="845" y="224" text-anchor="middle">발견은 주장이지 사실이 아니다</text>
+
+          <rect class="svg-box-green" x="380" y="180" width="250" height="60" rx="10"></rect>
+          <text class="svg-label" x="505" y="205" text-anchor="middle">반영 — 단일 스레드 쓰기</text>
+          <text class="svg-sub" x="505" y="224" text-anchor="middle">D4 유지 · 사용자와 판별 후</text>
+
+          <rect class="svg-box" x="30" y="180" width="230" height="60" rx="10"></rect>
+          <text class="svg-label" x="145" y="205" text-anchor="middle">artifact ## Reviews + 마커</text>
+          <text class="svg-sub" x="145" y="224" text-anchor="middle">kind=&lt;engine&gt;-&lt;프레이밍&gt;</text>
+
+          <path class="svg-line" d="M845,100 L845,172" marker-end="url(#ar1)"></path>
+          <path class="svg-line-green" d="M740,210 L638,210" marker-end="url(#ar2)"></path>
+          <path class="svg-line-green" d="M380,210 L268,210" marker-end="url(#ar2)"></path>
+          <text class="svg-note" x="324" y="200" text-anchor="middle">기록</text>
+
+          <!-- done gate -->
+          <rect class="svg-box-warn" x="30" y="280" width="380" height="36" rx="8"></rect>
+          <text class="svg-label" x="220" y="303" text-anchor="middle" style="font-size:12px">harness-team done — verify: required 가드가 마커를 스캔</text>
+          <path class="svg-line-green" d="M145,240 L145,272" marker-end="url(#ar2)"></path>
+
+          <!-- forbidden: verifier writing -->
+          <path class="svg-line-dash" d="M460,100 L300,176" marker-end="url(#ar3)"></path>
+          <text class="svg-note" x="330" y="128" text-anchor="middle" style="fill:#f5566a">✕ 검증자가 직접 고침 — 금지</text>
+        </svg>
+        <figcaption>검증자는 읽고 채점만 한다(보라). 반영·기록은 전부 driver의 단일 스레드(초록). 빨간 점선 경로 — 검증자에게 수정을 시키는 것 — 는 D6가 명시적으로 금지한다.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="framings">
+      <h2 class="section-title">4. 프레이밍 5 + 1 — 무엇을, 어느 층에서 반박하나</h2>
+      <p class="section-sub">검증 프레이밍은 <code>kind=&lt;engine&gt;-&lt;프레이밍&gt;</code> 접미사로 구분됩니다. 절차·엔진 표는 전부 <code>/harness-review</code>를 재사용하고, 각자 리뷰 프롬프트(루브릭)만 교체합니다.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>프레이밍</th><th>대상 층</th><th>루브릭</th><th>진입점</th><th>kind / scope</th><th>막는 것</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>adversarial</strong></td>
+              <td>구현 diff</td>
+              <td>자유 반박 (P1–P3 심각도)</td>
+              <td><code>/harness-adversarial-review</code></td>
+              <td><code>-adversarial</code> / <code>worktree|diff</code></td>
+              <td>거부되어야 할 설계·접근이 머지되는 것</td>
+            </tr>
+            <tr>
+              <td><strong>testcritic</strong></td>
+              <td>새 테스트</td>
+              <td>T1–T6</td>
+              <td>테스트 3형제 6단계 (unittest·comptest·inttest)</td>
+              <td><code>-testcritic</code> / <code>worktree|diff</code></td>
+              <td>tautological·mock 반향 테스트가 "커버리지"로 통과하는 것</td>
+            </tr>
+            <tr>
+              <td><strong>shipcheck</strong></td>
+              <td>문서 ↔ diff 정합</td>
+              <td>S1–S5</td>
+              <td><code>/harness-ship</code> 7단계</td>
+              <td><code>-shipcheck</code> / <code>diff</code></td>
+              <td>spec에 없는 구현·구현에 없는 체크박스가 PR로 나가는 것</td>
+            </tr>
+            <tr>
+              <td><strong>contrarian</strong></td>
+              <td>spec/plan 가정</td>
+              <td>A1–A4</td>
+              <td><code>/harness-contrarian &lt;engine&gt;</code></td>
+              <td><code>-contrarian</code> / <code>task-docs</code></td>
+              <td>뒤집히면 무너지는 가정 위에 구현이 시작되는 것</td>
+            </tr>
+            <tr>
+              <td><strong>simplifier</strong></td>
+              <td>plan 단계·추상화</td>
+              <td>R1–R4</td>
+              <td><code>/harness-simplifier &lt;engine&gt;</code></td>
+              <td><code>-simplifier</code> / <code>task-docs</code></td>
+              <td>자기가 도입한 단계를 아까워해 제거하지 못하는 것</td>
+            </tr>
+            <tr>
+              <td><strong>(interview 선행 채점)</strong></td>
+              <td>spec 모호성</td>
+              <td>Goal·Constraint·Success·Context·Ontology 5차원</td>
+              <td><code>/harness-interview</code></td>
+              <td>마커 없음 — spec 체크박스 갱신</td>
+              <td>감으로 질문부터 시작해 명확한 차원에 시간을 쓰고 구멍을 놓치는 것</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <div class="mark">ℹ️</div>
+        <div>
+          <h5>interview만 외부 엔진이 없는 이유</h5>
+          <p>선행 채점은 D6 정직성 규칙(증거 없는 pass는 na)을 그대로 상속하지만, 문답 자체는 여전히 <strong>사용자와의 대화</strong>입니다 — 숨은 가정은 코드가 아니라 사용자의 머릿속에 있어서, 외부 검증자가 대신 캐낼 수 없습니다. 그래서 리뷰 마커도 남기지 않고 spec의 Ambiguity 체크박스를 채점표 근거로만 갱신합니다.</p>
+        </div>
+      </div>
+
+      <h3 class="sub">각 루브릭 전문</h3>
+
+      <h4 style="margin:1.4rem 0 0.3rem; font-size:0.95rem">contrarian — A1–A4 (spec/plan의 가정 반박)</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>id</th><th>항목 (pass 조건)</th><th>심각도</th></tr></thead>
+          <tbody>
+            <tr><td>A1</td><td>반대가 사실이라면 — 핵심 가정이 뒤집혀도 목표가 즉시 무너지지 않거나, 무너지는 조건이 spec에 식별돼 있다</td><td><span class="sev sev-blocker">BLOCKER</span></td></tr>
+            <tr><td>A2</td><td>이게 필요 없다면 — 가장 비싼 단계를 제거하면 목표 달성이 불가능하다 (제거 가능하면 fail)</td><td><span class="sev sev-major">MAJOR</span></td></tr>
+            <tr><td>A3</td><td>숨은 비용 — 6개월 뒤 유지보수 부담을 만드는 결정이 없거나, 있다면 spec에 비용이 기록돼 있다</td><td><span class="sev sev-major">MAJOR</span></td></tr>
+            <tr><td>A4</td><td>잘못된 추상화 — 단일 사용처뿐인 추상화 도입이 plan에 없다</td><td><span class="sev sev-minor">MINOR</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:0.85rem; color:var(--muted)">A1(BLOCKER) fail이 해소되기 전에는 구현에 진입하지 않는다.</p>
+
+      <h4 style="margin:1.4rem 0 0.3rem; font-size:0.95rem">simplifier — R1–R4 (plan의 제거 후보)</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>id</th><th>항목 (pass 조건)</th><th>심각도</th></tr></thead>
+          <tbody>
+            <tr><td>R1</td><td>YAGNI — spec 요구사항에 대응하지 않는 선행 구현 단계가 plan에 없다</td><td><span class="sev sev-major">MAJOR</span></td></tr>
+            <tr><td>R2</td><td>단일 사용처 추상화 — 1곳에서만 쓰일 새 클래스/함수/계층 도입이 없다</td><td><span class="sev sev-major">MAJOR</span></td></tr>
+            <tr><td>R3</td><td>중복 단계 — 동일 효과를 내는 단계가 plan에 둘 이상 없다</td><td><span class="sev sev-major">MAJOR</span></td></tr>
+            <tr><td>R4</td><td>죽은 옵션 — 항상 같은 값으로만 쓰일 플래그·설정 추가가 없다</td><td><span class="sev sev-minor">MINOR</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:0.85rem; color:var(--muted)">fail마다 <strong>제거안 한 줄</strong>을 요구한다 — 제거"안"까지가 검증자의 몫이고, plan.md 수정은 driver가 사용자 승인 후 수행한다.</p>
+
+      <h4 style="margin:1.4rem 0 0.3rem; font-size:0.95rem">testcritic — T1–T6 (새 테스트 비평)</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>id</th><th>항목</th><th>심각도</th></tr></thead>
+          <tbody>
+            <tr><td>T1</td><td>새 테스트가 실제 실행되어 전부 통과했다는 증거(명령·출력)가 있다</td><td><span class="sev sev-blocker">BLOCKER</span></td></tr>
+            <tr><td>T2</td><td>tautological 테스트 없음 — 프로덕션을 망가뜨려도 통과하는 테스트 부재</td><td><span class="sev sev-blocker">BLOCKER</span></td></tr>
+            <tr><td>T3</td><td>mock 반향 테스트 없음 — mock 세팅값을 그대로 assert하는 테스트 부재</td><td><span class="sev sev-blocker">BLOCKER</span></td></tr>
+            <tr><td>T4</td><td>각 테스트가 죽일 수 있는 프로덕션 변이(mutation)를 최소 1개 지목할 수 있다</td><td><span class="sev sev-major">MAJOR</span></td></tr>
+            <tr><td>T5</td><td>GWT 3구획·서술형 테스트명·When 한 줄 규율 준수</td><td><span class="sev sev-major">MAJOR</span></td></tr>
+            <tr><td>T6</td><td>구현 세부사항 assert 없음 — private/호출 순서/내부 상태 검증 부재</td><td><span class="sev sev-major">MAJOR</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4 style="margin:1.4rem 0 0.3rem; font-size:0.95rem">shipcheck — S1–S5 (PR 직전 문서↔diff 정합)</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>id</th><th>항목</th><th>심각도</th></tr></thead>
+          <tbody>
+            <tr><td>S1</td><td>spec 요구사항마다 diff에 대응 구현이 있거나 "의도적 미구현"으로 기록돼 있다</td><td><span class="sev sev-blocker">BLOCKER</span></td></tr>
+            <tr><td>S2</td><td>plan의 <code>- [x]</code> 각 항목에 대응하는 변경·커밋이 실재한다</td><td><span class="sev sev-major">MAJOR</span></td></tr>
+            <tr><td>S3</td><td>spec/plan에 없는 스코프 밖 변경이 diff에 없다 (있으면 문서에 사유 기록)</td><td><span class="sev sev-major">MAJOR</span></td></tr>
+            <tr><td>S4</td><td>실행된 리뷰가 전부 artifact <code>## Reviews</code>에 마커와 함께 기록돼 있다</td><td><span class="sev sev-major">MAJOR</span></td></tr>
+            <tr><td>S5</td><td>보고의 "검증 결과"가 실제 명령·출력 인용이다 — 산문 선언이 아니다</td><td><span class="sev sev-blocker">BLOCKER</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="font-size:0.85rem; color:var(--muted)">shipcheck의 발견을 반영할 때 driver는 <strong>문서만</strong> 고친다 — 코드 결함은 보고만 한다(ship의 review-only 제약 유지).</p>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="lifecycle">
+      <h2 class="section-title">5. 라이프사이클 — 어느 단계에 어떤 검증이 꽂히나</h2>
+      <p class="section-sub">task의 흐름(spec → plan → 구현 → 테스트 → ship → done)마다 반박의 대상이 다릅니다. 전부 옵트인이며, 중요한 변경(AGENTS.md 리뷰 프로토콜 기준)에서 켭니다.</p>
+
+      <figure class="figure">
+        <svg viewBox="0 0 980 250" role="img" aria-label="라이프사이클 단계별 검증 프레이밍 배치: spec에 interview 선행 채점과 contrarian, plan에 simplifier, 구현 diff에 adversarial review, 테스트에 testcritic, ship에 shipcheck, done에 verify 가드">
+          <defs>
+            <marker id="lc1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+              <path d="M0,0 L8,4 L0,8 z" fill="#50c8f5"></path>
+            </marker>
+          </defs>
+
+          <!-- timeline boxes -->
+          <rect class="svg-box" x="20"  y="105" width="130" height="46" rx="9"></rect>
+          <text class="svg-label" x="85"  y="132" text-anchor="middle">spec</text>
+          <rect class="svg-box" x="180" y="105" width="130" height="46" rx="9"></rect>
+          <text class="svg-label" x="245" y="132" text-anchor="middle">plan</text>
+          <rect class="svg-box" x="340" y="105" width="130" height="46" rx="9"></rect>
+          <text class="svg-label" x="405" y="132" text-anchor="middle">구현 (diff)</text>
+          <rect class="svg-box" x="500" y="105" width="130" height="46" rx="9"></rect>
+          <text class="svg-label" x="565" y="132" text-anchor="middle">테스트</text>
+          <rect class="svg-box" x="660" y="105" width="130" height="46" rx="9"></rect>
+          <text class="svg-label" x="725" y="132" text-anchor="middle">ship</text>
+          <rect class="svg-box-warn" x="820" y="105" width="140" height="46" rx="9"></rect>
+          <text class="svg-label" x="890" y="132" text-anchor="middle">done 가드</text>
+
+          <path class="svg-line" d="M150,128 L172,128" marker-end="url(#lc1)"></path>
+          <path class="svg-line" d="M310,128 L332,128" marker-end="url(#lc1)"></path>
+          <path class="svg-line" d="M470,128 L492,128" marker-end="url(#lc1)"></path>
+          <path class="svg-line" d="M630,128 L652,128" marker-end="url(#lc1)"></path>
+          <path class="svg-line" d="M790,128 L812,128" marker-end="url(#lc1)"></path>
+
+          <!-- top attachments -->
+          <rect class="svg-box-accent" x="20" y="30" width="150" height="42" rx="8"></rect>
+          <text class="svg-label" x="95" y="48" text-anchor="middle" style="font-size:11.5px">interview 선행 채점</text>
+          <text class="svg-sub" x="95" y="63" text-anchor="middle">5차원 · 마커 없음</text>
+          <line x1="85" y1="72" x2="85" y2="105" stroke="#7c6af5" stroke-width="1.3" stroke-dasharray="3 3"></line>
+
+          <rect class="svg-box-accent" x="185" y="30" width="140" height="42" rx="8"></rect>
+          <text class="svg-label" x="255" y="48" text-anchor="middle" style="font-size:11.5px">contrarian A1–A4</text>
+          <text class="svg-sub" x="255" y="63" text-anchor="middle">scope=task-docs</text>
+          <line x1="230" y1="72" x2="150" y2="105" stroke="#7c6af5" stroke-width="1.3" stroke-dasharray="3 3"></line>
+          <line x1="262" y1="72" x2="262" y2="105" stroke="#7c6af5" stroke-width="1.3" stroke-dasharray="3 3"></line>
+
+          <rect class="svg-box-accent" x="345" y="30" width="140" height="42" rx="8"></rect>
+          <text class="svg-label" x="415" y="48" text-anchor="middle" style="font-size:11.5px">adversarial</text>
+          <text class="svg-sub" x="415" y="63" text-anchor="middle">P1–P3 · diff 반박</text>
+          <line x1="410" y1="72" x2="410" y2="105" stroke="#7c6af5" stroke-width="1.3" stroke-dasharray="3 3"></line>
+
+          <rect class="svg-box-accent" x="505" y="30" width="140" height="42" rx="8"></rect>
+          <text class="svg-label" x="575" y="48" text-anchor="middle" style="font-size:11.5px">testcritic T1–T6</text>
+          <text class="svg-sub" x="575" y="63" text-anchor="middle">3형제 6단계</text>
+          <line x1="570" y1="72" x2="570" y2="105" stroke="#7c6af5" stroke-width="1.3" stroke-dasharray="3 3"></line>
+
+          <rect class="svg-box-accent" x="665" y="30" width="140" height="42" rx="8"></rect>
+          <text class="svg-label" x="735" y="48" text-anchor="middle" style="font-size:11.5px">shipcheck S1–S5</text>
+          <text class="svg-sub" x="735" y="63" text-anchor="middle">ship 7단계</text>
+          <line x1="730" y1="72" x2="730" y2="105" stroke="#7c6af5" stroke-width="1.3" stroke-dasharray="3 3"></line>
+
+          <!-- bottom attachments -->
+          <rect class="svg-box-accent" x="120" y="185" width="150" height="42" rx="8"></rect>
+          <text class="svg-label" x="195" y="203" text-anchor="middle" style="font-size:11.5px">simplifier R1–R4</text>
+          <text class="svg-sub" x="195" y="218" text-anchor="middle">scope=task-docs</text>
+          <line x1="195" y1="185" x2="230" y2="151" stroke="#7c6af5" stroke-width="1.3" stroke-dasharray="3 3"></line>
+
+          <rect class="svg-box-green" x="620" y="185" width="340" height="42" rx="8"></rect>
+          <text class="svg-label" x="790" y="203" text-anchor="middle" style="font-size:11.5px">verify: required → 검증 프레이밍 kind 마커 요구</text>
+          <text class="svg-sub" x="790" y="218" text-anchor="middle" style="font-size:9px">-adversarial·-testcritic·-shipcheck·-contrarian·-simplifier</text>
+          <line x1="890" y1="185" x2="890" y2="151" stroke="#4df0aa" stroke-width="1.3" stroke-dasharray="3 3"></line>
+        </svg>
+        <figcaption>층이 다르면 서로 대체하지 않는다 — contrarian은 spec/plan의 가정을, adversarial은 구현 diff를 공격한다. done 가드는 이 검증들이 남긴 마커를 결정론적으로 확인할 뿐이다.</figcaption>
+      </figure>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="engines">
+      <h2 class="section-title">6. 엔진 층 — 누가 검증자가 되나</h2>
+      <p class="section-sub">프레이밍(무엇을 채점하나)과 엔진(누가 채점하나)은 직교합니다. 엔진 미지정이면 probe 폴백 체인 <code>codex → gemini → claude</code>가 첫 가용 엔진을 씁니다.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>엔진</th><th>호출</th><th>분리 수준</th><th>비고</th></tr></thead>
+          <tbody>
+            <tr><td><strong>codex</strong></td><td><code>codex exec --sandbox read-only "…" &lt; /dev/null</code></td><td>vendor 분리</td><td><code>&lt; /dev/null</code> 생략 금지 — stdin이 열려 있으면 무한 블로킹</td></tr>
+            <tr><td><strong>gemini</strong></td><td><code>gemini --approval-mode default -p "…"</code></td><td>vendor 분리</td><td>미설치 머신이 있다 — preflight에서 걸러진다</td></tr>
+            <tr><td><strong>claude</strong></td><td><code>claude -p --permission-mode plan "…"</code></td><td><strong>컨텍스트 분리만</strong></td><td>sunk-cost 편향은 제거되지만 같은 모델의 맹점은 공유 — 폴백 체인의 마지막인 이유</td></tr>
+            <tr><td><strong>custom</strong></td><td><code>.harness/reviewers.json</code>의 <code>custom.command</code> 템플릿</td><td>설정에 따름</td><td>명시 호출 전용 — 폴백 체인에 포함되지 않음. read-only 요건은 사용자 책임</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout warn">
+        <div class="mark">⚠️</div>
+        <div>
+          <h5>claude 엔진의 한계를 알고 쓰기</h5>
+          <p>claude-only 팀원의 경로로는 유효하지만, "외부 검증"의 외부가 <strong>컨텍스트</strong>까지인지 <strong>vendor</strong>까지인지가 다릅니다. 중요한 변경일수록 vendor 분리 엔진(codex·gemini)을 우선하세요.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="marker">
+      <h2 class="section-title">7. 마커 계약과 증거 게이트 — 검증을 결정론에 연결</h2>
+      <p class="section-sub">검증의 품질 판정은 사람과 검증자의 몫이지만, "검증이 있었는가"는 <code>done</code> 가드가 기계적으로 확인합니다. 연결 고리가 artifact의 한 줄 마커입니다.</p>
+
+      <pre><code><span class="c">&lt;!-- artifact ## Reviews 기록 끝에 한 줄로 append --&gt;</span>
+&lt;!-- harness:review <span class="b">kind=</span><span class="g">codex-testcritic</span> <span class="b">scope=</span>diff <span class="b">tip=</span>3fa1b2c <span class="b">at=</span>2026-08-28T09:00:00Z --&gt;</code></pre>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Done evidence 키</th><th>기본값</th><th>가드가 인정하는 마커</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><code>review: required</code></td>
+              <td><code>optional</code></td>
+              <td>판정 창 안의 <strong>모든</strong> 리뷰 마커 — kind를 목록 대조하지 않는다 (커스텀 엔진·새 프레이밍이 코드 변경 없이 통과하는 확장점)</td>
+            </tr>
+            <tr>
+              <td><code>verify: required</code></td>
+              <td><code>optional</code> (0.20.0)</td>
+              <td>kind가 <strong>검증 프레이밍 접미사로 끝나는</strong> 마커만 — <code>-adversarial</code> · <code>-testcritic</code> · <code>-shipcheck</code> · <code>-contrarian</code> · <code>-simplifier</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <ul class="tight">
+        <li><strong>검증 마커는 review 증거를 겸하지만, 역은 성립하지 않는다</strong> — 일반 <code>kind=codex</code> 리뷰는 <code>verify: required</code>를 만족하지 못한다.</li>
+        <li>접미사 열거의 정본은 <code>commands/harness-review.md</code> 5단계이고, <code>src/commands/task.mjs</code>의 <code>VERIFY_KIND_SUFFIXES</code> 상수와 pin 테스트로 양방향 동기화된다.</li>
+        <li>가드는 마커의 <strong>존재·kind·시각</strong>만 읽는다 — finding 내용(BLOCKER가 실제로 해소됐는지)의 판정은 결정론 게이트 밖이며, 그것이 D6의 역할 분담이다.</li>
+        <li>판정 창보다 <strong>앞선</strong> 마커는 무효다 — 창의 시작은 <code>&lt;name&gt;-meta.json</code>의 <code>firstActivatedAt</code>.</li>
+      </ul>
+
+      <pre><code><span class="c"># spec의 ## Done evidence 선언 예 — 중요한 변경의 풀 게이트</span>
+{ "version": 1, "review": "required", "verify": "required" }
+
+<span class="c"># done 실행 시 verify 마커가 없으면:</span>
+<span class="r">✗ spec이 `verify: required`인데 이 task 기간의 검증 마커가 artifact에 없음</span>
+<span class="c">  (kind 접미사 -adversarial·-testcritic·-shipcheck·-contrarian·-simplifier</span>
+<span class="c">   — 검증 프레이밍 리뷰 실행 후 기록)</span></code></pre>
+    </section>
+
+    <!-- ============================================================ -->
+    <section id="pitfalls">
+      <h2 class="section-title">8. 함정 — 루브릭이 있어도 새는 곳</h2>
+
+      <div class="grid2">
+        <div class="card no">
+          <h4>산문 pass</h4>
+          <p>"전반적으로 잘 작성됨 — pass"는 판정이 아니다. 근거 인용이 없는 pass는 <code>na</code>로 적어야 하고, na가 남은 표는 "검증 완료"가 아니다.</p>
+        </div>
+        <div class="card no">
+          <h4>검증자에게 고치게 하기</h4>
+          <p>"발견한 김에 수정까지"는 편해 보이지만 read-only 원칙과 D4를 동시에 깬다. 검증자의 출력은 항상 <strong>주장</strong>이고, 반영 전에 driver가 재현·판별한다 — 오탐을 그대로 반영하는 것도, 검증 없이 기각하는 것도 금지다.</p>
+        </div>
+        <div class="card no">
+          <h4>마커 없는 기록</h4>
+          <p>artifact에 리뷰 요약을 남겨도 마커 한 줄이 없으면 가드에게는 보이지 않는다. "기록 없는 리뷰는 안 한 것"의 기계 판독 버전이다.</p>
+        </div>
+        <div class="card no">
+          <h4>일반 리뷰로 verify 채우기</h4>
+          <p><code>verify: required</code>는 검증 프레이밍 접미사만 센다. <code>/harness-review codex</code>를 아무리 돌려도 <code>kind=codex</code>는 verify 증거가 되지 않는다 — 프레이밍이 다르면 묻는 질문이 다르기 때문이다.</p>
+        </div>
+        <div class="card note">
+          <h4>모든 task에 풀 게이트 걸기</h4>
+          <p>반대 방향의 함정. 검증 프레이밍은 <strong>중요한 변경</strong>(새 기능·아키텍처·복잡한 리팩토링·보안·스키마/API)용 옵트인이다. 작은 버그·문서 수정에까지 걸면 게이트가 요식이 되고, 요식이 된 게이트는 진짜 필요한 곳에서도 대충 통과된다.</p>
+        </div>
+        <div class="card ok">
+          <h4>kind 접미사 확장</h4>
+          <p>새 프레이밍이 필요하면 <code>kind=&lt;engine&gt;-&lt;새이름&gt;</code>으로 오늘 바로 쓸 수 있다(<code>review</code> 가드는 kind 비대조). 단 <code>verify</code> 증거로 인정받으려면 정본 열거(<code>harness-review.md</code> 5단계)와 <code>VERIFY_KIND_SUFFIXES</code>를 함께 갱신해야 한다 — pin 테스트가 한쪽만 바뀐 상태를 잡는다.</p>
+        </div>
+      </div>
+
+      <p class="section-sub" style="margin-top:2rem">정본: 규범 전문은 <code>docs/decisions.md</code> D6, 실행 절차·엔진 표·kind 열거는 <code>commands/harness-review.md</code>, 각 루브릭 표는 해당 커맨드 문서(<code>harness-contrarian</code>·<code>harness-simplifier</code>·<code>harness-unittest</code> 계열·<code>harness-ship</code>), 증거 게이트 구현은 <code>src/commands/task.mjs</code>·<code>tests/done-guard.test.mjs</code>에 있습니다. 릴리스 배경은 <code>docs/what-changes-0.20.0.html</code>을 보세요.</p>
+    </section>
+  </main>
+
+  <footer>
+    harness-aijient-team-plugin · 0.20.0 · 루브릭 평가 가이드 — 이 문서는 자립형 inline SVG로 작성되어 script를 제거하는 뷰어(Obsidian 등)에서도 렌더됩니다.
+  </footer>
+</body>
+</html>

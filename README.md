@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-08-07
+modified: 2026-08-28
 ---
 
 # harness-aijient-team
@@ -72,6 +72,9 @@ Anthropic·OpenAI·Cognition·12-Factor Agents 등 최근 1차 소스는 병렬�
 드라이버(Claude·OpenCode) → 리뷰어(Codex·Gemini, read-only) 순차 루프는 그 방향과 정합적입니다.
 단, 이 원칙이 금지하는 것은 **같은 워킹트리에 동시에 쓰는 것**입니다 — 각자 격리된 브랜치·git
 worktree에서 작업하고 PR/MR로 병합하는 병렬 경로는 허용되며 권장됩니다(`docs/decisions.md` D5).
+산출물의 품질 판정에는 **별도 컨텍스트의 read-only 검증자**(적대적 검증)를 붙일 수 있습니다 —
+검증자는 루브릭(finding 스키마)으로 반박만 하고, 반영은 작성 세션이 재현·판별 후 단일 스레드로
+수행합니다(D6, 0.20.0 — 상세는 [루브릭 평가 가이드](docs/harness-rubric-guide.html)).
 반면 조사·탐색을 위한 **컨텍스트 격리 서브에이전트**(별도 창에서 조사 후 요약만 반환)는 이 원칙과
 무관하게 표준 실무이며 계속 활용합니다 — 자세한 구분은 [`CLAUDE.md` §2](./CLAUDE.md) 참고.
 OS/네트워크 격리는 이 플러그인의 스코프 밖입니다 — devcontainer·sandbox 등 운영
@@ -368,6 +371,24 @@ Figma(wireframe·design-spec), task 이름 기반 인터뷰. 프로젝트별 소
 **PR/MR을 만들지 않습니다** — 준비 완료 보고에서 멈추고 생성·푸시는 사용자 지시로 진행합니다.
 `harness-team done`(task 완료 처리)을 대체하지도, 실행하지도 않습니다.
 
+### `/harness-review` · `/harness-adversarial-review` — 외부 read-only 리뷰
+
+엔진 중립 외부 리뷰입니다. 첫 토큰이 엔진(`codex`·`claude`·`gemini`·`custom`)이면 그 엔진으로,
+없으면 probe 폴백 체인(codex → gemini → claude)으로 실행합니다. 결과는 활성 task의 artifact
+`## Reviews`에 날짜·엔진과 함께 기록되고, 기록 끝의 기계 판독용 마커
+(`<!-- harness:review kind=... -->`)가 `harness-team done` 가드의 `review`·`verify` 증거가 됩니다.
+
+```bash
+/harness-review                              # 엔진 자동 (codex → gemini → claude)
+/harness-review claude --base origin/develop # claude-only 머신, 브랜치 리뷰
+/harness-adversarial-review codex            # 설계·가정에 반박을 시도하는 적대적 프레이밍
+```
+
+D6 검증 프레이밍(테스트 3형제의 testcritic, ship 7단계의 shipcheck, 페르소나 외부 엔진 모드의
+contrarian·simplifier)은 이 명령의 절차·엔진 표를 재사용하며 `kind=<engine>-<프레이밍>` 접미사로
+구분됩니다 — 루브릭·마커 계약·증거 게이트의 전체 그림은
+[docs/harness-rubric-guide.html](docs/harness-rubric-guide.html)에 있습니다.
+
 ### `/harness-clone` — project → backup dir 동기화
 
 프로젝트 파일을 백업 디렉토리로 복사(merge, newer-wins). 이미 harness symlink인 항목은 건너뜁니다.
@@ -502,6 +523,25 @@ schema instance의 object root를 가리키는 pointer와 표준 document pointe
 조건을 만족하는 기존 설치의 hook을 보강합니다. 알려진 기본 protect hook은 한 번만 실행되도록
 업그레이드하지만, 커스터마이즈한 hook group/script는 덮어쓰지 않습니다. 커스터마이즈된 group은
 그대로 두고 안전한 경우 template boundary group을 추가합니다.
+
+### Done evidence — `done` 가드의 증거 선언
+
+`harness-team done`은 task 판정 창(meta의 `firstActivatedAt` 이후) 안의 증거를 결정론적으로
+검사합니다. 요구 수준은 spec의 `## Done evidence` 아래 JSON으로 선언합니다:
+
+```json
+{ "version": 1, "review": "required", "verify": "required", "tests": "skip" }
+```
+
+- `tests` (기본 `required`) — 소스가 바뀌었으면 테스트 파일 변경도 요구
+- `review` (기본 `optional`) — `required`면 판정 창 안의 리뷰 마커를 요구 (kind는 대조하지 않음)
+- `verify` (기본 `optional`, 0.20.0) — `required`면 **검증 프레이밍 kind** 마커(`-adversarial` ·
+  `-testcritic` · `-shipcheck` · `-contrarian` · `-simplifier` 접미사)만 증거로 인정합니다.
+  검증 마커는 review 증거를 겸하지만 역은 성립하지 않습니다.
+
+가드는 마커의 존재·kind·시각만 읽습니다 — finding 내용의 품질 판정은 결정론 게이트 밖이며
+별도 컨텍스트의 검증자와 driver의 재현·판별이 담당합니다(D6,
+[루브릭 평가 가이드](docs/harness-rubric-guide.html) 참조).
 
 ### 실전 예제
 
@@ -704,13 +744,18 @@ Claude Code 도구 관측은 원문을 보존하지 않는 로컬 JSONL만 `.har
 
 | 문서 | 설명 |
 |---|---|
+| [index.html](docs/index.html) | docs 전체 색인 — 가이드·릴리스 노트·버전별 스냅샷 |
 | [harness-overview.html](docs/harness-overview.html) | 플러그인 전체 아키텍처 다이어그램 — 에이전트 연결, symlink 구조, 명령 흐름. 소스 변경 뒤 `npm run docs:generate`로 갱신하는 생성 산출물 |
+| [harness-task-guide.html](docs/harness-task-guide.html) | init 이후 개발자용 — 첫 task를 만들어 닫을 때까지의 실제 절차 |
+| [harness-fleet-guide.html](docs/harness-fleet-guide.html) | 여러 명·여러 워크트리로 나눠 쓰는 상황(D5 격리 병렬) 가이드 |
+| [harness-rubric-guide.html](docs/harness-rubric-guide.html) | 루브릭 평가(D6) 가이드 — finding 스키마, 5개 검증 프레이밍, 마커 계약과 `verify` 증거 게이트 |
 | [harness-workflow-simulation.html](docs/harness-workflow-simulation.html) | task 워크플로우 시나리오 시뮬레이션 — new → done 흐름 단계별 인터랙티브 |
 | [what-changes-latest-version.html](docs/what-changes-latest-version.html) | 최신 릴리스의 변경 내용과 그 근거 |
 
 ```bash
+open docs/index.html
 open docs/harness-overview.html
-open docs/harness-workflow-simulation.html
+open docs/harness-rubric-guide.html
 open docs/what-changes-latest-version.html
 ```
 
@@ -799,26 +844,10 @@ rsync -a \
 
 ## 변경 이력
 
-### v0.6.2
-- **fix**: `harness-doctor` — clone/symlink/delete.sh를 프로젝트 루트에서 점검 (init 직후 doctor가 실패하던 문제 해결)
-- **fix**: `templates/.opencode/opencode.json` — 존재하지 않는 plan/handoff/review skill 참조 제거, fix-bug/new-feature/verify만 노출
-- **docs**: README task 구조를 실제 구현(`docs/<member>/<name>/` 평탄 구조)에 맞춰 정정 — `feature/`·`fix/` 중간 카테고리 표기 제거, 명령 인터페이스(`/harness-task <name>`, `list`, `done`, `handoff`)로 통일
-
-### v0.6.1
-- **fix**: `harness-init` AI gitignore 옵션에서 `docs/` 제거 — 팀 공유 문서가 gitignore에 등록되던 버그 수정
-
-### v0.6.0
-- **feat**: task workflow flat path 구조 (`docs/<member>/<name>/`)
-- **feat**: post-commit hook으로 handoff 자동 갱신
-- **feat**: username 자동 감지 (`git config user.name` → `$USER`)
-- **feat**: pre-0.6.0 → v0.6.0 task 구조 마이그레이션 지원
-
-### v0.5.x
-- **feat**: `harness-init` / `harness-apply` / `harness-migrate` — CLAUDE.md 마커 외부 커스텀 감지 시 AskUserQuestion 추가
-- **feat**: `harness-doctor` — CLAUDE.md 미반영 진단 결과 표시
-
-### v0.4.0
-- **feat**: `harness-upgrade` — v0.3.x 실제 파일 → v0.4+ symlink 원스텝 전환
+버전별 변경 이력의 정본은 [CHANGELOG.md](./CHANGELOG.md)입니다 (Keep a Changelog 형식).
+각 릴리스에서 **무엇이 왜** 바뀌었는지는
+[docs/what-changes-latest-version.html](docs/what-changes-latest-version.html)
+(최신본)과 `docs/what-changes-<버전>.html` 스냅샷이 사람이 검토한 근거와 함께 설명합니다.
 
 ---
 

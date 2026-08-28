@@ -18,6 +18,32 @@ modified: 2026-08-28
 
 ## [Unreleased]
 
+### Added
+- **`docs/harness-rubric-guide.html` — 루브릭 평가(D6) 가이드** (task `root-docs-0200-rubric`).
+  finding 스키마(id·항목·심각도·판정·근거), 검증 프레이밍 5종(adversarial·testcritic·
+  shipcheck·contrarian·simplifier) + interview 선행 채점, 엔진 층(probe 폴백 체인·claude
+  엔진의 컨텍스트 분리 한계), 마커 계약과 `verify` 증거 게이트를 한 문서로 묶었다.
+  0.20.0이 D6를 4단계로 완성했는데 규범(decisions.md)·절차(커맨드 5곳)·구현(src)에 흩어져
+  있어 전체 그림을 보여 주는 문서가 없었다. 기존 가이드와 같은 디자인 토큰의 **자립형
+  inline SVG**(script를 제거하는 뷰어에서도 렌더)로 작성, `docs/index.html` Guides와
+  README 문서 표에 등재.
+
+### Changed
+- **루트 문서 0.20.0 정합화** (task `root-docs-0200-rubric`).
+  - `README.md`: D6 언급이 0곳이었다 — 설계 스코프 문단에 검증자 계층 1문단, 명령어
+    레퍼런스에 `/harness-review`·`/harness-adversarial-review` 절, task 관리에
+    **Done evidence** 절(`tests`·`review`·`verify` 키와 기본값)을 추가. v0.6.2에서 멈춰
+    있던 "변경 이력" 절은 CHANGELOG.md·what-changes 포인터로 교체(정본 중복 제거).
+    문서(HTML) 표에 index·task guide·fleet guide·rubric guide 등재.
+  - `MAINTAINING.md`: "필수 검증"의 `node --test tests/`를 `npm test`로 정정 — 디렉터리
+    글롭은 perf 스위트의 `--test-concurrency=1` 격리를 건너뛰어 0.19.0에서 잡은 부하성
+    flake를 되살린다. 작업 규칙에 verify kind 접미사의 양방향 동기화 표면
+    (`commands/harness-review.md` 5단계 ↔ `src/commands/task.mjs` `VERIFY_KIND_SUFFIXES`)
+    을 추가.
+  - `docs/prerequisites.md`: §2·§7이 여전히 옛 리뷰 커맨드 이름(`/harness-codex-review` 등)
+    을 안내하고 있었다 — 0.19.0 엔진 중립 재편 이후 이름으로 정정(포워딩은 남아 있지만
+    문서가 옛 이름을 권하지는 않는다는 0.19.0 Notes의 원칙 적용).
+
 ## [0.20.0] - 2026-08-28
 
 ### Added

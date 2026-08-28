@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-08-21
+modified: 2026-08-28
 ---
 
 # MAINTAINING.md — harness-aijient-team 운영 가이드
@@ -32,7 +32,7 @@ modified: 2026-08-21
 1. `README.md` — 플러그인 개요, 명령어 레퍼런스, 설치 방법
 2. `.claude-plugin/plugin.json` — 슬래시 커맨드 목록 및 메타데이터
 3. `.codex-plugin/plugin.json` / `skills/harness-team/SKILL.md` — Codex 플러그인 진입점
-4. `node --test tests/` — 현재 테스트 스위트 통과 여부 확인
+4. `npm test` — 현재 테스트 스위트 통과 여부 확인
 
 ---
 
@@ -56,6 +56,8 @@ modified: 2026-08-21
 
 `templates/{AGENTS,CLAUDE,GEMINI}.md.hbs`의 managed 섹션(`<!-- harness:section="..." -->` 블록)을 수정할 때는 **이 레포 루트의 같은 파일**(`AGENTS.md`·`CLAUDE.md`·`GEMINI.md`)도 함께 갱신하세요 — `tests/agent-files.test.mjs`가 이 저장소 스택으로 렌더한 템플릿과 루트 적용본의 managed 섹션 내용 일치를 강제합니다. 마커 밖 텍스트(제목 등 저장소 고유 영역)는 검사 대상이 아닙니다.
 
+**D6 검증 프레이밍 kind 접미사**(`-adversarial`·`-testcritic`·`-shipcheck`·`-contrarian`·`-simplifier`)를 추가·제거할 때는 열거의 정본인 `commands/harness-review.md` 5단계와 `src/commands/task.mjs`의 `VERIFY_KIND_SUFFIXES`를 **함께** 고치세요 — `tests/done-guard.test.mjs`의 allowlist↔문서 동기화 pin과 `tests/agent-files.test.mjs`의 소비 표면 pin이 한쪽만 바뀐 상태를 CI에서 잡습니다.
+
 ---
 
 ## 필수 검증
@@ -63,9 +65,13 @@ modified: 2026-08-21
 릴리스 전에 아래 두 명령이 반드시 통과해야 합니다:
 
 ```bash
-node --test tests/
+npm test
 harness-team release --dry-run
 ```
+
+> `node --test tests/`로 디렉터리를 직접 글롭하지 마세요 — perf 스위트(`tests/perf/`)는
+> `npm test`가 별도 단계에서 `--test-concurrency=1`로 격리 실행합니다. 함께 병렬로 돌리면
+> 0.19.0에서 잡은 부하성 flake가 되살아납니다.
 
 Codex manifest/skill을 수정했다면 Codex validator도 실행하세요. 로컬 Python에 `PyYAML`이 없으면 해당 validator는 실패할 수 있으므로, 먼저 Python 환경을 준비해야 합니다.
 
@@ -77,7 +83,7 @@ Codex manifest/skill을 수정했다면 Codex validator도 실행하세요. 로�
 >
 > 결과를 미리 보려면 `--dry-run`을 붙입니다. `harness-team release --help`는 사용법만 출력하고 릴리스를 수행하지 않으며, 오탈자 플래그(`--dryrun` 등)는 실행되지 않고 exit 2로 거부됩니다 (`src/cli-args.mjs`).
 
-1. 변경 작성 + `node --test tests/` 통과 확인
+1. 변경 작성 + `npm test` 통과 확인
 2. `CHANGELOG.md`의 `## [Unreleased]` 항목 채우기
 3. `harness-team release <minor|patch|major> --dry-run` 으로 결과 미리 확인
 4. `harness-team release <minor|patch|major>` 실행

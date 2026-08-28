@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-08-21
-modified: 2026-08-21
+modified: 2026-08-28
 ---
 
 # 사전 준비 (Prerequisites)
@@ -42,8 +42,8 @@ modified: 2026-08-21
 |---|---|---|
 | `jq` | Claude Code 훅의 정밀한 입력 파싱 | **차단은 유지되지만 판정 정확도가 떨어집니다 — §3 참조.** 다른 넷과 달리 doctor가 `optional`이 아니라 **`warning`** 으로 보고합니다. |
 | `gh` | GitHub PR 흐름 | 하네스 명령은 아무것도 깨지지 않습니다. `/harness-ship`은 **PR을 만들지 않고** 준비 완료 보고에서 멈추므로, `gh`는 그 다음에 **사용자가 직접 여는 PR** 단계용입니다. |
-| `codex` | `/harness-codex-review`, `/harness-codex-adversarial-review`, Codex L5 시뮬레이션(`tests/sim/codex-agentloop.mjs`) | 위 세 가지를 실행할 수 없습니다. 다른 명령은 영향 없음. |
-| `gemini` | 병렬 외부 리뷰 (규범 — 하네스 코드가 호출하지 않습니다) | 리뷰를 건너뛰되 활성 task의 `<name>-artifact.md`에 **"미실행"을 기록**합니다(`commands/harness-codex-review.md`). 기록 없는 미실행은 "안 한 것"입니다. |
+| `codex` | `/harness-review codex`, `/harness-adversarial-review codex`, Codex L5 시뮬레이션(`tests/sim/codex-agentloop.mjs`) | 위 세 가지를 실행할 수 없습니다. 엔진 미지정 리뷰는 probe 폴백 체인(codex → gemini → claude)이 다음 엔진으로 내려갑니다. |
+| `gemini` | `/harness-review gemini` 및 병렬 외부 리뷰 (규범 — 하네스 코드가 호출하지 않습니다) | 리뷰를 건너뛰되 활성 task의 `<name>-artifact.md`에 **"미실행"을 기록**합니다(`commands/harness-review.md`). 기록 없는 미실행은 "안 한 것"입니다. |
 | `opencode` | OpenCode 순차 드라이버 세션 (`AGENTS.md` D4) | 하네스는 `.opencode/opencode.json`을 **쓰기만** 합니다 — CLI를 호출하지 않으므로 하네스 동작에는 영향이 없고, 그 세션을 열 수 없을 뿐입니다. |
 <!-- /prerequisites:external-tools -->
 
@@ -195,7 +195,7 @@ harness-team doctor         # 파일·훅·CLI PATH·외부 도구 종합 점검
 |---|---|
 | `diagnosing-bugs` | `templates/.claude/skills/fix-bug` (이미 이 방법론을 흡수했습니다) |
 | `tdd` | `/harness-unittest` · `/harness-comptest` · `/harness-inttest` |
-| `code-review` | `/harness-codex-review` · `/harness-codex-adversarial-review` |
+| `code-review` | `/harness-review` · `/harness-adversarial-review` (엔진 중립 — `codex`·`claude`·`gemini`·`custom`) |
 | `grilling` | `/harness-interview` |
 | `domain-modeling` | spec의 **Ontology** 섹션 |
 
