@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-deprecated-review-carryover
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-08-28)
-4c84819 docs(task): codex 외부 리뷰 결과 기록 — Approve, 발견 0건
+## Last Completed Task (2026-08-28)
+`deprecated-review-carryover` — done
 
 ## Full Context
 → docs/chad/deprecated-review-carryover/deprecated-review-carryover-handoff.md

@@ -66,4 +66,6 @@
 | chad | persona-external-verify | ✅ done | 2026-08-26 |
 | chad | testpath-extension-gate | ✅ done | 2026-08-26 |
 | chad | verify-evidence-gate | ✅ done | 2026-08-26 |
+| chad | deprecated-review-carryover | ✅ done | 2026-08-28 |
 | chad | done-user-handoff-freeze | ✅ done | 2026-08-28 |
+| chad | root-docs-0200-rubric | 🔄 open | 2026-08-28 |

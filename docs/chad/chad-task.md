@@ -1,8 +1,10 @@
 # chad — Tasks
 
 ## Open
+- root-docs-0200-rubric (created 2026-08-28)
 
 ## Completed
+- ✅ deprecated-review-carryover
 - ✅ done-user-handoff-freeze
 - ✅ adversarial-verify-rubric
 - ✅ docs-refresh-0181
