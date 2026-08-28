@@ -1,16 +1,6 @@
 # chad — Tasks
 
 ## Open
-- node-test-runner-flake (created 2026-08-25)
-- diagram-companion-pin (created 2026-08-21)
-- hook-jq-failclosed (created 2026-08-21)
-- hook-jq-fallback-delivery (created 2026-08-21)
-- prerequisites-doc (created 2026-08-21)
-- d5-parallel-pr-scope (created 2026-08-20)
-- diagram-optin (created 2026-08-20)
-- ship-command (created 2026-08-20)
-- skilltest-skipstring (created 2026-07-30)
-- harness-comptest (created 2026-07-10)
 
 ## Completed
 - ✅ adversarial-verify-rubric
@@ -20,12 +10,20 @@
 - ✅ verify-evidence-gate
 - ✅ boundary-perf-invariant
 - ✅ done-guard-window
+- ✅ node-test-runner-flake
 - ✅ release-0181-recovery
 - ✅ sim-spec-coverage
+- ✅ diagram-companion-pin
 - ✅ doctor-decision-log
+- ✅ hook-jq-failclosed
+- ✅ hook-jq-fallback-delivery
 - ✅ instruction-structure
+- ✅ prerequisites-doc
 - ✅ review-restructure
 - ✅ spec-writing-skill
+- ✅ d5-parallel-pr-scope
+- ✅ diagram-optin
+- ✅ ship-command
 - ✅ done-guard-evidence
 - ✅ task-ledger-derived
 - ✅ global-cli-drift
@@ -41,9 +39,11 @@
 - ✅ th-overview-mermaid
 - ✅ th-release-0-12
 - ✅ th-whatschanged-upkeep
+- ✅ skilltest-skipstring
 - ✅ th-resident-verify
 - ✅ skilltest-ast-grader
 - ✅ harness-inttest
+- ✅ harness-comptest
 - ✅ harness-unittest
 - ✅ codex-command-surface
 - ✅ codex-plugin-cache-refresh
