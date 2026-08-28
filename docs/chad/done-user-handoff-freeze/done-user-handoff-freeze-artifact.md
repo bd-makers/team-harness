@@ -16,7 +16,7 @@
   - `runHandoffAuto` — 인라인 문자열 조립을 렌더러 호출로 교체 (활성 형태 출력은 바이트 동일).
   - `runDone` — 가드 **뒤**의 공유 tail 에서 종결 형태를 1회 쓴다. `handoff updated:` 로그도
     사용자 handoff 경로를 함께 보고한다.
-- `tests/user-handoff.test.mjs` — 신규 12케이스.
+- `tests/user-handoff.test.mjs` — 신규 15케이스 (적대적 리뷰·오케스트레이터 지시 반영 후).
 - `CHANGELOG.md` — Unreleased / Fixed 항목.
 
 ### 선택: (A) — `runDone` 1회 갱신
@@ -95,6 +95,12 @@ task handoff 포인터. 다만 포인터의 **제목**은 `bbbc885` 의 `## Last
 ℹ fail 0
 ```
 
+이후 적대적 리뷰 P2 와 오케스트레이터 지시로 3케이스를 더했다 (훅 no-op 직접 검증 ·
+활성 형태 바이트 동등 · **연속 종결**) → 15/15 GREEN. 연속 종결 케이스는 `first`→`second`→
+`third` 를 차례로 종결하며 매번 `Last Completed Task` 가 최신으로 바뀌고 앞선 task 의 흔적이
+남지 않음을 확인한다 — 현장에서 9건이 연달아 종결됐는데 파일이 그 앞 task 에 멈춰 있던
+모습이 정확히 이 회귀다.
+
 **전체 회귀** — `npm test`:
 
 ```
@@ -115,6 +121,37 @@ task handoff 포인터. 다만 포인터의 **제목**은 `bbbc885` 의 `## Last
 ## Reviews
 *Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
+
+
+### 2026-08-28 — Codex **적대적 리뷰** (`codex exec --sandbox read-only`, scope: diff against `origin/main`)
+
+`/harness-adversarial-review codex`. 프레이밍은 "결함이 있는가"가 아니라 **"이 변경이 거부되어야
+할 이유가 있는가"** — 설계 선택 (A)/(B), 가드 대비 쓰기 위치, 테스트가 자기충족적인지,
+리팩터의 활성 형태 보존을 각각 공격하게 했다.
+
+**판정: changes requested — P1 blocker 없음.** 접근 자체는 살아남았다.
+
+리뷰어가 명시적으로 인정한 것:
+- `runDone` 1회 쓰기가 훅 early return 제거보다 낫다 — 최종 task 정체를 알고, 비활성 기간의 재작성이 없다.
+- 쓰기가 가드 뒤인 것이 옳다 — 차단된 실행이 상태를 거짓말하지 않는다.
+- 종결 테스트는 자기충족적이지 않다 — `origin/main` 에 대고 돌리면 실패한다(실제로 RED 로 확인).
+- 활성 형태 출력이 리팩터 전 템플릿과 바이트 동일하다 — 회귀 없음.
+
+**발견과 판별:**
+
+| # | 심각도 | 지적 | 판별 | 조치 |
+|---|---|---|---|---|
+| 1 | P2 | 테스트가 `runHandoffAuto` 의 no-active early return 을 고정하지 못한다 — "조기 return 유지" 테스트가 실제로는 `runDone` 을 부른다 | **진짜 결함** (재현: `tests/user-handoff.test.mjs:181` 이 `runDoneCapture` 호출). early return 을 지워도 통과했다 — (B) 기각의 근거인 R4 계약이 무방비였다 | **수정함** — `runHandoffAuto` 를 직접 부르는 테스트 추가. 종결 형태를 심고 훅이 덮어쓰지 않음을 확인한다 |
+| 2 | P2 | 사용자 handoff 쓰기가 실패하면 task handoff append·meta `done` 은 이미 끝났고 `active.json` 은 아직 활성이라 상태가 모순된다. 재시도 시 완료 항목이 중복된다 | **관찰은 타당하나 이 변경이 만든 것이 아니다.** 수정 전에도 `appendFile` → `writeTaskMeta` → `writeActive` 는 원자적이지 않았다(2단계 실패 시 같은 모순). 이 변경은 그 창에 한 단계를 더할 뿐이고, 쓰기 대상 `docs/<user>/` 는 task 디렉터리의 부모라 존재가 보장된다 | **수정 안 함 — 범위 밖.** 진짜 해결은 저널/트랜잭션이고 이 리포에 그런 기제가 없다. 기존 결함으로 보고한다 |
+| 3 | P3 | 동시 실행 시 낡은 훅이 종결 형태를 활성 형태로 되살릴 수 있다 | **이론적.** `AGENTS.md` D4 가 같은 워킹트리·브랜치의 쓰기를 단일 스레드로 못 박는다. 리뷰어도 blocker 가 아니라고 분류했다 | **수정 안 함** — 규범이 이미 배제하는 시나리오에 락을 도입하지 않는다 |
+
+추가로 리뷰어가 제안한 "렌더러가 활성 형태 불변식을 직접 단언해야 한다"를 받아들여,
+리팩터 전 템플릿 사본과 **바이트 단위 동등**을 고정하는 테스트를 넣었다.
+
+리뷰어 환경 한계: read-only 샌드박스라 `mkdtemp` 가 `EPERM` 으로 막혀 파일 fixture 8케이스를
+돌리지 못했다(순수 렌더러 4케이스는 통과). 그 8케이스는 이 세션에서 실행해 GREEN 을 확인했다.
+
+<!-- harness:review kind=codex-adversarial scope=diff tip=7bd8be6aa7eb8f7586801c43fbbe50f79e4de3bf at=2026-08-28T07:45:00Z -->
 
 
 ## Learnings

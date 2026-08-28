@@ -11,7 +11,10 @@
 - [x] RED — `tests/user-handoff.test.mjs` 작성, 수정 전 소스에서 실패 확인 및 출력 캡처
 - [x] 구현 — `renderUserHandoff` 순수 렌더러 export, `runHandoffAuto`·`runDone` 양쪽이 호출
 - [x] GREEN — 같은 테스트 통과 확인, 전체 `npm test` 회귀 확인
-- [ ] 외부 검증 — `/harness-adversarial-review` 실행, `## Reviews` 에 kind 마커와 함께 기록
+- [x] 외부 검증 — `/harness-adversarial-review codex` 실행(판정: changes requested, P1 없음),
+      `## Reviews` 에 `kind=codex-adversarial` 마커와 함께 기록
+- [x] 리뷰 P2 반영 — 훅 no-op 직접 검증 · 활성 형태 바이트 동등 테스트 추가
+- [x] 연속 종결 회귀 테스트 추가 (오케스트레이터 지시 — 9건 연속 종결 시나리오)
 - [x] CHANGELOG Unreleased 항목 추가
 - [ ] PR 생성 (열린 리뷰 스레드 `PRRT_kwDOSD3QEM6dFU8u` 참조), CI green 확인 — 머지는 승인 대기
 

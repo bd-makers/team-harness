@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { runDone, renderUserHandoff, taskArtifactTemplate } from '../src/commands/task.mjs';
+import { runDone, runHandoffAuto, renderUserHandoff, taskArtifactTemplate } from '../src/commands/task.mjs';
 
 // `docs/<user>/<user>-handoff.md` 는 AGENTS.md 가 규정한 **세션 진입점**이다. 이 파일이
 // 종결된 task 를 계속 "Active Task" 로 가리키면 다음 세션이 끝난 작업으로 안내된다.
@@ -189,6 +189,61 @@ test('활성 task 없음 → 사용자 handoff 를 건드리지 않는다 (조�
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+// 이 설계의 핵심 선택은 "훅의 early return 을 그대로 둔다"이다 (후보 (B) 기각).
+// `runDone` 만 부르는 테스트로는 그 계약이 고정되지 않는다 — early return 을 지워도
+// 통과하기 때문이다. 그러면 활성 없는 기간의 모든 커밋이 이 파일을 재작성하는
+// diff 소음이 되살아난다. 훅 함수를 직접 부른다. (codex 적대적 리뷰 P2)
+test('runHandoffAuto: 활성 task 없음 → 사용자 handoff 를 재작성하지 않는다 (R4 소음 차단)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-uhandoff-hook-'));
+  const userHandoffPath = join(dir, 'docs', USER, `${USER}-handoff.md`);
+  await mkdir(join(dir, 'docs', USER), { recursive: true });
+  // done 이 남긴 종결 형태를 심는다 — 훅이 덮어쓰면 이 내용이 사라진다.
+  const closed = renderUserHandoff({ user: USER, task: TASK, date: '2026-08-28', closed: true });
+  await writeFile(userHandoffPath, closed);
+  await mkdir(join(dir, '.harness'), { recursive: true });
+  await writeFile(join(dir, '.harness/active.json'), 'null');
+  try {
+    await runHandoffAuto({ targetDir: dir });
+    assert.equal(await readFile(userHandoffPath, 'utf8'), closed, '훅은 종결 형태를 건드리지 않는다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 종결이 연달아 일어나면 이 파일은 **매번** 최신 종결 task 를 가리켜야 한다. 1회 done 만
+// 검사하면 "첫 종결은 갱신하고 그 뒤로는 안 한다"는 회귀를 놓친다 — 이 결함이 현장에서
+// 드러난 모습이 정확히 그것이었다(9건이 연달아 종결됐는데 파일은 그 앞 task 에 멈춰 있었다).
+test('연속 종결 → 사용자 handoff 의 마지막 종결 task 가 매번 최신으로 갱신된다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-uhandoff-seq-'));
+  const userHandoffPath = join(dir, 'docs', USER, `${USER}-handoff.md`);
+  const activePath = join(dir, '.harness/active.json');
+  await mkdir(join(dir, '.harness'), { recursive: true });
+
+  const tasks = ['first', 'second', 'third'];
+  for (const t of tasks) {
+    const taskDir = join(dir, 'docs', USER, t);
+    await mkdir(taskDir, { recursive: true });
+    await writeFile(join(taskDir, `${t}-handoff.md`), `# ${t} — Handoff\n`);
+    await writeFile(join(taskDir, `${t}-plan.md`), `# ${t} — Plan\n\n## 단계\n- [x] done\n`);
+    await writeFile(join(taskDir, `${t}-artifact.md`), taskArtifactTemplate(t) + '\n- 실제 결과\n');
+  }
+
+  try {
+    for (const t of tasks) {
+      await writeFile(activePath, JSON.stringify({ user: USER, task: t, path: `docs/${USER}/${t}` }));
+      const { logs } = await runDoneCapture(dir);
+      assert.ok(logs.some(l => l === `done: ${USER}/${t}`), `${t} 종결`);
+
+      const after = await readFile(userHandoffPath, 'utf8');
+      const completed = sectionBody(after, '## Last Completed Task');
+      assert.match(completed, new RegExp(`\\b${t}\\b`), `${t} 종결 후 최신 task 를 가리킨다`);
+      // 앞선 종결의 흔적이 남아 있으면 안 된다 — 덮어쓰기지 append 가 아니다
+      for (const prev of tasks.slice(0, tasks.indexOf(t))) {
+        assert.ok(!new RegExp(`\\b${prev}\\b`).test(after), `${prev} 는 더 이상 등장하지 않는다`);
+      }
+      assert.equal(sectionBody(after, '## Full Context'), `→ docs/${USER}/${t}/${t}-handoff.md`);
+    }
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 // ─── 렌더러 (순수 함수) ─────────────────────────────────────────────────────
 
 test('renderUserHandoff: 활성 형태 — Active Task 와 Last Commit 을 담는다', () => {
@@ -213,6 +268,27 @@ test('renderUserHandoff: 종결 형태 — Active Task 는 비고 Last Completed
   assert.ok(namesTask(sectionBody(out, '## Last Completed Task')), '종결된 task 이름을 담는다');
   assert.equal(sectionBody(out, '## Full Context'), `→ docs/${USER}/${TASK}/${TASK}-handoff.md`);
   assert.equal(sectionBody(out, '## Last Commit'), null, '종결 형태에는 낡지 않는 sha 가 없다');
+});
+
+// 리팩터 전 `runHandoffAuto` 가 인라인으로 조립하던 문자열과 **바이트 단위로 같아야** 한다.
+// 이 상수가 그 시절 템플릿의 사본이다 — 렌더러가 활성 형태를 바꾸면 여기서 걸린다.
+// (codex 적대적 리뷰: "renderer tests should assert that exact invariant")
+test('renderUserHandoff: 활성 형태는 리팩터 전 템플릿과 바이트 동일하다', () => {
+  const user = 'chad', task = 'demo-task', date = '2026-08-28', commitMsg = 'abc1234 work';
+  const before = `# Session Handoff
+
+## Active Task
+${task}
+
+## Last Commit (${date})
+${commitMsg}
+
+## Full Context
+→ docs/${user}/${task}/${task}-handoff.md
+`;
+  assert.equal(renderUserHandoff({ user, task, date, commitMsg, closed: false }), before);
+  // closed 를 생략해도 활성 형태가 기본값이다 (호출부가 빠뜨려도 형태가 뒤바뀌지 않는다)
+  assert.equal(renderUserHandoff({ user, task, date, commitMsg }), before);
 });
 
 // 렌더러가 한 곳이라는 것이 두 형태가 어긋나지 않는 근거다.
