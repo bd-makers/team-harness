@@ -4,7 +4,7 @@
 deprecated-review-carryover
 
 ## Last Commit (2026-08-28)
-4bb5b44 docs(changelog): 0.20.0 이월 기록 누락을 Unreleased Notes로 정정
+de2890b docs(task): deprecated-review-carryover spec·plan·artifact·context 기록
 
 ## Full Context
 → docs/chad/deprecated-review-carryover/deprecated-review-carryover-handoff.md
