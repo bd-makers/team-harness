@@ -15,3 +15,32 @@ docs/chad/chad-handoff.md                          |  6 +-
  .../deprecated-review-carryover-plan.md            | 35 +++++++++++
  .../deprecated-review-carryover-spec.md            | 72 ++++++++++++++++++++++
  7 files changed, 175 insertions(+), 3 deletions(-)
+
+## 2026-08-28T14:44:23.387Z — 67425cd feat(review)!: deprecated 옛 리뷰 이름 4개 제거 — 3릴리스 이월 끝
+.claude-plugin/plugin.json                         |  4 +--
+ CHANGELOG.md                                       | 29 +++++++++++++++++--
+ README.md                                          |  6 ++--
+ commands/harness-codex-adversarial-review.md       | 18 ------------
+ commands/harness-codex-review.md                   | 17 -----------
+ commands/harness-diagram.md                        |  2 +-
+ .../deprecated-review-carryover-artifact.md        | 30 ++++++++++++++++++++
+ .../deprecated-review-carryover-plan.md            | 33 ++++++++++++++++------
+ .../deprecated-review-carryover-spec.md            |  5 +++-
+ docs/harness-fleet-guide.html                      |  4 +--
+ docs/harness-overview.html                         | 32 ---------------------
+ docs/harness-task-guide.html                       |  4 +--
+ docs/harness-workflow-simulation.html              |  4 +--
+ skills/harness-codex-adversarial-review/SKILL.md   | 17 -----------
+ skills/harness-codex-review/SKILL.md               | 15 ----------
+ 15 files changed, 96 insertions(+), 124 deletions(-)
+
+## 2026-08-28T14:44:42.102Z — 68e76c1 chore(task): post-commit 훅이 갱신한 handoff 반영
+docs/chad/chad-handoff.md                              |  2 +-
+ .../deprecated-review-carryover-handoff.md             | 18 ++++++++++++++++++
+ 2 files changed, 19 insertions(+), 1 deletion(-)
+
+## 2026-08-28T14:48:13.024Z — 4c84819 docs(task): codex 외부 리뷰 결과 기록 — Approve, 발견 0건
+docs/chad/chad-handoff.md                           |  2 +-
+ .../deprecated-review-carryover-artifact.md         | 21 +++++++++++++++++++++
+ .../deprecated-review-carryover-handoff.md          |  5 +++++
+ 3 files changed, 27 insertions(+), 1 deletion(-)

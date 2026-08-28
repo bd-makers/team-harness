@@ -43,6 +43,29 @@ modified: 2026-08-28
   - `docs/prerequisites.md`: §2·§7이 여전히 옛 리뷰 커맨드 이름(`/harness-codex-review` 등)
     을 안내하고 있었다 — 0.19.0 엔진 중립 재편 이후 이름으로 정정(포워딩은 남아 있지만
     문서가 옛 이름을 권하지는 않는다는 0.19.0 Notes의 원칙 적용).
+- **옛 이름을 안내하던 문서 정정** — 위 제거의 동반 갱신 (task `deprecated-review-carryover`).
+  포워딩만 지우면 "0.19.0에서 제거됩니다"라고 적힌 안내가 그대로 남아, 이미 제거된 것을
+  미래형으로 예고하는 문서가 된다.
+  - `README.md` 3곳 — 슬래시 커맨드 개수 26 → 24
+  - `docs/harness-fleet-guide.html`·`docs/harness-task-guide.html` 각 2곳,
+    `docs/harness-workflow-simulation.html` 2곳 — "0.19.0에서 제거" 예고를 제거 완료 사실로 정정.
+    릴리스 번호를 새로 박지 않고 완료 시제로 쓴다 — 번호를 박으면 이월 때마다 또 틀린다.
+  - `commands/harness-diagram.md` — 어댑터 역할 유추 대상을 `harness-review`로 교체
+  - `docs/harness-overview.html` 재생성. 버전 스냅샷(`docs/harness-overview-*.html`·
+    `what-changes-*.html`·`harness-workflow-simulation-0.18.1.html`)은 발행된 기록이라 손대지 않는다.
+
+### Removed
+- **옛 리뷰 이름 4개 제거 — 3릴리스 이월 끝** (task `deprecated-review-carryover`).
+  0.17.0에서 엔진 중립으로 재편(`/harness-review`·`/harness-adversarial-review`)하며
+  1개 마이너 수명으로 남긴 deprecated 포워딩이 0.18.0·0.19.0·0.20.0 세 릴리스를 살아남았다.
+  제거의 선행 조건이던 **팀원 머신 전역 `~/.claude/CLAUDE.md`의 새 이름 전환**이 2026-08-28
+  홈 머신(hsonpro) 확인으로 두 머신 모두 충족돼 게이트가 닫혔고, 이번에 실제로 지운다.
+  - `commands/harness-codex-review.md`·`commands/harness-codex-adversarial-review.md`
+  - `skills/harness-codex-review/`·`skills/harness-codex-adversarial-review/` (디렉터리째)
+  - `.claude-plugin/plugin.json` commands 배열의 위 커맨드 2개 항목 — 슬래시 커맨드 26개 → **24개**
+  - `skills/harness-codex-sim`은 **별개 스킬**이며 제거 대상이 아니다(이름이 비슷해 grep 오탐을 부른다).
+  - 대체 경로: `/harness-review codex`·`/harness-adversarial-review codex`. 엔진 인자를 생략하면
+    probe 폴백 체인(codex → gemini → claude)이 첫 가용 엔진을 쓴다.
 
 ### Notes
 - **0.20.0 이월 기록 누락 정정** (task `deprecated-review-carryover`). 0.19.0 Notes는
@@ -58,9 +81,9 @@ modified: 2026-08-28
     전환이 릴리스 시점에 확인되지 않았다(회사 머신은 전환 확인, 홈 머신은 미확인).
     옛 이름을 부르는 안내가 살아 있는 동안 포워딩을 지우면 그 안내가 그대로 실패한다는
     0.19.0의 이월 사유가 그대로 유효했다.
-  - 제거는 **홈 머신 전역 `CLAUDE.md` 전환 확인 후 0.21.0 목표**로 이월한다.
-    실행 단계(커맨드 2 + 스킬 2 + `.claude-plugin/plugin.json` commands 항목 2 제거,
-    manifest 동기화 테스트, docs 재생성)는 task plan에 준비돼 있다.
+  - 제거는 **홈 머신 전역 `CLAUDE.md` 전환 확인 후 0.21.0 목표**로 이월했다.
+    그 확인이 2026-08-28에 완료돼 게이트가 닫혔고, 제거는 이 릴리스에서 수행했다 —
+    위 `### Removed` 참조. 이월은 여기서 끝난다.
 
 ## [0.20.0] - 2026-08-28
 

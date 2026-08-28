@@ -455,7 +455,7 @@ harness-team summary --write   <span class="c"># 기본 브랜치에서만 허�
         </div>
         <div class="card note">
           <h4>② 리뷰는 커맨드로 부른다</h4>
-          <p>0.14부터 외부 리뷰 절차는 하네스가 소유하고, <strong>0.17.0부터 이름이 엔진 중립</strong>입니다: <code>/harness-review</code>·<code>/harness-adversarial-review</code>. 옛 이름 <code>/harness-codex-review</code>·<code>/harness-codex-adversarial-review</code>는 deprecated alias로 아직 동작하지만 <strong>0.19.0에서 제거</strong>되므로, 문서·브리프에 박아 뒀다면 지금 바꾸세요.</p>
+          <p>0.14부터 외부 리뷰 절차는 하네스가 소유하고, <strong>0.17.0부터 이름이 엔진 중립</strong>입니다: <code>/harness-review</code>·<code>/harness-adversarial-review</code>. 옛 이름 <code>/harness-codex-review</code>·<code>/harness-codex-adversarial-review</code>는 deprecated alias였고 <strong>이제 제거됐으므로</strong>, 문서·브리프에 박아 뒀다면 바꾸세요.</p>
           <p>openai-codex 플러그인의 <code>/codex:review</code>류는 <code>disable-model-invocation</code>이라 <strong>모델이 호출할 수 없습니다</strong> — 터미널에서 사람이 직접 칠 때만 동작합니다.</p>
         </div>
         <div class="card note">
@@ -818,7 +818,7 @@ stop: 의도적으로 무시하려면 `harness-team done --force`</code></pre>
             <tr><td>병합했는데 <code>task_summary.md</code>가 그대로다</td><td>0.16.0부터 원장은 <strong>생성물</strong>이라 <code>task</code>·<code>done</code>이 쓰지 않는다</td><td>기본 브랜치에서 <code>harness-team summary --write</code> 실행 후 커밋</td></tr>
             <tr><td>피처 브랜치에서 <code>summary --write</code>가 거부됐다</td><td>가드가 기본 브랜치만 허용한다 — 의도된 동작</td><td>거부가 맞다. <code>--force</code>로 뚫지 말고 기본 브랜치에서 돌린다</td></tr>
             <tr><td><code>done</code>이 "테스트 파일 변경이 없음"으로 막힌다</td><td>0.18.1 테스트 증거 가드</td><td>테스트를 쓰거나, 정말 불필요하면 spec <code>## Done evidence</code>에 <code>"tests": "skip"</code> 선언</td></tr>
-            <tr><td><code>/harness-codex-review</code>가 언젠가 사라진다</td><td>0.17.0에서 <code>/harness-review</code>로 재편, 옛 이름은 alias이며 <strong>0.19.0에서 제거</strong></td><td>문서·브리프의 커맨드 이름을 지금 바꾼다</td></tr>
+            <tr><td><code>/harness-codex-review</code>가 아무 반응이 없다</td><td>0.17.0에서 <code>/harness-review</code>로 재편, 옛 이름 alias는 <strong>제거됐다</strong></td><td>문서·브리프의 커맨드 이름을 <code>/harness-review</code>로 바꾼다</td></tr>
             <tr><td>Codex 세션에 Context Card가 안 들어온다</td><td><code>.codex/hooks.json</code>을 <strong>신뢰 등록</strong>하지 않았다 (0.15.0)</td><td>첫 Codex 세션에서 승인. <code>harness-team doctor</code>로 훅 존재 확인</td></tr>
             <tr><td>병렬로 고치게 시켰다가 충돌</td><td>D4 위반 — 병렬 쓰기</td><td>조사·리뷰만 병렬. 쓰기는 메인 세션 순차</td></tr>
             <tr><td>"완료"라고 했는데 안 된다</td><td>증거 없이 보고</td><td>테스트 실행 출력·로그·main과의 동작 차이를 함께 제시</td></tr>

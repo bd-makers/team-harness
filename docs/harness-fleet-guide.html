@@ -462,7 +462,7 @@ harness-team task th-token-refresh --member chad</code></pre>
         <div class="mark">🔀</div>
         <div>
           <h5>리뷰 커맨드가 엔진 중립으로 재편됐다 (0.17.0) — 그리고 기록이 기계 판독 대상이 됐다 (0.18.1)</h5>
-          <p>이름은 <code>/harness-review</code>·<code>/harness-adversarial-review</code>이고, 엔진(<code>codex</code>·<code>claude</code>·<code>gemini</code>·<code>custom</code>)은 <strong>인수</strong>로 고릅니다. 옛 이름 <code>/harness-codex-review</code>·<code>/harness-codex-adversarial-review</code>는 deprecated alias로 살아 있지만 <strong>0.19.0에서 제거</strong>됩니다 — 브리프에 옛 이름을 박아 두면 그때 조용히 깨집니다.</p>
+          <p>이름은 <code>/harness-review</code>·<code>/harness-adversarial-review</code>이고, 엔진(<code>codex</code>·<code>claude</code>·<code>gemini</code>·<code>custom</code>)은 <strong>인수</strong>로 고릅니다. 옛 이름 <code>/harness-codex-review</code>·<code>/harness-codex-adversarial-review</code>는 0.17.0부터 deprecated alias였고 <strong>이제 제거됐습니다</strong>(CHANGELOG <code>Removed</code> 참조) — 브리프에 옛 이름이 박혀 있으면 지금 조용히 깨집니다.</p>
           <p>0.18.1부터 <code>/harness-review</code>는 artifact <code>## Reviews</code>에 <code>&lt;!-- harness:review kind=&lt;engine&gt; at=&lt;ISO8601&gt; --&gt;</code> 마커 한 줄을 append합니다. spec이 <code>review: required</code>를 선언한 task는 <strong><code>done</code>이 이 마커를 찾습니다</strong>. 즉 리뷰를 돌리고도 기록하지 않으면 이제 종결이 막힙니다 — "기록 없는 리뷰는 안 한 리뷰"가 규범에서 <strong>가드</strong>가 됐습니다.</p>
         </div>
       </div>
@@ -652,7 +652,7 @@ harness-team task th-token-refresh --member chad</code></pre>
             <tr><td>워크트리에서 <code>summary --write</code>가 거부됐다</td><td>가드가 기본 브랜치만 허용한다(의도된 동작)</td><td>거부가 맞다. <code>--force</code>로 뚫지 말고 기본 브랜치에서 돌린다</td></tr>
             <tr><td><code>done</code>이 "테스트 파일 변경이 없음"으로 막힌다</td><td>0.18.1 테스트 증거 가드. 소스는 바뀌었는데 테스트가 안 바뀌었다</td><td>테스트를 쓰거나, 정말 불필요하면 spec <code>## Done evidence</code>에 <code>"tests": "skip"</code>을 선언한다</td></tr>
             <tr><td><code>done</code>이 "리뷰 마커가 없음"으로 막힌다</td><td>spec이 <code>review: required</code>인데 artifact에 마커가 없다 — 리뷰를 안 했거나 <strong>기록을 빠뜨렸다</strong></td><td><code>/harness-review</code>를 돌리고 <code>## Reviews</code>에 결과 + 마커를 남긴다</td></tr>
-            <tr><td>브리프의 <code>/harness-codex-review</code>가 어느 날 사라진다</td><td>0.17.0에서 <code>/harness-review</code>로 재편, 옛 이름은 alias이며 <strong>0.19.0에서 제거</strong></td><td>브리프·문서의 커맨드 이름을 지금 <code>/harness-review</code>로 바꾼다</td></tr>
+            <tr><td>브리프의 <code>/harness-codex-review</code>가 아무 반응이 없다</td><td>0.17.0에서 <code>/harness-review</code>로 재편, 옛 이름 alias는 <strong>제거됐다</strong></td><td>브리프·문서의 커맨드 이름을 <code>/harness-review</code>로 바꾼다</td></tr>
             <tr><td>워크트리에서 <code>apply</code>를 돌려 diff가 폭발했다</td><td>관리 구역 재생성</td><td>해당 파일들 <code>git checkout</code>으로 되돌리고, 하네스 갱신은 전용 task로 분리</td></tr>
             <tr><td>리뷰가 두 번 쌓였다</td><td><code>no-mistakes</code> 위에 수동 리뷰를 얹었다</td><td>모드별 리뷰 주인 표를 따르고, 파이프라인 결과를 <code>## Reviews</code>에 기록</td></tr>
             <tr><td>scout 워크트리와 함께 task 문서가 사라졌다</td><td>scratch 워크트리에 하네스 task를 만들었다</td><td>scout엔 task를 만들지 않고, ship promote 시 생성 + 리포트 경로 인용</td></tr>

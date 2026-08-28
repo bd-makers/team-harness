@@ -261,7 +261,7 @@
     <br>
     <code>0.16.0</code> <strong>원장(<code>docs/task_summary.md</code>·<code>docs/&lt;user&gt;/&lt;user&gt;-task.md</code>)이 생성물이 됐다</strong> — <code>task</code>·<code>done</code>은 더 이상 이 파일들을 쓰지 않고, 기본 브랜치에서 <code>harness-team summary --write</code>가 task 디렉터리를 스캔해 렌더한다(병렬 브랜치가 같은 줄에서 충돌하던 원인 제거). 대신 task별 기계 상태는 <code>&lt;name&gt;-meta.json</code>이 들고 있다
     <br>
-    <code>0.17.0</code> 리뷰 커맨드를 엔진 중립 <code>/harness-review</code>·<code>/harness-adversarial-review</code>로 재편(codex 전용 옛 이름 2개는 deprecated alias이며 <strong>0.19.0에서 제거</strong>) + PR/MR 직전 단계 <code>/harness-ship</code>(아래 <strong>S7</strong>) + 신규 task 직후 다이어그램 <strong>옵트인 1회 질문</strong>
+    <code>0.17.0</code> 리뷰 커맨드를 엔진 중립 <code>/harness-review</code>·<code>/harness-adversarial-review</code>로 재편(codex 전용 옛 이름 2개는 deprecated alias였고 <strong>이후 제거됨</strong>) + PR/MR 직전 단계 <code>/harness-ship</code>(아래 <strong>S7</strong>) + 신규 task 직후 다이어그램 <strong>옵트인 1회 질문</strong>
     <br>
     <code>0.18.0</code> spec 초안 writer <code>/harness-spec</code> — Confluence·Figma·task 이름 기반 인터뷰 3소스에서 <code>&lt;name&gt;-spec.md</code> 초안을 만든다(검증은 <code>/harness-interview</code>)
     <br>
@@ -909,7 +909,7 @@ Last commit: 로그인 토큰 검증 수정 (2026-05-15)
         <strong>슬래시 커맨드 쪽 라이프사이클 (0.17.0–0.18.0):</strong>
         <code>/harness-task</code> → <code>/harness-spec</code>(초안 writer) → <code>/harness-interview</code>(검증) → 구현 → <code>/harness-unittest</code> 계열 →
         <code>/harness-review</code>·<code>/harness-adversarial-review</code>(엔진 중립: codex·claude·gemini·custom) → <code>/harness-retro</code> → <code>/harness-ship</code>(PR 직전) → <code>done</code>.
-        옛 이름 <code>/harness-codex-review</code>·<code>/harness-codex-adversarial-review</code>는 <strong>deprecated alias</strong>이며 <strong>0.19.0에서 제거</strong>된다.
+        옛 이름 <code>/harness-codex-review</code>·<code>/harness-codex-adversarial-review</code>는 <strong>deprecated alias</strong>였고 <strong>제거됐다</strong> — 이제 동작하지 않는다.
       </div>
       <div class="infobox" style="margin-top:1rem;border-left-color:var(--accent3)">
         <strong>에이전트 구동 (<code>--json</code>, 0.8.0):</strong> Codex·OpenCode가 <code>harness-team</code>를 Bash로 호출할 때 <code>--json</code>을 주면 stdout이 구조화 observation 엔벨로프(<code>{status, summary, next_actions, artifacts, error}</code>) 1개로 나와 다음 행동을 파싱할 수 있습니다. 사람용 출력은 그대로 — 상세는 overview 문서의 "CLI Observation 계약" 참조.
