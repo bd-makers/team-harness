@@ -8,3 +8,9 @@
  .../node-test-runner-flake-plan.md                 |  19 +++-
  .../node-test-runner-flake-spec.md                 |  19 +++-
  4 files changed, 165 insertions(+), 31 deletions(-)
+
+## 2026-08-28T05:11:03.249Z — 9473626 docs(node-test-runner-flake): PR 런 관측치 추가 — rerun 경로 특수성 배제
+docs/chad/chad-handoff.md                                         | 8 ++++----
+ .../node-test-runner-flake/node-test-runner-flake-artifact.md     | 7 ++++++-
+ .../chad/node-test-runner-flake/node-test-runner-flake-handoff.md | 7 +++++++
+ 3 files changed, 17 insertions(+), 5 deletions(-)

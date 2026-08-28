@@ -4,7 +4,7 @@
 node-test-runner-flake
 
 ## Last Commit (2026-08-28)
-f5c1f63 docs(node-test-runner-flake): 대기 조건 정정 — 릴리스가 아니라 러너 이미지 toolcache
+9473626 docs(node-test-runner-flake): PR 런 관측치 추가 — rerun 경로 특수성 배제
 
 ## Full Context
 → docs/chad/node-test-runner-flake/node-test-runner-flake-handoff.md
