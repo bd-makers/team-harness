@@ -9,8 +9,12 @@
   Node 24.20.0 자체는 **이미 나왔다**(2026-08-27). 그런데도 CI 는 여전히 24.19.0 으로 돈다 —
   `setup-node` 가 dist 매니페스트보다 **러너 toolcache 를 먼저** 본다. 상세는 artifact
   `### 검증 시도 1회차 (2026-08-28)`.
-- Stop / human-decision condition: **있다.** `check-latest: true` 를 넣을지 말지는
-  워크플로 변경이라 오케스트레이터 결정 사항이다. 워커가 임의로 넣지 않는다.
+- Stop / human-decision condition: **있다.** `check-latest: true` 를 넣을지((b)) 이미지
+  롤아웃을 기다릴지((a)) 는 워크플로 변경이라 **사람 결정 대기 중**(2026-08-28 오케스트레이터가
+  상신). 워커가 임의로 고르지 않는다. 어느 쪽이든 `.github/workflows/test.yml:19-26` 의
+  "automatically once released" 주석은 **거짓으로 입증됐으므로 함께 닫는다.**
+  (b) 를 택하면 런마다 **setup-node 단계 소요시간**을 `runtime vX.Y.Z` 와 함께 기록한다 —
+  다운로드 불안정이 green streak 의 귀속을 흐리기 때문이다(사전 등록 조건).
 
 ## Constraints and settled decisions
 *아래는 전부 **확정**이다. 재검토 대상이 아니라 재litigation 방지용으로 남긴다.*
