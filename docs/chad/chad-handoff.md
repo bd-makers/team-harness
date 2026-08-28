@@ -4,7 +4,7 @@
 done-user-handoff-freeze
 
 ## Last Commit (2026-08-28)
-163fa20 fix(task): done 이후 사용자 handoff 가 영구 동결되던 결함 수정
+7850764 test(task): 적대적 리뷰 P2 반영 + 연속 종결 회귀 고정
 
 ## Full Context
 → docs/chad/done-user-handoff-freeze/done-user-handoff-freeze-handoff.md
