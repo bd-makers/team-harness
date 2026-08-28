@@ -16,7 +16,7 @@
 - [x] 리뷰 P2 반영 — 훅 no-op 직접 검증 · 활성 형태 바이트 동등 테스트 추가
 - [x] 연속 종결 회귀 테스트 추가 (오케스트레이터 지시 — 9건 연속 종결 시나리오)
 - [x] CHANGELOG Unreleased 항목 추가
-- [ ] PR 생성 (열린 리뷰 스레드 `PRRT_kwDOSD3QEM6dFU8u` 참조), CI green 확인 — 머지는 승인 대기
+- [x] PR #57 생성 (열린 리뷰 스레드 `PRRT_kwDOSD3QEM6dFU8u` 참조), CI green 확인 (test (24) pass) — 머지·`done`·원장 재생성은 승인 후
 
 ## Ontology 변경 로그
 
