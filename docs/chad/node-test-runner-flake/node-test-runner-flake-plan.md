@@ -29,21 +29,18 @@
 - [x] 사용자 대면 문서 갱신 — `README.md`(2곳) · `docs/prerequisites.md`(3곳) · `CHANGELOG.md` Unreleased
       · 종결된 task의 spec(`docs/chad/prerequisites-doc/...`)은 **건드리지 않았다** — 당시 사실의
         historical record이며 다른 task의 SSOT다
-- [ ] **[대기] 패치된 런타임(24.20.0+)에서 flake 해소 검증** — 이것이 완료되기 전까지
-      "flake가 해소됐다"고 선언하지 않는다 (AO 리뷰 P1 수용).
-      · **대기 조건이 바뀌었다 (2026-08-28).** 24.20.0 은 이미 나왔다(node-versions
-        `24.20.0-33034074684`, 2026-08-27T02:44:18Z · 업스트림 태그 `refs/tags/v24.20.0`).
-        그런데도 CI 는 여전히 **24.19.0** 으로 돈다 — `setup-node` 가 dist 매니페스트보다
-        **러너 toolcache 를 먼저** 보고, 최신 이미지가 24.19.0 을 캐시하고 있다.
-        측정: run 33020249395 attempt 2 (job 98759657160) → `runtime v24.19.0`, green.
-        상세·근거는 artifact `### 검증 시도 1회차 (2026-08-28)`.
-      · 남은 대기 조건은 **러너 이미지가 24.20.0 을 실을 때까지**다. 확인 명령은 TCC 의
-        JIT retrieval map 에 있다. 그때까지 rerun 을 더 돌려도 결과는 같다 — CI 예산만 태운다.
-      · 대안 `check-latest: true` 는 **워크플로 변경**이라 워커가 임의로 넣지 않는다 —
-        오케스트레이터 결정 사항으로 올렸다.
-      · 패치된 런타임에서 **반복** 통과를 확인한 뒤에 해소 선언 — 확률적 flake라 1회 green은 증거가 아니다
-        (기준: 최소 5회 연속, 런 ID·각 런의 `runtime vX.Y.Z` 전부 기록)
-- [ ] artifact에 결정 근거와 검증 결과 기록
+- [x] **패치된 런타임(24.20.0+)에서 flake 해소 검증** — **완료 (2026-08-28).**
+      `runtime v24.20.0` 에서 **5회 연속 green** (run 33147199419 attempt 1~5, 커밋 `30d1273`).
+      · **대기 조건이 한 번 틀렸다.** 24.20.0 게시(2026-08-27) 후에도 rerun·새 `pull_request`
+        런 모두 `runtime v24.19.0` 이었다 — `setup-node` 가 `check-latest` 없이는 dist
+        매니페스트를 조회조차 않고 `tc.find('node','24')` 로 러너 toolcache 를 먼저 본다.
+        이미지 `ubuntu24/20260823.283` 의 toolcache(22.23.2/24.19.0)가 실질 pin 이었다.
+      · 사람 결정으로 **(b) `check-latest: true`** 채택 → 해석을 매니페스트에 묶었다.
+        같은 커밋에서 test.yml 19-26행의 거짓 주석도 정정했다. matrix·engines·pin·retry는 불변.
+      · 각 런의 setup-node 소요를 함께 기록했다(toolcache 0~1s → 매니페스트 5~13s).
+        다운로드 실패로 깨진 런 0건 → green streak 는 네트워크 운이 아니라 패치 런타임에 귀속된다.
+- [x] artifact에 결정 근거와 검증 결과 기록 — `## 검증 기록`(1·2회차), `## Reviews`
+      (codex-adversarial), `## Learnings`. CHANGELOG `[Unreleased] ### Fixed` 에 해소 확인 1줄.
 
 ## Ontology 변경 로그
 - **백포트 도달 여부**를 EOL과 **독립된 축**으로 분리 — 활성 LTS라고 수정이 와 있지 않다

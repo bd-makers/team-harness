@@ -129,11 +129,12 @@ $ gh api "repos/nodejs/node/contents/lib/internal/test_runner/runner.js?ref=<bra
   절충안 `engines ">=22"` + matrix `[24]` 도 **최소 지원 버전을 검증하지 않는** 공백이 생겨 제외했다.
 - (C)·(D)는 증상 완화라 불필요해졌고, (E) 자동 재시도는 **채택 금지**로 못박았다.
 
-**남은 것은 flake 해소 검증 하나뿐이다** — 패치된 런타임에서 반복 통과를 확인한다.
-Node 24.20.0 자체는 **2026-08-27에 게시됐다**. 그럼에도 2026-08-28 현재 CI annotation은
-여전히 `runtime v24.19.0`(미패치)을 기록한다 — 위 정정 참조. 대기 조건은
-"24.20.0 릴리스"에서 **"러너 이미지 toolcache가 24.20.0을 실을 때"**로 바뀌었다.
-정책 결정과 Ambiguity 게이트는 **이미 닫혔다 — 다시 열지 말 것.**
+**검증도 끝났다 (2026-08-28).** `runtime v24.20.0`에서 **5회 연속 green**
+(run 33147199419 attempt 1~5). 다만 거기 도달하는 데 한 단계가 더 필요했다 — Node 24.20.0이
+게시(2026-08-27)된 뒤에도 CI는 계속 24.19.0으로 돌았고(위 정정 참조), 사람 결정으로
+setup-node에 **`check-latest: true`**를 넣어 해석을 매니페스트에 묶고서야 패치 런타임을 얻었다.
+`check-latest`는 **load-bearing 입력이다** — 빼면 해석이 러너 toolcache로 되돌아간다.
+전 과정은 artifact `## 검증 기록`. 정책 결정과 Ambiguity 게이트는 **닫혔다 — 다시 열지 말 것.**
 
 ## Ontology
 
@@ -160,6 +161,8 @@ Node 24.20.0 자체는 **2026-08-27에 게시됐다**. 그럼에도 2026-08-28 �
       선택지 중 (A2)를 택했다. 22를 넣지 않는 것이 이 결정의 핵심이다 — 넣으면 flake가 남는다.
 - [x] **Success 기준** (30%) — 활성 LTS matrix에서 스위트가 반복 통과하고,
       이 오류가 annotation에 더 이상 나타나지 않는다.
+      **충족 확인 (2026-08-28):** `runtime v24.20.0` 5회 연속 green, 실패 annotation 0건.
+      "반복"은 5회 연속으로 조작화했다 — 확률적 flake라 1회 통과는 증거가 되지 않는다.
 - [x] **Context 명확도** — 원인 파일은 우리 저장소에 없다(업스트림). 영향 파일은 최종 7개:
       `.github/workflows/test.yml` · `release.yml` · `package.json` · `README.md` ·
       `docs/prerequisites.md` · `MAINTAINING.md` · `CHANGELOG.md`.
