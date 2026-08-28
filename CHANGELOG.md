@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-08-26
+modified: 2026-08-28
 ---
 
 # Changelog
@@ -17,6 +17,8 @@ modified: 2026-08-26
 -->
 
 ## [Unreleased]
+
+## [0.20.0] - 2026-08-28
 
 ### Added
 - **D6 — 적대적 검증(작업 단위 read-only 검증자 + 루브릭) 규범** (task `adversarial-verify-rubric`).
@@ -115,6 +117,19 @@ modified: 2026-08-26
     패치된 런타임에 귀속된다.
   - matrix `[24]`·`engines ">=24"`는 그대로다. 정확한 패치 버전 pin·자동 재시도·`22` 추가는
     채택하지 않았다.
+
+### Changed
+- **문서 내비게이션 허브 신설과 릴리스 노트 가독성 정리** (커밋 `fc9f586`).
+  `docs/`가 버전별 스냅샷으로 늘어나면서 어디서부터 읽어야 하는지가 사라졌다.
+  - `docs/index.html` 신설 — 버전별 overview·simulation, what-changes 릴리스 노트,
+    다이어그램 소스, task 원장으로 가는 로컬 내비게이션 허브. **손으로 관리하는 정적
+    페이지이며 빌드 산출물이 아니다**(`npm run docs:generate` 대상 아님).
+  - 릴리스 노트 콜아웃의 버전 항목 구분자를 `·`에서 `<br>`로 바꿔 버전마다 한 줄씩 읽히게
+    했다 — overview·simulation의 현행본·template·버전 스냅샷 전체에 동일 적용.
+  - `.tree` 블록에 `white-space: pre-wrap` — 긴 트리 라인이 잘리지 않고 접힌다.
+  - 현행 simulation 문서의 예시를 실제 산출물과 맞췄다 — `.harness/active.json`은
+    user·task·path·switchedAt 전체 형태로, `<name>-meta.json` 주석에 `firstActivatedAt` 포함.
+  - 이번 릴리스에서 허브의 what-changes 목록에 `0.19.0`(누락분)과 `0.20.0`을 등재했다.
 
 ## [0.19.0] - 2026-08-26
 
