@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ done-user-handoff-freeze
 - ✅ adversarial-verify-rubric
 - ✅ docs-refresh-0181
 - ✅ persona-external-verify
