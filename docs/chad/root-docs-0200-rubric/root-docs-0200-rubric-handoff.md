@@ -18,3 +18,13 @@ CHANGELOG.md              | 26 +++++++++++++++++
  docs/chad/chad-handoff.md |  9 +++---
  docs/prerequisites.md     |  8 +++---
  5 files changed, 95 insertions(+), 35 deletions(-)
+
+## 2026-08-28T14:01:32.570Z — d02cf27 docs(task): root-docs-0200-rubric spec·plan·artifact·context 기록
+docs/chad/chad-handoff.md                          |  9 ++-
+ .../root-docs-0200-rubric-artifact.md              | 46 +++++++++++++++
+ .../root-docs-0200-rubric-context.md               | 28 +++++++++
+ .../root-docs-0200-rubric-handoff.md               | 20 +++++++
+ .../root-docs-0200-rubric-meta.json                |  8 +++
+ .../root-docs-0200-rubric-plan.md                  | 28 +++++++++
+ .../root-docs-0200-rubric-spec.md                  | 66 ++++++++++++++++++++++
+ 7 files changed, 200 insertions(+), 5 deletions(-)
