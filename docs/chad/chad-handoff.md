@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-root-docs-0200-rubric
+deprecated-review-carryover
 
 ## Last Commit (2026-08-28)
-d02cf27 docs(task): root-docs-0200-rubric spec·plan·artifact·context 기록
+4bb5b44 docs(changelog): 0.20.0 이월 기록 누락을 Unreleased Notes로 정정
 
 ## Full Context
-→ docs/chad/root-docs-0200-rubric/root-docs-0200-rubric-handoff.md
+→ docs/chad/deprecated-review-carryover/deprecated-review-carryover-handoff.md
