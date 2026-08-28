@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-root-docs-0200-rubric
+deprecated-review-carryover
 
 ## Last Commit (2026-08-28)
-d02cf27 docs(task): root-docs-0200-rubric spec·plan·artifact·context 기록
+de2890b docs(task): deprecated-review-carryover spec·plan·artifact·context 기록
 
 ## Full Context
-→ docs/chad/root-docs-0200-rubric/root-docs-0200-rubric-handoff.md
+→ docs/chad/deprecated-review-carryover/deprecated-review-carryover-handoff.md
