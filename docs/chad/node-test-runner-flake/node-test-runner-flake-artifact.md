@@ -174,6 +174,10 @@ matrix `[24]` · `engines ">=24"` · 패치 pin · retry · `workflow_dispatch` 
 판정은 브리프대로 **annotation API 로만** 했다(CI 로그는 403). 실패 annotation 0건.
 `Unable to deserialize cloned data …` 는 다섯 런 어디에도 나타나지 않았다.
 
+> 판정 근거는 **위 5회 연속 streak** 이다(단일 커밋 `30d1273`). 이후 문서 커밋들의 런도
+> 모두 `v24.20.0` green 이지만(예: `50c01eb` / run 33147610362 / job 98772015245),
+> 커밋마다 표에 행을 늘리지 않는다 — 표는 증거 수집 기록이지 CI 이력이 아니다.
+
 #### setup-node 소요시간을 함께 기록한 이유 — green streak 의 귀속
 
 `check-latest: true` 는 **캐시된 로컬 설치를 매 런 다운로드로 바꾼다.** 다운로드가 불안정하면
