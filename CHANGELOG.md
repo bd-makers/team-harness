@@ -78,6 +78,27 @@ modified: 2026-08-26
   - 회귀 고정: `tests/done-guard.test.mjs`에 verify 케이스 6종(일반 마커 차단·allowlist 전
     접미사 통과·review 겸용·창 밖 무효·기본 optional·선언 검증) + allowlist↔문서 동기화 pin.
 
+### Fixed
+- **`node:test` 역직렬화 flake 해소 — 확인됨** (task `node-test-runner-flake`).
+  0.19.0 Notes는 "`node-version: 24`가 최신 24.x로 해석되므로 24.20.0이 나오면 자동으로
+  해소된다"고 적었다. **그 전제가 틀렸다.** 24.20.0이 게시된(2026-08-27) 뒤에도 rerun과
+  새 `pull_request` 런을 포함해 모든 런이 `runtime v24.19.0`을 기록했다 —
+  `actions/setup-node`는 `check-latest`가 꺼져 있으면 dist 매니페스트를 **조회조차 하지 않고**
+  `tc.find('node','24')`로 러너 이미지 toolcache를 먼저 보기 때문이다
+  (v5 `base-distribution.ts`, `setupNodeJs` → `findVersionInHostedToolCacheDirectory`).
+  당시 `ubuntu-latest` 이미지(`ubuntu24/20260823.283`)의 toolcache는 22.23.2/24.19.0이었고
+  24.19.0이 `24`를 만족했다. **이미지가 캐시한 패치 릴리스가 실질적인 pin이었다.**
+  - `.github/workflows/test.yml`의 setup-node 스텝에 **`check-latest: true`** 추가 —
+    해석을 이미지가 아니라 매니페스트에 묻게 한다. 같은 파일 matrix 주석의 거짓 주장
+    ("this job picks it up automatically once released")을 실제 메커니즘·근거·관측값으로 교체.
+  - **검증: `runtime v24.20.0`에서 5회 연속 green** (run 33147199419 attempt 1~5, 커밋
+    `30d1273`). 확률적 flake라 1회 통과는 증거가 되지 않으므로 반복으로 확인했다.
+    setup-node 단계는 toolcache 히트일 때 0~1초에서 매니페스트 경로로 바뀌며 5~13초가 됐다 —
+    다운로드 실패로 깨진 런은 없었고, 따라서 green streak는 네트워크 운이 아니라
+    패치된 런타임에 귀속된다.
+  - matrix `[24]`·`engines ">=24"`는 그대로다. 정확한 패치 버전 pin·자동 재시도·`22` 추가는
+    채택하지 않았다.
+
 ## [0.19.0] - 2026-08-26
 
 ### Added

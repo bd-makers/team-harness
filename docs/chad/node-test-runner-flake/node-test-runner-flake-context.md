@@ -2,46 +2,40 @@
 <!-- working set only; UTF-8 <= 6 KiB, nonblank lines <= 100 -->
 
 ## Now
-- Goal: `node:test` 업스트림 역직렬화 버그로 CI가 간헐 실패하는 것을 멈춘다.
-- **정책 결정·구현·리뷰 대응은 모두 끝났다 (2026-08-25, PR #45).** `engines: ">=24"` + matrix `[24]`.
-  spec Ambiguity 게이트 통과. **다시 열지 말 것.**
-- Current atomic step: **[대기] Node 24.20.0 릴리스 후 flake 해소 검증.**
-  릴리스되면 `node-version: 24`가 자동 승계 → 패치된 런타임에서 **반복** 통과 확인 후 해소 선언.
-- Stop / human-decision condition: 없음. 남은 것은 외부 릴리스 대기이며 판단이 필요한 지점이 아니다.
-  (24.20.0이 지연되거나 백포트가 빠지면 그때 재판단.)
+- Goal: `node:test` 업스트림 역직렬화 버그로 CI가 간헐 실패하는 것을 멈춘다. **달성.**
+- **종결 (2026-08-28).** plan 전 항목 완료. `runtime v24.20.0` 에서 **5회 연속 green**
+  (run 33147199419 attempt 1~5, 커밋 `30d1273`). 실패 annotation 0건.
+- Current atomic step: 없음 — 남은 것은 PR #56 머지 승인뿐이고 그건 사람 몫이다.
+- Stop / human-decision condition: 없음. (a)/(b) 결정은 받았고 (b)로 처리됐다.
 
 ## Constraints and settled decisions
-*아래는 전부 **확정**이다. 재검토 대상이 아니라 재litigation 방지용으로 남긴다.*
+*아래는 전부 **확정**이다. 재litigation 방지용으로 남긴다.*
 
-- 현재 CI matrix는 **`[24]`** 이고 `engines.node`는 **`">=24"`** 다 (PR #45에서 변경).
-  변경 전 `[18, 20]`·`">=18"`은 **historical** — 둘 다 EOL 런타임이었다.
+- CI matrix는 **`[24]`**, `engines.node`는 **`">=24"`** (PR #45). 변경 전 `[18, 20]`·`">=18"`은
+  **historical** — 둘 다 EOL 런타임이었다.
+- setup-node 스텝에 **`check-latest: true`** (PR #56, 사람 결정 (b)). **이 입력은 load-bearing 이다 —
+  빼면 해석이 다시 러너 toolcache 로 돌아간다.**
 - 원인: `#processRawBuffer`가 payload 길이를 **부호 있는 정수**로 읽는다 (nodejs/node#64061).
-  수정은 `>>> 0` 한 줄 (PR #64706).
-- **EOL과 백포트 도달은 별개 축이다.** v18/v20 = 영구 잔존(EOL) · **v22 = 활성 LTS인데 백포트 없음** ·
-  v24 = **24.20.0(2026-08-26)부터** · v26 = 26.7.0부터.
-  → `[22, 24]`는 함정이다. **22를 추가하지 말 것** — flake가 되돌아온다.
-- `engines.node` 상향 요구는 **미수용**(AO 리뷰 1차). 버그는 `node --test` 안에 있고 소비자는
-  그 코드를 실행하지 않는다 — `engines`는 소비자 지원 정책 선언이다.
-- `node-version`을 **미출시 버전으로 pin하지 말 것.** 24.20.0 태그는 아직 404이고,
-  pin하면 `setup-node` 해석 실패로 CI가 즉시 깨진다.
-- 자동 재시도는 **채택 금지** — 진짜 회귀까지 숨긴다.
+  수정은 `>>> 0` 한 줄 (PR #64706). 24.20.0 부터 v24 라인에 포함.
+- **버전 도달에는 축이 셋이다:** ① EOL(v18/v20 영구 잔존) ② 백포트 도달(**v22 = 활성 LTS인데
+  없음**, v24 = 24.20.0부터, v26 = 26.7.0부터) ③ **러너 이미지 toolcache 도달**.
+  → `[22, 24]`는 함정이다. **22를 추가하지 말 것.**
+- 채택하지 않은 것: 정확한 패치 버전 pin · 자동 재시도 · `workflow_dispatch` 추가 ·
+  `engines` 상향. 전부 근거가 spec/artifact 에 있다.
 - PR #44(perf flake)와 **독립**. 두 flake를 한 원인으로 묶지 말 것.
 
 ## JIT retrieval map
-- Read next: `<name>-artifact.md`의 **`## 결과`** 표 (현재 상태 정본) → 그 다음 `## Learnings`
-- Narrow globs: `.github/workflows/test.yml` (matrix·runtime annotation), `package.json`
-- Identifiers: `runtime v` (annotation 줄), `matrix.node`, `engines.node`
-- Verification command:
-  `gh api repos/bd-makers/team-harness/check-runs/<job_id>/annotations`
-- 업스트림 확인: `gh api repos/nodejs/node/git/ref/tags/v24.20.0` (404면 아직 미출시)
+*이 task 는 닫혔다. 아래는 이 결론을 다시 참조할 때만 쓴다.*
+- Read: `<name>-artifact.md` `## 결과` → `## 검증 기록`(1·2회차) → `## Learnings`
+- Narrow globs: `.github/workflows/test.yml` (matrix 주석·check-latest·runtime annotation)
+- 런타임 판정: `gh api repos/bd-makers/team-harness/check-runs/<job_id>/annotations`
+  (CI 로그는 403 — `gh run view --log-failed` 는 쓰지 않는다)
 
 ## Failure capsules (max 3 unresolved)
-- (none unresolved — 원인 확정·구현 완료. 남은 것은 외부 릴리스 대기뿐이다.)
+- (none unresolved — F-1 "rerun 이 패치 런타임을 집지 못한다" 는 `check-latest: true` 로 해소됐고
+  메커니즘·측정은 artifact `## 검증 기록`·`## Learnings` 로 옮겼다.)
 
 ## Resume checklist
-- **먼저 확인:** CI annotation의 `runtime vX.Y.Z` 줄. `v24.19.x` 이하면 아직 미패치라
-  green이어도 해소 증거가 아니다. **`v24.20.0` 이상이어야 검증 대상이다.**
-- 패치된 런타임이 확인되면 **반복** 실행으로 검증한다 — 확률적 flake라 1회 green은 증거가 아니다.
-  검증되면 artifact `## 결과`의 ⏳ 항목을 닫고 plan의 마지막 단계를 체크한다.
-- 재현은 **CI에서만** 가능하다 — 이 머신에 node 18 없음(프록시가 nodejs.org 차단), docker 없음.
-- CI 로그는 403이다. `gh run view --log-failed`에 시간 쓰지 말 것 — annotation API를 쓴다.
+- 이 task 는 **종결됐다.** 재개할 것 없음. 결론만 필요하면 artifact `## 결과` 를 읽는다.
+- 미래에 CI 가 예상과 다른 node 패치로 돌면: annotation 의 `runtime vX.Y.Z` 를 먼저 보고,
+  그 다음 `check-latest` 가 살아 있는지 확인한다 — 그 입력이 사라지면 증상이 재현된다.

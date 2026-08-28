@@ -16,13 +16,26 @@ jobs:
       # signed int) is never reaching them. The fix landed in 26.7.0 and was
       # backported to the v24 line only; v22 did not get it, so adding "22 for
       # LTS coverage" would reintroduce the flake rather than broaden coverage.
-      # `24` resolves to the latest 24.x. NOTE: as of 2026-08-25 that is 24.19.0,
-      # which does NOT yet carry the fix — it ships in 24.20.0 (2026-08-26), and
-      # this job picks it up automatically once released. Until then this matrix
-      # buys the EOL escape, not the flake fix; the run's actual runtime is
-      # annotated below so which one a given run used is answerable after the
-      # fact rather than assumed. Pinning 24.20.0 here is not possible before it
-      # exists — setup-node fails to resolve an unreleased version.
+      # `24` is a range, not a version, and `check-latest: true` below decides
+      # what it resolves to. That input is load-bearing, so do not drop it:
+      # without it setup-node does NOT consult the dist manifest at all. It calls
+      # tc.find('node', '24') against the runner image's tool cache first and
+      # returns on a hit, only falling through to the manifest on a cache miss
+      # (actions/setup-node@v5 src/distributions/base-distribution.ts,
+      # setupNodeJs → findVersionInHostedToolCacheDirectory). The image's cached
+      # patch release was therefore the effective pin.
+      #
+      # Measured 2026-08-28: node 24.20.0 carried the node:test fix and had been
+      # published to actions/node-versions (24.20.0-33034074684, 2026-08-27), yet
+      # every run — including a rerun and a fresh pull_request run — still
+      # reported `runtime v24.19.0`, because ubuntu-latest was still image
+      # ubuntu24/20260823.283 whose tool cache holds 22.23.2 and 24.19.0, and
+      # 24.19.0 satisfies `24`. Waiting for the image to roll would have worked
+      # eventually; check-latest makes the resolution answer to the manifest
+      # instead of to whatever the image happens to ship.
+      #
+      # The run's actual runtime is annotated below, so which one a given run
+      # used stays answerable after the fact rather than assumed.
       # Add versions back here when they are both supported and carry the fix.
       matrix:
         node: [24]
@@ -32,6 +45,11 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: ${{ matrix.node }}
+          # Resolve `24` against the dist manifest rather than the runner
+          # image's tool cache — see the matrix comment above. Costs a node
+          # download on a cache miss; buys the newest patch on the day it
+          # ships instead of whenever the image catches up.
+          check-latest: true
 
       # e2e sandboxes set their own git identity, but done-guard and other
       # tests run git in the checkout itself — give the runner a global one.
