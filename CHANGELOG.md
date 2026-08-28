@@ -79,6 +79,23 @@ modified: 2026-08-26
     접미사 통과·review 겸용·창 밖 무효·기본 optional·선언 검증) + allowlist↔문서 동기화 pin.
 
 ### Fixed
+- **`done` 이후 사용자 handoff 가 영구 동결되던 결함** (task `done-user-handoff-freeze`).
+  `docs/<user>/<user>-handoff.md`는 `AGENTS.md`가 규정한 **세션 진입점**인데, `runDone`은
+  task handoff만 갱신하고 활성을 `null`로 비웠고, 이 파일을 쓰는 **유일한** 경로인
+  `runHandoffAuto`(post-commit 훅)는 활성이 null이면 즉시 반환했다. 맞물린 결과 종결 직후
+  파일이 마지막 활성 커밋 상태로 얼어붙어, 다음 세션이 **이미 끝난 task를 활성으로 안내**했다.
+  특정 task의 문제가 아니라 구조적이다.
+  - `runDone`이 종결 시점에 **1회** 종결 형태로 쓴다. 훅의 early return은 그대로 둔다 —
+    없애면 활성 없는 기간의 모든 커밋이 이 파일을 재작성해 diff 소음이 되고, 활성이 null이면
+    가리킬 task를 몰라 포인터를 만들 재료도 없다.
+  - 쓰기 지점은 가드 **뒤**의 공유 tail이다. 차단된 `done`은 파일을 건드리지 않는다 —
+    active.json은 task를 가리키는데 진입점만 "활성 없음"이 되면 같은 종류의 거짓말이 된다.
+  - 종결 형태에는 커밋 sha를 담지 않는다. 종결 후 훅이 더는 갱신하지 않으므로 박아 둔 sha는
+    다음 커밋 즉시 낡는다 — 계속 갱신되는 task handoff를 가리킨다(형식 기준: `bbbc885`).
+  - 두 형태(활성·종결)를 순수 렌더러 `renderUserHandoff` 하나로 모아 형식 드리프트를 차단.
+  - 회귀 고정: `tests/user-handoff.test.mjs` 12케이스(종결 후 활성 미선언·Last Completed 분리·
+    sha 부재·파일 부재 시 생성·차단 시 바이트 무변경·`--force` 갱신·활성 없음 무변경·렌더러 3종).
+
 - **`node:test` 역직렬화 flake 해소 — 확인됨** (task `node-test-runner-flake`).
   0.19.0 Notes는 "`node-version: 24`가 최신 24.x로 해석되므로 24.20.0이 나오면 자동으로
   해소된다"고 적었다. **그 전제가 틀렸다.** 24.20.0이 게시된(2026-08-27) 뒤에도 rerun과
