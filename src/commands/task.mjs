@@ -110,6 +110,37 @@ export function taskPlanTemplate(name) {
 `;
 }
 
+// `docs/<user>/<user>-handoff.md` 의 유일한 렌더러. 두 지점이 이 파일을 쓴다 —
+// 커밋마다 도는 `runHandoffAuto`(활성 형태)와 종결 시점의 `runDone`(종결 형태). 두 곳이 각자
+// 문자열을 조립하면 형식이 반드시 어긋나므로 여기 하나로 모은다.
+//
+// 종결 형태에는 커밋 sha 를 담지 않는다. 종결 후에는 훅이 이 파일을 더는 갱신하지 않으므로
+// (활성이 null 이면 `runHandoffAuto` 는 즉시 반환한다) 박아 둔 sha 는 다음 커밋 즉시 낡는다.
+// 대신 계속 갱신되는 task handoff 를 가리킨다 — 커밋 이력의 정본은 그쪽이다.
+export function renderUserHandoff({ user, task, date, commitMsg = '', closed = false }) {
+  const head = closed
+    ? `## Active Task
+없음 — \`.harness/active.json\` 은 \`null\` 이다.
+새 작업은 \`harness-team task <name>\` 으로 시작한다.
+
+## Last Completed Task (${date})
+\`${task}\` — done
+`
+    : `## Active Task
+${task}
+
+## Last Commit (${date})
+${commitMsg}
+`;
+
+  return `# Session Handoff
+
+${head}
+## Full Context
+→ docs/${user}/${task}/${task}-handoff.md
+`;
+}
+
 function taskHandoffTemplate(name) {
   return `# ${name} — Handoff
 
@@ -603,9 +634,21 @@ export async function runDone(ctx) {
   const meta = (await readTaskMeta(ctx.targetDir, user, task)) || { user, task, created: today() };
   await writeTaskMeta(ctx.targetDir, user, task, { ...meta, user, task, status: 'done', closedAt: ts });
 
+  // 사용자 handoff 는 AGENTS.md 가 규정한 **세션 진입점**이다. 갱신하지 않고 활성만 비우면
+  // 이 파일이 종결된 task 를 계속 "Active Task" 로 가리킨 채 얼어붙는다 — 이후 커밋에서
+  // `runHandoffAuto` 는 활성이 null 이라 즉시 반환하므로 되살릴 경로가 없다.
+  // 상태 전이를 아는 유일한 지점이 여기이므로 여기서 1회 종결 형태로 쓴다. 훅에서 매 커밋
+  // 쓰게 하지 않는 이유: 활성 없는 기간의 모든 커밋이 이 파일을 재작성해 diff 소음이 된다.
+  // 차단 경로는 위에서 이미 반환했으므로 이 쓰기는 실제로 종결될 때만 일어난다.
+  const userHandoffPath = join(ctx.targetDir, 'docs', user, `${user}-handoff.md`);
+  await writeFile(userHandoffPath, renderUserHandoff({
+    user, task, date: ts.slice(0, 10), closed: true,
+  }));
+
   await writeActive(ctx.targetDir, null);
   console.log(`done: ${user}/${task}`);
   console.log(`handoff updated: docs/${user}/${task}/${task}-handoff.md`);
+  console.log(`handoff updated: docs/${user}/${user}-handoff.md`);
 }
 
 export async function runRetro(ctx) {
@@ -690,19 +733,9 @@ export async function runHandoffAuto(ctx) {
   await appendFile(taskHandoffPath, taskEntry);
 
   const userHandoffPath = join(ctx.targetDir, 'docs', user, `${user}-handoff.md`);
-  const date = ts.slice(0, 10);
-  const userHandoffContent = `# Session Handoff
-
-## Active Task
-${task}
-
-## Last Commit (${date})
-${commitMsg}
-
-## Full Context
-→ docs/${user}/${task}/${task}-handoff.md
-`;
-  await writeFile(userHandoffPath, userHandoffContent);
+  await writeFile(userHandoffPath, renderUserHandoff({
+    user, task, date: ts.slice(0, 10), commitMsg, closed: false,
+  }));
 
   try {
     const planPath = join(ctx.targetDir, 'docs', user, task, `${task}-plan.md`);
