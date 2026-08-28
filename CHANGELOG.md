@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-08-28
+modified: 2026-08-29
 ---
 
 # Changelog
@@ -17,6 +17,8 @@ modified: 2026-08-28
 -->
 
 ## [Unreleased]
+
+## [0.21.0] - 2026-08-29
 
 ### Added
 - **`docs/harness-rubric-guide.html` — 루브릭 평가(D6) 가이드** (task `root-docs-0200-rubric`).
