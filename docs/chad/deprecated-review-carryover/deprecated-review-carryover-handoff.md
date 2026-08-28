@@ -33,3 +33,8 @@ docs/chad/chad-handoff.md                          |  6 +-
  skills/harness-codex-adversarial-review/SKILL.md   | 17 -----------
  skills/harness-codex-review/SKILL.md               | 15 ----------
  15 files changed, 96 insertions(+), 124 deletions(-)
+
+## 2026-08-28T14:44:42.102Z — 68e76c1 chore(task): post-commit 훅이 갱신한 handoff 반영
+docs/chad/chad-handoff.md                              |  2 +-
+ .../deprecated-review-carryover-handoff.md             | 18 ++++++++++++++++++
+ 2 files changed, 19 insertions(+), 1 deletion(-)

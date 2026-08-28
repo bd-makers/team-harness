@@ -50,6 +50,27 @@
 *Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
 
+### 2026-08-28 · codex (gpt-5.6-terra, `codex exec --sandbox read-only`) · scope=diff(main...HEAD)
+
+**판정: Approve — P1/P2/P3 발견 0건.** 리뷰어가 독립적으로 재현한 검증:
+
+- 삭제 범위가 정확하다 — 커맨드 2 + 스킬 2만 ABSENT, `skills/harness-codex-sim/SKILL.md`는 PRESENT.
+- 개수 정합 — manifest 24 / 실제 커맨드 파일 24 / 생성 overview 24, `missingFromOverview`·
+  `staleOverviewEntries` 모두 빈 배열. `docs:check` 최신, `git diff --check` 통과.
+- 라이브 문서에 **제거된 이름을 실행하라고 안내하는 참조 0건** — 남은 언급은 전부 제거 사실
+  고지 또는 마이그레이션 안내다.
+- 발행 버전 스냅샷 미수정 확인. 리뷰어가 `docs/what-changes-latest-version.html:421`의
+  "이번에도 이월합니다" 문구를 짚었으나 **0.20.0 발행 스냅샷의 사실 기록**으로 분류했다 —
+  이 세션의 판단(발행 절 불변 + `tests/what-changes-latest-version.test.mjs`가 0.20.0
+  스냅샷과의 바이트 동일성을 강제)과 일치한다. 조치 없음이 정답.
+
+**조치: 없음** (발견 0건). 반영할 지적이 없으므로 review-only 계약대로 종료.
+
+**미실행 기록:** gemini 병렬 리뷰는 돌리지 않았다 — `gemini` CLI는 이 머신에 설치돼 있으나
+(`doctor` ✓) 이번 호출이 `codex` 엔진 명시였다. 단일 엔진 리뷰다.
+
+<!-- harness:review kind=codex scope=diff tip=68e76c14db41db04dcb0564198e08854d0e7d85c at=2026-08-28T14:48:06Z -->
+
 
 ## Learnings
 
