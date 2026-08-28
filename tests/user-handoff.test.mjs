@@ -193,6 +193,10 @@ test('활성 task 없음 → 사용자 handoff 를 건드리지 않는다 (조�
 // `runDone` 만 부르는 테스트로는 그 계약이 고정되지 않는다 — early return 을 지워도
 // 통과하기 때문이다. 그러면 활성 없는 기간의 모든 커밋이 이 파일을 재작성하는
 // diff 소음이 되살아난다. 훅 함수를 직접 부른다. (codex 적대적 리뷰 P2)
+//
+// 범위 주의: 이 픽스처에는 git 레포도 task 디렉터리도 없다. early return 이 사라지면
+// 사용자 handoff 쓰기에 닿기 전에 다른 곳에서 먼저 깨질 수도 있다 — 즉 이 테스트가
+// 보장하는 것은 "훅이 종결 형태를 덮어쓰지 않는다"이지 실패 지점의 특정이 아니다.
 test('runHandoffAuto: 활성 task 없음 → 사용자 handoff 를 재작성하지 않는다 (R4 소음 차단)', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'harness-uhandoff-hook-'));
   const userHandoffPath = join(dir, 'docs', USER, `${USER}-handoff.md`);
@@ -270,10 +274,12 @@ test('renderUserHandoff: 종결 형태 — Active Task 는 비고 Last Completed
   assert.equal(sectionBody(out, '## Last Commit'), null, '종결 형태에는 낡지 않는 sha 가 없다');
 });
 
-// 리팩터 전 `runHandoffAuto` 가 인라인으로 조립하던 문자열과 **바이트 단위로 같아야** 한다.
-// 이 상수가 그 시절 템플릿의 사본이다 — 렌더러가 활성 형태를 바꾸면 여기서 걸린다.
+// 활성 형태의 **정확한 바이트 모양**을 못 박는다. 아래 상수는 리팩터 전
+// `runHandoffAuto` 의 인라인 템플릿을 옮겨 적은 것이고, 그 시점 origin/main 소스와의
+// 동등성은 별도로 대조해 확인했다(artifact `## 결과` 참조). 이 테스트 자체는 origin/main 을
+// 읽지 않으므로 "리팩터가 안전했다"의 증명이 아니라 **앞으로 이 모양이 바뀌지 않는다는 고정**이다.
 // (codex 적대적 리뷰: "renderer tests should assert that exact invariant")
-test('renderUserHandoff: 활성 형태는 리팩터 전 템플릿과 바이트 동일하다', () => {
+test('renderUserHandoff: 활성 형태의 바이트 모양을 고정한다', () => {
   const user = 'chad', task = 'demo-task', date = '2026-08-28', commitMsg = 'abc1234 work';
   const before = `# Session Handoff
 

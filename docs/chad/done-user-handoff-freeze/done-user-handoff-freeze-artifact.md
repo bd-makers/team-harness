@@ -113,6 +113,20 @@ task handoff 포인터. 다만 포인터의 **제목**은 `bbbc885` 의 `## Last
 
 기존 450개가 그대로 통과한다 — `runHandoffAuto` 리팩터가 활성 형태 출력을 바꾸지 않았다는 증거다.
 
+**리팩터 안전성의 직접 증거**는 두 가지다. (1) 위 기존 450개가 그대로 통과한다.
+(2) `origin/main` 의 인라인 템플릿을 소스에서 뽑아 같은 입력으로 렌더한 결과와
+`renderUserHandoff(..., closed:false)` 의 출력을 프로그램으로 대조해 **동일**을 확인했다:
+
+```
+--- origin/main template literal ---
+"# Session Handoff\n\n## Active Task\n${task}\n\n## Last Commit (${date})\n${commitMsg}\n\n## Full Context\n→ docs/${user}/${task}/${task}-handoff.md\n"
+--- identical? --- true
+```
+
+테스트 파일의 바이트 동등 케이스는 이 대조의 **사본**이라 그 자체로는 순환이다 —
+`origin/main` 을 읽지 않기 때문이다. 그 케이스의 역할은 "리팩터가 안전했다"의 증명이 아니라
+**앞으로 활성 형태가 소리 없이 바뀌지 않게 고정**하는 것이다.
+
 ### 다이어그램
 
 미실행 — 옵트인 단계이고 이 task 에서는 선택되지 않았다. AO 워커 세션은 비대화형이라
@@ -141,7 +155,7 @@ task handoff 포인터. 다만 포인터의 **제목**은 `bbbc885` 의 `## Last
 
 | # | 심각도 | 지적 | 판별 | 조치 |
 |---|---|---|---|---|
-| 1 | P2 | 테스트가 `runHandoffAuto` 의 no-active early return 을 고정하지 못한다 — "조기 return 유지" 테스트가 실제로는 `runDone` 을 부른다 | **진짜 결함** (재현: `tests/user-handoff.test.mjs:181` 이 `runDoneCapture` 호출). early return 을 지워도 통과했다 — (B) 기각의 근거인 R4 계약이 무방비였다 | **수정함** — `runHandoffAuto` 를 직접 부르는 테스트 추가. 종결 형태를 심고 훅이 덮어쓰지 않음을 확인한다 |
+| 1 | P2 | 테스트가 `runHandoffAuto` 의 no-active early return 을 고정하지 못한다 — "조기 return 유지" 테스트가 실제로는 `runDone` 을 부른다 | **진짜 결함** (재현: `tests/user-handoff.test.mjs:181` 이 `runDoneCapture` 호출). early return 을 지워도 통과했다 — (B) 기각의 근거인 R4 계약이 무방비였다 | **수정함** — `runHandoffAuto` 를 직접 부르는 테스트 추가. 보장 범위는 "훅이 종결 형태를 덮어쓰지 않는다"이며, 픽스처에 git 레포·task 디렉터리가 없어 실패 지점까지 특정하지는 않는다 |
 | 2 | P2 | 사용자 handoff 쓰기가 실패하면 task handoff append·meta `done` 은 이미 끝났고 `active.json` 은 아직 활성이라 상태가 모순된다. 재시도 시 완료 항목이 중복된다 | **관찰은 타당하나 이 변경이 만든 것이 아니다.** 수정 전에도 `appendFile` → `writeTaskMeta` → `writeActive` 는 원자적이지 않았다(2단계 실패 시 같은 모순). 이 변경은 그 창에 한 단계를 더할 뿐이고, 쓰기 대상 `docs/<user>/` 는 task 디렉터리의 부모라 존재가 보장된다 | **수정 안 함 — 범위 밖.** 진짜 해결은 저널/트랜잭션이고 이 리포에 그런 기제가 없다. 기존 결함으로 보고한다 |
 | 3 | P3 | 동시 실행 시 낡은 훅이 종결 형태를 활성 형태로 되살릴 수 있다 | **이론적.** `AGENTS.md` D4 가 같은 워킹트리·브랜치의 쓰기를 단일 스레드로 못 박는다. 리뷰어도 blocker 가 아니라고 분류했다 | **수정 안 함** — 규범이 이미 배제하는 시나리오에 락을 도입하지 않는다 |
 
