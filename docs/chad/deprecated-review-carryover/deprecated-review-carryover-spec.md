@@ -24,7 +24,10 @@
 포워딩을 지우면 그 안내가 그대로 실패한다(0.19.0 Notes의 이월 사유).
 
 - [x] 회사 머신 chadonpro 전역 CLAUDE.md 새 이름 전환 확인됨
-- [ ] 홈 머신 hsonpro 전역 CLAUDE.md 전환 확인 — 사용자만 가능
+- [x] 홈 머신 hsonpro 전역 CLAUDE.md 전환 확인됨 (2026-08-28) — 그 머신 세션에서 실측:
+      `~/.claude/CLAUDE.md`의 외부 리뷰 절이 `/harness-review`·`/harness-adversarial-review`를
+      호출 경로로 안내한다. 옛 이름은 "새 참조를 옛 이름으로 만들지 말 것"이라는 금지 문구
+      1회뿐이라 호출 경로가 아니다 — 포워딩을 지워도 실패할 안내가 없다.
 
 ## 설계 / 접근
 
