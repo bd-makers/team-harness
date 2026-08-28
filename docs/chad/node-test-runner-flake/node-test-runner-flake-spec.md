@@ -86,8 +86,13 @@ $ gh api "repos/nodejs/node/contents/lib/internal/test_runner/runner.js?ref=<bra
 
 **따라서 "활성 LTS(22/24)로 이동"이 곧 flake 해소는 아니다.**
 - 22로 가면 **flake는 그대로 남는다.**
-- 24로 가면 **24.20.0 이후에만** 해소된다. `actions/setup-node`의 `node-version: 24`는
-  최신 24.x로 해석되므로 2026-08-26 이후 자동으로 24.20.0을 집는다.
+- 24로 가면 **24.20.0 이후에만** 해소된다.
+  > **정정 (2026-08-28):** 원래 여기에 "`node-version: 24`는 최신 24.x로 해석되므로 릴리스되면
+  > 자동으로 24.20.0을 집는다"고 적었다. **틀렸다.** `setup-node`는 `check-latest`가 꺼져 있으면
+  > dist 매니페스트보다 **러너 toolcache를 먼저** 본다(`base-distribution.ts`
+  > `findVersionInHostedToolCacheDirectory()` → `tc.find('node','24')`). 이미지가 캐시한
+  > 24.19.0이 spec `24`를 만족하므로 그대로 쓰인다. 자동 승계는 **러너 이미지가 갱신된 뒤**
+  > 일어난다. 측정 근거는 artifact `### 검증 시도 1회차 (2026-08-28)`.
 - 26은 이미 해소됐지만 **Current이고 LTS 승격은 2026-10월**이다.
 
 ### 후보
@@ -119,8 +124,10 @@ $ gh api "repos/nodejs/node/contents/lib/internal/test_runner/runner.js?ref=<bra
   절충안 `engines ">=22"` + matrix `[24]` 도 **최소 지원 버전을 검증하지 않는** 공백이 생겨 제외했다.
 - (C)·(D)는 증상 완화라 불필요해졌고, (E) 자동 재시도는 **채택 금지**로 못박았다.
 
-**남은 것은 flake 해소 검증 하나뿐이다** — Node 24.20.0 릴리스 후 패치된 런타임에서
-반복 통과를 확인한다. 현재 CI annotation은 `runtime v24.19.0`(미패치)을 기록 중이다.
+**남은 것은 flake 해소 검증 하나뿐이다** — 패치된 런타임에서 반복 통과를 확인한다.
+Node 24.20.0 자체는 **2026-08-27에 게시됐다**. 그럼에도 2026-08-28 현재 CI annotation은
+여전히 `runtime v24.19.0`(미패치)을 기록한다 — 위 정정 참조. 대기 조건은
+"24.20.0 릴리스"에서 **"러너 이미지 toolcache가 24.20.0을 실을 때"**로 바뀌었다.
 정책 결정과 Ambiguity 게이트는 **이미 닫혔다 — 다시 열지 말 것.**
 
 ## Ontology
@@ -135,6 +142,10 @@ $ gh api "repos/nodejs/node/contents/lib/internal/test_runner/runner.js?ref=<bra
   v22는 활성 LTS인데도 백포트가 없다. 런타임 선택 시 두 축을 따로 확인해야 한다.
 - **전이성(transient) 실패**: 같은 코드·같은 커밋에서 실행마다 결과가 달라지는 실패.
   재실행으로 통과한다는 사실이 코드 결함 가설을 반증한다.
+- **러너 toolcache 도달 여부**: 백포트 도달과 **또 다른 축**이다. 업스트림이 릴리스하고
+  `actions/node-versions`에 게시돼도, `setup-node`는 `check-latest` 없이는 러너 이미지가
+  미리 캐시해 둔 버전을 먼저 쓴다. **"릴리스됐다"와 "CI에서 그 버전으로 돈다"는 다른 사건**이며,
+  둘 사이에는 이미지 롤아웃 지연(24.19.0 기준 약 1주)이 있다.
 
 ## Ambiguity 자가진단
 
