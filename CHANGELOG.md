@@ -18,6 +18,43 @@ modified: 2026-08-29
 
 ## [Unreleased]
 
+### Changed
+- **소비자 문서 5종 0.21.0 현행화** — 벤더링되지 않은 스킬 목록 + 전체 스킬 로스터 +
+  overview·fleet·task 가이드의 버전 정합. 세 HTML 가이드가 모두 0.18.1 세대에 멈춰 있어
+  0.19.0–0.20.0이 인도한 것(Node 24 · 판정 창 `firstActivatedAt` · D6 검증자 · `verify` 증거 키)이
+  **문서 어디에도 없었다** — 특히 done 가드는 세 문서가 입을 모아 "6종"이라고 말하고 있었다.
+  - `docs/prerequisites.md` §5: "벤더링되지 않은 스킬 — 미리 설치해야 켜지는 것" 절 신설.
+    번들 여부의 전체 인벤토리를 명시했다 — `/harness-*` 커맨드·스킬 24종(+Codex 전용 스킬 2종)은
+    전부 플러그인 번들이라 별도 설치가 없고, 비번들은 `diagram-design` 하나뿐이다. 설치 명령과
+    없을 때의 degrade 동작(probe → degrade → record, doctor 미검사 사유)을 표로 정리.
+    핀 갱신 절차·번들하지 않는 이유는 README 동반 플러그인 절이 계속 정본이다.
+  - `docs/harness-workflow-simulation.html`: 0.18.1에 멈춰 있던 것을 0.21.0 기준으로 갱신.
+    0.19.0–0.21.0 배너(Node ≥ 24 · D6 적대적 검증 · 옛 리뷰 이름 제거), done 종결 가드
+    6종 → **7종**(`verify` 증거 키)·선언 기본값·판정 창 `firstActivatedAt`, S7에 정합
+    검증(shipcheck) 단계 추가, 다이어그램 옵트인의 실행 주체가 `/harness-diagram` 어댑터임을
+    본문에 명시(그동안 옵트인을 설명하면서 실행 커맨드를 한 번도 이름으로 부르지 않았다),
+    그리고 **전체 스킬 로스터 표**(24 커맨드 + 커맨드 없는 스킬 2종, 옵트인 여부 배지) 신설.
+    스냅샷 `harness-workflow-simulation-0.21.0.html`을 남기고 `docs/index.html` 버전 목록에 등재.
+  - `docs/harness-overview.template.html` → `docs/harness-overview.html` 재생성: hero·footer의
+    v0.18.1 표기를 v0.21.0으로 올리고, 0.19.0에서 이미 출시된 내용(Node 24·`firstActivatedAt`)을
+    아직 미래형으로 예고하던 **"⚠️ 다음 릴리스 예고" 블록을 출시 사실로 전환** —
+    0.19.0–0.21.0 배너 그룹으로 대체(문서에 미래 릴리스 번호를 남기지 않는 원칙).
+    생성 인벤토리(커맨드 표 등)는 이미 0.21.0 기준이었고 산문·버전 라벨만 낡아 있었다.
+    스냅샷 `harness-overview-0.21.0.html`을 남기고 `docs/index.html` 버전 목록에 등재.
+  - `docs/harness-task-guide.html`: 버전 라벨(title·nav·eyebrow·tag·footer)과 라이프사이클
+    SVG의 게이트 문구를 0.21.0/**가드 7종**으로. `## Done evidence` 절에 `verify` 키 설명
+    (검증 프레이밍 kind만 증거로 세며, 검증 마커는 review를 겸하지만 역은 성립하지 않는다)과
+    "가드는 마커의 존재·kind·시각만 읽는다"는 D6 경계를 추가. §8에 판정 창 `firstActivatedAt`
+    문단과 검증 마커 가드 행, 페르소나 절에 contrarian·simplifier의 외부 엔진 모드와 interview
+    선행 채점, 리뷰 절에 kind 접미사 규약을 추가.
+  - `docs/harness-fleet-guide.html`: 같은 버전 라벨 갱신 + 완료 판정 증거를 가드 7종으로,
+    체크시트의 `# 6종:` 주석과 §7 종결 단계 주석을 7종으로. D6 콜아웃 신설(검증자는 반박만
+    하고 고치지 않으며 반영은 작성 세션이 단일 스레드로 — 크루 운용에서 워커 보고서의
+    "다 됐습니다"를 대체하는 증거가 된다), 재활성화가 판정 창을 밀지 않는다는 항목,
+    "리뷰를 돌렸는데도 검증 마커 없음으로 막힌다" 함정 행 추가.
+  - 두 가이드는 버전 스냅샷을 두지 않는 관례(0.19.0도 제자리 갱신)라 그대로 갱신했다.
+    남아 있는 `0.18.1` 표기는 전부 **기능이 도입된 릴리스**를 가리키는 역사적 귀속이라 유지.
+
 ## [0.21.0] - 2026-08-29
 
 ### Added

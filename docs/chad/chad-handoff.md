@@ -4,8 +4,8 @@
 없음 — `.harness/active.json` 은 `null` 이다.
 새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Completed Task (2026-08-28)
-`deprecated-review-carryover` — done
+## Last Completed Task (2026-08-29)
+`docs-refresh-0210` — done
 
 ## Full Context
-→ docs/chad/deprecated-review-carryover/deprecated-review-carryover-handoff.md
+→ docs/chad/docs-refresh-0210/docs-refresh-0210-handoff.md
