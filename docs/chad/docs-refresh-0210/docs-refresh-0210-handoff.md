@@ -20,3 +20,8 @@ CHANGELOG.md                                       |   37 +
  docs/index.html                                    |    2 +
  docs/prerequisites.md                              |   27 +-
  16 files changed, 3900 insertions(+), 57 deletions(-)
+
+## 2026-08-29T08:40:37.287Z — fe711c2 chore(task): post-commit 훅이 갱신한 handoff 반영
+docs/chad/chad-handoff.md                             |  9 ++++-----
+ .../docs-refresh-0210/docs-refresh-0210-handoff.md    | 19 +++++++++++++++++++
+ 2 files changed, 23 insertions(+), 5 deletions(-)
