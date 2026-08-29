@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-08-21
-modified: 2026-08-28
+modified: 2026-08-29
 ---
 
 # 사전 준비 (Prerequisites)
@@ -141,11 +141,25 @@ Codex 플러그인은 Claude의 `commands[]`를 가져오지 않으므로 **따�
 세 CLI 중 어느 것도 하네스가 호출하지 않습니다 — 설치 여부는 그 도구를 여러분이 쓸지에만
 영향을 줍니다.
 
-### 동반 플러그인 (선택) — diagram-design
+### 벤더링되지 않은 스킬 — 미리 설치해야 켜지는 것 (선택)
 
-spec/plan 단계 다이어그램은 **옵트인**이며 `diagram-design`은 하네스가 소유하지도 번들하지도
-않는 외부 플러그인입니다. 이 마켓플레이스가 **커밋 sha로 핀을 걸어** 함께 등재하지만 설치는
-선택입니다 — 설치 여부·명령·핀 갱신 절차는 README의
+`/harness-*` 슬래시 커맨드 24종과 짝이 되는 스킬(그리고 Codex 전용 `harness-team`·
+`harness-codex-sim` 스킬)은 **전부 플러그인에 번들**되어 있어 따로 설치할 것이 없습니다.
+하네스가 참조하지만 **번들하지 않는**(= 쓰려면 미리 설치해야 하는) 스킬은 현재 아래
+**하나뿐**입니다.
+
+| 스킬/플러그인 | 켜지는 기능 | 없으면 |
+|---|---|---|
+| `diagram-design` | spec/plan 다이어그램 **옵트인** 단계 전부 — `/harness-task`의 신규 task 직후 1회 질문, `/harness-diagram` 어댑터 실행, `/harness-ship`의 다이어그램 갱신 | **아무것도 실패하지 않습니다** — probe → degrade → record로 그 단계만 건너뛰고 기록을 남깁니다(아래). `doctor`도 검사하지 않습니다 — 옵트아웃한 사용자에게는 부재가 오탐이기 때문입니다. |
+
+```
+/plugin marketplace add https://github.com/bd-makers/team-harness
+/plugin install diagram-design@harness-aijient-team-marketplace
+```
+
+`diagram-design`은 하네스가 소유하지도 번들하지도 않는 외부 플러그인이며, 이 마켓플레이스가
+**커밋 sha로 핀을 걸어** 함께 등재합니다. `@<marketplace>`를 붙여야 핀이 걸린 사본이
+설치됩니다 — 핀 갱신 절차·번들하지 않는 이유는 README의
 [동반 플러그인 (선택)](../README.md#동반-플러그인-선택) 절이 정본입니다.
 
 하네스 안에서는 상류 스킬을 직접 부르지 않고 `/harness-diagram` 어댑터로 실행합니다
@@ -153,6 +167,9 @@ spec/plan 단계 다이어그램은 **옵트인**이며 `diagram-design`은 하�
 없으면 **실패시키지 않고** 그 단계를 건너뛴 뒤 `<name>-artifact.md`에
 "다이어그램 미실행 — 도구 없음"을 한 줄 남깁니다(probe → degrade → record).
 plan의 해당 단계는 지우지 말고 `- [x] … — 미실행(도구 없음)`으로 닫습니다.
+
+> 팀원이 개별적으로 설치할 수 있는 서드파티 스킬(mattpocock-skills 등)은 하네스의 의존성이
+> 아닙니다 — 주의할 상호작용만 §7 호환성 주의에 있습니다.
 
 ---
 

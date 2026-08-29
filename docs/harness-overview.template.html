@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Gemini, Cursor, OpenCode를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.18.1</span>
+      <span class="tag tag-purple">v0.21.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,14 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.19.0–0.21.0 — Node 24 · D6 적대적 검증 · 옛 리뷰 이름 제거:</strong>
+    <br>
+    <code>0.19.0</code> <strong>BREAKING — 최소 Node 18 → 24</strong>(<code>engines.node</code> — Node 18·20이 모두 지원 종료였고, <code>node:test</code> 러너 flake 수정이 24 라인에만 백포트됐다). <code>done</code>의 테스트 증거 가드가 문서를 테스트 파일로 오분류해 사실상 죽어 있던 것을 고쳐 <strong>처음으로 실제 발동</strong>하고, 판정 창의 시작점이 <code>active.json</code>의 <code>switchedAt</code>에서 <code>&lt;name&gt;-meta.json</code>의 <code>firstActivatedAt</code>으로 바뀌었다(재활성화가 창을 초기화해 이미 만족된 증거를 밀어내던 오탐 제거)
+    <br>
+    <code>0.20.0</code> <strong>D6 — 작업 단위 적대적 검증</strong>: 별도 컨텍스트의 read-only 검증자가 루브릭(id·항목·심각도·판정·근거)으로 반박만 하고, 반영은 작성 세션이 재현·판별 후 단일 스레드로 수행한다. <code>/harness-contrarian</code>·<code>/harness-simplifier</code> 외부 엔진 모드(codex·claude·gemini·custom) + <code>/harness-interview</code> 선행 채점 + <code>/harness-ship</code> 정합 검증(shipcheck) + <code>done</code> 가드 <code>verify</code> 증거 키. <code>done</code> 이후 사용자 handoff가 영구 동결되던 결함 수정 + 문서 내비게이션 허브 <code>docs/index.html</code> 신설
+    <br>
+    <code>0.21.0</code> deprecated alias였던 옛 리뷰 이름 2개(<code>/harness-codex-review</code>·<code>/harness-codex-adversarial-review</code>)가 <strong>실제로 제거됐다</strong>(슬래시 커맨드 26 → 24) — 대체는 <code>/harness-review codex</code>·<code>/harness-adversarial-review codex</code>. D6 루브릭 평가 가이드 <code>docs/harness-rubric-guide.html</code> 추가
+    <br><br>
     <strong>🆕 0.16.0–0.18.1 — 원장 분리 · 리뷰 재편 · 증거 기반 종결:</strong>
     <br>
     <code>0.16.0</code> <strong>원장이 생성물이 됐다</strong> — <code>docs/task_summary.md</code>·<code>docs/&lt;user&gt;/&lt;user&gt;-task.md</code>를 <code>task</code>·<code>done</code>이 더 이상 쓰지 않고, 기본 브랜치에서 <code>harness-team summary --write</code>가 task 디렉터리를 스캔해 렌더한다(모든 병렬 브랜치가 같은 줄에서 충돌하던 원인 제거). task별 기계 상태는 새 <code>&lt;name&gt;-meta.json</code>이 들고, <code>migrate</code>가 과거 task를 백필한다
@@ -221,11 +229,6 @@
     <code>0.18.0</code> spec 초안 writer <code>/harness-spec</code>(Confluence·Figma·인터뷰 3소스, 검증은 <code>/harness-interview</code>)
     <br>
     <code>0.18.1</code> <code>done</code> <strong>증거 기반 종결 가드 2종</strong> — 테스트 미작성 체크(기본 ON)와 리뷰 마커 체크(spec <code>## Done evidence</code>에서 opt-in).
-    <br><br>
-    <strong>⚠️ 다음 릴리스 예고 (현재 <code>## [Unreleased]</code>):</strong>
-    <strong>BREAKING — 최소 Node 18 → 24.</strong> Node 18(2025-04-30)·20(2026-04-30)이 모두 지원 종료라 CI가 EOL 런타임만 시험하고 있었다.
-    위 <code>Node ≥24</code> 배지와 <code>docs/prerequisites.md</code>는 이미 이 값(<code>package.json</code>의 <code>engines.node</code>)을 따른다.
-    함께: <code>done</code> 판정 창의 시작점이 <code>active.json</code>의 <code>switchedAt</code>에서 <code>&lt;name&gt;-meta.json</code>의 <code>firstActivatedAt</code>으로 바뀐다(재활성화가 창을 초기화해 이미 만족된 증거를 밀어내던 오탐 제거).
     <br><br>
     <strong>🆕 0.15.x — Codex 훅 · CLI 안전:</strong>
     <br>
@@ -772,7 +775,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.18.1 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.21.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

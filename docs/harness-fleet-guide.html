@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Harness 0.18.1 — firstmate · Orca 크루에서 task 운용하기</title>
+  <title>Harness 0.21.0 — firstmate · Orca 크루에서 task 운용하기</title>
   <style>
     :root {
       --bg: #0f1117;
@@ -229,7 +229,7 @@
 
   <main>
     <header class="hero">
-      <div class="eyebrow">Fleet guide · 0.18.1</div>
+      <div class="eyebrow">Fleet guide · 0.21.0</div>
       <h1>크루가 여러 명일 때<br>하네스 task는 이렇게 굴린다</h1>
       <p>단일 세션용 절차는 <code>docs/harness-task-guide.html</code>에 있습니다. 이 문서는 <strong>firstmate</strong>가 크루메이트를 워크트리에 띄우고 <strong>Orca</strong>가 그 워크트리와 터미널을 소유하는 환경에서, 하네스 task 계약이 어디서 끊기고 무엇으로 이어 붙이는지를 다룹니다. 결론부터: <strong>활성 포인터는 git을 타고 오지 않으므로 크루메이트의 첫 명령은 task 활성화</strong>입니다.</p>
       <div class="tags">
@@ -268,8 +268,9 @@ harness-team handoff
 
 <span class="c"># 6. PR/MR 직전 문서 정합 (0.17.0) — spec·plan·artifact를 코드 현실과 맞춘다</span>
 <span class="c">#    /harness-ship 은 PR/MR을 만들지 않는다. "준비 완료" 보고에서 멈춘다.</span>
+<span class="c">#    0.20.0: 별도 검증자가 문서↔diff 정합을 shipcheck 루브릭으로 반박한다 (D6)</span>
 
-<span class="c"># 7. 종결은 캡틴/배송 경로 승인 이후 (증거 가드 6종 + 선언 유효성을 통과해야 닫힌다 — §7)</span>
+<span class="c"># 7. 종결은 캡틴/배송 경로 승인 이후 (증거 가드 7종 + 선언 유효성을 통과해야 닫힌다 — §7)</span>
 harness-team done</code></pre>
 
       <div class="callout bad">
@@ -423,7 +424,8 @@ harness-team task th-token-refresh --member chad</code></pre>
 - 금지: `apply` / `init` / `sync` / `migrate` / `upgrade` / `backup` / `summary --write`
 - PR/MR 직전: `/harness-ship` — spec·plan·artifact를 코드 현실과 맞춘다 (PR은 만들지 않는다)
 - 완료 보고 전: `harness-team done`이 통과해야 한다
-  <span class="c"># 6종: 미완 박스 · artifact 템플릿 · 미커밋 · 커밋 0개 · 테스트 미작성 · 리뷰 마커(spec opt-in)</span>
+  <span class="c"># 7종: 미완 박스 · artifact 템플릿 · 미커밋 · 커밋 0개 · 테스트 미작성</span>
+  <span class="c">#      · 리뷰 마커(spec opt-in) · 검증 마커(spec opt-in, verify: required)</span>
   <span class="c"># + spec의 `## Done evidence` 선언이 깨져 있으면 그 자체로 차단된다 (조용한 폴백 없음)</span>
   <span class="c"># 테스트가 불필요한 task면 {"tests":"skip"}을 선언한다 — 무시하지 말고 선언한다.</span></code></pre>
 
@@ -464,6 +466,16 @@ harness-team task th-token-refresh --member chad</code></pre>
           <h5>리뷰 커맨드가 엔진 중립으로 재편됐다 (0.17.0) — 그리고 기록이 기계 판독 대상이 됐다 (0.18.1)</h5>
           <p>이름은 <code>/harness-review</code>·<code>/harness-adversarial-review</code>이고, 엔진(<code>codex</code>·<code>claude</code>·<code>gemini</code>·<code>custom</code>)은 <strong>인수</strong>로 고릅니다. 옛 이름 <code>/harness-codex-review</code>·<code>/harness-codex-adversarial-review</code>는 0.17.0부터 deprecated alias였고 <strong>이제 제거됐습니다</strong>(CHANGELOG <code>Removed</code> 참조) — 브리프에 옛 이름이 박혀 있으면 지금 조용히 깨집니다.</p>
           <p>0.18.1부터 <code>/harness-review</code>는 artifact <code>## Reviews</code>에 <code>&lt;!-- harness:review kind=&lt;engine&gt; at=&lt;ISO8601&gt; --&gt;</code> 마커 한 줄을 append합니다. spec이 <code>review: required</code>를 선언한 task는 <strong><code>done</code>이 이 마커를 찾습니다</strong>. 즉 리뷰를 돌리고도 기록하지 않으면 이제 종결이 막힙니다 — "기록 없는 리뷰는 안 한 리뷰"가 규범에서 <strong>가드</strong>가 됐습니다.</p>
+        </div>
+      </div>
+
+      <div class="callout warn">
+        <div class="mark">🧪</div>
+        <div>
+          <h5>D6 — 작업 산출물에 read-only 검증자를 붙인다 (0.20.0)</h5>
+          <p>D2(작성자·리뷰어 분리)를 <strong>작업 단위</strong>로 적용한 규범입니다. 크루 운용에서 특히 유용한 이유는, 워커 보고서의 "다 됐습니다"를 캡틴이 눈으로 검수하는 대신 <strong>별도 컨텍스트의 검증자가 반박을 시도한 기록</strong>으로 대체할 수 있기 때문입니다.</p>
+          <p>검증자는 finding(<code>id</code>·항목·심각도 <code>BLOCKER</code>/<code>MAJOR</code>/<code>MINOR</code>·판정·근거)으로 <strong>반박만 하고 고치지 않습니다</strong>. 반영은 작성 세션이 발견을 재현·판별한 뒤 단일 스레드로 수행합니다 — 검증자→작업자 자동 수정 루프는 금지입니다(D4가 금지하는 병렬 쓰기와 같은 이유). 산문 칭찬은 신호가 아닙니다.</p>
+          <p>붙는 자리는 다섯입니다: <code>/harness-adversarial-review</code>(설계·가정) · 엔진 인수를 준 <code>/harness-contrarian</code>·<code>/harness-simplifier</code>(task 문서) · 테스트 3형제의 testcritic 인계 · <code>/harness-ship</code>의 정합 검증(문서↔diff). 각각 <code>kind=&lt;engine&gt;-&lt;프레이밍&gt;</code> 마커를 남기고, spec이 <code>verify: required</code>면 <code>done</code>이 <strong>이 접미사로 끝나는 마커만</strong> 증거로 셉니다. 판정 기준은 <a href="harness-rubric-guide.html">루브릭 평가 가이드</a>가 정본입니다.</p>
         </div>
       </div>
 
@@ -600,7 +612,8 @@ harness-team task th-token-refresh --member chad</code></pre>
         <li>칸반·crew-state의 "done"을 병합 근거로 쓰지 않는다 <span class="pill pill-doc">문서</span>.</li>
         <li>워커 보고서는 <strong>증거를 확인</strong>한다 — <code>ls</code> 한 번, 파일 한 번 열기. 상세하고 일관된 보고서가 산출물의 존재 증명은 아니다.</li>
         <li>반대로 워커가 <strong>스스로 신고한 간극</strong>은 대개 진짜다 — 확인하고 닫는다.</li>
-        <li>하네스 쪽 증거는 <code>done</code> 가드 <strong>6종</strong>이다: 미완 박스 0 · artifact 내용 있음 · 미커밋 없음 · task 시작 이후 커밋 ≥ 1 · <strong>소스가 바뀌었으면 테스트도 바뀜</strong>(0.18.1, 기본 ON — 문서·설정만 바뀐 task엔 발동하지 않는다) · <strong>spec이 <code>review: required</code>면 리뷰 마커 존재</strong>(0.18.1, spec opt-in).</li>
+        <li>하네스 쪽 증거는 <code>done</code> 가드 <strong>7종</strong>이다: 미완 박스 0 · artifact 내용 있음 · 미커밋 없음 · task 시작 이후 커밋 ≥ 1 · <strong>소스가 바뀌었으면 테스트도 바뀜</strong>(0.18.1, 기본 ON — 문서·설정만 바뀐 task엔 발동하지 않는다) · <strong>spec이 <code>review: required</code>면 리뷰 마커 존재</strong>(0.18.1, spec opt-in) · <strong>spec이 <code>verify: required</code>면 검증 프레이밍 마커 존재</strong>(0.20.0, spec opt-in — kind가 <code>-adversarial</code>·<code>-testcritic</code>·<code>-shipcheck</code>·<code>-contrarian</code>·<code>-simplifier</code>로 끝나는 마커만 센다).</li>
+            <li>증거를 찾는 <strong>판정 창</strong>의 시작은 <code>&lt;name&gt;-meta.json</code>의 <code>firstActivatedAt</code>이다(0.19.0). 생성 시 1회만 기록되고 재활성화가 건드리지 않으므로, <strong>워크트리를 오가며 task를 재활성화해도 이미 만족된 증거가 창 밖으로 밀려나지 않는다</strong> — 크루 운용에서 특히 자주 밟던 오탐이었다.</li>
             <li>여기에 <strong>선언 유효성</strong>이 하나 더 붙는다 — spec의 <code>## Done evidence</code> JSON이 깨졌거나 미지 키를 담고 있으면 <strong>그것만으로 차단</strong>된다 <span class="pill pill-src">소스</span>. 조용히 기본값으로 폴백하지 않는 것이 의도다(<code>boundary check</code>의 <code>not-configured</code> 전례).</li>
             <li>가드가 막는 것은 악의가 아니라 <strong>망각</strong>이다. <code>--force</code>로 뚫었다면 <strong>그 이유가 artifact에 있어야</strong> 하고, 없으면 그 <code>done</code>은 증거가 아니다.</li>
       </ul>
@@ -652,6 +665,7 @@ harness-team task th-token-refresh --member chad</code></pre>
             <tr><td>워크트리에서 <code>summary --write</code>가 거부됐다</td><td>가드가 기본 브랜치만 허용한다(의도된 동작)</td><td>거부가 맞다. <code>--force</code>로 뚫지 말고 기본 브랜치에서 돌린다</td></tr>
             <tr><td><code>done</code>이 "테스트 파일 변경이 없음"으로 막힌다</td><td>0.18.1 테스트 증거 가드. 소스는 바뀌었는데 테스트가 안 바뀌었다</td><td>테스트를 쓰거나, 정말 불필요하면 spec <code>## Done evidence</code>에 <code>"tests": "skip"</code>을 선언한다</td></tr>
             <tr><td><code>done</code>이 "리뷰 마커가 없음"으로 막힌다</td><td>spec이 <code>review: required</code>인데 artifact에 마커가 없다 — 리뷰를 안 했거나 <strong>기록을 빠뜨렸다</strong></td><td><code>/harness-review</code>를 돌리고 <code>## Reviews</code>에 결과 + 마커를 남긴다</td></tr>
+            <tr><td>리뷰를 돌렸는데도 <code>done</code>이 "검증 마커가 없음"으로 막힌다</td><td>spec이 <code>verify: required</code>다 (0.20.0). 일반 <code>review</code> 마커는 이 가드를 만족시키지 않는다 — <strong>검증 프레이밍 kind만</strong> 센다</td><td><code>/harness-adversarial-review</code>나 엔진 인수를 준 <code>/harness-contrarian</code>·<code>/harness-simplifier</code>를 돌리고 그 마커를 남긴다. 반대 방향은 성립한다 — 검증 마커는 <code>review</code> 증거를 겸한다</td></tr>
             <tr><td>브리프의 <code>/harness-codex-review</code>가 아무 반응이 없다</td><td>0.17.0에서 <code>/harness-review</code>로 재편, 옛 이름 alias는 <strong>제거됐다</strong></td><td>브리프·문서의 커맨드 이름을 <code>/harness-review</code>로 바꾼다</td></tr>
             <tr><td>워크트리에서 <code>apply</code>를 돌려 diff가 폭발했다</td><td>관리 구역 재생성</td><td>해당 파일들 <code>git checkout</code>으로 되돌리고, 하네스 갱신은 전용 task로 분리</td></tr>
             <tr><td>리뷰가 두 번 쌓였다</td><td><code>no-mistakes</code> 위에 수동 리뷰를 얹었다</td><td>모드별 리뷰 주인 표를 따르고, 파이프라인 결과를 <code>## Reviews</code>에 기록</td></tr>
@@ -670,10 +684,10 @@ harness-team task th-token-refresh --member chad</code></pre>
         </div>
       </div>
 
-      <p class="section-sub" style="margin-top:2rem">정본: 단일 세션 절차는 <code>docs/harness-task-guide.html</code>(0.18.1 기준) · 하네스 작업 프로토콜은 <code>AGENTS.md</code> · firstmate 라이프사이클과 브리프 계약은 그 <code>AGENTS.md §7·§11</code>과 <code>bin/fm-brief.sh --help</code> · Orca 명령 표면은 <code>orca skills get orca-cli</code>와 <code>orca skills get orchestration</code>.</p>
+      <p class="section-sub" style="margin-top:2rem">정본: 단일 세션 절차는 <code>docs/harness-task-guide.html</code>(0.21.0 기준) · 하네스 작업 프로토콜은 <code>AGENTS.md</code> · firstmate 라이프사이클과 브리프 계약은 그 <code>AGENTS.md §7·§11</code>과 <code>bin/fm-brief.sh --help</code> · Orca 명령 표면은 <code>orca skills get orca-cli</code>와 <code>orca skills get orchestration</code>.</p>
     </section>
   </main>
 
-  <footer>Harness Aijient Team Plugin 0.18.1 · firstmate · Orca 크루 운용 가이드 · 실측 표기는 2026-08-11 확인 · 0.18.1 기준 갱신 2026-08-26</footer>
+  <footer>Harness Aijient Team Plugin 0.21.0 · firstmate · Orca 크루 운용 가이드 · 실측 표기는 2026-08-11 확인 · 0.21.0 기준 갱신 2026-08-29</footer>
 </body>
 </html>
