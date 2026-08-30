@@ -320,6 +320,31 @@ export async function checkBoundaryCheckpointHook(targetDir) {
   return 'PreToolUse boundary checkpoint hook 없음 — run: harness-team apply';
 }
 
+// The "eager tier" = instruction files loaded into context at EVERY session start
+// (AGENTS.md + CLAUDE.md at the project root), unlike lazy-loaded command docs/skills.
+// This repo's own eager tier is ~16 KB; 24 KiB = 1.5x headroom. This is a deterministic
+// size check only — the fix (moving procedure to lazy sources) is a human judgment call,
+// so it stays warning-only, mirroring the TCC 6 KiB budget philosophy (context.mjs
+// CONTEXT_MAX_BYTES).
+export const EAGER_TIER_MAX_BYTES = 24 * 1024;
+
+// A missing file counts as 0 bytes. Both missing → total is 0, which never exceeds
+// the budget, so this returns null without any special-casing — same as a project
+// that simply doesn't use the harness agent files.
+export async function checkEagerTierSize(targetDir) {
+  let total = 0;
+  for (const name of ['AGENTS.md', 'CLAUDE.md']) {
+    // Read without an encoding: Buffer#length is the raw byte count, which is the
+    // UTF-8 size — no separate Buffer.byteLength re-encode needed.
+    const body = await readFile(join(targetDir, name)).catch(() => null);
+    if (body) total += body.length;
+  }
+  if (total <= EAGER_TIER_MAX_BYTES) return null;
+  const totalFmt = total.toLocaleString('en-US');
+  const budgetFmt = EAGER_TIER_MAX_BYTES.toLocaleString('en-US');
+  return `eager 계층(AGENTS.md+CLAUDE.md) ${totalFmt} B > ${budgetFmt} B(24 KiB) — 매 세션 로드되는 지시가 큽니다. 절차는 lazy 정본(커맨드 문서·스킬)으로 옮기는 것을 검토하세요.`;
+}
+
 const CHECKS = [
   { path: 'AGENTS.md', required: true, realFile: true, contains: 'harness:section="protocol"' },
   { path: 'CLAUDE.md', required: true, realFile: true, contains: '@AGENTS.md' },
@@ -518,6 +543,11 @@ export async function runDoctor(ctx) {
   // in the source repo too, so its absence is real drift on either side.
   const decisionLogWarning = await checkDecisionLog(ctx.targetDir);
   if (decisionLogWarning) add('decision log', 'warning', decisionLogWarning, `\n⚠️ ${decisionLogWarning}`);
+
+  // Deliberately NOT gated on pluginDev either — this repo's own eager tier is the
+  // reason the 24 KiB budget was picked, so it must be measured here too.
+  const eagerTierWarning = await checkEagerTierSize(ctx.targetDir);
+  if (eagerTierWarning) add('eager tier size', 'warning', eagerTierWarning, `\n⚠️ ${eagerTierWarning}`);
 
   // Like the hook-presence checks above, this is consumer-only. plugin-dev uses
   // `node bin/harness-team.mjs` and deliberately does not install consumer hooks.

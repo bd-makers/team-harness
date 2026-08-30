@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { readdir, readFile } from 'node:fs/promises';
+import { readdir, readFile, stat } from 'node:fs/promises';
 import { exists } from '../fsx.mjs';
 import { readActive, planHasOpenBoxes } from './task.mjs';
 import { contextCardPath, validateContextCard } from './context.mjs';
@@ -11,7 +11,12 @@ export function settingsHasSessionGate(settings) {
     (group.hooks || []).some(h => typeof h.command === 'string' && h.command.includes('session-context')));
 }
 
+// "활성 task 없음" nudge는 task마다 한 줄을 찍는 유일한 무제한 주입 경로다 — SessionStart 출력을
+// lean하게 유지하기 위해 상한을 두고, 전체 목록은 `harness-team list`로 안내한다.
+export const SESSION_CONTEXT_MAX_TASKS = 8;
+
 // plan.md에 열린 체크박스가 남은 task = 재개 가능. (marker: <name>-spec.md, `list`와 동일 규약)
+// 최신 활동(plan.md mtime) 내림차순, 동률이면 user/name 오름차순으로 정렬해 반환한다.
 export async function listIncompleteTasks(targetDir) {
   const docs = join(targetDir, 'docs');
   if (!(await exists(docs))) return [];
@@ -24,12 +29,20 @@ export async function listIncompleteTasks(targetDir) {
       if (!te.isDirectory()) continue;
       const name = te.name;
       if (!(await exists(join(userPath, name, `${name}-spec.md`)))) continue;
-      let plan;
-      try { plan = await readFile(join(userPath, name, `${name}-plan.md`), 'utf8'); }
-      catch { continue; }
-      if (planHasOpenBoxes(plan)) out.push({ user, name });
+      const planPath = join(userPath, name, `${name}-plan.md`);
+      // 스캔 중 task가 이동·삭제될 수 있다 — readFile·stat 어느 쪽이 실패해도 그 task만 건너뛴다.
+      let plan, mtimeMs;
+      try {
+        plan = await readFile(planPath, 'utf8');
+        ({ mtimeMs } = await stat(planPath));
+      } catch { continue; }
+      if (!planHasOpenBoxes(plan)) continue;
+      out.push({ user, name, mtimeMs });
     }
   }
+  out.sort((a, b) => b.mtimeMs - a.mtimeMs
+    || (a.user < b.user ? -1 : a.user > b.user ? 1 : 0)
+    || (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   return out;
 }
 
@@ -79,7 +92,11 @@ export async function buildSessionContext(targetDir) {
     '이 세션의 첫 프롬프트가 실질 작업(기능/수정/리팩토링/디버깅)이면, 코드를 건드리기 전에',
     '반드시 AskUserQuestion으로 다음 중 하나를 확인하세요:',
   ];
-  for (const t of incomplete) lines.push(`  · 재개: ${t.user}/${t.name}   (plan 미완)`);
+  const shown = incomplete.slice(0, SESSION_CONTEXT_MAX_TASKS);
+  for (const t of shown) lines.push(`  · 재개: ${t.user}/${t.name}   (plan 미완)`);
+  if (incomplete.length > SESSION_CONTEXT_MAX_TASKS) {
+    lines.push(`  · … 외 ${incomplete.length - SESSION_CONTEXT_MAX_TASKS}개 (harness-team list로 전체 확인)`);
+  }
   lines.push('  · 새 task 생성');
   lines.push('  · task 없이 진행');
   lines.push('(단순 질문·조회·잡일이면 무시.)');
