@@ -287,6 +287,7 @@ harness-team doctor</code></pre>
 
       <p><code>doctor</code>는 파일 무결성만 보지 않고 <strong>PATH의 <code>harness-team</code>이 실제로 실행되며 <code>session-context</code>/<code>handoff</code>를 지원하는지</strong>까지 확인합니다(0.13+). 실패하면 전역 CLI 재링크 안내를 냅니다 — 훅이 조용히 죽어 있는 상태로 며칠을 보내는 사고를 막는 검사입니다.</p>
       <p>0.15.2에서 여기에 <strong>버전 드리프트 검사</strong>가 붙었습니다. 릴리스는 슬래시 커맨드 캐시만 새 버전으로 만들고 <strong>PATH의 CLI는 마켓플레이스 클론에 묶여 옛 버전으로 남을 수 있습니다.</strong> 신기능이 "없다"고 느껴지면 먼저 <code>harness-team --version</code>(0.15.1 신설)으로 채널을 확인하세요 — 이 명령이 <code>Unknown command</code>로 떨어지면 그 자체가 클론이 낡았다는 신호입니다.</p>
+      <p>0.23.0에서는 여기에 <strong>eager 계층 크기 경고</strong>가 하나 더 붙었습니다 — 매 세션 무조건 로드되는 <code>AGENTS.md</code> + <code>CLAUDE.md</code>의 UTF-8 합산이 24 KiB를 넘으면 경고합니다. <strong>fail이 아니라 warning이라 <code>doctor</code>는 계속 green이고</strong>, 문서가 커지는 데에는 정당한 이유가 있을 수 있어 판단은 사람 몫으로 남깁니다 — 그래서 대응은 지시를 지우는 것이 아니라 절차를 커맨드 문서·스킬 같은 <strong>lazy 정본</strong>으로 옮기는 쪽입니다.</p>
     </section>
 
     <section id="loop">
@@ -617,7 +618,7 @@ unresolved-failure-capsules: 0/3</code></pre>
 # auth-refresh — Context Card
 ## Now
 - Goal: …</code></pre>
-      <p>활성 task가 없으면 첫 작업 프롬프트에서 <strong>재개 / 새 task / task 없이 진행</strong>을 묻습니다. block이 아니라 nudge이므로 "task 없이 진행"도 선택지입니다 — 다만 그 선택을 <em>의식적으로</em> 하게 만드는 것이 목적입니다.</p>
+      <p>활성 task가 없으면 첫 작업 프롬프트에서 <strong>재개 / 새 task / task 없이 진행</strong>을 묻습니다. block이 아니라 nudge이므로 "task 없이 진행"도 선택지입니다 — 다만 그 선택을 <em>의식적으로</em> 하게 만드는 것이 목적입니다. 0.23.0에서 바뀐 것은 <strong>이 3택이 아니라 재개 후보 목록의 길이</strong>입니다 — 미완 task는 최근 활동순(<code>plan.md</code> mtime)으로 <strong>최대 8개</strong>만 나열되고 나머지는 <code>… 외 N개</code> 한 줄로 접힙니다. 접힌 것까지 전부 보려면 <code>harness-team list</code>를 쓰세요.</p>
     </section>
 
     <section id="llm">
@@ -844,6 +845,6 @@ stop: 의도적으로 무시하려면 `harness-team done --force`</code></pre>
     </section>
   </main>
 
-  <footer>Harness Aijient Team Plugin 0.21.0 · task 작업 가이드 · CLI 출력은 0.18.1 실행 결과를 인용 · 0.21.0 기준 갱신 2026-08-29</footer>
+  <footer>Harness Aijient Team Plugin 0.23.0 · task 작업 가이드 · CLI 출력은 0.18.1 실행 결과를 인용 · 0.23.0 기준 갱신 2026-08-30</footer>
 </body>
 </html>
