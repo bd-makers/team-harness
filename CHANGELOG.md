@@ -18,6 +18,20 @@ modified: 2026-08-29
 
 ## [Unreleased]
 
+### Changed
+- **릴리스 절차 5단계에 가드 없는 문서 표면 2종의 갱신을 명시.**
+  `docs/harness-overview.template.html`의 hero 배지·최신 그룹 배너 산문·footer는 생성물이 아니라
+  **템플릿에 하드코딩**돼 있어 `docs:generate`가 손대지 않습니다(자동 갱신되는 것은 커맨드·파일
+  인벤토리뿐). 그래서 `docs:check`가 green이어도 낡습니다. `docs/index.html`의 what-changes 목록도
+  가드가 없어 빠뜨리면 새 릴리스 노트가 문서 허브에서 도달 불가가 됩니다.
+  - 근거는 실제 재발입니다 — **0.22.0과 0.23.0이 연속으로** 이 템플릿을 놓쳐 배지가 두 세대
+    (`v0.21.0`) 밀린 채 발행됐고, 0.23.0 릴리스 직후 점검에서야 잡혔습니다. 두 릴리스 모두
+    `docs:check`는 green이었습니다.
+  - 절차에 **결합 강도 순서**를 함께 적었습니다: `what-changes-*`(3방향 강제) >
+    `harness-overview`(생성+pin, 산문은 무방비) > `prerequisites.md`(doctor 양방향) >
+    `index.html`·simulation·guide류(가드 0). 가드가 약한 표면일수록 절차가 유일한 방어선입니다.
+  - 이 변경 자체는 ③ 메인테이너 전용이라 **릴리스하지 않습니다.** 다음 릴리스에 딸려 갑니다.
+
 ## [0.23.0] - 2026-08-30
 
 ### Added
