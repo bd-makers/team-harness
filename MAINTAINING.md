@@ -56,6 +56,8 @@ modified: 2026-08-28
 
 `templates/{AGENTS,CLAUDE,GEMINI}.md.hbs`의 managed 섹션(`<!-- harness:section="..." -->` 블록)을 수정할 때는 **이 레포 루트의 같은 파일**(`AGENTS.md`·`CLAUDE.md`·`GEMINI.md`)도 함께 갱신하세요 — `tests/agent-files.test.mjs`가 이 저장소 스택으로 렌더한 템플릿과 루트 적용본의 managed 섹션 내용 일치를 강제합니다. 마커 밖 텍스트(제목 등 저장소 고유 영역)는 검사 대상이 아닙니다.
 
+**eager 계층 크기 예산**: 대상 프로젝트 루트의 `AGENTS.md`+`CLAUDE.md`는 매 세션 무조건 컨텍스트에 로드되는 **eager 계층**입니다 — 필요할 때만 로드되는 커맨드 문서·스킬 같은 **lazy 정본**과 다릅니다(어휘 정의는 `docs/chad/instruction-structure/instruction-structure-spec.md` 참조). `doctor`가 두 파일의 UTF-8 바이트 합을 `EAGER_TIER_MAX_BYTES`(24 KiB — 이 레포 자신의 eager 계층 ~16 KB에 1.5배 여유)와 비교해 초과 시 경고합니다. 새 규칙을 추가할 때 절차 본문은 여기 두지 말고 lazy 정본으로 옮기고 eager 쪽에는 트리거 한 줄만 남기세요.
+
 **D6 검증 프레이밍 kind 접미사**(`-adversarial`·`-testcritic`·`-shipcheck`·`-contrarian`·`-simplifier`)를 추가·제거할 때는 열거의 정본인 `commands/harness-review.md` 5단계와 `src/commands/task.mjs`의 `VERIFY_KIND_SUFFIXES`를 **함께** 고치세요 — `tests/done-guard.test.mjs`의 allowlist↔문서 동기화 pin과 `tests/agent-files.test.mjs`의 소비 표면 pin이 한쪽만 바뀐 상태를 CI에서 잡습니다.
 
 ---

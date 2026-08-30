@@ -6,7 +6,7 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from 'node:fs
 import { tmpdir, homedir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
+import { checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, checkEagerTierSize, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
 import { POST_COMMIT_HOOK } from '../src/git-hooks.mjs';
 import { cloudSyncPathWarning } from '../src/harness.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
@@ -294,6 +294,46 @@ test('checkBoundaryCheckpointHook: Edit PreToolUse 경계 훅 있음 → null', 
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+async function makeEagerTierFixture({ agents, claude } = {}) {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-eager-'));
+  if (agents !== undefined) await writeFile(join(dir, 'AGENTS.md'), agents);
+  if (claude !== undefined) await writeFile(join(dir, 'CLAUDE.md'), claude);
+  return dir;
+}
+
+test('checkEagerTierSize: 둘 다 없음 → null (조용히 skip)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-eager-none-'));
+  try {
+    assert.equal(await checkEagerTierSize(dir), null);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkEagerTierSize: 합계가 24 KiB 이내 → null', async () => {
+  const dir = await makeEagerTierFixture({ agents: 'x'.repeat(1000), claude: 'y'.repeat(1000) });
+  try {
+    assert.equal(await checkEagerTierSize(dir), null);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkEagerTierSize: 합계가 24 KiB 초과 → 측정치·예산을 담은 경고 문자열', async () => {
+  const dir = await makeEagerTierFixture({ agents: 'x'.repeat(EAGER_TIER_MAX_BYTES), claude: 'y'.repeat(1) });
+  try {
+    const total = EAGER_TIER_MAX_BYTES + 1;
+    const w = await checkEagerTierSize(dir);
+    assert.ok(typeof w === 'string', 'returns a warning string');
+    assert.match(w, /^eager 계층\(AGENTS\.md\+CLAUDE\.md\)/);
+    assert.match(w, new RegExp(`${total.toLocaleString('en-US')} B > ${EAGER_TIER_MAX_BYTES.toLocaleString('en-US')} B\\(24 KiB\\)`));
+    assert.match(w, /lazy 정본\(커맨드 문서·스킬\)/, '절차를 lazy 정본으로 옮기라는 안내가 있어야 한다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkEagerTierSize: 한쪽 파일만 존재해도 초과분은 합산한다 (누락 파일은 0바이트)', async () => {
+  const dir = await makeEagerTierFixture({ agents: 'x'.repeat(EAGER_TIER_MAX_BYTES + 1) });
+  try {
+    assert.ok(typeof (await checkEagerTierSize(dir)) === 'string');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('detectLegacyStructure: AGENTS.md 실파일 + .cursorrules 없으면 null(신구조)', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'harness-new-'));
   try {
@@ -500,5 +540,31 @@ test('runDoctor: docs/decisions.md 없는 프로젝트 → decision log 경고 �
     const c = checkOf(env, 'decision log');
     assert.equal(c?.status, 'warning');
     assert.match(c.detail, /decisions\.md/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// --- eager tier size (AGENTS.md+CLAUDE.md) — runDoctor wiring ---
+
+test('runDoctor: eager 계층(AGENTS.md+CLAUDE.md)이 24 KiB 초과 → 경고, doctor는 여전히 성공한다', async () => {
+  const dir = await healthyConsumerFixture();
+  try {
+    // healthyConsumerFixture's AGENTS.md already carries the required CHECKS marker —
+    // keep it and pad past the budget so this only exercises the size check.
+    await writeFile(join(dir, 'AGENTS.md'), '# core\n<!-- harness:section="protocol" -->\n' + 'x'.repeat(EAGER_TIER_MAX_BYTES));
+    const env = await doctorJson(dir);
+    const c = checkOf(env, 'eager tier size');
+    assert.equal(c?.status, 'warning');
+    assert.match(c.detail, /eager 계층\(AGENTS\.md\+CLAUDE\.md\)/);
+    const failCount = (env.checks || []).filter(x => x.status === 'fail').length;
+    assert.equal(failCount, 0, '이 경고만으로 다른 필수 점검이 fail 처리되면 안 된다');
+    assert.notEqual(env.status, 'error', '경고는 fail이 아니므로 doctor의 exit code(0)에 영향을 주면 안 된다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('runDoctor: eager 계층이 24 KiB 이내면 경고를 노출하지 않는다', async () => {
+  const dir = await healthyConsumerFixture();
+  try {
+    const env = await doctorJson(dir);
+    assert.equal(checkOf(env, 'eager tier size'), undefined);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
