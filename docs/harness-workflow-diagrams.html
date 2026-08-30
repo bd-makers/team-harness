@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<!-- Team Harness workflow를 다섯 가지 형태의 다이어그램으로 그린 문서입니다. -->
+<!-- 정본: AGENTS.md(작업 프로토콜) · commands/harness-task.md · commands/harness-review.md · commands/harness-ship.md · docs/decisions.md(D2·D4·D5·D6) -->
+<html lang="ko"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="vendor/mermaid.min.js"></script>
+  <title>Team Harness Workflow — 다이어그램 모음</title>
+
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3350;
+      --accent: #7c6af5;
+      --accent2: #50c8f5;
+      --accent3: #4df0aa;
+      --text: #e2e6f0;
+      --muted: #7a82a0;
+      --tag-blue: #1e3a5f;
+      --tag-green: #0e3d30;
+      --tag-purple: #2a1f5c;
+      --tag-orange: #3d2700;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      background: rgba(15,17,23,0.95); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem; height: 54px; display: flex; align-items: center;
+    }
+    .nav-logo { font-weight: 700; font-size: 1rem; color: var(--accent); margin-right: 2rem; white-space: nowrap; flex-shrink: 0; }
+    .nav-links { display: flex; gap: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+    .nav-links::-webkit-scrollbar { display: none; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none; font-size: 0.85rem;
+      padding: 0 0.8rem; height: 54px; display: flex; align-items: center;
+      border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; white-space: nowrap;
+    }
+    .nav-links a:hover { color: var(--text); border-bottom-color: var(--accent); }
+
+    main { max-width: 1160px; margin: 0 auto; padding: 72px 2rem 6rem; }
+
+    .hero { text-align: center; padding: 4rem 0 2.5rem; }
+    .hero h1 {
+      font-size: 2.6rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 0.75rem;
+    }
+    .hero p { color: var(--muted); font-size: 1.05rem; max-width: 680px; margin: 0 auto 1.5rem; }
+    .hero-tags { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+    .tag { padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+    .tag-blue { background: var(--tag-blue); color: var(--accent2); }
+    .tag-green { background: var(--tag-green); color: var(--accent3); }
+    .tag-purple { background: var(--tag-purple); color: var(--accent); }
+    .tag-orange { background: var(--tag-orange); color: #f5a623; }
+
+    section { margin-bottom: 4.5rem; }
+    .section-title {
+      font-size: 1.45rem; font-weight: 700; color: var(--text); margin-bottom: 0.4rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .section-title::before {
+      content: ''; display: inline-block; width: 4px; height: 1.45rem;
+      background: var(--accent); border-radius: 2px;
+    }
+    .section-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.4rem; margin-bottom: 1rem;
+    }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+    .card h3 { font-size: 0.95rem; font-weight: 600; color: var(--accent2); margin-bottom: 0.6rem; }
+    .card p, .card li { font-size: 0.85rem; color: var(--muted); }
+    .card a { color: var(--accent2); }
+
+    .diagram-wrap {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 2.5rem 1.5rem;
+      overflow-x: auto; margin-bottom: 0.75rem;
+    }
+    .diagram-wrap .mermaid { display: flex; justify-content: center; min-width: 600px; }
+    .diagram-label { font-size: 0.78rem; color: var(--muted); text-align: center; margin-top: 0.5rem; margin-bottom: 1.5rem; }
+
+    details {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 0.9rem 1.2rem; margin-bottom: 1rem;
+    }
+    details summary { cursor: pointer; font-size: 0.85rem; color: var(--accent2); font-weight: 600; }
+    details p, details li { font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; }
+    details ul { padding-left: 1.2rem; }
+
+    .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead tr { background: var(--surface2); }
+    th {
+      padding: 0.8rem 1.1rem; text-align: left; color: var(--muted);
+      font-weight: 600; font-size: 0.78rem; text-transform: uppercase;
+      letter-spacing: 0.05em; border-bottom: 1px solid var(--border);
+    }
+    td { padding: 0.75rem 1.1rem; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(124,106,245,0.04); }
+    code {
+      background: var(--surface2); color: var(--accent2); padding: 2px 7px;
+      border-radius: 4px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.83em;
+    }
+
+    .infobox {
+      background: #1a2535; border-left: 3px solid var(--accent2);
+      border-radius: 0 8px 8px 0; padding: 0.9rem 1.2rem;
+      font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem;
+    }
+    .infobox strong { color: var(--text); }
+
+    footer { text-align: center; padding: 2rem; color: var(--muted); font-size: 0.8rem; border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">⚙ Harness</div>
+  <div class="nav-links">
+    <a href="#forms">형태 고르기</a>
+    <a href="#flow">플로우차트</a>
+    <a href="#lanes">스윔레인</a>
+    <a href="#sequence">시퀀스</a>
+    <a href="#states">상태</a>
+    <a href="#parallel">병렬 worktree</a>
+    <a href="#guide">가이드</a>
+  </div>
+</nav>
+
+<main>
+
+  <div class="hero">
+    <h1>Team Harness Workflow</h1>
+    <p>한 task가 태어나서 닫히기까지의 팀 워크플로우를 다섯 가지 형태로 그렸다.
+       각 다이어그램은 같은 워크플로우를 다른 질문으로 자른다.</p>
+    <div class="hero-tags">
+      <span class="tag tag-purple">기준 v0.23.0</span>
+      <span class="tag tag-blue">5가지 형태</span>
+      <span class="tag tag-green">정본: AGENTS.md · commands/*</span>
+      <span class="tag tag-orange">D2 · D4 · D5 · D6</span>
+    </div>
+  </div>
+
+  <section id="forms">
+    <div class="section-title">어떤 형태를 볼까</div>
+    <div class="section-sub">다이어그램마다 대답하는 질문이 다르다. 질문에 맞는 형태로 이동한다.</div>
+    <div class="card-grid">
+      <div class="card"><h3><a href="#flow">1 · 플로우차트</a></h3><p>"한 task는 어떤 길을 지나가나?" — 세션 시작부터 done까지의 전체 여정과 분기.</p></div>
+      <div class="card"><h3><a href="#lanes">2 · 역할 스윔레인</a></h3><p>"누가 무엇을 하나?" — 작성자와 리뷰어의 분리(D2), 단일 스레드 쓰기(D4).</p></div>
+      <div class="card"><h3><a href="#sequence">3 · 시퀀스</a></h3><p>"시간 순서로 누가 누구를 부르나?" — 사용자·Claude·CLI·훅·리뷰어의 상호작용.</p></div>
+      <div class="card"><h3><a href="#states">4 · 상태 다이어그램</a></h3><p>"task는 어떤 상태를 오가고, 무엇이 전이를 막나?" — 게이트와 done 가드.</p></div>
+      <div class="card"><h3><a href="#parallel">5 · gitGraph</a></h3><p>"병렬 작업은 어떻게 충돌 없이 합쳐지나?" — worktree 격리와 PR 병합(D5).</p></div>
+    </div>
+  </section>
+
+  <section id="flow">
+    <div class="section-title">1 · 플로우차트 — task의 전체 여정</div>
+    <div class="section-sub">세션 시작 → task 활성화 → spec 게이트 → 구현 루프 → 리뷰 → ship → done → summary.</div>
+    <div class="diagram-wrap">
+      <div class="mermaid">
+flowchart TD
+    S([세션 시작]) --> SC["SessionStart 훅<br/>harness-team session-context"]
+    SC -->|활성 task 있음| TCC["TCC 주입<br/>(breadcrumb + &lt;name&gt;-context.md)"]
+    SC -->|활성 task 없음| GATE{"task-gate nudge<br/>재개 / 새 task / task 없이"}
+    GATE -->|새 task| T["harness-team task &lt;name&gt;"]
+    GATE -->|재개| TCC
+    T -->|created| DIA{"다이어그램 옵트인?<br/>(1회만 질문)"}
+    DIA -->|예: plan에 체크박스 추가| SPEC
+    DIA -->|아니오| SPEC
+    TCC --> PLANREAD["plan.md 현재 단계 파악"] --> IMPL
+    SPEC["spec.md — Ambiguity 자가진단 게이트"] -->|본문이 비면| SPECGEN["/harness-spec<br/>(Confluence·Figma·인터뷰)"]
+    SPECGEN --> SPEC
+    SPEC -->|막히면| INT["/harness-interview"] --> SPEC
+    SPEC -->|통과| PLAN["plan.md 단계별 체크리스트"] --> IMPL
+    IMPL["구현 루프<br/>JIT retrieval: TCC → Grep → Glob → Read"] --> BC{"boundary check<br/>(checkbox 완료 직전)"}
+    BC -->|통과 / not-configured| CK["plan 체크박스 - [x]"] --> CM["git commit"]
+    CM --> HK["post-commit 훅<br/>handoff.md 자동 갱신"]
+    HK -->|다음 atomic step| IMPL
+    HK -->|중요 변경 완료| REV["/harness-review<br/>probe 폴백: codex → gemini → claude"]
+    REV --> ART["artifact.md ## Reviews 기록<br/>발견 재현·판별 후 단일 스레드 반영"]
+    ART -->|반영할 발견 있음| IMPL
+    ART --> SHIP["ship — spec·plan·artifact 최종 갱신<br/>+ 준비 완료 보고 (PR/MR은 별도 지시)"]
+    SHIP --> DQ{"plan 전체 완료?<br/>AskUserQuestion"}
+    DQ -->|아직| IMPL
+    DQ -->|완료| DN["harness-team done<br/>가드 통과 → active.json = null"]
+    DN --> SM["기본 브랜치에서<br/>harness-team summary --write"] --> E([task 종료])
+
+    classDef gate fill:#3d2700,stroke:#f5a623,color:#f5a623
+    classDef hook fill:#0e3d30,stroke:#4df0aa,color:#4df0aa
+    class GATE,DIA,BC,DQ gate
+    class SC,HK hook
+      </div>
+    </div>
+    <div class="diagram-label">정본: AGENTS.md §작업 프로토콜 · commands/harness-task.md · commands/harness-ship.md</div>
+    <details>
+      <summary>이 그림이 접어 둔 것</summary>
+      <ul>
+        <li>spec의 Ambiguity 게이트는 작은 버그·문서 수정에는 생략할 수 있다.</li>
+        <li>ship 8단계 중 다이어그램 갱신(6)·적대적 검증(7, D6)은 옵트인이다.</li>
+        <li>집계 파일(<code>docs/task_summary.md</code> 등)은 생성물이라 task/done이 건드리지 않는다.</li>
+      </ul>
+    </details>
+  </section>
+
+  <section id="lanes">
+    <div class="section-title">2 · 역할 스윔레인 — 누가 무엇을 하나 (D2 · D4)</div>
+    <div class="section-sub">쓰기는 drive 레인 단일 스레드(D4), 리뷰어는 read-only로 반박만 한다(D2·D6).</div>
+    <div class="diagram-wrap">
+      <div class="mermaid">
+flowchart LR
+    subgraph U["👤 사용자"]
+        U1["작업 요청<br/>AskUserQuestion 응답"]
+        U2["PR/MR 지시"]
+    end
+    subgraph C["🤖 Claude Code — 리드 드라이버 · 쓰기는 단일 스레드 (D4)"]
+        direction TB
+        C1["spec · plan 작성"] --> C2["구현 · commit"] --> C3["리뷰 발견<br/>재현·판별·반영"] --> C4["ship 보고"]
+    end
+    subgraph H["⚙ harness-team CLI · hooks"]
+        H1["task · boundary check<br/>done · summary"]
+        H1 ~~~ H2["SessionStart ·<br/>post-commit 훅"]
+    end
+    subgraph R["🔍 리뷰어 — read-only (D2)"]
+        R1["Codex"]
+        R1 ~~~ R2["Gemini"]
+    end
+    U1 --> C1
+    C2 <-.->|"명령·훅 왕복<br/>(handoff 자동 갱신)"| H1
+    C2 -->|"/harness-review<br/>probe: codex → gemini → claude"| R1
+    R1 -->|"루브릭 발견 — 반박만,<br/>수정 없음 (D6)"| C3
+    R2 --> C3
+    C4 --> U2
+      </div>
+    </div>
+    <div class="diagram-label">정본: AGENTS.md §AI 팀 역할 분담 · docs/decisions.md D2·D4·D6 · commands/harness-review.md</div>
+    <details>
+      <summary>이 그림이 접어 둔 것</summary>
+      <ul>
+        <li>OpenCode는 보조 드라이버지만 Claude와 <strong>동시에</strong> 쓰지 않는다 — 순차 전환 세션(D4).</li>
+        <li>Cursor는 보조 에디터로 <code>.cursor/rules/*.mdc</code>를 자동 적용받는다.</li>
+        <li>리뷰 기록이 없는 리뷰는 "안 한 것"이다 — artifact <code>## Reviews</code>가 증거다.</li>
+      </ul>
+    </details>
+  </section>
+
+  <section id="sequence">
+    <div class="section-title">3 · 시퀀스 — 한 task 사이클의 시간 순서</div>
+    <div class="section-sub">세션 시작부터 done까지, 실제 호출 순서대로.</div>
+    <div class="diagram-wrap">
+      <div class="mermaid">
+sequenceDiagram
+    actor U as 사용자
+    participant CC as Claude Code (drive)
+    participant HT as harness-team CLI
+    participant HK as hooks
+    participant RV as Codex/Gemini (read-only)
+
+    HK->>CC: SessionStart — session-context (TCC 또는 task-gate nudge 주입)
+    U->>CC: 작업 요청
+    CC->>HT: harness-team task &lt;name&gt;
+    HT-->>CC: created — SSOT 4파일 + context.md + meta.json 생성
+    CC->>U: 다이어그램 옵트인? (신규 task, 1회만)
+    U-->>CC: 예 / 아니오
+    CC->>CC: spec.md Ambiguity 게이트 통과 → plan.md 체크리스트
+
+    loop 구현 루프 (atomic step 단위)
+        CC->>CC: JIT retrieval (TCC → Grep → Glob → Read) → 구현
+        CC->>HT: boundary check (plan 체크박스 완료 직전)
+        CC->>HK: git commit → post-commit
+        HK-->>CC: handoff.md 자동 갱신
+    end
+
+    CC->>RV: /harness-review (중요 변경 — probe 폴백 codex → gemini → claude)
+    RV-->>CC: 루브릭 발견 (id·항목·심각도·판정·근거) — 반박만
+    CC->>CC: 발견 재현·판별 → 단일 스레드 반영, artifact ## Reviews 기록
+    CC->>U: ship — 준비 완료 보고 (PR/MR 생성은 별도 지시)
+    U-->>CC: 완료 신호
+    CC->>U: AskUserQuestion — 완료 확인
+    U-->>CC: 완료
+    CC->>HT: harness-team done
+    HT-->>CC: 가드 통과 → meta status=done · active.json = null
+    Note over HT: 집계 갱신은 기본 브랜치에서 harness-team summary --write
+      </div>
+    </div>
+    <div class="diagram-label">정본: AGENTS.md §task 워크플로우 · commands/harness-review.md §실행 절차 · commands/harness-ship.md</div>
+  </section>
+
+  <section id="states">
+    <div class="section-title">4 · 상태 다이어그램 — 전이와 가드</div>
+    <div class="section-sub">task가 오가는 상태와, 전이를 막는 게이트. 파일 생성 내부는 harness-overview의 Task Lifecycle이 정본이다.</div>
+    <div class="diagram-wrap">
+      <div class="mermaid">
+stateDiagram-v2
+    [*] --> NoTask : 세션 시작 (active.json = null)
+    NoTask --> Created : harness-team task &lt;name&gt;
+    Created --> Active : 자동 활성화 (다이어그램 옵트인 1회)
+    Active --> Active : 구현 · commit · handoff 자동 갱신
+    Active --> Reviewing : /harness-review (중요 변경)
+    Reviewing --> Active : 발견 재현·판별 후 단일 스레드 반영
+    Active --> Shipping : plan 전체 완료 → ship (spec·plan·artifact 정합)
+    Shipping --> AskDone : 준비 완료 보고 + 완료 확인 (AskUserQuestion)
+    AskDone --> Active : 아직 진행 중
+    AskDone --> Done : harness-team done — 가드 통과
+    Done --> [*] : active.json = null · summary는 기본 브랜치에서
+
+    note right of AskDone
+        done 가드: firstActivatedAt 이후의
+        증거(커밋·plan 체크)를 대조한다.
+        열린 plan 체크박스가 있으면 막힌다 —
+        미실행 사유를 붙여 닫는 게 정답.
+    end note
+      </div>
+    </div>
+    <div class="diagram-label">정본: docs/diagrams/harness-overview/task-lifecycle.mmd · AGENTS.md §task 단위 관리</div>
+  </section>
+
+  <section id="parallel">
+    <div class="section-title">5 · gitGraph — 병렬 worktree 경로 (D5)</div>
+    <div class="section-sub">격리된 브랜치·worktree에서 병렬로 작업하고 PR로 병합한다. task SSOT는 각 디렉터리에 격리되므로 충돌하지 않는다.</div>
+    <div class="diagram-wrap">
+      <div class="mermaid">
+gitGraph
+   commit id: "main"
+   branch task-a
+   checkout task-a
+   commit id: "A: spec·plan"
+   commit id: "A: 구현 + handoff 갱신"
+   checkout main
+   branch task-b
+   checkout task-b
+   commit id: "B: spec·plan"
+   checkout task-a
+   commit id: "A: 리뷰 반영"
+   checkout main
+   merge task-a id: "PR merge A"
+   checkout task-b
+   commit id: "B: 구현 + handoff 갱신"
+   checkout main
+   merge task-b id: "PR merge B"
+   commit id: "summary --write (생성물 갱신)"
+      </div>
+    </div>
+    <div class="diagram-label">정본: docs/decisions.md D5 · AGENTS.md §task 단위 관리 (집계 파일은 생성물)</div>
+    <div class="infobox">
+      <strong>왜 충돌하지 않나:</strong> task SSOT 4파일은 <code>docs/&lt;user&gt;/&lt;name&gt;/</code>에 격리되고,
+      집계 파일(<code>docs/task_summary.md</code> · <code>&lt;user&gt;-task.md</code>)은 어느 브랜치도 직접 쓰지 않는다 —
+      병합이 끝난 기본 브랜치에서 <code>harness-team summary --write</code>로만 갱신한다.
+    </div>
+  </section>
+
+  <section id="guide">
+    <div class="section-title">가이드 — 언제 어떤 형태를 보나</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>질문</th><th>형태</th><th>정본 출처</th></tr></thead>
+        <tbody>
+          <tr><td>온보딩 — 전체 흐름을 처음 익힐 때</td><td><a href="#flow">플로우차트</a></td><td>AGENTS.md §작업 프로토콜</td></tr>
+          <tr><td>권한 경계 — 누가 쓰고 누가 반박하나</td><td><a href="#lanes">스윔레인</a></td><td>docs/decisions.md D2·D4·D6</td></tr>
+          <tr><td>디버깅 — 어느 시점에 어떤 훅·명령이 개입하나</td><td><a href="#sequence">시퀀스</a></td><td>commands/harness-*.md</td></tr>
+          <tr><td>막힘 — done이 왜 안 되나, 지금 어떤 상태인가</td><td><a href="#states">상태</a></td><td>task-lifecycle.mmd</td></tr>
+          <tr><td>협업 설계 — 세션·브랜치를 어떻게 나눌까</td><td><a href="#parallel">gitGraph</a></td><td>docs/decisions.md D5</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<footer>harness-aijient-team-plugin v0.23.0 기준 &nbsp;·&nbsp; 같은 워크플로우, 다섯 개의 단면</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      fontSize: '18px',
+      background: '#1a1d27',
+      primaryColor: '#2a1f5c',
+      primaryTextColor: '#e2e6f0',
+      primaryBorderColor: '#7c6af5',
+      lineColor: '#7a82a0',
+      secondaryColor: '#1e3a5f',
+      tertiaryColor: '#0e3d30',
+      edgeLabelBackground: '#1a1d27',
+      clusterBkg: '#22263a',
+      clusterBorder: '#2e3350',
+      titleColor: '#e2e6f0',
+      nodeTextColor: '#e2e6f0',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    },
+    flowchart: { curve: 'basis', htmlLabels: true, nodeSpacing: 60, rankSpacing: 70 },
+    sequence: { actorMargin: 80, messageMargin: 40, boxTextMargin: 12, noteMargin: 12 },
+    stateDiagram: { dividerMargin: 20 },
+  });
+</script>
+
+</body>
+</html>
