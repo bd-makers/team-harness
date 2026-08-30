@@ -1,9 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, rm, utimes } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { buildSessionContext } from '../src/commands/session-context.mjs';
+import { buildSessionContext, SESSION_CONTEXT_MAX_TASKS } from '../src/commands/session-context.mjs';
 import { CONTEXT_MAX_BYTES } from '../src/commands/context.mjs';
 import { taskContextTemplate } from '../src/commands/task.mjs';
 
@@ -25,6 +25,10 @@ async function writeCard(dir, user, name, content = taskContextTemplate(name)) {
   const td = join(dir, 'docs', user, name);
   await mkdir(td, { recursive: true });
   await writeFile(join(td, `${name}-context.md`), content);
+}
+async function setPlanMtime(dir, user, name, date) {
+  const planPath = join(dir, 'docs', user, name, `${name}-plan.md`);
+  await utimes(planPath, date, date);
 }
 
 test('활성 task + valid card → breadcrumb 다음에 card 전체만 주입', async () => {
@@ -132,5 +136,79 @@ test('인라인 산문의 `- [ ]`는 미완으로 오탐하지 않음', async ()
     await writeTask(dir, 'chad', 'prose', '# prose — Plan\n- [x] 가드는 인라인 `- [ ]` 를 오탐 금지\n');
     const out = await buildSessionContext(dir);
     assert.ok(!out.includes('재개: chad/prose'), 'prose `- [ ]` is not an open box');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('미완 task가 상한 초과 → 최신 plan mtime 순으로 8개만, 뒤에 외 N개 요약', async () => {
+  const dir = await baseDir();
+  try {
+    await writeActive(dir, null);
+    const base = new Date('2026-01-01T00:00:00Z').getTime();
+    const total = 10;
+    for (let i = 0; i < total; i++) {
+      const name = `t${String(i).padStart(2, '0')}`;
+      await writeTask(dir, 'chad', name, `# ${name} — Plan\n- [ ] 미완\n`);
+      // i가 클수록 최신(mtime이 큼) — task09가 가장 최근 활동.
+      await setPlanMtime(dir, 'chad', name, new Date(base + i * 60_000));
+    }
+    const out = await buildSessionContext(dir);
+    const resumeLines = out.split('\n').filter(l => l.includes('재개:'));
+    assert.equal(resumeLines.length, SESSION_CONTEXT_MAX_TASKS, `상한(${SESSION_CONTEXT_MAX_TASKS}개)까지만 나열`);
+
+    const expectedOrder = [];
+    for (let i = total - 1; i >= total - SESSION_CONTEXT_MAX_TASKS; i--) expectedOrder.push(`t${String(i).padStart(2, '0')}`);
+    const actualOrder = resumeLines.map(l => l.match(/재개: chad\/(t\d\d)/)[1]);
+    assert.deepEqual(actualOrder, expectedOrder, 'plan.md mtime 내림차순(최신 먼저)');
+
+    const omitted = total - SESSION_CONTEXT_MAX_TASKS;
+    assert.ok(out.includes(`  · … 외 ${omitted}개 (harness-team list로 전체 확인)`), '생략된 개수를 요약 줄로 안내');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('미완 task가 상한 이하 → 외 N개 요약 없이 전부 나열(동작 불변)', async () => {
+  const dir = await baseDir();
+  try {
+    await writeActive(dir, null);
+    const base = new Date('2026-01-01T00:00:00Z').getTime();
+    for (let i = 0; i < SESSION_CONTEXT_MAX_TASKS; i++) {
+      const name = `t${String(i).padStart(2, '0')}`;
+      await writeTask(dir, 'chad', name, `# ${name} — Plan\n- [ ] 미완\n`);
+      await setPlanMtime(dir, 'chad', name, new Date(base + i * 60_000));
+    }
+    const out = await buildSessionContext(dir);
+    const resumeLines = out.split('\n').filter(l => l.includes('재개:'));
+    assert.equal(resumeLines.length, SESSION_CONTEXT_MAX_TASKS, '상한과 같은 개수는 전부 나열');
+    assert.doesNotMatch(out, /외 \d+개/, '상한 이하면 요약 줄이 없음');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('plan mtime 동률 → task명 오름차순으로 tie-break', async () => {
+  const dir = await baseDir();
+  try {
+    await writeActive(dir, null);
+    const same = new Date('2026-01-01T00:00:00Z');
+    await writeTask(dir, 'chad', 'bravo', '# bravo — Plan\n- [ ] 미완\n');
+    await writeTask(dir, 'chad', 'alpha', '# alpha — Plan\n- [ ] 미완\n');
+    await setPlanMtime(dir, 'chad', 'bravo', same);
+    await setPlanMtime(dir, 'chad', 'alpha', same);
+    const out = await buildSessionContext(dir);
+    const order = out.split('\n').filter(l => l.includes('재개:')).map(l => l.match(/재개: chad\/(\w+)/)[1]);
+    assert.deepEqual(order, ['alpha', 'bravo'], 'mtime 동률이면 task명 오름차순');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('plan mtime·task명 동률 → user 오름차순으로 tie-break (열거 순서 비의존)', async () => {
+  const dir = await baseDir();
+  try {
+    await writeActive(dir, null);
+    const same = new Date('2026-01-01T00:00:00Z');
+    // 서로 다른 user의 같은 task명 + 같은 mtime — readdir 열거 순서와 무관하게 user 순이어야 한다.
+    await writeTask(dir, 'zoe', 'same-name', '# same-name — Plan\n- [ ] 미완\n');
+    await writeTask(dir, 'amy', 'same-name', '# same-name — Plan\n- [ ] 미완\n');
+    await setPlanMtime(dir, 'zoe', 'same-name', same);
+    await setPlanMtime(dir, 'amy', 'same-name', same);
+    const out = await buildSessionContext(dir);
+    const order = out.split('\n').filter(l => l.includes('재개:')).map(l => l.match(/재개: (\w+)\/same-name/)[1]);
+    assert.deepEqual(order, ['amy', 'zoe'], 'mtime·task명 동률이면 user 오름차순');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
