@@ -3,6 +3,6 @@
   "task": "claude5-context-followups",
   "created": "2026-08-30",
   "firstActivatedAt": "2026-08-30T01:41:46.329Z",
-  "status": "open",
-  "closedAt": null
+  "status": "done",
+  "closedAt": "2026-08-30T01:53:19.656Z"
 }
