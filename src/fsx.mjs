@@ -15,16 +15,19 @@ export async function writeText(p, content, { mode } = {}) {
   if (mode !== undefined) await chmod(p, mode);
 }
 
-export async function copyTree(srcDir, dstDir, { skipExisting = false } = {}) {
+export async function copyTree(srcDir, dstDir, { skipExisting = false, exclude } = {}) {
   const out = [];
   const entries = await readdir(srcDir, { withFileTypes: true });
   await mkdir(dstDir, { recursive: true });
   for (const e of entries) {
     if (e.name === '.DS_Store') continue;
+    // `exclude` matches file names anywhere in the tree — callers use it to hold back a
+    // named subset (e.g. stack-specific rule files) without restructuring the source tree.
+    if (exclude?.has(e.name)) continue;
     const s = join(srcDir, e.name);
     const d = join(dstDir, e.name);
     if (e.isDirectory()) {
-      out.push(...await copyTree(s, d, { skipExisting }));
+      out.push(...await copyTree(s, d, { skipExisting, exclude }));
     } else {
       if (skipExisting && await exists(d)) { out.push({ path: d, action: 'skip' }); continue; }
       await copyFile(s, d);

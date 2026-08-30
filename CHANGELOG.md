@@ -44,6 +44,17 @@ modified: 2026-08-29
   계층을 가르는 진짜 기준은 "배포되느냐"가 아니라 **누가 읽고 무엇이 그대로 동작하느냐**이며,
   그 문장을 표 아래에 명시했다. 문서가 틀린 사실을 말하는 것을 고치자고 만든 절이 스스로
   틀린 사실을 담고 있었다.
+- **task spec 템플릿 `## 참고` 섹션에 코드 기반 참조 우선 안내를 내장.**
+  산문 설계보다 테스트 스위트·Boundary contract(JSON Schema)·다이어그램·기존 코드 경로가
+  더 정밀한 참조라는 안내를 템플릿에 직접 실었다 — 새 task부터 spec 작성 시 산문 대신
+  코드 기반 참조를 먼저 찾도록 유도한다(Claude 5 컨텍스트 엔지니어링 검토 후속).
+
+### Fixed
+- **`copyStaticAssets`가 React Native 전용 rules 4종을 모든 stack에 무조건 복사하던 결함.**
+  `navigation.md`·`state-management.md`·`styling.md`·`testing.md`(Expo Router 등 RN 전용
+  가이드)가 `--stack python|node|generic` 같은 비-RN 프로젝트에도 그대로 복사됐다. 명시적
+  비-RN `--stack`에는 이 4종을 제외하고, RN 계열(`react-native`)과 `--stack` 미지정(자동감지
+  경로, 하위 호환)에는 기존 동작을 그대로 유지하도록 게이트했다.
 
 ## [0.22.0] - 2026-08-29
 

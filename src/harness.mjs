@@ -225,13 +225,24 @@ export async function applyChanges(changes) {
   return results;
 }
 
+// React Native 전용 rules(Expo Router 네비게이션 등) — RN 계열·미지정 stack에만 복사한다.
+// 명시적 비-RN `--stack`(python/node/generic 등)에는 제외; `--stack` 미지정 시엔 기존
+// 무조건 복사 동작을 그대로 유지한다(하위 호환 — auto-detect 결과로는 게이트하지 않는다).
+const RN_ONLY_RULE_FILES = new Set(['navigation.md', 'state-management.md', 'styling.md', 'testing.md']);
+const RN_STACK_IDS = new Set(['react-native', 'expo']);
+
 export async function copyStaticAssets(ctx) {
   const tplDir = join(ctx.root, 'templates');
   const out = [];
   // hooks: copy, skip existing
   out.push(...await copyTree(join(tplDir, '.claude/hooks'), join(ctx.targetDir, '.claude/hooks'), { skipExisting: true }));
-  // rules: copy, skip existing
-  out.push(...await copyTree(join(tplDir, '.claude/rules'), join(ctx.targetDir, '.claude/rules'), { skipExisting: true }));
+  // rules: copy, skip existing. RN 전용 4종은 명시적 비-RN stack일 때만 제외한다.
+  const explicitStack = ctx.flags?.stack;
+  const excludeRnRules = explicitStack && !RN_STACK_IDS.has(explicitStack);
+  out.push(...await copyTree(join(tplDir, '.claude/rules'), join(ctx.targetDir, '.claude/rules'), {
+    skipExisting: true,
+    exclude: excludeRnRules ? RN_ONLY_RULE_FILES : undefined,
+  }));
   // skills: copy, skip existing
   out.push(...await copyTree(join(tplDir, '.claude/skills'), join(ctx.targetDir, '.claude/skills'), { skipExisting: true }));
   // docs/: README + .gitkeep seed (skip existing to preserve team work)
