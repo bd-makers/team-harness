@@ -70,3 +70,5 @@
 | chad | done-user-handoff-freeze | ✅ done | 2026-08-28 |
 | chad | root-docs-0200-rubric | 🔄 open | 2026-08-28 |
 | chad | docs-refresh-0210 | ✅ done | 2026-08-29 |
+| hslee | claude5-context-apply | ✅ done | 2026-08-30 |
+| hslee | claude5-context-followups | ✅ done | 2026-08-30 |
