@@ -91,7 +91,12 @@ Codex manifest/skill을 수정했다면 Codex validator도 실행하세요. 로�
 | **① 에이전트 행동 표면** | `templates/**`(`AGENTS.md.hbs`·`CLAUDE.md.hbs`·`GEMINI.md.hbs`·`.claude/hooks`·`rules`·`skills`·`.codex`·`.opencode`·`templates/docs/`) | `apply`/`init`이 **소비자 프로젝트에 복사** | 그 프로젝트의 에이전트가 잘못 동작 |
 | **① 에이전트 행동 표면** | `commands/*.md` · `skills/*/SKILL.md` · `src/**` · `bin/**` | **플러그인 채널**(`/plugin install` → 버전별 캐시). `templates/`에 없습니다 | 슬래시 커맨드·CLI가 잘못 동작 |
 | **② 소비자가 읽는 문서** | `docs/*.html` · `README.md` | 캐시에는 복사되지만(제외는 `tests`·`scripts`·`docs/superpowers`뿐) `apply`가 프로젝트에 쓰지는 않음 | 읽는 사람이 오해 — 실행은 그대로 |
-| **③ 메인테이너 전용** | `MAINTAINING.md` | 어디에도 배포되지 않음 | 다음 릴리스를 하는 사람만 영향 |
+| **③ 메인테이너 전용** | `MAINTAINING.md` | 캐시에는 복사되지만(트리 전체 복사) **읽는 소비자가 없음** — `apply`도 쓰지 않습니다 | 다음 릴리스를 하는 사람만 영향 |
+
+> **계층을 가르는 것은 "배포되느냐"가 아닙니다.** 버전별 캐시는 `tests`·`scripts`·
+> `docs/superpowers`를 뺀 **트리 전체**를 복사하므로 `MAINTAINING.md`까지 거기 들어갑니다.
+> 실제 판별 기준은 **누가 읽고, 무엇이 그대로 동작하느냐**입니다 — ①은 기계가 실행하고,
+> ②는 소비자가 읽고, ③은 메인테이너만 봅니다.
 
 **①의 핵심 증거는 0.16.1입니다.** `commands/harness-codex-review.md`의 호출 예시에 `< /dev/null`이
 빠져 있었고, 에이전트가 그대로 복사해 **이 하네스를 쓰는 모든 프로젝트에서 재발**했습니다
