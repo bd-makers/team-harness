@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Gemini, Cursor, OpenCode를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.21.0</span>
+      <span class="tag tag-purple">v0.23.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,12 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.22.0–0.23.0 — 소비자 문서 현행화 · Claude 5 컨텍스트 엔지니어링 반영:</strong>
+    <br>
+    <code>0.22.0</code> <strong>첫 문서 전용 릴리스</strong> — 소비자 문서 5종을 0.21.0 기준으로 현행화했다(벤더링되지 않은 스킬 목록·전체 스킬 로스터). 이 릴리스를 계기로 <code>MAINTAINING.md</code>에 <strong>릴리스 크기 판단</strong> 절이 생겼다 — 이 저장소는 semver 문자가 아니라 <strong>blast radius</strong>로 크기를 정한다(① 에이전트 행동 표면 · ② 소비자가 읽는 문서 · ③ 메인테이너 전용).
+    <br>
+    <code>0.23.0</code> <strong>eager 계층을 처음 재기 시작했다</strong> — 매 세션 무조건 로드되는 <code>AGENTS.md</code>+<code>CLAUDE.md</code> 합산이 24 KiB를 넘으면 <code>doctor</code>가 경고한다(<code>EAGER_TIER_MAX_BYTES</code> — 차단이 아니라 경고이고, 자동 요약·삭제 없이 크기만 잰다). auto-memory 시대에 팀 학습이 개인 메모리로 새지 않도록 <strong><code>artifact.md</code> 우선</strong> 저장 경계를 <code>CLAUDE.md.hbs</code> §3에 명시했고, SessionStart 주입에서 유일하게 상한이 없던 no-task nudge를 최근 8개(<code>SESSION_CONTEXT_MAX_TASKS</code>) + 요약줄로 캡했다. spec 템플릿에는 코드 기반 참조 우선 안내가 들어갔고, RN 전용 rules가 비-RN <code>--stack</code>에 복사되던 결함을 고쳤다.
+    <br><br>
     <strong>🆕 0.19.0–0.21.0 — Node 24 · D6 적대적 검증 · 옛 리뷰 이름 제거:</strong>
     <br>
     <code>0.19.0</code> <strong>BREAKING — 최소 Node 18 → 24</strong>(<code>engines.node</code> — Node 18·20이 모두 지원 종료였고, <code>node:test</code> 러너 flake 수정이 24 라인에만 백포트됐다). <code>done</code>의 테스트 증거 가드가 문서를 테스트 파일로 오분류해 사실상 죽어 있던 것을 고쳐 <strong>처음으로 실제 발동</strong>하고, 판정 창의 시작점이 <code>active.json</code>의 <code>switchedAt</code>에서 <code>&lt;name&gt;-meta.json</code>의 <code>firstActivatedAt</code>으로 바뀌었다(재활성화가 창을 초기화해 이미 만족된 증거를 밀어내던 오탐 제거)
@@ -775,7 +781,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.21.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.23.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
