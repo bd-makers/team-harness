@@ -750,6 +750,8 @@ Claude Code 도구 관측은 원문을 보존하지 않는 로컬 JSONL만 `.har
 | [harness-fleet-guide.html](docs/harness-fleet-guide.html) | 여러 명·여러 워크트리로 나눠 쓰는 상황(D5 격리 병렬) 가이드 |
 | [harness-rubric-guide.html](docs/harness-rubric-guide.html) | 루브릭 평가(D6) 가이드 — finding 스키마, 5개 검증 프레이밍, 마커 계약과 `verify` 증거 게이트 |
 | [harness-workflow-simulation.html](docs/harness-workflow-simulation.html) | task 워크플로우 시나리오 시뮬레이션 — new → done 흐름 단계별 인터랙티브 |
+| [harness-workflow-diagrams.html](docs/harness-workflow-diagrams.html) | 워크플로우 전체를 5가지 mermaid 관점으로 — 플로우차트·역할 스윔레인·시퀀스·상태·gitGraph(D5 병렬). 렌더에 JS가 필요해 브라우저에서 연다 |
+| [harness-workflow-schematics.html](docs/harness-workflow-schematics.html) | 같은 워크플로우의 정적 inline SVG 5단면 — 게이트·역할·시간·상태/가드·SSOT 축적. 스크립트가 없어 Obsidian 볼트에서도 렌더된다 |
 | [what-changes-latest-version.html](docs/what-changes-latest-version.html) | 최신 릴리스의 변경 내용과 그 근거 |
 
 ```bash
