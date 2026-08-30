@@ -1,0 +1,2324 @@
+<!DOCTYPE html>
+<!-- scripts/generate-harness-overview.mjs로 생성된 파일입니다. 직접 수정하지 마세요. -->
+<!-- Harness overview 템플릿입니다. 다이어그램 원본은 docs/diagrams/harness-overview/에 있습니다. -->
+<html lang="ko"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="vendor/mermaid.min.js"></script>
+  <title>Harness Aijient Team Plugin — Architecture Overview</title>
+
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3350;
+      --accent: #7c6af5;
+      --accent2: #50c8f5;
+      --accent3: #4df0aa;
+      --text: #e2e6f0;
+      --muted: #7a82a0;
+      --tag-blue: #1e3a5f;
+      --tag-green: #0e3d30;
+      --tag-purple: #2a1f5c;
+      --tag-orange: #3d2700;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      background: rgba(15,17,23,0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 2rem;
+      height: 54px;
+      display: flex;
+      align-items: center;
+    }
+    .nav-logo {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--accent);
+      margin-right: 2rem;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .nav-links {
+      display: flex;
+      gap: 0;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .nav-links::-webkit-scrollbar { display: none; }
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+      padding: 0 0.8rem;
+      height: 54px;
+      display: flex;
+      align-items: center;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+    .nav-links a:hover { color: var(--text); border-bottom-color: var(--accent); }
+
+    /* LAYOUT */
+    main { max-width: 1160px; margin: 0 auto; padding: 72px 2rem 6rem; }
+
+    /* HERO */
+    .hero { text-align: center; padding: 4rem 0 2.5rem; }
+    .hero h1 {
+      font-size: 2.8rem; font-weight: 800;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 0.75rem;
+    }
+    .hero p { color: var(--muted); font-size: 1.05rem; max-width: 640px; margin: 0 auto 1.5rem; }
+    .hero-tags { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+    .tag { padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+    .tag-blue { background: var(--tag-blue); color: var(--accent2); }
+    .tag-green { background: var(--tag-green); color: var(--accent3); }
+    .tag-purple { background: var(--tag-purple); color: var(--accent); }
+    .tag-orange { background: var(--tag-orange); color: #f5a623; }
+
+    /* SECTIONS */
+    section { margin-bottom: 4.5rem; }
+    .section-title {
+      font-size: 1.45rem; font-weight: 700; color: var(--text);
+      margin-bottom: 0.4rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .section-title::before {
+      content: ''; display: inline-block; width: 4px; height: 1.45rem;
+      background: var(--accent); border-radius: 2px;
+    }
+    .section-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+    /* CARDS */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.4rem; margin-bottom: 1rem;
+    }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem; }
+    .card h3 { font-size: 0.95rem; font-weight: 600; color: var(--accent2); margin-bottom: 0.6rem; }
+    .card p, .card li { font-size: 0.85rem; color: var(--muted); }
+    .card ul { padding-left: 1rem; }
+    .card li { margin-bottom: 0.3rem; }
+    .card-accent-green { border-color: #4df0aa44; }
+    .card-accent-purple { border-color: #7c6af544; }
+    .card-accent-blue { border-color: #50c8f544; }
+    .card-accent-orange { border-color: #f5a62344; }
+
+    /* DIAGRAM */
+    .diagram-wrap {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 2.5rem 1.5rem;
+      overflow-x: auto; margin-bottom: 0.75rem;
+    }
+    .diagram-wrap .mermaid { display: flex; justify-content: center; min-width: 600px; }
+    .diagram-label { font-size: 0.78rem; color: var(--muted); text-align: center; margin-top: 0.5rem; margin-bottom: 1.5rem; }
+
+    /* TABLE */
+    .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    thead tr { background: var(--surface2); }
+    th {
+      padding: 0.8rem 1.1rem; text-align: left; color: var(--muted);
+      font-weight: 600; font-size: 0.78rem; text-transform: uppercase;
+      letter-spacing: 0.05em; border-bottom: 1px solid var(--border);
+    }
+    td { padding: 0.75rem 1.1rem; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(124,106,245,0.04); }
+    code {
+      background: var(--surface2); color: var(--accent2); padding: 2px 7px;
+      border-radius: 4px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.83em;
+    }
+    .cmd { color: var(--accent); font-weight: 700; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.9em; }
+    .desc { color: var(--muted); font-size: 0.83rem; }
+    td .desc { display: block; margin-top: 0.2rem; }
+
+    /* INFOBOX */
+    .infobox {
+      background: #1a2535; border-left: 3px solid var(--accent2);
+      border-radius: 0 8px 8px 0; padding: 0.9rem 1.2rem;
+      font-size: 0.85rem; color: var(--muted); margin-bottom: 1rem;
+    }
+    .infobox strong { color: var(--text); }
+
+    /* HOOK BADGE */
+    .hook-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 0.72rem; font-weight: 700; margin-right: 4px;
+    }
+    .hook-pre  { background: #3d2700; color: #f5a623; }
+    .hook-post { background: #0e3d30; color: #4df0aa; }
+
+    /* DIVIDER */
+    hr { border: none; border-top: 1px solid var(--border); margin: 3rem 0; }
+
+    /* FOOTER */
+    footer { text-align: center; padding: 2rem; color: var(--muted); font-size: 0.8rem; border-top: 1px solid var(--border); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">⚙ Harness</div>
+  <div class="nav-links">
+    <a href="#overview">Overview</a>
+    <a href="#architecture">Architecture</a>
+    <a href="#subagents">Subagents</a>
+    <a href="#commands">Commands</a>
+    <a href="#observation">--json</a>
+    <a href="#hooks">Hooks</a>
+    <a href="#rules">Rules</a>
+    <a href="#skills">Skills</a>
+    <a href="#plugin">Plugin</a>
+    <a href="#workflow">Workflow</a>
+    <a href="#task">Task</a>
+    <a href="#symlink">Core</a>
+    <a href="#backup">Backup</a>
+    <a href="#template">Template</a>
+    <a href="#files">파일 구조</a>
+  </div>
+</nav>
+
+<main>
+
+  <!-- HERO -->
+  <div class="hero" id="overview">
+    <h1>Harness Aijient Team</h1>
+    <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Gemini, Cursor, OpenCode를 통합 관리</p>
+    <div class="hero-tags">
+      <span class="tag tag-purple">v0.23.0</span>
+      <span class="tag tag-blue">Claude Code Plugin</span>
+      <span class="tag tag-green">ESM · Node ≥24</span>
+      <span class="tag tag-orange">AGENTS.md SSOT</span>
+    </div>
+  </div>
+
+  <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.22.0–0.23.0 — 소비자 문서 현행화 · Claude 5 컨텍스트 엔지니어링 반영:</strong>
+    <br>
+    <code>0.22.0</code> <strong>첫 문서 전용 릴리스</strong> — 소비자 문서 5종을 0.21.0 기준으로 현행화했다(벤더링되지 않은 스킬 목록·전체 스킬 로스터). 이 릴리스를 계기로 <code>MAINTAINING.md</code>에 <strong>릴리스 크기 판단</strong> 절이 생겼다 — 이 저장소는 semver 문자가 아니라 <strong>blast radius</strong>로 크기를 정한다(① 에이전트 행동 표면 · ② 소비자가 읽는 문서 · ③ 메인테이너 전용).
+    <br>
+    <code>0.23.0</code> <strong>eager 계층을 처음 재기 시작했다</strong> — 매 세션 무조건 로드되는 <code>AGENTS.md</code>+<code>CLAUDE.md</code> 합산이 24 KiB를 넘으면 <code>doctor</code>가 경고한다(<code>EAGER_TIER_MAX_BYTES</code> — 차단이 아니라 경고이고, 자동 요약·삭제 없이 크기만 잰다). auto-memory 시대에 팀 학습이 개인 메모리로 새지 않도록 <strong><code>artifact.md</code> 우선</strong> 저장 경계를 <code>CLAUDE.md.hbs</code> §3에 명시했고, SessionStart 주입에서 유일하게 상한이 없던 no-task nudge를 최근 8개(<code>SESSION_CONTEXT_MAX_TASKS</code>) + 요약줄로 캡했다. spec 템플릿에는 코드 기반 참조 우선 안내가 들어갔고, RN 전용 rules가 비-RN <code>--stack</code>에 복사되던 결함을 고쳤다.
+    <br><br>
+    <strong>🆕 0.19.0–0.21.0 — Node 24 · D6 적대적 검증 · 옛 리뷰 이름 제거:</strong>
+    <br>
+    <code>0.19.0</code> <strong>BREAKING — 최소 Node 18 → 24</strong>(<code>engines.node</code> — Node 18·20이 모두 지원 종료였고, <code>node:test</code> 러너 flake 수정이 24 라인에만 백포트됐다). <code>done</code>의 테스트 증거 가드가 문서를 테스트 파일로 오분류해 사실상 죽어 있던 것을 고쳐 <strong>처음으로 실제 발동</strong>하고, 판정 창의 시작점이 <code>active.json</code>의 <code>switchedAt</code>에서 <code>&lt;name&gt;-meta.json</code>의 <code>firstActivatedAt</code>으로 바뀌었다(재활성화가 창을 초기화해 이미 만족된 증거를 밀어내던 오탐 제거)
+    <br>
+    <code>0.20.0</code> <strong>D6 — 작업 단위 적대적 검증</strong>: 별도 컨텍스트의 read-only 검증자가 루브릭(id·항목·심각도·판정·근거)으로 반박만 하고, 반영은 작성 세션이 재현·판별 후 단일 스레드로 수행한다. <code>/harness-contrarian</code>·<code>/harness-simplifier</code> 외부 엔진 모드(codex·claude·gemini·custom) + <code>/harness-interview</code> 선행 채점 + <code>/harness-ship</code> 정합 검증(shipcheck) + <code>done</code> 가드 <code>verify</code> 증거 키. <code>done</code> 이후 사용자 handoff가 영구 동결되던 결함 수정 + 문서 내비게이션 허브 <code>docs/index.html</code> 신설
+    <br>
+    <code>0.21.0</code> deprecated alias였던 옛 리뷰 이름 2개(<code>/harness-codex-review</code>·<code>/harness-codex-adversarial-review</code>)가 <strong>실제로 제거됐다</strong>(슬래시 커맨드 26 → 24) — 대체는 <code>/harness-review codex</code>·<code>/harness-adversarial-review codex</code>. D6 루브릭 평가 가이드 <code>docs/harness-rubric-guide.html</code> 추가
+    <br><br>
+    <strong>🆕 0.16.0–0.18.1 — 원장 분리 · 리뷰 재편 · 증거 기반 종결:</strong>
+    <br>
+    <code>0.16.0</code> <strong>원장이 생성물이 됐다</strong> — <code>docs/task_summary.md</code>·<code>docs/&lt;user&gt;/&lt;user&gt;-task.md</code>를 <code>task</code>·<code>done</code>이 더 이상 쓰지 않고, 기본 브랜치에서 <code>harness-team summary --write</code>가 task 디렉터리를 스캔해 렌더한다(모든 병렬 브랜치가 같은 줄에서 충돌하던 원인 제거). task별 기계 상태는 새 <code>&lt;name&gt;-meta.json</code>이 들고, <code>migrate</code>가 과거 task를 백필한다
+    <br>
+    <code>0.16.1</code> <code>summary --write</code> 가드의 fail-open·<code>codex exec</code> 무한 blocking·<code>release</code> symlink 오판 수정
+    <br>
+    <code>0.17.0</code> 리뷰 커맨드를 <strong>엔진 중립</strong> <code>/harness-review</code>·<code>/harness-adversarial-review</code>로 재편(엔진은 인수: codex·claude·gemini·custom) + PR/MR 직전 단계 <code>/harness-ship</code> + 다이어그램 어댑터 <code>/harness-diagram</code>과 <strong>spec/plan 다이어그램 옵트인</strong>(plan.md에 그 단계가 있는지가 곧 상태) + <code>diagram-design</code> 동반 플러그인 sha 핀 등재 + <code>docs/prerequisites.md</code>
+    <br>
+    <code>0.18.0</code> spec 초안 writer <code>/harness-spec</code>(Confluence·Figma·인터뷰 3소스, 검증은 <code>/harness-interview</code>)
+    <br>
+    <code>0.18.1</code> <code>done</code> <strong>증거 기반 종결 가드 2종</strong> — 테스트 미작성 체크(기본 ON)와 리뷰 마커 체크(spec <code>## Done evidence</code>에서 opt-in).
+    <br><br>
+    <strong>🆕 0.15.x — Codex 훅 · CLI 안전:</strong>
+    <br>
+    <code>0.15.0</code> Codex SessionStart 훅 템플릿(<code>templates/.codex/hooks.json</code>)을 신설해 Codex 세션도 Context Card를 주입받는다 + <code>.codex</code>를 백업 아키텍처 관리 대상에 포함 + Cursor 규칙 미러의 경로 스코프 파괴 수정
+    <br>
+    <code>0.15.1</code> <strong><code>--help</code>가 명령을 실제로 실행하던 문제 수정</strong> — <code>harness-team release --help</code>가 진짜 patch 릴리스를 수행했다. 이제 argv 어디에 있든 usage만 출력하고, 오탈자 플래그는 dispatch 전에 <code>exit 2</code>로 거부된다. <code>harness-team --version</code> 신설
+    <br>
+    <code>0.15.2</code> 전역 CLI가 조용히 구버전으로 남던 문제 + <code>doctor</code>가 warning 뒤에도 <code>All checks passed</code>를 출력하던 문제 수정.
+  </div>
+
+  <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #a78bfa;background:rgba(167,139,250,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.9.x — SessionStart task-gate (nudge):</strong>
+    세션 시작 시 활성 task 유무를 주입해 "task로 시작" 규율을 <em>강제가 아닌 nudge</em>로 상기한다.
+    <br>
+    <code>0.9.0</code> SessionStart 훅 + <code>harness-team session-context</code> 서브커맨드
+    <br>
+    <code>0.9.1</code> <code>migrate</code> 훅 보강(구버전 비파괴 주입)
+    <br>
+    <code>0.9.2</code> <code>doctor</code>가 훅 누락을 ⚠ 경고(soft — CI 비파괴). block이 아닌 inject, 판단은 Claude 몫.
+    <br><br>
+    <strong>🆕 0.9.3–0.9.5 — 검증 인프라 &amp; 마찰 제거:</strong>
+    <br>
+    <code>0.9.3</code> <code>harness-sim</code> 시뮬레이션 스킬(설치된 하네스를 영속 <code>harness-playground</code> 3스택에서 실제로 굴려 L4 시뮬레이션 + 날짜 리포트) + <code>tests/e2e/</code> 3스택 E2E 하네스(<code>bin/harness-team.mjs</code>를 spawn해 ephemeral sandbox에 적용·검증 — L1 apply+<code>doctor</code> · L2 task 라이프사이클+post-commit 훅 · L3 <code>AGENTS.md</code> SSOT <code>@import</code> 일관성)
+    <br>
+    <code>0.9.4</code> <code>harness-sim</code> 커맨드 래퍼(<code>commands/harness-sim.md</code> — 다른 harness-*와 동일 프리픽스로 노출, 절차 SSOT는 스킬 본문)
+    <br>
+    <code>0.9.5</code> <strong>done-guard post-commit 마찰 제거</strong> — <code>done</code>의 "미커밋 변경" 가드가 post-commit 훅이 자동 재생성하는 handoff 2개를 제외하도록 좁힘(handoff만 dirty면 통과).
+    (E2E는 배포 산출물 <code>files</code>에 미포함 — 내부 도구)
+  </div>
+
+  <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #4df0aa;background:rgba(77,240,170,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>✅ 0.8.0 — 세 축:</strong>
+    <br>
+    <strong>P0 강제 전환</strong>(선언→강제: <code>done</code> 종결 가드 · <code>doctor</code> spec-gate)
+    <br>
+    <strong>P1 SSOT 역전</strong>(<code>CLAUDE.md</code> → <code>AGENTS.md</code> 오픈 표준 코어)
+    <br>
+    <strong>P2 <code>--json</code> 계약</strong>(에이전트 구동용 observation 엔벨로프).
+    <br><br>
+    <strong>SSOT 역전 상세:</strong> 단일 진실의 원천이 <code>CLAUDE.md</code>(벤더 master + alias symlink)에서
+    <code>AGENTS.md</code>(Linux Foundation 오픈 표준 · 공유 코어 <em>실파일</em>)로 역전되었습니다.
+    <code>CLAUDE.md</code> / <code>GEMINI.md</code>는 <code>@AGENTS.md</code>를 import하는 얇은 파일이고, Cursor·OpenCode는 <code>AGENTS.md</code>를 네이티브로 읽습니다.
+    alias symlink(<code>.cursorrules</code> 포함)는 폐기됐습니다. 아래 다이어그램은 이 신구조를 반영합니다.
+    (이전 버전 스냅샷: <code>harness-overview-0.14.0.html</code> · <code>harness-overview-0.12.0.html</code> · <code>harness-overview-0.9.5.html</code> · <code>harness-overview-0.9.2.html</code> · <code>harness-overview-0.8.0.html</code> · <code>harness-overview-0.7.0.html</code>)
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <section id="architecture">
+    <div class="section-title">전체 아키텍처</div>
+    <p class="section-sub">플러그인 컴포넌트 구성 및 의존 레이어</p>
+    <div class="diagram-wrap">
+      <div class="mermaid">
+      graph TB
+    BIN["🖥 bin/harness-team.mjs\nCLI Entry · Command Router"]
+
+    subgraph CMDS["Commands Layer"]
+        direction LR
+        INIT["init"] & APPLY["apply"] & SYNC["sync"]
+        CLONE["clone"] & SYM["symlink"] & DEL["delete"] & BACKUP["backup"]
+        DOCTOR["doctor"] & TASK["task · list · done\nhandoff · retro"] & SESS["session-context"]
+        MIG["migrate"] & UPG["upgrade"] & REL["release"]
+    end
+
+    subgraph ORCH["Orchestration"]
+        direction LR
+        HARNESS["harness.mjs\nplanChanges · applyChanges\ncopyStaticAssets (renders 3 agent files)"]
+        BACKUPDIR["backup-dir.mjs\nresolveBackupDir\n4-priority resolution"]
+    end
+
+    subgraph UTIL["Utilities"]
+        direction LR
+        MERGE["merge.mjs\nmergeMarkdown · extractSections\ndeepMergeJson"]
+        RENDER["render.mjs\n{{var}} 치환"]
+        DETECT["detect-stack.mjs\nAuto stack detection"]
+        MEMBER["member.mjs\ndetectMember"]
+        UCFG["user-config.mjs\nensureUsername"]
+        GHOOKS["git-hooks.mjs\ninstallPostCommitHook"]
+        OBS["observation.mjs\nbuildEnvelope · emitObservation\n--json 엔벨로프 (P2 0.8.0)"]
+    end
+
+    subgraph TMPL["Templates"]
+        direction LR
+        HBS["AGENTS.md.hbs (core)\nCLAUDE.md.hbs (thin)\nGEMINI.md.hbs (thin)"]
+        HOOKS_T[".claude/hooks/"]
+        RULES_T[".claude/rules/"]
+        SKILLS_T[".claude/skills/"]
+        SCRIPTS["clone.sh\nsymlink.sh\ndelete.sh"]
+    end
+
+    BIN --> CMDS
+    INIT & APPLY & SYNC --> HARNESS
+    CLONE & SYM & DEL & BACKUP & MIG & UPG --> BACKUPDIR
+    DOCTOR --> BACKUPDIR
+    TASK --> MEMBER
+    DOCTOR & TASK & REL --> OBS
+    DOCTOR --> SESS
+    SESS --> TASK
+    INIT & SYNC --> UCFG & GHOOKS
+    HARNESS --> MERGE & RENDER & DETECT
+    HARNESS --> TMPL
+
+    style CMDS fill:#1e2140,stroke:#2e3350
+    style ORCH fill:#1e3a5f,stroke:#50c8f5
+    style UTIL fill:#1a2035,stroke:#2e3350
+    style TMPL fill:#1e2810,stroke:#2e3350
+    style BIN fill:#2a1f5c,stroke:#7c6af5
+      </div>
+    </div>
+    <p class="diagram-label">컴포넌트 레이어 다이어그램 — Entry → Commands → Orchestration → Utilities → Templates</p>
+  </section>
+
+  <!-- SUBAGENTS -->
+  <section id="subagents">
+    <div class="section-title">Subagents — 멀티 에이전트 역할 분담</div>
+    <p class="section-sub">하나의 AGENTS.md(오픈 표준 코어)를 공유 — Claude·Gemini는 <code>@import</code>, Cursor·OpenCode는 네이티브</p>
+    <div class="diagram-wrap">
+      <div class="mermaid">
+      graph LR
+    SSOT["📄 AGENTS.md\n공유 코어 (오픈 표준 SSOT)"]
+
+    subgraph AGENTS["AI Agents"]
+        CLAUDE_A["🤖 Claude Code (drive)\n주 구현 · 계획 · 오케스트레이션\nCLAUDE.md → @AGENTS.md import"]
+        OPENCODE_A["⚡ OpenCode (drive)\n순차 전환 세션\nAGENTS.md 네이티브"]
+        CODEX_A["🧠 Codex (review)\n독립 리뷰어 (read-only)\nAGENTS.md 네이티브"]
+        GEMINI_A["💎 Gemini CLI (review)\n독립 리뷰어 · 대용량 분석\nGEMINI.md → @AGENTS.md import"]
+        CURSOR_A["🖱 Cursor\nIDE 보조 편집\nAGENTS.md 네이티브 + .cursor/rules"]
+    end
+
+    subgraph ROLES["역할 분담 (D2)"]
+        R1["Claude → drive: 설계·구현·오케스트레이션"]
+        R2["OpenCode → drive: 순차 작성"]
+        R3["Codex → review: read-only 리뷰"]
+        R4["Gemini → review: 대용량 분석·리뷰"]
+        R5["Cursor → IDE 인라인 보조"]
+    end
+
+    SSOT -->|"@AGENTS.md import"| CLAUDE_A
+    SSOT -->|네이티브| OPENCODE_A
+    SSOT -->|네이티브| CODEX_A
+    SSOT -->|"@AGENTS.md import"| GEMINI_A
+    SSOT -->|네이티브| CURSOR_A
+
+    CLAUDE_A -.-> R1
+    OPENCODE_A -.-> R2
+    CODEX_A -.-> R3
+    GEMINI_A -.-> R4
+    CURSOR_A -.-> R5
+
+    style SSOT fill:#0e3d30,stroke:#4df0aa
+    style AGENTS fill:#1a1d27,stroke:#2e3350
+    style ROLES fill:#1a2035,stroke:#2e3350
+    style CLAUDE_A fill:#1e3a5f,stroke:#50c8f5
+    style OPENCODE_A fill:#1e3a5f,stroke:#50c8f5
+    style CODEX_A fill:#22263a,stroke:#2e3350
+    style GEMINI_A fill:#22263a,stroke:#2e3350
+    style CURSOR_A fill:#22263a,stroke:#2e3350
+      </div>
+    </div>
+    <p class="diagram-label">에이전트별 역할 — AGENTS.md 코어 공유 · drive(Claude·OpenCode) / review(Codex·Gemini) (D2)</p>
+
+    <div class="table-wrap" style="margin-top:1.5rem">
+      <table>
+        <thead>
+          <tr><th>Agent</th><th>Config 파일</th><th>주 역할</th><th>언제 사용</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Claude Code</strong> <span class="tag tag-blue" style="font-size:0.68rem;padding:1px 7px;">drive</span></td>
+            <td><code>CLAUDE.md</code> → <code>@AGENTS.md</code></td>
+            <td>설계, 계획, 구현, 오케스트레이션</td>
+            <td>모든 주요 작업의 진입점</td>
+          </tr>
+          <tr>
+            <td><strong>OpenCode</strong> <span class="tag tag-blue" style="font-size:0.68rem;padding:1px 7px;">drive</span></td>
+            <td><code>AGENTS.md</code> (네이티브) + <code>opencode.json</code></td>
+            <td>순차 전환 세션 (보조 드라이버)</td>
+            <td>순차 전환 구현, 빠른 단일 작업</td>
+          </tr>
+          <tr>
+            <td><strong>Codex</strong> <span class="tag tag-orange" style="font-size:0.68rem;padding:1px 7px;">review</span></td>
+            <td><code>AGENTS.md</code> (네이티브)</td>
+            <td>독립 리뷰어 (read-only)</td>
+            <td>중요 변경 후 코드 리뷰</td>
+          </tr>
+          <tr>
+            <td><strong>Gemini CLI</strong> <span class="tag tag-orange" style="font-size:0.68rem;padding:1px 7px;">review</span></td>
+            <td><code>GEMINI.md</code> → <code>@AGENTS.md</code></td>
+            <td>독립 리뷰어 · 대용량 컨텍스트 분석</td>
+            <td>리뷰, 파일 5개 이상 분석 시</td>
+          </tr>
+          <tr>
+            <td><strong>Cursor</strong></td>
+            <td><code>AGENTS.md</code> (네이티브)<br><code>.cursor/rules/*.mdc</code> (mirror)</td>
+            <td>IDE 인라인 편집, 자동완성 보조</td>
+            <td>IDE에서 직접 코드 수정 시</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- COMMANDS -->
+  <section id="commands">
+    <div class="section-title">Commands</div>
+    <p class="section-sub">등록된 명령은 <code>commands/*.md</code>와 <code>.claude-plugin/plugin.json</code>에서 생성됩니다.</p>
+    <div class="table-wrap">
+      <table data-generated="commands">
+        <thead><tr><th>명령</th><th>소스 파일</th><th>설명</th><th>Phase</th></tr></thead>
+        <tbody>
+          <tr data-command-source="commands/harness-init.md">
+            <td><span class="cmd">/harness-init</span></td>
+            <td><code>commands/harness-init.md</code></td>
+            <td>현재 프로젝트에 팀 하네스를 신규 scaffold합니다 (Claude 메인 + Codex/Gemini/Cursor/OpenCode)</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">First-time</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-apply.md">
+            <td><span class="cmd">/harness-apply</span></td>
+            <td><code>commands/harness-apply.md</code></td>
+            <td>기존 프로젝트에 팀 하네스를 비파괴적으로 적용 (dry-run 후 병합)</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Onboarding</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-sync.md">
+            <td><span class="cmd">/harness-sync</span></td>
+            <td><code>commands/harness-sync.md</code></td>
+            <td>symlink 재생성 + .cursor/rules ←→ .claude/rules 동기화</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Maintenance</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-doctor.md">
+            <td><span class="cmd">/harness-doctor</span></td>
+            <td><code>commands/harness-doctor.md</code></td>
+            <td>하네스 무결성 점검 (파일, hooks, CLI PATH)</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Validation</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-task.md">
+            <td><span class="cmd">/harness-task</span></td>
+            <td><code>commands/harness-task.md</code></td>
+            <td>task 관리 (task/list/done/handoff) — docs/&lt;user&gt;/&lt;name&gt;/ 구조</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-ship.md">
+            <td><span class="cmd">/harness-ship</span></td>
+            <td><code>commands/harness-ship.md</code></td>
+            <td>PR/MR 직전 spec·plan·artifact를 최종 갱신하고 다이어그램(옵트인)까지 정리한 뒤 준비 완료 상태를 보고</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-diagram.md">
+            <td><span class="cmd">/harness-diagram</span></td>
+            <td><code>commands/harness-diagram.md</code></td>
+            <td>활성 task의 spec/plan 다이어그램을 하네스 규약(경로·자립형 inline SVG·artifact 기록)대로 생성하거나 갱신</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-clone.md">
+            <td><span class="cmd">/harness-clone</span></td>
+            <td><code>commands/harness-clone.md</code></td>
+            <td>project → backup dir 동기화 (merge, newer-wins)</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Backup</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-symlink.md">
+            <td><span class="cmd">/harness-symlink</span></td>
+            <td><code>commands/harness-symlink.md</code></td>
+            <td>backup dir → project symlink 생성/교체</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Backup</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-delete.md">
+            <td><span class="cmd">/harness-delete</span></td>
+            <td><code>commands/harness-delete.md</code></td>
+            <td>project에서 harness symlink 제거</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Cleanup</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-migrate.md">
+            <td><span class="cmd">/harness-migrate</span></td>
+            <td><code>commands/harness-migrate.md</code></td>
+            <td>구버전 구조를 최신으로 마이그레이션 — backup dir 스크립트 → project root, task 구조(pre-0.6→0.6, 0.6→0.7 artifact.md 분리)</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Migration</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-upgrade.md">
+            <td><span class="cmd">/harness-upgrade</span></td>
+            <td><code>commands/harness-upgrade.md</code></td>
+            <td>구버전 구조(실제 파일)를 신버전(symlink)으로 원스텝 마이그레이션</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Migration</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-spec.md">
+            <td><span class="cmd">/harness-spec</span></td>
+            <td><code>commands/harness-spec.md</code></td>
+            <td>활성 task의 spec.md 초안을 Confluence·Figma·인터뷰 3소스에서 생성한다 (writer — 검증은 /harness-interview)</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Persona</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-interview.md">
+            <td><span class="cmd">/harness-interview</span></td>
+            <td><code>commands/harness-interview.md</code></td>
+            <td>활성 task의 spec.md를 선행 채점 후 소크라테스식 질문으로 검증해 숨겨진 가정을 드러낸다</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Persona</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-contrarian.md">
+            <td><span class="cmd">/harness-contrarian</span></td>
+            <td><code>commands/harness-contrarian.md</code></td>
+            <td>활성 task의 spec.md / plan.md의 모든 가정에 의문을 제기한다 — 엔진 인수를 주면 외부 read-only 검증자가 반론(D6)</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Persona</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-simplifier.md">
+            <td><span class="cmd">/harness-simplifier</span></td>
+            <td><code>commands/harness-simplifier.md</code></td>
+            <td>활성 task의 plan.md에서 제거 가능한 단계와 추상화를 찾아낸다 — 엔진 인수를 주면 외부 read-only 검증자가 채점(D6)</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Persona</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-retro.md">
+            <td><span class="cmd">/harness-retro</span></td>
+            <td><code>commands/harness-retro.md</code></td>
+            <td>현재(또는 지정) task의 artifact.md에 학습/교정 내용을 append. CLAUDE.md 자기개선 루프 정책 실행.</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-release.md">
+            <td><span class="cmd">/harness-release</span></td>
+            <td><code>commands/harness-release.md</code></td>
+            <td>4개 매니페스트(package.json/.claude-plugin/plugin.json/.claude-plugin/marketplace.json/.codex-plugin/plugin.json) 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화. 휴먼 에러(manifest 누락·버전 불일치) 차단.</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Release</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-sim.md">
+            <td><span class="cmd">/harness-sim</span></td>
+            <td><code>commands/harness-sim.md</code></td>
+            <td>설치된 하네스와 에이전트 워크플로우 스킬이 진짜 작동하는지 실제 claude -p 세션으로 검증 (L5 agent-in-the-loop) + 날짜 리포트 (harness-sim 스킬 위임)</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Simulation</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-unittest.md">
+            <td><span class="cmd">/harness-unittest</span></td>
+            <td><code>commands/harness-unittest.md</code></td>
+            <td>JS/TS/React/RN 프로젝트에 Khorikov 원칙 기반 단위테스트를 작성한다 (스택 자동 감지 → GWT 강제 → 커버리지 → 검증)</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Testing</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-comptest.md">
+            <td><span class="cmd">/harness-comptest</span></td>
+            <td><code>commands/harness-comptest.md</code></td>
+            <td>React/React Native 컴포넌트·화면·UI 플로우에 Testing Trophy 통합 층 테스트를 작성한다 (스택 감지 → 사용자 관점 검증 강제 → 커버리지 → 검증)</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Testing</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-inttest.md">
+            <td><span class="cmd">/harness-inttest</span></td>
+            <td><code>commands/harness-inttest.md</code></td>
+            <td>API 핸들러·DB 접근·캐시·아웃바운드 HTTP 등 프로세스 경계 코드에 Khorikov Part III 통합 테스트를 작성한다 (스택 감지 → managed/unmanaged 구분 강제 → 커버리지 → 검증)</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Testing</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-review.md">
+            <td><span class="cmd">/harness-review</span></td>
+            <td><code>commands/harness-review.md</code></td>
+            <td>엔진 중립 read-only 외부 리뷰(codex·claude·gemini·custom)를 로컬 git 상태에 실행하고 결과를 활성 task의 artifact ## Reviews에 기록</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
+          <tr data-command-source="commands/harness-adversarial-review.md">
+            <td><span class="cmd">/harness-adversarial-review</span></td>
+            <td><code>commands/harness-adversarial-review.md</code></td>
+            <td>설계 결정과 가정에 반박을 시도하는 적대적 read-only 외부 리뷰 — 절차·엔진 표는 harness-review와 동일, 리뷰 프롬프트만 교체</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- OBSERVATION / --json -->
+  <section id="observation">
+    <div class="section-title">CLI Observation 계약 (<code>--json</code>)</div>
+    <p class="section-sub">P2 (0.8.0) — drive 에이전트(Codex·OpenCode)가 <code>harness-team</code> CLI를 Bash로 호출하면 stdout이 곧 observation이 된다. 사람용 출력과 별도로 <code>--json</code>으로 구조화 엔벨로프를 opt-in</p>
+
+    <div class="infobox">
+      <strong>동작 방식:</strong> drive 4커맨드(<code>task</code> · <code>retro</code> · <code>release</code> · <code>doctor</code>)에 <code>--json</code>을 주면 stdout에 단일 JSON 엔벨로프 1개만 출력하고 <code>process.exitCode</code>로 신호한다. 사람용 출력은 각 커맨드의 별도 계약을 따르며, <code>task</code>는 생성·재활성화 뒤 다음 단계 안내를 출력한다. 헬퍼는 <code>src/observation.mjs</code>의 <code>buildEnvelope</code> · <code>emitObservation</code>.
+    </div>
+
+    <div class="card">
+      <h3>엔벨로프 스키마 — <code>harness/observation/v1</code></h3>
+      <pre style="margin-top:0.75rem;font-family:'SF Mono','Fira Code',monospace;font-size:0.82rem;color:#e2e6f0;line-height:1.7;overflow-x:auto;">{
+  <span style="color:#50c8f5">"schema"</span>: <span style="color:#4df0aa">"harness/observation/v1"</span>,
+  <span style="color:#50c8f5">"command"</span>: <span style="color:#4df0aa">"doctor"</span>,
+  <span style="color:#50c8f5">"status"</span>: <span style="color:#4df0aa">"success | warning | error"</span>,
+  <span style="color:#50c8f5">"summary"</span>: <span style="color:#4df0aa">"사람이 읽는 한 줄 요약"</span>,
+  <span style="color:#50c8f5">"next_actions"</span>: [<span style="color:#4df0aa">"에이전트가 다음에 할 행동"</span>],
+  <span style="color:#50c8f5">"artifacts"</span>: [<span style="color:#4df0aa">"생성·변경된 경로"</span>],
+  <span style="color:#50c8f5">"error"</span>: <span style="color:#7a82a0">null</span> | { <span style="color:#50c8f5">"root_cause"</span>, <span style="color:#50c8f5">"safe_retry"</span>, <span style="color:#50c8f5">"stop_condition"</span> }
+}</pre>
+      <p style="margin-top:0.8rem;font-size:0.83rem;color:var(--muted)">
+        <strong style="color:var(--text)">불변식:</strong> <code>status === "error" ⟺ error !== null</code> — 4커맨드 공통.
+        에이전트는 커맨드별 분기 없이 <code>if (env.error) …</code> 한 패턴으로 파싱한다. 계약은 "가장 약한 커맨드"만큼만 강하다.
+      </p>
+    </div>
+
+    <div class="card-grid" style="margin-top:1rem">
+      <div class="card card-accent-blue">
+        <h3>doctor --json</h3>
+        <p>표준 엔벨로프 + per-check <code>checks:[{label, status, detail}]</code>. status는 <code>pass | fail | missing | optional | warning | skip</code>. 소비자 프로젝트에서는 SessionStart·post-commit 훅이 쓸 PATH의 <code>harness-team</code>도 경고로 확인한다.</p>
+      </div>
+      <div class="card card-accent-green">
+        <h3>task / retro --json</h3>
+        <p>created / activated / no-active / bad-name 분기마다 엔벨로프. 에러 경로도 <code>root_cause</code> + <code>safe_retry</code> + <code>stop_condition</code>로 정합.</p>
+      </div>
+      <div class="card card-accent-purple">
+        <h3>release --json</h3>
+        <p>success / dry-run / error 분기. <code>artifacts</code>에 bump된 매니페스트·캐시 경로. (release는 maintainer 액션 — 에이전트 비운전.)</p>
+      </div>
+    </div>
+
+    <div class="infobox" style="margin-top:1rem">
+      <strong>범위:</strong> drive 4커맨드만 (파킹 문서 결정). <code>src/observation.mjs</code> 헬퍼가 제네릭이라 나머지 커맨드는 후속 opt-in 가능 (YAGNI). 파서 · human 포맷 무변경. baseline 71 → 84 테스트 pass.
+    </div>
+  </section>
+
+  <!-- HOOKS -->
+  <section id="hooks">
+    <div class="section-title">Hooks</div>
+    <p class="section-sub"><code>.claude/hooks/</code> — Claude Code 이벤트에 따라 자동 실행하는 보호·검증·포맷·관측 훅</p>
+
+    <div class="infobox">
+      <strong>동작 방식:</strong> Claude Code는 <code>.claude/settings.json</code>의 <code>"hooks"</code> 설정을 읽어 <code>PreToolUse</code>·<code>PostToolUse</code>·실패/권한거절·<code>SessionStart</code> 이벤트에 훅을 실행합니다. Exit code 2는 해당 도구 실행을 <strong>차단</strong>합니다.
+    </div>
+
+    <div class="diagram-wrap">
+      <div class="mermaid">
+      sequenceDiagram
+    participant Claude as Claude Code
+    participant Hook as Hook Script
+    participant Tool as Tool (Edit/Bash)
+
+    rect rgb(30, 40, 60)
+        Note over Claude,Tool: PreToolUse — Edit/Write 도구 실행 전
+        Claude->>Hook: protect-files.sh (파일 경로 전달)
+        alt 보호 대상 파일
+            Hook-->>Claude: exit 2 (차단)
+            Note over Claude: 🚫 .env · node_modules · .git 보호
+        else 허용
+            Hook-->>Claude: exit 0
+            Claude->>Tool: Edit/Write 실행
+        end
+    end
+
+    rect rgb(26, 40, 30)
+        Note over Claude,Tool: PostToolUse — Edit/Write 완료 후
+        Claude->>Tool: 파일 수정 완료
+        Tool-->>Claude: 완료
+        Claude->>Hook: auto-format.sh (파일 경로 전달)
+        Hook->>Hook: npx prettier --write (ts/tsx/js/jsx/json)
+        Hook-->>Claude: exit 0
+    end
+
+    rect rgb(40, 26, 26)
+        Note over Claude,Tool: PreToolUse — Bash git commit 실행 전
+        Claude->>Hook: pre-commit-check.sh (명령어 전달)
+        Hook->>Hook: pnpm tsc --noEmit
+        Hook->>Hook: pnpm test
+        alt 실패
+            Hook-->>Claude: exit 2 (커밋 차단)
+        else 통과
+            Hook-->>Claude: exit 0
+            Claude->>Tool: git commit 실행
+        end
+    end
+      </div>
+    </div>
+    <p class="diagram-label">보호·포맷·커밋 검증의 대표 순서 — 전체 이벤트 훅은 아래 settings.json 표를 참조</p>
+
+    <div class="card-grid" style="margin-top:1rem">
+      <div class="card card-accent-orange">
+        <h3><span class="hook-badge hook-pre">PreToolUse</span> protect-files.sh</h3>
+        <p>Edit · Write 도구 실행 전 보호 대상 경로를 차단한다.</p>
+        <ul style="margin-top:0.6rem">
+          <li>차단 패턴: <code>.env</code>, <code>ios/Pods</code>, <code>android/build</code>, <code>node_modules/</code>, <code>.git/</code></li>
+          <li>파일 경로가 패턴과 매칭되면 exit 2 → Claude가 수정 불가</li>
+        </ul>
+      </div>
+      <div class="card card-accent-green">
+        <h3><span class="hook-badge hook-post">PostToolUse</span> auto-format.sh</h3>
+        <p>Edit · Write 완료 후 Prettier로 자동 포맷.</p>
+        <ul style="margin-top:0.6rem">
+          <li>대상: <code>.ts</code>, <code>.tsx</code>, <code>.js</code>, <code>.jsx</code>, <code>.json</code></li>
+          <li><code>npx prettier --write</code> 실행 — 실패 시 무시(silent)</li>
+        </ul>
+      </div>
+      <div class="card card-accent-orange">
+        <h3><span class="hook-badge hook-pre">PreToolUse</span> pre-commit-check.sh</h3>
+        <p>Bash 도구에서 <code>git commit</code> 명령 감지 시 검증 실행.</p>
+        <ul style="margin-top:0.6rem">
+          <li><code>pnpm tsc --noEmit</code> — 타입 에러 시 차단</li>
+          <li><code>pnpm test --passWithNoTests</code> — 테스트 실패 시 차단</li>
+          <li>timeout: 120초</li>
+        </ul>
+      </div>
+      <div class="card card-accent-purple">
+        <h3>전 이벤트 observe-tools.mjs</h3>
+        <p>도구 시작·성공·실패·권한거절을 원문 없는 로컬 JSONL로 관측한다.</p>
+        <ul style="margin-top:0.6rem">
+          <li><code>PreToolUse</code>·<code>PostToolUse</code>·<code>PostToolUseFailure</code>·<code>PermissionDenied</code>는 모든 도구(<code>*</code>)에 적용</li>
+          <li><code>SessionStart</code>에서는 정리만 수행하며, runner는 stdout이나 context를 출력하지 않음</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="margin-top:1.5rem" class="card">
+      <h3>도구 호출 관측 v1 — 프라이버시와 보존 계약</h3>
+      <p style="margin-top:0.6rem"><code>.harness/observability/v1/YYYY-MM-DD/</code> 아래에만 기록하며, 전체 디렉터리는 생성 시 자동 gitignore된다. 디렉터리는 <code>0700</code>, JSONL과 프로젝트별 HMAC 키는 <code>0600</code>으로 제한한다.</p>
+      <ul style="margin-top:0.6rem">
+        <li>레코드는 allowlist다: 세션·task·도구 호출·도구 이름은 HMAC 참조값만, 상태와 도구 분류는 고정 enum만, 그 밖에는 숫자/boolean 메타데이터와 선택적 안전 정수 usage만 남긴다.</li>
+        <li>프롬프트, 경로, tool input/output, shell 명령, stdout/stderr/error, transcript·MCP raw ID와 credential은 절대 기록·전송하지 않는다. LLM·HTTP·외부 telemetry·cross-agent adapter·tool profile·dashboard·USD cost도 없다.</li>
+        <li>입력/응답 JSON byte metadata는 1 MiB에서 포화하며 <code>input_bytes_capped</code>/<code>response_bytes_capped</code> boolean으로 표시한다. 이는 토큰이나 비용이 아니다.</li>
+        <li>로그는 8 MiB 단위로 다음 suffix 파일에 회전하고, UTC 기준 14일을 지난 날짜 디렉터리는 <code>SessionStart</code>에서만 정리한다.</li>
+        <li><code>.harness</code>가 프로젝트 밖을 가리키는 symlink면 기록하지 않고 경로 없는 안전한 stderr 안내만 남긴다.</li>
+      </ul>
+    </div>
+
+    <div style="margin-top:1.5rem">
+      <div class="section-title" style="font-size:1.1rem;margin-bottom:0.75rem">settings.json Hook 설정 구조</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Hook 타입</th><th>Matcher</th><th>스크립트</th><th>Timeout</th></tr></thead>
+          <tbody>
+            <tr><td><span class="hook-badge hook-pre">PreToolUse</span></td><td><code>Edit|Write</code></td><td><code>.claude/hooks/protect-files.sh</code></td><td>10s</td></tr>
+            <tr><td><span class="hook-badge hook-pre">PreToolUse</span></td><td><code>Bash</code></td><td><code>.claude/hooks/block-dangerous-git.sh</code></td><td>10s</td></tr>
+            <tr><td><span class="hook-badge hook-pre">PreToolUse</span></td><td><code>Bash</code></td><td><code>.claude/hooks/pre-commit-check.sh</code></td><td>120s</td></tr>
+            <tr><td><span class="hook-badge hook-pre">PreToolUse</span></td><td><code>*</code></td><td><code>.claude/hooks/observe-tools.mjs</code></td><td>10s</td></tr>
+            <tr><td><span class="hook-badge hook-post">PostToolUse</span></td><td><code>Edit|Write</code></td><td><code>.claude/hooks/auto-format.sh</code></td><td>30s</td></tr>
+            <tr><td><span class="hook-badge hook-post">PostToolUse</span></td><td><code>*</code></td><td><code>.claude/hooks/observe-tools.mjs</code></td><td>10s</td></tr>
+            <tr><td>PostToolUseFailure</td><td><code>*</code></td><td><code>.claude/hooks/observe-tools.mjs</code></td><td>10s</td></tr>
+            <tr><td>PermissionDenied</td><td><code>*</code></td><td><code>.claude/hooks/observe-tools.mjs</code></td><td>10s</td></tr>
+            <tr><td>SessionStart</td><td>—</td><td><code>harness-team session-context</code> + <code>observe-tools.mjs</code> 정리</td><td>10s</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- RULES -->
+  <section id="rules">
+    <div class="section-title">Rules</div>
+    <p class="section-sub"><code>.claude/rules/</code> — Claude Code에 항상 주입되는 코딩 컨벤션. <code>.cursor/rules/*.mdc</code>로 자동 미러링</p>
+
+    <div class="infobox">
+      <strong>동작 방식:</strong> <code>.claude/rules/*.md</code>는 파일 상단의 <code>paths:</code> 프론트매터에 매칭되는 파일을 열 때 해당 Rule이 Claude의 컨텍스트에 자동 주입됩니다. <code>harness-sync</code> 실행 시 <code>.cursor/rules/*.mdc</code>로 미러링됩니다.
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Rule 파일</th><th>적용 경로</th><th>내용 요약</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>navigation.md</code></td>
+            <td><code>app/**/*.tsx</code><br><code>src/**/*navigation*</code><br><code>src/**/*router*</code></td>
+            <td>Expo Router 기반 파일 라우팅 원칙 — <code>router.push()</code>/<code>Link</code> 사용, <code>useNavigation()</code> 금지, 인증 플로우 패턴, Deep Linking 처리</td>
+          </tr>
+          <tr>
+            <td><code>state-management.md</code></td>
+            <td><code>src/stores/**/*.ts</code><br><code>src/hooks/**/*.ts</code><br><code>src/services/**/*.ts</code></td>
+            <td>상태 분류 매트릭스 — 서버 상태는 TanStack Query, 전역 클라이언트는 Zustand, 로컬 UI는 useState. 서버 데이터 복제 금지, useEffect 동기화 체인 금지</td>
+          </tr>
+          <tr>
+            <td><code>styling.md</code></td>
+            <td>스타일 관련 파일</td>
+            <td>Tailwind CSS v4 / StyleSheet 사용 원칙, 인라인 스타일 금지, 토큰 기반 색상 사용</td>
+          </tr>
+          <tr>
+            <td><code>testing.md</code></td>
+            <td>테스트 파일</td>
+            <td>Jest / Vitest 기반 단위·통합 테스트 작성 원칙, mock 전략, 테스트 파일 co-location 패턴</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:1.5rem">
+      <div class="diagram-wrap">
+        <div class="mermaid">
+        graph LR
+    subgraph SOURCE[".claude/rules/  (SSOT)"]
+        NAV["navigation.md"]
+        STATE["state-management.md"]
+        STYLE["styling.md"]
+        TEST["testing.md"]
+    end
+
+    subgraph MIRROR[".cursor/rules/  (auto-mirror)"]
+        NAV2["navigation.mdc"]
+        STATE2["state-management.mdc"]
+        STYLE2["styling.mdc"]
+        TEST2["testing.mdc"]
+    end
+
+    NAV -. "harness-sync" .-> NAV2
+    STATE -. "harness-sync" .-> STATE2
+    STYLE -. "harness-sync" .-> STYLE2
+    TEST -. "harness-sync" .-> TEST2
+
+    SOURCE -->|"paths 매칭 시 자동 주입"| CLAUDE_CODE["Claude Code"]
+    MIRROR -->|"Cursor IDE에서 읽음"| CURSOR_IDE["Cursor IDE"]
+
+    style SOURCE fill:#1e3a5f,stroke:#50c8f5
+    style MIRROR fill:#0e3d30,stroke:#4df0aa
+        </div>
+      </div>
+      <p class="diagram-label">Rules SSOT → Cursor 미러링 흐름</p>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section id="skills">
+    <div class="section-title">Skills</div>
+    <p class="section-sub"><code>.claude/skills/</code> — slash command 형태로 호출하는 워크플로우 가이드. <code>SKILL.md</code>가 컨텍스트에 주입됨</p>
+
+    <div class="infobox">
+      <strong>동작 방식:</strong> <code>.claude/skills/&lt;name&gt;/SKILL.md</code>는 <code>/&lt;name&gt;</code> slash command로 호출됩니다. <code>disable-model-invocation: true</code>로 선언된 경우 Claude가 직접 따르는 지침으로 동작합니다. <code>harness-team task new</code>와 연동되어 태스크 디렉토리를 자동 생성합니다.
+    </div>
+
+    <div class="card-grid">
+      <div class="card card-accent-purple">
+        <h3>🐛 /fix-bug</h3>
+        <p><strong>버그 수정 4단계 워크플로우</strong></p>
+        <ul style="margin-top:0.5rem">
+          <li>Phase 1: <code>harness-team task &lt;name&gt;</code> + <code>&lt;name&gt;-spec.md</code> 증상 기록</li>
+          <li>Phase 2: 코드 탐색 → 근본 원인 파악 → 최소 surgical fix</li>
+          <li>Phase 3: typecheck/lint/test + 수동 재현 확인</li>
+          <li>Phase 4: git commit → hook 자동 handoff → AskUserQuestion → <code>harness-team done</code></li>
+        </ul>
+      </div>
+      <div class="card card-accent-blue">
+        <h3>✨ /new-feature</h3>
+        <p><strong>신규 기능 4단계 워크플로우</strong></p>
+        <ul style="margin-top:0.5rem">
+          <li>Phase 1: <code>harness-team task &lt;name&gt;</code> + <code>&lt;name&gt;-spec.md</code> 요구사항</li>
+          <li>Phase 2: 코드베이스 탐색 → <code>&lt;name&gt;-plan.md</code> 체크리스트</li>
+          <li>Phase 3: 단계별 구현 + plan 체크 갱신</li>
+          <li>Phase 4: 검증 + git commit → hook 자동 handoff → AskUserQuestion → <code>harness-team done</code></li>
+        </ul>
+      </div>
+      <div class="card card-accent-purple">
+        <h3>✅ /verify</h3>
+        <p>완료 선언 전 검증 체크리스트 실행. typecheck · lint · test · 수동 확인 · 코드 리뷰 기준 대조.</p>
+      </div>
+    </div>
+
+    <div class="infobox" style="margin-top:1rem">
+      <strong>v0.6.0 변경:</strong> <code>/handoff</code>와 <code>/plan</code> skill은 제거됨 — handoff는 post-commit hook이 자동 처리하고, plan은 <code>&lt;name&gt;-plan.md</code>로 task 내에 통합됨.
+    </div>
+
+    <div style="margin-top:1.5rem">
+      <div class="diagram-wrap">
+        <div class="mermaid">
+        graph LR
+    USER["사용자\n/new-feature auth-redesign"] --> SKILL["new-feature/SKILL.md\n워크플로우 가이드 주입"]
+    SKILL --> TASK_NEW["harness-team task auth-redesign"]
+    TASK_NEW --> DOCS["docs/chad/auth-redesign/\nauth-redesign-spec.md\nauth-redesign-plan.md\nauth-redesign-handoff.md"]
+    SKILL --> IMPL["Phase 2-3\n계획·구현"]
+    IMPL --> COMMIT["git commit"]
+    COMMIT --> HOOK["post-commit hook\nhandoff 자동 갱신"]
+    HOOK --> DONE["harness-team done\n(AskUserQuestion 거침)"]
+
+    style USER fill:#2a1f5c,stroke:#7c6af5
+    style SKILL fill:#1e3a5f,stroke:#50c8f5
+    style HOOK fill:#3d2700,stroke:#f5a623
+    style DONE fill:#0e3d30,stroke:#4df0aa
+        </div>
+      </div>
+      <p class="diagram-label">Skill 실행 흐름 — /new-feature 예시 (v0.6.0)</p>
+    </div>
+  </section>
+
+  <!-- PLUGIN -->
+  <section id="plugin">
+    <div class="section-title">Plugin 등록 구조</div>
+    <p class="section-sub"><code>.claude-plugin/</code> — Claude Code 마켓플레이스 등록 및 slash command 바인딩</p>
+
+    <div class="infobox">
+      <strong>동작 방식:</strong> Claude Code는 <code>.claude-plugin/plugin.json</code>을 읽어 slash command를 등록합니다. <code>marketplace.json</code>은 마켓플레이스 목록에 표시되는 메타데이터입니다. 버전 범프 시 <strong>두 파일 모두</strong> 반드시 동기화해야 합니다.
+    </div>
+
+    <div class="card-grid">
+      <div class="card card-accent-purple">
+        <h3>plugin.json</h3>
+        <ul>
+          <li>플러그인 이름·버전·설명·저자</li>
+          <li><code>commands[]</code> — slash command 경로 목록<br>(<code>./commands/harness-*.md</code>)</li>
+          <li><code>skills[]</code> — skill 디렉토리 경로</li>
+          <li>Claude Code가 이 파일로 command 등록</li>
+        </ul>
+      </div>
+      <div class="card card-accent-blue">
+        <h3>marketplace.json</h3>
+        <ul>
+          <li>마켓플레이스 목록 표시용 메타데이터</li>
+          <li>버전 필드 별도 관리 ⚠️ 누락 주의</li>
+          <li><code>/plugin</code> 목록에서 보이는 버전 출처</li>
+          <li>설명·태그·카테고리 포함</li>
+        </ul>
+      </div>
+      <div class="card card-accent-orange">
+        <h3>commands/*.md</h3>
+        <ul>
+          <li>각 slash command의 메타데이터 파일</li>
+          <li>description, argument-hint, allowed-tools 선언</li>
+          <li><code>disable-model-invocation</code> 옵션으로 지침 모드 전환</li>
+          <li>Claude Code가 command 호출 시 이 파일을 컨텍스트에 주입</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="margin-top:1.5rem">
+      <div class="diagram-wrap">
+        <div class="mermaid">
+        flowchart LR
+    V["버전 범프\n예: 0.5.1 → 0.5.2"]
+    V --> A["package.json\nversion 필드"]
+    V --> B[".claude-plugin/\nplugin.json"]
+    V --> C[".claude-plugin/\nmarketplace.json ⚠️"]
+    V --> D["~/.claude/plugins/cache/\nharness-aijient-team/X.Y.Z/\n(로컬 캐시 동기화)"]
+    A & B & C & D --> E["git commit + push\ninstalled_plugins.json 갱신\n/reload-plugins 실행"]
+
+    style C fill:#3d2700,stroke:#f5a623
+    style E fill:#0e3d30,stroke:#4df0aa
+        </div>
+      </div>
+      <p class="diagram-label">버전 범프 시 4개 파일 동시 동기화 필수 — marketplace.json 누락 시 /plugin 목록에 구버전 표시</p>
+    </div>
+  </section>
+
+  <!-- WORKFLOW -->
+  <section id="workflow">
+    <div class="section-title">Init / Apply 워크플로우</div>
+    <p class="section-sub">신규 설치(init)와 기존 프로젝트 적용(apply)의 시퀀스 비교</p>
+    <div class="diagram-wrap">
+      <div class="mermaid">
+      sequenceDiagram
+    actor User
+    participant CLI as harness-team.mjs
+    participant Cmd as init / apply
+    participant H as harness.mjs
+    participant FS as FileSystem
+
+    rect rgb(26, 32, 53)
+        Note over User,FS: /harness-init (신규 프로젝트)
+        User->>CLI: /harness-init
+        CLI->>Cmd: init.run(cwd, flags)
+        Cmd->>H: detectStack(cwd)
+        H-->>Cmd: stack, language, packageManager
+        Cmd->>User: 백업 폴더명 확인 (prompt)
+        User-->>Cmd: "harness-backup"
+        Cmd->>FS: mkdir(backupDir)
+        Cmd->>H: planChanges(ctx)
+        H->>H: render(AGENTS/CLAUDE/GEMINI.md.hbs)
+        H-->>Cmd: changes[]
+        Cmd->>User: diff 미리보기 + 승인
+        User-->>Cmd: 확인
+        Cmd->>H: applyChanges(changes)
+        H->>FS: AGENTS.md (core) 기록
+        H->>FS: CLAUDE.md / GEMINI.md (@AGENTS.md import) 기록
+        Cmd->>H: copyStaticAssets
+        H->>FS: hooks · rules · skills · docs 복사
+        H->>FS: .claude/rules → .cursor/rules 미러링
+        Cmd->>FS: clone.sh · symlink.sh · delete.sh 기록
+        Cmd-->>User: ✅ 완료
+    end
+
+    rect rgb(26, 40, 30)
+        Note over User,FS: /harness-apply (기존 프로젝트)
+        User->>CLI: /harness-apply
+        CLI->>Cmd: apply.run(cwd, flags)
+        Cmd->>FS: readFile(CLAUDE.md)
+        FS-->>Cmd: existingContent
+        Cmd->>H: mergeMarkdown(existing, template)
+        Note over H: 마커 외부 사용자 콘텐츠 보존
+        H-->>Cmd: mergedContent
+        Cmd->>H: deepMergeJson(settings.json)
+        Cmd->>H: deepMergeJson(opencode.json)
+        Cmd->>User: diff 미리보기 + 승인
+        User-->>Cmd: 확인
+        Cmd->>FS: writeFile(CLAUDE.md)
+        Cmd-->>User: ✅ 완료
+    end
+      </div>
+    </div>
+    <p class="diagram-label">init vs apply 시퀀스 — init은 전체 scaffold, apply는 기존 파일 보존 병합</p>
+  </section>
+
+  <!-- TASK -->
+  <section id="task">
+    <div class="section-title">Task 라이프사이클</div>
+    <p class="section-sub">사용자별 flat path 구조, prefix 기반 파일명, post-commit 자동화</p>
+    <div class="diagram-wrap">
+      <div class="mermaid">
+      stateDiagram-v2
+    [*] --> Created : harness-team task &lt;name&gt;
+
+    state Created {
+        direction LR
+        [*] --> spec : &lt;name&gt;-spec.md 생성
+        spec --> plan : &lt;name&gt;-plan.md 생성
+        plan --> handoff : &lt;name&gt;-handoff.md 생성
+        handoff --> artifact : &lt;name&gt;-artifact.md 생성
+        artifact --> context : &lt;name&gt;-context.md 생성
+        context --> meta_json : &lt;name&gt;-meta.json 생성
+        meta_json --> active_json : .harness/active.json 갱신
+    }
+
+    Created --> Active : 자동 활성화
+
+    state Active {
+        direction LR
+        [*] --> work : 개발 진행
+        work --> commit : git commit
+        commit --> hook : post-commit hook
+        hook --> work : handoff 자동 갱신
+        work --> switch : harness-team task &lt;other&gt;
+        switch --> work : 다른 task 활성화
+    }
+
+    Active --> AskDone : plan 완료 감지\n또는 완료 발화\n또는 harness-team done
+    AskDone --> Active : 아직 진행 중
+    AskDone --> Done : 완료 처리
+
+    state Done {
+        direction LR
+        [*] --> guards : 가드 6종 + 선언 유효성 통과
+        guards --> handoff_final : handoff.md 완료 append
+        handoff_final --> meta_done : &lt;name&gt;-meta.json status=done
+        meta_done --> clear : active.json → null
+    }
+
+    Done --> [*]
+      </div>
+    </div>
+    <p class="diagram-label">Task 상태 다이어그램 — create → active(commit loop) → AskUserQuestion → done</p>
+
+    <p style="margin-top:1.5rem">task 파일 계약과 Context Card 규약은 scaffold 되는 <code>AGENTS.md</code>의 <strong>작업 프로토콜</strong>에서 확인합니다.</p>
+
+    <div style="margin-top:1.5rem">
+      <div class="diagram-wrap">
+        <div class="mermaid">
+        graph LR
+    CMD["harness-team task auth-redesign"] --> ACTIVE[".harness/active.json\n{user, task, path, switchedAt}"]
+    CMD --> DIR["docs/chad/auth-redesign/"]
+    DIR --> SP["auth-redesign-spec.md"]
+    DIR --> PL["auth-redesign-plan.md"]
+    DIR --> HO["auth-redesign-handoff.md\n← post-commit 자동 갱신"]
+    DIR --> AR["auth-redesign-artifact.md\n← done/retro append"]
+    DIR --> CX["auth-redesign-context.md\n비-SSOT working set"]
+    DIR --> MT["auth-redesign-meta.json\n기계 상태 (0.16.0)"]
+    MT -.-> SUMCMD["harness-team summary --write\ntask 디렉터리 스캔 · 기본 브랜치 전용"]
+    SUMCMD --> IDX["docs/chad/chad-task.md\n생성물 — task/done은 쓰지 않음"]
+    SUMCMD --> SUM["docs/task_summary.md\n생성물 — task/done은 쓰지 않음"]
+
+    style CMD fill:#2a1f5c,stroke:#7c6af5
+    style ACTIVE fill:#1e3a5f,stroke:#50c8f5
+    style HO fill:#0e3d30,stroke:#4df0aa
+    style MT fill:#3d2700,stroke:#f5a623
+    style SUMCMD fill:#2a1f5c,stroke:#7c6af5
+        </div>
+      </div>
+      <p class="diagram-label">태스크 디렉토리 — <code>docs/&lt;user&gt;/&lt;name&gt;/</code> flat path, prefix 파일명</p>
+    </div>
+  </section>
+
+  <!-- CORE / SSOT -->
+  <section id="symlink">
+    <div class="section-title">공유 코어 아키텍처 (AGENTS.md SSOT)</div>
+    <p class="section-sub">AGENTS.md 코어 실파일 하나를 모든 에이전트가 공유 — alias symlink 폐기, 코어 복제 0</p>
+    <div class="diagram-wrap">
+      <div class="mermaid">
+      graph TB
+    subgraph PROJECT["📁 my-project/"]
+        CORE["📄 AGENTS.md\n공유 코어 실파일 (오픈 표준 SSOT)\nprotocol · roles · principles · stack"]
+        CLA["📄 CLAUDE.md (thin)\n@AGENTS.md + workflow"]
+        GEM["📄 GEMINI.md (thin)\n@AGENTS.md + reviewer"]
+        CLA -. "@AGENTS.md import" .-> CORE
+        GEM -. "@AGENTS.md import" .-> CORE
+
+        subgraph RULES_SRC[".claude/rules/"]
+            R1["navigation.md"]
+            R2["state-management.md"]
+            R3["styling.md"]
+            R4["testing.md"]
+        end
+
+        subgraph CURSOR_RULES[".cursor/rules/"]
+            C1["navigation.mdc"]
+            C2["state-management.mdc"]
+            C3["styling.mdc"]
+            C4["testing.mdc"]
+        end
+    end
+
+    R1 -. "mirror" .-> C1
+    R2 -. "mirror" .-> C2
+    R3 -. "mirror" .-> C3
+    R4 -. "mirror" .-> C4
+
+    CLA -->|"@import"| CLAUDE_A["Claude Code (drive)"]
+    GEM -->|"@import"| GEMINI_A["Gemini CLI (review)"]
+    CORE -->|네이티브| CODEX_A["Codex (review)"]
+    CORE -->|네이티브| OPENCODE_A["OpenCode (drive)"]
+    CORE -->|네이티브| CURSOR_A["Cursor"]
+    CURSOR_RULES --> CURSOR_A
+
+    style CORE fill:#0e3d30,stroke:#4df0aa
+    style CLA fill:#1e3a5f,stroke:#50c8f5
+    style GEM fill:#1e3a5f,stroke:#50c8f5
+    style PROJECT fill:#1a1d27,stroke:#2e3350
+    style RULES_SRC fill:#1e3a5f,stroke:#50c8f5
+    style CURSOR_RULES fill:#0e3d30,stroke:#4df0aa
+      </div>
+    </div>
+    <p class="diagram-label">공유 코어 — AGENTS.md 수정 하나가 @import(Claude·Gemini)와 네이티브(Codex·OpenCode·Cursor)로 전파</p>
+  </section>
+
+  <!-- BACKUP -->
+  <section id="backup">
+    <div class="section-title">Backup 디렉토리 구조</div>
+    <p class="section-sub"><code>resolveBackupDir</code> 우선순위 플로우 및 clone/symlink 흐름</p>
+    <div class="diagram-wrap">
+      <div class="mermaid">
+      flowchart TD
+    S([resolveBackupDir 호출]) --> F1{"--backup-dir\n플래그?"}
+    F1 -- Yes --> R1[/"CLI 플래그 경로"/]
+    F1 -- No --> F2{".harness/backup.json\n존재?"}
+    F2 -- Yes --> F2a{"dir 필드\n있음?"}
+    F2a -- Yes --> R2[/"backup.json dir 경로"/]
+    F2a -- No --> F2b{"parent + name\n있음?"}
+    F2b -- Yes --> R3[/"path.join(parent, name)"/]
+    F2b -- No --> F3
+    F2 -- No --> F3{"기존 symlink\n역추적?"}
+    F3 -- Yes --> R4[/"symlink target 경로"/]
+    F3 -- No --> F4{"../harness-backup/\nprojectName/?"}
+    F4 -- Yes --> R5[/"자동 탐지 경로"/]
+    F4 -- No --> R6[/"null 반환"/]
+
+    style R1 fill:#0e3d30,stroke:#4df0aa
+    style R2 fill:#0e3d30,stroke:#4df0aa
+    style R3 fill:#0e3d30,stroke:#4df0aa
+    style R4 fill:#0e3d30,stroke:#4df0aa
+    style R5 fill:#0e3d30,stroke:#4df0aa
+    style R6 fill:#3d1a1a,stroke:#f05050
+      </div>
+    </div>
+    <p class="diagram-label">resolveBackupDir 4단계 우선순위 — CLI 플래그 → config 파일 → symlink 역추적 → 자동 탐지</p>
+
+    <div style="margin-top:1.5rem">
+      <div class="diagram-wrap">
+        <div class="mermaid">
+        graph LR
+    subgraph W["~/work/"]
+        subgraph P["my-project/  (프로젝트)"]
+            CM["CLAUDE.md"]
+            CL[".claude/"]
+            HA[".harness/\nbackup.json"]
+            SCR["clone.sh\nsymlink.sh\ndelete.sh"]
+        end
+        subgraph B["harness-backup/my-project/  (백업)"]
+            B_CM["CLAUDE.md"]
+            B_CL[".claude/"]
+            B_DOCS["docs/"]
+            B_SCR["clone.sh\nsymlink.sh\ndelete.sh"]
+        end
+    end
+
+    SCR -. "clone.sh\nnewer-wins rsync" .-> B_CM & B_CL & B_DOCS
+    B_SCR -. "symlink.sh\nbackup→project" .-> CM
+
+    style P fill:#1a2035,stroke:#2e3350
+    style B fill:#231a10,stroke:#2e3350
+    style W fill:#1a1d27,stroke:#2e3350
+        </div>
+      </div>
+      <p class="diagram-label">백업 디렉토리 위치 및 clone/symlink 방향</p>
+    </div>
+  </section>
+
+  <!-- TEMPLATE -->
+  <section id="template">
+    <div class="section-title">AGENTS.md 코어 + thin 템플릿 구조</div>
+    <p class="section-sub">3개 템플릿(<code>AGENTS.md.hbs</code> 코어 · <code>CLAUDE.md.hbs</code>/<code>GEMINI.md.hbs</code> thin)을 <code>{{var}}</code> 치환 + 마커 머지로 렌더 — 섹션별 소속 파일은 아래 참조</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>섹션</th><th>파일</th><th>마커</th><th>내용</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>principles</strong></td>
+            <td><span class="tag tag-green" style="font-size:0.72rem;padding:2px 8px;">AGENTS.md</span></td>
+            <td><code>harness:section="principles"</code></td>
+            <td>단순함 우선, 게으름 금지, 최소 영향 — 3대 핵심 원칙</td>
+          </tr>
+          <tr>
+            <td><strong>stack</strong></td>
+            <td><span class="tag tag-green" style="font-size:0.72rem;padding:2px 8px;">AGENTS.md</span></td>
+            <td><code>harness:section="stack"</code></td>
+            <td>스택 자동감지 결과 — 런타임, 패키지 매니저, 빌드/테스트/린트/타입체크 커맨드</td>
+          </tr>
+          <tr>
+            <td><strong>roles</strong></td>
+            <td><span class="tag tag-green" style="font-size:0.72rem;padding:2px 8px;">AGENTS.md</span></td>
+            <td><code>harness:section="roles"</code></td>
+            <td>역할 매트릭스 (D2: Claude·OpenCode drive / Codex·Gemini review), 리뷰 프로토콜</td>
+          </tr>
+          <tr>
+            <td><strong>protocol</strong></td>
+            <td><span class="tag tag-green" style="font-size:0.72rem;padding:2px 8px;">AGENTS.md</span></td>
+            <td><code>harness:section="protocol"</code></td>
+            <td>태스크 단위 관리, 세션 시작/종료 체크리스트, 코드 리뷰 기준, 컨텍스트 파일 맵</td>
+          </tr>
+          <tr>
+            <td><strong>workflow</strong></td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">CLAUDE.md</span></td>
+            <td><code>harness:section="workflow"</code></td>
+            <td>플랜 모드, 서브에이전트 전략, Ambiguity·복잡도 게이트, 완료 전 검증 — Claude driver 전용</td>
+          </tr>
+          <tr>
+            <td><strong>reviewer</strong></td>
+            <td><span class="tag tag-purple" style="font-size:0.72rem;padding:2px 8px;">GEMINI.md</span></td>
+            <td><code>harness:section="reviewer"</code></td>
+            <td>독립 리뷰어(read-only) 운영 지침 — 호출·기준·결과 기록 규약</td>
+          </tr>
+          <tr>
+            <td><strong>(import)</strong></td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">CLAUDE/GEMINI</span></td>
+            <td><code>@AGENTS.md</code></td>
+            <td>thin 파일 최상단 — 코어를 import (Claude·Gemini). doctor가 정확 문자열 검증</td>
+          </tr>
+          <tr>
+            <td><strong>user</strong></td>
+            <td>각 파일</td>
+            <td><code>harness:user:begin/end</code></td>
+            <td>팀별 규칙, 프로젝트 특이사항 — <code>apply</code> 시에도 절대 덮어쓰지 않음</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:1.5rem" class="card">
+      <h3>병합 마커 포맷</h3>
+      <pre style="margin-top:0.75rem;font-family:'SF Mono','Fira Code',monospace;font-size:0.85rem;color:#e2e6f0;line-height:1.8;"><span style="color:#7a82a0">&lt;!-- harness:section="workflow" begin --&gt;</span>
+<span style="color:#50c8f5">... harness가 apply 시 템플릿으로 자동 갱신하는 콘텐츠 ...</span>
+<span style="color:#7a82a0">&lt;!-- harness:section="workflow" end --&gt;</span>
+
+<span style="color:#7a82a0">&lt;!-- harness:user:begin --&gt;</span>
+<span style="color:#4df0aa">... 사용자 커스텀 콘텐츠 — 절대 덮어쓰지 않음 ...</span>
+<span style="color:#7a82a0">&lt;!-- harness:user:end --&gt;</span></pre>
+    </div>
+  </section>
+
+  <hr>
+
+  <!-- FILES -->
+  <section id="files">
+    <div class="section-title">파일 구조</div>
+    <p class="section-sub">경로·유형·역할은 현재 소스 트리에서 생성됩니다.</p>
+    <div class="table-wrap">
+      <table data-generated="source-tree">
+        <thead><tr><th>경로</th><th>유형</th><th>역할</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>.claude-plugin/marketplace.json</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Manifest</span></td>
+            <td>Claude Code 플러그인 등록 정보</td>
+          </tr>
+          <tr>
+            <td><code>.claude-plugin/plugin.json</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Manifest</span></td>
+            <td>Claude Code 플러그인 등록 정보</td>
+          </tr>
+          <tr>
+            <td><code>.codex-plugin/plugin.json</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Manifest</span></td>
+            <td>Codex 플러그인 등록 정보</td>
+          </tr>
+          <tr>
+            <td><code>bin/harness-team.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>CLI 진입점과 command router</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-adversarial-review.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>설계 결정과 가정에 반박을 시도하는 적대적 read-only 외부 리뷰 — 절차·엔진 표는 harness-review와 동일, 리뷰 프롬프트만 교체</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-apply.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>기존 프로젝트에 팀 하네스를 비파괴적으로 적용 (dry-run 후 병합)</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-clone.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>project → backup dir 동기화 (merge, newer-wins)</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-comptest.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>React/React Native 컴포넌트·화면·UI 플로우에 Testing Trophy 통합 층 테스트를 작성한다 (스택 감지 → 사용자 관점 검증 강제 → 커버리지 → 검증)</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-contrarian.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>활성 task의 spec.md / plan.md의 모든 가정에 의문을 제기한다 — 엔진 인수를 주면 외부 read-only 검증자가 반론(D6)</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-delete.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>project에서 harness symlink 제거</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-diagram.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>활성 task의 spec/plan 다이어그램을 하네스 규약(경로·자립형 inline SVG·artifact 기록)대로 생성하거나 갱신</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-doctor.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>하네스 무결성 점검 (파일, hooks, CLI PATH)</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-init.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>현재 프로젝트에 팀 하네스를 신규 scaffold합니다 (Claude 메인 + Codex/Gemini/Cursor/OpenCode)</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-interview.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>활성 task의 spec.md를 선행 채점 후 소크라테스식 질문으로 검증해 숨겨진 가정을 드러낸다</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-inttest.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>API 핸들러·DB 접근·캐시·아웃바운드 HTTP 등 프로세스 경계 코드에 Khorikov Part III 통합 테스트를 작성한다 (스택 감지 → managed/unmanaged 구분 강제 → 커버리지 → 검증)</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-migrate.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>구버전 구조를 최신으로 마이그레이션 — backup dir 스크립트 → project root, task 구조(pre-0.6→0.6, 0.6→0.7 artifact.md 분리)</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-release.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>4개 매니페스트(package.json/.claude-plugin/plugin.json/.claude-plugin/marketplace.json/.codex-plugin/plugin.json) 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화. 휴먼 에러(manifest 누락·버전 불일치) 차단.</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-retro.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>현재(또는 지정) task의 artifact.md에 학습/교정 내용을 append. CLAUDE.md 자기개선 루프 정책 실행.</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-review.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>엔진 중립 read-only 외부 리뷰(codex·claude·gemini·custom)를 로컬 git 상태에 실행하고 결과를 활성 task의 artifact ## Reviews에 기록</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-ship.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>PR/MR 직전 spec·plan·artifact를 최종 갱신하고 다이어그램(옵트인)까지 정리한 뒤 준비 완료 상태를 보고</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-sim.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>설치된 하네스와 에이전트 워크플로우 스킬이 진짜 작동하는지 실제 claude -p 세션으로 검증 (L5 agent-in-the-loop) + 날짜 리포트 (harness-sim 스킬 위임)</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-simplifier.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>활성 task의 plan.md에서 제거 가능한 단계와 추상화를 찾아낸다 — 엔진 인수를 주면 외부 read-only 검증자가 채점(D6)</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-spec.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>활성 task의 spec.md 초안을 Confluence·Figma·인터뷰 3소스에서 생성한다 (writer — 검증은 /harness-interview)</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-symlink.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>backup dir → project symlink 생성/교체</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-sync.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>symlink 재생성 + .cursor/rules ←→ .claude/rules 동기화</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-task.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>task 관리 (task/list/done/handoff) — docs/&lt;user&gt;/&lt;name&gt;/ 구조</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-unittest.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>JS/TS/React/RN 프로젝트에 Khorikov 원칙 기반 단위테스트를 작성한다 (스택 자동 감지 → GWT 강제 → 커버리지 → 검증)</td>
+          </tr>
+          <tr>
+            <td><code>commands/harness-upgrade.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>구버전 구조(실제 파일)를 신버전(symlink)으로 원스텝 마이그레이션</td>
+          </tr>
+          <tr>
+            <td><code>docs/diagrams/harness-overview/architecture.mmd</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Mermaid</span></td>
+            <td>harness overview 아키텍처 다이어그램 원본</td>
+          </tr>
+          <tr>
+            <td><code>docs/diagrams/harness-overview/backup-layout.mmd</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Mermaid</span></td>
+            <td>harness overview 아키텍처 다이어그램 원본</td>
+          </tr>
+          <tr>
+            <td><code>docs/diagrams/harness-overview/backup-resolution.mmd</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Mermaid</span></td>
+            <td>harness overview 아키텍처 다이어그램 원본</td>
+          </tr>
+          <tr>
+            <td><code>docs/diagrams/harness-overview/core.mmd</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Mermaid</span></td>
+            <td>harness overview 아키텍처 다이어그램 원본</td>
+          </tr>
+          <tr>
+            <td><code>docs/diagrams/harness-overview/hooks.mmd</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Mermaid</span></td>
+            <td>harness overview 아키텍처 다이어그램 원본</td>
+          </tr>
+          <tr>
+            <td><code>docs/diagrams/harness-overview/plugin.mmd</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Mermaid</span></td>
+            <td>harness overview 아키텍처 다이어그램 원본</td>
+          </tr>
+          <tr>
+            <td><code>docs/diagrams/harness-overview/rules.mmd</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Mermaid</span></td>
+            <td>harness overview 아키텍처 다이어그램 원본</td>
+          </tr>
+          <tr>
+            <td><code>docs/diagrams/harness-overview/skills.mmd</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Mermaid</span></td>
+            <td>harness overview 아키텍처 다이어그램 원본</td>
+          </tr>
+          <tr>
+            <td><code>docs/diagrams/harness-overview/subagents.mmd</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Mermaid</span></td>
+            <td>harness overview 아키텍처 다이어그램 원본</td>
+          </tr>
+          <tr>
+            <td><code>docs/diagrams/harness-overview/task-files.mmd</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Mermaid</span></td>
+            <td>harness overview 아키텍처 다이어그램 원본</td>
+          </tr>
+          <tr>
+            <td><code>docs/diagrams/harness-overview/task-lifecycle.mmd</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Mermaid</span></td>
+            <td>harness overview 아키텍처 다이어그램 원본</td>
+          </tr>
+          <tr>
+            <td><code>docs/diagrams/harness-overview/workflow.mmd</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Mermaid</span></td>
+            <td>harness overview 아키텍처 다이어그램 원본</td>
+          </tr>
+          <tr>
+            <td><code>docs/harness-overview.template.html</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Document</span></td>
+            <td>harness overview HTML 템플릿</td>
+          </tr>
+          <tr>
+            <td><code>scripts/changelog-section.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>프로젝트 소스 파일</td>
+          </tr>
+          <tr>
+            <td><code>scripts/generate-harness-overview.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>다이어그램과 인벤토리를 한 번에 생성</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-adversarial-review/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-apply/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-apply/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-clone/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-clone/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-codex-sim/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-codex-sim/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-comptest/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-contrarian/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-contrarian/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-delete/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-delete/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-diagram/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-doctor/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-doctor/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-init/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-init/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-interview/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-interview/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-inttest/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-migrate/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-migrate/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-release/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-release/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-retro/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-retro/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-review/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-ship/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-sim/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-sim/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-simplifier/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-simplifier/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-spec/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-spec/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-symlink/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-symlink/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-sync/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-sync/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-task/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-task/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-team/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-team/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-unittest/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-unittest/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-upgrade/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-upgrade/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>src/backup-dir.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>CLI가 공유하는 핵심 모듈</td>
+          </tr>
+          <tr>
+            <td><code>src/cli-args.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>CLI가 공유하는 핵심 모듈</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/apply.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team apply CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/backup.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team backup CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/boundary.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team boundary CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/clone.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team clone CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/context.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team context CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/delete.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team delete CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/doctor.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team doctor CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/init.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team init CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/migrate.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team migrate CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/release.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team release CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/session-context.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team session-context CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/summary.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team summary CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/symlink.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team symlink CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/sync.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team sync CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/task.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team task CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/upgrade.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team upgrade CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/detect-stack.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>CLI가 공유하는 핵심 모듈</td>
+          </tr>
+          <tr>
+            <td><code>src/fsx.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>CLI가 공유하는 핵심 모듈</td>
+          </tr>
+          <tr>
+            <td><code>src/git-hooks.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>CLI가 공유하는 핵심 모듈</td>
+          </tr>
+          <tr>
+            <td><code>src/harness.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>CLI가 공유하는 핵심 모듈</td>
+          </tr>
+          <tr>
+            <td><code>src/member.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>CLI가 공유하는 핵심 모듈</td>
+          </tr>
+          <tr>
+            <td><code>src/merge.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>CLI가 공유하는 핵심 모듈</td>
+          </tr>
+          <tr>
+            <td><code>src/observation.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>CLI가 공유하는 핵심 모듈</td>
+          </tr>
+          <tr>
+            <td><code>src/prompt.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>CLI가 공유하는 핵심 모듈</td>
+          </tr>
+          <tr>
+            <td><code>src/render.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>CLI가 공유하는 핵심 모듈</td>
+          </tr>
+          <tr>
+            <td><code>src/user-config.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>CLI가 공유하는 핵심 모듈</td>
+          </tr>
+          <tr>
+            <td><code>templates/.claude/hooks/auto-format.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트에 설치되는 Claude Code hook</td>
+          </tr>
+          <tr>
+            <td><code>templates/.claude/hooks/block-dangerous-git.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트에 설치되는 Claude Code hook</td>
+          </tr>
+          <tr>
+            <td><code>templates/.claude/hooks/boundary-checkpoint.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트에 설치되는 Claude Code hook</td>
+          </tr>
+          <tr>
+            <td><code>templates/.claude/hooks/observe-tools.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트에 설치되는 Claude Code hook</td>
+          </tr>
+          <tr>
+            <td><code>templates/.claude/hooks/pre-commit-check.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트에 설치되는 Claude Code hook</td>
+          </tr>
+          <tr>
+            <td><code>templates/.claude/hooks/protect-files.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트에 설치되는 Claude Code hook</td>
+          </tr>
+          <tr>
+            <td><code>templates/.claude/rules/navigation.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트에 설치되는 코딩 규칙</td>
+          </tr>
+          <tr>
+            <td><code>templates/.claude/rules/state-management.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트에 설치되는 코딩 규칙</td>
+          </tr>
+          <tr>
+            <td><code>templates/.claude/rules/styling.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트에 설치되는 코딩 규칙</td>
+          </tr>
+          <tr>
+            <td><code>templates/.claude/rules/testing.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트에 설치되는 코딩 규칙</td>
+          </tr>
+          <tr>
+            <td><code>templates/.claude/settings.json</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트 scaffold 템플릿</td>
+          </tr>
+          <tr>
+            <td><code>templates/.claude/skills/fix-bug/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>소비자 프로젝트에 설치되는 workflow skill</td>
+          </tr>
+          <tr>
+            <td><code>templates/.claude/skills/new-feature/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>소비자 프로젝트에 설치되는 workflow skill</td>
+          </tr>
+          <tr>
+            <td><code>templates/.claude/skills/verify/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>소비자 프로젝트에 설치되는 workflow skill</td>
+          </tr>
+          <tr>
+            <td><code>templates/.codex/hooks.json</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트 scaffold 템플릿</td>
+          </tr>
+          <tr>
+            <td><code>templates/.opencode/opencode.json</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트 scaffold 템플릿</td>
+          </tr>
+          <tr>
+            <td><code>templates/AGENTS.md.hbs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트 scaffold 템플릿</td>
+          </tr>
+          <tr>
+            <td><code>templates/CLAUDE.md.hbs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트 scaffold 템플릿</td>
+          </tr>
+          <tr>
+            <td><code>templates/GEMINI.md.hbs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트 scaffold 템플릿</td>
+          </tr>
+          <tr>
+            <td><code>templates/clone.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트 scaffold 템플릿</td>
+          </tr>
+          <tr>
+            <td><code>templates/delete.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트 scaffold 템플릿</td>
+          </tr>
+          <tr>
+            <td><code>templates/docs/.gitkeep</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트 scaffold 템플릿</td>
+          </tr>
+          <tr>
+            <td><code>templates/docs/README.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트 scaffold 템플릿</td>
+          </tr>
+          <tr>
+            <td><code>templates/docs/decisions.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트 scaffold 템플릿</td>
+          </tr>
+          <tr>
+            <td><code>templates/symlink.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
+            <td>소비자 프로젝트 scaffold 템플릿</td>
+          </tr>
+          <tr>
+            <td><code>tests/agent-files.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/agentloop-spec-signals.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/backup-dir.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/boundary.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/changelog-section.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/cli-args.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/cli-drift.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/codex-agentloop-parser.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/codex-hooks.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/context.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/cursor-rules-mirror.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/delete.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/doctor.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/documentation-inventory-pointers.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/done-guard.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/e2e/apply-smoke.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/e2e/boundary-checkpoint.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/e2e/lifecycle.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/e2e/sandbox.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/e2e/ssot-consistency.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/README.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/jq-fallback-v1/auto-format.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/jq-fallback-v1/block-dangerous-git.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/jq-fallback-v1/pre-commit-check.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/jq-fallback-v1/protect-files.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/older/block-dangerous-git.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/older/pre-commit-check.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/pre-jq-fallback/auto-format.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/pre-jq-fallback/block-dangerous-git.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/pre-jq-fallback/pre-commit-check.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/pre-jq-fallback/protect-files.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/harness-overview-generation.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/harness-settings.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/hooks-jq-fallback.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/manifest-sync.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/migrate-agents.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/migrate-hooks.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/migrate-session-hook.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/migrate.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/observability-hook.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/observation-commands.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/observation.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/perf/boundary-checkpoint.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/prerequisites-doc.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/release.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/retro.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/session-context.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/ship-command.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/sim/agentloop.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/sim/codex-agentloop.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/sim/rules.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/sim/skilltest.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/stack-conditional-rules.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/summary.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/symlink.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/task-templates.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/user-handoff.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/what-changes-latest-version.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</main>
+
+<footer>harness-aijient-team-plugin v0.23.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      fontSize: '18px',
+      background: '#1a1d27',
+      primaryColor: '#2a1f5c',
+      primaryTextColor: '#e2e6f0',
+      primaryBorderColor: '#7c6af5',
+      lineColor: '#7a82a0',
+      secondaryColor: '#1e3a5f',
+      tertiaryColor: '#0e3d30',
+      edgeLabelBackground: '#1a1d27',
+      clusterBkg: '#22263a',
+      clusterBorder: '#2e3350',
+      titleColor: '#e2e6f0',
+      nodeTextColor: '#e2e6f0',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+    },
+    flowchart: { curve: 'basis', htmlLabels: true, nodeSpacing: 60, rankSpacing: 80 },
+    sequence: { actorMargin: 80, messageMargin: 40, boxTextMargin: 12, noteMargin: 12 },
+    stateDiagram: { dividerMargin: 20 },
+  });
+</script>
+
+</body>
+</html>
