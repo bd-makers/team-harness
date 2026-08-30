@@ -87,6 +87,9 @@ export function taskSpecTemplate(name) {
 -->
 
 ## 참고
+*코드 기반 참조가 산문 설계보다 정밀하다 — 테스트 스위트·Boundary contract(JSON Schema)·
+다이어그램·기존 코드 경로를 우선 링크하고, 산문은 코드로 표현 못 하는 의도만 담는다.*
+
 -
 `;
 }
