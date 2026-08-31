@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+doctor-eager-global
 
-## Last Completed Task (2026-08-29)
-`docs-refresh-0210` — done
+## Last Commit (2026-08-31)
+c936f94 fix(doctor): eager 계층 측정에 전역·.claude/CLAUDE.md 합산
 
 ## Full Context
-→ docs/chad/docs-refresh-0210/docs-refresh-0210-handoff.md
+→ docs/chad/doctor-eager-global/doctor-eager-global-handoff.md
