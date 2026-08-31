@@ -22,7 +22,7 @@
 - [x] 전체 테스트 통과 확인 (`npm test`) — 481 tests / 480 pass / 0 fail / 1 skip(CI 전용 jq) + perf 통과
 - [x] `/harness-review` 외부 리뷰 + `artifact.md` `## Reviews` 기록 — claude 엔진(codex capacity 실패·gemini 미설치로 폴백), Approve with nits, 7건 전건 판별
 - [x] PR 생성 + CI green 확인 — PR #68, `test (24)` success
-- [ ] PR 리뷰 덱(`/mr-change-diagram`) — `docs/diagrams/pr/`에 커밋
+- [x] PR 리뷰 덱(`/mr-change-diagram`) — `docs/diagrams/pr/pr-68-doctor-eager-global.html`, 슬라이드 3장, 커밋 `d29f9eb`
 
 > task 다이어그램은 **미옵트인**이다. AO 워커는 사람에게 물을 수 없어 옵트인 질문을 수행할 수
 > 없었고, 하네스 계약상 **plan에 체크박스가 없는 것이 곧 "옵트인 안 함" 상태**다. (PR 리뷰 덱은
