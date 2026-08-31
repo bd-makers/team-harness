@@ -19,7 +19,7 @@
 - [x] 기존 테스트 머신 의존성 제거 — 단위 6곳 + runDoctor 배선에 격리된 `CLAUDE_CONFIG_DIR` 주입
 - [x] `MAINTAINING.md` eager 계층 단락 현행화
 - [x] `CHANGELOG.md` `## [Unreleased]` 기록 (릴리스 범프 없음)
-- [ ] 전체 테스트 통과 확인 (`npm test`)
+- [x] 전체 테스트 통과 확인 (`npm test`) — 481 tests / 480 pass / 0 fail / 1 skip(CI 전용 jq) + perf 통과
 - [ ] `/harness-review` 외부 리뷰 + `artifact.md` `## Reviews` 기록
 - [ ] PR 생성 + CI green 확인
 - [ ] PR 리뷰 덱(`/mr-change-diagram`) — `docs/diagrams/pr/`에 커밋
