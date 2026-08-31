@@ -19,3 +19,15 @@ CHANGELOG.md                                       |  22 +++
 docs/chad/chad-handoff.md                                   |  9 ++++-----
  .../chad/doctor-eager-global/doctor-eager-global-handoff.md | 13 +++++++++++++
  2 files changed, 17 insertions(+), 5 deletions(-)
+
+## 2026-08-31T09:36:48.417Z — efae5d3 fix(doctor): 리뷰 발견 반영 — 테스트 격리 확장·처방 순서·누수 정리
+CHANGELOG.md                                       |  6 +++
+ docs/chad/chad-handoff.md                          |  2 +-
+ .../doctor-eager-global-artifact.md                | 48 ++++++++++++++++++++++
+ .../doctor-eager-global-handoff.md                 |  5 +++
+ src/commands/doctor.mjs                            | 17 ++++----
+ tests/doctor.test.mjs                              | 42 ++++++++++++++++---
+ tests/e2e/sandbox.mjs                              |  4 ++
+ tests/sim/agentloop.mjs                            |  5 ++-
+ tests/sim/codex-agentloop.mjs                      |  5 ++-
+ 9 files changed, 119 insertions(+), 15 deletions(-)
