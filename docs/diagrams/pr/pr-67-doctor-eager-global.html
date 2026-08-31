@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PR 67 · doctor eager 계층 측정 · 화면 / 제품 / 소스</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --paper: #f5f5f5;
+      --ink: #2d3142;
+      --muted: #4f5d75;
+      --soft: #7a8399;
+      --rule: rgba(45,49,66,0.12);
+      --accent: #eb6c36;
+      --bad: #9b2226;
+      --good: #2d6a4f;
+      --sans: 'Geist', 'Apple SD Gothic Neo', system-ui, sans-serif;
+      --serif: 'Instrument Serif', serif;
+      --mono: 'Geist Mono', ui-monospace, monospace;
+    }
+    html, body { height: 100%; background: var(--paper); color: var(--ink); font-family: var(--sans); }
+    .deck { height: 100vh; overflow-y: auto; scroll-snap-type: y mandatory; }
+    .slide {
+      min-height: 100vh;
+      scroll-snap-align: start;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 2.5rem 3.25rem;
+    }
+    .frame { max-width: 1180px; width: 100%; }
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+    h1 {
+      font-family: var(--serif);
+      font-size: clamp(1.3rem, 1.8vw + 0.7rem, 1.8rem);
+      font-weight: 400;
+      line-height: 1.25;
+      margin-bottom: 0.65rem;
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 1.4rem;
+      list-style: none;
+      margin-bottom: 0.85rem;
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+    .meta span {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--soft);
+      margin-right: 0.4rem;
+    }
+    .meta code { font-family: var(--mono); font-size: 0.72rem; color: var(--ink); }
+    .cols { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 0.7rem; margin-bottom: 0.85rem; }
+    .box {
+      background: #fff;
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      padding: 0.75rem 0.9rem;
+    }
+    .box h2 {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+    .box.problem h2 { color: var(--bad); }
+    .box.fix h2 { color: var(--good); }
+    .box p { font-size: 0.84rem; line-height: 1.45; color: var(--muted); }
+    .box code { font-family: var(--mono); font-size: 0.76rem; color: var(--ink); }
+    .diags { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .diag h3 {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+    .diag.before h3 { color: var(--bad); }
+    .diag.after h3 { color: var(--good); }
+    .diag svg { width: 100%; display: block; }
+    .foot {
+      margin-top: 0.7rem;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+    .foot .src { color: var(--soft); }
+    .dots {
+      position: fixed; right: 1.1rem; top: 50%; transform: translateY(-50%);
+      display: flex; flex-direction: column; gap: 12px; z-index: 4;
+    }
+    .dots a {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(45,49,66,0.18); overflow: hidden; text-indent: -99px;
+    }
+    .dots a:hover { background: var(--accent); }
+    .hint {
+      position: fixed; bottom: 1rem; left: 0; right: 0; text-align: center;
+      font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--soft);
+    }
+    @media (max-width: 900px) {
+      .cols, .diags { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="dots" aria-label="슬라이드">
+    <a href="#s1">1</a>
+    <a href="#s2">2</a>
+    <a href="#s3">3</a>
+  </nav>
+  <p class="hint">Scroll · 01–03</p>
+
+  <div class="deck">
+
+    <section class="slide" id="s1">
+      <div class="frame">
+        <p class="eyebrow">01 / 03 · 재지 않은 것은 보이지 않는다</p>
+        <h1>점검이 초록불을 켜는데, 실제로 매 세션 로드되는 지시는 이미 예산을 넘어 있었다.</h1>
+        <ul class="meta">
+          <li><span>화면</span>harness-team doctor 리포트 · <code>eager tier size</code> 항목</li>
+          <li><span>제품</span>하네스 무결성 점검 · eager 계층 예산</li>
+          <li><span>소스</span><code>src/commands/doctor.mjs</code> · <code>checkEagerTierSize</code></li>
+        </ul>
+        <div class="cols">
+          <article class="box problem">
+            <h2>이전 문제</h2>
+            <p>예산은 <code>24 KiB</code>인데 세는 대상이 프로젝트 <code>AGENTS.md</code>·<code>CLAUDE.md</code> 둘뿐이었다. 같은 계층인 프로젝트 <code>.claude/CLAUDE.md</code>와 사용자 전역 <code>CLAUDE.md</code>가 빠져, 합계가 예산을 넘어도 점검은 통과라고 답했다.</p>
+          </article>
+          <article class="box fix">
+            <h2>개선</h2>
+            <p>매 세션 무조건 로드되는 네 곳을 모두 더해 <strong>합계 하나</strong>로 판정한다. 파일마다 임계를 두면 "각 파일은 통과, 합계는 초과"가 그대로 빠져나가기 때문이다. 여전히 경고이지 실패가 아니다.</p>
+          </article>
+        </div>
+        <div class="diags">
+          <div class="diag before">
+            <h3>변경 전</h3>
+            <svg viewBox="0 0 480 268" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <marker id="b1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+                <marker id="b1x" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#9b2226"/></marker>
+              </defs>
+              <rect width="100%" height="100%" fill="#f5f5f5"/>
+              <text x="20" y="20" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.12em">ACTIVITY · 재는 것과 로드되는 것</text>
+              <line x1="140" y1="62" x2="176" y2="62" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#b1)"/>
+              <line x1="304" y1="62" x2="336" y2="62" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#b1)"/>
+              <line x1="392" y1="84" x2="392" y2="128" stroke="#9b2226" stroke-width="1.4" marker-end="url(#b1x)"/>
+              <line x1="392" y1="176" x2="392" y2="204" stroke="#9b2226" stroke-width="1.4" marker-end="url(#b1x)"/>
+              <rect x="20" y="40" width="120" height="44" rx="20" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)"/>
+              <text x="80" y="60" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">세션 시작</text>
+              <text x="80" y="74" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">4곳 로드 · 24,702 B</text>
+              <rect x="176" y="40" width="128" height="44" rx="6" fill="rgba(155,34,38,0.08)" stroke="#9b2226"/>
+              <text x="240" y="60" fill="#9b2226" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">2곳만 측정</text>
+              <text x="240" y="74" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">15,968 B</text>
+              <polygon points="392,40 448,62 392,84 336,62" fill="#fff" stroke="#2d3142"/>
+              <text x="392" y="66" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">24 KiB 초과?</text>
+              <rect x="364" y="104" width="26" height="12" rx="2" fill="#f5f5f5"/>
+              <text x="377" y="114" fill="#9b2226" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">NO</text>
+              <rect x="316" y="132" width="152" height="44" rx="6" fill="rgba(155,34,38,0.08)" stroke="#9b2226"/>
+              <text x="392" y="151" fill="#9b2226" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">통과라고 보고</text>
+              <text x="392" y="166" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">빠진 8,734 B는 안 보임</text>
+              <rect x="316" y="204" width="152" height="44" rx="20" fill="rgba(155,34,38,0.08)" stroke="#9b2226"/>
+              <text x="392" y="222" fill="#9b2226" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">사각지대 통과</text>
+              <text x="392" y="238" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">넘었는데 초록불</text>
+            </svg>
+          </div>
+          <div class="diag after">
+            <h3>변경 후</h3>
+            <svg viewBox="0 0 480 268" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <marker id="a1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+                <marker id="a1c" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+              </defs>
+              <rect width="100%" height="100%" fill="#f5f5f5"/>
+              <text x="20" y="20" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.12em">ACTIVITY · 재는 것 = 로드되는 것</text>
+              <line x1="140" y1="62" x2="176" y2="62" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#a1)"/>
+              <line x1="304" y1="62" x2="336" y2="62" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#a1)"/>
+              <line x1="392" y1="84" x2="392" y2="128" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#a1c)"/>
+              <line x1="392" y1="176" x2="392" y2="204" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#a1c)"/>
+              <rect x="20" y="40" width="120" height="44" rx="20" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)"/>
+              <text x="80" y="60" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">세션 시작</text>
+              <text x="80" y="74" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">4곳 로드 · 24,702 B</text>
+              <rect x="176" y="40" width="128" height="44" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36"/>
+              <text x="240" y="60" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">4곳 합산</text>
+              <text x="240" y="74" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">전역 · .claude 포함</text>
+              <polygon points="392,40 448,62 392,84 336,62" fill="#fff" stroke="#2d3142"/>
+              <text x="392" y="66" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">24 KiB 초과?</text>
+              <rect x="362" y="104" width="30" height="12" rx="2" fill="#f5f5f5"/>
+              <text x="377" y="114" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">YES</text>
+              <rect x="316" y="132" width="152" height="44" rx="6" fill="#fff" stroke="#2d3142"/>
+              <text x="392" y="151" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">경고 + 파일별 내역</text>
+              <text x="392" y="166" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">실패 아님 · 판단은 사람</text>
+              <rect x="316" y="204" width="152" height="44" rx="20" fill="rgba(235,108,54,0.08)" stroke="#eb6c36"/>
+              <text x="392" y="222" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">실제 로드량 보고</text>
+              <text x="392" y="238" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">부재·읽기 불가는 무음</text>
+            </svg>
+          </div>
+        </div>
+        <p class="foot">유저 체감 · 점검이 통과라고 말하면 실제로도 예산 안이다 — 초록불의 뜻이 복구됐다<br><span class="src">src/commands/doctor.mjs · checkEagerTierSize · EAGER_TIER_MAX_BYTES</span></p>
+      </div>
+    </section>
+
+    <section class="slide" id="s2">
+      <div class="frame">
+        <p class="eyebrow">02 / 03 · 경고가 가리키는 방향</p>
+        <h1>경고를 읽은 사람이 정작 용량을 차지하지 않은 파일부터 뒤지게 되어 있었다.</h1>
+        <ul class="meta">
+          <li><span>화면</span>doctor 경고 문구 · <code>⚠️ eager 계층 …</code></li>
+          <li><span>제품</span>점검 결과 처방 · 소유 경계 안내</li>
+          <li><span>소스</span><code>src/commands/doctor.mjs</code> · 경고 메시지 조립부</li>
+        </ul>
+        <div class="cols">
+          <article class="box problem">
+            <h2>이전 문제</h2>
+            <p>합계 숫자 하나와 고정된 처방 한 줄만 나왔다. 용량의 대부분이 사용자 전역 파일에서 왔더라도 <strong>"프로젝트 파일의 절차를 옮기라"</strong>는 안내가 먼저 나와, 초과를 만들지 않은 파일로 사람을 보냈다.</p>
+          </article>
+          <article class="box fix">
+            <h2>개선</h2>
+            <p>파일별 바이트와 전역 파일의 <strong>해결된 실제 경로</strong>를 함께 보여 주고, 처방은 <strong>많이 차지한 계층부터</strong> 말한다. 전역 파일에는 지시 대신 사실만 알린다 — 하네스는 그 파일을 읽기만 한다.</p>
+          </article>
+        </div>
+        <div class="diags">
+          <div class="diag before">
+            <h3>변경 전</h3>
+            <svg viewBox="0 0 480 268" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <marker id="b2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+                <marker id="b2x" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#9b2226"/></marker>
+              </defs>
+              <rect width="100%" height="100%" fill="#f5f5f5"/>
+              <text x="20" y="20" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.12em">ACTIVITY · 경고를 읽은 뒤의 행동</text>
+              <line x1="240" y1="72" x2="240" y2="100" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#b2)"/>
+              <line x1="240" y1="148" x2="240" y2="176" stroke="#9b2226" stroke-width="1.4" marker-end="url(#b2x)"/>
+              <line x1="240" y1="224" x2="240" y2="236" stroke="#9b2226" stroke-width="1.4" marker-end="url(#b2x)"/>
+              <rect x="150" y="34" width="180" height="38" rx="19" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)"/>
+              <text x="240" y="58" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">예산 초과 경고</text>
+              <rect x="140" y="100" width="200" height="48" rx="6" fill="#fff" stroke="#2d3142"/>
+              <text x="240" y="120" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">합계 숫자 하나</text>
+              <text x="240" y="136" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">어느 파일이 큰지 없음</text>
+              <rect x="130" y="176" width="220" height="48" rx="6" fill="rgba(155,34,38,0.08)" stroke="#9b2226"/>
+              <text x="240" y="196" fill="#9b2226" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">프로젝트 처방 고정</text>
+              <text x="240" y="212" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">기여 10 B여도 먼저 나온다</text>
+              <rect x="130" y="236" width="220" height="30" rx="15" fill="rgba(155,34,38,0.08)" stroke="#9b2226"/>
+              <text x="240" y="255" fill="#9b2226" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">엉뚱한 파일을 뒤진다</text>
+            </svg>
+          </div>
+          <div class="diag after">
+            <h3>변경 후</h3>
+            <svg viewBox="0 0 480 268" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <marker id="a2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+                <marker id="a2c" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+              </defs>
+              <rect width="100%" height="100%" fill="#f5f5f5"/>
+              <text x="20" y="20" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.12em">ACTIVITY · 주범부터 말하는 경고</text>
+              <line x1="240" y1="66" x2="240" y2="86" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#a2)"/>
+              <line x1="240" y1="134" x2="240" y2="152" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#a2)"/>
+              <line x1="170" y1="186" x2="118" y2="204" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#a2)"/>
+              <line x1="310" y1="186" x2="362" y2="204" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#a2c)"/>
+              <rect x="150" y="28" width="180" height="38" rx="19" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)"/>
+              <text x="240" y="52" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">예산 초과 경고</text>
+              <rect x="130" y="86" width="220" height="48" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36"/>
+              <text x="240" y="106" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">파일별 내역 · 실제 경로</text>
+              <text x="240" y="122" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">전역은 해결된 절대경로로</text>
+              <polygon points="240,152 310,186 240,220 170,186" fill="#fff" stroke="#2d3142"/>
+              <text x="240" y="190" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">더 큰 쪽?</text>
+              <rect x="16" y="204" width="188" height="46" rx="6" fill="#fff" stroke="#2d3142"/>
+              <text x="110" y="223" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">프로젝트: 절차 이관</text>
+              <text x="110" y="238" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">lazy 정본으로</text>
+              <rect x="276" y="204" width="188" height="46" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36"/>
+              <text x="370" y="223" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">전역: 사실만 보고</text>
+              <text x="370" y="238" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">하네스는 읽기만</text>
+            </svg>
+          </div>
+        </div>
+        <p class="foot">유저 체감 · 경고를 읽자마자 어느 파일을 열어야 하는지 알고, 손대면 안 되는 파일은 손대라고 하지 않는다<br><span class="src">src/commands/doctor.mjs · 기여 바이트 내림차순 처방 · globalClaudeMdPath</span></p>
+      </div>
+    </section>
+
+    <section class="slide" id="s3">
+      <div class="frame">
+        <p class="eyebrow">03 / 03 · 리뷰가 막아 세운 것</p>
+        <h1>측정 범위를 넓히자 테스트가 개발자 개인 홈 파일에 물려, CI만 초록이고 각자 노트북에서만 빨개질 뻔했다.</h1>
+        <ul class="meta">
+          <li><span>화면</span>로컬 <code>npm test</code> 출력 · PR 체크</li>
+          <li><span>제품</span>테스트 신뢰성 · 샌드박스 격리</li>
+          <li><span>소스</span><code>tests/e2e/sandbox.mjs</code> · <code>tests/sim/agentloop.mjs</code> · <code>codex-agentloop.mjs</code></li>
+        </ul>
+        <div class="cols">
+          <article class="box problem">
+            <h2>이전 문제</h2>
+            <p>e2e·시뮬레이션 스위트가 <code>doctor</code>의 성공을 단언하는데, 그 판정이 이제 <strong>저장소 밖 파일</strong>의 크기에 좌우됐다. 20 KiB짜리 개인 전역 파일로 재현하니 3건 전부 실패했고, CI에는 그 파일이 없어 초록으로 남았다.</p>
+          </article>
+          <article class="box fix">
+            <h2>개선</h2>
+            <p>샌드박스가 만드는 환경에 설정 홈 경로를 <strong>고정</strong>한다. 이미 같은 이유로 플러그인 경로를 고정하던 선례를 따랐고, 같은 재현 절차가 이제 3건 모두 통과한다.</p>
+          </article>
+        </div>
+        <div class="diags">
+          <div class="diag before">
+            <h3>변경 전</h3>
+            <svg viewBox="0 0 480 268" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <marker id="b3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+                <marker id="b3x" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#9b2226"/></marker>
+              </defs>
+              <rect width="100%" height="100%" fill="#f5f5f5"/>
+              <text x="20" y="18" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.12em">SEQUENCE · 테스트가 읽는 곳</text>
+              <line x1="76" y1="60" x2="76" y2="246" stroke="rgba(45,49,66,0.22)" stroke-width="1" stroke-dasharray="3 3"/>
+              <line x1="240" y1="60" x2="240" y2="246" stroke="rgba(45,49,66,0.22)" stroke-width="1" stroke-dasharray="3 3"/>
+              <line x1="404" y1="60" x2="404" y2="246" stroke="rgba(155,34,38,0.35)" stroke-width="1" stroke-dasharray="3 3"/>
+              <rect x="16" y="30" width="120" height="30" rx="5" fill="#fff" stroke="#2d3142"/>
+              <text x="76" y="50" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">테스트 스위트</text>
+              <rect x="180" y="30" width="120" height="30" rx="5" fill="#fff" stroke="#2d3142"/>
+              <text x="240" y="50" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">doctor 실행</text>
+              <rect x="344" y="30" width="120" height="30" rx="5" fill="rgba(155,34,38,0.08)" stroke="#9b2226"/>
+              <text x="404" y="50" fill="#9b2226" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">개발자 개인 홈</text>
+              <line x1="76" y1="88" x2="234" y2="88" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#b3)"/>
+              <rect x="108" y="76" width="96" height="11" rx="2" fill="#f5f5f5"/>
+              <text x="156" y="85" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">점검 실행</text>
+              <line x1="240" y1="126" x2="398" y2="126" stroke="#9b2226" stroke-width="1.4" marker-end="url(#b3x)"/>
+              <rect x="264" y="114" width="122" height="11" rx="2" fill="#f5f5f5"/>
+              <text x="325" y="123" fill="#9b2226" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">개인 전역 파일 읽기</text>
+              <line x1="404" y1="164" x2="246" y2="164" stroke="#9b2226" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#b3x)"/>
+              <rect x="296" y="152" width="66" height="11" rx="2" fill="#f5f5f5"/>
+              <text x="329" y="161" fill="#9b2226" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">20 KiB</text>
+              <line x1="240" y1="202" x2="82" y2="202" stroke="#9b2226" stroke-width="1.4" marker-end="url(#b3x)"/>
+              <rect x="120" y="190" width="86" height="11" rx="2" fill="#f5f5f5"/>
+              <text x="163" y="199" fill="#9b2226" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">경고 → 실패</text>
+              <rect x="60" y="222" width="360" height="30" rx="5" fill="rgba(155,34,38,0.08)" stroke="#9b2226"/>
+              <text x="240" y="241" fill="#9b2226" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">CI는 초록 · 내 노트북만 빨강</text>
+            </svg>
+          </div>
+          <div class="diag after">
+            <h3>변경 후</h3>
+            <svg viewBox="0 0 480 268" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <marker id="a3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+                <marker id="a3c" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+              </defs>
+              <rect width="100%" height="100%" fill="#f5f5f5"/>
+              <text x="20" y="18" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.12em">SEQUENCE · 고정된 설정 홈</text>
+              <line x1="76" y1="60" x2="76" y2="246" stroke="rgba(45,49,66,0.22)" stroke-width="1" stroke-dasharray="3 3"/>
+              <line x1="240" y1="60" x2="240" y2="246" stroke="rgba(45,49,66,0.22)" stroke-width="1" stroke-dasharray="3 3"/>
+              <line x1="404" y1="60" x2="404" y2="246" stroke="rgba(235,108,54,0.4)" stroke-width="1" stroke-dasharray="3 3"/>
+              <rect x="16" y="30" width="120" height="30" rx="5" fill="#fff" stroke="#2d3142"/>
+              <text x="76" y="50" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">테스트 스위트</text>
+              <rect x="180" y="30" width="120" height="30" rx="5" fill="#fff" stroke="#2d3142"/>
+              <text x="240" y="50" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">doctor 실행</text>
+              <rect x="344" y="30" width="120" height="30" rx="5" fill="rgba(235,108,54,0.08)" stroke="#eb6c36"/>
+              <text x="404" y="50" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">샌드박스 설정 홈</text>
+              <line x1="76" y1="88" x2="234" y2="88" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#a3c)"/>
+              <rect x="96" y="76" width="122" height="11" rx="2" fill="#f5f5f5"/>
+              <text x="157" y="85" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">설정 홈 고정해 실행</text>
+              <line x1="240" y1="126" x2="398" y2="126" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#a3)"/>
+              <rect x="278" y="114" width="94" height="11" rx="2" fill="#f5f5f5"/>
+              <text x="325" y="123" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">격리 경로 읽기</text>
+              <line x1="404" y1="164" x2="246" y2="164" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#a3)"/>
+              <rect x="290" y="152" width="80" height="11" rx="2" fill="#f5f5f5"/>
+              <text x="330" y="161" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">없음 · 0 B</text>
+              <line x1="240" y1="202" x2="82" y2="202" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#a3)"/>
+              <rect x="126" y="190" width="74" height="11" rx="2" fill="#f5f5f5"/>
+              <text x="163" y="199" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">통과</text>
+              <rect x="60" y="222" width="360" height="30" rx="5" fill="rgba(235,108,54,0.08)" stroke="#eb6c36"/>
+              <text x="240" y="241" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">어느 머신에서도 같은 결과</text>
+            </svg>
+          </div>
+        </div>
+        <p class="foot">유저 체감 · 팀원 아무나 받아서 돌려도 테스트 결과가 같다 — 내 홈 디렉터리가 남의 빌드를 흔들지 않는다<br><span class="src">tests/e2e/sandbox.mjs · tests/sim/agentloop.mjs · tests/sim/codex-agentloop.mjs · CLAUDE_CONFIG_DIR 핀</span></p>
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>
