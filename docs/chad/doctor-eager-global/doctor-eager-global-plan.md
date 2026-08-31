@@ -14,14 +14,15 @@
 - [x] `checkEagerTierSize(targetDir, env)` 합산 + 파일별 내역 + 해결된 경로 + 처방 분리
 - [x] 중복 계산 방지(config home 자체를 target으로 doctor 실행하는 경우)
 - [x] 테스트: 전역 유/무/읽기 불가(디렉터리), 임계 위/아래, 사각지대(부분 통과·합계 초과),
-      `.claude/CLAUDE.md` 합산, 비절대 config home, 경로 해석
+      `.claude/CLAUDE.md` 합산, 비절대 config home, 경로 해석,
+      **config home == target 중복 계산 방지**(dedupe 제거 시 실패함을 확인)
 - [x] 기존 테스트 머신 의존성 제거 — 단위 6곳 + runDoctor 배선에 격리된 `CLAUDE_CONFIG_DIR` 주입
 - [x] `MAINTAINING.md` eager 계층 단락 현행화
 - [x] `CHANGELOG.md` `## [Unreleased]` 기록 (릴리스 범프 없음)
-- [x] 전체 테스트 통과 확인 (`npm test`)
-- [x] `/harness-review` 외부 리뷰 + `artifact.md` `## Reviews` 기록
-- [x] PR 생성 + CI green 확인
-- [x] PR 리뷰 덱(`/mr-change-diagram`) — `docs/diagrams/pr/`에 커밋
+- [ ] 전체 테스트 통과 확인 (`npm test`)
+- [ ] `/harness-review` 외부 리뷰 + `artifact.md` `## Reviews` 기록
+- [ ] PR 생성 + CI green 확인
+- [ ] PR 리뷰 덱(`/mr-change-diagram`) — `docs/diagrams/pr/`에 커밋
 
 > task 다이어그램은 **미옵트인**이다. AO 워커는 사람에게 물을 수 없어 옵트인 질문을 수행할 수
 > 없었고, 하네스 계약상 **plan에 체크박스가 없는 것이 곧 "옵트인 안 함" 상태**다. (PR 리뷰 덱은

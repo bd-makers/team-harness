@@ -427,6 +427,19 @@ test('checkEagerTierSize: 프로젝트 .claude/CLAUDE.md도 eager 계층으로 �
   } finally { await rm(dir, { recursive: true, force: true }); await rm(home, { recursive: true, force: true }); }
 });
 
+test('checkEagerTierSize: config home이 target 자체여도 같은 파일을 두 번 세지 않는다', async () => {
+  // Running doctor on the config home itself makes join(target,"CLAUDE.md") and
+  // join(configHome,"CLAUDE.md") the same file. Sized just over half the budget so the
+  // two outcomes are opposite: deduped stays under and returns null, double-counted
+  // would cross the budget and warn. Without the dedupe this assertion fails.
+  const half = 13 * 1024;
+  const dir = await makeEagerTierFixture({ claude: 'x'.repeat(half) });
+  try {
+    assert.ok(half * 2 > EAGER_TIER_MAX_BYTES, '이 fixture가 두 결과를 갈라야 검사가 성립한다');
+    assert.equal(await checkEagerTierSize(dir, withConfigHome(dir)), null);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('checkEagerTierSize: config home이 절대경로가 아니면 전역 항목을 건너뛴다', async () => {
   // Claude Code itself refuses a non-absolute configuration home. Resolving it relative to
   // cwd could re-read the project's own CLAUDE.md and double-count it.
