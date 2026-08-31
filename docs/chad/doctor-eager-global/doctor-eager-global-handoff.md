@@ -31,3 +31,14 @@ CHANGELOG.md                                       |  6 +++
  tests/sim/agentloop.mjs                            |  5 ++-
  tests/sim/codex-agentloop.mjs                      |  5 ++-
  9 files changed, 119 insertions(+), 15 deletions(-)
+
+## 2026-08-31T09:36:54.816Z — ec6df60 chore(handoff): post-commit hook 자동 갱신
+docs/chad/chad-handoff.md                                    |  2 +-
+ docs/chad/doctor-eager-global/doctor-eager-global-handoff.md | 12 ++++++++++++
+ 2 files changed, 13 insertions(+), 1 deletion(-)
+
+## 2026-08-31T09:44:25.404Z — 6da0ea9 docs(diagram): PR 67 변경 슬라이드 추가
+docs/chad/chad-handoff.md                          |   2 +-
+ .../doctor-eager-global-handoff.md                 |   5 +
+ docs/diagrams/pr/pr-67-doctor-eager-global.html    | 395 +++++++++++++++++++++
+ 3 files changed, 401 insertions(+), 1 deletion(-)
