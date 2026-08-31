@@ -39,6 +39,12 @@ modified: 2026-08-29
   - 여전히 **warning이지 fail이 아닙니다** — 크기만 재고 자동 요약·삭제는 하지 않습니다(0.23.0 판단 유지).
   - `checkEagerTierSize(targetDir, env = process.env)`로 서명을 넓혀 테스트가 격리된 config home을
     주입합니다. 없으면 테스트가 **실행 머신의 진짜 `~/.claude/CLAUDE.md`** 를 읽어 머신마다 결과가 달라집니다.
+    e2e·sim 샌드박스 env 빌더(`tests/e2e/sandbox.mjs`, `tests/sim/agentloop.mjs`,
+    `tests/sim/codex-agentloop.mjs`)도 같은 이유로 `CLAUDE_CONFIG_DIR`를 핀합니다 — 기존
+    `CLAUDE_PLUGINS_ROOT` 핀과 같은 논리입니다. 핀이 없으면 `doctor status === 'success'` 단언이
+    레포 밖 파일에 물려, **CI는 green인데 로컬만 red**가 됩니다(외부 리뷰에서 발견·재현).
+  - 경고의 처방은 **기여 바이트가 큰 계층부터** 말합니다 — 프로젝트가 10 B, 전역이 24 KiB인
+    상황에서 "프로젝트 파일은…"으로 시작하면 초과를 만들지 않은 파일로 독자를 보냅니다.
 
 ### Changed
 - **`docs/harness-task-guide` 0.23.0 현행화 + 두 가이드 footer 기준 버전 상향.**

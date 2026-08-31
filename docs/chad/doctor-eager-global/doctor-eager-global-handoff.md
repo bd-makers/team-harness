@@ -14,3 +14,8 @@ CHANGELOG.md                                       |  22 +++
  src/commands/doctor.mjs                            |  87 ++++++++--
  tests/doctor.test.mjs                              | 166 ++++++++++++++++---
  10 files changed, 508 insertions(+), 37 deletions(-)
+
+## 2026-08-31T09:21:31.847Z — 002f213 chore(handoff): post-commit hook 자동 갱신
+docs/chad/chad-handoff.md                                   |  9 ++++-----
+ .../chad/doctor-eager-global/doctor-eager-global-handoff.md | 13 +++++++++++++
+ 2 files changed, 17 insertions(+), 5 deletions(-)

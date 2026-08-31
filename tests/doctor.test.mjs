@@ -297,7 +297,8 @@ test('checkBoundaryCheckpointHook: Edit PreToolUse 경계 훅 있음 → null', 
 // Every eager-tier test must pin CLAUDE_CONFIG_DIR at an isolated directory. Without it
 // the check reads the *running machine's* real ~/.claude/CLAUDE.md, which would make these
 // assertions depend on the maintainer's own global file — green here, red on a laptop with
-// a large one. `emptyConfigHome()` is the "no global file" case; pass bytes to add one.
+// a large one. `makeConfigHome()` with no argument is the "no global file" case;
+// pass bytes to add one.
 async function makeConfigHome(globalBytes) {
   const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-cfghome-'));
   if (globalBytes !== undefined) await writeFile(join(dir, 'CLAUDE.md'), globalBytes);
@@ -364,13 +365,18 @@ test('checkEagerTierSize: 프로젝트만으로는 통과하지만 전역을 더
   const half = Math.floor(EAGER_TIER_MAX_BYTES / 2) + 1;
   const dir = await makeEagerTierFixture({ agents: 'x'.repeat(half) });
   const home = await makeConfigHome('g'.repeat(half));
+  const emptyHome = await makeConfigHome();
   try {
-    assert.equal(await checkEagerTierSize(dir, { CLAUDE_CONFIG_DIR: await makeConfigHome() }), null,
+    assert.equal(await checkEagerTierSize(dir, withConfigHome(emptyHome)), null,
       '전역이 비면 프로젝트만으로는 예산 안이어야 한다 (전제 확인)');
     const w = await checkEagerTierSize(dir, withConfigHome(home));
     assert.ok(typeof w === 'string', '합계가 넘으면 경고해야 한다');
     assert.match(w, new RegExp((half * 2).toLocaleString('en-US') + ' B'), '합계를 보고해야 한다');
-  } finally { await rm(dir, { recursive: true, force: true }); await rm(home, { recursive: true, force: true }); }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+    await rm(home, { recursive: true, force: true });
+    await rm(emptyHome, { recursive: true, force: true });
+  }
 });
 
 test('checkEagerTierSize: 전역이 주범이면 해결된 실제 경로와 "읽기만 한다"는 사실을 알린다', async () => {
@@ -381,6 +387,27 @@ test('checkEagerTierSize: 전역이 주범이면 해결된 실제 경로와 "읽
     assert.ok(w.includes(join(home, 'CLAUDE.md')),
       '라벨이 아니라 해결된 실제 경로여야 사용자가 조치 대상을 찾는다');
     assert.match(w, /전역 파일은 프로젝트 밖\(사용자 소유\)이라 하네스가 읽기만 합니다/);
+  } finally { await rm(dir, { recursive: true, force: true }); await rm(home, { recursive: true, force: true }); }
+});
+
+test('checkEagerTierSize: 처방은 기여 바이트가 큰 계층부터 말한다', async () => {
+  // Leading with "프로젝트 파일은 …" when the project tier contributed 10 B sends the
+  // reader to the wrong file. The tier that caused the overage speaks first.
+  const dir = await makeEagerTierFixture({ agents: 'x'.repeat(10) });
+  const home = await makeConfigHome('g'.repeat(EAGER_TIER_MAX_BYTES));
+  try {
+    const w = await checkEagerTierSize(dir, withConfigHome(home));
+    assert.ok(w.indexOf('전역 파일은') < w.indexOf('프로젝트 파일은'),
+      '전역이 주범이면 전역 안내가 먼저 나와야 한다');
+  } finally { await rm(dir, { recursive: true, force: true }); await rm(home, { recursive: true, force: true }); }
+});
+
+test('checkEagerTierSize: 프로젝트가 주범이면 프로젝트 처방이 먼저 나온다', async () => {
+  const dir = await makeEagerTierFixture({ agents: 'x'.repeat(EAGER_TIER_MAX_BYTES) });
+  const home = await makeConfigHome('g'.repeat(10));
+  try {
+    const w = await checkEagerTierSize(dir, withConfigHome(home));
+    assert.ok(w.indexOf('프로젝트 파일은') < w.indexOf('전역 파일은'));
   } finally { await rm(dir, { recursive: true, force: true }); await rm(home, { recursive: true, force: true }); }
 });
 
@@ -687,12 +714,17 @@ test('runDoctor: 프로젝트는 예산 안이지만 전역을 더하면 초과 
   const dir = await healthyConsumerFixture();
   const half = Math.floor(EAGER_TIER_MAX_BYTES / 2) + 1;
   const home = await makeConfigHome('g'.repeat(half));
+  const emptyHome = await makeConfigHome();
   try {
     await writeFile(join(dir, 'AGENTS.md'), '# core\n<!-- harness:section="protocol" -->\n' + 'x'.repeat(half));
-    assert.equal(checkOf(await doctorJson(dir, doctorEnv(await makeConfigHome())), 'eager tier size'), undefined,
+    assert.equal(checkOf(await doctorJson(dir, doctorEnv(emptyHome)), 'eager tier size'), undefined,
       '전역이 비면 프로젝트만으로는 예산 안이어야 한다 (전제 확인)');
     const c = checkOf(await doctorJson(dir, doctorEnv(home)), 'eager tier size');
     assert.equal(c?.status, 'warning', '합계가 넘으면 경고해야 한다');
     assert.ok(c.detail.includes(join(home, 'CLAUDE.md')), '전역 파일의 해결된 경로를 알려야 한다');
-  } finally { await rm(dir, { recursive: true, force: true }); await rm(home, { recursive: true, force: true }); }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+    await rm(home, { recursive: true, force: true });
+    await rm(emptyHome, { recursive: true, force: true });
+  }
 });
