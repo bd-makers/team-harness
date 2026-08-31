@@ -42,3 +42,8 @@ docs/chad/chad-handoff.md                          |   2 +-
  .../doctor-eager-global-handoff.md                 |   5 +
  docs/diagrams/pr/pr-67-doctor-eager-global.html    | 395 +++++++++++++++++++++
  3 files changed, 401 insertions(+), 1 deletion(-)
+
+## 2026-08-31T09:44:32.282Z — 7e2367b chore(handoff): post-commit hook 자동 갱신
+docs/chad/chad-handoff.md                                    |  2 +-
+ docs/chad/doctor-eager-global/doctor-eager-global-handoff.md | 11 +++++++++++
+ 2 files changed, 12 insertions(+), 1 deletion(-)

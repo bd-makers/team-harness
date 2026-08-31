@@ -60,3 +60,10 @@
   config home은 Claude Code 자신이 거부한다"는 사실이 이중 계산 방지 설계로 직결됐다 —
   추측했다면 나오지 않았을 분기다.
 
+
+## PR
+
+- **PR #67** — `ao/harness-aijient-team-plugin-39/doctor-eager-global` → `main`
+- 리뷰 덱: `docs/diagrams/pr/pr-67-doctor-eager-global.html` (슬라이드 3장, 자립형 inline SVG)
+- task 다이어그램: **미옵트인** — AO 워커는 옵트인 질문을 수행할 수 없어 plan에 체크박스를
+  추가하지 않았다(체크박스 없음 = 옵트인 안 함 상태).
