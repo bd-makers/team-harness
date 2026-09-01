@@ -6,7 +6,7 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from 'node:fs
 import { tmpdir, homedir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, checkEagerTierSize, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
+import { checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
 import { POST_COMMIT_HOOK } from '../src/git-hooks.mjs';
 import { cloudSyncPathWarning } from '../src/harness.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
@@ -294,44 +294,189 @@ test('checkBoundaryCheckpointHook: Edit PreToolUse 경계 훅 있음 → null', 
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-async function makeEagerTierFixture({ agents, claude } = {}) {
-  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-eager-'));
-  if (agents !== undefined) await writeFile(join(dir, 'AGENTS.md'), agents);
-  if (claude !== undefined) await writeFile(join(dir, 'CLAUDE.md'), claude);
+// Every eager-tier test must pin CLAUDE_CONFIG_DIR at an isolated directory. Without it
+// the check reads the *running machine's* real ~/.claude/CLAUDE.md, which would make these
+// assertions depend on the maintainer's own global file — green here, red on a laptop with
+// a large one. `makeConfigHome()` with no argument is the "no global file" case;
+// pass bytes to add one.
+async function makeConfigHome(globalBytes) {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-cfghome-'));
+  if (globalBytes !== undefined) await writeFile(join(dir, 'CLAUDE.md'), globalBytes);
   return dir;
 }
 
-test('checkEagerTierSize: 둘 다 없음 → null (조용히 skip)', async () => {
+async function makeEagerTierFixture({ agents, claude, dotClaude } = {}) {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-eager-'));
+  if (agents !== undefined) await writeFile(join(dir, 'AGENTS.md'), agents);
+  if (claude !== undefined) await writeFile(join(dir, 'CLAUDE.md'), claude);
+  if (dotClaude !== undefined) {
+    await mkdir(join(dir, '.claude'), { recursive: true });
+    await writeFile(join(dir, '.claude/CLAUDE.md'), dotClaude);
+  }
+  return dir;
+}
+
+const withConfigHome = home => ({ CLAUDE_CONFIG_DIR: home });
+
+test('checkEagerTierSize: 프로젝트·전역 모두 없음 → null (조용히 skip)', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-eager-none-'));
+  const home = await makeConfigHome();
   try {
-    assert.equal(await checkEagerTierSize(dir), null);
-  } finally { await rm(dir, { recursive: true, force: true }); }
+    assert.equal(await checkEagerTierSize(dir, withConfigHome(home)), null);
+  } finally { await rm(dir, { recursive: true, force: true }); await rm(home, { recursive: true, force: true }); }
 });
 
 test('checkEagerTierSize: 합계가 24 KiB 이내 → null', async () => {
   const dir = await makeEagerTierFixture({ agents: 'x'.repeat(1000), claude: 'y'.repeat(1000) });
+  const home = await makeConfigHome('g'.repeat(1000));
   try {
-    assert.equal(await checkEagerTierSize(dir), null);
-  } finally { await rm(dir, { recursive: true, force: true }); }
+    assert.equal(await checkEagerTierSize(dir, withConfigHome(home)), null);
+  } finally { await rm(dir, { recursive: true, force: true }); await rm(home, { recursive: true, force: true }); }
 });
 
-test('checkEagerTierSize: 합계가 24 KiB 초과 → 측정치·예산을 담은 경고 문자열', async () => {
+test('checkEagerTierSize: 합계가 24 KiB 초과 → 측정치·예산·파일별 내역을 담은 경고', async () => {
   const dir = await makeEagerTierFixture({ agents: 'x'.repeat(EAGER_TIER_MAX_BYTES), claude: 'y'.repeat(1) });
+  const home = await makeConfigHome();
   try {
     const total = EAGER_TIER_MAX_BYTES + 1;
-    const w = await checkEagerTierSize(dir);
+    const w = await checkEagerTierSize(dir, withConfigHome(home));
     assert.ok(typeof w === 'string', 'returns a warning string');
-    assert.match(w, /^eager 계층\(AGENTS\.md\+CLAUDE\.md\)/);
+    assert.match(w, /^eager 계층 /);
     assert.match(w, new RegExp(`${total.toLocaleString('en-US')} B > ${EAGER_TIER_MAX_BYTES.toLocaleString('en-US')} B\\(24 KiB\\)`));
+    assert.match(w, new RegExp(`AGENTS\\.md ${EAGER_TIER_MAX_BYTES.toLocaleString('en-US')} B`), '파일별 내역이 있어야 한다');
+    assert.match(w, /CLAUDE\.md 1 B/);
     assert.match(w, /lazy 정본\(커맨드 문서·스킬\)/, '절차를 lazy 정본으로 옮기라는 안내가 있어야 한다');
-  } finally { await rm(dir, { recursive: true, force: true }); }
+  } finally { await rm(dir, { recursive: true, force: true }); await rm(home, { recursive: true, force: true }); }
 });
 
 test('checkEagerTierSize: 한쪽 파일만 존재해도 초과분은 합산한다 (누락 파일은 0바이트)', async () => {
   const dir = await makeEagerTierFixture({ agents: 'x'.repeat(EAGER_TIER_MAX_BYTES + 1) });
+  const home = await makeConfigHome();
   try {
-    assert.ok(typeof (await checkEagerTierSize(dir)) === 'string');
+    assert.ok(typeof (await checkEagerTierSize(dir, withConfigHome(home))) === 'string');
+  } finally { await rm(dir, { recursive: true, force: true }); await rm(home, { recursive: true, force: true }); }
+});
+
+// --- the blind spot this check exists to close ---
+
+test('checkEagerTierSize: 프로젝트만으로는 통과하지만 전역을 더하면 초과 → 경고 (사각지대)', async () => {
+  // Neither tier crosses 24 KiB on its own; only the sum does. A per-file budget would
+  // report green here — that is exactly the defect.
+  const half = Math.floor(EAGER_TIER_MAX_BYTES / 2) + 1;
+  const dir = await makeEagerTierFixture({ agents: 'x'.repeat(half) });
+  const home = await makeConfigHome('g'.repeat(half));
+  const emptyHome = await makeConfigHome();
+  try {
+    assert.equal(await checkEagerTierSize(dir, withConfigHome(emptyHome)), null,
+      '전역이 비면 프로젝트만으로는 예산 안이어야 한다 (전제 확인)');
+    const w = await checkEagerTierSize(dir, withConfigHome(home));
+    assert.ok(typeof w === 'string', '합계가 넘으면 경고해야 한다');
+    assert.match(w, new RegExp((half * 2).toLocaleString('en-US') + ' B'), '합계를 보고해야 한다');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+    await rm(home, { recursive: true, force: true });
+    await rm(emptyHome, { recursive: true, force: true });
+  }
+});
+
+test('checkEagerTierSize: 전역이 주범이면 해결된 실제 경로와 "읽기만 한다"는 사실을 알린다', async () => {
+  const dir = await makeEagerTierFixture({ agents: 'x'.repeat(10) });
+  const home = await makeConfigHome('g'.repeat(EAGER_TIER_MAX_BYTES));
+  try {
+    const w = await checkEagerTierSize(dir, withConfigHome(home));
+    assert.ok(w.includes(join(home, 'CLAUDE.md')),
+      '라벨이 아니라 해결된 실제 경로여야 사용자가 조치 대상을 찾는다');
+    assert.match(w, /전역 파일은 프로젝트 밖\(사용자 소유\)이라 하네스가 읽기만 합니다/);
+  } finally { await rm(dir, { recursive: true, force: true }); await rm(home, { recursive: true, force: true }); }
+});
+
+test('checkEagerTierSize: 처방은 기여 바이트가 큰 계층부터 말한다', async () => {
+  // Leading with "프로젝트 파일은 …" when the project tier contributed 10 B sends the
+  // reader to the wrong file. The tier that caused the overage speaks first.
+  const dir = await makeEagerTierFixture({ agents: 'x'.repeat(10) });
+  const home = await makeConfigHome('g'.repeat(EAGER_TIER_MAX_BYTES));
+  try {
+    const w = await checkEagerTierSize(dir, withConfigHome(home));
+    assert.ok(w.indexOf('전역 파일은') < w.indexOf('프로젝트 파일은'),
+      '전역이 주범이면 전역 안내가 먼저 나와야 한다');
+  } finally { await rm(dir, { recursive: true, force: true }); await rm(home, { recursive: true, force: true }); }
+});
+
+test('checkEagerTierSize: 프로젝트가 주범이면 프로젝트 처방이 먼저 나온다', async () => {
+  const dir = await makeEagerTierFixture({ agents: 'x'.repeat(EAGER_TIER_MAX_BYTES) });
+  const home = await makeConfigHome('g'.repeat(10));
+  try {
+    const w = await checkEagerTierSize(dir, withConfigHome(home));
+    assert.ok(w.indexOf('프로젝트 파일은') < w.indexOf('전역 파일은'));
+  } finally { await rm(dir, { recursive: true, force: true }); await rm(home, { recursive: true, force: true }); }
+});
+
+test('checkEagerTierSize: 전역 파일이 없으면 조용히 건너뛰고 프로젝트만 잰다', async () => {
+  const dir = await makeEagerTierFixture({ agents: 'x'.repeat(EAGER_TIER_MAX_BYTES + 1) });
+  const home = await makeConfigHome(); // config home exists, CLAUDE.md does not
+  try {
+    const w = await checkEagerTierSize(dir, withConfigHome(home));
+    assert.ok(!w.includes(home), '없는 전역 파일은 내역에 등장하지 않아야 한다');
+    assert.ok(!w.includes('전역 파일은 프로젝트 밖'), '전역 관련 안내도 붙지 않아야 한다');
+  } finally { await rm(dir, { recursive: true, force: true }); await rm(home, { recursive: true, force: true }); }
+});
+
+test('checkEagerTierSize: 전역 config home 자체가 없어도 기존 동작을 그대로 유지한다', async () => {
+  const dir = await makeEagerTierFixture({ agents: 'x'.repeat(EAGER_TIER_MAX_BYTES + 1) });
+  try {
+    const w = await checkEagerTierSize(dir, { CLAUDE_CONFIG_DIR: join(tmpdir(), 'harness-doctor-no-such-home-이건없음') });
+    assert.match(w, /^eager 계층 /, 'config home 부재는 경고가 아니라 무음 skip이다');
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkEagerTierSize: 전역 CLAUDE.md가 읽기 불가(디렉터리)여도 조용히 건너뛴다', async () => {
+  // A directory named CLAUDE.md makes readFile fail with EISDIR deterministically.
+  // chmod 000 would not: it is a no-op for root, and CI containers often run as root.
+  const dir = await makeEagerTierFixture({ agents: 'x'.repeat(EAGER_TIER_MAX_BYTES + 1) });
+  const home = await makeConfigHome();
+  await mkdir(join(home, 'CLAUDE.md'), { recursive: true });
+  try {
+    const w = await checkEagerTierSize(dir, withConfigHome(home));
+    assert.match(w, /^eager 계층 /, '읽기 불가는 검사를 깨뜨리지 않는다');
+    assert.ok(!w.includes(join(home, 'CLAUDE.md')), '읽지 못한 파일은 내역에서 빠진다');
+  } finally { await rm(dir, { recursive: true, force: true }); await rm(home, { recursive: true, force: true }); }
+});
+
+test('checkEagerTierSize: 프로젝트 .claude/CLAUDE.md도 eager 계층으로 합산한다', async () => {
+  // Project scope loads join(dir, ".claude", "CLAUDE.md") alongside join(dir, "CLAUDE.md").
+  const half = Math.floor(EAGER_TIER_MAX_BYTES / 2) + 1;
+  const dir = await makeEagerTierFixture({ agents: 'x'.repeat(half), dotClaude: 'z'.repeat(half) });
+  const home = await makeConfigHome();
+  try {
+    const w = await checkEagerTierSize(dir, withConfigHome(home));
+    assert.ok(typeof w === 'string', '.claude/CLAUDE.md를 더하면 예산을 넘는다');
+    assert.match(w, new RegExp(`\\.claude/CLAUDE\\.md ${half.toLocaleString('en-US')} B`));
+  } finally { await rm(dir, { recursive: true, force: true }); await rm(home, { recursive: true, force: true }); }
+});
+
+test('checkEagerTierSize: config home이 target 자체여도 같은 파일을 두 번 세지 않는다', async () => {
+  // Running doctor on the config home itself makes join(target,"CLAUDE.md") and
+  // join(configHome,"CLAUDE.md") the same file. Sized just over half the budget so the
+  // two outcomes are opposite: deduped stays under and returns null, double-counted
+  // would cross the budget and warn. Without the dedupe this assertion fails.
+  const half = 13 * 1024;
+  const dir = await makeEagerTierFixture({ claude: 'x'.repeat(half) });
+  try {
+    assert.ok(half * 2 > EAGER_TIER_MAX_BYTES, '이 fixture가 두 결과를 갈라야 검사가 성립한다');
+    assert.equal(await checkEagerTierSize(dir, withConfigHome(dir)), null);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkEagerTierSize: config home이 절대경로가 아니면 전역 항목을 건너뛴다', async () => {
+  // Claude Code itself refuses a non-absolute configuration home. Resolving it relative to
+  // cwd could re-read the project's own CLAUDE.md and double-count it.
+  assert.equal(globalClaudeMdPath({ CLAUDE_CONFIG_DIR: 'relative/dir' }), null);
+  assert.equal(globalClaudeMdPath({ CLAUDE_CONFIG_DIR: '' }), null);
+});
+
+test('globalClaudeMdPath: CLAUDE_CONFIG_DIR 미설정이면 ~/.claude/CLAUDE.md로 해석한다', async () => {
+  assert.equal(globalClaudeMdPath({}), join(homedir(), '.claude', 'CLAUDE.md'));
+  assert.equal(globalClaudeMdPath({ CLAUDE_CONFIG_DIR: join(tmpdir(), 'cfg') }), join(tmpdir(), 'cfg', 'CLAUDE.md'));
 });
 
 test('detectLegacyStructure: AGENTS.md 실파일 + .cursorrules 없으면 null(신구조)', async () => {
@@ -543,28 +688,56 @@ test('runDoctor: docs/decisions.md 없는 프로젝트 → decision log 경고 �
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-// --- eager tier size (AGENTS.md+CLAUDE.md) — runDoctor wiring ---
+// --- eager tier size — runDoctor wiring ---
+//
+// These spawn the real CLI, so they must pin CLAUDE_CONFIG_DIR in the subprocess env too:
+// otherwise doctor reads the running machine's own ~/.claude/CLAUDE.md and the assertions
+// swing with whatever the maintainer happens to have in it.
+const doctorEnv = home => ({ ...process.env, CLAUDE_CONFIG_DIR: home });
 
-test('runDoctor: eager 계층(AGENTS.md+CLAUDE.md)이 24 KiB 초과 → 경고, doctor는 여전히 성공한다', async () => {
+test('runDoctor: eager 계층이 24 KiB 초과 → 경고, doctor는 여전히 성공한다', async () => {
   const dir = await healthyConsumerFixture();
+  const home = await makeConfigHome();
   try {
     // healthyConsumerFixture's AGENTS.md already carries the required CHECKS marker —
     // keep it and pad past the budget so this only exercises the size check.
     await writeFile(join(dir, 'AGENTS.md'), '# core\n<!-- harness:section="protocol" -->\n' + 'x'.repeat(EAGER_TIER_MAX_BYTES));
-    const env = await doctorJson(dir);
+    const env = await doctorJson(dir, doctorEnv(home));
     const c = checkOf(env, 'eager tier size');
     assert.equal(c?.status, 'warning');
-    assert.match(c.detail, /eager 계층\(AGENTS\.md\+CLAUDE\.md\)/);
+    assert.match(c.detail, /^eager 계층 /);
+    assert.match(c.detail, /내역: AGENTS\.md /, '파일별 내역이 배선을 통과해야 한다');
     const failCount = (env.checks || []).filter(x => x.status === 'fail').length;
     assert.equal(failCount, 0, '이 경고만으로 다른 필수 점검이 fail 처리되면 안 된다');
     assert.notEqual(env.status, 'error', '경고는 fail이 아니므로 doctor의 exit code(0)에 영향을 주면 안 된다');
-  } finally { await rm(dir, { recursive: true, force: true }); }
+  } finally { await rm(dir, { recursive: true, force: true }); await rm(home, { recursive: true, force: true }); }
 });
 
 test('runDoctor: eager 계층이 24 KiB 이내면 경고를 노출하지 않는다', async () => {
   const dir = await healthyConsumerFixture();
+  const home = await makeConfigHome();
   try {
-    const env = await doctorJson(dir);
+    const env = await doctorJson(dir, doctorEnv(home));
     assert.equal(checkOf(env, 'eager tier size'), undefined);
-  } finally { await rm(dir, { recursive: true, force: true }); }
+  } finally { await rm(dir, { recursive: true, force: true }); await rm(home, { recursive: true, force: true }); }
+});
+
+test('runDoctor: 프로젝트는 예산 안이지만 전역을 더하면 초과 → 경고가 배선을 통과한다', async () => {
+  // The reported defect, end to end: doctor used to report green here.
+  const dir = await healthyConsumerFixture();
+  const half = Math.floor(EAGER_TIER_MAX_BYTES / 2) + 1;
+  const home = await makeConfigHome('g'.repeat(half));
+  const emptyHome = await makeConfigHome();
+  try {
+    await writeFile(join(dir, 'AGENTS.md'), '# core\n<!-- harness:section="protocol" -->\n' + 'x'.repeat(half));
+    assert.equal(checkOf(await doctorJson(dir, doctorEnv(emptyHome)), 'eager tier size'), undefined,
+      '전역이 비면 프로젝트만으로는 예산 안이어야 한다 (전제 확인)');
+    const c = checkOf(await doctorJson(dir, doctorEnv(home)), 'eager tier size');
+    assert.equal(c?.status, 'warning', '합계가 넘으면 경고해야 한다');
+    assert.ok(c.detail.includes(join(home, 'CLAUDE.md')), '전역 파일의 해결된 경로를 알려야 한다');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+    await rm(home, { recursive: true, force: true });
+    await rm(emptyHome, { recursive: true, force: true });
+  }
 });

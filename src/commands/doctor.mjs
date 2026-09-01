@@ -1,6 +1,6 @@
 import { lstat, readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { join, isAbsolute, resolve } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { exists } from '../fsx.mjs';
@@ -320,29 +320,91 @@ export async function checkBoundaryCheckpointHook(targetDir) {
   return 'PreToolUse boundary checkpoint hook 없음 — run: harness-team apply';
 }
 
-// The "eager tier" = instruction files loaded into context at EVERY session start
-// (AGENTS.md + CLAUDE.md at the project root), unlike lazy-loaded command docs/skills.
-// This repo's own eager tier is ~16 KB; 24 KiB = 1.5x headroom. This is a deterministic
+// The "eager tier" = instruction files loaded into context at EVERY session start,
+// unlike lazy-loaded command docs/skills. Every source below was read out of the Claude
+// Code binary's own resolution (2.1.251) rather than assumed:
+//
+//   join(dir, "CLAUDE.md") / join(dir, ".claude", "CLAUDE.md")  -> loaded as "Project"
+//   join(CLAUDE_CONFIG_DIR ?? homedir()/".claude", "CLAUDE.md") -> loaded as "User"
+//
+// AGENTS.md joins them because CLAUDE.md imports it (`@AGENTS.md`), so it is in context
+// every session too. The budget is on the SUM: the context window does not care which
+// file a byte came from, and a per-file budget would let "each part passes, the total
+// does not" slip through green — the blind spot this measurement exists to close.
+//
+// The budget covers the SUM of all four sources above, and its last term — the user-scope
+// file — is machine-local, so no repo-fixed number describes the tier being measured.
+// What is fixed here is the project-side portion: 15,968 B (AGENTS.md 11,079 + CLAUDE.md
+// 4,889; this repo has no .claude/CLAUDE.md). Against a 24 KiB budget that leaves 8,608 B
+// of headroom for whatever the user's own CLAUDE.md carries. Do NOT re-justify this budget
+// from the project subtotal alone — sizing a superset budget by a subset measurement is
+// the exact defect this check was widened to fix. This is a deterministic
 // size check only — the fix (moving procedure to lazy sources) is a human judgment call,
 // so it stays warning-only, mirroring the TCC 6 KiB budget philosophy (context.mjs
 // CONTEXT_MAX_BYTES).
 export const EAGER_TIER_MAX_BYTES = 24 * 1024;
 
-// A missing file counts as 0 bytes. Both missing → total is 0, which never exceeds
-// the budget, so this returns null without any special-casing — same as a project
-// that simply doesn't use the harness agent files.
-export async function checkEagerTierSize(targetDir) {
-  let total = 0;
-  for (const name of ['AGENTS.md', 'CLAUDE.md']) {
-    // Read without an encoding: Buffer#length is the raw byte count, which is the
-    // UTF-8 size — no separate Buffer.byteLength re-encode needed.
-    const body = await readFile(join(targetDir, name)).catch(() => null);
-    if (body) total += body.length;
+// Claude Code resolves its config home as `CLAUDE_CONFIG_DIR ?? ~/.claude`, and refuses a
+// non-absolute value ("the configuration home (CLAUDE_CONFIG_DIR) is not an absolute path").
+// Mirror both halves: an unusable value returns null so the user-scope term is skipped
+// entirely, rather than resolving relative to cwd and double-counting the project's own
+// CLAUDE.md. Same shape as the CLAUDE_PLUGINS_ROOT handling above.
+export function globalClaudeMdPath(env = process.env) {
+  const configHome = env.CLAUDE_CONFIG_DIR ?? join(homedir(), '.claude');
+  if (!configHome || !isAbsolute(configHome)) return null;
+  return join(configHome, 'CLAUDE.md');
+}
+
+// A missing or unreadable file contributes 0 bytes and drops out of the breakdown. Both
+// are ordinary states (CI, containers, a fresh machine, or a path that is a directory),
+// so they stay silent and leave the previous behaviour untouched.
+async function eagerTierEntry(path, label, scope) {
+  // Read without an encoding: Buffer#length is the raw byte count, which is the
+  // UTF-8 size -- no separate Buffer.byteLength re-encode needed.
+  const body = await readFile(path).catch(() => null);
+  return body ? { path, label, scope, bytes: body.length } : null;
+}
+
+// The user-scope file lives outside the project, so it is READ ONLY here -- the harness
+// does not write outside the project directory, and this check only measures and reports.
+export async function checkEagerTierSize(targetDir, env = process.env) {
+  const globalPath = globalClaudeMdPath(env);
+  const found = await Promise.all([
+    eagerTierEntry(join(targetDir, 'AGENTS.md'), 'AGENTS.md', 'project'),
+    eagerTierEntry(join(targetDir, 'CLAUDE.md'), 'CLAUDE.md', 'project'),
+    eagerTierEntry(join(targetDir, '.claude', 'CLAUDE.md'), '.claude/CLAUDE.md', 'project'),
+    ...(globalPath ? [eagerTierEntry(globalPath, `${globalPath} (전역)`, 'user')] : []),
+  ]);
+
+  // Running doctor on the config home itself would otherwise count one file twice.
+  const seen = new Set();
+  const entries = [];
+  for (const entry of found) {
+    if (!entry) continue;
+    const key = resolve(entry.path);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    entries.push(entry);
   }
+
+  const total = entries.reduce((sum, e) => sum + e.bytes, 0);
   if (total <= EAGER_TIER_MAX_BYTES) return null;
-  const totalFmt = total.toLocaleString('en-US');
-  const budgetFmt = EAGER_TIER_MAX_BYTES.toLocaleString('en-US');
-  return `eager 계층(AGENTS.md+CLAUDE.md) ${totalFmt} B > ${budgetFmt} B(24 KiB) — 매 세션 로드되는 지시가 큽니다. 절차는 lazy 정본(커맨드 문서·스킬)으로 옮기는 것을 검토하세요.`;
+
+  const fmt = n => n.toLocaleString('en-US');
+  const breakdown = entries.map(e => `${e.label} ${fmt(e.bytes)} B`).join(' + ');
+  // Two different remedies, and pointing the wrong one at the wrong file matters: the
+  // user-scope file is not the harness's to restructure, so it gets a fact, not an order.
+  // Order them by how many bytes each scope actually contributes -- leading with advice
+  // about a tier that did not cause the overage sends the reader to the wrong file.
+  const bytesIn = scope => entries.filter(e => e.scope === scope).reduce((sum, e) => sum + e.bytes, 0);
+  const advice = [
+    { scope: 'project', text: '프로젝트 파일은 절차를 lazy 정본(커맨드 문서·스킬)으로 옮기는 것을 검토하세요.' },
+    { scope: 'user', text: '전역 파일은 프로젝트 밖(사용자 소유)이라 하네스가 읽기만 합니다 — 크기만 보고하며 조치는 사용자 판단입니다.' },
+  ]
+    .filter(a => bytesIn(a.scope) > 0)
+    .sort((a, b) => bytesIn(b.scope) - bytesIn(a.scope))
+    .map(a => a.text);
+  return `eager 계층 ${fmt(total)} B > ${fmt(EAGER_TIER_MAX_BYTES)} B(24 KiB) — 매 세션 무조건 로드되는 지시가 큽니다. 내역: ${breakdown}. ${advice.join(' ')}`;
 }
 
 const CHECKS = [
