@@ -332,7 +332,13 @@ export async function checkBoundaryCheckpointHook(targetDir) {
 // file a byte came from, and a per-file budget would let "each part passes, the total
 // does not" slip through green — the blind spot this measurement exists to close.
 //
-// This repo's own project tier is ~16 KB; 24 KiB = 1.5x headroom. This is a deterministic
+// The budget covers the SUM of all four sources above, and its last term — the user-scope
+// file — is machine-local, so no repo-fixed number describes the tier being measured.
+// What is fixed here is the project-side portion: 15,968 B (AGENTS.md 11,079 + CLAUDE.md
+// 4,889; this repo has no .claude/CLAUDE.md). Against a 24 KiB budget that leaves 8,608 B
+// of headroom for whatever the user's own CLAUDE.md carries. Do NOT re-justify this budget
+// from the project subtotal alone — sizing a superset budget by a subset measurement is
+// the exact defect this check was widened to fix. This is a deterministic
 // size check only — the fix (moving procedure to lazy sources) is a human judgment call,
 // so it stays warning-only, mirroring the TCC 6 KiB budget philosophy (context.mjs
 // CONTEXT_MAX_BYTES).
@@ -367,7 +373,7 @@ export async function checkEagerTierSize(targetDir, env = process.env) {
     eagerTierEntry(join(targetDir, 'AGENTS.md'), 'AGENTS.md', 'project'),
     eagerTierEntry(join(targetDir, 'CLAUDE.md'), 'CLAUDE.md', 'project'),
     eagerTierEntry(join(targetDir, '.claude', 'CLAUDE.md'), '.claude/CLAUDE.md', 'project'),
-    ...(globalPath ? [eagerTierEntry(globalPath, `${globalPath}(전역)`, 'user')] : []),
+    ...(globalPath ? [eagerTierEntry(globalPath, `${globalPath} (전역)`, 'user')] : []),
   ]);
 
   // Running doctor on the config home itself would otherwise count one file twice.
