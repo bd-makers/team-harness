@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-08-29
+modified: 2026-09-01
 ---
 
 # Changelog
@@ -17,6 +17,8 @@ modified: 2026-08-29
 -->
 
 ## [Unreleased]
+
+## [0.23.1] - 2026-09-01
 
 ### Fixed
 - **`doctor`의 eager 계층 측정이 실제 상시 로드량을 재도록 고쳤습니다** — 프로젝트 `AGENTS.md`+`CLAUDE.md`만
@@ -60,6 +62,12 @@ modified: 2026-08-29
   - `docs:check`는 `harness-overview.html`만 검사하므로 이 두 가이드의 footer에는 가드가 없습니다 —
     낡음을 잡아 주는 것은 절차뿐입니다.
   - 이 변경은 ② 소비자 문서라 **별도 릴리스를 하지 않습니다.** 다음 릴리스에 딸려 갑니다.
+  - **0.23.1 발행 시점에 한 번 더 고쳤습니다.** 이 가이드의 `doctor` 절은 검사 목록을
+    누적 서술하는 **현재 동작 레퍼런스**라, 위 Fixed 항목이 측정 범위를 넓힌 순간
+    "`AGENTS.md`+`CLAUDE.md` 합산"이라는 서술이 틀린 사실이 됩니다. 네 파일 합계·전역 파일
+    읽기 전용·부재 시 skip을 한 문단으로 더하고 footer를 `0.23.1 기준 갱신`으로 올렸습니다.
+    `docs/harness-workflow-simulation`의 같은 문장은 **고치지 않았습니다** — 그쪽은
+    `0.23.0` 라벨이 붙은 릴리스 이력 배너의 항목이라 "0.23.0이 무엇을 했나"로서 여전히 참입니다.
 - **`docs/harness-workflow-simulation` 0.23.0 현행화 + 스냅샷 추가.**
   이 문서도 hero 배지·배너·footer가 `v0.21.0`에 멈춰 있었습니다(overview와 같은 하드코딩 패턴이지만
   이쪽은 템플릿 없이 파일을 직접 관리합니다). 본문 워크플로우 서술은 손대지 않았습니다 — 0.23.0이 캡을
@@ -82,6 +90,21 @@ modified: 2026-08-29
     `harness-overview`(생성+pin, 산문은 무방비) > `prerequisites.md`(doctor 양방향) >
     `index.html`·simulation·guide류(가드 0). 가드가 약한 표면일수록 절차가 유일한 방어선입니다.
   - 이 변경 자체는 ③ 메인테이너 전용이라 **릴리스하지 않습니다.** 다음 릴리스에 딸려 갑니다.
+- **워크플로우 다이어그램 문서 2종 추가 + `docs/index.html`·README 문서 표 등재.**
+  `docs/harness-workflow-diagrams.html`(mermaid 5관점 — 플로우차트·역할 스윔레인·시퀀스·상태·
+  gitGraph)과 같은 워크플로우를 정적 inline SVG 5단면으로 그린 `docs/harness-workflow-schematics.html`
+  입니다. **두 벌인 이유는 렌더 환경이 갈리기 때문입니다** — mermaid 판은 렌더에 JS가 필요해
+  브라우저에서만 보이고, Obsidian 볼트는 script를 제거하므로 볼트에서 읽는 독자에게는 SVG 판이
+  유일하게 렌더되는 사본입니다.
+  - 이 변경은 ② 소비자 문서라 **별도 릴리스를 하지 않았습니다.** 이 릴리스에 딸려 갑니다.
+- **`docs/harness-overview-0.23.1.html` 스냅샷은 뜨지 않았습니다 — 근거를 남깁니다.**
+  스냅샷의 정의는 "그 버전 기준으로 현행화된 overview의 사본"인데, 재생성한
+  `harness-overview.html`과 `harness-overview-0.23.0.html`의 차이는 hero 배지·배너 제목·
+  배너 한 줄·footer **4곳뿐**이고 커맨드·파일 인벤토리는 바이트 동일합니다(슬래시 커맨드 24개 그대로).
+  이 시리즈는 릴리스마다가 아니라 **내용이 실제로 갈릴 때만** 떠 왔으므로
+  (0.7.0·0.8.0·0.9.2·0.9.5·0.12.0·0.14.0·0.18.1·0.21.0·0.23.0), 사실상 중복 사본을 더하면
+  시리즈의 신호가 흐려집니다. 같은 이유로 `docs/index.html`의 overview 스냅샷 목록도 손대지
+  않았습니다 — 이번에 등재한 것은 what-changes 목록뿐입니다.
 
 ## [0.23.0] - 2026-08-30
 
