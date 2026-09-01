@@ -186,7 +186,10 @@ async function makeSandbox(name, { seed = false, pkg = null } = {}) {
   // Stack signature drives detect-stack → AGENTS.md stack section. Default keeps the
   // legacy generic/node shape so callers that omit `pkg` behave unchanged.
   await writeFile(join(dir, 'package.json'), JSON.stringify(pkg ?? { name, version: '0.0.0' }, null, 2));
-  const env = { ...process.env, PATH: `${binDir}:${process.env.PATH}` };
+  // Pin the Claude config home at a sandbox path: doctor's eager-tier check otherwise
+  // sums the dev machine's real ~/.claude/CLAUDE.md and doctorGreen() goes red on a
+  // laptop with a large one, while CI (no such file) stays green.
+  const env = { ...process.env, PATH: `${binDir}:${process.env.PATH}`, CLAUDE_CONFIG_DIR: join(dir, '.claude-config-isolated') };
   await run('git', ['init', '-q'], { cwd: dir, env });
   await run('git', ['config', 'user.email', 'sim@harness.io'], { cwd: dir, env });
   await run('git', ['config', 'user.name', 'simbot'], { cwd: dir, env });

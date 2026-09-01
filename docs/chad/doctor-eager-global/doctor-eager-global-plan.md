@@ -16,12 +16,19 @@
 - [x] 테스트: 전역 유/무/읽기 불가(디렉터리), 임계 위/아래, 사각지대(부분 통과·합계 초과),
       `.claude/CLAUDE.md` 합산, 비절대 config home, 경로 해석,
       **config home == target 중복 계산 방지**(dedupe 제거 시 실패함을 확인)
-- [x] 기존 테스트 머신 의존성 제거 — 단위 6곳 + runDoctor 배선에 격리된 `CLAUDE_CONFIG_DIR` 주입
+- [x] 기존 테스트 머신 의존성 제거 — 단위 6곳 + runDoctor 배선, 그리고 e2e·sim 3곳
+      (`tests/e2e/sandbox.mjs`·`tests/sim/agentloop.mjs`·`tests/sim/codex-agentloop.mjs`)에
+      격리된 `CLAUDE_CONFIG_DIR` 주입 — 리뷰 P1
 - [x] `MAINTAINING.md` eager 계층 단락 현행화
 - [x] `CHANGELOG.md` `## [Unreleased]` 기록 (릴리스 범프 없음)
-- [x] 전체 테스트 통과 확인 (`npm test`) — 481 tests / 480 pass / 0 fail / 1 skip(CI 전용 jq) + perf 통과
-- [x] `/harness-review` 외부 리뷰 + `artifact.md` `## Reviews` 기록 — claude 엔진(codex capacity 실패·gemini 미설치로 폴백), Approve with nits, 7건 전건 판별
+- [x] 전체 테스트 통과 확인 (`npm test`) — 합병 후 실측 **483 tests / 482 pass / 0 fail /
+      1 skip**(CI 전용 jq) + perf 통과. doctor 단위만 57건
+- [x] `/harness-review` 외부 리뷰 **2회**(브랜치가 갈라져 각 브랜치에서 1회씩) +
+      `artifact.md` `## Reviews`에 둘 다 기록 — 엔진은 둘 다 claude(codex capacity 실패·
+      gemini 미설치로 폴백). ①5건 중 4건 `efae5d3`로 반영, ②7건 전건 판별(Approve with nits)
 - [x] PR 생성 + CI green 확인 — PR #68, `test (24)` success
+- [x] 갈라진 브랜치 합병 — PR #67(39 브랜치)의 코드·테스트를 union으로 병합하고 #67 close.
+      P1 격리 핀 3곳 + 처방 기여도순 정렬 + dedupe 테스트가 모두 최종본에 있음을 확인
 - [x] PR 리뷰 덱(`/mr-change-diagram`) — `docs/diagrams/pr/pr-68-doctor-eager-global.html`, 슬라이드 3장, 커밋 `d29f9eb`
 
 > task 다이어그램은 **미옵트인**이다. AO 워커는 사람에게 물을 수 없어 옵트인 질문을 수행할 수

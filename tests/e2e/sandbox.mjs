@@ -48,10 +48,14 @@ export async function createSandbox(stack) {
   // sandbox (nonexistent → drift check no-ops, same as CI). Without it the
   // spawned CLI reads the dev machine's real ~/.claude/plugins/
   // installed_plugins.json, and any version drift there fails these tests.
+  // CLAUDE_CONFIG_DIR does the same for doctor's eager-tier check: without it the
+  // spawned CLI sums the dev machine's real ~/.claude/CLAUDE.md into the budget and
+  // these suites go red on a laptop with a large one while CI stays green.
   const env = {
     ...process.env,
     PATH: `${binDir}:${process.env.PATH}`,
     CLAUDE_PLUGINS_ROOT: join(dir, '.plugins-isolated'),
+    CLAUDE_CONFIG_DIR: join(dir, '.claude-config-isolated'),
   };
 
   await writeFile(join(dir, 'package.json'), JSON.stringify(stack.pkg, null, 2));

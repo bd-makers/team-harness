@@ -386,15 +386,18 @@ export async function checkEagerTierSize(targetDir, env = process.env) {
 
   const fmt = n => n.toLocaleString('en-US');
   const breakdown = entries.map(e => `${e.label} ${fmt(e.bytes)} B`).join(' + ');
-  const advice = [];
   // Two different remedies, and pointing the wrong one at the wrong file matters: the
   // user-scope file is not the harness's to restructure, so it gets a fact, not an order.
-  if (entries.some(e => e.scope === 'project')) {
-    advice.push('프로젝트 파일은 절차를 lazy 정본(커맨드 문서·스킬)으로 옮기는 것을 검토하세요.');
-  }
-  if (entries.some(e => e.scope === 'user')) {
-    advice.push('전역 파일은 프로젝트 밖(사용자 소유)이라 하네스가 읽기만 합니다 — 크기만 보고하며 조치는 사용자 판단입니다.');
-  }
+  // Order them by how many bytes each scope actually contributes -- leading with advice
+  // about a tier that did not cause the overage sends the reader to the wrong file.
+  const bytesIn = scope => entries.filter(e => e.scope === scope).reduce((sum, e) => sum + e.bytes, 0);
+  const advice = [
+    { scope: 'project', text: '프로젝트 파일은 절차를 lazy 정본(커맨드 문서·스킬)으로 옮기는 것을 검토하세요.' },
+    { scope: 'user', text: '전역 파일은 프로젝트 밖(사용자 소유)이라 하네스가 읽기만 합니다 — 크기만 보고하며 조치는 사용자 판단입니다.' },
+  ]
+    .filter(a => bytesIn(a.scope) > 0)
+    .sort((a, b) => bytesIn(b.scope) - bytesIn(a.scope))
+    .map(a => a.text);
   return `eager 계층 ${fmt(total)} B > ${fmt(EAGER_TIER_MAX_BYTES)} B(24 KiB) — 매 세션 무조건 로드되는 지시가 큽니다. 내역: ${breakdown}. ${advice.join(' ')}`;
 }
 
