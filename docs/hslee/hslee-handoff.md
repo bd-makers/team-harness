@@ -4,7 +4,7 @@
 scaffold-pm-permissions
 
 ## Last Commit (2026-09-03)
-3040597 fix(init): RN 권한 게이트를 pm 게이트와 분리 — package.json 없는 --stack expo에도 ios/android deny (codex P2) + P3 테스트 2건
+61bfc45 docs(task): scaffold-pm-permissions ship — spec 설계 확정 반영, artifact 결과·검증 출력·리스크·학습 기록
 
 ## Full Context
 → docs/hslee/scaffold-pm-permissions/scaffold-pm-permissions-handoff.md

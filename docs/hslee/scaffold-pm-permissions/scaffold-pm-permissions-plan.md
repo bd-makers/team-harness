@@ -13,7 +13,7 @@
 - [x] 문서 (2026-09-04) — `CHANGELOG.md` [Unreleased] Changed 1항목(합집합 병합의 옛 pnpm 항목 잔존 한계 포함). 가이드 갱신 없음: README·MAINTAINING에 pnpm 권한 서술 0건, overview 템플릿의 pnpm 언급은 pre-commit 훅 설명
 - [x] 리뷰 (2026-09-04) — `/harness-review codex` scope=diff: P1 0 · P2 1 · P3 3, 전부 재현돼 진짜. artifact `## Reviews` 기록·마커
 - [x] 리뷰 발견 조치 (2026-09-04) — P2: RN 게이트를 pm 게이트와 분리(deny 2종은 pm 무관, Expo allow는 exec 접두 기본 `npx`), 실패 테스트 먼저(red 1건) → green / P3: yarn·pnpm tsc 단언, stack 없는 planChanges 계약 pin. 파일 16/16, test:unit fail 0
-- [ ] ship — spec·plan·artifact 최종 갱신, PR 생성은 별도 지시
+- [x] ship (2026-09-04) — spec 설계 확정 반영·artifact 결과/검증/리스크/학습 기록, 다이어그램 건너뜀(사용자 선택), codex-shipcheck S1·S2·S3·S5 pass / S4는 자기참조 기록으로 해소. PR 생성은 별도 지시
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

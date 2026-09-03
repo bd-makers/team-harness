@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: init이 쓰는 `.claude/settings.json` 권한 목록을 감지된 패키지 매니저·스택에 맞게 생성 (pnpm·Expo 고정 해소)
-- Current atomic step: ship 정합 검증 — codex-shipcheck S1–S5 → 발견 재현·문서만 정정 → 준비 완료 보고 (PR 생성은 별도 지시)
+- Current atomic step: PR/MR 준비 완료 — 브랜치 푸시·PR 생성은 사용자 지시 대기, 머지 후 `harness-team done`·기본 브랜치에서 `summary --write`
 - Stop / human-decision condition: 템플릿을 JSON이 아닌 형식으로 바꿔야 하거나 merge 계약을 건드려야 하면 멈추고 사용자에게
 
 ## Constraints and settled decisions

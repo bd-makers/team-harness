@@ -56,6 +56,20 @@ harness overview 생성 상태가 최신입니다.
 
 <!-- harness:review kind=codex scope=diff tip=4f3e55fb63aae3f7aae2b05de008a82273ef4d3c at=2026-09-03T15:56:11Z -->
 
+### 2026-09-04 — codex-shipcheck (read-only, scope=diff `origin/main...HEAD` c9945bc → 61bfc45, ship 정합 검증 S1–S5)
+
+**실행**: `codex exec --sandbox read-only "<S1–S5 루브릭 프롬프트>" < /dev/null` (백그라운드, stdout 2.7 KB). 폴백 없음(명시 codex).
+**결과**: S1 pass(요구사항 1–3·구현 중 확정 ↔ `src/settings-permissions.mjs:22-47`·`src/harness.mjs:179-190`·템플릿·테스트, 커밋 `28762ea`·`3040597`) ·
+S2 pass(plan `[x]` 8항목 ↔ 커밋 8개 대응) · S3 pass(13파일 모두 범위 내, `git diff --check` 통과) · **S4 fail(MAJOR)** · S5 pass(artifact 검증 절이
+실제 명령·출력 인용, 리뷰어 재실행 `docs:check` 일치. `node --test tests/settings-permissions.test.mjs`는 순수 10건 통과 후 통합 6건이 샌드박스
+`mkdtemp` EPERM으로 중단 — 제품 실패로 판정하지 않음). 리뷰어 판정 NOT READY.
+**판별**: S4는 진짜이나 자기참조다 — 검증자가 read-only라 자기 기록을 남길 수 없어, 기록 시점에는 항상 fail로 나온다(직전 task의 shipcheck와 동일).
+통합 6건 미실행은 샌드박스 제약이며, 작성 세션의 ship 시점 전체 `npm test`(523 pass / 1 skip / 0 fail, 위 검증 절)가 그 증거다.
+**조치(문서만)**: 이 기록과 마커를 추가. 코드·테스트 변경 없음. 리뷰어가 제안한 마커 kind는 `codex-adversarial`이었으나 ship 명령 문서가
+정한 `codex-shipcheck`를 쓴다(verify allowlist 접미사).
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=61bfc4572093e10a7d5c4c5f870feabecec4cc47 at=2026-09-03T23:35:16Z -->
+
 ## Learnings
 
 - **한 함수 안의 두 게이트는 순서가 곧 계약이다** — pm early return이 RN 게이트를 삼켜 package.json 없는 `--stack expo`에서 네이티브 deny가 사라졌다(codex P2). 독립 조건은 독립 블록으로 쓴다.

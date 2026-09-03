@@ -75,3 +75,11 @@ docs/hslee/hslee-handoff.md                        |  2 +-
  src/settings-permissions.mjs                       | 22 ++++++++++++-------
  tests/settings-permissions.test.mjs                | 25 ++++++++++++++++++++++
  7 files changed, 52 insertions(+), 12 deletions(-)
+
+## 2026-09-03T23:31:30.133Z — 61bfc45 docs(task): scaffold-pm-permissions ship — spec 설계 확정 반영, artifact 결과·검증 출력·리스크·학습 기록
+docs/hslee/hslee-handoff.md                        |  2 +-
+ .../scaffold-pm-permissions-artifact.md            | 33 ++++++++++++++++++++++
+ .../scaffold-pm-permissions-context.md             |  2 +-
+ .../scaffold-pm-permissions-handoff.md             | 10 +++++++
+ .../scaffold-pm-permissions-spec.md                | 11 ++++++--
+ 5 files changed, 54 insertions(+), 4 deletions(-)
