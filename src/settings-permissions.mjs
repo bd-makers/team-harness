@@ -24,17 +24,23 @@ export function stackPermissions(profile, { stackId } = {}) {
   const deny = [];
   if (!profile) return { allow, deny };
   const pm = profile.packageManager;
-  if (!ADD_CMD[pm]) return { allow, deny };
 
-  if (configured(profile.cmdInstall)) allow.push(bash(profile.cmdInstall));
-  allow.push(bash(ADD_CMD[pm]));
-  if (configured(profile.cmdTest)) allow.push(bash(profile.cmdTest), bash(`${profile.cmdTest} -- *`));
-  if (configured(profile.cmdLint)) allow.push(bash(profile.cmdLint));
-  if (configured(profile.cmdTypecheck)) allow.push(bash(profile.cmdTypecheck));
-  else if (profile.language === 'TypeScript') allow.push(bash(`${EXEC_PREFIX[pm]} tsc --noEmit`));
+  // pm 게이트 — 지원하는 pm(npm·yarn·pnpm·bun)일 때만 pm 의존 항목을 만든다.
+  if (ADD_CMD[pm]) {
+    if (configured(profile.cmdInstall)) allow.push(bash(profile.cmdInstall));
+    allow.push(bash(ADD_CMD[pm]));
+    if (configured(profile.cmdTest)) allow.push(bash(profile.cmdTest), bash(`${profile.cmdTest} -- *`));
+    if (configured(profile.cmdLint)) allow.push(bash(profile.cmdLint));
+    if (configured(profile.cmdTypecheck)) allow.push(bash(profile.cmdTypecheck));
+    else if (profile.language === 'TypeScript') allow.push(bash(`${EXEC_PREFIX[pm]} tsc --noEmit`));
+  }
 
+  // RN 게이트 — pm 게이트와 독립이다(codex 리뷰 P2, 2026-09-04): package.json 없는 디렉터리에
+  // --stack expo를 강제해도 excludesRnRules가 RN rules를 넣는 것과 같이 네이티브 deny는 들어가야 한다.
+  // pm을 모르면 exec 접두는 npx로 둔다.
   if (isRnStack(stackId ?? profile.id)) {
-    allow.push(bash(`${EXEC_PREFIX[pm]} expo start`), bash(`${EXEC_PREFIX[pm]} expo prebuild *`), bash('npx expo install *'));
+    const exec = EXEC_PREFIX[pm] ?? 'npx';
+    allow.push(bash(`${exec} expo start`), bash(`${exec} expo prebuild *`), bash('npx expo install *'));
     deny.push('Edit(./ios/**)', 'Edit(./android/**)');
   }
   return { allow, deny };

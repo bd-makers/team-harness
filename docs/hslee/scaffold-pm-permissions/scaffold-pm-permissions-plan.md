@@ -12,7 +12,7 @@
 - [x] 전체 검증 (2026-09-04) — `npm test` exit 0: unit+e2e `ℹ tests 522 / ℹ pass 521 / ℹ fail 0 / ℹ skipped 1`, perf `ℹ tests 1 / ℹ pass 1`; `npm run docs:check` → `harness overview 생성 상태가 최신입니다.` (인벤토리 재생성은 3단계 커밋 `28762ea`에 포함)
 - [x] 문서 (2026-09-04) — `CHANGELOG.md` [Unreleased] Changed 1항목(합집합 병합의 옛 pnpm 항목 잔존 한계 포함). 가이드 갱신 없음: README·MAINTAINING에 pnpm 권한 서술 0건, overview 템플릿의 pnpm 언급은 pre-commit 훅 설명
 - [x] 리뷰 (2026-09-04) — `/harness-review codex` scope=diff: P1 0 · P2 1 · P3 3, 전부 재현돼 진짜. artifact `## Reviews` 기록·마커
-- [ ] 리뷰 발견 조치 — P2: RN 게이트를 pm 게이트와 분리(deny 2종은 pm 무관, Expo allow는 exec 접두 기본 `npx`) / P3: yarn·pnpm tsc 단언, stack 없는 planChanges 계약 pin (사용자 지시 대기)
+- [x] 리뷰 발견 조치 (2026-09-04) — P2: RN 게이트를 pm 게이트와 분리(deny 2종은 pm 무관, Expo allow는 exec 접두 기본 `npx`), 실패 테스트 먼저(red 1건) → green / P3: yarn·pnpm tsc 단언, stack 없는 planChanges 계약 pin. 파일 16/16, test:unit fail 0
 - [ ] ship — spec·plan·artifact 최종 갱신, PR 생성은 별도 지시
 
 ## Ontology 변경 로그

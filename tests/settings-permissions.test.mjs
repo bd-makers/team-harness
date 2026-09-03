@@ -61,6 +61,10 @@ test('TypeScript인데 typecheck 스크립트가 없으면 exec 접두(npx·bunx
   const bunTs = stackPermissions(profile({ language: 'TypeScript', packageManager: 'bun', cmdInstall: 'bun install', cmdTest: 'bun test', cmdLint: '(configure)' }));
   assert.ok(bunTs.allow.includes('Bash(bunx tsc --noEmit)'));
   assert.ok(bunTs.allow.includes('Bash(bun add *)'));
+  const yarnTs = stackPermissions(profile({ language: 'TypeScript', packageManager: 'yarn', cmdInstall: 'yarn install', cmdTest: 'yarn test', cmdLint: '(configure)' }));
+  assert.ok(yarnTs.allow.includes('Bash(yarn tsc --noEmit)'));
+  const pnpmTs = stackPermissions(profile({ language: 'TypeScript', packageManager: 'pnpm', cmdInstall: 'pnpm install', cmdTest: 'pnpm test', cmdLint: '(configure)' }));
+  assert.ok(pnpmTs.allow.includes('Bash(pnpm tsc --noEmit)'));
   const jsNoScript = stackPermissions(profile({ language: 'JavaScript' }));
   assert.ok(!jsNoScript.allow.some(e => e.includes('tsc')));
 });
@@ -84,6 +88,14 @@ test('RN 판정은 유효 stack id를 따른다 — 명시 --stack이 프로필 
   const forcedNode = stackPermissions(profile({ id: 'expo' }), { stackId: 'node' });
   assert.ok(!forcedNode.allow.some(e => e.includes('expo')));
   assert.deepEqual(forcedNode.deny, []);
+});
+
+// codex 리뷰 P2 (2026-09-04) — pm 게이트가 RN 게이트보다 앞에 있어 package.json 없는 디렉터리에 --stack expo를
+// 강제하면 ios/android deny까지 사라졌다. RN rules 게이트(excludesRnRules)는 같은 입력에 RN rules를 포함한다.
+test('pm이 없어도 유효 stack이 RN이면 ios/android deny와 Expo allow(exec 접두 기본 npx)를 낸다', () => {
+  const out = stackPermissions({ id: 'expo', language: 'unknown', packageManager: '(none)', cmdInstall: '(configure)', cmdTest: '(configure)', cmdLint: '(configure)', cmdTypecheck: '(configure)' }, { stackId: 'expo' });
+  assert.deepEqual(out.allow, ['Bash(npx expo start)', 'Bash(npx expo prebuild *)', 'Bash(npx expo install *)']);
+  assert.deepEqual(out.deny, ['Edit(./ios/**)', 'Edit(./android/**)']);
 });
 
 test('프로필이 없으면(직접 호출·테스트) 빈 목록 — 템플릿 JSON만 남는다', () => {
@@ -192,5 +204,18 @@ test('planChanges: 옛 스캐폴드의 pnpm 항목이 있는 프로젝트를 npm
     assert.ok(allow.includes('Bash(pnpm test)'), '옛 항목은 제거하지 않는다');
     assert.ok(allow.includes('Bash(npm run test)'), '새 pm 항목이 더해진다');
     assert.equal(allow.filter(e => e === 'Read').length, 1, '동일 항목은 중복되지 않는다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('planChanges: stack 없이 직접 부르면 permissions는 템플릿 JSON 그대로다 — 제거한 pm·RN 항목이 되살아나지 않는다', async () => {
+  const dir = await fixture({ 'package.json': { name: 'svc' } });
+  try {
+    const tpl = JSON.parse(await readFile(join(ROOT, 'templates/.claude/settings.json'), 'utf8'));
+    const ctx = { root: ROOT, targetDir: dir, backupDir: null, flags: {} };
+    const { changes } = await planChanges(ctx, { stack: undefined });
+    const change = changes.find(c => c.path.endsWith('.claude/settings.json'));
+    const { allow, deny } = JSON.parse(change.after).permissions;
+    assert.deepEqual(allow, tpl.permissions.allow);
+    assert.deepEqual(deny, tpl.permissions.deny);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

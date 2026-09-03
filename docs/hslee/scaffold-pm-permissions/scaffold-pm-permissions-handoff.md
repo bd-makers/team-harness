@@ -57,3 +57,11 @@ CHANGELOG.md                                              | 15 ++++++++++++++-
  .../scaffold-pm-permissions-handoff.md                    |  7 +++++++
  .../scaffold-pm-permissions-plan.md                       |  2 +-
  5 files changed, 25 insertions(+), 5 deletions(-)
+
+## 2026-09-03T15:56:12.071Z — 801b5cd docs(task): scaffold-pm-permissions codex 리뷰 기록 — P2 1(RN 게이트가 pm 게이트에 종속)·P3 3, 전부 재현, 조치 단계 개설
+docs/hslee/hslee-handoff.md                              |  2 +-
+ .../scaffold-pm-permissions-artifact.md                  | 16 ++++++++++++++++
+ .../scaffold-pm-permissions-context.md                   |  4 ++--
+ .../scaffold-pm-permissions-handoff.md                   |  8 ++++++++
+ .../scaffold-pm-permissions-plan.md                      |  3 ++-
+ 5 files changed, 29 insertions(+), 4 deletions(-)

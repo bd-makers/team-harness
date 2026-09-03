@@ -23,6 +23,7 @@
 - P2: `resolveStack(빈 디렉터리, 'expo')` → `packageManager '(none)'` → `stackPermissions(profile, { stackId: 'expo' })` = `{allow:[],deny:[]}`. 같은 입력에 `excludesRnRules` = false(RN rules는 포함) — 두 게이트가 어긋난다. package.json 있는 대조군은 deny 2종을 낸다.
 - P3-1: 58~66행 단언은 `npx`·`bunx`뿐. P3-2: agent-files·codex-hooks 테스트는 permissions를 보지 않음. P3-3: P2에 종속.
 **조치**: 없음(review-only). 제안 — (1) RN 게이트를 pm 게이트 앞으로 빼서 deny 2종은 pm과 무관하게, Expo allow는 exec 접두 `EXEC_PREFIX[pm] ?? 'npx'`로 생성 (2) yarn·pnpm `tsc --noEmit` 단언 추가 (3) `planChanges(ctx, { stack: undefined })`의 permissions가 템플릿 6+6과 같음을 pin (4) P2 수정 후 CHANGELOG 문장은 그대로 참이 되므로 변경 없음. 반영은 사용자 지시로 별도 진행.
+**반영 (2026-09-04, 사용자 지시)**: (1) `stackPermissions`의 pm 게이트를 `if (ADD_CMD[pm])` 블록으로 바꾸고 RN 게이트를 독립시킴, exec 접두 `EXEC_PREFIX[pm] ?? 'npx'` (2) yarn·pnpm `tsc --noEmit` 단언 추가 (3) `planChanges(ctx, { stack: undefined })` permissions == 템플릿 pin. P2 케이스는 실패 테스트를 먼저 써서 red(16건 중 1 fail) 확인 후 green. 재검증: 파일 16/16, `test:unit` fail 0, `docs:check` 최신. CHANGELOG 문장은 수정 없이 참이 됨.
 
 <!-- harness:review kind=codex scope=diff tip=4f3e55fb63aae3f7aae2b05de008a82273ef4d3c at=2026-09-03T15:56:11Z -->
 

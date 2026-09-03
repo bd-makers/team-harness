@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: init이 쓰는 `.claude/settings.json` 권한 목록을 감지된 패키지 매니저·스택에 맞게 생성 (pnpm·Expo 고정 해소)
-- Current atomic step: 리뷰 발견 조치(사용자 지시 대기) — P2 RN 게이트 분리(`src/settings-permissions.mjs` 27행 early return 앞으로) + P3 테스트 2건
+- Current atomic step: ship — `npm test` 전체 재실행 후 spec·plan·artifact 최종 갱신, 준비 완료 보고 (PR 생성은 별도 지시)
 - Stop / human-decision condition: 템플릿을 JSON이 아닌 형식으로 바꿔야 하거나 merge 계약을 건드려야 하면 멈추고 사용자에게
 
 ## Constraints and settled decisions
@@ -15,7 +15,7 @@
 ## JIT retrieval map
 - Identifiers / symbols: `excludesRnRules`, `planChanges`, `mergeClaudeSettings`, `deepMergeJson`, `buildProfile`, `detectPackageManager`
 - Narrow globs: `src/harness.mjs`, `src/detect-stack.mjs`, `src/merge.mjs`, `templates/.claude/settings.json`, `tests/harness-settings.test.mjs`
-- Read next: artifact `## Reviews` 2026-09-04 codex 기록(발견·제안), `src/settings-permissions.mjs` 23~40행
+- Read next: `commands/harness-ship.md`(산출물 계약), artifact `## 결과` 절 채우기
 - Verification command: `npm test` · `npm run docs:check`
 
 ## Failure capsules (max 3 unresolved)
