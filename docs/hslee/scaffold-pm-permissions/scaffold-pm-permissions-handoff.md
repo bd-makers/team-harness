@@ -42,3 +42,10 @@ docs/hslee/hslee-handoff.md                        |  2 +-
  .../scaffold-pm-permissions-plan.md                |  2 +-
  tests/settings-permissions.test.mjs                | 95 ++++++++++++++++++++++
  5 files changed, 110 insertions(+), 4 deletions(-)
+
+## 2026-09-03T15:47:07.736Z — 0ee35b8 docs(task): scaffold-pm-permissions 5단계 — 전체 검증 출력 인용 (npm test 521 pass / 1 skip, perf 1, docs:check 최신)
+docs/hslee/hslee-handoff.md                                       | 2 +-
+ .../scaffold-pm-permissions/scaffold-pm-permissions-context.md    | 2 +-
+ .../scaffold-pm-permissions/scaffold-pm-permissions-handoff.md    | 8 ++++++++
+ .../hslee/scaffold-pm-permissions/scaffold-pm-permissions-plan.md | 2 +-
+ 4 files changed, 11 insertions(+), 3 deletions(-)

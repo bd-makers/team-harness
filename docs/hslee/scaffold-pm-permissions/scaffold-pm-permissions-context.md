@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: init이 쓰는 `.claude/settings.json` 권한 목록을 감지된 패키지 매니저·스택에 맞게 생성 (pnpm·Expo 고정 해소)
-- Current atomic step: 문서 — `CHANGELOG.md` [Unreleased] Changed 항목(합집합 병합으로 옛 pnpm 항목 잔존 한계 포함); 가이드에 pnpm 권한 서술 없음(README·MAINTAINING 0건, overview 템플릿 언급은 pre-commit 훅 설명)
+- Current atomic step: 리뷰 — `/harness-review codex`(scope=diff `main...HEAD`) → 발견 재현·판별 → artifact `## Reviews` 기록·마커
 - Stop / human-decision condition: 템플릿을 JSON이 아닌 형식으로 바꿔야 하거나 merge 계약을 건드려야 하면 멈추고 사용자에게
 
 ## Constraints and settled decisions
@@ -15,7 +15,7 @@
 ## JIT retrieval map
 - Identifiers / symbols: `excludesRnRules`, `planChanges`, `mergeClaudeSettings`, `deepMergeJson`, `buildProfile`, `detectPackageManager`
 - Narrow globs: `src/harness.mjs`, `src/detect-stack.mjs`, `src/merge.mjs`, `templates/.claude/settings.json`, `tests/harness-settings.test.mjs`
-- Read next: `CHANGELOG.md` [Unreleased] 절 형식(직전 릴리스 Changed 항목 문체), `MAINTAINING.md` 릴리스 크기 판단(① 에이전트 행동 표면)
+- Read next: `commands/harness-review.md`(공용 프롬프트·마커 형식), artifact `## Reviews` 기존 기록 형식
 - Verification command: `npm test` · `npm run docs:check`
 
 ## Failure capsules (max 3 unresolved)
