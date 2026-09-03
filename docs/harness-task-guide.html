@@ -314,7 +314,7 @@ harness-team doctor</code></pre>
 
           <rect class="svg-box" x="210" y="46" width="150" height="54" rx="9"></rect>
           <text class="svg-label" x="285" y="70" text-anchor="middle">2 · spec 작성</text>
-          <text class="svg-sub" x="285" y="87" text-anchor="middle">요구사항 · Ontology</text>
+          <text class="svg-sub" x="285" y="87" text-anchor="middle">/harness-spec</text>
 
           <rect class="svg-box" x="400" y="46" width="150" height="54" rx="9"></rect>
           <text class="svg-label" x="475" y="70" text-anchor="middle">3 · spec 검증</text>
@@ -375,7 +375,7 @@ harness-team doctor</code></pre>
           <path class="svg-lane" d="M946,240 L946,268 L20,268 L20,246" ></path>
           <text class="svg-sub" x="480" y="284" text-anchor="middle">commit 할 때마다 post-commit 훅이 handoff 2개를 자동 갱신 · 모든 박스가 체크되면 PLAN_COMPLETE 신호</text>
         </svg>
-        <figcaption>10단계와 3개 게이트. 점선은 게이트에 걸렸을 때의 복귀 경로다. 9 · ship(0.17.0 신설)은 PR/MR을 여는 경우에만 밟는 <strong>문서 정합</strong> 단계이며, PR을 만들지는 않는다.</figcaption>
+        <figcaption>10단계와 3개 게이트. 점선은 게이트에 걸렸을 때의 복귀 경로다. 9 · ship(0.17.0 신설)은 PR/MR을 여는 경우에만 밟는 <strong>문서 정합</strong> 단계이며, PR을 만들지는 않는다. 4·6번 칸의 축약 이름은 각각 <code>/harness-contrarian</code>·<code>/harness-simplifier</code>, <code>/harness-unittest</code>·<code>/harness-comptest</code>·<code>/harness-inttest</code>다.</figcaption>
       </figure>
 
       <h3 class="sub">실제 출력 — <code>task</code>는 다음 칸을 알려준다</h3>
@@ -390,6 +390,7 @@ active: chad/auth-refresh
         <div>
           <h5>신규 생성 직후 한 번 물어봅니다 — 다이어그램 옵트인 (0.17.0)</h5>
           <p>"이 task의 spec/plan 단계에서 다이어그램도 함께 만들까요?" <strong>신규 생성 때만 1회</strong> 묻고, 기존 task를 다시 활성화할 때는 묻지 않습니다. "예"면 <code>plan.md</code>에 <code>- [ ] spec/plan 다이어그램 작성 → …-diagram.html</code> 단계가 추가됩니다 — <strong>plan에 그 단계가 있는지가 곧 상태</strong>이고, 전용 설정 키나 상태 파일은 없습니다.</p>
+          <p>그 단계를 <strong>실제로 실행하는 것은 <code>/harness-diagram</code></strong>입니다 <span class="pill pill-auto">0.17.0</span> &mdash; 다이어그램을 직접 그리는 명령이 아니라, <code>diagram-design</code> 같은 외부 스킬을 부르되 그 앞뒤에 하네스 규약(산출물 경로 · 자립형 inline SVG · artifact 기록)을 주입하는 <strong>어댑터</strong>입니다. 상류 스킬을 직접 부르면 이 규약이 하나도 적용되지 않습니다. plan에 그 단계가 없는 task에 쓰려면 <code>--force</code>를 붙입니다.</p>
           <p>산출물 <code>&lt;name&gt;-diagram.html</code>은 SSOT 4파일이 아니며, 옵트인이므로 <strong>없는 task가 정상</strong>입니다. 도구(<code>diagram-design</code> 같은 외부 플러그인)가 없는 머신이면 task를 실패시키지 말고 그 단계를 <strong>지우지 말고</strong> <code>- [x] … — 미실행(도구 없음)</code>으로 닫은 뒤 artifact에 한 줄 남깁니다. 지우면 옵트인 사실이 사라지고, 열어 두면 <code>done</code>이 막힙니다.</p>
         </div>
       </div>
