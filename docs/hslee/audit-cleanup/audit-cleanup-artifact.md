@@ -44,12 +44,40 @@ overview 템플릿+mmd 4개+훅 카드 2개, 현행 가이드 6개, index.html h
 boundary Write 항목 단위 판정; `settingsHasBoundaryCheckpoint(requireWrite)` — doctor 엄격/migrate 관대; post-commit 마커 비주석 줄만;
 `--stack` help를 `KNOWN_STACK_IDS`에서 렌더. 각 건에 테스트 추가.
 
-**검증**: `npm test` 508 pass / 1 skip(CI 전용) + perf 1 pass; `npm run docs:check` exit 0; 신규 테스트 6파일
+**검증** (2026-09-03 커밋 직전 재실행, worktree `delegation-router-review-9d679d` — 실제 출력 인용, 중략은 `…`):
+```
+$ npm test
+…
+ℹ tests 508
+ℹ suites 0
+ℹ pass 507
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ duration_ms 6163.775167
+✔ boundary performance: steady-state cold-process check <3x and plan checkpoint <5x an equal-work baseline for 10 x 10KiB local contracts (582.579334ms)
+ℹ tests 1
+ℹ pass 1
+ℹ fail 0
+…
+$ npm run docs:check
+harness overview 생성 상태가 최신입니다.
+```
+`skipped 1`은 `tests/hooks-jq-fallback.test.mjs`의 `skip: !process.env.CI` 게이트(CI에서는 실행). 신규 테스트 6파일
 (git-hooks·detect-stack·observe-tools-entry·boundary-checkpoint-write·gitignore-entries + agent-files/migrate-hooks/stack-rules/hooks-jq 확장).
 현행 문서의 `opencode|gemini|harness-apply` 잔존 0(이력 스냅샷·부정 단언 테스트·D7 본문 제외).
 
-**남긴 것**: 커밋·푸시는 사용자 지시 대기(변경은 스테이징만). `templates/.claude/settings.json`의 pnpm 권한 목록은 범위 밖.
-`docs/task_summary.md` 원장은 기본 브랜치에서 `summary --write`로 갱신.
+**남긴 것**: `templates/.claude/settings.json`의 pnpm 권한 목록은 범위 밖. `docs/task_summary.md` 원장은 기본 브랜치에서
+`summary --write`로 갱신. 릴리스는 별도 작업 — 소비자에게 깨지는 변경(`apply` 삭제·멤버 제외)이라 minor bump 권고
+(절차: `commands/harness-release.md` + MAINTAINING.md).
+
+### 2026-09-03 — 커밋·종결·ship
+
+- 커밋: `58b2284` feat!(122파일, +2318/−887) → `562e3dd` chore(task) 종결. `node bin/harness-team.mjs done` exit 0(가드 cause 0건,
+  `--force` 미사용). 브랜치 `claude/delegation-router-review-9d679d`, base `origin/main` 3c659bb.
+- 커밋 직전 재검증: 작성 세션과 다른 세션에서 재실행 — 출력은 위 **검증** 절에 인용(같은 실행).
+- 다이어그램: 건너뜀 (task 생성 시 옵트인 없음 — plan에 다이어그램 단계 없음; 종결 후 ship이라 묻지 않음 — 2026-09-03)
 
 
 ## Reviews
@@ -81,10 +109,22 @@ boundary Write 항목 단위 판정; `settingsHasBoundaryCheckpoint(requireWrite
 **결과**: P1/P2/P3 발견 없음. 리뷰어가 직접 실행해 확인: git 훅 차단 3·허용 2 + jq 없는 payload 스캔 fail-closed, 마커 순서 오류 거부·
 균형 복수 pair 병합·깨진 파일 제외, Write 스왑 차단·완료 plan 재작성 무시, doctor(Edit|Write)/migrate(Edit-only 존중) 분리 일관,
 주석 마커 비인정, `KNOWN_STACK_IDS` 단일 원천(import cycle·I/O 없음). 리뷰어 자체 실행: `node --test tests/harness-settings.test.mjs tests/cli-args.test.mjs` 23 pass.
-**판정**: "여섯 수정 범위는 승인 가능, 유의미한 회귀 없음." 작성 세션 검증: `npm test` 508 pass / 1 skip + perf 1 pass, `docs:check` exit 0.
+**판정**: "여섯 수정 범위는 승인 가능, 유의미한 회귀 없음." 작성 세션 검증: `npm test` tests 508 / pass 507 / skipped 1 + perf pass 1, `docs:check` exit 0.
 **조치**: 없음.
 
 <!-- harness:review kind=codex scope=worktree tip=3c659bbe1df837b279b487a3fbab3394c9b6c6b0 at=2026-09-03T00:28:06Z -->
+
+### 2026-09-03 — codex-shipcheck (read-only, scope=diff `origin/main...HEAD`, ship 정합 검증 S1–S5)
+
+**실행**: `codex exec --sandbox read-only "<S1–S5 루브릭 프롬프트>" < /dev/null` (백그라운드, 출력 470 KB). 폴백 없음(명시 codex).
+**결과**: S1 pass · S2 pass · S3 pass · S4 pass · **S5 fail(BLOCKER)** → 리뷰어 판정 NOT READY.
+- S5 근거: `검증` 문단이 산문 선언이고, 같은 문서 안에서 "508 pass"와 "tests 508 / pass 507"이 불일치.
+  리뷰어는 `npm run docs:check`를 직접 실행해 일치를 확인했으나, `npm test`는 샌드박스가 OS temp `mkdtemp`를 EPERM으로 막아 완료하지 못했다.
+**판별**: 진짜(표기 결함). "508 pass / 1 skip"은 node:test의 `tests 508 / pass 507 / skipped 1`을 느슨하게 옮긴 것 — 수치는 같은 실행이나 인용 형식이 아니었다.
+**조치(문서만)**: `검증` 문단을 실제 명령·출력 인용으로 교체, 2차 리뷰 기록의 같은 표기를 정확한 형태로 정정. 코드·테스트 변경 없음.
+수정분은 외부 재실행 없이 작성 세션이 자체 확인했다(S1–S4는 리뷰어 pass 유지).
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=562e3dd7a9b43fc558ec5bb264e98736bd80450b at=2026-09-03T02:20:32Z -->
 
 ## Learnings
 
