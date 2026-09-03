@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: init이 쓰는 `.claude/settings.json` 권한 목록을 감지된 패키지 매니저·스택에 맞게 생성 (pnpm·Expo 고정 해소)
-- Current atomic step: 실패 테스트 먼저 — `tests/settings-permissions.test.mjs` pm×stack 매트릭스
+- Current atomic step: 구현 — `src/settings-permissions.mjs` `stackPermissions(profile, { stackId })` + 템플릿에서 pm·RN 항목 제거 + `planChanges` 합성 (테스트 9건 green 목표)
 - Stop / human-decision condition: 템플릿을 JSON이 아닌 형식으로 바꿔야 하거나 merge 계약을 건드려야 하면 멈추고 사용자에게
 
 ## Constraints and settled decisions
@@ -15,7 +15,7 @@
 ## JIT retrieval map
 - Identifiers / symbols: `excludesRnRules`, `planChanges`, `mergeClaudeSettings`, `deepMergeJson`, `buildProfile`, `detectPackageManager`
 - Narrow globs: `src/harness.mjs`, `src/detect-stack.mjs`, `src/merge.mjs`, `templates/.claude/settings.json`, `tests/harness-settings.test.mjs`
-- Read next: `src/harness.mjs:129-195` (vars·settings 합성 지점), `src/harness.mjs:228-240` (RN 게이트)
+- Read next: `tests/settings-permissions.test.mjs`(계약 정본), `src/harness.mjs:180-195` (settings 합성 지점), `src/harness.mjs:228-240` (RN 게이트·RN_STACK_IDS 공유 후보)
 - Verification command: `npm test` · `npm run docs:check`
 
 ## Failure capsules (max 3 unresolved)

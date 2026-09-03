@@ -10,3 +10,8 @@
  .../scaffold-pm-permissions-plan.md                | 24 +++++++
  .../scaffold-pm-permissions-spec.md                | 82 ++++++++++++++++++++++
  6 files changed, 157 insertions(+)
+
+## 2026-09-03T15:06:55.753Z — e0f4d87 docs(task): scaffold-pm-permissions handoff — post-commit 훅 갱신분
+docs/hslee/hslee-handoff.md                                      | 9 ++++-----
+ .../scaffold-pm-permissions/scaffold-pm-permissions-handoff.md   | 9 +++++++++
+ 2 files changed, 13 insertions(+), 5 deletions(-)
