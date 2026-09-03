@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-09-01
+modified: 2026-09-03
 ---
 
 # Changelog
@@ -18,12 +18,14 @@ modified: 2026-09-01
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-09-03
+
 ### Removed
-- **`apply` 명령을 삭제했습니다** — `runInit`의 별칭이었고(`src/commands/apply.mjs`), `init`이 마커 병합·JSON
+- **BREAKING — `apply` 명령을 삭제했습니다** — `runInit`의 별칭이었고(`src/commands/apply.mjs`), `init`이 마커 병합·JSON
   deep-merge로 멱등이라 재실행 동사를 둘 이유가 없었습니다. `/harness-apply` 슬래시 커맨드와 Codex `harness-apply`
   스킬도 함께 사라졌습니다. 기존 프로젝트에는 `init`을 다시 실행하면 됩니다(사용자 텍스트·기존 hooks/rules 보존).
   doctor·migrate가 안내하던 `harness-team apply`는 전부 `harness-team init`으로 바뀌었습니다.
-- **OpenCode·Gemini를 하네스 멤버에서 제외했습니다 (D7)** — `GEMINI.md`·`.opencode/opencode.json` 스캐폴드, 역할표 행,
+- **BREAKING — OpenCode·Gemini를 하네스 멤버에서 제외했습니다 (D7)** — `GEMINI.md`·`.opencode/opencode.json` 스캐폴드, 역할표 행,
   doctor의 외부 도구·파일 검사, `.gitignore` 항목, 백업 스크립트 ITEMS, 리뷰 엔진 목록(`codex`·`claude`·`custom`)과
   probe 폴백 체인(codex → claude)에서 모두 뺐습니다. `migrate`는 레거시 `GEMINI.md` alias를 다시 만들지 않고
   제거만 합니다. 근거와 재도입 조건은 `docs/decisions.md` D7에 있습니다.
