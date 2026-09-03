@@ -23,3 +23,14 @@ docs/hslee/hslee-handoff.md                        |   2 +-
  .../scaffold-pm-permissions-plan.md                |   2 +-
  tests/settings-permissions.test.mjs                | 101 +++++++++++++++++++++
  5 files changed, 110 insertions(+), 4 deletions(-)
+
+## 2026-09-03T15:35:00.640Z — 28762ea feat(init): settings.json 권한 목록을 감지된 패키지 매니저·스택에서 생성 — pnpm·Expo 고정 해소
+docs/harness-overview.html                         | 10 ++++++
+ docs/hslee/hslee-handoff.md                        |  2 +-
+ .../scaffold-pm-permissions-context.md             |  4 +--
+ .../scaffold-pm-permissions-handoff.md             |  8 +++++
+ .../scaffold-pm-permissions-plan.md                |  2 +-
+ src/harness.mjs                                    | 11 +++++-
+ src/settings-permissions.mjs                       | 41 ++++++++++++++++++++++
+ templates/.claude/settings.json                    | 13 +------
+ 8 files changed, 74 insertions(+), 17 deletions(-)

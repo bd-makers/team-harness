@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: init이 쓰는 `.claude/settings.json` 권한 목록을 감지된 패키지 매니저·스택에 맞게 생성 (pnpm·Expo 고정 해소)
-- Current atomic step: planChanges 통합 테스트 — node fixture(`npm run test`·Expo 없음) / expo fixture(Expo allow 3·deny 2) / 재실행 멱등(합집합)
+- Current atomic step: 전체 검증 — `npm test`(e2e·perf 포함) green, `docs:check` exit 0 → 문서 단계(CHANGELOG [Unreleased])
 - Stop / human-decision condition: 템플릿을 JSON이 아닌 형식으로 바꿔야 하거나 merge 계약을 건드려야 하면 멈추고 사용자에게
 
 ## Constraints and settled decisions
@@ -15,7 +15,7 @@
 ## JIT retrieval map
 - Identifiers / symbols: `excludesRnRules`, `planChanges`, `mergeClaudeSettings`, `deepMergeJson`, `buildProfile`, `detectPackageManager`
 - Narrow globs: `src/harness.mjs`, `src/detect-stack.mjs`, `src/merge.mjs`, `templates/.claude/settings.json`, `tests/harness-settings.test.mjs`
-- Read next: `tests/agent-files.test.mjs`(planChanges 직접 호출 패턴·ctx 모양), `src/harness.mjs` planChanges의 settings 합성 블록
+- Read next: `CHANGELOG.md` [Unreleased] 절 형식(직전 릴리스 Changed 항목 문체), `MAINTAINING.md` 릴리스 크기 판단(① 에이전트 행동 표면)
 - Verification command: `npm test` · `npm run docs:check`
 
 ## Failure capsules (max 3 unresolved)

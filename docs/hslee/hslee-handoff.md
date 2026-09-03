@@ -4,7 +4,7 @@
 scaffold-pm-permissions
 
 ## Last Commit (2026-09-03)
-59cfae5 test(settings-permissions): 실패 테스트 먼저 — pm×stack 매트릭스 9건 + 템플릿 계약 (red: 모듈 없음)
+28762ea feat(init): settings.json 권한 목록을 감지된 패키지 매니저·스택에서 생성 — pnpm·Expo 고정 해소
 
 ## Full Context
 → docs/hslee/scaffold-pm-permissions/scaffold-pm-permissions-handoff.md

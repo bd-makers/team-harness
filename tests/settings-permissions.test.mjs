@@ -99,3 +99,98 @@ test('템플릿 settings.json에는 pm·RN 의존 항목이 없고 pm 무관 항
   for (const keep of ['Read', 'Edit', 'Write', 'Glob', 'Grep', 'Bash(codex:*)']) assert.ok(tpl.permissions.allow.includes(keep), `allow에 ${keep} 없음`);
   for (const keep of ['Read(./.env)', 'Bash(rm -rf *)', 'Bash(git push --force*)']) assert.ok(tpl.permissions.deny.includes(keep), `deny에 ${keep} 없음`);
 });
+
+// ---- planChanges 통합: 실제 fixture 디렉터리에서 감지 → 합성 → deep-merge까지 한 경로로 확인한다.
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { planChanges } from '../src/harness.mjs';
+import { resolveStack } from '../src/detect-stack.mjs';
+
+async function fixture(files) {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-perm-'));
+  for (const [name, body] of Object.entries(files)) {
+    await mkdir(dirname(join(dir, name)), { recursive: true });
+    await writeFile(join(dir, name), typeof body === 'string' ? body : JSON.stringify(body, null, 2));
+  }
+  return dir;
+}
+
+// init.mjs와 같은 순서: resolveStack → ctx.stackId = stack.id → planChanges(ctx, { stack })
+async function planSettings(dir, forced) {
+  const stack = await resolveStack(dir, forced);
+  const ctx = { root: ROOT, targetDir: dir, backupDir: null, flags: forced ? { stack: forced } : {}, stackId: stack.id };
+  const { changes } = await planChanges(ctx, { stack });
+  const change = changes.find(c => c.path.endsWith('.claude/settings.json'));
+  return { stack, change, settings: change ? JSON.parse(change.after) : null };
+}
+
+test('planChanges: npm Node 프로젝트는 `npm run test` 등 실제 명령을 허용하고 pnpm·Expo 항목이 없다', async () => {
+  const dir = await fixture({ 'package.json': { name: 'svc', scripts: { test: 'node --test', lint: 'eslint .' } } });
+  try {
+    const { stack, settings } = await planSettings(dir);
+    assert.equal(stack.packageManager, 'npm');
+    const { allow, deny } = settings.permissions;
+    for (const e of ['Bash(npm install)', 'Bash(npm install *)', 'Bash(npm run test)', 'Bash(npm run test -- *)', 'Bash(npm run lint)', 'Bash(codex:*)']) {
+      assert.ok(allow.includes(e), `allow에 ${e} 없음: ${allow.join(', ')}`);
+    }
+    assert.ok(!allow.some(e => /pnpm|expo/.test(e)), `pnpm·Expo 항목 잔존: ${allow.join(', ')}`);
+    assert.ok(!deny.some(e => /ios|android/.test(e)), `네이티브 deny 잔존: ${deny.join(', ')}`);
+    assert.ok(deny.includes('Read(./.env)'), 'pm 무관 deny는 유지');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('planChanges: pnpm Expo 프로젝트는 Expo allow 3종과 ios/android deny 2종을 받는다', async () => {
+  const dir = await fixture({
+    'package.json': { name: 'app', dependencies: { expo: '52.0.0', 'react-native': '0.76.0' }, scripts: { test: 'jest' } },
+    'pnpm-lock.yaml': 'lockfileVersion: 9\n',
+  });
+  try {
+    const { stack, settings } = await planSettings(dir);
+    assert.equal(stack.id, 'react-native', 'detectStack은 expo 의존성도 react-native id로 보고한다(expo는 --stack 별칭)');
+    assert.equal(stack.packageManager, 'pnpm');
+    const { allow, deny } = settings.permissions;
+    for (const e of ['Bash(pnpm test)', 'Bash(pnpm add *)', 'Bash(pnpm expo start)', 'Bash(pnpm expo prebuild *)', 'Bash(npx expo install *)']) {
+      assert.ok(allow.includes(e), `allow에 ${e} 없음: ${allow.join(', ')}`);
+    }
+    assert.ok(deny.includes('Edit(./ios/**)') && deny.includes('Edit(./android/**)'), `네이티브 deny 없음: ${deny.join(', ')}`);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('planChanges: Expo 프로젝트라도 --stack node를 주면 Expo·네이티브 항목을 빼고 pm 항목은 유지한다 (excludesRnRules와 같은 판정)', async () => {
+  const dir = await fixture({
+    'package.json': { name: 'app', dependencies: { expo: '52.0.0' }, scripts: { test: 'jest' } },
+    'pnpm-lock.yaml': 'lockfileVersion: 9\n',
+  });
+  try {
+    const { settings } = await planSettings(dir, 'node');
+    const { allow, deny } = settings.permissions;
+    assert.ok(allow.includes('Bash(pnpm test)'), 'pm 항목은 남는다');
+    assert.ok(!allow.some(e => /expo/.test(e)), `Expo 항목 잔존: ${allow.join(', ')}`);
+    assert.ok(!deny.some(e => /ios|android/.test(e)), `네이티브 deny 잔존: ${deny.join(', ')}`);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('planChanges: 생성 결과를 그대로 둔 채 재실행하면 settings.json change가 없다 (멱등)', async () => {
+  const dir = await fixture({ 'package.json': { name: 'svc', scripts: { test: 'node --test' } } });
+  try {
+    const first = await planSettings(dir);
+    await mkdir(join(dir, '.claude'), { recursive: true });
+    await writeFile(join(dir, '.claude/settings.json'), first.change.after);
+    const second = await planSettings(dir);
+    assert.equal(second.change, undefined, '재실행에 settings.json change가 생김');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('planChanges: 옛 스캐폴드의 pnpm 항목이 있는 프로젝트를 npm으로 재실행하면 옛 항목은 남고 npm 항목이 더해진다 (합집합 병합 — 알려진 한계)', async () => {
+  const dir = await fixture({
+    'package.json': { name: 'svc', scripts: { test: 'node --test' } },
+    '.claude/settings.json': { permissions: { allow: ['Read', 'Bash(pnpm test)'], deny: [] } },
+  });
+  try {
+    const { settings } = await planSettings(dir);
+    const { allow } = settings.permissions;
+    assert.ok(allow.includes('Bash(pnpm test)'), '옛 항목은 제거하지 않는다');
+    assert.ok(allow.includes('Bash(npm run test)'), '새 pm 항목이 더해진다');
+    assert.equal(allow.filter(e => e === 'Read').length, 1, '동일 항목은 중복되지 않는다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
