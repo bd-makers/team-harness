@@ -83,3 +83,15 @@ docs/hslee/hslee-handoff.md                        |  2 +-
  .../scaffold-pm-permissions-handoff.md             | 10 +++++++
  .../scaffold-pm-permissions-spec.md                | 11 ++++++--
  5 files changed, 54 insertions(+), 4 deletions(-)
+
+## 2026-09-03T23:35:17.132Z — c6c0aa7 docs(task): scaffold-pm-permissions ship — codex-shipcheck 기록(S1·S2·S3·S5 pass, S4 자기참조 해소), plan ship 단계 종료
+docs/hslee/hslee-handoff.md                                |  2 +-
+ .../scaffold-pm-permissions-artifact.md                    | 14 ++++++++++++++
+ .../scaffold-pm-permissions-context.md                     |  2 +-
+ .../scaffold-pm-permissions-handoff.md                     |  8 ++++++++
+ .../scaffold-pm-permissions-plan.md                        |  2 +-
+ 5 files changed, 25 insertions(+), 3 deletions(-)
+
+## 2026-09-03T23:40:10.989Z — 완료
+
+태스크 종료.
