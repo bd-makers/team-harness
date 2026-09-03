@@ -74,3 +74,4 @@
 | hslee | claude5-context-followups | ✅ done | 2026-08-30 |
 | chad | doctor-eager-global | ✅ done | 2026-08-31 |
 | hslee | audit-cleanup | ✅ done | 2026-09-02 |
+| hslee | scaffold-pm-permissions | ✅ done | 2026-09-03 |
