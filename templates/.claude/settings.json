@@ -7,15 +7,6 @@
       "Write",
       "Glob",
       "Grep",
-      "Bash(pnpm test)",
-      "Bash(pnpm test -- *)",
-      "Bash(pnpm lint)",
-      "Bash(pnpm tsc --noEmit)",
-      "Bash(pnpm expo start)",
-      "Bash(pnpm expo prebuild *)",
-      "Bash(pnpm install)",
-      "Bash(pnpm add *)",
-      "Bash(npx expo install *)",
       "Bash(codex:*)"
     ],
     "deny": [
@@ -24,9 +15,7 @@
       "Edit(./.env)",
       "Edit(./.env.*)",
       "Bash(rm -rf *)",
-      "Bash(git push --force*)",
-      "Edit(./ios/**)",
-      "Edit(./android/**)"
+      "Bash(git push --force*)"
     ]
   },
   "hooks": {

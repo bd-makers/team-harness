@@ -4,6 +4,7 @@ import { lstat, unlink } from 'node:fs/promises';
 import { writeText, readTextSafe, copyTree, exists } from './fsx.mjs';
 import { render } from './render.mjs';
 import { mergeMarkdown, deepMergeJson, simpleDiff } from './merge.mjs';
+import { stackPermissions, RN_STACK_IDS } from './settings-permissions.mjs';
 
 export const DEFAULT_BACKUP_PARENT = 'harness-backup';
 
@@ -178,6 +179,14 @@ export async function planChanges(ctx, { stack }) {
 
   // .claude/settings.json — JSON deep-merge
   const tplSettings = JSON.parse(await readTextSafe(join(tplDir, '.claude/settings.json')));
+  // permissions의 pm·RN 의존 항목은 템플릿에 없다 — 스택 프로필에서 생성해 합성한다.
+  // RN 판정 입력은 excludesRnRules와 같다(명시 --stack > 감지 stackId > 프로필 id).
+  const stackPerms = stackPermissions(stack, { stackId: ctx.flags?.stack ?? ctx.stackId });
+  if (stackPerms.allow.length || stackPerms.deny.length) {
+    tplSettings.permissions ??= {};
+    tplSettings.permissions.allow = [...(tplSettings.permissions.allow ?? []), ...stackPerms.allow];
+    tplSettings.permissions.deny = [...(tplSettings.permissions.deny ?? []), ...stackPerms.deny];
+  }
   const existingSettings = JSON.parse((await readTextSafe(join(targetDir, '.claude/settings.json'))) || 'null');
   const mergedSettings = mergeClaudeSettings(existingSettings, tplSettings);
   const existingSettingsText = existingSettings ? JSON.stringify(existingSettings, null, 2) : null;
@@ -231,7 +240,7 @@ export async function applyChanges(changes) {
 // `--stack node`를 주면 감지된 명령이 전부 (configure)로 지워졌다. stack 정보가 전혀 없는
 // 호출(직접 호출·테스트)은 종전대로 전부 복사한다.
 const RN_ONLY_RULE_FILES = new Set(['navigation.md', 'state-management.md', 'styling.md', 'testing.md']);
-const RN_STACK_IDS = new Set(['react-native', 'expo']);
+// RN_STACK_IDS는 settings-permissions.mjs와 공유한다 — permissions의 RN 전용 항목도 같은 판정을 쓴다.
 
 export function excludesRnRules(ctx) {
   const stackId = ctx.flags?.stack ?? ctx.stackId;

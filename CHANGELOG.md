@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-09-03
+modified: 2026-09-04
 ---
 
 # Changelog
@@ -17,6 +17,19 @@ modified: 2026-09-03
 -->
 
 ## [Unreleased]
+
+### Changed
+- **`init`이 쓰는 `.claude/settings.json` 권한 목록이 감지된 패키지 매니저·스택을 따릅니다** — 템플릿에 `pnpm test`·
+  `pnpm add *` 등 pnpm 전용 8개와 Expo 전용 항목(`pnpm expo start`·`npx expo install *`, `Edit(./ios/**)` deny)이 고정돼 있어
+  npm·yarn·bun 프로젝트는 쓸모없는 항목을 받고 실제 명령은 허용되지 않았으며, 순수 Node·Python 프로젝트에도 Expo 항목이
+  들어갔습니다(RN 전용 rules를 스택으로 게이트한 0.23.0 수정과 불일치). 이제 템플릿에는 pm·스택 무관 항목만 남고
+  (`templates/.claude/settings.json`), 새 순수 함수 `stackPermissions`(`src/settings-permissions.mjs`)가 스택 프로필의
+  install·add·test·lint·typecheck 명령을 허용 항목으로 만들며, RN 계열(`react-native`·`expo`)에만 Expo allow 3종과
+  `ios/android` deny 2종을 더합니다. RN 판정은 `excludesRnRules`와 같은 입력(명시 `--stack` > 감지값)이고 `RN_STACK_IDS`는
+  새 모듈에서 공유합니다. TypeScript인데 typecheck 스크립트가 없으면 pm별 exec 접두로 `tsc --noEmit`만 허용합니다
+  (`npx`·`yarn`·`pnpm`·`bunx`). **알려진 한계**: 기존 settings와의 병합은 합집합이라 이미 스캐폴드된 프로젝트의 옛
+  `pnpm …` 항목은 남습니다(무해하지만 낡음) — 필요하면 손으로 지우십시오. 자동 제거는 별도 결정으로 둡니다.
+  (task `scaffold-pm-permissions`)
 
 ## [0.24.0] - 2026-09-03
 

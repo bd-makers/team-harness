@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+scaffold-pm-permissions
 
-## Last Completed Task (2026-09-03)
-`audit-cleanup` — done
+## Last Commit (2026-09-03)
+61bfc45 docs(task): scaffold-pm-permissions ship — spec 설계 확정 반영, artifact 결과·검증 출력·리스크·학습 기록
 
 ## Full Context
-→ docs/hslee/audit-cleanup/audit-cleanup-handoff.md
+→ docs/hslee/scaffold-pm-permissions/scaffold-pm-permissions-handoff.md
