@@ -4,7 +4,7 @@
 scaffold-pm-permissions
 
 ## Last Commit (2026-09-03)
-0ee35b8 docs(task): scaffold-pm-permissions 5단계 — 전체 검증 출력 인용 (npm test 521 pass / 1 skip, perf 1, docs:check 최신)
+4f3e55f docs(changelog): [Unreleased] — init 권한 목록의 pm·스택 생성과 합집합 병합 한계 기록
 
 ## Full Context
 → docs/hslee/scaffold-pm-permissions/scaffold-pm-permissions-handoff.md

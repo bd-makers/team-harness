@@ -49,3 +49,11 @@ docs/hslee/hslee-handoff.md                                       | 2 +-
  .../scaffold-pm-permissions/scaffold-pm-permissions-handoff.md    | 8 ++++++++
  .../hslee/scaffold-pm-permissions/scaffold-pm-permissions-plan.md | 2 +-
  4 files changed, 11 insertions(+), 3 deletions(-)
+
+## 2026-09-03T15:49:09.202Z — 4f3e55f docs(changelog): [Unreleased] — init 권한 목록의 pm·스택 생성과 합집합 병합 한계 기록
+CHANGELOG.md                                              | 15 ++++++++++++++-
+ docs/hslee/hslee-handoff.md                               |  2 +-
+ .../scaffold-pm-permissions-context.md                    |  4 ++--
+ .../scaffold-pm-permissions-handoff.md                    |  7 +++++++
+ .../scaffold-pm-permissions-plan.md                       |  2 +-
+ 5 files changed, 25 insertions(+), 5 deletions(-)
