@@ -64,8 +64,8 @@ $ npm test
 $ npm run docs:check
 harness overview 생성 상태가 최신입니다.
 ```
-`skipped 1`은 `tests/hooks-jq-fallback.test.mjs`의 `skip: !process.env.CI` 게이트(CI에서는 실행). 신규 테스트 6파일
-(git-hooks·detect-stack·observe-tools-entry·boundary-checkpoint-write·gitignore-entries + agent-files/migrate-hooks/stack-rules/hooks-jq 확장).
+`skipped 1`은 `tests/hooks-jq-fallback.test.mjs`의 `skip: !process.env.CI` 게이트(CI에서는 실행). 신규 테스트 5파일
+(git-hooks·detect-stack·observe-tools-entry·boundary-checkpoint-write·gitignore-entries) + 기존 4파일 확장(agent-files/migrate-hooks/stack-rules/hooks-jq).
 현행 문서의 `opencode|gemini|harness-apply` 잔존 0(이력 스냅샷·부정 단언 테스트·D7 본문 제외).
 
 **남긴 것**: `templates/.claude/settings.json`의 pnpm 권한 목록은 범위 밖. `docs/task_summary.md` 원장은 기본 브랜치에서
@@ -125,6 +125,22 @@ harness overview 생성 상태가 최신입니다.
 수정분은 외부 재실행 없이 작성 세션이 자체 확인했다(S1–S4는 리뷰어 pass 유지).
 
 <!-- harness:review kind=codex-shipcheck scope=diff tip=562e3dd7a9b43fc558ec5bb264e98736bd80450b at=2026-09-03T02:20:32Z -->
+
+### 2026-09-03 — codex 사실 대조 (read-only, scope=release-docs — what-changes 0.24.0 산문 + overview 배너 vs CHANGELOG·task 4파일·decisions D7·소스; 릴리스 후 후속)
+
+**실행**: `codex exec --sandbox read-only "<사실 대조 프롬프트>" < /dev/null` (백그라운드, stdout 7.5 KB). 폴백 없음(명시 codex).
+활성 task 없음(이 task는 `done`) — 절차상 기록처가 없어 이 task의 후속 기록으로 남긴다.
+**결과**: 주장 34개 추출, 일치 31, 문제 4(P1 1 · P2 2 · P3 1). 미래 릴리스 번호 없음. 리뷰어 자체 실행: `--version` 0.24.0, `--help`에 `apply` 없음, `docs:check` 최신.
+- P1 what-changes "검증" 문단 "회귀 테스트 6파일이 새로": `git diff --name-status --diff-filter=A v0.23.1 v0.24.0 -- tests`의 신규 `*.test.mjs`는 5개.
+- P2 이 artifact "신규 테스트 6파일": 같은 오기의 원천(handoff·what-changes·latest 복사본까지 4곳).
+- P2 "위임이 컨텍스트를 아끼는 이유는 원증거를 부모로 되돌리지 않기 때문" — 정본·소스에 근거 없음.
+- P3 "0.21.0 alias 제거": 0.21.0 CHANGELOG는 "옛 리뷰 이름 4개 제거(deprecated 포워딩)".
+**판별**: "6파일" P1·P2는 진짜 — 작성 세션 재현: 신규 5, `apply-smoke → init-smoke`는 +11/-7 소폭 수정이라 6번째 아님. P3 진짜(경미).
+"위임" P2는 오탐 — 사실 주장이 아닌 학습 해석이고 출처는 저장소 밖 delegation-router 스킬 문장.
+**조치(문서만)**: 네 곳 "6파일" → "5파일 + 기존 4파일 확장", "alias 제거" → "옛 리뷰 이름 제거". 코드·테스트 변경 없음.
+overview 생성물에는 해당 문장이 없어 `docs:generate` 불필요(`docs:check` exit 0 재확인).
+
+<!-- harness:review kind=codex scope=release-docs tip=9a9684d4d936bcff4fd8cef954dd53db60401f19 at=2026-09-03T14:22:17Z -->
 
 ## Learnings
 

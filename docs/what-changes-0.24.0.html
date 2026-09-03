@@ -408,10 +408,10 @@
       <p><code>git -C</code> 우회를 닫으며 값 있는 전역 옵션만 열거했더니, 리뷰어가 값 없는 옵션(<code>--no-pager</code>)과 공백 분리 값(<code>--work-tree x</code>)으로 곧바로 뚫었습니다. &ldquo;어떤 토큰이 subcommand 앞에 올 수 있나&rdquo;를 먼저 적고 그 목록으로 매트릭스를 만들었어야 했습니다. 개수 검사도 마찬가지입니다 &mdash; 마커 begin/end 개수, 체크박스 개수 둘 다 순서·스왑으로 뚫렸습니다. <strong>개수 검사는 구조 검사가 아닙니다.</strong></p>
 
       <h3>&ldquo;우선은 제거&rdquo;는 멤버 표면 전체를 뜻한다</h3>
-      <p>스캐폴드·역할표·doctor·gitignore·ITEMS·리뷰 엔진 체인·매니페스트·문서·다이어그램까지 한 표면이라도 남기면 규범과 실체가 다시 어긋납니다. 지울 계획을 세울 때 plan에 적을 것은 지울 대상이 아니라 <strong>그 대상을 이름으로 부르는 모든 곳</strong>입니다 &mdash; 0.21.0 alias 제거에서 배운 규칙이 여기서도 맞았습니다.</p>
+      <p>스캐폴드·역할표·doctor·gitignore·ITEMS·리뷰 엔진 체인·매니페스트·문서·다이어그램까지 한 표면이라도 남기면 규범과 실체가 다시 어긋납니다. 지울 계획을 세울 때 plan에 적을 것은 지울 대상이 아니라 <strong>그 대상을 이름으로 부르는 모든 곳</strong>입니다 &mdash; 0.21.0 옛 리뷰 이름 제거에서 배운 규칙이 여기서도 맞았습니다.</p>
 
       <h3>검증</h3>
-      <p>커밋 직전, 작성 세션과 다른 세션에서 재실행한 실제 출력입니다. <code>skipped 1</code>은 <code>tests/hooks-jq-fallback.test.mjs</code>의 <code>skip: !process.env.CI</code> 게이트로 CI에서는 실행됩니다. 회귀 테스트 6파일이 새로 들어갔습니다(git-hooks · detect-stack · observe-tools-entry · boundary-checkpoint-write · gitignore-entries + 기존 확장).</p>
+      <p>커밋 직전, 작성 세션과 다른 세션에서 재실행한 실제 출력입니다. <code>skipped 1</code>은 <code>tests/hooks-jq-fallback.test.mjs</code>의 <code>skip: !process.env.CI</code> 게이트로 CI에서는 실행됩니다. 회귀 테스트 5파일이 새로 들어갔고(git-hooks · detect-stack · observe-tools-entry · boundary-checkpoint-write · gitignore-entries) 기존 테스트 4파일을 확장했습니다.</p>
       <pre><code>$ npm test
 ℹ tests 508
 ℹ pass 507

@@ -23,7 +23,7 @@ feat!: apply 삭제·OpenCode/Gemini 멤버 제외(D7) + 2026-09-03 감사 발�
 - observe-tools 공백 경로 no-op, 마커 손상 병합 가드, boundary stderr 미러·Write 판정, 스택 감지(TS·bun.lock·--stack 검증·RN rules 게이트),
   git-hooks hooksPath/worktree, protect-files·block-dangerous-git 패턴, .harness gitignore 범위, 문서 결함 다수
 - codex 리뷰 1차 6건 반영(전역 옵션 우회·마커 순서·checkbox 스왑·Edit|Write·주석 마커·help), 2차 발견 0
-- 회귀 테스트 6파일 신규, npm test 508 pass; docs:generate 재생성; CHANGELOG [Unreleased]
+- 회귀 테스트 5파일 신규(기존 4파일 확장), npm test 508 pass; docs:generate 재생성; CHANGELOG [Unreleased]
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 ```
