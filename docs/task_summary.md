@@ -73,3 +73,4 @@
 | hslee | claude5-context-apply | ✅ done | 2026-08-30 |
 | hslee | claude5-context-followups | ✅ done | 2026-08-30 |
 | chad | doctor-eager-global | ✅ done | 2026-08-31 |
+| hslee | audit-cleanup | ✅ done | 2026-09-02 |
