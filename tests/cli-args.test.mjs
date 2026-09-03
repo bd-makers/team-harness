@@ -110,9 +110,9 @@ test('cli-args: real invocations still resolve to a run', () => {
 });
 
 test('cli-args: --no-gitignore-ai normalizes to the key init reads', () => {
-  assert.equal(resolveInvocation(['apply', '--no-gitignore-ai']).flags['gitignore-ai'], false);
-  assert.equal(resolveInvocation(['apply', '--gitignore-ai']).flags['gitignore-ai'], true);
-  assert.equal(resolveInvocation(['apply']).flags['gitignore-ai'], undefined);
+  assert.equal(resolveInvocation(['init', '--no-gitignore-ai']).flags['gitignore-ai'], false);
+  assert.equal(resolveInvocation(['init', '--gitignore-ai']).flags['gitignore-ai'], true);
+  assert.equal(resolveInvocation(['init']).flags['gitignore-ai'], undefined);
 });
 
 test('cli-args: globals are accepted on every command', () => {
@@ -127,7 +127,7 @@ test('cli-args: globals are accepted on every command', () => {
 });
 
 test('parseArgs: an inline value flag does not swallow the next token', () => {
-  const parsed = parseArgs(['apply', '--target=/tmp/x', 'extra']);
+  const parsed = parseArgs(['init', '--target=/tmp/x', 'extra']);
   assert.equal(parsed.flags.target, '/tmp/x');
   assert.deepEqual(parsed.positional, ['extra']);
 });
@@ -148,7 +148,7 @@ test('cli-args: the command table and the bin router agree', async () => {
 // failure this module exists to remove: the caller passes `--backup-dir B`,
 // nothing errors, and the command operates on A. Each declared flag must appear
 // in the module that actually handles the command.
-const HANDLER = { apply: 'init', list: 'task', done: 'task', handoff: 'task', retro: 'task' };
+const HANDLER = { list: 'task', done: 'task', handoff: 'task', retro: 'task' };
 
 test('cli-args: every declared flag is read by the command that declares it', async () => {
   for (const command of COMMANDS.filter(c => c.name !== 'help' && c.flags.length > 0)) {

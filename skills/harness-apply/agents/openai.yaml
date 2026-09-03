@@ -1,4 +1,0 @@
-interface:
-  display_name: "Harness Apply"
-  short_description: "Apply the team harness to a project."
-  default_prompt: "Use $harness-apply to apply the team harness."

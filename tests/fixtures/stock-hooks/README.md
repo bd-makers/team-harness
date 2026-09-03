@@ -16,3 +16,9 @@
 
 `older`/`pre-jq-fallback`은 `harness:jq-fallback` 마커가 없어 jq 부재 시 fail-open,
 `jq-fallback-v1`은 마커는 있으나 `json_input_field`(tool_input 스코프) 이전 판이다.
+| `pre-audit-cleanup/block-dangerous-git.sh` | `599cd2d4` | tool_input 스코프판 (`-C`·`-fu`·`+refspec` 우회 이전) |
+| `pre-audit-cleanup/protect-files.sh` | `bf6c4f6e` | substring 패턴판 (`.envrc`·`android/builder.ts` 오탐) |
+| `pre-audit-cleanup/boundary-checkpoint.sh` | `63c8862f` | 도입판 (CLI 부재 시 exit 127) |
+| `pre-audit-cleanup/observe-tools.mjs` | `7bc95dd0` | 도입판 (`URL.pathname` 비교 — 공백 경로에서 no-op) |
+
+`pre-audit-cleanup`은 2026-09-03 점검(audit-cleanup) 직전 판이다. `.mjs`도 같은 sha 규칙으로 refresh한다.

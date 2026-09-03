@@ -9,10 +9,12 @@ modified: 2026-08-28
 
 # harness-aijient-team
 
-> **Claude 메인 + Codex · Gemini · Cursor · OpenCode** — 다섯 AI 에이전트의 설정과 상태를 하나의 프로젝트에서 통일하는 멀티에이전트 **설정·상태 하네스** 플러그인.
+> **Claude 메인 + Codex · Cursor** — 세 AI 에이전트의 설정과 상태를 하나의 프로젝트에서 통일하는 멀티에이전트 **설정·상태 하네스** 플러그인.
 
-프로젝트에 통일된 멀티 에이전트 설정을 **새로 scaffold**하거나 **기존 repo에 비파괴적으로 적용**합니다.
-`AGENTS.md`(Linux Foundation 오픈 표준)를 공유 코어 단일 진실의 원천(SSOT)으로 삼고, `CLAUDE.md` / `GEMINI.md`는 `@AGENTS.md`를 import하는 얇은 파일로 두어 drift가 없습니다.
+`init` 하나로 프로젝트에 통일된 멀티 에이전트 설정을 **새로 scaffold**하거나 **기존 repo에 비파괴적으로 재적용**합니다(마커 병합·JSON deep-merge).
+`AGENTS.md`(Linux Foundation 오픈 표준)를 공유 코어 단일 진실의 원천(SSOT)으로 삼고, `CLAUDE.md`는 `@AGENTS.md`를 import하는 얇은 파일로 두어 drift가 없습니다.
+
+> OpenCode·Gemini는 하네스 멤버에서 제외됐습니다(`docs/decisions.md` D7). 예전의 `apply` 명령은 `init`의 별칭이었고 삭제됐습니다.
 
 > 이 레포를 수정하는 에이전트/메인테이너는 [MAINTAINING.md](./MAINTAINING.md)를 먼저 확인하세요 (릴리스 절차·작업 규칙).
 
@@ -43,33 +45,32 @@ modified: 2026-08-28
 | 에이전트 | 읽는 파일 |
 |---|---|
 | Claude Code | `CLAUDE.md`, `.claude/` |
-| Codex | `AGENTS.md`, `.codex-plugin/`, `skills/` |
-| Gemini CLI | `GEMINI.md` |
+| Codex | `AGENTS.md`, `.codex/hooks.json`, `.codex-plugin/`, `skills/` |
 | Cursor | `AGENTS.md`, `.cursor/rules/*.mdc` |
-| OpenCode | `AGENTS.md`, `opencode.json` |
 
 각각 관리하면 동기화 지옥이 됩니다. 이 플러그인은:
 
-- `AGENTS.md`를 공유 코어 실파일(오픈 표준)로 두고 `CLAUDE.md` / `GEMINI.md`는 `@AGENTS.md` import 얇은 파일 (Cursor·OpenCode는 `AGENTS.md` 네이티브 인식)
+- `AGENTS.md`를 공유 코어 실파일(오픈 표준)로 두고 `CLAUDE.md`는 `@AGENTS.md` import 얇은 파일 (Codex·Cursor는 `AGENTS.md` 네이티브 인식)
 - `.claude/rules/*.md`를 원본으로 `.cursor/rules/*.mdc`를 자동 미러링 — `paths:`가 있으면 Cursor의 `globs:`(auto-attach)로, 없으면 `alwaysApply: true`로 번역
-- `opencode.json`은 `.claude/skills/*/SKILL.md`를 **참조**(복사 아님)
 - `.codex-plugin/plugin.json` + `skills/harness-team`으로 Codex에서도 같은 CLI/AGENTS.md 워크플로우를 사용
-- Codex/Gemini는 read-only 리뷰어로 Bash를 통해 호출 (first-token 매칭 규칙 준수)
+- Codex는 read-only 리뷰어로 Bash를 통해 호출 (first-token 매칭 규칙 준수)
 - 작업은 `docs/<member>/<name>/` 구조로 팀원·task별 격리
 
 결과: 규칙·스킬을 한 곳에서 편집하면 모든 에이전트가 같은 내용을 읽고, 팀원이 서로의 작업에 간섭하지 않습니다.
 
 > **예외 — `.claude/rules`는 팀 전체 규칙이 아닙니다.** 경로 스코프 규칙(`paths:` frontmatter)을
-> 네이티브로 읽는 건 Claude Code와 미러를 받는 Cursor뿐입니다. Codex·Gemini·OpenCode는 `.claude/`를
+> 네이티브로 읽는 건 Claude Code와 미러를 받는 Cursor뿐입니다. Codex는 `.claude/`를
 > 보지 않으므로, 이들에게도 적용돼야 하는 규칙은 `AGENTS.md`(전역) 또는 하위 디렉터리
 > `AGENTS.md`(경로별)에 둬야 합니다. 특히 Codex는 리뷰어 역할이라 — 작성자만 아는 기준으로
 > 리뷰하는 상황을 만들지 않으려면 리뷰에 쓰일 기준은 `AGENTS.md`에 있어야 합니다.
+> 설치되는 rules 4종은 React Native/Expo 전용이라 유효 stack이 RN 계열일 때만 복사됩니다 — 다른 stack은
+> `.claude/rules`가 비어 있고 Cursor 미러도 생기지 않습니다.
 
 **설계 스코프: 설정·상태 하네스이지 런타임 오케스트레이션이 아닙니다.** 지휘자·공유 작업큐·
 팬아웃/팬인 같은 런타임 협업 계층은 두지 않습니다 — 이는 누락이 아니라 의도된 설계입니다.
 Anthropic·OpenAI·Cognition·12-Factor Agents 등 최근 1차 소스는 병렬로 "쓰는" 에이전트를
 상충·신뢰성 위험으로 보고, 단일 스레드 실행 + 얇고 직접 소유한 제어흐름을 권장합니다. 이 플러그인의
-드라이버(Claude·OpenCode) → 리뷰어(Codex·Gemini, read-only) 순차 루프는 그 방향과 정합적입니다.
+드라이버(Claude) → 리뷰어(Codex, read-only) 순차 루프는 그 방향과 정합적입니다.
 단, 이 원칙이 금지하는 것은 **같은 워킹트리에 동시에 쓰는 것**입니다 — 각자 격리된 브랜치·git
 worktree에서 작업하고 PR/MR로 병합하는 병렬 경로는 허용되며 권장됩니다(`docs/decisions.md` D5).
 산출물의 품질 판정에는 **별도 컨텍스트의 read-only 검증자**(적대적 검증)를 붙일 수 있습니다 —
@@ -88,15 +89,15 @@ OS/네트워크 격리는 이 플러그인의 스코프 밖입니다 — devcont
 
 | 채널 | 대상/시점 | 제공하는 것 |
 |---|---|---|
-| `apply` | 프로젝트당 1회 | hooks·rules·AGENTS/CLAUDE/GEMINI·docs 구조·`opencode.json`·`.cursor/rules` |
-| Claude Code 플러그인 설치 | 사람·머신마다 | `/harness-*` 슬래시 커맨드 24개 |
+| `init` | 프로젝트당 1회 (재실행은 갱신) | hooks·rules·AGENTS/CLAUDE·docs 구조·`.codex/hooks.json`·`.cursor/rules`(RN 계열만) |
+| Claude Code 플러그인 설치 | 사람·머신마다 | `/harness-*` 슬래시 커맨드 23개 |
 | 전역 `harness-team` CLI 링크 | 사람마다 | 터미널과 훅이 호출하는 `harness-team` CLI |
 
-**`apply`만으로는 `/harness-*` 슬래시 커맨드가 설치되지 않습니다.** `apply`는 `commands/*.md` 24개를 프로젝트에 복사하지 않으며, 해당 명령은 Claude Code 플러그인 설치 채널에서 제공됩니다.
+**`init`만으로는 `/harness-*` 슬래시 커맨드가 설치되지 않습니다.** `init`은 `commands/*.md` 23개를 프로젝트에 복사하지 않으며, 해당 명령은 Claude Code 플러그인 설치 채널에서 제공됩니다.
 
 이 패키지는 **npm 공개 저장소에 배포되지 않습니다** — 전역 CLI는 `/plugin install`이 만든
 로컬 마켓플레이스 클론을 `npm i -g`로 링크해 얻습니다. 이미 하네스가 적용된 저장소를 clone한
-팀원은 프로젝트에 다시 `apply`하지 마세요. 먼저 자신의 Claude Code에 플러그인을 설치하고,
+팀원은 프로젝트에 `init`을 다시 돌릴 필요가 없습니다(돌려도 마커 병합이라 무해하지만 diff만 생깁니다). 먼저 자신의 Claude Code에 플러그인을 설치하고,
 자신의 PATH에 CLI를 링크한 뒤 점검합니다.
 
 ```bash
@@ -111,24 +112,22 @@ harness-team doctor
 
 | 에이전트 | hooks | 커맨드/적용 표면 | 경로 스코프 규칙 |
 |---|---|---|---|
-| Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 24개 슬래시 커맨드 | `.claude/rules` `paths:` — 매칭 파일 **Read 시** 로드 |
+| Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 23개 슬래시 커맨드 | `.claude/rules` `paths:` — 매칭 파일 **Read 시** 로드 |
 | Codex | SessionStart 1종 (신뢰 승인 필요) | 슬래시 커맨드는 없고 별도 `.codex-plugin` 설치 시 동명의 스킬 | 없음 — 하위 디렉터리 `AGENTS.md`로 대체 |
-| OpenCode | 0 | `new-feature` / `fix-bug` / `verify` 3개 | 없음 |
-| Gemini | 0 | `GEMINI.md` 텍스트만 | 없음 |
-| Cursor | 0 | `.cursor/rules/*.mdc` 규칙만 | `.mdc` `globs:` — `.claude/rules`에서 미러 |
+| Cursor | 0 | `.cursor/rules/*.mdc` 규칙만 (RN 계열 stack) | `.mdc` `globs:` — `.claude/rules`에서 미러 |
 
-`apply`는 Claude Code용 `.claude/settings.json` 훅과 Codex용 `.codex/hooks.json` SessionStart 훅을 설치합니다. 둘 다 `harness-team session-context`를 호출해 활성 task의 Context Card를 주입합니다. 나머지 에이전트는 훅 메커니즘이 없어 하네스 규칙이 결정론적 강제가 아니라 규범으로 적용됩니다.
+`init`은 Claude Code용 `.claude/settings.json` 훅과 Codex용 `.codex/hooks.json` SessionStart 훅을 설치합니다. 둘 다 `harness-team session-context`를 호출해 활성 task의 Context Card를 주입합니다. Cursor는 훅 메커니즘이 없어 하네스 규칙이 결정론적 강제가 아니라 규범으로 적용됩니다.
 
 > **Codex 훅은 설치만으로 동작하지 않습니다 — 한 번의 신뢰 승인이 필요합니다.** Codex는 새로 나타난
 > 프로젝트 훅을 사용자가 검토·신뢰할 때까지 실행하지 않고, 승인 결과를 `~/.codex/config.toml`
-> `[hooks.state]`에 해시로 기록합니다. `apply` 이후 첫 Codex 세션에서 승인하세요. 훅 파일을 수정하면
-> 해시가 바뀌어 재승인이 필요합니다 — **하네스 업그레이드 후 재`apply`로 훅 커맨드가 바뀌었을 때도
+> `[hooks.state]`에 해시로 기록합니다. `init` 이후 첫 Codex 세션에서 승인하세요. 훅 파일을 수정하면
+> 해시가 바뀌어 재승인이 필요합니다 — **하네스 업그레이드 후 `init` 재실행으로 훅 커맨드가 바뀌었을 때도
 > 마찬가지입니다.** 또한 `harness-team` CLI가 PATH에 없으면 훅은 조용히 no-op으로
 > 넘어갑니다(전역 CLI 링크는 별도 채널 — 위 표 참조).
 > `harness-team doctor`가 `.codex/hooks.json`이 존재하는데 harness SessionStart 훅이 없는 상태를
 > 경고로 잡아 줍니다.
 
-> 커맨드 표면은 별개입니다 — 슬래시 커맨드(`commands/`)는 Claude Code 전용이고, Codex는 `.codex-plugin`을 따로 설치해야 동명의 스킬(`skills/`)을 받습니다. `apply`가 설치해 주지 않습니다.
+> 커맨드 표면은 별개입니다 — 슬래시 커맨드(`commands/`)는 Claude Code 전용이고, Codex는 `.codex-plugin`을 따로 설치해야 동명의 스킬(`skills/`)을 받습니다. `init`이 설치해 주지 않습니다.
 
 ---
 
@@ -139,11 +138,9 @@ harness-team doctor
 /plugin marketplace add https://github.com/bd-makers/team-harness
 /plugin install harness-aijient-team
 
-# 2. 프로젝트에 적용
+# 2. 프로젝트에 적용 — 신규·기존 모두 같은 명령 (기존 파일은 마커 병합)
 cd my-project
-/harness-apply        # 기존 프로젝트면 (비파괴 병합)
-# 또는
-/harness-init         # 빈 디렉토리면
+/harness-init
 
 # 3. 첫 작업 시작
 /harness-task user-auth
@@ -154,7 +151,7 @@ cd my-project
 /harness-ship         # spec·plan·artifact 최종 갱신 + 준비 완료 보고 (PR 생성은 별도)
 
 # 5. 세션 종료 전
-/harness-task done    # 활성 task 완료 처리 (handoff.md 갱신, task_summary 반영)
+/harness-task done    # 활성 task 완료 처리 (meta 상태 done — 원장은 기본 브랜치에서 `harness-team summary --write`)
 ```
 
 > **task-gate (자동):** 3번을 건너뛰고 그냥 프롬프트로 작업을 시작해도, 세션 시작 시
@@ -168,17 +165,15 @@ cd my-project
 
 **하드 요구사항은 Node.js ≥ 24 하나뿐입니다** (`engines.node`, 런타임 npm 의존성 0개).
 나머지는 "있으면 켜지고 없으면 그 기능만 꺼지는" 능력 매트릭스입니다.
-`git` 아래 다섯 개는 `harness-team doctor`가 런타임에 유무를 확인해 줍니다.
+`jq`와 `git` 아래 두 개는 `harness-team doctor`가 런타임에 유무를 확인해 줍니다.
 
 | 도구 | 없으면 |
 |---|---|
 | Node.js ≥ 24 | `harness-team` CLI가 실행되지 않음 — 유일한 하드 요구사항 |
-| `jq` | Claude Code 훅이 **저정밀 모드**로 판정 — 차단은 유지되지만 정확도가 떨어짐. 다른 넷과 달리 doctor가 `warning`으로 알림 |
+| `jq` | Claude Code 훅이 **저정밀 모드**로 판정 — 차단은 유지되지만 정확도가 떨어짐. 다른 둘과 달리 doctor가 `warning`으로 알림 |
 | `git` | CLI는 동작하되 post-commit handoff·summary 브랜치 감지·task 전환 diff가 no-op |
 | `gh` | `/harness-ship` 이후 **사용자가 직접 여는** PR 단계용 — 하네스 명령은 영향 없음 |
-| `codex` | `/harness-review codex`, `/harness-adversarial-review codex`, Codex L5 시뮬레이션 |
-| `gemini` | 병렬 외부 리뷰 — 건너뛰되 artifact에 "미실행"을 기록 |
-| `opencode` | OpenCode 순차 드라이버 세션 (하네스는 설정 파일을 쓰기만 합니다) |
+| `codex` | `/harness-review codex`, `/harness-adversarial-review codex`, Codex L5 시뮬레이션 — 없으면 probe 체인이 `claude` 엔진으로 내려감 |
 
 > **⚠ jq를 먼저 확인하세요.** 없으면 훅이 grep 폴백으로 판정합니다 — 차단 자체는 유지되지만
 > JSON 이스케이프를 디코드하지 못해 일부 명령을 놓칠 수 있습니다. 자세한 한계는
@@ -210,7 +205,7 @@ cd my-project
 
 Codex 쪽 marketplace/설치 위치는 개인·팀 환경에 따라 다릅니다. 로컬 개발 중에는 이 레포를 Codex local plugin source로 등록한 뒤, 새 Codex thread에서 `harness-team` 및 `harness-*` command-equivalent skills가 노출되는지 확인하세요.
 
-주의: Codex 플러그인은 Claude Code의 `.claude-plugin/plugin.json` `commands[]`를 같은 slash command 목록으로 가져오지 않습니다. Codex의 플러그인 표면은 `skills`, apps, MCP 서버이며, 명시 호출은 `/harness-*`가 아니라 `$harness-aijient-team:harness-apply`처럼 `$` skill invocation을 사용합니다. 이 레포는 Claude의 `/harness-*` 명령에 대응하는 `skills/harness-*` 래퍼를 제공하고, 각 wrapper는 `commands/harness-*.md`를 SSOT로 읽습니다. 단, `harness-sim`은 방향이 반대로 — 커맨드가 얇은 래퍼이고 절차 SSOT는 스킬 본문입니다.
+주의: Codex 플러그인은 Claude Code의 `.claude-plugin/plugin.json` `commands[]`를 같은 slash command 목록으로 가져오지 않습니다. Codex의 플러그인 표면은 `skills`, apps, MCP 서버이며, 명시 호출은 `/harness-*`가 아니라 `$harness-aijient-team:harness-init`처럼 `$` skill invocation을 사용합니다. 이 레포는 Claude의 `/harness-*` 명령에 대응하는 `skills/harness-*` 래퍼를 제공하고, 각 wrapper는 `commands/harness-*.md`를 SSOT로 읽습니다. 단, `harness-sim`은 방향이 반대로 — 커맨드가 얇은 래퍼이고 절차 SSOT는 스킬 본문입니다.
 
 Codex headless L5 검증은 먼저 probe로 auth/JSONL 계약을 확인한 뒤 full run을 실행합니다:
 
@@ -276,44 +271,37 @@ harness-team --help
 
 아래는 전체 목록이 아니라 자주 쓰는 명령만 다루는 부분 안내입니다 — 등록된 전체 명령은 `commands/*.md` 및 `.claude-plugin/plugin.json`이 정본입니다.
 
-### `/harness-init` — 신규 scaffold
+### `/harness-init` — scaffold · 기존 프로젝트 재적용
 
-빈 디렉토리 또는 이미 `package.json`만 있는 프로젝트에 전체 하네스 설치.
+빈 디렉토리, `package.json`만 있는 프로젝트, 이미 `CLAUDE.md`·`.claude/settings.json`이 있는 repo 모두 같은 명령입니다.
+기존 파일은 **비파괴**로 다룹니다:
 
-```bash
-/harness-init                          # 스택 자동 탐지
-/harness-init --stack next             # 명시적 지정
-/harness-init --yes                    # 비대화식 (diff 확인 건너뜀)
-```
-
-스택 옵션: `react-native` | `react` | `next` | `node` | `python` | `generic`
-
-### `/harness-apply` — 기존 프로젝트에 비파괴 적용
-
-기존 `CLAUDE.md`, `.claude/settings.json` 등이 있는 repo에 하네스를 **안전하게** 추가합니다.
-
-동작:
 1. 기존 파일 탐지 & 파싱
-2. HTML 주석 마커(`<!-- harness:section="..." -->`) 섹션만 교체/추가
-3. JSON은 deep-merge (배열은 union, 중복 제거)
-4. hooks/rules는 덮지 않고 건너뜀
-5. Diff를 보여주고 `[y/N]` 확인 → 승인 시 적용
+2. HTML 주석 마커(`<!-- harness:section="..." -->`) 섹션만 교체/추가 — begin/end 마커가 짝이 안 맞는 파일은 병합하지 않고 경고
+3. JSON(`.claude/settings.json`, `.codex/hooks.json`)은 deep-merge (배열은 union, 중복 제거)
+4. hooks/rules/skills는 이미 있으면 건너뜀
+5. Diff를 보여주고 `[Y/n]` 확인 → 승인 시 적용 (`--yes`면 확인 없이)
 
 ```bash
-/harness-apply                  # 대화식 (diff 확인 후 승인)
-/harness-apply --yes            # 비대화식 (CI에서 사용)
+/harness-init                          # 스택 자동 탐지, 대화식
+/harness-init --stack next             # 명시적 지정 (감지된 패키지 매니저·스크립트는 유지)
+/harness-init --yes                    # 비대화식 (CI·재적용)
 ```
+
+스택 옵션: `react-native` | `react` | `next` | `node` | `python` | `go` | `generic` — 목록 밖의 값은 exit 2로 거부합니다.
+React Native/Expo 전용 rules 4종은 유효 stack이 RN 계열일 때만 설치됩니다.
 
 ### `/harness-sync` — 내부 정합성 동기화
 
-`.cursor/rules` 미러를 재생성. rules를 수정했을 때 실행. (에이전트 파일은 실파일이라 symlink 재생성 없음 — `AGENTS.md`/`CLAUDE.md`/`GEMINI.md` 갱신은 `apply`.)
+`.cursor/rules` 미러를 재생성하고 post-commit 훅을 재설치. rules를 수정했을 때 실행. (에이전트 파일은 실파일이라 symlink 재생성 없음 — `AGENTS.md`/`CLAUDE.md` 갱신은 `/harness-init` 재실행.)
 
 ```bash
 /harness-sync
 ```
 
 수행:
-- `.claude/rules/*.md` → `.cursor/rules/*.mdc` 미러링 갱신
+- `.claude/rules/*.md` → `.cursor/rules/*.mdc` 미러링 갱신 (단방향; 원본이 사라진 미러는 정리)
+- git post-commit 훅 재설치 (`core.hooksPath`·worktree는 `git rev-parse --git-path hooks`로 따라감)
 
 > ⚠️ `symlink.sh` 와는 **다른 기능**입니다. 아래 [스크립트 3종](#스크립트-3종-사용법) 참조.
 
@@ -333,8 +321,6 @@ symlink · JSON 유효성 · 실행 권한 · 외부 도구 존재 여부 체크
 external tools:
 ✓ gh (GitHub CLI)
 - codex (Codex CLI)  (not found, optional)
-✓ gemini (Gemini CLI)
-- opencode (OpenCode CLI)  (not found, optional)
 ✓ jq (JSON processor)
 ✓ harness-team CLI  (--help OK)
 ✓ SessionStart/post-commit hook CLI  (session-context/handoff supported)
@@ -343,7 +329,7 @@ All checks passed.
 ```
 
 심볼: `✓` 정상, `✗` 실패(exit 1), `-` 선택 항목 없음(정상).
-소비자 프로젝트에서는 PATH의 `harness-team`이 `session-context`와 `handoff`를 지원하는지도 경고로 점검합니다. 플러그인 소스 저장소는 소비자 훅을 설치하지 않으므로 이 항목이 n/a로 건너뛰어집니다.
+소비자 프로젝트에서는 PATH의 `harness-team`이 `session-context`·`handoff`·`boundary`를 지원하는지도 경고로 점검합니다. 플러그인 소스 저장소는 소비자 훅을 설치하지 않으므로 이 항목이 n/a로 건너뛰어집니다.
 
 ### `/harness-spec` — spec 초안 생성 (writer)
 
@@ -373,13 +359,13 @@ Figma(wireframe·design-spec), task 이름 기반 인터뷰. 프로젝트별 소
 
 ### `/harness-review` · `/harness-adversarial-review` — 외부 read-only 리뷰
 
-엔진 중립 외부 리뷰입니다. 첫 토큰이 엔진(`codex`·`claude`·`gemini`·`custom`)이면 그 엔진으로,
-없으면 probe 폴백 체인(codex → gemini → claude)으로 실행합니다. 결과는 활성 task의 artifact
+엔진 중립 외부 리뷰입니다. 첫 토큰이 엔진(`codex`·`claude`·`custom`)이면 그 엔진으로,
+없으면 probe 폴백 체인(codex → claude)으로 실행합니다. 결과는 활성 task의 artifact
 `## Reviews`에 날짜·엔진과 함께 기록되고, 기록 끝의 기계 판독용 마커
 (`<!-- harness:review kind=... -->`)가 `harness-team done` 가드의 `review`·`verify` 증거가 됩니다.
 
 ```bash
-/harness-review                              # 엔진 자동 (codex → gemini → claude)
+/harness-review                              # 엔진 자동 (codex → claude)
 /harness-review claude --base origin/develop # claude-only 머신, 브랜치 리뷰
 /harness-adversarial-review codex            # 설계·가정에 반박을 시도하는 적대적 프레이밍
 ```
@@ -418,6 +404,7 @@ contrarian·simplifier)은 이 명령의 절차·엔진 표를 재사용하며 `
 ```
 
 `--include-real`은 구버전(파일이 symlink가 아닌 실제 파일로 존재)에서 신버전으로 전환할 때 사용합니다.
+`--yes`는 `--include-real`의 "PERMANENTLY delete" 확인까지 건너뛰므로 둘을 함께 쓰기 전에 삭제 대상을 확인하세요.
 
 ### `/harness-migrate` — v0.2.x → v0.3+ 스크립트 위치 이전
 
@@ -432,7 +419,8 @@ v0.2.x에서 backup dir에 있던 `clone.sh`, `symlink.sh`, `delete.sh`를 프�
 > hook**이나 **PreToolUse boundary checkpoint hook**이 없으면 추가합니다(0.9+). 단,
 > `.claude/settings.json`이 없거나 JSON으로 파싱되지 않으면 해당 hook은 설치하지 않고 안내만 출력합니다.
 > 모두 멱등이라 이미 최신이면 `up to date`로 건너뜁니다.
-> (hook은 `apply`의 deep-merge로도 들어옵니다 — migrate는 구조 변경 없이 hook만 보강할 때 유용.)
+> (hook은 `init` 재실행의 deep-merge로도 들어옵니다 — migrate는 구조 변경 없이 hook만 보강할 때 유용하고,
+> 설치된 stock 훅 스크립트(observe-tools·boundary-checkpoint 포함)를 현재 템플릿으로 갱신하는 유일한 경로입니다.)
 
 ### `/harness-upgrade` — v0.3.x → v0.4+ 원스텝 전환
 
@@ -480,7 +468,7 @@ task 디렉토리 구조와 파일 계약은 scaffold 되는 `AGENTS.md`의 **�
 # 목록 (* = active)
 /harness-task list
 
-# 활성 task 완료 — task_summary.md / <member>-task.md 상태 갱신
+# 활성 task 완료 — meta 상태를 done으로 (원장 갱신은 기본 브랜치에서 `harness-team summary --write`)
 /harness-task done
 
 # 활성 task의 handoff.md를 최신 커밋 정보로 갱신 (post-commit hook이 자동 호출)
@@ -518,8 +506,8 @@ V1은 object schema의 `properties`, `required`, 기본 `type`만 비교합니�
 schema instance의 object root를 가리키는 pointer와 표준 document pointer(`/properties/data`)를
 모두 지원합니다. OpenAPI resolver, TypeScript type parser, runtime schema 실행은 범위 밖입니다.
 
-기존 설치에는 `harness-team apply` 또는 `harness-team migrate`로 이 기능을 추가할 수 있습니다.
-`apply`는 settings 템플릿을 deep-merge하고, `migrate`는 구조 마이그레이션과 별도로 위 설정 파일
+기존 설치에는 `harness-team init` 재실행 또는 `harness-team migrate`로 이 기능을 추가할 수 있습니다.
+`init`은 settings 템플릿을 deep-merge하고, `migrate`는 구조 마이그레이션과 별도로 위 설정 파일
 조건을 만족하는 기존 설치의 hook을 보강합니다. 알려진 기본 protect hook은 한 번만 실행되도록
 업그레이드하지만, 커스터마이즈한 hook group/script는 덮어쓰지 않습니다. 커스터마이즈된 group은
 그대로 두고 안전한 경우 template boundary group을 추가합니다.
@@ -571,7 +559,7 @@ $ /harness-task list
 
 ## 스크립트 3종 사용법
 
-`harness-team init/apply` 실행 시 **프로젝트 루트에** 설치되는 세 스크립트입니다. 백업 클론 폴더(`BACKUP_DIR`)는 프로젝트와 같은 레벨의 형제 폴더 아래에 위치하며, 그 경로는 생성 시점에 각 스크립트에 박혀 들어갑니다.
+`harness-team init` 실행 시 **프로젝트 루트에** 설치되는 세 스크립트입니다. 백업 클론 폴더(`BACKUP_DIR`)는 프로젝트와 같은 레벨의 형제 폴더 아래에 위치하며, 그 경로는 생성 시점에 각 스크립트에 박혀 들어갑니다.
 
 ### 설치 구조
 
@@ -635,7 +623,7 @@ Backup clone parent folder (sibling of project, holds clone.sh/symlink.sh/delete
 **용도**: BACKUP_DIR의 자산을 프로젝트 루트에 symlink로 연결.
 
 링크 대상(ITEMS):
-`CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `.claude`, `.cursor`, `.opencode`, `docs`, `.harness`
+`CLAUDE.md`, `AGENTS.md`, `.claude`, `.cursor`, `.codex`, `docs`, `.harness`
 
 **사용 예**:
 ```bash
@@ -683,7 +671,7 @@ cd ~/work/project-a
 ```
 
 **안전장치**:
-- BACKUP_DIR을 가리키는 symlink만 제거 (`[[ "$target" == "$BACKUP_DIR"* ]]` 체크)
+- BACKUP_DIR을 가리키는 symlink만 제거 (`"$target" == "$BACKUP_DIR" || "$target" == "$BACKUP_DIR"/*` 체크 — 경로 경계까지 봐서 `project-a`가 `project-ab`를 잡지 않음)
 - 다른 곳을 가리키는 symlink는 건드리지 않음
 - 실파일/디렉터리는 skip + 안내. 실제로 지우려면 인터랙티브 CLI(`harness-team delete --include-real`) 사용
 
@@ -693,7 +681,7 @@ cd ~/work/project-a
 |---|---|---|
 | 대상 | 같은 프로젝트 내부 (`.cursor/rules` 미러) | 외부 중앙 harness repo |
 | 목적 | 플러그인이 설치한 구조의 무결성 유지 | 여러 프로젝트가 하나의 harness를 공유 |
-| 주요 작업 | `.cursor/rules` 미러링 (에이전트 파일 갱신은 `apply`) | 중앙의 `AGENTS.md`, `CLAUDE.md`, `.claude`, `docs` 등을 현재 프로젝트로 심볼릭 링크 |
+| 주요 작업 | `.cursor/rules` 미러링 + post-commit 훅 재설치 (에이전트 파일 갱신은 `init` 재실행) | 중앙의 `AGENTS.md`, `CLAUDE.md`, `.claude`, `docs` 등을 현재 프로젝트로 심볼릭 링크 |
 | 언제 | rules 수정 후 | 중앙 harness를 새 프로젝트에 적용할 때 |
 
 ---
@@ -702,9 +690,10 @@ cd ~/work/project-a
 
 설치되는 파일과 task 계약은 scaffold 되는 `AGENTS.md`의 **작업 프로토콜** 및 `templates/`를 확인합니다. 개인 상태 파일은 `.harness/active.json`에 보관됩니다. 반면 백업 클론 폴더 경로를 기억하는 `.harness/backup.json`은 팀이 공유하는 설정이므로 commit을 권장합니다.
 
-자동으로 `.gitignore`에 추가되는 항목:
+자동으로 `.gitignore`에 추가되는 항목(`.harness/`를 통째로 무시하지 않습니다 — `backup.json`·`cursor-mirror.json`은 팀 상태):
 - `.claude/settings.local.json` (개인 권한 오버라이드)
 - `.harness/active.json` (개인 활성 task 상태)
+- `.harness/config.json` (개인 docs 사용자명)
 - `.harness/observability/` (로컬 도구 관측 로그와 HMAC 키)
 
 Claude Code 도구 관측은 원문을 보존하지 않는 로컬 JSONL만 `.harness/observability/`에 기록합니다.
@@ -719,7 +708,7 @@ Claude Code 도구 관측은 원문을 보존하지 않는 로컬 JSONL만 `.har
 ```markdown
 <!-- harness:section="roles" begin -->
 ## AI 팀 역할 분담
-...(apply 시 이 블록만 갱신)...
+...(init 재실행 시 이 블록만 갱신)...
 <!-- harness:section="roles" end -->
 
 <!-- harness:user:begin -->
@@ -730,10 +719,10 @@ Claude Code 도구 관측은 원문을 보존하지 않는 로컬 JSONL만 `.har
 관리되는 섹션:
 - `AGENTS.md` (공유 코어): `principles`, `stack`, `roles`, `protocol`
 - `CLAUDE.md` (얇음): 최상단 `@AGENTS.md` import + `workflow`
-- `GEMINI.md` (얇음): 최상단 `@AGENTS.md` import + `reviewer`
 
-이 섹션들을 직접 수정해도 `/harness-apply` 재실행 시 템플릿으로 덮어쓰여집니다.
-영구 커스터마이즈는 `<!-- harness:user -->` 블록 또는 마커 밖에 작성하세요.
+이 섹션들을 직접 수정해도 `/harness-init` 재실행 시 템플릿으로 덮어쓰여집니다.
+영구 커스터마이즈는 `<!-- harness:user -->` 블록 또는 마커 밖에 작성하세요. begin/end 마커 중 하나만 지우면
+그 파일은 병합하지 않고 경고합니다 — 예전에는 두 번째 실행에서 마커 사이의 사용자 텍스트가 지워졌습니다.
 
 ---
 

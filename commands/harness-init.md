@@ -1,7 +1,7 @@
 ---
-description: 현재 프로젝트에 팀 하네스를 신규 scaffold합니다 (Claude 메인 + Codex/Gemini/Cursor/OpenCode)
+description: "현재 프로젝트에 팀 하네스를 scaffold하거나 기존 설치를 갱신합니다 (Claude 메인 + Codex 리뷰어 + Cursor 미러). 마커 병합·JSON deep-merge라 재실행해도 사용자 텍스트를 보존"
 phase: First-time
-argument-hint: [--stack react-native|next|node|python|generic] [--yes]
+argument-hint: '[--stack react-native|react|next|node|python|go|generic] [--yes]'
 tags:
   - react
   - project
@@ -10,7 +10,14 @@ created: 2026-04-28
 modified: 2026-04-28
 ---
 
-현재 작업 디렉토리에 팀용 하네스를 설치합니다.
+현재 작업 디렉토리에 팀용 하네스를 설치합니다. **기존 프로젝트에 다시 실행해도 됩니다** —
+에이전트 파일은 `<!-- harness:section -->` 마커 블록만 갱신하고, `.claude/settings.json`·`.codex/hooks.json`은
+deep-merge하며, hooks·rules·skills는 이미 있으면 건너뜁니다. 마커가 한쪽만 남은 파일은 병합하지 않고
+경고합니다. (예전의 `apply` 명령은 이 명령의 별칭이었고 삭제됐습니다.)
+
+Claude의 Bash는 TTY가 아니라 CLI의 readline 프롬프트(사용자명·백업 폴더·gitignore·적용 확인)에 답할 수
+없습니다. 그래서 아래 Step 0~2에서 답을 먼저 받아 **플래그로 넘깁니다** — 플래그 없이 `init`만 실행하지 마세요.
+`--stack`을 주지 않으면 자동 감지하며, React Native/Expo 전용 rules 4종은 유효 stack이 RN 계열일 때만 설치됩니다.
 
 **Step 0 — 기존 CLAUDE.md 커스텀 내용 확인**
 
@@ -49,34 +56,16 @@ modified: 2026-04-28
 
 > .gitignore에 AI 도구 관련 항목을 추가할까요?
 >
-> 추가될 항목:
-> ```
-> # AI
-> CLAUDE.md
-> AGENTS.md
-> GEMINI.md
->
-> oh-my-openagent.json
-> opencode.json
->
-> handoff.md
-> plan.md
->
-> .claude
-> .claude/
-> .cursor
-> .cursor/
-> .omc / .omx / .ai / .sisyphus / .agents /
-> .cursorrules
->
-> # build
-> output/
-> *.log
-> docs/
-> ```
+> 추가될 항목: (아래 정본 목록을 그대로 보여준다)
 >
 > **예** — 추가합니다
 > **아니오** — 건너뜁니다 (하네스 전용 항목만 추가됨)
+
+추가될 항목의 정본은 `${CLAUDE_PLUGIN_ROOT}/src/harness.mjs`의 `AI_GITIGNORE_ENTRIES`다 — 묻기 전에 그 배열을
+읽어 그대로 보여준다. 손으로 옮겨 적은 목록은 드리프트한다(예전 문서는 실제로 추가되지 않는 `docs/`를
+보여줬고, 실제로 추가되는 `.codex`는 빠져 있었다). 하네스 전용 항목(`.claude/settings.local.json`,
+`.harness/active.json`, `.harness/config.json`, `.harness/observability/`)은 답과 무관하게 항상 추가된다 —
+`.harness/backup.json`은 팀 공유 설정이라 무시하지 않는다.
 
 **Step 3 — 답변에 따라 실행**
 

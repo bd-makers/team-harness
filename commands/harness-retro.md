@@ -1,7 +1,7 @@
 ---
 description: 현재(또는 지정) task의 artifact.md에 학습/교정 내용을 append. CLAUDE.md 자기개선 루프 정책 실행.
 phase: Workflow
-argument-hint: [학습 내용 요약]
+argument-hint: '[학습 내용 요약]'
 tags:
   - project
   - ai
@@ -20,9 +20,10 @@ append 로직은 CLI(`harness-team retro`)가 소유한다 — 이 래퍼는 그
 
 2. **CLI를 Bash로 실행**해 dated 섹션을 artifact.md에 append한다:
    ```bash
-   harness-team retro "$ARGUMENTS"
+   node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" retro "$ARGUMENTS"
    ```
-   - `$ARGUMENTS`가 비어 있으면 인수 없이 실행 (`harness-team retro`) — 빈 헤더를 생성해 사용자가 직접 채울 수 있게 한다.
+   - 다른 래퍼와 같이 플러그인의 CLI를 직접 호출한다 — PATH의 전역 `harness-team`은 없거나 다른 버전일 수 있다.
+   - `$ARGUMENTS`가 비어 있으면 인수 없이 실행 — 빈 헤더를 생성해 사용자가 직접 채울 수 있게 한다.
    - 성공 시 stdout에 `✓ retro: ...` 줄과 `next:` 힌트가 출력된다.
    - 실패(활성 task 없음) 시 `✗ retro:` 줄을 사용자에게 그대로 전달하고 `harness-team task <name>` 로 활성화하도록 안내한다.
 

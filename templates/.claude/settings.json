@@ -16,7 +16,6 @@
       "Bash(pnpm install)",
       "Bash(pnpm add *)",
       "Bash(npx expo install *)",
-      "Bash(gemini:*)",
       "Bash(codex:*)"
     ],
     "deny": [

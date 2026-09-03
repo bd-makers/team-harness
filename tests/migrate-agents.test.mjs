@@ -25,7 +25,7 @@ const LEGACY = [
 ].join('\n\n') + '\n';
 const ctxYes = (dir) => ({ targetDir: dir, root: ROOT, flags: { yes: true } });
 
-test('레거시 CLAUDE.md master + 3 symlink → AGENTS.md core 실파일 + thin CLAUDE/GEMINI', async () => {
+test('레거시 CLAUDE.md master + 3 symlink → AGENTS.md core 실파일 + thin CLAUDE, GEMINI alias 제거', async () => {
   const dir = await makeLegacy(LEGACY);
   try {
     const ret = await migrateToAgentsMd(ctxYes(dir));
@@ -46,11 +46,9 @@ test('레거시 CLAUDE.md master + 3 symlink → AGENTS.md core 실파일 + thin
     assert.match(claude, /SENTINEL/, '사용자 텍스트 보존');
     assert.doesNotMatch(claude, /section="protocol"/, 'core 섹션은 CLAUDE에서 제거');
 
-    // GEMINI.md = thin 실파일
-    const geminiSt = await lstat(join(dir, 'GEMINI.md'));
-    assert.equal(geminiSt.isSymbolicLink(), false, 'GEMINI.md는 실파일');
-    const gemini = await readFile(join(dir, 'GEMINI.md'), 'utf8');
-    assert.match(gemini, /^@AGENTS\.md/m);
+    // 레거시 GEMINI.md alias는 제거되고 다시 만들지 않는다 (Gemini는 멤버가 아니다 — D7)
+    const geminiExists = await lstat(join(dir, 'GEMINI.md')).then(() => true, () => false);
+    assert.equal(geminiExists, false, 'GEMINI.md alias 제거, 재생성 없음');
 
     // .cursorrules 제거됨
     const cursorExists = await lstat(join(dir, '.cursorrules')).then(() => true, () => false);

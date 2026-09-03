@@ -11,5 +11,5 @@ export async function runSync(ctx) {
   const pruned = results.filter(r => r.action === 'prune');
   console.log(`✓ Mirrored ${mirrored.length} cursor rule(s)`);
   if (pruned.length) console.log(`✓ Pruned ${pruned.length} stale cursor rule(s) (source removed)`);
-  console.log(`  (agent files are real files now — no symlinks to re-create; run \`apply\` to refresh AGENTS/CLAUDE/GEMINI)`);
+  console.log(`  (agent files are real files now — no symlinks to re-create; run \`init\` to refresh AGENTS/CLAUDE)`);
 }

@@ -280,7 +280,6 @@ async function sc1Init(token, stack) {
     sig('agent run completed (no auth/parse error)', a.ok && !a.authFailed, a.authFailed ? 'AUTH FAILED' : ''),
     sig('AGENTS.md + harness:section marker', await fileHas(join(dir, 'AGENTS.md'), 'harness:section=')),
     sig('CLAUDE.md @AGENTS.md import', await fileHas(join(dir, 'CLAUDE.md'), '@AGENTS.md')),
-    sig('GEMINI.md @AGENTS.md import', await fileHas(join(dir, 'GEMINI.md'), '@AGENTS.md')),
     sig('.claude/settings.json hooks present', await fileHas(join(dir, '.claude', 'settings.json'), 'hooks')),
     sig('.claude/rules present', existsSync(join(dir, '.claude', 'rules'))),
     // stack-discriminating: the expected stackLabel must land in AGENTS.md. This is
@@ -291,12 +290,12 @@ async function sc1Init(token, stack) {
   return { dir, env, signals, session: a.sessionId };
 }
 
-// ── SC2 apply (non-destructive, per stack) ────────────────────────────────────
+// ── SC2 re-init (non-destructive, per stack) ────────────────────────────────────
 async function sc2Apply(token, stack) {
-  const { dir, env } = await makeSandbox(`apply-${stack.id}`, { seed: true, pkg: stack.pkg });
+  const { dir, env } = await makeSandbox(`reinit-${stack.id}`, { seed: true, pkg: stack.pkg });
   const readmeBefore = await sha(join(dir, 'README.md'));
   const srcBefore = await sha(join(dir, 'src', 'index.js'));
-  const a = await runHeadless(token, dir, `${NS}:harness-apply`);
+  const a = await runHeadless(token, dir, `${NS}:harness-init`);
   const signals = [
     sig('agent run completed', a.ok && !a.authFailed, a.authFailed ? 'AUTH FAILED' : ''),
     sig('README.md preserved (hash unchanged)', existsSync(join(dir, 'README.md')) && (await sha(join(dir, 'README.md'))) === readmeBefore),
@@ -400,8 +399,8 @@ async function sc6Lifecycle() {
   const gitc = (args) => run('git', args, { cwd: dir, env });
   const slug = `sim-life-${TS}`;
 
-  // setup: install the full harness via CLI (apply === init, --yes non-interactive).
-  await cli(['apply', '--yes']);
+  // setup: install the full harness via CLI (init is also the re-run verb, --yes non-interactive).
+  await cli(['init', '--yes']);
   const setupGreen = await doctorGreen(dir, env);
 
   // create task → active pointer set.
@@ -457,7 +456,7 @@ async function sc6Lifecycle() {
   const doneMarker = await fileHas(handoffPath, '완료');
 
   const signals = [
-    sig('apply installs harness (doctor green)', setupGreen),
+    sig('init installs harness (doctor green)', setupGreen),
     sig('task active.json set', activeSet),
     sig('done-guard blocks (exit≠0 + 종결 가드 메시지)', blocked),
     sig('done-guard detects all 4 conditions', missingCauses.length === 0, missingCauses.length ? `missing: ${missingCauses.join(', ')}` : ''),
@@ -534,7 +533,7 @@ async function sc7DraftTrial(token, index) {
   const cli = (args) => run('node', [BIN, ...args], { cwd: dir, env });
   // apply --yes → ensureUsername이 git config에서 {"user":"simbot"}를 쓴다. 이게 read-modify-write
   // 보존 검증의 "기존 값"이다 — 인위적으로 심지 않는다.
-  await cli(['apply', '--yes']);
+  await cli(['init', '--yes']);
   const configPath = join(dir, '.harness', 'config.json');
   const configBefore = await readFile(configPath, 'utf8').catch(() => null);
   let expectedUser = '';
@@ -662,7 +661,7 @@ async function runFull() {
     sc2PerStack.push({ stack, ...(await sc2Apply(token, stack)) });
     // golden snapshots split per stack for cross-stack + cross-version diff.
     await snapshot(version, `${stack.id}-init`, sc1PerStack.at(-1).dir);
-    await snapshot(version, `${stack.id}-apply`, sc2PerStack.at(-1).dir);
+    await snapshot(version, `${stack.id}-reinit`, sc2PerStack.at(-1).dir);
   }
   const canon = sc2PerStack.find((p) => p.stack.id === CANONICAL_STACK.id);
   const sc3 = await sc3Task(token, canon.dir, canon.env);
@@ -676,7 +675,7 @@ async function runFull() {
 
   const sections = [
     renderMatrix('SC1 — init (stack matrix)', sc1PerStack),
-    renderMatrix('SC2 — apply / non-destructive (stack matrix)', sc2PerStack),
+    renderMatrix('SC2 — re-init / non-destructive (stack matrix)', sc2PerStack),
     renderSignals(`SC3 — task 생성 (canonical: ${CANONICAL_STACK.id})`, sc3.signals),
     renderSignals(`SC4 — installed-hook firing 2번 (canonical: ${CANONICAL_STACK.id})`, sc4.signals),
     renderSignals(`SC5 — slash/skill trigger reliability (canonical: ${CANONICAL_STACK.id})`, sc5.signals),
@@ -712,13 +711,13 @@ async function runFull() {
     + ' `result`만 본다. 라벨에 `[산문 예외]`로 표시했다.',
     '>',
     '> **검증 범위(전제 정정):** 현재 코드에서 stack별로 갈리는 산출물은 AGENTS.md `## 기술 스택`',
-    '> 섹션의 stackLabel뿐이다(rules·settings·permissions는 stack 무관). 이 매트릭스는 ①init/apply',
+    '> 섹션의 stackLabel뿐이다(rules·settings·permissions는 stack 무관). 이 매트릭스는 ①init/re-init',
     '> 전 과정의 stack별 완주 ②stackLabel 렌더(stack-discriminating signal) ③스냅샷 stack delta를',
     '> 검증하며, "stack별 rules·permissions"를 검증하지 **않는다**.',
     '',
     ...sections,
     '## 골든 스냅샷',
-    `- stack별 \`sim-snapshots/${version}/<stack>-{init,apply}\` (${STACKS.map((s) => s.id).join('/')}) — stack 간·버전 간 \`git diff\`용.`,
+    `- stack별 \`sim-snapshots/${version}/<stack>-{init,reinit}\` (${STACKS.map((s) => s.id).join('/')}) — stack 간·버전 간 \`git diff\`용.`,
     '',
     '## 정리',
     `- throwaway: \`.sim-tmp/${TS}\` 제거. 영속 playground 프로젝트는 미사용(무오염).`,

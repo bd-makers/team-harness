@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Diagram"
+  short_description: "Create or refresh the opt-in spec/plan diagram for the active task."
+  default_prompt: "Use $harness-diagram to draw the active task's spec/plan diagram."

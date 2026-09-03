@@ -333,7 +333,7 @@ async function refreshProjectScripts(ctx) {
 // --- Refresh installed .claude hooks (known stock versions → current template) ---
 //
 // Template fixes never reach an existing install on their own: copyStaticAssets copies
-// hooks with skipExisting, so init/apply leave installed copies untouched. This is the
+// hooks with skipExisting, so init leaves installed copies untouched. This is the
 // explicit opt-in delivery path — PR #29's jq-fallback fail-open fix ships through here.
 // An installed hook is refreshed ONLY when its bytes match a version we actually
 // shipped (sha256 table below). Anything else is treated as user-customized and never
@@ -346,6 +346,11 @@ export const CLAUDE_HOOK_FILES = [
   'auto-format.sh',
 ];
 
+// Refreshed by the same stock-sha rule but outside the jq matrix (no fallback block):
+// the observability logger and the boundary checkpoint shim. Until they were listed
+// here a template fix to either file had no delivery path to an existing install.
+export const REFRESHABLE_HOOK_FILES = [...CLAUDE_HOOK_FILES, 'boundary-checkpoint.sh', 'observe-tools.mjs'];
+
 // sha256 of every template version ever shipped per hook, EXCLUDING the current
 // template (that case is compared directly). Provenance: git history of
 // templates/.claude/hooks — the git blob sha is noted per entry, and
@@ -356,10 +361,12 @@ export const KNOWN_STOCK_HOOK_SHA256 = {
     '7fe0735fee13b7e5ac2aeecff90b3463b080848a9509fe180376583b2c160433', // 9198ed24 2026-07-02 도입판
     '4146387004a9139c4318ed75bcbfe41b838ca476caedea0361ddf9ffec0cee69', // 8367653a 상류 출처 표기판
     '2c8671affb60fee88f1e16467a23a13dde4df2ff80cb9d102036536903ea11ac', // e1c87ee4 PR #29 (tool_input 스코프 이전)
+    '87f05509b6bc67c528e4a8f0ead3962aed754556765763fcb6e606bcc702c106', // 599cd2d4 tool_input 스코프판 (audit-cleanup 이전)
   ],
   'protect-files.sh': [
     '8031a9db866e2d79e9ed2837f6b12214e1a4cb3a91e510c1c89bbe0ac7962e63', // 286e227e initial
     '2fb1c2ff7fbd956503634a641596039cf452ac07c8fa5c7fad5a003c7e8cbe42', // 75858c28 PR #29
+    '07459eed771b5b6d467877a1c34147a1d9bf634d1cf9873c08b0113da61c8ecf', // bf6c4f6e tool_input 스코프판 (audit-cleanup 이전, substring 패턴)
   ],
   'pre-commit-check.sh': [
     '97b4e1802c5ab75e463c8280d055e0a723390673bacf7116f98c63d3c87d4297', // 813a2212 initial (pnpm 하드코딩판)
@@ -370,12 +377,18 @@ export const KNOWN_STOCK_HOOK_SHA256 = {
     'ba2ab843b6609543748e66d96ba26dbb2982444e8f24c4af10910ab8546e8327', // 58c4fe2e initial
     '11db4b4dc6f5a1f152d5bc7b7a9065c92ff07a7e4d30b06b549267e6363be019', // 775c0d56 PR #29
   ],
+  'boundary-checkpoint.sh': [
+    '452216fef5edb09a6fa6e14d6675222e06446c72c96abce0ff1d16156a545bc4', // 63c8862f 도입판 (CLI 부재 시 exit 127)
+  ],
+  'observe-tools.mjs': [
+    '1c159268e0f24d802eec75d8304e610ce425db69d877c673d126b71ffb3960ba', // 7bc95dd0 도입판 (URL.pathname 비교 — 공백 경로에서 no-op)
+  ],
 };
 
 export async function refreshClaudeHooks(ctx) {
   const { root, targetDir } = ctx;
   const stale = [];
-  for (const name of CLAUDE_HOOK_FILES) {
+  for (const name of REFRESHABLE_HOOK_FILES) {
     const rel = `.claude/hooks/${name}`;
     const installed = await readTextSafe(join(targetDir, rel));
     if (installed === null) continue; // not installed — nothing to refresh
@@ -452,8 +465,9 @@ export async function migrateTaskIndexLabels(ctx) {
 //
 // Legacy = CLAUDE.md real file holds all sections (principles/stack/roles/protocol +
 // workflow) and AGENTS.md/GEMINI.md/.cursorrules are symlinks to it.
-// New = AGENTS.md is the canonical core real file; CLAUDE.md/GEMINI.md are thin files
-// that `@AGENTS.md` import + carry only their own section. We reassemble from the
+// New = AGENTS.md is the canonical core real file; CLAUDE.md is a thin file that
+// `@AGENTS.md` imports + carries only its own section. GEMINI.md is not recreated
+// (Gemini is no longer a member — D7); a legacy alias is just removed. We reassemble from the
 // existing marker blocks (no text heuristics) so user-rendered content (real stack
 // commands, customizations) and the user region are preserved verbatim.
 
@@ -478,7 +492,7 @@ export async function migrateToAgentsMd(ctx) {
 
   console.log('\nFound legacy CLAUDE.md master → migrating to AGENTS.md core structure:');
   console.log('  CLAUDE.md (master)        → AGENTS.md (core) + thin CLAUDE.md');
-  console.log('  AGENTS.md/GEMINI.md links → real thin files');
+  console.log('  AGENTS.md link            → real core file; legacy GEMINI.md link removed');
   console.log('  .cursorrules              → removed (Cursor reads AGENTS.md natively)');
   console.log('  backup                    → CLAUDE.md.bak');
 
@@ -500,7 +514,7 @@ export async function migrateToAgentsMd(ctx) {
   const agents =
     `# ${name} — AI Team Contract (Core)\n\n` +
     '> 이 파일(`AGENTS.md`)이 모든 에이전트가 공유하는 단일 소스(SSOT)입니다 — agents.md 오픈 표준.\n' +
-    '> `CLAUDE.md` / `GEMINI.md` 는 `@AGENTS.md` 를 import 하는 얇은 파일이며, 이 코어를 복제하지 않습니다.\n\n' +
+    '> `CLAUDE.md` 는 `@AGENTS.md` 를 import 하는 얇은 파일이며, 이 코어를 복제하지 않습니다.\n\n' +
     coreBlocks + '\n';
 
   // 3. thin CLAUDE.md — @AGENTS.md import + workflow block + preserved user region.
@@ -511,29 +525,22 @@ export async function migrateToAgentsMd(ctx) {
     (sections.workflow ? sections.workflow + '\n\n' : '') +
     userBlock + '\n';
 
-  // 4. thin GEMINI.md — rendered from the template (no legacy content to preserve).
-  const geminiTpl = await readTextSafe(join(ctx.root, 'templates', 'GEMINI.md.hbs'));
-  const gemini = geminiTpl
-    ? render(geminiTpl, { projectName: name })
-    : `@AGENTS.md\n\n# ${name} — Gemini (Reviewer)\n\n` +
-      '<!-- harness:section="reviewer" begin -->\n## 리뷰어 운영 지침\n- 역할: 독립 리뷰어(read-only).\n<!-- harness:section="reviewer" end -->\n\n' +
-      EMPTY_USER_REGION + '\n';
-
-  // 5. Write files, replacing any alias symlinks with real files.
+  // 4. Write files, replacing any alias symlinks with real files.
   if (agentsSt && agentsSt.isSymbolicLink()) await unlink(agentsPath);
   await writeText(agentsPath, agents);
 
   await writeText(claudePath, claudeThin);
 
+  // A legacy GEMINI.md alias is removed, not rewritten; a real GEMINI.md the team
+  // authored themselves is left alone.
   const geminiPath = join(targetDir, 'GEMINI.md');
   const geminiSt = await lstat(geminiPath).catch(() => null);
   if (geminiSt && geminiSt.isSymbolicLink()) await unlink(geminiPath);
-  await writeText(geminiPath, gemini);
 
   const cursorPath = join(targetDir, '.cursorrules');
   if (await exists(cursorPath)) await unlink(cursorPath);
 
-  console.log('  ✓ AGENTS.md (core) + thin CLAUDE.md/GEMINI.md written, .cursorrules removed');
+  console.log('  ✓ AGENTS.md (core) + thin CLAUDE.md written, legacy GEMINI.md alias/.cursorrules removed');
   return true;
 }
 
@@ -541,7 +548,7 @@ export async function migrateToAgentsMd(ctx) {
 //
 // `migrate` is structure-only and never touched .claude/settings.json, so projects
 // scaffolded before 0.9 don't get the SessionStart task-gate from migrate alone
-// (apply's deep-merge is the other path). This adds just the SessionStart hook,
+// (init's deep-merge is the other path). This adds just the SessionStart hook,
 // pulled from the template as the single source so the command never drifts.
 
 export async function migrateSessionStartHook(ctx) {
@@ -549,7 +556,7 @@ export async function migrateSessionStartHook(ctx) {
   const settingsPath = join(targetDir, '.claude/settings.json');
   const raw = await readTextSafe(settingsPath);
   if (raw === null) {
-    console.log('  SessionStart task-gate: no .claude/settings.json — skipping (run apply/init)');
+    console.log('  SessionStart task-gate: no .claude/settings.json — skipping (run init)');
     return false;
   }
   let settings;
@@ -585,7 +592,7 @@ export async function migrateSessionStartHook(ctx) {
 
 // --- PreToolUse boundary checkpoint (pre-boundary settings.json → + hook) ---
 //
-// Keep this deliberately narrower than apply: only the template's PreToolUse
+// Keep this deliberately narrower than init: only the template's PreToolUse
 // groups participate. mergeClaudeSettings() recognizes the exact old default
 // protect group and upgrades it; every other group is preserved and receives a
 // non-destructive union with the template group. The hook script is copied only
@@ -596,7 +603,7 @@ export async function migrateBoundaryCheckpointHook(ctx) {
   const settingsPath = join(targetDir, '.claude/settings.json');
   const raw = await readTextSafe(settingsPath);
   if (raw === null) {
-    console.log('  PreToolUse boundary checkpoint: no .claude/settings.json — skipping (run apply/init)');
+    console.log('  PreToolUse boundary checkpoint: no .claude/settings.json — skipping (run init)');
     return null;
   }
 
@@ -620,7 +627,8 @@ export async function migrateBoundaryCheckpointHook(ctx) {
   }
 
   const merged = mergeClaudeSettings(settings, { hooks: { PreToolUse: [tplBoundaryGroup] } });
-  const settingsChanged = !settingsHasBoundaryCheckpoint(settings)
+  // Customized Edit-only groups are respected here (doctor still warns about Write).
+  const settingsChanged = !settingsHasBoundaryCheckpoint(settings, { requireWrite: false })
     && JSON.stringify(merged) !== JSON.stringify(settings);
   const scriptRel = '.claude/hooks/boundary-checkpoint.sh';
   const scriptPath = join(targetDir, scriptRel);

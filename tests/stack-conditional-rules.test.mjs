@@ -1,9 +1,10 @@
 // copyStaticAssets copied the 4 React-Native-specific `.claude/rules` files (Expo Router
 // navigation, RN state management, RN styling, RN testing) into every scaffolded project —
-// even `--stack python|node|generic` ones, where the guidance is actively wrong. This gates
-// the copy on the explicit `--stack` flag: an explicit non-RN stack skips them; an explicit
-// RN-family stack, or no `--stack` flag at all, keeps the pre-existing unconditional copy
-// (backward compat — auto-detected stack never gates this on its own).
+// even `--stack python|node|generic` ones, where the guidance is actively wrong. The copy
+// is gated on the *effective* stack id: an explicit `--stack`, else the id init detected
+// and passed as `ctx.stackId`. A call with no stack information at all keeps the
+// unconditional copy (audit-cleanup 2026-09-03: before that, auto-detection never gated,
+// so a plain Node/Python project received the Expo rules unless it lied with --stack).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, readdir, rm } from 'node:fs/promises';
@@ -70,13 +71,46 @@ test('copyStaticAssets: 명시적 RN stack(react-native)은 기존처럼 RN 전�
   }
 });
 
-test('copyStaticAssets: --stack 미지정(자동감지 경로)은 기존 무조건 복사 동작을 유지한다', async () => {
+test('copyStaticAssets: stack 정보가 전혀 없는 호출은 종전대로 전부 복사한다', async () => {
   const dir = await sandbox();
   try {
-    // flags에 stack 키 자체가 없다 — CLI에서 --stack을 안 준 경우와 동일.
+    // flags에 stack 키도 없고 ctx.stackId도 없다 — 직접 호출·테스트 경로.
     await copyStaticAssets(ctxFor(dir, {}));
     const names = await rulesIn(dir);
-    for (const f of RN_ONLY_RULES) assert.ok(names.includes(f), `${f}는 stack 미지정 시 기존 동작대로 복사돼야 한다(하위 호환)`);
+    for (const f of RN_ONLY_RULES) assert.ok(names.includes(f), `${f}는 stack 정보가 없으면 종전대로 복사돼야 한다`);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('copyStaticAssets: 자동감지된 비-RN stack(ctx.stackId=node)은 --stack 없이도 RN rules를 제외한다', async () => {
+  const dir = await sandbox();
+  try {
+    await copyStaticAssets({ ...ctxFor(dir, {}), stackId: 'node' });
+    const names = await rulesIn(dir);
+    for (const f of RN_ONLY_RULES) assert.ok(!names.includes(f), `${f}는 감지된 node stack에 복사되면 안 된다`);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('copyStaticAssets: 자동감지된 RN stack(ctx.stackId=react-native)은 RN rules를 복사한다', async () => {
+  const dir = await sandbox();
+  try {
+    await copyStaticAssets({ ...ctxFor(dir, {}), stackId: 'react-native' });
+    const names = await rulesIn(dir);
+    for (const f of RN_ONLY_RULES) assert.ok(names.includes(f), `${f}는 감지된 react-native stack에 복사돼야 한다`);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('copyStaticAssets: 명시 --stack이 감지 결과보다 우선한다', async () => {
+  const dir = await sandbox();
+  try {
+    await copyStaticAssets({ ...ctxFor(dir, { stack: 'react-native' }), stackId: 'node' });
+    const names = await rulesIn(dir);
+    for (const f of RN_ONLY_RULES) assert.ok(names.includes(f), `${f}: --stack react-native가 감지된 node를 덮어야 한다`);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

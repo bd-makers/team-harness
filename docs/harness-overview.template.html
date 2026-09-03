@@ -200,7 +200,7 @@
   <!-- HERO -->
   <div class="hero" id="overview">
     <h1>Harness Aijient Team</h1>
-    <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Gemini, Cursor, OpenCode를 통합 관리</p>
+    <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
       <span class="tag tag-purple">v0.23.1</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
@@ -278,7 +278,7 @@
     <br><br>
     <strong>SSOT 역전 상세:</strong> 단일 진실의 원천이 <code>CLAUDE.md</code>(벤더 master + alias symlink)에서
     <code>AGENTS.md</code>(Linux Foundation 오픈 표준 · 공유 코어 <em>실파일</em>)로 역전되었습니다.
-    <code>CLAUDE.md</code> / <code>GEMINI.md</code>는 <code>@AGENTS.md</code>를 import하는 얇은 파일이고, Cursor·OpenCode는 <code>AGENTS.md</code>를 네이티브로 읽습니다.
+    <code>CLAUDE.md</code>는 <code>@AGENTS.md</code>를 import하는 얇은 파일이고, Codex·Cursor는 <code>AGENTS.md</code>를 네이티브로 읽습니다. OpenCode·Gemini는 멤버에서 제외됐고(D7) <code>apply</code> 명령은 <code>init</code>으로 합쳐졌습니다.
     alias symlink(<code>.cursorrules</code> 포함)는 폐기됐습니다. 아래 다이어그램은 이 신구조를 반영합니다.
     (이전 버전 스냅샷: <code>harness-overview-0.14.0.html</code> · <code>harness-overview-0.12.0.html</code> · <code>harness-overview-0.9.5.html</code> · <code>harness-overview-0.9.2.html</code> · <code>harness-overview-0.8.0.html</code> · <code>harness-overview-0.7.0.html</code>)
   </div>
@@ -298,13 +298,13 @@
   <!-- SUBAGENTS -->
   <section id="subagents">
     <div class="section-title">Subagents — 멀티 에이전트 역할 분담</div>
-    <p class="section-sub">하나의 AGENTS.md(오픈 표준 코어)를 공유 — Claude·Gemini는 <code>@import</code>, Cursor·OpenCode는 네이티브</p>
+    <p class="section-sub">하나의 AGENTS.md(오픈 표준 코어)를 공유 — Claude는 <code>@import</code>, Codex·Cursor는 네이티브</p>
     <div class="diagram-wrap">
       <div class="mermaid">
       {{MERMAID:subagents}}
       </div>
     </div>
-    <p class="diagram-label">에이전트별 역할 — AGENTS.md 코어 공유 · drive(Claude·OpenCode) / review(Codex·Gemini) (D2)</p>
+    <p class="diagram-label">에이전트별 역할 — AGENTS.md 코어 공유 · drive(Claude) / review(Codex) (D2 · D7)</p>
 
     <div class="table-wrap" style="margin-top:1.5rem">
       <table>
@@ -319,22 +319,10 @@
             <td>모든 주요 작업의 진입점</td>
           </tr>
           <tr>
-            <td><strong>OpenCode</strong> <span class="tag tag-blue" style="font-size:0.68rem;padding:1px 7px;">drive</span></td>
-            <td><code>AGENTS.md</code> (네이티브) + <code>opencode.json</code></td>
-            <td>순차 전환 세션 (보조 드라이버)</td>
-            <td>순차 전환 구현, 빠른 단일 작업</td>
-          </tr>
-          <tr>
             <td><strong>Codex</strong> <span class="tag tag-orange" style="font-size:0.68rem;padding:1px 7px;">review</span></td>
             <td><code>AGENTS.md</code> (네이티브)</td>
             <td>독립 리뷰어 (read-only)</td>
             <td>중요 변경 후 코드 리뷰</td>
-          </tr>
-          <tr>
-            <td><strong>Gemini CLI</strong> <span class="tag tag-orange" style="font-size:0.68rem;padding:1px 7px;">review</span></td>
-            <td><code>GEMINI.md</code> → <code>@AGENTS.md</code></td>
-            <td>독립 리뷰어 · 대용량 컨텍스트 분석</td>
-            <td>리뷰, 파일 5개 이상 분석 시</td>
           </tr>
           <tr>
             <td><strong>Cursor</strong></td>
@@ -357,7 +345,7 @@
   <!-- OBSERVATION / --json -->
   <section id="observation">
     <div class="section-title">CLI Observation 계약 (<code>--json</code>)</div>
-    <p class="section-sub">P2 (0.8.0) — drive 에이전트(Codex·OpenCode)가 <code>harness-team</code> CLI를 Bash로 호출하면 stdout이 곧 observation이 된다. 사람용 출력과 별도로 <code>--json</code>으로 구조화 엔벨로프를 opt-in</p>
+    <p class="section-sub">P2 (0.8.0) — Codex 같은 외부 에이전트가 <code>harness-team</code> CLI를 Bash로 호출하면 stdout이 곧 observation이 된다. 사람용 출력과 별도로 <code>--json</code>으로 구조화 엔벨로프를 opt-in</p>
 
     <div class="infobox">
       <strong>동작 방식:</strong> drive 4커맨드(<code>task</code> · <code>retro</code> · <code>release</code> · <code>doctor</code>)에 <code>--json</code>을 주면 stdout에 단일 JSON 엔벨로프 1개만 출력하고 <code>process.exitCode</code>로 신호한다. 사람용 출력은 각 커맨드의 별도 계약을 따르며, <code>task</code>는 생성·재활성화 뒤 다음 단계 안내를 출력한다. 헬퍼는 <code>src/observation.mjs</code>의 <code>buildEnvelope</code> · <code>emitObservation</code>.
@@ -421,7 +409,7 @@
         <h3><span class="hook-badge hook-pre">PreToolUse</span> protect-files.sh</h3>
         <p>Edit · Write 도구 실행 전 보호 대상 경로를 차단한다.</p>
         <ul style="margin-top:0.6rem">
-          <li>차단 패턴: <code>.env</code>, <code>ios/Pods</code>, <code>android/build</code>, <code>node_modules/</code>, <code>.git/</code></li>
+          <li>차단 패턴: <code>.env</code>(및 <code>.env.*</code>), <code>ios/Pods</code>, <code>android/build</code>, <code>node_modules/</code>, <code>.git/</code> — 경로 경계를 보므로 <code>.envrc</code>·<code>android/build.gradle</code>은 통과</li>
           <li>파일 경로가 패턴과 매칭되면 exit 2 → Claude가 수정 불가</li>
         </ul>
       </div>
@@ -437,9 +425,25 @@
         <h3><span class="hook-badge hook-pre">PreToolUse</span> pre-commit-check.sh</h3>
         <p>Bash 도구에서 <code>git commit</code> 명령 감지 시 검증 실행.</p>
         <ul style="margin-top:0.6rem">
-          <li><code>pnpm tsc --noEmit</code> — 타입 에러 시 차단</li>
-          <li><code>pnpm test --passWithNoTests</code> — 테스트 실패 시 차단</li>
+          <li>lockfile로 pnpm/yarn/bun/npm을 감지해 <code>&lt;pm&gt; tsc --noEmit</code> — 타입 에러 시 차단</li>
+          <li><code>&lt;pm&gt; test</code> — 테스트 실패 시 차단 (package.json에 test 스크립트가 없으면 통과)</li>
           <li>timeout: 120초</li>
+        </ul>
+      </div>
+      <div class="card card-accent-orange">
+        <h3><span class="hook-badge hook-pre">PreToolUse</span> block-dangerous-git.sh</h3>
+        <p>Bash 도구의 되돌릴 수 없는 git 명령을 차단한다 (substring 휴리스틱 — 커밋 메시지 안의 문자열은 오탐한다).</p>
+        <ul style="margin-top:0.6rem">
+          <li>force push(<code>--force</code>·<code>-f</code>·<code>-fu</code>·<code>+refspec</code>·<code>-C &lt;dir&gt;</code> 프리픽스), 원격 브랜치 삭제, <code>reset --hard</code>, <code>clean -f</code>, <code>branch -D</code>/<code>--delete --force</code>, <code>checkout .</code>/<code>--</code>, 워킹트리 <code>restore</code>, <code>stash drop|clear</code></li>
+          <li><code>--force-if-includes</code>·<code>restore --staged</code>/<code>-S</code>·<code>push -u</code>는 통과</li>
+        </ul>
+      </div>
+      <div class="card card-accent-orange">
+        <h3><span class="hook-badge hook-pre">PreToolUse</span> boundary-checkpoint.sh</h3>
+        <p>활성 task plan의 checkbox를 완료로 바꾸는 Edit·Write 직전에 spec의 <code>## Boundary contracts</code>를 대조한다.</p>
+        <ul style="margin-top:0.6rem">
+          <li><code>harness-team boundary checkpoint</code>로 위임 — 선언이 없으면 통과, 불일치면 exit 2 + 사유를 stderr로</li>
+          <li>전역 CLI가 PATH에 없으면 조용히 통과(<code>doctor</code>가 보고)</li>
         </ul>
       </div>
       <div class="card card-accent-purple">
@@ -471,6 +475,7 @@
           <thead><tr><th>Hook 타입</th><th>Matcher</th><th>스크립트</th><th>Timeout</th></tr></thead>
           <tbody>
             <tr><td><span class="hook-badge hook-pre">PreToolUse</span></td><td><code>Edit|Write</code></td><td><code>.claude/hooks/protect-files.sh</code></td><td>10s</td></tr>
+            <tr><td><span class="hook-badge hook-pre">PreToolUse</span></td><td><code>Edit|Write</code></td><td><code>.claude/hooks/boundary-checkpoint.sh</code> — plan checkbox 완료 직전 <code>harness-team boundary checkpoint</code></td><td>10s</td></tr>
             <tr><td><span class="hook-badge hook-pre">PreToolUse</span></td><td><code>Bash</code></td><td><code>.claude/hooks/block-dangerous-git.sh</code></td><td>10s</td></tr>
             <tr><td><span class="hook-badge hook-pre">PreToolUse</span></td><td><code>Bash</code></td><td><code>.claude/hooks/pre-commit-check.sh</code></td><td>120s</td></tr>
             <tr><td><span class="hook-badge hook-pre">PreToolUse</span></td><td><code>*</code></td><td><code>.claude/hooks/observe-tools.mjs</code></td><td>10s</td></tr>
@@ -633,14 +638,14 @@
 
   <!-- WORKFLOW -->
   <section id="workflow">
-    <div class="section-title">Init / Apply 워크플로우</div>
-    <p class="section-sub">신규 설치(init)와 기존 프로젝트 적용(apply)의 시퀀스 비교</p>
+    <div class="section-title">Init 워크플로우 — 신규·재실행</div>
+    <p class="section-sub">신규 설치와 기존 프로젝트 재실행(마커 병합·deep-merge)의 시퀀스 — 예전 <code>apply</code>는 이 명령의 별칭이었고 삭제됐다</p>
     <div class="diagram-wrap">
       <div class="mermaid">
       {{MERMAID:workflow}}
       </div>
     </div>
-    <p class="diagram-label">init vs apply 시퀀스 — init은 전체 scaffold, apply는 기존 파일 보존 병합</p>
+    <p class="diagram-label">init 시퀀스 — 신규는 전체 scaffold, 재실행은 기존 파일 보존 병합 (마커가 짝이 안 맞는 파일은 건너뛰고 경고)</p>
   </section>
 
   <!-- TASK -->
@@ -675,7 +680,7 @@
       {{MERMAID:core}}
       </div>
     </div>
-    <p class="diagram-label">공유 코어 — AGENTS.md 수정 하나가 @import(Claude·Gemini)와 네이티브(Codex·OpenCode·Cursor)로 전파</p>
+    <p class="diagram-label">공유 코어 — AGENTS.md 수정 하나가 @import(Claude)와 네이티브(Codex·Cursor)로 전파</p>
   </section>
 
   <!-- BACKUP -->
@@ -702,7 +707,7 @@
   <!-- TEMPLATE -->
   <section id="template">
     <div class="section-title">AGENTS.md 코어 + thin 템플릿 구조</div>
-    <p class="section-sub">3개 템플릿(<code>AGENTS.md.hbs</code> 코어 · <code>CLAUDE.md.hbs</code>/<code>GEMINI.md.hbs</code> thin)을 <code>{{var}}</code> 치환 + 마커 머지로 렌더 — 섹션별 소속 파일은 아래 참조</p>
+    <p class="section-sub">2개 템플릿(<code>AGENTS.md.hbs</code> 코어 · <code>CLAUDE.md.hbs</code> thin)을 <code>{{var}}</code> 치환 + 마커 머지로 렌더 — 섹션별 소속 파일은 아래 참조</p>
 
     <div class="table-wrap">
       <table>
@@ -724,7 +729,7 @@
             <td><strong>roles</strong></td>
             <td><span class="tag tag-green" style="font-size:0.72rem;padding:2px 8px;">AGENTS.md</span></td>
             <td><code>harness:section="roles"</code></td>
-            <td>역할 매트릭스 (D2: Claude·OpenCode drive / Codex·Gemini review), 리뷰 프로토콜</td>
+            <td>역할 매트릭스 (D2: Claude drive / Codex review · D7: OpenCode·Gemini 제외), 리뷰 프로토콜</td>
           </tr>
           <tr>
             <td><strong>protocol</strong></td>
@@ -739,22 +744,16 @@
             <td>플랜 모드, 서브에이전트 전략, Ambiguity·복잡도 게이트, 완료 전 검증 — Claude driver 전용</td>
           </tr>
           <tr>
-            <td><strong>reviewer</strong></td>
-            <td><span class="tag tag-purple" style="font-size:0.72rem;padding:2px 8px;">GEMINI.md</span></td>
-            <td><code>harness:section="reviewer"</code></td>
-            <td>독립 리뷰어(read-only) 운영 지침 — 호출·기준·결과 기록 규약</td>
-          </tr>
-          <tr>
             <td><strong>(import)</strong></td>
-            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">CLAUDE/GEMINI</span></td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">CLAUDE.md</span></td>
             <td><code>@AGENTS.md</code></td>
-            <td>thin 파일 최상단 — 코어를 import (Claude·Gemini). doctor가 정확 문자열 검증</td>
+            <td>thin 파일 최상단 — 코어를 import. doctor가 정확 문자열 검증</td>
           </tr>
           <tr>
             <td><strong>user</strong></td>
             <td>각 파일</td>
             <td><code>harness:user:begin/end</code></td>
-            <td>팀별 규칙, 프로젝트 특이사항 — <code>apply</code> 시에도 절대 덮어쓰지 않음</td>
+            <td>팀별 규칙, 프로젝트 특이사항 — <code>init</code> 재실행 시에도 절대 덮어쓰지 않음</td>
           </tr>
         </tbody>
       </table>
@@ -763,7 +762,7 @@
     <div style="margin-top:1.5rem" class="card">
       <h3>병합 마커 포맷</h3>
       <pre style="margin-top:0.75rem;font-family:'SF Mono','Fira Code',monospace;font-size:0.85rem;color:#e2e6f0;line-height:1.8;"><span style="color:#7a82a0">&lt;!-- harness:section="workflow" begin --&gt;</span>
-<span style="color:#50c8f5">... harness가 apply 시 템플릿으로 자동 갱신하는 콘텐츠 ...</span>
+<span style="color:#50c8f5">... harness가 init 재실행 시 템플릿으로 자동 갱신하는 콘텐츠 ...</span>
 <span style="color:#7a82a0">&lt;!-- harness:section="workflow" end --&gt;</span>
 
 <span style="color:#7a82a0">&lt;!-- harness:user:begin --&gt;</span>

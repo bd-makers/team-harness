@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Ship"
+  short_description: "Refresh spec, plan and artifact before a PR/MR and report readiness."
+  default_prompt: "Use $harness-ship to prepare the active task for a PR."

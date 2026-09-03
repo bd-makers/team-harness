@@ -1,4 +1,4 @@
-// Shared harness ops used by init & apply.
+// Shared harness ops used by init.
 import { join, basename, resolve } from 'node:path';
 import { lstat, unlink } from 'node:fs/promises';
 import { writeText, readTextSafe, copyTree, exists } from './fsx.mjs';
@@ -7,12 +7,11 @@ import { mergeMarkdown, deepMergeJson, simpleDiff } from './merge.mjs';
 
 export const DEFAULT_BACKUP_PARENT = 'harness-backup';
 
-// AGENTS.md (shared core) + CLAUDE.md / GEMINI.md (thin, @AGENTS.md import).
-// Exported so drift checks stay in step with what apply actually renders.
+// AGENTS.md (shared core) + CLAUDE.md (thin, @AGENTS.md import).
+// Exported so drift checks stay in step with what init actually renders.
 export const AGENT_FILE_TEMPLATES = [
   ['AGENTS.md', 'AGENTS.md.hbs'],
   ['CLAUDE.md', 'CLAUDE.md.hbs'],
-  ['GEMINI.md', 'GEMINI.md.hbs'],
 ];
 
 function hasCommand(group, command) {
@@ -20,7 +19,7 @@ function hasCommand(group, command) {
     && group.hooks.some(hook => hook?.type === 'command' && hook.command === command);
 }
 
-// A project can author its own `.codex/hooks.json`. `apply` deep-merges the harness
+// A project can author its own `.codex/hooks.json`. `init` deep-merges the harness
 // group in, but a hand-edited file can still drop it — and then Codex sessions silently
 // lose task context while the file stays valid JSON. Content check, not just parse.
 export function codexHooksHaveSessionContext(hooks) {
@@ -31,12 +30,20 @@ export function codexHooksHaveSessionContext(hooks) {
         && hook.command.includes('harness-team session-context')));
 }
 
-export function settingsHasBoundaryCheckpoint(settings) {
+// Both Edit and Write must be wired: a Write that rewrites the plan completes
+// checkboxes too, and an Edit-only group used to pass this check so doctor never
+// noticed the Write half was missing (codex review P2, 2026-09-03). `migrate` passes
+// `requireWrite: false` — an Edit-only group is by definition a customization (the
+// template has always shipped `Edit|Write`), and migrate leaves customized groups
+// alone; doctor keeps warning until the team adds Write themselves.
+export function settingsHasBoundaryCheckpoint(settings, { requireWrite = true } = {}) {
   const groups = settings?.hooks?.PreToolUse;
-  return Array.isArray(groups) && groups.some(group =>
-    typeof group?.matcher === 'string'
-      && group.matcher.split('|').includes('Edit')
-      && hasCommand(group, './.claude/hooks/boundary-checkpoint.sh'));
+  return Array.isArray(groups) && groups.some(group => {
+    if (typeof group?.matcher !== 'string') return false;
+    const tools = group.matcher.split('|');
+    return tools.includes('Edit') && (!requireWrite || tools.includes('Write'))
+      && hasCommand(group, './.claude/hooks/boundary-checkpoint.sh');
+  });
 }
 
 function hasExactKeys(value, keys) {
@@ -60,7 +67,7 @@ function isKnownDefaultProtectGroup(group) {
 
 // Settings arrays normally union whole hook groups. When upgrading the known
 // default Edit|Write group, normalize the old protect-only group into the new
-// protect→boundary group so `apply` does not run protect-files twice. Any
+// protect→boundary group so `init` does not run protect-files twice. Any
 // customized group is left intact; the normal non-destructive union still adds
 // the new template group without replacing user hooks.
 export function mergeClaudeSettings(existing, incoming) {
@@ -129,6 +136,7 @@ export async function planChanges(ctx, { stack }) {
 
   const changes = [];
   const legacyAgentFiles = [];
+  const brokenMarkerFiles = [];
 
   // Each agent file is marker-merged independently: managed sections updated,
   // user text preserved.
@@ -136,14 +144,21 @@ export async function planChanges(ctx, { stack }) {
     const t = await readTextSafe(join(tplDir, tplName));
     if (!t) continue;
     const filePath = join(targetDir, file);
-    // Legacy guard: an alias symlink (0.7.x AGENTS.md/GEMINI.md → CLAUDE.md) must NOT be
+    // Legacy guard: an alias symlink (0.7.x AGENTS.md → CLAUDE.md) must NOT be
     // read or written through — fs.writeFile follows symlinks and would clobber CLAUDE.md.
     // Skip it and surface a migrate hint; `migrate` converts these to real files.
     const st = await lstat(filePath).catch(() => null);
     if (st?.isSymbolicLink()) { legacyAgentFiles.push(file); continue; }
     const rendered = render(t, vars);
     const existing = await readTextSafe(filePath);
-    const merged = mergeMarkdown(existing, rendered);
+    let merged;
+    try {
+      merged = mergeMarkdown(existing, rendered);
+    } catch (err) {
+      if (err?.code !== 'HARNESS_MARKER_MISMATCH') throw err;
+      brokenMarkerFiles.push({ file, section: err.section, message: err.message });
+      continue;
+    }
     if (existing !== merged) {
       changes.push({ kind: 'markdown', path: filePath, before: existing, after: merged });
     }
@@ -176,21 +191,6 @@ export async function planChanges(ctx, { stack }) {
     });
   }
 
-  // .opencode/opencode.json
-  const tplOpen = JSON.parse(await readTextSafe(join(tplDir, '.opencode/opencode.json')));
-  const existingOpen = JSON.parse((await readTextSafe(join(targetDir, '.opencode/opencode.json'))) || 'null');
-  const mergedOpen = deepMergeJson(existingOpen, tplOpen);
-  const existingOpenText = existingOpen ? JSON.stringify(existingOpen, null, 2) : null;
-  const mergedOpenText = JSON.stringify(mergedOpen, null, 2);
-  if (existingOpenText !== mergedOpenText) {
-    changes.push({
-      kind: 'json',
-      path: join(targetDir, '.opencode/opencode.json'),
-      before: existingOpenText,
-      after: mergedOpenText,
-    });
-  }
-
   // .codex/hooks.json — Codex reads project-local hooks. Deep-merge (not skip-existing)
   // so a project that already authored its own Codex hooks still gains the harness
   // SessionStart group instead of silently keeping none. Array union is by JSON identity,
@@ -209,7 +209,7 @@ export async function planChanges(ctx, { stack }) {
     });
   }
 
-  return { changes, vars, legacyAgentFiles };
+  return { changes, vars, legacyAgentFiles, brokenMarkerFiles };
 }
 
 export async function applyChanges(changes) {
@@ -225,20 +225,26 @@ export async function applyChanges(changes) {
   return results;
 }
 
-// React Native 전용 rules(Expo Router 네비게이션 등) — RN 계열·미지정 stack에만 복사한다.
-// 명시적 비-RN `--stack`(python/node/generic 등)에는 제외; `--stack` 미지정 시엔 기존
-// 무조건 복사 동작을 그대로 유지한다(하위 호환 — auto-detect 결과로는 게이트하지 않는다).
+// React Native 전용 rules(Expo Router 네비게이션 등). 유효 stack id — 명시 `--stack`, 없으면
+// init이 감지해 `ctx.stackId`로 넘긴 값 — 가 RN 계열이 아니면 제외한다. 예전에는 자동감지
+// 결과로 게이트하지 않아 순수 Node·Python 프로젝트에도 Expo 규칙 4종이 들어갔고, 이를 피하려고
+// `--stack node`를 주면 감지된 명령이 전부 (configure)로 지워졌다. stack 정보가 전혀 없는
+// 호출(직접 호출·테스트)은 종전대로 전부 복사한다.
 const RN_ONLY_RULE_FILES = new Set(['navigation.md', 'state-management.md', 'styling.md', 'testing.md']);
 const RN_STACK_IDS = new Set(['react-native', 'expo']);
+
+export function excludesRnRules(ctx) {
+  const stackId = ctx.flags?.stack ?? ctx.stackId;
+  return !!stackId && !RN_STACK_IDS.has(stackId);
+}
 
 export async function copyStaticAssets(ctx) {
   const tplDir = join(ctx.root, 'templates');
   const out = [];
   // hooks: copy, skip existing
   out.push(...await copyTree(join(tplDir, '.claude/hooks'), join(ctx.targetDir, '.claude/hooks'), { skipExisting: true }));
-  // rules: copy, skip existing. RN 전용 4종은 명시적 비-RN stack일 때만 제외한다.
-  const explicitStack = ctx.flags?.stack;
-  const excludeRnRules = explicitStack && !RN_STACK_IDS.has(explicitStack);
+  // rules: copy, skip existing. RN 전용 4종은 유효 stack이 비-RN이면 제외한다.
+  const excludeRnRules = excludesRnRules(ctx);
   out.push(...await copyTree(join(tplDir, '.claude/rules'), join(ctx.targetDir, '.claude/rules'), {
     skipExisting: true,
     exclude: excludeRnRules ? RN_ONLY_RULE_FILES : undefined,
@@ -265,10 +271,8 @@ const AI_GITIGNORE_ENTRIES = [
   '# AI',
   'CLAUDE.md',
   'AGENTS.md',
-  'GEMINI.md',
   '',
   'oh-my-openagent.json',
-  'opencode.json',
   '',
   'handoff.md',
   'plan.md',
@@ -288,8 +292,6 @@ const AI_GITIGNORE_ENTRIES = [
   '.agents',
   '.agents/',
   '.cursorrules',
-  '.opencode',
-  '.opencode/',
   '.codex',
   '.codex/',
   '',
@@ -306,9 +308,13 @@ async function appendGitignore(targetDir, { addAiEntries = false } = {}) {
   const lines = existing.split('\n');
   const has = (line) => lines.some(l => l.trim() === line);
 
+  // Not `.harness/` wholesale: backup.json (the shared backup path) and the cursor
+  // mirror manifest are team state the README asks teams to commit. Only the per-user
+  // pointer/config and the observability logs are personal.
   const harnessNeeded = [
     '.claude/settings.local.json',
-    '.harness/',
+    '.harness/active.json',
+    '.harness/config.json',
     '.harness/observability/',
   ];
   const harnessMissing = harnessNeeded.filter(line => !has(line));

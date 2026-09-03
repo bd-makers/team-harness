@@ -19,7 +19,9 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash
    harness-team task <name>
    ```
    - `docs/<user>/<name>/{<name>-spec,<name>-plan,<name>-handoff,<name>-artifact,<name>-context}.md` 생성 + active 설정
-3. `<name>-spec.md`에 초기 요구사항 작성
+3. `<name>-spec.md`에 초기 요구사항 작성 — spec의 **Ambiguity 자가진단** 5항목을 채점하고, 3개 이상
+   미체크면 구현에 들어가지 않는다: `/harness-spec`으로 초안을 만들고 막히면 `/harness-interview`로 돌아간다
+   (작은 변경은 생략 가능 — `CLAUDE.md` §1).
 
 ### Phase 2: 계획 수립
 1. 코드베이스 탐색으로 영향 범위 파악
@@ -30,7 +32,7 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash
 2. 재현 가능한 실패는 `<name>-context.md`의 failure capsule에 신호·시도·현재 가설·다음 판별법·
    안전한 source 위치만 압축해 기록한다(최대 3개). raw stderr, 토큰, 비밀값, 전체 HTTP payload는 복사하지 않는다.
    해소 시 capsule을 제거하고 재발 방지 가치가 있으면 artifact의 `## Learnings`에 남긴다.
-3. 중요한 변경은 `CLAUDE.md`의 **코드 리뷰 기준** 확인
+3. 중요한 변경은 `AGENTS.md`의 **코드 리뷰 기준** 확인
 
 ### Phase 4: 완료
 1. git commit → post-commit hook이 handoff 자동 갱신
@@ -38,4 +40,4 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash
 
 ## 주의사항
 - 항상 `harness-team task <name>`으로 시작 (수동으로 docs/ 만들지 말 것)
-- post-commit hook이 handoff를 자동 갱신하므로 수동 `/handoff` 불필요
+- post-commit hook이 handoff를 자동 갱신하므로 `harness-team handoff`를 손으로 실행할 필요 없음

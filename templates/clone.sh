@@ -4,7 +4,7 @@
 set -euo pipefail
 
 BACKUP_DIR="{{BACKUP_DIR}}"
-ITEMS=("CLAUDE.md" "AGENTS.md" "GEMINI.md" ".claude" ".cursor" ".opencode" ".codex" "docs" ".harness")
+ITEMS=("CLAUDE.md" "AGENTS.md" ".claude" ".cursor" ".codex" "docs" ".harness")
 
 if [ ! -d "$BACKUP_DIR" ]; then
   echo "error: backup dir not found: $BACKUP_DIR" >&2
@@ -14,10 +14,10 @@ fi
 for item in "${ITEMS[@]}"; do
   if [ -L "$item" ]; then
     target="$(readlink "$item")"
-    if [[ "$target" == "$BACKUP_DIR"* ]]; then
+    if [[ "$target" == "$BACKUP_DIR" || "$target" == "$BACKUP_DIR"/* ]]; then
       echo "skip: $item (backup symlink)"
     else
-      ln -sf "$target" "$BACKUP_DIR/$item"
+      ln -sfn "$target" "$BACKUP_DIR/$item"
       echo "synced symlink: $item -> $target"
     fi
   elif [ -d "$item" ]; then

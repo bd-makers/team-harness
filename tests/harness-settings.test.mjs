@@ -39,6 +39,13 @@ test('mergeClaudeSettings preserves protect-files hooks with customized settings
   }
 });
 
+test('settingsHasBoundaryCheckpoint requires both Edit and Write in the matcher', () => {
+  const cmd = { type: 'command', command: './.claude/hooks/boundary-checkpoint.sh' };
+  assert.equal(settingsHasBoundaryCheckpoint({ hooks: { PreToolUse: [{ matcher: 'Edit', hooks: [cmd] }] } }), false, 'Edit만 배선된 설치는 Write 완료를 놓친다');
+  assert.equal(settingsHasBoundaryCheckpoint({ hooks: { PreToolUse: [{ matcher: 'Write|Edit', hooks: [cmd] }] } }), true);
+  assert.equal(settingsHasBoundaryCheckpoint({ hooks: { PreToolUse: [{ matcher: 'Edit|Write', hooks: [cmd] }] } }), true);
+});
+
 test('settingsHasBoundaryCheckpoint ignores malformed custom hook groups', () => {
   const settings = { hooks: { PreToolUse: [{ matcher: 'Edit', hooks: {} }] } };
   assert.equal(settingsHasBoundaryCheckpoint(settings), false);

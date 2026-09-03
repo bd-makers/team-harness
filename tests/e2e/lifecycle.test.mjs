@@ -10,7 +10,7 @@ for (const stack of STACKS) {
   test(`L2 lifecycle [${stack.label}]: task → commit → handoff → done guard → force`, async () => {
     const sb = await appliedSandbox(stack);
     try {
-      assert.equal(sb.applyResult.code, 0, sb.applyResult.stderr);
+      assert.equal(sb.initResult.code, 0, sb.initResult.stderr);
 
       // create task → 4 SSOT files + active.json populated
       const created = await sb.cli(['task', 'demo']);

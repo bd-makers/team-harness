@@ -6,13 +6,14 @@
 set -euo pipefail
 
 BACKUP_DIR="{{BACKUP_DIR}}"
-# AGENTS.md / GEMINI.md are real files now (not CLAUDE.md aliases); .cursorrules retired.
-ITEMS=("CLAUDE.md" "AGENTS.md" "GEMINI.md" ".claude" ".cursor" ".opencode" ".codex" "docs" ".harness")
+# AGENTS.md is a real file now (not CLAUDE.md aliases); .cursorrules retired.
+ITEMS=("CLAUDE.md" "AGENTS.md" ".claude" ".cursor" ".codex" "docs" ".harness")
 
 for item in "${ITEMS[@]}"; do
   if [ -L "$item" ]; then
     target="$(readlink "$item")"
-    if [[ "$target" == "$BACKUP_DIR"* ]]; then
+    # 경로 경계까지 본다 — 접두 매치는 project-a가 project-ab의 링크까지 잡는다.
+    if [[ "$target" == "$BACKUP_DIR" || "$target" == "$BACKUP_DIR"/* ]]; then
       rm "$item"
       echo "removed: $item (backup symlink)"
     else

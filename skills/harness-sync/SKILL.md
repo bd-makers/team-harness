@@ -1,6 +1,6 @@
 ---
 name: harness-sync
-description: Codex wrapper for resyncing harness symlinks and mirrored rules. Use when the user asks for /harness-sync, harness sync, regenerate symlinks, or sync Claude and Cursor rules.
+description: Codex wrapper for regenerating the .cursor/rules mirror from .claude/rules and reinstalling the git post-commit hook. Use when the user asks for /harness-sync, harness sync, or to sync Claude and Cursor rules.
 ---
 
 # Harness Sync

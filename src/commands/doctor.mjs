@@ -10,7 +10,7 @@ import { settingsHasSessionGate } from './session-context.mjs';
 
 const pexec = promisify(execFile);
 
-// gh/codex/gemini/opencode are optional integrations: absent means a feature is off.
+// gh/codex are optional integrations: absent means a feature is off.
 // jq is not in that class. The Claude hooks parse their stdin payload with it, and
 // current templates fall back to a grep extractor instead of failing open — but that
 // holds only for installed hooks that actually carry the fallback block. runDoctor
@@ -24,8 +24,6 @@ const pexec = promisify(execFile);
 export const EXTERNAL_TOOLS = [
   { cmd: 'gh', label: 'gh (GitHub CLI)' },
   { cmd: 'codex', label: 'codex (Codex CLI)' },
-  { cmd: 'gemini', label: 'gemini (Gemini CLI)' },
-  { cmd: 'opencode', label: 'opencode (OpenCode CLI)' },
   {
     cmd: 'jq',
     label: 'jq (JSON processor)',
@@ -75,16 +73,17 @@ export async function checkSelfCli(root, env = process.env) {
   }
 }
 
-// Claude's SessionStart and git post-commit hooks invoke the globally resolvable
-// `harness-team` command. The source repository runs its local Node entrypoint,
-// so that check cannot prove consumer hooks will be able to run.
+// Claude's SessionStart hook, the PreToolUse boundary checkpoint and the git
+// post-commit hook all invoke the globally resolvable `harness-team` command. The
+// source repository runs its local Node entrypoint, so that check cannot prove
+// consumer hooks will be able to run.
 export async function checkHookCli(env = process.env) {
   try {
     // 5s to match checkSelfCli: both spawn node with this CLI, so a loaded machine
     // that is slow for one is slow for the other. A shorter budget here would report
     // "hooks can't run" for what is only a slow spawn.
     const { stdout } = await pexec('harness-team', ['--help'], { timeout: 5000, env });
-    return ['session-context', 'handoff'].every(command =>
+    return ['session-context', 'handoff', 'boundary'].every(command =>
       new RegExp(`^\\s*${command}(?:\\s|$)`, 'm').test(stdout));
   } catch {
     return false;
@@ -259,9 +258,9 @@ export async function detectLegacyStructure(targetDir) {
   return null;
 }
 
-// Detect a settings.json that predates the SessionStart task-gate (0.9+). apply
+// Detect a settings.json that predates the SessionStart task-gate (0.9+). init
 // (deep-merge) / migrate deliver the hook; a missing one means the project is
-// outdated. Soft warning steering to apply — does NOT count toward fail (a pre-0.9
+// outdated. Soft warning steering to init — does NOT count toward fail (a pre-0.9
 // project is legitimate; a hard fail would break its CI). Missing/invalid
 // settings.json is already covered by CHECKS, so we stay silent there (no double-fail).
 export async function checkSessionStartHook(targetDir) {
@@ -269,7 +268,7 @@ export async function checkSessionStartHook(targetDir) {
   try { settings = JSON.parse(await readFile(join(targetDir, '.claude/settings.json'), 'utf8')); }
   catch { return null; }
   if (settingsHasSessionGate(settings)) return null;
-  return 'SessionStart task-gate hook 없음 (0.9+) — run: harness-team apply (또는 migrate)';
+  return 'SessionStart task-gate hook 없음 (0.9+) — run: harness-team init (또는 migrate)';
 }
 
 export { settingsHasBoundaryCheckpoint };
@@ -282,13 +281,13 @@ export async function checkCodexSessionHook(targetDir) {
   try { hooks = JSON.parse(await readFile(join(targetDir, '.codex/hooks.json'), 'utf8')); }
   catch { return null; }
   if (codexHooksHaveSessionContext(hooks)) return null;
-  return '.codex/hooks.json에 harness SessionStart 훅 없음 — Codex 세션이 task context를 못 받음; run: harness-team apply';
+  return '.codex/hooks.json에 harness SessionStart 훅 없음 — Codex 세션이 task context를 못 받음; run: harness-team init';
 }
 
 // docs/decisions.md is scaffolded with skipExisting (copyStaticAssets), so a project
 // that already had the file when the D-log migration shipped never receives the
-// upstream D2/D4/D5 sections — and apply cannot deliver them without clobbering the
-// team's own log. Warn-level: a missing file is fixable by apply (scaffold copies it),
+// upstream D2/D4/D5 sections — and init cannot deliver them without clobbering the
+// team's own log. Warn-level: a missing file is fixable by init (scaffold copies it),
 // missing sections need a manual merge from the plugin's templates/docs/decisions.md.
 export const DECISION_LOG_PATH = 'docs/decisions.md';
 export const DECISION_HEADINGS = ['## D2', '## D4', '## D5'];
@@ -299,7 +298,7 @@ export async function checkDecisionLog(targetDir) {
     body = await readFile(join(targetDir, DECISION_LOG_PATH), 'utf8');
   } catch (error) {
     if (error?.code === 'ENOENT') {
-      return `${DECISION_LOG_PATH} 없음 — 팀 결정 로그(D2/D4/D5 전문)가 프로젝트에 없다; run: harness-team apply (플러그인 templates/docs/decisions.md를 스캐폴드)`;
+      return `${DECISION_LOG_PATH} 없음 — 팀 결정 로그(D2/D4/D5 전문)가 프로젝트에 없다; run: harness-team init (플러그인 templates/docs/decisions.md를 스캐폴드)`;
     }
     // A directory or an unreadable file must stay a warning too — a warn-level
     // check crashing doctor before it can emit its envelope defeats its purpose.
@@ -317,7 +316,7 @@ export async function checkBoundaryCheckpointHook(targetDir) {
   try { settings = JSON.parse(await readFile(join(targetDir, '.claude/settings.json'), 'utf8')); }
   catch { return null; }
   if (settingsHasBoundaryCheckpoint(settings)) return null;
-  return 'PreToolUse boundary checkpoint hook 없음 — run: harness-team apply';
+  return 'PreToolUse boundary checkpoint hook 없음(또는 matcher에 Edit|Write 미포함) — run: harness-team init';
 }
 
 // The "eager tier" = instruction files loaded into context at EVERY session start,
@@ -410,14 +409,16 @@ export async function checkEagerTierSize(targetDir, env = process.env) {
 const CHECKS = [
   { path: 'AGENTS.md', required: true, realFile: true, contains: 'harness:section="protocol"' },
   { path: 'CLAUDE.md', required: true, realFile: true, contains: '@AGENTS.md' },
-  { path: 'GEMINI.md', required: false, realFile: true, contains: '@AGENTS.md' },
   { path: '.claude/settings.json', required: true, json: true },
   { path: '.claude/hooks/protect-files.sh', executable: true },
+  { path: '.claude/hooks/block-dangerous-git.sh', executable: true },
   { path: '.claude/hooks/boundary-checkpoint.sh', executable: true },
   { path: '.claude/hooks/auto-format.sh', executable: true },
   { path: '.claude/hooks/pre-commit-check.sh', executable: true },
+  // Run by node, so no exec bit — but it is the sixth wired hook, and a missing copy
+  // means observability silently records nothing.
+  { path: '.claude/hooks/observe-tools.mjs' },
   { path: '.cursor/rules', required: false, dir: true },
-  { path: '.opencode/opencode.json', required: false, json: true },
   { path: '.codex/hooks.json', required: false, json: true },
   { path: 'docs/README.md', required: false },
   // Backup/symlink architecture is a consumer-project concern; the plugin source
@@ -617,7 +618,7 @@ export async function runDoctor(ctx) {
   if (!pluginDev) {
     hookCliOk = await checkHookCli();
     if (!hookCliOk) {
-      const detail = `PATH의 harness-team이 실행되지 않거나 session-context/handoff를 지원하지 않음 — SessionStart/post-commit 훅이 실행되지 않음; ${hookCliInstall}로 전역 CLI를 링크하거나 Claude Code 플러그인 경로를 PATH에 추가`;
+      const detail = `PATH의 harness-team이 실행되지 않거나 session-context/handoff/boundary를 지원하지 않음 — SessionStart/post-commit/boundary 훅이 실행되지 않음; ${hookCliInstall}로 전역 CLI를 링크하거나 Claude Code 플러그인 경로를 PATH에 추가`;
       add('SessionStart/post-commit hook CLI', 'warning', detail, `\n⚠️ ${detail}`);
     } else {
       add('SessionStart/post-commit hook CLI', 'pass', 'session-context/handoff supported', '✓ SessionStart/post-commit hook CLI  (session-context/handoff supported)');
@@ -651,14 +652,14 @@ export async function runDoctor(ctx) {
     // spec-gate bypass → create the task properly. A blanket 'migrate' would
     // misdirect an agent whose only warning is a pointer-shell spec.
     const warnActions = [];
-    // A decision log that is missing outright is delivered by apply's scaffold;
+    // A decision log that is missing outright is delivered by init's scaffold;
     // one that exists without the D-sections is not (skipExisting) — no command
-    // fixes it, so only the missing-file case earns the apply action.
+    // fixes it, so only the missing-file case earns the init action.
     const decisionLogNeedsScaffold = decisionLogWarning
       && !(await exists(join(ctx.targetDir, DECISION_LOG_PATH)));
     if (legacyWarning) warnActions.push('harness-team migrate');
     if (specGateWarning) warnActions.push('harness-team task <name>');
-    if (hookWarning || boundaryHookWarning || decisionLogNeedsScaffold) warnActions.push('harness-team apply');
+    if (hookWarning || boundaryHookWarning || decisionLogNeedsScaffold) warnActions.push('harness-team init');
     // jq warning always carries its remedy; the fail-open branch additionally needs
     // migrate — installing jq alone leaves the stale hooks' precision degraded forever.
     if (jqGaps.length) warnActions.push('harness-team migrate');

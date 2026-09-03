@@ -35,18 +35,23 @@ else
   FILE_PATH=$(json_input_field file_path "$INPUT") || FILE_PATH=$(json_input_field command "$INPUT") || FILE_PATH="$INPUT"
 fi
 
-# 보호 대상 패턴
+# 보호 대상 패턴 (ERE). 경로 구분자·공백·따옴표·문자열 끝을 경계로 요구한다 — 예전의 substring
+# 매칭은 `.envrc`·`src/dev.env.md`·`src/android/builder.ts`처럼 이름만 닮은 파일까지 막았다.
+# `.env.*`(local/example 등)는 settings.json의 deny와 같은 범위로 보호한다.
+# 앞 경계에 공백을 허용하는 것은 Bash `command` 폴백(`echo x > .env`)과 저정밀 모드의
+# payload 전체 스캔(fail-closed)을 그대로 유지하기 위해서다.
+PROTECTED_LABELS=(".env" "ios/Pods" "android/build" "node_modules/" ".git/")
 PROTECTED_PATTERNS=(
-  ".env"
-  "ios/Pods"
-  "android/build"
-  "node_modules/"
-  ".git/"
+  '(^|/|[[:space:]])\.env(\.[^/"[:space:]]*)?("|[[:space:]]|$)'
+  '(^|/|[[:space:]])ios/Pods(/|"|[[:space:]]|$)'
+  '(^|/|[[:space:]])android/build(/|"|[[:space:]]|$)'
+  '(^|/|[[:space:]])node_modules/'
+  '(^|/|[[:space:]])\.git/'
 )
 
-for pattern in "${PROTECTED_PATTERNS[@]}"; do
-  if [[ "$FILE_PATH" == *"$pattern"* ]]; then
-    echo "🚫 보호 대상 파일입니다: $pattern — 직접 수정할 수 없습니다." >&2
+for i in "${!PROTECTED_PATTERNS[@]}"; do
+  if printf '%s' "$FILE_PATH" | grep -qE "${PROTECTED_PATTERNS[$i]}"; then
+    echo "🚫 보호 대상 파일입니다: ${PROTECTED_LABELS[$i]} — 직접 수정할 수 없습니다." >&2
   [[ $jq_missing -eq 1 ]] && echo "   ⚠ jq가 PATH에 없어 저정밀 모드로 판정했습니다 — jq를 설치하면 판정이 정확해집니다." >&2
     exit 2
   fi

@@ -3,7 +3,7 @@ graph TB
 
     subgraph CMDS["Commands Layer"]
         direction LR
-        INIT["init"] & APPLY["apply"] & SYNC["sync"]
+        INIT["init (신규·재실행)"] & SYNC["sync"]
         CLONE["clone"] & SYM["symlink"] & DEL["delete"] & BACKUP["backup"]
         DOCTOR["doctor"] & TASK["task · list · done\nhandoff · retro"] & SESS["session-context"]
         MIG["migrate"] & UPG["upgrade"] & REL["release"]
@@ -11,7 +11,7 @@ graph TB
 
     subgraph ORCH["Orchestration"]
         direction LR
-        HARNESS["harness.mjs\nplanChanges · applyChanges\ncopyStaticAssets (renders 3 agent files)"]
+        HARNESS["harness.mjs\nplanChanges · applyChanges\ncopyStaticAssets (renders 2 agent files)"]
         BACKUPDIR["backup-dir.mjs\nresolveBackupDir\n4-priority resolution"]
     end
 
@@ -28,7 +28,7 @@ graph TB
 
     subgraph TMPL["Templates"]
         direction LR
-        HBS["AGENTS.md.hbs (core)\nCLAUDE.md.hbs (thin)\nGEMINI.md.hbs (thin)"]
+        HBS["AGENTS.md.hbs (core)\nCLAUDE.md.hbs (thin)"]
         HOOKS_T[".claude/hooks/"]
         RULES_T[".claude/rules/"]
         SKILLS_T[".claude/skills/"]
@@ -36,7 +36,7 @@ graph TB
     end
 
     BIN --> CMDS
-    INIT & APPLY & SYNC --> HARNESS
+    INIT & SYNC --> HARNESS
     CLONE & SYM & DEL & BACKUP & MIG & UPG --> BACKUPDIR
     DOCTOR --> BACKUPDIR
     TASK --> MEMBER

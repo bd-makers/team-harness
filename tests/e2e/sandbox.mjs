@@ -60,7 +60,7 @@ export async function createSandbox(stack) {
 
   await writeFile(join(dir, 'package.json'), JSON.stringify(stack.pkg, null, 2));
   await run('git', ['init', '-q'], { cwd: dir, env });
-  // `apply --yes` pins the docs member to git user.name (see ensureUsername),
+  // `init --yes` pins the docs member to git user.name (see ensureUsername),
   // so set it to a known value the tests can assert against.
   await run('git', ['config', 'user.email', 'tester@e2e.io'], { cwd: dir, env });
   await run('git', ['config', 'user.name', 'tester'], { cwd: dir, env });
@@ -75,12 +75,12 @@ export async function createSandbox(stack) {
   return { dir, env, cli, gitCommit, cleanup };
 }
 
-// Sandbox with the harness already applied non-interactively. backup-dir is kept
+// Sandbox with the harness already installed non-interactively. backup-dir is kept
 // inside the sandbox so doctor's required `.harness/backup.json` check passes.
 export async function appliedSandbox(stack) {
   const sb = await createSandbox(stack);
-  const applyResult = await sb.cli([
-    'apply', '--yes', '--backup-dir', join(sb.dir, '.hbackup'),
+  const initResult = await sb.cli([
+    'init', '--yes', '--backup-dir', join(sb.dir, '.hbackup'),
   ]);
-  return { ...sb, applyResult };
+  return { ...sb, initResult };
 }

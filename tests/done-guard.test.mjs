@@ -416,7 +416,7 @@ test('parseReviewMarkers: 유효 마커 파싱, 깨진 마커는 무시', () => 
     '## Reviews',
     '- 2026-08-20 codex: OK',
     '<!-- harness:review kind=codex scope=worktree tip=abc123 at=2026-08-20T09:00:00Z -->',
-    '<!-- harness:review kind=gemini-adversarial at="2026-08-21T10:00:00Z" -->',
+    '<!-- harness:review kind=codex-adversarial at="2026-08-21T10:00:00Z" -->',
     '<!-- harness:review kind=codex at=not-a-date -->', // 깨진 at → 무시
     '<!-- harness:review at=2026-08-21T10:00:00Z -->',  // kind 없음 → 무시
   ].join('\n');
@@ -426,7 +426,7 @@ test('parseReviewMarkers: 유효 마커 파싱, 깨진 마커는 무시', () => 
   assert.equal(markers[0].scope, 'worktree');
   assert.equal(markers[0].tip, 'abc123');
   assert.equal(markers[0].at, Date.parse('2026-08-20T09:00:00Z'));
-  assert.equal(markers[1].kind, 'gemini-adversarial'); // 따옴표 값 허용
+  assert.equal(markers[1].kind, 'codex-adversarial'); // 따옴표 값 허용
   assert.equal(markers[1].scope, null);
 });
 
@@ -751,7 +751,7 @@ test('verify: required + 창 내 검증 프레이밍 마커 → 통과 (allowlis
 test('verify 마커 하나가 review+verify 동시 required를 만족한다', async () => {
   const both =
     '# demo — Spec\n\n## Done evidence\n\n```json\n{ "version": 1, "review": "required", "verify": "required", "tests": "skip" }\n```\n';
-  const marker = `<!-- harness:review kind=gemini-adversarial at=${new Date().toISOString()} -->`;
+  const marker = `<!-- harness:review kind=codex-adversarial at=${new Date().toISOString()} -->`;
   const { dir } = await makeEvidenceFixture({ spec: both, files: {
     'docs/tester/demo/demo-artifact.md': taskArtifactTemplate('demo') + `\n- 실제 결과\n\n${marker}\n`,
   } });

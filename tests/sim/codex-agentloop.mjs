@@ -220,7 +220,6 @@ async function installSignals(sb) {
   return [
     sig('AGENTS.md + harness:section marker', await fileHas(join(sb.dir, 'AGENTS.md'), 'harness:section=')),
     sig('CLAUDE.md @AGENTS.md import', await fileHas(join(sb.dir, 'CLAUDE.md'), '@AGENTS.md')),
-    sig('GEMINI.md @AGENTS.md import', await fileHas(join(sb.dir, 'GEMINI.md'), '@AGENTS.md')),
     sig('.harness/config.json present', existsSync(join(sb.dir, '.harness', 'config.json'))),
     sig('.claude/settings.json hooks present', await fileHas(join(sb.dir, '.claude', 'settings.json'), 'hooks')),
     sig('.claude/rules present', existsSync(join(sb.dir, '.claude', 'rules'))),
@@ -287,14 +286,14 @@ async function probe() {
 }
 
 async function sc1ExplicitApply() {
-  const sb = await makeSandbox('explicit-apply', { seed: true });
+  const sb = await makeSandbox('explicit-init', { seed: true });
   const readmeBefore = await sha(join(sb.dir, 'README.md'));
   const srcBefore = await sha(join(sb.dir, 'src', 'index.js'));
   const prompt = [
     '$harness-aijient-team:harness-team',
     '',
     'You are in a throwaway git repository for an automated Codex L5 simulation.',
-    'Run exactly `harness-team apply --yes` to apply the team harness to this project.',
+    'Run exactly `harness-team init --yes` to set up the team harness in this project.',
     'Run non-interactively, accept defaults, do not create a commit, and keep changes limited to harness output.',
     'When complete, reply exactly: HARNESS_APPLY_DONE',
   ].join('\n');
@@ -304,7 +303,7 @@ async function sc1ExplicitApply() {
     sig('JSONL thread_id observed', Boolean(r.threadId)),
     sig('command execution event observed', r.commandItems.length > 0),
     sig('harness-team command observed', hasHarnessCommand(r), 'diagnostic; file evidence is authoritative'),
-    sig('harness-team apply command observed', r.commandItems.some((item) => /harness-team\s+apply\b/.test(item.command || ''))),
+    sig('harness-team init command observed', r.commandItems.some((item) => /harness-team\s+init\b/.test(item.command || ''))),
     sig('README.md preserved (hash unchanged)', existsSync(join(sb.dir, 'README.md')) && (await sha(join(sb.dir, 'README.md'))) === readmeBefore),
     sig('src/index.js preserved (hash unchanged)', existsSync(join(sb.dir, 'src', 'index.js')) && (await sha(join(sb.dir, 'src', 'index.js'))) === srcBefore),
     ...(await installSignals(sb)),
@@ -315,7 +314,7 @@ async function sc1ExplicitApply() {
 async function sc2NaturalApply(trials = 2) {
   const runs = [];
   for (let i = 1; i <= trials; i++) {
-    const sb = await makeSandbox(`natural-apply-${i}`, { seed: true });
+    const sb = await makeSandbox(`natural-init-${i}`, { seed: true });
     const prompt = [
       'Apply the team harness to this project using the installed Harness AIjient Team Codex plugin if available.',
       'Run non-interactively, accept defaults, do not create a commit, and keep user files intact.',
@@ -501,7 +500,7 @@ async function runFull() {
   const sc3 = await sc3Task(sc1.sb);
   const sc4 = await sc4PostCommitHook(sc1.sb, sc3);
   const sc5 = await sc5Packaging();
-  const snapshots = [await snapshot(version, 'node-explicit-apply', sc1.sb.dir)];
+  const snapshots = [await snapshot(version, 'node-explicit-init', sc1.sb.dir)];
 
   const tmpRoot = join(PG, '.sim-tmp', TS);
   await rm(tmpRoot, { recursive: true, force: true });
@@ -516,8 +515,8 @@ async function runFull() {
 
   const sections = [
     renderSignals('Phase 0 — preflight', preflight),
-    renderSignals('SC1 — explicit skill trigger apply', sc1.signals),
-    renderSignals('SC2 — natural-language trigger apply', sc2.signals),
+    renderSignals('SC1 — explicit skill trigger init', sc1.signals),
+    renderSignals('SC2 — natural-language trigger init', sc2.signals),
     renderSignals('SC3 — task workflow', sc3.signals),
     renderSignals('SC4 — installed post-commit hook compatibility', sc4.signals),
     renderSignals('SC5 — packaging / availability', sc5.signals),

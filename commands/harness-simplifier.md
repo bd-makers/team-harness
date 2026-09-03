@@ -1,7 +1,7 @@
 ---
 description: 활성 task의 plan.md에서 제거 가능한 단계와 추상화를 찾아낸다 — 엔진 인수를 주면 외부 read-only 검증자가 채점(D6)
 phase: Persona
-argument-hint: '[codex|claude|gemini|custom] [focus ...]'
+argument-hint: '[codex|claude|custom] [focus ...]'
 tags:
   - project
   - ai
@@ -15,7 +15,7 @@ modified: 2026-08-26
 Raw slash-command 인수:
 `$ARGUMENTS`
 
-인수 해석: 첫 토큰이 `codex`·`claude`·`gemini`·`custom`이면 아래 **외부 엔진 모드**로
+인수 해석: 첫 토큰이 `codex`·`claude`·`custom`이면 아래 **외부 엔진 모드**로
 실행하고, 나머지 토큰은 focus 문구로 검증자 프롬프트 끝에 전달한다. 인수가 없으면
 아래 절차(대화형)를 그대로 수행한다.
 

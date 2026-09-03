@@ -458,7 +458,7 @@
         <div class="step-num step-num-green">5</div>
         <div class="step-body">
           <div class="step-actor actor-system">System</div>
-          <div class="step-content">AGENTS.md 코어 + CLAUDE.md/GEMINI.md(@AGENTS.md import) 렌더, rules/hooks/skills 배포 완료</div>
+          <div class="step-content">AGENTS.md 코어 + CLAUDE.md(@AGENTS.md import) 렌더, hooks/skills 배포 완료 (rules는 RN 계열 stack만)</div>
         </div>
       </div>
     </div>
@@ -935,7 +935,7 @@ Last commit: 로그인 토큰 검증 수정 (2026-05-15)
   <!-- SKILLS ROSTER -->
   <section id="skills">
     <div class="section-title">전체 스킬 로스터 — 옵트인 여부 (0.21.0)</div>
-    <p class="section-sub">슬래시 커맨드 24종 + 커맨드 없는 스킬 2종. 전부 플러그인에 번들되며, 외부 설치가 필요한 것은 <code>diagram-design</code>(다이어그램 옵트인용) 하나뿐이다 — <code>docs/prerequisites.md</code> §5 참조.</p>
+    <p class="section-sub">슬래시 커맨드 23종 + 커맨드 없는 스킬 2종. 전부 플러그인에 번들되며, 외부 설치가 필요한 것은 <code>diagram-design</code>(다이어그램 옵트인용) 하나뿐이다 — <code>docs/prerequisites.md</code> §5 참조.</p>
 
     <div class="infobox">
       <strong>"옵트인"의 정확한 범위:</strong> 결정론 계약으로 정식 선언된 옵트인은 셋뿐이다 —
@@ -959,15 +959,14 @@ Last commit: 로그인 토큰 검증 수정 (2026-05-15)
           <tr><td>/harness-unittest</td><td>Khorikov 원칙 단위테스트 (스택 감지 → GWT → 커버리지 → 검증)</td><td><span class="badge badge-core">기본</span> 소스 변경 시 — done 가드 5번이 강제 · spec <code>"tests": "skip"</code> 선언 시 생략</td></tr>
           <tr><td>/harness-comptest</td><td>React/RN 컴포넌트·화면 Testing Trophy 통합층 테스트</td><td><span class="badge badge-cond">조건부</span> 해당 스택·UI 플로우가 대상일 때</td></tr>
           <tr><td>/harness-inttest</td><td>프로세스 경계(API·DB·캐시·아웃바운드 HTTP) 통합 테스트</td><td><span class="badge badge-cond">조건부</span> 경계 코드가 대상일 때</td></tr>
-          <tr><td>/harness-review</td><td>엔진 중립 read-only 외부 리뷰 (codex·claude·gemini·custom, 엔진 생략 시 probe 폴백 codex→gemini→claude)</td><td><span class="badge badge-core">기본</span> 중요 변경 후 · 사소한 변경 생략 가능 · 마커가 done 가드 6번 증거</td></tr>
+          <tr><td>/harness-review</td><td>엔진 중립 read-only 외부 리뷰 (codex·claude·custom, 엔진 생략 시 probe 폴백 codex→claude)</td><td><span class="badge badge-core">기본</span> 중요 변경 후 · 사소한 변경 생략 가능 · 마커가 done 가드 6번 증거</td></tr>
           <tr><td>/harness-adversarial-review</td><td>설계 결정·가정에 반박을 시도하는 적대적 리뷰 (절차는 review와 동일, 프롬프트만 교체)</td><td><span class="badge badge-cond">선택</span> 설계 자체를 공격하고 싶을 때 · 마커는 verify 증거 겸용</td></tr>
           <tr><td>/harness-contrarian</td><td>spec/plan의 모든 가정에 의문 제기</td><td><span class="badge badge-persona">페르소나</span> 막힐 때 2순위 · 엔진 인수 시 D6 외부 검증자 (0.20.0)</td></tr>
           <tr><td>/harness-simplifier</td><td>plan에서 제거 가능한 단계·추상화 탐색</td><td><span class="badge badge-persona">페르소나</span> 막힐 때 3순위 · 엔진 인수 시 D6 외부 검증자 채점 (0.20.0)</td></tr>
           <tr><td>/harness-retro</td><td>artifact.md에 학습·교정 append (자기개선 루프)</td><td><span class="badge badge-core">기본</span> 교정 받은 후 · done 전</td></tr>
           <tr><td>/harness-ship</td><td>PR/MR 직전 spec·plan·artifact 정합 + shipcheck 정합 검증(0.20.0) — PR은 만들지 않는다</td><td><span class="badge badge-core">기본</span> PR/MR 직전 · 다이어그램 갱신은 옵트인(<code>--no-diagram</code>)</td></tr>
           <tr class="skills-group"><td colspan="3">설치 · 온보딩</td></tr>
-          <tr><td>/harness-init</td><td>신규 프로젝트에 하네스 scaffold (Claude 메인 + Codex/Gemini/Cursor/OpenCode)</td><td><span class="badge badge-cond">1회</span> 새 프로젝트</td></tr>
-          <tr><td>/harness-apply</td><td>기존 프로젝트에 비파괴 적용 (dry-run 후 병합)</td><td><span class="badge badge-cond">1회</span> 기존 프로젝트</td></tr>
+          <tr><td>/harness-init</td><td>하네스 scaffold 또는 기존 설치 갱신 (Claude 메인 + Codex 리뷰어 + Cursor 미러; 마커 병합이라 재실행 안전)</td><td><span class="badge badge-cond">1회</span> 새 프로젝트 · 재실행은 갱신</td></tr>
           <tr class="skills-group"><td colspan="3">유지보수 · 상황별</td></tr>
           <tr><td>/harness-doctor</td><td>무결성 점검 — 파일·훅·CLI PATH·외부 도구</td><td><span class="badge badge-maint">상황별</span> 설치 직후·뭔가 이상할 때</td></tr>
           <tr><td>/harness-sync</td><td>symlink 재생성 + <code>.cursor/rules</code> ↔ <code>.claude/rules</code> 동기화</td><td><span class="badge badge-maint">상황별</span></td></tr>
@@ -1032,12 +1031,12 @@ Last commit: 로그인 토큰 검증 수정 (2026-05-15)
         <br><br>
         <strong>슬래시 커맨드 쪽 라이프사이클 (0.17.0–0.21.0):</strong>
         <code>/harness-task</code> → <code>/harness-spec</code>(초안 writer) → <code>/harness-interview</code>(선행 채점 + 검증) → <code>/harness-diagram</code>(옵트인 시) → 구현 → <code>/harness-unittest</code> 계열 →
-        <code>/harness-review</code>·<code>/harness-adversarial-review</code>(엔진 중립: codex·claude·gemini·custom) → <code>/harness-retro</code> → <code>/harness-ship</code>(PR 직전, 정합 검증 포함) → <code>done</code>.
+        <code>/harness-review</code>·<code>/harness-adversarial-review</code>(엔진 중립: codex·claude·custom) → <code>/harness-retro</code> → <code>/harness-ship</code>(PR 직전, 정합 검증 포함) → <code>done</code>.
         막히면 페르소나 순서 — <code>/harness-interview</code> → <code>/harness-contrarian</code> → <code>/harness-simplifier</code>. 뒤 둘은 엔진 인수를 주면 D6 read-only 외부 검증자로 동작한다(0.20.0).
         옛 이름 <code>/harness-codex-review</code>·<code>/harness-codex-adversarial-review</code>는 <strong>deprecated alias</strong>였고 <strong>제거됐다</strong>(0.21.0) — 이제 동작하지 않는다. 전체 커맨드와 옵트인 여부는 위 <a href="#skills" style="color:var(--accent2)">스킬 로스터</a> 참조.
       </div>
       <div class="infobox" style="margin-top:1rem;border-left-color:var(--accent3)">
-        <strong>에이전트 구동 (<code>--json</code>, 0.8.0):</strong> Codex·OpenCode가 <code>harness-team</code>를 Bash로 호출할 때 <code>--json</code>을 주면 stdout이 구조화 observation 엔벨로프(<code>{status, summary, next_actions, artifacts, error}</code>) 1개로 나와 다음 행동을 파싱할 수 있습니다. 사람용 출력은 그대로 — 상세는 overview 문서의 "CLI Observation 계약" 참조.
+        <strong>에이전트 구동 (<code>--json</code>, 0.8.0):</strong> Codex 같은 외부 에이전트가 <code>harness-team</code>를 Bash로 호출할 때 <code>--json</code>을 주면 stdout이 구조화 observation 엔벨로프(<code>{status, summary, next_actions, artifacts, error}</code>) 1개로 나와 다음 행동을 파싱할 수 있습니다. 사람용 출력은 그대로 — 상세는 overview 문서의 "CLI Observation 계약" 참조.
       </div>
     </div>
 

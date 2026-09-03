@@ -16,8 +16,6 @@ paths:
 - 행위(behavior) 변경 시 반드시 테스트 추가 또는 수정
 - 구현 세부사항이 아닌 사용자 관점에서 테스트 (getByText, getByRole 등)
 - `testID`는 테스트 전용 — 프로덕션 로직에서 참조 금지
-- unused import 금지
-- 함수는 단일 책임, 50줄 이내 권장
 
 ## 테스트 구조
 ```typescript

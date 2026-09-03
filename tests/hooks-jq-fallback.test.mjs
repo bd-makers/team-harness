@@ -95,6 +95,23 @@ const GIT_BLOCK = [
   ['checkout .', bash('git checkout .')],
   ['checkout -- <file>', bash('git checkout -- src/app.ts')],
   ['restore <워킹트리>', bash('git restore src/app.ts')],
+  // audit-cleanup (2026-09-03) — 점검에서 드러난 우회 변형
+  ['push -fu (묶음 단축 플래그)', bash('git push -fu origin main')],
+  ['push +refspec', bash('git push origin +main')],
+  ['git -C <dir> push -f', bash('git -C other push --force')],
+  ['push --delete', bash('git push --delete origin feature')],
+  ['push :refspec (원격 삭제)', bash('git push origin :feature')],
+  ['branch --delete --force', bash('git branch --delete --force feature')],
+  ['branch -d -f', bash('git branch -d -f feature')],
+  ['restore --staged --worktree', bash('git restore --staged --worktree src/app.ts')],
+  ['restore -W', bash('git restore -W src/app.ts')],
+  ['stash drop', bash('git stash drop')],
+  ['stash clear', bash('git stash clear')],
+  // codex 리뷰 P1 (2026-09-03) — 값 없는 전역 옵션·공백 분리 값 옵션 프리픽스
+  ['git --no-pager reset --hard', bash('git --no-pager reset --hard HEAD')],
+  ['git --work-tree <dir> clean -fd', bash('git --work-tree /tmp/repo clean -fd')],
+  ['git -p push --force', bash('git -p push --force')],
+  ['git --git-dir=<dir> push -f', bash('git --git-dir=/x/.git push -f')],
 ];
 
 const GIT_ALLOW = [
@@ -110,6 +127,17 @@ const GIT_ALLOW = [
   ['branch my-Data (-D 경계)', bash('git branch my-Data')],
   ['비-git 명령', bash('npm run test')],
   ['non-Bash 도구', { tool_name: 'Read', tool_input: { file_path: '/proj/src/app.ts' } }],
+  // audit-cleanup (2026-09-03) — 예전 패턴의 오탐
+  ['push --force-if-includes (안전장치)', bash('git push origin main --force-if-includes')],
+  ['push -u', bash('git push -u origin feat')],
+  ['push --set-upstream', bash('git push --set-upstream origin feat')],
+  ['push HEAD:main (콜론 refspec, 삭제 아님)', bash('git push origin HEAD:main')],
+  ['push --dry-run', bash('git push --dry-run origin main')],
+  ['restore -S (--staged 단축)', bash('git restore -S src/app.ts')],
+  ['git -C 뒤 안전한 명령', bash('git -C other status')],
+  ['git 밖의 push -f 문자열', bash('git log --oneline | grep "push -f"')],
+  ['전역 옵션 뒤 안전한 subcommand', bash('git --no-pager log --oneline | grep "push -f"')],
+  ['stash (저장)', bash('git stash')],
 ];
 
 for (const mode of MODES) {
@@ -144,12 +172,11 @@ for (const mode of MODES) {
     }
   });
 
-  // 상류 병합 때 "의식적으로 수용한 잔여 리스크" — 이번 범위가 아니므로 현재 동작을 고정만 한다.
+  // 상류 병합 때 "의식적으로 수용한 잔여 리스크" — 현재 동작을 고정만 한다.
+  // (`git -C` 프리픽스 우회는 audit-cleanup에서 닫혔다 — GIT_BLOCK 참조.)
   test(`block-dangerous-git [${mode}]: 알려진 잔여 리스크의 현재 동작을 고정한다`, async () => {
     const fp = await runHook('block-dangerous-git.sh', bash('git commit -m "docs: git reset --hard 설명"'), { mode });
     assert.equal(fp.code, 2, '커밋 메시지 오탐(차단)은 알려진 수용 리스크다');
-    const fn = await runHook('block-dangerous-git.sh', bash('git -C other push --force'), { mode });
-    assert.equal(fn.code, 0, 'git -C 프리픽스 우회(통과)는 알려진 수용 리스크다');
   });
 
   test(`block-dangerous-git [${mode}]: JSON 이스케이프가 든 명령도 같은 판정`, async () => {
@@ -181,6 +208,7 @@ const PROTECT_BLOCK = [
   ['node_modules/', { tool_name: 'Write', tool_input: { file_path: '/proj/node_modules/x/index.js' } }],
   ['.git/', { tool_name: 'Edit', tool_input: { file_path: '/proj/.git/config' } }],
   ['command 폴백', { tool_name: 'Bash', tool_input: { command: 'echo x > .env' } }],
+  ['.env.example (settings deny `.env.*`와 같은 범위)', { tool_name: 'Edit', tool_input: { file_path: '/proj/.env.example' } }],
 ];
 
 const PROTECT_ALLOW = [
@@ -188,6 +216,12 @@ const PROTECT_ALLOW = [
   ['문서', { tool_name: 'Write', tool_input: { file_path: '/proj/docs/readme.md' } }],
   ['환경과 무관한 명령', { tool_name: 'Bash', tool_input: { command: 'npm run build' } }],
   ['빈 payload', {}],
+  // audit-cleanup (2026-09-03) — substring 매칭이 막던 이름만 닮은 파일
+  ['.envrc', { tool_name: 'Edit', tool_input: { file_path: '/proj/.envrc' } }],
+  ['dev.env.md', { tool_name: 'Edit', tool_input: { file_path: '/proj/src/dev.env.md' } }],
+  ['.envelope.ts', { tool_name: 'Edit', tool_input: { file_path: '/proj/docs/environment/.envelope.ts' } }],
+  ['src/android/builder.ts', { tool_name: 'Edit', tool_input: { file_path: '/proj/src/android/builder.ts' } }],
+  ['android/build.gradle', { tool_name: 'Edit', tool_input: { file_path: '/proj/apps/android/build.gradle' } }],
 ];
 
 for (const mode of MODES) {

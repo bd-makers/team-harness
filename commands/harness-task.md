@@ -1,7 +1,7 @@
 ---
-description: task 관리 (task/list/done/handoff) — docs/<user>/<name>/ 구조
+description: "task 관리 (task/list/done/handoff) — docs/<user>/<name>/ 구조"
 phase: Workflow
-argument-hint: <name> | list | done
+argument-hint: '<name> | list | done [--force] | handoff'
 tags:
   - project
   - ai
@@ -10,14 +10,23 @@ created: 2026-05-15
 modified: 2026-05-15
 ---
 
+`$ARGUMENTS`의 **첫 토큰**으로 분기한다. `list`·`done`·`handoff`는 `task`의 인자가 아니라 **별개 하위명령**이다 —
+`task done`으로 넘기면 이름 규칙(`^[\w.-]+$`)을 통과해 "done"이라는 task가 생성·활성화된다.
+
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task $ARGUMENTS
+# 첫 토큰이 list | done | handoff → task 없이 그 하위명령을 그대로 실행
+node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" list
+node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" done [--force]
+node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" handoff
+
+# 그 외 → task 생성 또는 활성화
+node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name>
 ```
 
 예시:
 - `harness-team task auth-redesign`   # 생성 또는 활성화
 - `harness-team list`                 # 전체 task 목록
-- `harness-team done`                 # 활성 task 완료 처리
+- `harness-team done`                 # 활성 task 완료 처리 (meta 상태만 — 원장은 `summary --write`)
 
 ## spec/plan 다이어그램 옵트인
 

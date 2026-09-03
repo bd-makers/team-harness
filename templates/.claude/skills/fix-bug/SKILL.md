@@ -33,15 +33,15 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash
    - 계측은 **변수 하나만** 바꿔 검증. 디버그 로그엔 `[DEBUG-xxxx]` 같은 고유 태그를 달아 나중에 grep 한 번으로 제거.
    - 재현 가능한 실패는 `<name>-context.md`의 failure capsule에 신호·시도·현재 가설·다음 판별법·
      안전한 source 위치만 압축해 기록한다(최대 3개). raw stderr, 토큰, 비밀값, 전체 HTTP payload는 복사하지 않는다.
-     해소 시 capsule을 제거하고 재발 방지 가치가 있으면 artifact의 `## Learnings`에 남긴다.
+     해소 시 capsule을 제거하고 재발 방지 가치가 있으면 `harness-team retro "<메모>"`로 artifact의 `## Learnings`에 남긴다.
 3. 최소 surgical fix (관련 없는 리팩토링 금지)
 4. 회귀 방지 테스트 작성 (Phase 1의 최소 재현을 테스트로 고정)
 
 ### Phase 3: 검증 + 정리
-1. typecheck / lint / test
+1. typecheck / lint / test — `/verify` (명령은 `AGENTS.md` **## 명령** 절이 정본)
 2. Phase 1 재현 루프를 다시 돌려 red → green 확인 (원 시나리오로)
 3. **`[DEBUG-...]` 계측·throwaway 하니스 전부 제거** (`grep`으로 태그 확인)
-4. 중요한 수정은 `CLAUDE.md`의 **코드 리뷰 기준** 확인
+4. 중요한 수정은 `AGENTS.md`의 **코드 리뷰 기준** 확인
 
 ### Phase 4: 완료
 1. git commit → post-commit hook이 handoff 자동 갱신

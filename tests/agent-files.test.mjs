@@ -19,11 +19,11 @@ const VARS = {
 };
 
 // 루트 파일의 제목은 이 저장소 고유 이름을 쓸 수 있어 템플릿 전체와 같을 필요는 없다.
-// 반면 harness:section 마커 블록은 apply가 템플릿에서 관리하는 영역이므로, 렌더된
+// 반면 harness:section 마커 블록은 init이 템플릿에서 관리하는 영역이므로, 렌더된
 // 템플릿의 모든 블록이 루트 적용본에도 내용까지 같아야 한다. 이는 새 샌드박스가 아닌
 // 이 저장소 자체를 확인해 템플릿만 변경되어도 드리프트를 잡는다.
-// AGENTS/CLAUDE/GEMINI 세 파일은 planChanges가 같은 루프에서 렌더·마커 병합하므로
-// 드리프트 결함 부류가 같다 — 파일 목록을 harness.mjs와 공유해 셋 다 같은 기준으로 본다.
+// AGENTS/CLAUDE 두 파일은 planChanges가 같은 루프에서 렌더·마커 병합하므로
+// 드리프트 결함 부류가 같다 — 파일 목록을 harness.mjs와 공유해 둘 다 같은 기준으로 본다.
 for (const [file, tplName] of AGENT_FILE_TEMPLATES) {
   test(`저장소 루트 ${file}는 렌더된 템플릿의 관리 절과 드리프트하지 않는다`, async () => {
     const [template, rootFile, stack] = await Promise.all([
@@ -56,37 +56,30 @@ test('CLAUDE.md(thin)는 @AGENTS.md import + workflow 섹션 + user 영역만', 
   assert.doesNotMatch(out, /harness:section="principles"/, 'core 섹션 복제 금지');
 });
 
-test('GEMINI.md(thin)는 @AGENTS.md import + reviewer 섹션', async () => {
-  const out = render(await tpl('GEMINI.md.hbs'), VARS);
-  assert.match(out, /^@AGENTS\.md\s*$/m);
-  assert.match(out, /harness:section="reviewer" begin/);
-});
-
-test('어느 thin 파일도 core 본문을 복제하지 않는다 (중복 0)', async () => {
+test('thin 파일은 core 본문을 복제하지 않는다 (중복 0)', async () => {
   const claude = render(await tpl('CLAUDE.md.hbs'), VARS);
-  const gemini = render(await tpl('GEMINI.md.hbs'), VARS);
   assert.doesNotMatch(claude, /## 작업 프로토콜/);
-  assert.doesNotMatch(gemini, /## 작업 프로토콜/);
 });
 
-test('AGENTS.md(core) roles 표는 D2 반영 — OpenCode=drive, Codex/Gemini=리뷰어', async () => {
+// D7 (2026-09-03) — OpenCode·Gemini는 멤버가 아니다. 템플릿 목록과 역할표 양쪽에서 고정한다:
+// 템플릿이 되살아나면 planChanges가 GEMINI.md를 다시 쓰고, 역할표 행이 되살아나면 문서가
+// 존재하지 않는 스캐폴드를 약속한다.
+test('AGENT_FILE_TEMPLATES는 AGENTS.md·CLAUDE.md 둘뿐이다 (GEMINI.md 스캐폴드 없음)', () => {
+  assert.deepEqual(AGENT_FILE_TEMPLATES.map(([file]) => file), ['AGENTS.md', 'CLAUDE.md']);
+});
+
+test('AGENTS.md(core) roles 표는 D2 반영 — Claude=drive, Codex=리뷰어, OpenCode·Gemini 행 없음', async () => {
   const out = render(await tpl('AGENTS.md.hbs'), VARS);
-  assert.match(out, /OpenCode/, 'OpenCode 행 존재');
-  assert.match(out, /drive/, 'drive 주체 명시');
-  assert.match(out, /리뷰어/, '리뷰어 역할 명시');
+  const rows = roleRows(out);
+  assert.ok(rows.some((l) => l.includes('**Claude Code**') && l.includes('drive')), 'Claude drive 행');
+  assert.ok(rows.some((l) => l.includes('**Codex**') && l.includes('리뷰어')), 'Codex 리뷰어 행');
+  assert.ok(!rows.some((l) => /OpenCode|Gemini/.test(l)), '역할표에 OpenCode·Gemini 행이 없어야 한다 (D7)');
+  assert.match(out, /\*\*D7\*\*/, 'D7 요약이 코어에 있어야 한다');
 });
 
 // D4 (2026-07-28) — 쓰기는 단일 스레드. scaffold 되는 AGENTS.md/CLAUDE.md 쌍이
 // 병렬 작성 여부에서 서로 모순되면 소비자 프로젝트가 자기모순 문서를 받는다.
 const roleRows = (agentsMd) => agentsMd.split('\n').filter((l) => /^\|\s*\*\*/.test(l));
-
-test('AGENTS.md(core) roles 표의 OpenCode 행은 순차 전환 세션 — "병렬 작성 세션" 회귀 금지', async () => {
-  const out = render(await tpl('AGENTS.md.hbs'), VARS);
-  const row = roleRows(out).find((l) => l.includes('**OpenCode**'));
-  assert.ok(row, 'OpenCode 행 존재');
-  assert.match(row, /순차/, 'OpenCode는 순차 전환 세션으로 표기');
-  assert.doesNotMatch(row, /병렬 작성/, '역할 표가 병렬 작성 세션으로 되돌아가면 안 됨');
-});
 
 // 결정 로그 분리 (2026-08-21) — D-log 전문은 append-only로 자라 코어를 단조 증가시키므로
 // docs/decisions.md 가 정본이다. 코어에는 현행 규범 + 포인터만 남는다. 규범이 코어에서 빠지면
@@ -174,13 +167,13 @@ test('scaffold 되는 AGENTS.md/CLAUDE.md 쌍은 병렬 쓰기 서술에서 모�
   const claude = render(await tpl('CLAUDE.md.hbs'), VARS);
   assert.match(claude, /쓰기는 단일 스레드로 유지한다/, 'CLAUDE.md가 단일 스레드 쓰기를 규정');
   const rows = roleRows(agents);
-  assert.ok(rows.length >= 4, `역할 표 행 파싱 실패 (${rows.length}행)`);
+  assert.ok(rows.length >= 3, `역할 표 행 파싱 실패 (${rows.length}행)`);
   for (const row of rows)
     assert.doesNotMatch(row, /병렬/, `역할 표가 병렬 실행을 기술해 CLAUDE.md와 충돌: ${row}`);
 });
 
-// 다이어그램 옵트인 (2026-08-20) — AGENTS.md는 Codex·Cursor·OpenCode도 네이티브로 읽는
-// 멀티에이전트 SSOT다. Claude 전용 스킬 이름이 core로 새면 역할표의 다섯 에이전트 중 셋에게
+// 다이어그램 옵트인 (2026-08-20) — AGENTS.md는 Codex·Cursor도 네이티브로 읽는
+// 멀티에이전트 SSOT다. Claude 전용 스킬 이름이 core로 새면 역할표의 다른 에이전트에게
 // 실행 불가능한 규칙이 된다. 도구 이름은 CLAUDE.md/commands 쪽에만 있어야 한다.
 test('AGENTS.md(core)는 다이어그램 산출물을 SSOT 제외 생성물로 선언하되 도구 중립적이다', async () => {
   const out = render(await tpl('AGENTS.md.hbs'), VARS);
@@ -198,7 +191,7 @@ test('AGENTS.md(core)는 옵트인 상태를 plan.md로 규정하고 별도 저�
 });
 
 // 지시 구조 슬림화 (2026-08-21) — 다이어그램 옵트인의 정본은 commands/harness-task.md 하나다.
-// AGENTS.md는 도구 중립 요약 1블록만 유지하고(Codex·Cursor·OpenCode는 플러그인 commands/를
+// AGENTS.md는 도구 중립 요약 1블록만 유지하고(Codex·Cursor는 플러그인 commands/를
 // 못 읽으므로 요약 자체는 남긴다), CLAUDE.md는 재서술하지 않는다 — 표면이 늘면 드리프트가 돌아온다.
 test('CLAUDE.md(thin)는 다이어그램 옵트인을 재서술하지 않는다 (정본: commands/harness-task.md)', async () => {
   const out = render(await tpl('CLAUDE.md.hbs'), VARS);
@@ -248,7 +241,7 @@ test('AGENTS.md(core) stack 명령이 vars로 렌더된다', async () => {
   assert.doesNotMatch(out, /\{\{cmdTest\}\}/, '미치환 토큰 없음');
 });
 
-test('planChanges: 신규 프로젝트에 AGENTS/CLAUDE/GEMINI 3개 markdown change 생성', async () => {
+test('planChanges: 신규 프로젝트에 AGENTS/CLAUDE 2개 markdown change 생성 (GEMINI.md 없음)', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'harness-af-'));
   try {
     const ctx = { root: ROOT, targetDir: dir, backupDir: null, flags: {} };
@@ -256,7 +249,8 @@ test('planChanges: 신규 프로젝트에 AGENTS/CLAUDE/GEMINI 3개 markdown cha
     const md = changes.filter(c => c.kind === 'markdown').map(c => c.path);
     assert.ok(md.some(p => p.endsWith('AGENTS.md')), 'AGENTS.md');
     assert.ok(md.some(p => p.endsWith('CLAUDE.md')), 'CLAUDE.md');
-    assert.ok(md.some(p => p.endsWith('GEMINI.md')), 'GEMINI.md');
+    assert.ok(!md.some(p => p.endsWith('GEMINI.md')), 'GEMINI.md는 더 이상 스캐폴드하지 않는다 (D7)');
+    assert.ok(!changes.some(c => c.path.endsWith('.opencode/opencode.json')), 'opencode.json도 스캐폴드하지 않는다 (D7)');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
@@ -273,13 +267,13 @@ test('planChanges: 레거시 alias symlink 에이전트 파일은 건너뛰고 l
   try {
     await writeFile(join(dir, 'CLAUDE.md'), '# legacy master\nLEGACY_SENTINEL\n');
     await symlink('CLAUDE.md', join(dir, 'AGENTS.md'));
-    await symlink('CLAUDE.md', join(dir, 'GEMINI.md'));
+    await symlink('CLAUDE.md', join(dir, 'GEMINI.md')); // 레거시 alias — 템플릿이 없으니 planChanges는 관여하지 않는다
     const ctx = { root: ROOT, targetDir: dir, backupDir: null, flags: {} };
     const { changes, legacyAgentFiles } = await planChanges(ctx, { stack: VARS });
     assert.ok(!changes.some(c => c.path.endsWith('AGENTS.md')), 'AGENTS.md symlink 건너뜀');
-    assert.ok(!changes.some(c => c.path.endsWith('GEMINI.md')), 'GEMINI.md symlink 건너뜀');
-    assert.deepEqual([...legacyAgentFiles].sort(), ['AGENTS.md', 'GEMINI.md']);
-    // CLAUDE.md change은 정상 생성되더라도, apply가 symlink 타깃을 오염시키지 않아야(아래 applyChanges 테스트)
+    assert.ok(!changes.some(c => c.path.endsWith('GEMINI.md')), 'GEMINI.md는 스캐폴드 대상이 아니므로 change 없음');
+    assert.deepEqual([...legacyAgentFiles], ['AGENTS.md']);
+    // CLAUDE.md change은 정상 생성되더라도, init이 symlink 타깃을 오염시키지 않아야(아래 applyChanges 테스트)
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
@@ -294,4 +288,44 @@ test('applyChanges: 심볼릭 링크 경로는 unlink 후 실파일로 써서 �
     assert.equal(st.isSymbolicLink(), false, 'link은 실파일로 교체');
     assert.equal(await readFile(join(dir, 'link.txt'), 'utf8'), 'NEW');
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// audit-cleanup (2026-09-03) — 마커가 한쪽만 남은 파일을 두 번 병합하면 사용자 텍스트가 지워졌다:
+// 1차는 "섹션 없음"으로 읽어 새 블록을 끝에 붙이고, 2차는 옛 begin부터 새 end까지를 한 블록으로
+// 치환해 그 사이의 harness:user 영역과 마커 밖 텍스트를 삼켰다. 실제 마커 문법으로 재현한 사고.
+test('mergeMarkdown: begin/end 마커 개수가 다르면 병합을 거부한다 (사용자 텍스트 보호)', async () => {
+  const begin = '<!-- harness:section="roles" begin -->';
+  const end = '<!-- harness:section="roles" end -->';
+  const broken = `# T\n${begin}\nOLD\n\n<!-- harness:user:begin -->\nKEEP ME\n<!-- harness:user:end -->\nTRAILING\n`;
+  const incoming = `${begin}\nNEW\n${end}`;
+  assert.throws(() => mergeMarkdown(broken, incoming), (e) => e.code === 'HARNESS_MARKER_MISMATCH' && e.section === 'roles' && e.begins === 1 && e.ends === 0);
+  // 균형 잡힌 파일은 종전대로 병합된다.
+  const merged = mergeMarkdown(`# T\n${begin}\nOLD\n${end}\nTRAILING\n`, incoming);
+  assert.match(merged, /NEW/); assert.match(merged, /TRAILING/); assert.doesNotMatch(merged, /OLD/);
+});
+
+test('planChanges: 마커가 깨진 에이전트 파일은 건너뛰고 brokenMarkerFiles로 보고한다 (쓰기 없음)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-broken-marker-'));
+  try {
+    await writeFile(join(dir, 'CLAUDE.md'), '@AGENTS.md\n<!-- harness:section="workflow" begin -->\nold\n<!-- harness:user:begin -->\nMINE\n<!-- harness:user:end -->\n');
+    const ctx = { root: ROOT, targetDir: dir, backupDir: null, flags: {} };
+    const { changes, brokenMarkerFiles } = await planChanges(ctx, { stack: VARS });
+    assert.equal(brokenMarkerFiles.length, 1);
+    assert.equal(brokenMarkerFiles[0].file, 'CLAUDE.md');
+    assert.equal(brokenMarkerFiles[0].section, 'workflow');
+    assert.ok(!changes.some(c => c.path.endsWith('CLAUDE.md')), '깨진 파일에 대한 change가 없어야 한다');
+    assert.ok(changes.some(c => c.path.endsWith('AGENTS.md')), '다른 파일은 정상 처리');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// codex 리뷰 P2 (2026-09-03) — 개수만 같으면 `end … begin` 순서 오류가 통과해 2차 병합에서 사용자 텍스트가 지워졌다.
+test('mergeMarkdown: 마커 개수가 같아도 순서·중첩이 틀리면 거부한다', () => {
+  const B = '<!-- harness:section="roles" begin -->';
+  const E = '<!-- harness:section="roles" end -->';
+  const incoming = `${B}\nNEW\n${E}`;
+  for (const broken of [`# T\n${E}\nA\n${B}\nB\n`, `# T\n${B}\n${B}\nA\n${E}\n${E}\n`]) {
+    assert.throws(() => mergeMarkdown(broken, incoming), (e) => e.code === 'HARNESS_MARKER_MISMATCH');
+  }
+  const merged = mergeMarkdown(`# T\n${B}\nOLD\n${E}\nKEEP\n`, incoming);
+  assert.match(merged, /NEW/); assert.match(merged, /KEEP/);
 });

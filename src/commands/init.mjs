@@ -1,6 +1,6 @@
 import { basename, resolve } from 'node:path';
 import { mkdir } from 'node:fs/promises';
-import { detectStack } from '../detect-stack.mjs';
+import { resolveStack, KNOWN_STACK_IDS } from '../detect-stack.mjs';
 import {
   planChanges, applyChanges, copyStaticAssets, formatDiff,
   loadBackupDir, saveBackupConfig, DEFAULT_BACKUP_PARENT, AI_GITIGNORE_PREVIEW,
@@ -12,10 +12,17 @@ import { installPostCommitHook } from '../git-hooks.mjs';
 
 export async function runInit(ctx) {
   console.log(`harness-team init → ${ctx.targetDir}`);
-  const stack = ctx.flags.stack
-    ? { id: ctx.flags.stack, stackLabel: ctx.flags.stack, language: 'unknown', packageManager: '(none)',
-        cmdInstall: '(configure)', cmdDev: '(configure)', cmdTest: '(configure)', cmdLint: '(configure)', cmdTypecheck: '(configure)' }
-    : await detectStack(ctx.targetDir);
+  const forced = ctx.flags.stack;
+  if (forced !== undefined && !KNOWN_STACK_IDS.includes(forced)) {
+    // A typo used to pass straight through as the stack id and render an AGENTS.md
+    // naming a stack nothing recognizes. Refuse before anything is written.
+    console.error(`init: unknown --stack "${forced}" (expected one of ${KNOWN_STACK_IDS.join('|')})`);
+    process.exitCode = 2;
+    return;
+  }
+  const stack = await resolveStack(ctx.targetDir, forced);
+  // copyStaticAssets gates the RN-only rules on this, not just on an explicit --stack.
+  ctx.stackId = stack.id;
   console.log(`  stack: ${stack.stackLabel} (${stack.id})`);
 
   await ensureUsername(ctx.targetDir, ctx.flags);
@@ -66,11 +73,15 @@ export async function runInit(ctx) {
     ctx.addAiGitignore = false;
   }
 
-  const { changes, legacyAgentFiles } = await planChanges(ctx, { stack });
+  const { changes, legacyAgentFiles, brokenMarkerFiles } = await planChanges(ctx, { stack });
 
   if (legacyAgentFiles && legacyAgentFiles.length) {
     console.log(`\n⚠️ 레거시 alias symlink 감지: ${legacyAgentFiles.join(', ')} → CLAUDE.md`);
     console.log(`   이 파일들은 건너뜁니다(CLAUDE.md 오염 방지). 신구조 전환: harness-team migrate`);
+  }
+  for (const broken of brokenMarkerFiles || []) {
+    console.log(`\n⚠️ ${broken.file}: ${broken.message}`);
+    console.log(`   이 파일은 건너뜁니다 — 마커가 한쪽만 남은 채 병합하면 다음 실행에서 사용자 텍스트가 지워집니다.`);
   }
 
   if (changes.length === 0) {
@@ -97,5 +108,5 @@ export async function runInit(ctx) {
     console.log(`  ./delete.sh  # tear down symlinks`);
   }
   console.log(`✓ Copied ${copied.filter(c => c.action === 'write').length} asset(s) (${copied.filter(c => c.action === 'skip').length} skipped as existing)`);
-  console.log(`✓ Agent files: AGENTS.md (core) + CLAUDE.md / GEMINI.md (@AGENTS.md import)`);
+  console.log(`✓ Agent files: AGENTS.md (core) + CLAUDE.md (@AGENTS.md import)`);
 }

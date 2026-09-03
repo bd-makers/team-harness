@@ -7,7 +7,7 @@ import { runClone } from './clone.mjs';
 import { runDelete } from './delete.mjs';
 import { runSymlink } from './symlink.mjs';
 
-const MOVE_ITEMS = ['CLAUDE.md', 'AGENTS.md', 'GEMINI.md', '.claude', '.cursor', '.opencode', '.codex', 'docs', '.harness'];
+const MOVE_ITEMS = ['CLAUDE.md', 'AGENTS.md', '.claude', '.cursor', '.codex', 'docs', '.harness'];
 const ALIAS_ITEMS = [];
 
 export async function runUpgrade(ctx) {

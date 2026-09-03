@@ -56,11 +56,11 @@ test('checkSelfCli: 실제 bin으로 실행 → true (harness-team 출력 포함
   assert.equal(result, true);
 });
 
-test('checkHookCli: PATH의 CLI가 두 hook 명령을 광고할 때만 통과한다', async () => {
+test('checkHookCli: PATH의 CLI가 세 hook 명령(session-context·handoff·boundary)을 광고할 때만 통과한다', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-cli-'));
   try {
     const shim = join(dir, 'harness-team');
-    await writeFile(shim, '#!/bin/sh\nif [ "$1" != "--help" ]; then exit 1; fi\nprintf "%s\\n" "harness-team" "  handoff" "  session-context"\n');
+    await writeFile(shim, '#!/bin/sh\nif [ "$1" != "--help" ]; then exit 1; fi\nprintf "%s\\n" "harness-team" "  handoff" "  session-context" "  boundary check"\n');
     await chmod(shim, 0o755);
     assert.equal(await checkHookCli({ PATH: dir }), true);
     await writeFile(shim, '#!/bin/sh\nprintf "%s\\n" "harness-team" "  session-context"\n');
@@ -180,18 +180,18 @@ test('checkDecisionLog: 템플릿 원본(D2/D4/D5 포함) → null (템플릿↔
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('checkDecisionLog: docs/decisions.md 부재 → 경고 (apply 스캐폴드 유도)', async () => {
+test('checkDecisionLog: docs/decisions.md 부재 → 경고 (init 스캐폴드 유도)', async () => {
   const dir = await makeDecisionLogFixture(undefined);
   try {
     const w = await checkDecisionLog(dir);
     assert.ok(typeof w === 'string', 'returns a warning string');
     assert.match(w, /없음/);
-    assert.match(w, /harness-team apply/, '부재는 apply 스캐폴드가 해결하므로 apply로 유도');
+    assert.match(w, /harness-team init/, '부재는 init 스캐폴드가 해결하므로 init로 유도');
     assert.match(w, /templates\/docs\/decisions\.md/, '가져올 원본 위치를 안내');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('checkDecisionLog: 일부 절 누락 → 누락 절만 나열 + 템플릿 병합 안내 (apply 아님)', async () => {
+test('checkDecisionLog: 일부 절 누락 → 누락 절만 나열 + 템플릿 병합 안내 (init 아님)', async () => {
   // 본문 중간의 `## D4` 언급과 `## D20` 제목은 각각 라인 앵커·\b 덕에 제목으로 안 쳐야 한다.
   const dir = await makeDecisionLogFixture(
     '# Team Decision Log\n\n## D2 (2026-06-11) — drive/리뷰어 역할 분리\n\n본문에서 ## D4 를 언급만 한다.\n\n## D20 (2027-01-01) — 별개 결정\n',
@@ -201,7 +201,7 @@ test('checkDecisionLog: 일부 절 누락 → 누락 절만 나열 + 템플릿 �
     assert.ok(typeof w === 'string', 'returns a warning string');
     assert.match(w, /## D4, ## D5 절 없음/, '누락된 절만 정확히 나열');
     assert.doesNotMatch(w, /## D2/, '존재하는 D2는 누락 목록에 없어야 한다');
-    assert.doesNotMatch(w, /apply/, 'skipExisting이라 apply로는 해결 불가 — 수동 병합 안내만');
+    assert.doesNotMatch(w, /init/, 'skipExisting이라 init로는 해결 불가 — 수동 병합 안내만');
     assert.match(w, /templates\/docs\/decisions\.md/, '가져올 원본 위치를 안내');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
@@ -247,14 +247,14 @@ async function makeSettingsFixture(settings) {
   return dir;
 }
 
-test('checkSessionStartHook: SessionStart task-gate 없음 → 경고(apply 유도)', async () => {
+test('checkSessionStartHook: SessionStart task-gate 없음 → 경고(init 유도)', async () => {
   const dir = await makeSettingsFixture({
     hooks: { PreToolUse: [{ matcher: 'Bash', hooks: [{ type: 'command', command: './x.sh' }] }] },
   });
   try {
     const w = await checkSessionStartHook(dir);
     assert.ok(typeof w === 'string', 'returns a warning string');
-    assert.match(w, /apply/, 'apply로 유도');
+    assert.match(w, /init/, 'init로 유도');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
@@ -274,20 +274,20 @@ test('checkSessionStartHook: settings.json 부재 → null (CHECKS가 담당, �
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('checkBoundaryCheckpointHook: Edit PreToolUse 경계 훅 없음 → 경고(apply 유도)', async () => {
+test('checkBoundaryCheckpointHook: Edit PreToolUse 경계 훅 없음 → 경고(init 유도)', async () => {
   const dir = await makeSettingsFixture({
     hooks: { PreToolUse: [{ matcher: 'Edit|Write', hooks: [{ type: 'command', command: './x.sh' }] }] },
   });
   try {
     const w = await checkBoundaryCheckpointHook(dir);
     assert.ok(typeof w === 'string', 'returns a warning string');
-    assert.match(w, /apply/, 'apply로 유도');
+    assert.match(w, /init/, 'init로 유도');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
 test('checkBoundaryCheckpointHook: Edit PreToolUse 경계 훅 있음 → null', async () => {
   const dir = await makeSettingsFixture({
-    hooks: { PreToolUse: [{ matcher: 'Edit', hooks: [{ type: 'command', command: './.claude/hooks/boundary-checkpoint.sh' }] }] },
+    hooks: { PreToolUse: [{ matcher: 'Edit|Write', hooks: [{ type: 'command', command: './.claude/hooks/boundary-checkpoint.sh' }] }] },
   });
   try {
     assert.equal(await checkBoundaryCheckpointHook(dir), null);
@@ -564,13 +564,13 @@ test('runDoctor: backup dir이 설정됐지만 디스크에 없으면 fail (iClo
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('runDoctor: boundary checkpoint가 settings에 없으면 apply 경고를 노출한다', async () => {
+test('runDoctor: boundary checkpoint가 settings에 없으면 init 경고를 노출한다', async () => {
   const dir = await makeSettingsFixture({ hooks: {} });
   try {
     const env = await doctorJson(dir);
     const c = checkOf(env, 'PreToolUse boundary checkpoint');
     assert.equal(c?.status, 'warning');
-    assert.match(c.detail, /harness-team apply/);
+    assert.match(c.detail, /harness-team init/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

@@ -1,7 +1,7 @@
 ---
-description: 엔진 중립 read-only 외부 리뷰(codex·claude·gemini·custom)를 로컬 git 상태에 실행하고 결과를 활성 task의 artifact ## Reviews에 기록
+description: "엔진 중립 read-only 외부 리뷰(codex·claude·custom)를 로컬 git 상태에 실행하고 결과를 활성 task의 artifact 'Reviews' 절에 기록"
 phase: Workflow
-argument-hint: '[codex|claude|gemini|custom] [--base <ref>] [focus ...]'
+argument-hint: '[codex|claude|custom] [--base <ref>] [focus ...]'
 ---
 
 이 명령은 AGENTS.md 리뷰 프로토콜의 실행 절차를 하네스가 직접 소유한다.
@@ -19,23 +19,24 @@ argument-hint: '[codex|claude|gemini|custom] [--base <ref>] [focus ...]'
 Raw slash-command 인수:
 `$ARGUMENTS`
 
-인수 해석: 첫 토큰이 `codex`·`claude`·`gemini`·`custom`이면 엔진으로 소비한다.
+인수 해석: 첫 토큰이 `codex`·`claude`·`custom`이면 엔진으로 소비한다.
 `--base <ref>`는 브랜치 리뷰의 기준 ref, 나머지 토큰은 리뷰 focus 문구로
 공용 리뷰 프롬프트 끝에 그대로 전달한다.
 
 ## 실행 절차
 
 1. **엔진 결정** —
-   - 엔진 인자가 있으면 그 엔진을 쓴다. `codex`·`claude`·`gemini`는 `command -v <cli>`로
+   - 엔진 인자가 있으면 그 엔진을 쓴다. `codex`·`claude`는 `command -v <cli>`로
      존재를 확인하고, 없으면 설치 명령을 단정해 안내하지 말고(#17의 404 안내 결함 재발 방지)
      해당 CLI의 설치·인증 상태를 공식 문서로 확인하도록 안내하고 종료한다.
      `custom`의 preflight는 CLI probe가 아니라 설정이다 — `.harness/reviewers.json`을 읽어
      `custom.command` 키를 확인하고, 그 템플릿의 **첫 토큰**을 `command -v`로 확인한다.
      둘 중 하나라도 없으면 아래 custom 절의 스키마로 안내하고 종료한다.
-   - 엔진 인자가 없으면 **probe 폴백 체인**: `command -v`로 **codex → gemini → claude**
-     순서로 탐지해 첫 가용 엔진을 쓴다. claude는 Claude Code 환경에서 항상 존재하므로
-     이 체인은 어느 머신에서든 리뷰어를 보장한다. vendor 분리 리뷰어(codex·gemini)를
+   - 엔진 인자가 없으면 **probe 폴백 체인**: `command -v`로 **codex → claude** 순서로
+     탐지해 첫 가용 엔진을 쓴다. claude는 Claude Code 환경에서 항상 존재하므로
+     이 체인은 어느 머신에서든 리뷰어를 보장한다. vendor 분리 리뷰어(codex)를
      우선하고, 컨텍스트 분리만 제공하는 claude가 마지막이다(엔진 표의 한계 참조).
+     Gemini는 하네스 멤버가 아니다(`docs/decisions.md` D7) — 필요하면 `custom`으로 등록한다.
      `custom`은 체인에 포함되지 않는다 — 명시 호출 전용이다.
 
 2. **Scope 결정** — `git status --short`가 dirty면 working tree 전체가 리뷰 대상이다.
@@ -62,7 +63,7 @@ Raw slash-command 인수:
 
 5. **기록** — 활성 task가 있으면 artifact `## Reviews`에 날짜·**실행 엔진**과 함께
    요약·발견·판별 결과·조치를 append 한다. 폴백 체인으로 엔진이 내려갔다면(예: codex
-   미설치로 gemini 실행) 건너뛴 엔진과 사유도 명기한다. 활성 task가 없으면 기록할
+   미설치로 claude 실행) 건너뛴 엔진과 사유도 명기한다. 활성 task가 없으면 기록할
    곳이 없다는 사실을 사용자에게 보고한다.
 
    기록 끝에 기계 판독용 마커를 **한 줄로** append 한다 — `harness-team done`의
@@ -73,7 +74,7 @@ Raw slash-command 인수:
    ```
 
    `kind`는 실행 엔진과 검증 프레이밍을 식별한다 — 이 문서의 기본 리뷰 프레이밍에서는
-   엔진 이름 그대로(`codex`·`claude`·`gemini`·`custom`), 다른 프레이밍에서는 아래 접미사
+   엔진 이름 그대로(`codex`·`claude`·`custom`), 다른 프레이밍에서는 아래 접미사
    형태가 유효한 kind 값이다. `scope`는 리뷰 대상이다 — 이 문서의 절차에서는 2단계에서
    결정된 값(`worktree`|`diff`)이고, 리뷰 대상이 다른 프레이밍은 자기 대상 값(예: 페르소나
    외부 엔진 모드의 `task-docs`)이 유효한 scope 값이다(가드는 scope 값도 목록 대조하지
@@ -107,15 +108,6 @@ codex exec --sandbox read-only "<공용 리뷰 프롬프트>" < /dev/null
 > `Reading additional input from stdin...` 한 줄만 남고 CPU 는 거의 0인 채 멈춘다.
 > 백그라운드로 돌리면 수십 분을 통째로 날린다.
 
-### gemini
-
-```bash
-gemini --approval-mode default -p "<공용 리뷰 프롬프트>"
-```
-
-AGENTS.md 역할표의 공식 호출 방식. `gemini` CLI가 없는 머신이 있다 — preflight에서
-걸러지고, 명시 호출이었다면 안내 후 종료한다.
-
 ### claude
 
 ```bash
@@ -126,7 +118,7 @@ claude -p --permission-mode plan "<공용 리뷰 프롬프트>"
 프롬프트 없이 실행되며, 부모 세션의 인증을 상속한다 (2026-08-21 실측 검증).
 
 > **한계 명시:** claude 엔진은 **컨텍스트 분리만** 제공한다 — 작성 세션의 sunk-cost
-> 편향은 제거되지만, 같은 모델의 맹점은 공유한다(vendor 분리 없음). codex·gemini를
+> 편향은 제거되지만, 같은 모델의 맹점은 공유한다(vendor 분리 없음). codex를
 > 쓸 수 없는 환경(claude-only 팀원)의 경로이며, probe 폴백 체인에서 마지막인 이유다.
 
 ### custom
@@ -155,7 +147,7 @@ gitignore 대상이 아니다)에서 커맨드 템플릿을 읽어 `{prompt}`를
 ## 예시
 
 ```bash
-# 엔진 자동 (probe 체인: codex → gemini → claude)
+# 엔진 자동 (probe 체인: codex → claude)
 /harness-review
 
 # claude-only 머신에서 명시 호출, origin/develop 대비 브랜치 리뷰

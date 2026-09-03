@@ -1,6 +1,6 @@
 ---
 name: harness-team
-description: Use the harness-team project workflow from Codex. Trigger when the user asks to apply, initialize, inspect, repair, release, or operate the Team Harness; create or resume task docs under the docs user task structure; run harness doctor; or work inside a project configured by the Claude Code Team Harness plugin that should also be usable from Codex.
+description: Use the harness-team project workflow from Codex. Trigger when the user asks to initialize, refresh, inspect, repair, release, or operate the Team Harness; create or resume task docs under the docs user task structure; run harness doctor; or work inside a project configured by the Claude Code Team Harness plugin that should also be usable from Codex.
 ---
 
 # Harness Team
@@ -29,17 +29,16 @@ node bin/harness-team.mjs <command>
 
 Common commands:
 
-- `harness-team init --yes`: scaffold a new project.
-- `harness-team apply --yes`: apply the harness to an existing project.
+- `harness-team init --yes`: scaffold a new project, or refresh an existing install (marker-merge; idempotent, keeps user text).
 - `harness-team task <name>`: create or activate a task.
 - `harness-team list`: list task directories.
 - `harness-team doctor --json`: diagnose install health with a structured observation.
 - `harness-team done`: complete the active task after the plan and artifact are complete.
 - `harness-team retro "<note>"`: append a learning to the active task artifact.
 - `harness-team context init` / `context check`: create or validate the active task's Context Card. Agents own this file — update it when the plan's atomic step changes or a reproducible failure appears or clears.
-- `harness-team release [patch|minor|major|x.y.z] [--dry-run]`: bump the four manifests together. Run `--dry-run` first.
+- `harness-team release [patch|minor|major|x.y.z] [--dry-run] [--skip-cache]`: bump the four manifests together (plugin source repo only — run it as `node bin/harness-team.mjs release`). Run `--dry-run` first.
 
-`session-context` and `boundary check` are invoked by hooks and the harness itself — do not call them directly.
+`session-context` and `boundary checkpoint` are invoked by hooks — do not call them directly. `harness-team boundary check` is the user-facing form (compares the JSON Schema boundaries declared in the active spec).
 
 ## Output Contract
 
