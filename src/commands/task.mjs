@@ -160,7 +160,7 @@ export function taskArtifactTemplate(name) {
 
 
 ## Reviews
-*Codex/Gemini 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
+*Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: \`<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->\`*
 
 
@@ -587,7 +587,7 @@ async function collectDoneIssues(targetDir, active) {
       }
 
       // 테스트 작성 체크 — 커밋 훅(pre-commit-check.sh)은 테스트를 *실행*하지만
-      // *작성*은 강제하지 못하고, Claude Code 세션 밖(OpenCode 등)에서는 아예 걸리지 않는다.
+      // *작성*은 강제하지 못하고, Claude Code 세션 밖(다른 에이전트 등)에서는 아예 걸리지 않는다.
       // 여기서는 git 이력만으로 판정하므로 어떤 드라이버가 커밋했든 동일하게 적용된다.
       if (evidence.tests === 'required') {
         try {

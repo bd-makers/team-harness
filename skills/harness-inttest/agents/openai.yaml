@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Integration Test"
+  short_description: "Write integration tests across module and service boundaries."
+  default_prompt: "Use $harness-inttest to write integration tests."

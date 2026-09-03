@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Component Test"
+  short_description: "Write Testing Trophy integration-layer tests for React/RN components."
+  default_prompt: "Use $harness-comptest to write component tests."

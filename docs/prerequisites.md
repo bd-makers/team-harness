@@ -14,7 +14,7 @@ modified: 2026-08-29
 의존성 0개 — `dependencies` 없음), 나머지는 전부 **"있으면 켜지고, 없으면 그 기능만 꺼지는"**
 선택 도구입니다. 무엇을 설치하느냐가 아니라 **무엇을 안 하면 무엇이 꺼지느냐**를 보세요.
 
-> 이 문서는 **하네스 자체**를 쓰기 위한 준비입니다. `harness-team apply`가 소비자 프로젝트에
+> 이 문서는 **하네스 자체**를 쓰기 위한 준비입니다. `harness-team init`이 소비자 프로젝트에
 > 설치하는 내용이 아닙니다(`templates/`에 들어가지 않습니다).
 
 ---
@@ -25,8 +25,9 @@ modified: 2026-08-29
 |---|---|---|
 | Node.js ≥ 24 | `node --version` | `harness-team` CLI가 실행되지 않음. 이것 하나뿐입니다. |
 
-런타임 의존성이 0개이므로 `npm install` 없이도 CLI가 동작합니다. `npm install`은 이 저장소를
-**개발**할 때(테스트 실행) 필요한 devDependencies용입니다.
+런타임 의존성이 0개이고 devDependencies도 없으므로 `npm install`이 필요 없습니다 — 이 저장소를
+**개발**할 때도 테스트는 Node 내장 `node:test`로 `npm test`만 실행합니다(`docs/ao-worker-rules.md`는
+`npm install`과 lockfile 생성을 금지합니다).
 
 ---
 
@@ -40,14 +41,12 @@ modified: 2026-08-29
      src/commands/doctor.mjs의 EXTERNAL_TOOLS와 양방향 대조합니다. 마커를 지우지 마세요. -->
 | 도구 | 켜지는 기능 | 없으면 |
 |---|---|---|
-| `jq` | Claude Code 훅의 정밀한 입력 파싱 | **차단은 유지되지만 판정 정확도가 떨어집니다 — §3 참조.** 다른 넷과 달리 doctor가 `optional`이 아니라 **`warning`** 으로 보고합니다. |
+| `jq` | Claude Code 훅의 정밀한 입력 파싱 | **차단은 유지되지만 판정 정확도가 떨어집니다 — §3 참조.** 다른 둘과 달리 doctor가 `optional`이 아니라 **`warning`** 으로 보고합니다. |
 | `gh` | GitHub PR 흐름 | 하네스 명령은 아무것도 깨지지 않습니다. `/harness-ship`은 **PR을 만들지 않고** 준비 완료 보고에서 멈추므로, `gh`는 그 다음에 **사용자가 직접 여는 PR** 단계용입니다. |
-| `codex` | `/harness-review codex`, `/harness-adversarial-review codex`, Codex L5 시뮬레이션(`tests/sim/codex-agentloop.mjs`) | 위 세 가지를 실행할 수 없습니다. 엔진 미지정 리뷰는 probe 폴백 체인(codex → gemini → claude)이 다음 엔진으로 내려갑니다. |
-| `gemini` | `/harness-review gemini` 및 병렬 외부 리뷰 (규범 — 하네스 코드가 호출하지 않습니다) | 리뷰를 건너뛰되 활성 task의 `<name>-artifact.md`에 **"미실행"을 기록**합니다(`commands/harness-review.md`). 기록 없는 미실행은 "안 한 것"입니다. |
-| `opencode` | OpenCode 순차 드라이버 세션 (`AGENTS.md` D4) | 하네스는 `.opencode/opencode.json`을 **쓰기만** 합니다 — CLI를 호출하지 않으므로 하네스 동작에는 영향이 없고, 그 세션을 열 수 없을 뿐입니다. |
+| `codex` | `/harness-review codex`, `/harness-adversarial-review codex`, Codex L5 시뮬레이션(`tests/sim/codex-agentloop.mjs`) | 위 세 가지를 실행할 수 없습니다. 엔진 미지정 리뷰는 probe 폴백 체인(codex → claude)이 claude 엔진(plan 모드)으로 내려갑니다. |
 <!-- /prerequisites:external-tools -->
 
-**중요:** 이 다섯 개는 없어도 **exit code에 반영되지 않습니다.** gh·codex·gemini·opencode는
+**중요:** 이 셋은 없어도 **exit code에 반영되지 않습니다.** gh·codex는
 `not found, optional`(기능이 꺼질 뿐)로, **jq만 `warning`** 으로 보고됩니다 — 없으면 기능이
 꺼지는 게 아니라 훅의 **판정 정밀도**가 떨어지기 때문입니다(§3).
 
@@ -103,7 +102,7 @@ git은 **하드 요구사항이 아닙니다.** 없어도 CLI는 실행되지만
 | 기능 | git 없을 때 | 근거 |
 |---|---|---|
 | 사용자 이름 감지 (`docs/<user>/` 경로) | `$USER` → `unknown`으로 폴백 | `src/member.mjs` `detectMember` |
-| post-commit handoff 자동 갱신 | 훅이 설치되지 않음 (`.git/hooks` 없으면 조용히 return) | `src/git-hooks.mjs` `installPostCommitHook` |
+| post-commit handoff 자동 갱신 | 훅이 설치되지 않음 (git 저장소가 아니면 조용히 return; 저장소면 `git rev-parse --git-path hooks`로 `core.hooksPath`·worktree까지 따라간다) | `src/git-hooks.mjs` `installPostCommitHook` |
 | `harness-team handoff`의 커밋 메시지·diff | 빈 값으로 계속 진행 | `src/commands/task.mjs` |
 | `harness-team summary`의 기본 브랜치 감지 | 감지 실패 | `src/commands/summary.mjs` |
 
@@ -125,25 +124,28 @@ git은 **하드 요구사항이 아닙니다.** 없어도 CLI는 실행되지만
 
 없으면: `/harness-*` 슬래시 명령 전부. CLI(`harness-team ...`)는 그대로 쓸 수 있습니다.
 
-훅이 실제로 도는지는 별개입니다 — `SessionStart`·post-commit 훅은 PATH의 `harness-team`을
-셸에서 호출하므로, 전역 CLI가 링크되어 있지 않으면 **조용히 no-op**입니다. `harness-team doctor`가
+훅이 실제로 도는지는 별개입니다 — `SessionStart`·post-commit·PreToolUse boundary checkpoint 훅은 PATH의
+`harness-team`을 셸에서 호출하므로, 전역 CLI가 링크되어 있지 않으면 **조용히 no-op**입니다. `harness-team doctor`가
 이 상태를 경고로 잡아 줍니다.
 
 ### Codex — `$` 스킬 호출
 
 `.codex-plugin/plugin.json` + `skills/`를 Codex 플러그인으로 등록합니다. Codex는
-`/harness-*`가 아니라 `$harness-aijient-team:harness-apply` 형태로 호출합니다.
+`/harness-*`가 아니라 `$harness-aijient-team:harness-init` 형태로 호출합니다.
 Codex 플러그인은 Claude의 `commands[]`를 가져오지 않으므로 **따로 설치해야** 합니다.
 
-### Gemini / Cursor / OpenCode — 파일만
+### Cursor — 파일만
 
-`apply`가 `GEMINI.md`, `.cursor/rules/*.mdc`, `.opencode/opencode.json`을 **쓰기만** 합니다.
-세 CLI 중 어느 것도 하네스가 호출하지 않습니다 — 설치 여부는 그 도구를 여러분이 쓸지에만
-영향을 줍니다.
+`init`이 `.cursor/rules/*.mdc`를 **쓰기만** 합니다 — 그것도 유효 stack이 React Native 계열일 때만.
+설치되는 rules 4종이 전부 RN/Expo 전용이라 다른 stack에서는 `.claude/rules`가 비어 있고 미러할 것이
+없습니다. Cursor CLI를 하네스가 호출하지는 않습니다.
+
+> OpenCode·Gemini는 하네스 멤버가 아닙니다(`docs/decisions.md` D7) — 스캐폴드·doctor 검사·리뷰 엔진 체인
+> 어디에도 없습니다. Gemini로 리뷰하고 싶으면 `/harness-review custom`으로 등록합니다.
 
 ### 벤더링되지 않은 스킬 — 미리 설치해야 켜지는 것 (선택)
 
-`/harness-*` 슬래시 커맨드 24종과 짝이 되는 스킬(그리고 Codex 전용 `harness-team`·
+`/harness-*` 슬래시 커맨드 23종과 짝이 되는 스킬(그리고 Codex 전용 `harness-team`·
 `harness-codex-sim` 스킬)은 **전부 플러그인에 번들**되어 있어 따로 설치할 것이 없습니다.
 하네스가 참조하지만 **번들하지 않는**(= 쓰려면 미리 설치해야 하는) 스킬은 현재 아래
 **하나뿐**입니다.
@@ -193,12 +195,12 @@ harness-team doctor         # 파일·훅·CLI PATH·외부 도구 종합 점검
 팀원이 [mattpocock/skills](https://github.com/mattpocock/skills)를 개별적으로 설치할 수
 있습니다(하네스에 번들하지 않습니다 — 각자 판단). 그중 `writing-for-agents`는 설명이
 *"Use when creating or editing skills, or modifying AGENTS.md or CLAUDE.md"* 라서 **이 저장소에서
-자동으로 발동합니다.** 그런데 이 저장소의 `AGENTS.md`·`CLAUDE.md`·`GEMINI.md`는
+자동으로 발동합니다.** 그런데 이 저장소의 `AGENTS.md`·`CLAUDE.md`는
 `templates/*.hbs`에서 **생성**되고, `harness:section` 마커 블록은 루트와 템플릿이 **쌍으로**
 같아야 합니다:
 
 - `tests/agent-files.test.mjs` — 루트 파일의 마커 절이 렌더된 템플릿과 다르면 실패
-- `tests/e2e/ssot-consistency.test.mjs` — `AGENTS.md`가 SSOT 마커를 갖고 `CLAUDE.md`/`GEMINI.md`가
+- `tests/e2e/ssot-consistency.test.mjs` — `AGENTS.md`가 SSOT 마커를 갖고 `CLAUDE.md`가
   `@AGENTS.md`를 import만 하는지 검사
 
 루트만 고치면 **CI가 깨지고 원인을 찾기 어렵습니다.** 이 저장소의 에이전트 파일을 고칠 때는
@@ -212,7 +214,7 @@ harness-team doctor         # 파일·훅·CLI PATH·외부 도구 종합 점검
 |---|---|
 | `diagnosing-bugs` | `templates/.claude/skills/fix-bug` (이미 이 방법론을 흡수했습니다) |
 | `tdd` | `/harness-unittest` · `/harness-comptest` · `/harness-inttest` |
-| `code-review` | `/harness-review` · `/harness-adversarial-review` (엔진 중립 — `codex`·`claude`·`gemini`·`custom`) |
+| `code-review` | `/harness-review` · `/harness-adversarial-review` (엔진 중립 — `codex`·`claude`·`custom`) |
 | `grilling` | `/harness-interview` |
 | `domain-modeling` | spec의 **Ontology** 섹션 |
 
@@ -221,7 +223,6 @@ harness-team doctor         # 파일·훅·CLI PATH·외부 도구 종합 점검
 ## 8. 개발자용 (이 저장소를 수정할 때)
 
 ```bash
-npm install                 # devDependencies (테스트 러너)
 npm run test                # 단위 + e2e + perf
 npm run docs:check          # docs/harness-overview.html 생성 상태 확인
 ```

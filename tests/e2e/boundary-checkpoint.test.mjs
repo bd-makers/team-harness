@@ -11,7 +11,7 @@ function objectSchema(properties, required = Object.keys(properties)) {
 test('L1 boundary checkpoint blocks a declared mismatch and allows it once schemas agree', async () => {
   const sb = await appliedSandbox(STACKS[0]);
   try {
-    assert.equal(sb.applyResult.code, 0, sb.applyResult.stderr);
+    assert.equal(sb.initResult.code, 0, sb.initResult.stderr);
     assert.equal((await sb.cli(['task', 'boundary-demo'])).code, 0);
     const taskDir = join(sb.dir, 'docs', 'tester', 'boundary-demo');
     const planPath = join(taskDir, 'boundary-demo-plan.md');

@@ -3,5 +3,9 @@
 # 선언된 JSON Schema boundary를 결정론적으로 대조한다.
 # stdin의 tool input은 단일 Node CLI process가 읽어 fast path를 유지한다.
 # Exit 0 = 허용, Exit 2 = edit 차단.
-
-exec "${HARNESS_TEAM_BIN:-harness-team}" boundary checkpoint
+#
+# CLI가 PATH에 없으면 SessionStart·post-commit 훅과 같은 정책으로 조용히 통과한다 —
+# 매 Edit/Write마다 exit 127 에러를 띄우는 대신 `harness-team doctor`가 부재를 보고한다.
+bin="${HARNESS_TEAM_BIN:-harness-team}"
+command -v "$bin" >/dev/null 2>&1 || exit 0
+exec "$bin" boundary checkpoint

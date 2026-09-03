@@ -18,6 +18,66 @@ modified: 2026-09-01
 
 ## [Unreleased]
 
+### Removed
+- **`apply` 명령을 삭제했습니다** — `runInit`의 별칭이었고(`src/commands/apply.mjs`), `init`이 마커 병합·JSON
+  deep-merge로 멱등이라 재실행 동사를 둘 이유가 없었습니다. `/harness-apply` 슬래시 커맨드와 Codex `harness-apply`
+  스킬도 함께 사라졌습니다. 기존 프로젝트에는 `init`을 다시 실행하면 됩니다(사용자 텍스트·기존 hooks/rules 보존).
+  doctor·migrate가 안내하던 `harness-team apply`는 전부 `harness-team init`으로 바뀌었습니다.
+- **OpenCode·Gemini를 하네스 멤버에서 제외했습니다 (D7)** — `GEMINI.md`·`.opencode/opencode.json` 스캐폴드, 역할표 행,
+  doctor의 외부 도구·파일 검사, `.gitignore` 항목, 백업 스크립트 ITEMS, 리뷰 엔진 목록(`codex`·`claude`·`custom`)과
+  probe 폴백 체인(codex → claude)에서 모두 뺐습니다. `migrate`는 레거시 `GEMINI.md` alias를 다시 만들지 않고
+  제거만 합니다. 근거와 재도입 조건은 `docs/decisions.md` D7에 있습니다.
+
+### Fixed
+- **관측 훅이 공백·비ASCII 경로에서 조용히 아무것도 기록하지 않던 결함** — `observe-tools.mjs`의 entry 게이트가
+  `URL.pathname`(퍼센트 인코딩)과 `resolve(argv[1])`을 비교해 `Mobile Documents` 같은 경로에서 절대 같지 않았습니다.
+  `fileURLToPath`로 비교합니다. 이 파일과 `boundary-checkpoint.sh`가 `migrate`의 stock 훅 갱신 목록에 없어 고쳐도
+  기존 설치본에 도달할 경로가 없었기에, 둘을 `REFRESHABLE_HOOK_FILES`와 sha 표에 편입하고 doctor CHECKS에
+  `block-dangerous-git.sh`·`observe-tools.mjs`를 추가했습니다.
+- **마커가 한쪽만 남은 에이전트 파일을 두 번 `init`하면 사용자 텍스트가 지워지던 결함** — 1차는 "섹션 없음"으로
+  블록을 끝에 붙이고, 2차는 옛 begin부터 새 end까지를 통째로 치환해 `harness:user` 영역까지 삼켰습니다.
+  `mergeMarkdown`이 begin/end 개수 불일치를 거부하고, `init`은 그 파일을 건너뛰며 경고합니다.
+- **boundary checkpoint 차단 사유가 Claude에게 보이지 않던 결함** — 실패 출력이 stdout뿐이었는데 Claude Code는 exit 2에서
+  stderr만 보여줍니다. checkpoint 경로에서 stderr로도 미러합니다. 또 `Edit|Write`로 배선된 훅이 `Write`를 무시해
+  plan 전체를 다시 쓰며 checkbox를 채우면 검사가 돌지 않던 것을 고쳤습니다(`- [X]` 대문자 포함).
+- **`.claude/hooks/block-dangerous-git.sh` 우회·오탐** — `git push -fu`·`+refspec`·`git -C <dir> push -f`·
+  `push --delete`/`:branch`·`branch --delete --force`·`restore --staged --worktree`·`stash drop|clear`를 막고,
+  `--force-if-includes`(안전장치)·`restore -S`·`push -u`·`git log | grep "push -f"`는 통과시킵니다.
+  `protect-files.sh`는 경로 경계를 보도록 바꿔 `.envrc`·`src/dev.env.md`·`src/android/builder.ts`·`android/build.gradle`
+  편집이 더는 막히지 않습니다(`.env.*`는 settings deny와 같은 범위로 계속 보호).
+- **post-commit 훅이 worktree·`core.hooksPath`(husky 등)에서 설치되지 않거나 git이 읽지 않는 곳에 쓰이던 결함** —
+  `git rev-parse --git-path hooks`로 실제 hooks 디렉터리를 찾고, "harness"라는 단어만으로 설치됨으로 오판하던
+  마커 판정을 `harness-team handoff` 줄로 좁혔습니다.
+- **스택 감지** — package.json만 있으면 무조건 TypeScript로 판정하던 것을 tsconfig·typescript 의존성 기준으로
+  고쳤고(이 저장소의 AGENTS.md도 이제 JavaScript라고 말합니다), `bun.lock`(텍스트 lockfile)을 bun으로 감지합니다.
+  `--stack`은 허용 목록 밖의 값을 exit 2로 거부하고, JS 계열 override는 감지된 패키지 매니저·스크립트를 유지합니다
+  (예전에는 모든 명령이 `(configure)`로 지워졌습니다). React Native 전용 rules 4종은 **감지된** stack이 RN 계열일 때만
+  설치됩니다 — 예전에는 `--stack`을 명시하지 않으면 Node·Python 프로젝트에도 Expo 규칙이 들어갔습니다. 그 결과
+  비-RN 프로젝트에는 `.cursor/rules` 미러가 생기지 않습니다(미러할 규칙이 없으므로).
+- **`.gitignore`가 `.harness/`를 통째로 무시해 README가 커밋을 권하는 `backup.json`을 커밋할 수 없던 모순** —
+  `.harness/active.json`·`.harness/config.json`·`.harness/observability/`만 무시합니다.
+- **`/harness-task done`이 "done"이라는 task를 만들던 문서 결함** — 커맨드 문서의 유일한 실행 줄이 `task $ARGUMENTS`였습니다.
+  첫 토큰 `list`·`done`·`handoff`는 별개 하위명령으로 분기하도록 문서를 고쳤습니다.
+- **`boundary-checkpoint.sh`가 전역 CLI 부재 시 매 Edit마다 exit 127 에러를 띄우던 것** — SessionStart·post-commit 훅과 같은
+  정책으로 조용히 통과하고, doctor의 hook CLI 검사가 `boundary`까지 확인합니다. 파일 모드도 실행 가능(100755)으로 고쳤습니다.
+- 문서 정정 — `/harness-review` description이 YAML 주석(`#`)으로 잘리던 것, `sync`가 "symlink 재생성·양방향 동기화"라고
+  세 곳에서 주장하던 것(실제는 단방향 미러 + post-commit 훅 재설치), `done`이 task_summary를 갱신한다는 README 문장,
+  `init`의 gitignore 미리보기가 실제 목록과 다르던 것, `prerequisites.md`의 devDependencies 서술, `harness-retro`만
+  PATH의 CLI를 부르던 것, `harness-release.md`에 MAINTAINING 문서 단계 포인터가 없던 것, `verify` 템플릿 스킬의 `pnpm`
+  하드코딩(AGENTS.md `## 명령` 절을 읽도록), `styling.md`의 `Animated` 귀속, `delete.sh`/`clone.sh`의 접두 매치.
+
+- **codex 1차 리뷰가 잡은 후속 결함 6건** — (P1) `block-dangerous-git.sh`가 값 없는 전역 옵션(`--no-pager`·`-p`)과 공백 분리
+  `--work-tree <dir>` 프리픽스를 통과시키던 것(원래 패턴에서도 통과하던 사전 결함); (P2) `mergeMarkdown`이 마커 개수만 보고
+  `end … begin` 순서 오류를 통과시키던 것 → 문서 순서로 교대·비중첩 검증; (P2) boundary Write 판정이 순증 비교라
+  `[ ]→[x]`+`[x]→[ ]` 스왑을 놓치던 것 → 항목 단위 판정; (P2) `settingsHasBoundaryCheckpoint`가 matcher `Edit`만으로
+  정상 판정하던 것 → doctor는 Edit·Write 둘 다 요구(migrate는 Edit-only 커스터마이즈를 존중); (P2) post-commit 훅 설치
+  판정이 주석 줄의 `harness-team handoff`로도 성립하던 것 → 비주석 줄만; (P3) `--stack` 도움말 목록을 `KNOWN_STACK_IDS`에서 생성.
+
+### Changed
+- `--json` 도움말이 `summary`도 나열합니다. `--stack` 허용 목록은 `KNOWN_STACK_IDS`에서 렌더합니다(`expo`·`go` 포함).
+- 플러그인 소스 저장소가 자기 하네스를 dogfood하지 않는 관행을 D7에 결정으로 기록했습니다.
+
+
 ## [0.23.1] - 2026-09-01
 
 ### Fixed

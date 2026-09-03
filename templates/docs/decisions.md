@@ -53,3 +53,24 @@ D4의 단일 스레드 쓰기 규칙이 금지하는 범위는 **같은 워킹�
 판정하지 못한다(가드 스스로 "이 체크가 막는 것은 망각이다"라고 명시). 품질 판정을 작업자
 자신의 자가 채점에 두면 낙관적 체크가 게이트를 무력화하므로, 판정 주체를 분리하되 실행
 메커니즘은 기존 리뷰 경로를 재사용해 표면 증가를 최소화한다.
+
+## D7 (2026-09-03) — OpenCode·Gemini 멤버 제외, 플러그인 소스 저장소는 자기 하네스를 dogfood하지 않음
+
+OpenCode와 Gemini를 하네스 멤버에서 **우선 제외**한다. 스캐폴드 파일(`GEMINI.md`, `.opencode/opencode.json`),
+역할표 행, `doctor`의 외부 도구·파일 검사, `.gitignore` 항목, 백업 스크립트 ITEMS, 리뷰 엔진 목록과
+probe 폴백 체인(codex → claude)에서 모두 뺀다. D2의 리뷰어 집합은 Codex(+ 같은 모델의 `claude` 엔진,
+plan 모드)가 되고, D4의 "Claude·OpenCode 병렬 쓰기 금지" 조항은 멤버 일반("어떤 세션·에이전트도")으로
+읽는다. 근거: 2026-09-03 점검에서 두 표면이 규범과 어긋난 채 방치돼 있었다 — `opencode.json`이
+`.claude/rules/*.md`를 경로 스코프 없이 매 세션 로드하게 하면서 README는 OpenCode가 `.claude/`를 보지
+않는다고 적었고, `GEMINI.md`는 read-only 리뷰어에게 artifact 기록(쓰기)을 지시했다. 사용 흔적이 없는
+표면은 고치는 것보다 빼는 것이 단순하다(핵심 원칙 "단순함 우선"). 코드는 git 이력에 남고 재도입은
+별도 결정으로 한다. 같은 릴리스에서 `apply` 명령을 삭제했다 — `runInit`의 별칭이었고, `init`이
+마커 병합으로 멱등이라 재실행 동사를 둘 이유가 없었다.
+
+같은 날 **플러그인 소스 저장소(bd-makers/team-harness)는 자기 하네스를 dogfood하지 않는다**는 관행을
+결정으로 기록한다: 이 저장소에는 `.claude/hooks`·`.claude/rules`·`.cursor`가 없고
+`.claude/settings.json`에 SessionStart 훅이 없다. `doctor`는 plugin-dev 모드로 이를 n/a 처리한다.
+AGENTS.md의 task-gate·rules 서술은 **소비자 프로젝트**에 대한 규범이다. 근거: 소비자 훅은 PATH의
+전역 `harness-team`을 호출하는데 소스 저장소는 `node bin/harness-team.mjs`로 개발 중 버전을 돌려야
+하고, 두 경로가 갈리면 훅이 낡은 전역 CLI를 타는 사고가 난다(`doctor`의 CLI drift 검사가 그 사고의
+산물이다). 소스 저장소가 자기 훅을 쓰려면 이 두 경로를 먼저 통일해야 하며, 그 결정은 열어 둔다.

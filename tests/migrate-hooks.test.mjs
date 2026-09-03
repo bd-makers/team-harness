@@ -7,7 +7,7 @@ import { constants, rmSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
-import { refreshClaudeHooks, CLAUDE_HOOK_FILES, KNOWN_STOCK_HOOK_SHA256 } from '../src/commands/migrate.mjs';
+import { refreshClaudeHooks, CLAUDE_HOOK_FILES, REFRESHABLE_HOOK_FILES, KNOWN_STOCK_HOOK_SHA256 } from '../src/commands/migrate.mjs';
 
 // PR #29의 jq-fallback 보안 수정이 기존 설치에 실제로 도달하는지 검증한다.
 // copyStaticAssets는 훅을 skipExisting으로 복사하므로 migrate의 refreshClaudeHooks가
@@ -69,7 +69,7 @@ test('KNOWN_STOCK_HOOK_SHA256는 fixture의 실제 바이트와 일치한다 (�
   assert.ok(eras.length >= 3, `stock fixture era 디렉터리를 기대 — 실제: ${eras.join(', ')}`);
   let checked = 0;
   for (const era of eras) {
-    for (const name of (await readdir(join(FIXTURES, era))).filter(f => f.endsWith('.sh'))) {
+    for (const name of (await readdir(join(FIXTURES, era))).filter(f => /\.(sh|mjs)$/.test(f))) {
       const body = await readFile(join(FIXTURES, era, name), 'utf8');
       assert.ok((KNOWN_STOCK_HOOK_SHA256[name] || []).includes(sha256(body)),
         `${era}/${name}의 sha256이 KNOWN_STOCK_HOOK_SHA256에 없다 — fixture와 테이블이 어긋났다`);
@@ -78,7 +78,22 @@ test('KNOWN_STOCK_HOOK_SHA256는 fixture의 실제 바이트와 일치한다 (�
       checked++;
     }
   }
-  assert.equal(checked, 10, `알려진 stock 버전 10개를 기대 — 실제: ${checked}`);
+  assert.equal(checked, 14, `알려진 stock 버전 14개를 기대 — 실제: ${checked}`);
+});
+
+// audit-cleanup (2026-09-03) — observe-tools.mjs와 boundary-checkpoint.sh는 refresh 목록에 없어
+// 템플릿 수정이 기존 설치본에 도달할 경로가 없었다(observe-tools의 공백 경로 no-op이 그 예).
+test('audit-cleanup 이전 판(observe-tools·boundary-checkpoint·substring 패턴 훅)도 stock이면 갱신된다', async () => {
+  const files = ['observe-tools.mjs', 'boundary-checkpoint.sh', 'block-dangerous-git.sh', 'protect-files.sh'];
+  assert.deepEqual(REFRESHABLE_HOOK_FILES.slice(CLAUDE_HOOK_FILES.length), ['boundary-checkpoint.sh', 'observe-tools.mjs']);
+  const dir = await plantHooks(join(FIXTURES, 'pre-audit-cleanup'), files);
+  try {
+    assert.equal(await refreshClaudeHooks(ctxFor(dir)), true);
+    for (const name of files) {
+      const tpl = await readFile(join(TEMPLATES, name), 'utf8');
+      assert.equal(await readFile(join(dir, '.claude/hooks', name), 'utf8'), tpl, `${name}은 현재 템플릿으로 갱신돼야 한다`);
+    }
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
 test('P1-1 수용 기준: pre-jq-fallback 설치본 — fail-open 재현 → migrate refresh → jq 없이 차단', async () => {

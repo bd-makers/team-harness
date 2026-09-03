@@ -1,6 +1,6 @@
-// Codex reads project-local `.codex/hooks.json`, so `apply` installs a SessionStart
-// hook there. It must behave like the other JSON surfaces (`.claude/settings.json`,
-// `.opencode/opencode.json`): deep-merged, not skip-existing. A project that already
+// Codex reads project-local `.codex/hooks.json`, so `init` installs a SessionStart
+// hook there. It must behave like the other JSON surface (`.claude/settings.json`):
+// deep-merged, not skip-existing. A project that already
 // authored its own Codex hooks would otherwise silently receive no harness hook while
 // `doctor` still reported the file healthy.
 import { test } from 'node:test';
@@ -91,7 +91,7 @@ test('doctor: .codex/hooks.json이 유효한 JSON이어도 harness 훅이 없으
 
     const warning = await checkCodexSessionHook(dir);
     assert.match(warning ?? '', /harness SessionStart 훅 없음/);
-    assert.match(warning ?? '', /harness-team apply/, '복구 명령을 안내해야 한다');
+    assert.match(warning ?? '', /harness-team init/, '복구 명령을 안내해야 한다');
   });
 });
 
@@ -101,7 +101,7 @@ test('doctor: .codex/hooks.json이 없으면 경고하지 않는다 (optional)',
   });
 });
 
-test('doctor: apply가 설치한 .codex/hooks.json은 경고하지 않는다', async () => {
+test('doctor: init이 설치한 .codex/hooks.json은 경고하지 않는다', async () => {
   await sandbox(async (dir, ctx) => {
     const { changes } = await planChanges(ctx, { stack: VARS });
     await applyChanges(changes);

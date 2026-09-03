@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Review"
+  short_description: "Run the engine-neutral read-only external review and record it in the task artifact."
+  default_prompt: "Use $harness-review to review the current changes."

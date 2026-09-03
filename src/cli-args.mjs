@@ -13,6 +13,8 @@
 // return value instead of spawning a command that would mutate the repo if the
 // guard ever regressed.
 
+import { KNOWN_STACK_IDS } from './detect-stack.mjs';
+
 export const VALUE_FLAGS = new Set(['stack', 'member', 'target', 'backup-dir', 'backup-parent']);
 
 // Accepted on every command: they change where the harness looks or how it
@@ -21,7 +23,7 @@ export const VALUE_FLAGS = new Set(['stack', 'member', 'target', 'backup-dir', '
 export const GLOBAL_FLAGS = ['target', 'member', 'yes', 'json'];
 
 // Only the commands that pass an override into `resolveBackupDir` list
-// `backup-dir`; `backup-parent` is read by init/apply alone. `backup` and
+// `backup-dir`; `backup-parent` is read by init alone. `backup` and
 // `migrate` call `loadBackupDir` and ignore both, so they must not advertise
 // them — a flag that is accepted and then ignored is the same silent-default
 // failure this module exists to remove.
@@ -32,10 +34,10 @@ const INIT_FLAGS = ['backup-dir', 'backup-parent', 'stack', 'no-backup', 'gitign
 // validation reads `flags`. A flag that is not listed here cannot be passed,
 // so an accepted flag and a documented flag are the same thing by construction.
 export const COMMANDS = [
-  { name: 'init', args: '[dir]', summary: 'Scaffold a new project with the full harness', flags: INIT_FLAGS },
-  // apply is `runInit` under a different verb (src/commands/apply.mjs), so it
-  // takes exactly the same flags.
-  { name: 'apply', args: '[dir]', summary: 'Apply the harness to an existing project (non-destructive)', flags: INIT_FLAGS },
+  // init is also the re-run verb: agent files are marker-merged and static assets
+  // skip existing files, so applying it to a project that already has the harness
+  // refreshes managed sections without touching user text.
+  { name: 'init', args: '[dir]', summary: 'Scaffold the harness, or refresh an existing install (non-destructive)', flags: INIT_FLAGS },
   { name: 'backup', args: '[dir]', summary: 'Move harness items to backup dir and replace with symlinks',
     flags: [] },
   { name: 'clone', args: '[dir]', summary: 'Sync project items to backup dir (merge, newer-wins)',
@@ -48,7 +50,7 @@ export const COMMANDS = [
     flags: [] },
   { name: 'upgrade', args: '[dir]', summary: 'Migrate real files → symlinks in one step (v0.3.x → v0.4+)',
     flags: BACKUP_DIR_FLAG },
-  { name: 'sync', args: '[dir]', summary: 'Re-sync symlinks, cursor rules, opencode config', flags: [] },
+  { name: 'sync', args: '[dir]', summary: 'Mirror .claude/rules → .cursor/rules and reinstall the post-commit hook', flags: [] },
   { name: 'doctor', args: '[dir]', summary: 'Diagnose harness integrity', flags: [] },
   { name: 'task', args: '<name>', summary: 'Create or activate a task', flags: [] },
   { name: 'list', args: '', summary: 'List all tasks', flags: [] },
@@ -77,14 +79,14 @@ export function findCommand(name) {
 const OPTIONS_HELP = `Options:
   --help, -h           Show usage for the CLI or a command — never runs the command
   --version, -v        Print the installed harness-team version
-  --stack <name>       Force stack (react-native|react|next|node|python|generic)
+  --stack <name>       Force stack (${KNOWN_STACK_IDS.join('|')})
   --yes                Non-interactive
   --member <name>      Override member (default: git config user.name, else $USER)
-  --no-backup          Skip backup dir setup entirely (init/apply only)
+  --no-backup          Skip backup dir setup entirely (init only)
   --target <dir>       Target directory (default: cwd)
   --gitignore-ai       Add AI tool entries to .gitignore without prompting
   --no-gitignore-ai    Skip AI gitignore entries without prompting
-  --json               Structured JSON envelope output for drive commands (task/retro/release/doctor)`;
+  --json               Structured JSON envelope output for drive commands (task/retro/release/doctor/summary)`;
 
 // `doctor` proves the hook CLI is reachable by matching `session-context` and
 // `handoff` at the start of a line in this output, so the two-space indent is a

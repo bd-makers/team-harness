@@ -190,7 +190,7 @@ flowchart TD
     BC -->|통과 / not-configured| CK["plan 체크박스 - [x]"] --> CM["git commit"]
     CM --> HK["post-commit 훅<br/>handoff.md 자동 갱신"]
     HK -->|다음 atomic step| IMPL
-    HK -->|중요 변경 완료| REV["/harness-review<br/>probe 폴백: codex → gemini → claude"]
+    HK -->|중요 변경 완료| REV["/harness-review<br/>probe 폴백: codex → claude"]
     REV --> ART["artifact.md ## Reviews 기록<br/>발견 재현·판별 후 단일 스레드 반영"]
     ART -->|반영할 발견 있음| IMPL
     ART --> SHIP["ship — spec·plan·artifact 최종 갱신<br/>+ 준비 완료 보고 (PR/MR은 별도 지시)"]
@@ -236,11 +236,10 @@ flowchart LR
     end
     subgraph R["🔍 리뷰어 — read-only (D2)"]
         R1["Codex"]
-        R1 ~~~ R2["Gemini"]
     end
     U1 --> C1
     C2 <-.->|"명령·훅 왕복<br/>(handoff 자동 갱신)"| H1
-    C2 -->|"/harness-review<br/>probe: codex → gemini → claude"| R1
+    C2 -->|"/harness-review<br/>probe: codex → claude"| R1
     R1 -->|"루브릭 발견 — 반박만,<br/>수정 없음 (D6)"| C3
     R2 --> C3
     C4 --> U2
@@ -250,7 +249,7 @@ flowchart LR
     <details>
       <summary>이 그림이 접어 둔 것</summary>
       <ul>
-        <li>OpenCode는 보조 드라이버지만 Claude와 <strong>동시에</strong> 쓰지 않는다 — 순차 전환 세션(D4).</li>
+        <li>어떤 세션·에이전트도 같은 워킹트리에 <strong>동시에</strong> 쓰지 않는다(D4). OpenCode·Gemini는 멤버에서 제외됐다(D7).</li>
         <li>Cursor는 보조 에디터로 <code>.cursor/rules/*.mdc</code>를 자동 적용받는다.</li>
         <li>리뷰 기록이 없는 리뷰는 "안 한 것"이다 — artifact <code>## Reviews</code>가 증거다.</li>
       </ul>
@@ -267,7 +266,7 @@ sequenceDiagram
     participant CC as Claude Code (drive)
     participant HT as harness-team CLI
     participant HK as hooks
-    participant RV as Codex/Gemini (read-only)
+    participant RV as Codex (read-only)
 
     HK->>CC: SessionStart — session-context (TCC 또는 task-gate nudge 주입)
     U->>CC: 작업 요청
@@ -284,7 +283,7 @@ sequenceDiagram
         HK-->>CC: handoff.md 자동 갱신
     end
 
-    CC->>RV: /harness-review (중요 변경 — probe 폴백 codex → gemini → claude)
+    CC->>RV: /harness-review (중요 변경 — probe 폴백 codex → claude)
     RV-->>CC: 루브릭 발견 (id·항목·심각도·판정·근거) — 반박만
     CC->>CC: 발견 재현·판별 → 단일 스레드 반영, artifact ## Reviews 기록
     CC->>U: ship — 준비 완료 보고 (PR/MR 생성은 별도 지시)

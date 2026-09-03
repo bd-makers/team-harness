@@ -1,6 +1,6 @@
 ---
 name: harness-codex-sim
-description: Run Codex headless L5 harness simulations with `tests/sim/codex-agentloop.mjs`. Use when verifying the Harness AIjient Team Codex plugin, `codex exec` skill activation, JSONL evidence, installed harness task/apply flows, or Codex-specific PASS/FAIL/MANUAL/N/A reports.
+description: Run Codex headless L5 harness simulations with `tests/sim/codex-agentloop.mjs`. Use when verifying the Harness AIjient Team Codex plugin, `codex exec` skill activation, JSONL evidence, installed harness task/init flows, or Codex-specific PASS/FAIL/MANUAL/N/A reports.
 ---
 
 # /harness-codex-sim — Codex headless L5 simulation

@@ -12,7 +12,7 @@ This skill also serves as the Codex `$harness-sim` entry corresponding to Claude
 Code `/harness-sim`. The Claude wrapper lives at `../../commands/harness-sim.md`;
 keep this SKILL.md as the SSOT for the simulation procedure.
 
-**측정 대상(2번):** `harness-init`/`apply`/`task`로 소비자 프로젝트에 *설치된* 하네스가
+**측정 대상(2번):** `harness-init`/`task`로 소비자 프로젝트에 *설치된* 하네스가
 실제로 작동하는가 — slash→CLI 체인, 설치된 hook(SessionStart·post-commit) 발화,
 트리거 신뢰성. 이 레이어는 실제 **`claude -p` 에이전트 세션을 cwd=테스트프로젝트에서
 띄워야만** 관찰된다(한 세션 안에서 도는 스킬은 못 본다).
@@ -78,14 +78,14 @@ keep this SKILL.md as the SSOT for the simulation procedure.
 throwaway `.sim-tmp/<TS>/` 샌드박스에서 실 에이전트를 띄워 SC1~SC5를 채점:
 
 - **SC1 init** — 빈 dir + `/harness-aijient-team:harness-init`(비대화형 지시) → scaffold 7신호.
-- **SC2 apply** — 기존파일 dir + `harness-apply` → 비파괴(해시 불변) + 코어 주입 + doctor green.
+- **SC2 재적용** — 기존파일 dir + `harness-init` 재실행 → 비파괴(해시 불변) + 코어 주입 + doctor green.
 - **SC3 task** — applied dir + `harness-task` → 4 SSOT + active.json + spec 게이트 섹션.
 - **SC4 설치-hook(핵심 2번)** — applied dir에서 post-commit handoff(active task 있을 때
   mtime 갱신) + **2nd 세션 SessionStart nudge transcript 주입** + PreToolUse(`⚠️manual`).
 - **SC5 트리거** — 네임스페이스 slash + 자연어, 각 N=2 pass-rate.
 
 산출: `../harness-playground/sim-reports/agentloop-<TS>.md` +
-골든 스냅샷 `sim-snapshots/<version>/{init,apply}`(버전 간 `git diff`용). 정리 후 `.sim-tmp` 삭제.
+골든 스냅샷 `sim-snapshots/<version>/{init,reinit}`(버전 간 `git diff`용). 정리 후 `.sim-tmp` 삭제.
 
 ## Phase 2-B — skilltest (command 스킬, 자매 하네스)
 
@@ -114,7 +114,7 @@ GWT 3구획 신호도 파서가 본문을 신뢰할 수 없으면(`본문 n/m개
 1. 리포트의 신호 집계(PASS/FAIL/MANUAL)와 매트릭스를 읽는다
    (agentloop은 SC1~SC5, skilltest은 스킬×파일별 신호).
 2. **FAIL이 있으면** 시나리오 의존성부터 의심 → CLI 레벨로 격리 검증(예: 임시 dir에서
-   `harness-team apply --yes` 후 `.git/hooks/post-commit`·handoff mtime 직접 확인).
+   `harness-team init --yes` 후 `.git/hooks/post-commit`·handoff mtime 직접 확인).
    진짜 결함이면 남기고, sim 아티팩트면 해당 하네스(`agentloop.mjs` 또는
    `skilltest.mjs`)를 고쳐 재실행.
 3. 무오염 확인: `.sim-tmp` 삭제됨 + 영속 playground 3프로젝트 `git status` clean.

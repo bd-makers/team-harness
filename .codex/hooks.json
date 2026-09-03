@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node bin/harness-team.mjs session-context 2>/dev/null || true",
+            "command": "root=\"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\"; node \"$root/bin/harness-team.mjs\" session-context --target \"$root\" 2>/dev/null || true",
             "timeout": 10
           }
         ]

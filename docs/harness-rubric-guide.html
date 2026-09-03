@@ -549,14 +549,13 @@
     <!-- ============================================================ -->
     <section id="engines">
       <h2 class="section-title">6. 엔진 층 — 누가 검증자가 되나</h2>
-      <p class="section-sub">프레이밍(무엇을 채점하나)과 엔진(누가 채점하나)은 직교합니다. 엔진 미지정이면 probe 폴백 체인 <code>codex → gemini → claude</code>가 첫 가용 엔진을 씁니다.</p>
+      <p class="section-sub">프레이밍(무엇을 채점하나)과 엔진(누가 채점하나)은 직교합니다. 엔진 미지정이면 probe 폴백 체인 <code>codex → claude</code>가 첫 가용 엔진을 씁니다(Gemini는 멤버가 아니다 — D7).</p>
 
       <div class="table-wrap">
         <table>
           <thead><tr><th>엔진</th><th>호출</th><th>분리 수준</th><th>비고</th></tr></thead>
           <tbody>
             <tr><td><strong>codex</strong></td><td><code>codex exec --sandbox read-only "…" &lt; /dev/null</code></td><td>vendor 분리</td><td><code>&lt; /dev/null</code> 생략 금지 — stdin이 열려 있으면 무한 블로킹</td></tr>
-            <tr><td><strong>gemini</strong></td><td><code>gemini --approval-mode default -p "…"</code></td><td>vendor 분리</td><td>미설치 머신이 있다 — preflight에서 걸러진다</td></tr>
             <tr><td><strong>claude</strong></td><td><code>claude -p --permission-mode plan "…"</code></td><td><strong>컨텍스트 분리만</strong></td><td>sunk-cost 편향은 제거되지만 같은 모델의 맹점은 공유 — 폴백 체인의 마지막인 이유</td></tr>
             <tr><td><strong>custom</strong></td><td><code>.harness/reviewers.json</code>의 <code>custom.command</code> 템플릿</td><td>설정에 따름</td><td>명시 호출 전용 — 폴백 체인에 포함되지 않음. read-only 요건은 사용자 책임</td></tr>
           </tbody>
@@ -567,7 +566,7 @@
         <div class="mark">⚠️</div>
         <div>
           <h5>claude 엔진의 한계를 알고 쓰기</h5>
-          <p>claude-only 팀원의 경로로는 유효하지만, "외부 검증"의 외부가 <strong>컨텍스트</strong>까지인지 <strong>vendor</strong>까지인지가 다릅니다. 중요한 변경일수록 vendor 분리 엔진(codex·gemini)을 우선하세요.</p>
+          <p>claude-only 팀원의 경로로는 유효하지만, "외부 검증"의 외부가 <strong>컨텍스트</strong>까지인지 <strong>vendor</strong>까지인지가 다릅니다. 중요한 변경일수록 vendor 분리 엔진(codex)을 우선하세요.</p>
         </div>
       </div>
     </section>

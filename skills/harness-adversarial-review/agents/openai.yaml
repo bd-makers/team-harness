@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Adversarial Review"
+  short_description: "Challenge the approach and design of the current changes with a read-only reviewer."
+  default_prompt: "Use $harness-adversarial-review to attack the design of the current changes."

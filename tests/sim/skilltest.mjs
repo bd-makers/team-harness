@@ -3,7 +3,7 @@
 // /harness-unittest and /harness-comptest.
 //
 // WHY a separate harness: agentloop.mjs scores the INSTALLED harness scaffold
-// (init/apply/task/hooks/triggers, SC1–SC6). It does NOT exercise these two
+// (init/task/hooks/triggers, SC1–SC6). It does NOT exercise these two
 // command skills. Both are pure agent workflows (detect stack → scope → write
 // GWT tests → coverage → verify) with no CLI-deterministic path, so the only
 // honest way to verify them is to spawn a REAL `claude -p` session in a fixture

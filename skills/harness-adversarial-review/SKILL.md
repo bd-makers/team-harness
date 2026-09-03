@@ -1,6 +1,6 @@
 ---
 name: harness-adversarial-review
-description: Engine-neutral wrapper for the adversarial variant of the harness review - it challenges implementation approach and design choices of local git changes with any engine (codex, claude, gemini, custom). Use when the user asks for /harness-adversarial-review, adversarial review, or a review that tries to reject the change.
+description: Engine-neutral wrapper for the adversarial variant of the harness review - it challenges implementation approach and design choices of local git changes with any engine (codex, claude, custom). Use when the user asks for /harness-adversarial-review, adversarial review, or a review that tries to reject the change.
 ---
 
 # Harness Adversarial Review

@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
 - 하드코딩된 색상값 금지
 
 ## 애니메이션
-- 단순 전환: `LayoutAnimation` 또는 Expo의 `Animated` API
+- 단순 전환: `LayoutAnimation` 또는 React Native의 `Animated` API
 - 복잡한 인터랙션: `react-native-reanimated` (worklet 기반)
 - JS thread 블로킹 애니메이션 금지 — `useNativeDriver: true` 또는 reanimated 사용
 

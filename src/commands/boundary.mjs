@@ -158,16 +158,23 @@ export async function verifyBoundary(targetDir, boundary, cache = new Map()) {
   return failures;
 }
 
-function printFailures(failures) {
-  console.log('boundary: failed');
-  for (const item of failures) console.log(`failure: ${item.id} | ${item.code} | ${item.message}`);
+// Claude Code shows Claude only stderr when a PreToolUse hook exits 2, so the
+// checkpoint mirrors every failure line there — a block with no visible reason is
+// indistinguishable from a broken hook. The `boundary check` CLI keeps stdout only.
+function printFailures(failures, ctx) {
+  const emit = (line) => {
+    console.log(line);
+    if (ctx?.mirrorStderr) console.error(line);
+  };
+  emit('boundary: failed');
+  for (const item of failures) emit(`failure: ${item.id} | ${item.code} | ${item.message}`);
 }
 
 export async function runBoundaryCheck(ctx) {
   const active = await readActive(ctx.targetDir);
   if (!active || !active.task) {
     process.exitCode = 2;
-    printFailures([failure('declaration', 'no-active-task', 'activate a task before running boundary check')]);
+    printFailures([failure('declaration', 'no-active-task', 'activate a task before running boundary check')], ctx);
     return { status: 'error' };
   }
 
@@ -177,7 +184,7 @@ export async function runBoundaryCheck(ctx) {
     spec = await readFile(specPath, 'utf8');
   } catch (err) {
     process.exitCode = 2;
-    printFailures([failure('declaration', 'unreadable-spec', err.code || err.message)]);
+    printFailures([failure('declaration', 'unreadable-spec', err.code || err.message)], ctx);
     return { status: 'error' };
   }
 
@@ -188,7 +195,7 @@ export async function runBoundaryCheck(ctx) {
   }
   if (declaration.status === 'invalid') {
     process.exitCode = 2;
-    printFailures(declaration.failures);
+    printFailures(declaration.failures, ctx);
     return { status: 'error', failures: declaration.failures };
   }
 
@@ -197,12 +204,20 @@ export async function runBoundaryCheck(ctx) {
   const failures = results.flat();
   if (failures.length) {
     process.exitCode = 2;
-    printFailures(failures);
+    printFailures(failures, ctx);
     return { status: 'error', failures };
   }
   console.log(`boundary: pass (${declaration.boundaries.length} checked)`);
   return { status: 'pass', checked: declaration.boundaries.length };
 }
+
+const CHECKED_BOX_RE = /- \[[xX]\]/;
+// Checked items by their text, so a Write is judged per item rather than by count:
+// counting let `[ ]→[x]` on one line slip past when another line went `[x]→[ ]` in the
+// same rewrite (codex review P2, 2026-09-03).
+const checkedItems = (text) => new Set(
+  text.split('\n').map(line => line.match(/^\s*- \[[xX]\]\s*(.*\S)?/)).filter(Boolean).map(m => (m[1] || '').trim()),
+);
 
 export async function runBoundaryCheckpoint(ctx) {
   let input;
@@ -215,11 +230,15 @@ export async function runBoundaryCheckpoint(ctx) {
   }
   const tool = input?.tool_name;
   const toolInput = input?.tool_input;
-  if (tool !== 'Edit' || !isRecord(toolInput)) return { status: 'ignored' };
-  if (typeof toolInput.file_path !== 'string' || typeof toolInput.old_string !== 'string' || typeof toolInput.new_string !== 'string') {
-    return { status: 'ignored' };
-  }
-  if (!toolInput.old_string.includes('- [ ]') || !toolInput.new_string.includes('- [x]')) {
+  // The hook is wired for Edit|Write. A Write that rewrites the whole plan used to be
+  // ignored outright, so completing a checkbox via Write skipped the check entirely.
+  if ((tool !== 'Edit' && tool !== 'Write') || !isRecord(toolInput)) return { status: 'ignored' };
+  if (typeof toolInput.file_path !== 'string') return { status: 'ignored' };
+  const isEdit = tool === 'Edit';
+  if (isEdit) {
+    if (typeof toolInput.old_string !== 'string' || typeof toolInput.new_string !== 'string') return { status: 'ignored' };
+    if (!toolInput.old_string.includes('- [ ]') || !CHECKED_BOX_RE.test(toolInput.new_string)) return { status: 'ignored' };
+  } else if (typeof toolInput.content !== 'string' || !CHECKED_BOX_RE.test(toolInput.content)) {
     return { status: 'ignored' };
   }
 
@@ -234,6 +253,15 @@ export async function runBoundaryCheckpoint(ctx) {
   } catch {
     return { status: 'ignored' };
   }
+  if (!isEdit) {
+    // A whole-file Write completes a checkbox only if some item is checked in the new
+    // content and was not checked on disk — rewriting an already-complete plan is not
+    // a completion, and swapping one item's check onto another still is.
+    const existing = await readFile(planPath, 'utf8').catch(() => '');
+    const before = checkedItems(existing);
+    if (![...checkedItems(toolInput.content)].some(item => !before.has(item))) return { status: 'ignored' };
+  }
+  ctx.mirrorStderr = true;
   return runBoundaryCheck(ctx);
 }
 

@@ -1,6 +1,6 @@
 // L3 — multi-agent SSOT consistency: AGENTS.md is the single source (carries the
-// section markers), CLAUDE.md / GEMINI.md IMPORT it via @AGENTS.md rather than
-// duplicating the core, and the Cursor / OpenCode mirrors are present and valid.
+// section markers), CLAUDE.md IMPORTS it via @AGENTS.md rather than duplicating
+// the core, and the Cursor mirror is present and valid.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile, readdir, lstat } from 'node:fs/promises';
@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { STACKS, appliedSandbox } from './sandbox.mjs';
 
 for (const stack of STACKS) {
-  test(`L3 SSOT [${stack.label}]: AGENTS source + @import + cursor/opencode mirrors`, async () => {
+  test(`L3 SSOT [${stack.label}]: AGENTS source + @import + cursor mirror`, async () => {
     const sb = await appliedSandbox(stack);
     try {
       // AGENTS.md is a real file (not a legacy alias symlink) carrying the markers
@@ -17,16 +17,23 @@ for (const stack of STACKS) {
       const agents = await readFile(join(sb.dir, 'AGENTS.md'), 'utf8');
       assert.match(agents, /harness:section="roles"/, 'AGENTS.md should hold the SSOT section markers');
 
-      // CLAUDE.md / GEMINI.md import the core, not duplicate it
-      for (const f of ['CLAUDE.md', 'GEMINI.md']) {
+      // CLAUDE.md imports the core, not duplicate it
+      for (const f of ['CLAUDE.md']) {
         const body = await readFile(join(sb.dir, f), 'utf8');
         assert.match(body, /@AGENTS\.md/, `${f} should import @AGENTS.md`);
         assert.doesNotMatch(body, /harness:section="roles"/, `${f} must not duplicate the SSOT roles section`);
       }
 
-      // OpenCode mirror is valid JSON; Cursor mirror has at least one .mdc rule
-      const opencode = JSON.parse(await readFile(join(sb.dir, '.opencode/opencode.json'), 'utf8'));
-      assert.ok(opencode && typeof opencode === 'object', '.opencode/opencode.json should be a JSON object');
+      // Gemini/OpenCode are not members (D7): nothing is scaffolded for them.
+      for (const gone of ['GEMINI.md', '.opencode/opencode.json']) {
+        await assert.rejects(() => lstat(join(sb.dir, gone)), `${gone} must not be scaffolded`);
+      }
+      // The shipped rules are all RN/Expo specific: only an RN project gets them and
+      // therefore a Cursor mirror. Other stacks must not receive an empty mirror dir.
+      if (stack.id !== 'react-native') {
+        await assert.rejects(() => readdir(join(sb.dir, '.cursor/rules')), 'non-RN stacks have no rules to mirror');
+        return;
+      }
       const cursorRules = await readdir(join(sb.dir, '.cursor/rules'));
       assert.ok(cursorRules.some((f) => f.endsWith('.mdc')), '.cursor/rules should contain mirrored .mdc rules');
 

@@ -3,37 +3,27 @@ graph LR
 
     subgraph AGENTS["AI Agents"]
         CLAUDE_A["🤖 Claude Code (drive)\n주 구현 · 계획 · 오케스트레이션\nCLAUDE.md → @AGENTS.md import"]
-        OPENCODE_A["⚡ OpenCode (drive)\n순차 전환 세션\nAGENTS.md 네이티브"]
         CODEX_A["🧠 Codex (review)\n독립 리뷰어 (read-only)\nAGENTS.md 네이티브"]
-        GEMINI_A["💎 Gemini CLI (review)\n독립 리뷰어 · 대용량 분석\nGEMINI.md → @AGENTS.md import"]
         CURSOR_A["🖱 Cursor\nIDE 보조 편집\nAGENTS.md 네이티브 + .cursor/rules"]
     end
 
-    subgraph ROLES["역할 분담 (D2)"]
+    subgraph ROLES["역할 분담 (D2 · D7)"]
         R1["Claude → drive: 설계·구현·오케스트레이션"]
-        R2["OpenCode → drive: 순차 작성"]
         R3["Codex → review: read-only 리뷰"]
-        R4["Gemini → review: 대용량 분석·리뷰"]
         R5["Cursor → IDE 인라인 보조"]
     end
 
     SSOT -->|"@AGENTS.md import"| CLAUDE_A
-    SSOT -->|네이티브| OPENCODE_A
     SSOT -->|네이티브| CODEX_A
-    SSOT -->|"@AGENTS.md import"| GEMINI_A
     SSOT -->|네이티브| CURSOR_A
 
     CLAUDE_A -.-> R1
-    OPENCODE_A -.-> R2
     CODEX_A -.-> R3
-    GEMINI_A -.-> R4
     CURSOR_A -.-> R5
 
     style SSOT fill:#0e3d30,stroke:#4df0aa
     style AGENTS fill:#1a1d27,stroke:#2e3350
     style ROLES fill:#1a2035,stroke:#2e3350
     style CLAUDE_A fill:#1e3a5f,stroke:#50c8f5
-    style OPENCODE_A fill:#1e3a5f,stroke:#50c8f5
     style CODEX_A fill:#22263a,stroke:#2e3350
-    style GEMINI_A fill:#22263a,stroke:#2e3350
     style CURSOR_A fill:#22263a,stroke:#2e3350

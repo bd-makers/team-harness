@@ -32,8 +32,11 @@ bump/검증/복사 로직은 모두 CLI(`harness-team release`)가 소유한다 
 
 2. **반드시 dry-run을 먼저 실행한다**:
    ```bash
-   harness-team release $ARGUMENTS --dry-run
+   node bin/harness-team.mjs release $ARGUMENTS --dry-run
    ```
+   - 이 명령은 **플러그인 소스 저장소에서만** 실행한다. 현재 체크아웃의 코드를 쓰도록 `node bin/harness-team.mjs`를
+     부른다 — PATH의 전역 `harness-team`은 마켓플레이스 클론이라 낡았을 수 있다(`doctor`의 CLI drift 경고가
+     바로 그 사고에서 나왔다).
    - `ⓘ release (dry-run): <old> → <new>` 와 변경 대상 목록, `next:` 힌트가 출력된다.
    - 어떤 파일도 변경되지 않는다. 출력된 계획(old→new, 캐시 경로, 마켓플레이스 경로)을 사용자에게 보여준다.
 
@@ -46,11 +49,15 @@ bump/검증/복사 로직은 모두 CLI(`harness-team release`)가 소유한다 
 
 4. **계획이 올바르면 실제 적용한다** (`--dry-run` 제거):
    ```bash
-   harness-team release $ARGUMENTS
+   node bin/harness-team.mjs release $ARGUMENTS
    ```
    - 성공 시 `✓ release: <old> → <new>` 와 변경된 대상, `next:` git 커밋/태그/푸시 명령이 출력된다.
 
-5. **변경 diff를 보여주고 next 명령을 안내한다**:
+5. **커밋·태그 전에 MAINTAINING.md의 릴리스 절차 문서 단계를 먼저 끝낸다** — what-changes 페이지 생성·`docs/index.html`
+   등재·overview 템플릿 배지·CHANGELOG의 `[Unreleased]` → 버전 헤딩 이동. `next:` 힌트는 bump 직후의 git 명령만
+   보여주므로 이 단계를 알려주지 않는다. 건너뛴 채 태그를 push하면 release 워크플로우가 실패한다.
+
+6. **변경 diff를 보여주고 next 명령을 안내한다**:
    ```bash
    git diff --stat
    ```
@@ -60,14 +67,14 @@ bump/검증/복사 로직은 모두 CLI(`harness-team release`)가 소유한다 
 
 ```bash
 # 1) 항상 먼저 — 변경 없이 계획만
-harness-team release patch --dry-run
+node bin/harness-team.mjs release patch --dry-run
 
 # 2) 검토 후 실제 적용
-harness-team release patch
+node bin/harness-team.mjs release patch
 
 # 명시적 버전
-harness-team release 1.0.0 --dry-run
+node bin/harness-team.mjs release 1.0.0 --dry-run
 
 # 캐시/마켓플레이스/installed 동기화 없이 매니페스트만 (디버그용)
-harness-team release minor --skip-cache
+node bin/harness-team.mjs release minor --skip-cache
 ```

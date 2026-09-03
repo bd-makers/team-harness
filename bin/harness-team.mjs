@@ -4,7 +4,6 @@ import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { resolveInvocation } from '../src/cli-args.mjs';
 import { runInit } from '../src/commands/init.mjs';
-import { runApply } from '../src/commands/apply.mjs';
 import { runBackup } from '../src/commands/backup.mjs';
 import { runSync } from '../src/commands/sync.mjs';
 import { runDoctor } from '../src/commands/doctor.mjs';
@@ -59,7 +58,6 @@ async function main() {
 
   switch (cmd) {
     case 'init': return runInit(ctx);
-    case 'apply': return runApply(ctx);
     case 'backup': return runBackup(ctx);
     case 'clone': return runClone(ctx);
     case 'symlink': return runSymlink(ctx);

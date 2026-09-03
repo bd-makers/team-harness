@@ -1,7 +1,7 @@
 ---
 description: 설계 결정과 가정에 반박을 시도하는 적대적 read-only 외부 리뷰 — 절차·엔진 표는 harness-review와 동일, 리뷰 프롬프트만 교체
 phase: Workflow
-argument-hint: '[codex|claude|gemini|custom] [--base <ref>] [focus ...]'
+argument-hint: '[codex|claude|custom] [--base <ref>] [focus ...]'
 ---
 
 이 명령은 `harness-review`의 적대적 변형이다. 통상 리뷰가 "결함이 있는가"를 묻는다면,
@@ -11,7 +11,7 @@ argument-hint: '[codex|claude|gemini|custom] [--base <ref>] [focus ...]'
 Raw slash-command 인수:
 `$ARGUMENTS`
 
-인수 해석은 `harness-review.md`와 동일하다 — 첫 토큰이 `codex`·`claude`·`gemini`·`custom`이면
+인수 해석은 `harness-review.md`와 동일하다 — 첫 토큰이 `codex`·`claude`·`custom`이면
 엔진, `--base <ref>`는 기준 ref, 나머지 토큰은 focus 문구로 아래 프롬프트 끝에 전달한다.
 
 ## 실행 절차

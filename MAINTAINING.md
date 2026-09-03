@@ -54,7 +54,7 @@ modified: 2026-08-28
 그런 표기를 문서에 쓰지 않으면 됩니다. `harness-interview`·`harness-ship`처럼 절차가 전부
 에이전트 판단인 커맨드가 여기 해당합니다.
 
-`templates/{AGENTS,CLAUDE,GEMINI}.md.hbs`의 managed 섹션(`<!-- harness:section="..." -->` 블록)을 수정할 때는 **이 레포 루트의 같은 파일**(`AGENTS.md`·`CLAUDE.md`·`GEMINI.md`)도 함께 갱신하세요 — `tests/agent-files.test.mjs`가 이 저장소 스택으로 렌더한 템플릿과 루트 적용본의 managed 섹션 내용 일치를 강제합니다. 마커 밖 텍스트(제목 등 저장소 고유 영역)는 검사 대상이 아닙니다.
+`templates/{AGENTS,CLAUDE}.md.hbs`의 managed 섹션(`<!-- harness:section="..." -->` 블록)을 수정할 때는 **이 레포 루트의 같은 파일**(`AGENTS.md`·`CLAUDE.md`)도 함께 갱신하세요 — `tests/agent-files.test.mjs`가 이 저장소 스택으로 렌더한 템플릿과 루트 적용본의 managed 섹션 내용 일치를 강제합니다. 마커 밖 텍스트(제목 등 저장소 고유 영역)는 검사 대상이 아닙니다.
 
 **eager 계층 크기 예산**: 매 세션 무조건 컨텍스트에 로드되는 파일들이 **eager 계층**입니다 — 필요할 때만 로드되는 커맨드 문서·스킬 같은 **lazy 정본**과 다릅니다(어휘 정의는 `docs/chad/instruction-structure/instruction-structure-spec.md` 참조). `doctor`는 네 파일을 잽니다: 프로젝트 루트의 `AGENTS.md`와 `CLAUDE.md`, 프로젝트 `.claude/CLAUDE.md`, 그리고 사용자 전역 `CLAUDE.md`(`CLAUDE_CONFIG_DIR ?? ~/.claude` 아래). **예산은 합계에 걸립니다** — 컨텍스트 윈도우는 바이트의 출처를 구분하지 않으므로, 파일마다 임계를 두면 "각 파일은 통과하는데 합계는 초과"가 green으로 빠져나갑니다. UTF-8 바이트 합을 `EAGER_TIER_MAX_BYTES`(24 KiB)와 비교해 초과 시 경고하고, 경고 문구는 파일별 내역을 나눠 어느 계층이 주범인지 보여줍니다. **예산이 덮는 대상은 이 네 소스의 합계이고, 그중 전역 파일은 머신마다 다릅니다 — 따라서 이 레포의 고정 수치로 예산을 정당화하지 마세요.** 레포에 고정된 부분은 프로젝트 소계 15,968 B(`AGENTS.md` 11,079 + `CLAUDE.md` 4,889, 이 레포에는 `.claude/CLAUDE.md`가 없습니다)이고, 24 KiB 예산에서 나머지 8,608 B가 사용자 전역 파일 몫으로 남습니다. 부분집합 실측으로 상위집합 예산을 재도출하는 것이 이 검사를 넓혀 고친 결함 그 자체입니다. 전역 파일은 **프로젝트 밖(사용자 소유)이라 읽기만** 합니다 — 하네스는 프로젝트 디렉터리 밖에 쓰지 않으므로 크기를 보고할 뿐 조치는 사용자 판단입니다. 새 규칙을 추가할 때 절차 본문은 eager 쪽에 두지 말고 lazy 정본으로 옮기고 트리거 한 줄만 남기세요.
 
@@ -90,17 +90,17 @@ Codex manifest/skill을 수정했다면 Codex validator도 실행하세요. 로�
 
 | 계층 | 경로 | 도달 경로 | 틀렸을 때 |
 |---|---|---|---|
-| **① 에이전트 행동 표면** | `templates/**`(`AGENTS.md.hbs`·`CLAUDE.md.hbs`·`GEMINI.md.hbs`·`.claude/hooks`·`rules`·`skills`·`.codex`·`.opencode`·`templates/docs/`) | `apply`/`init`이 **소비자 프로젝트에 복사** | 그 프로젝트의 에이전트가 잘못 동작 |
+| **① 에이전트 행동 표면** | `templates/**`(`AGENTS.md.hbs`·`CLAUDE.md.hbs`·`.claude/hooks`·`rules`·`skills`·`.codex`·`templates/docs/`) | `init`이 **소비자 프로젝트에 복사** | 그 프로젝트의 에이전트가 잘못 동작 |
 | **① 에이전트 행동 표면** | `commands/*.md` · `skills/*/SKILL.md` · `src/**` · `bin/**` | **플러그인 채널**(`/plugin install` → 버전별 캐시). `templates/`에 없습니다 | 슬래시 커맨드·CLI가 잘못 동작 |
-| **② 소비자가 읽는 문서** | `docs/*.html` · `README.md` | 캐시에는 복사되지만(제외는 `tests`·`scripts`·`docs/superpowers`뿐) `apply`가 프로젝트에 쓰지는 않음 | 읽는 사람이 오해 — 실행은 그대로 |
-| **③ 메인테이너 전용** | `MAINTAINING.md` | 캐시에는 복사되지만(트리 전체 복사) **읽는 소비자가 없음** — `apply`도 쓰지 않습니다 | 다음 릴리스를 하는 사람만 영향 |
+| **② 소비자가 읽는 문서** | `docs/*.html` · `README.md` | 캐시에는 복사되지만(제외는 `tests`·`scripts`·`docs/superpowers`뿐) `init`이 프로젝트에 쓰지는 않음 | 읽는 사람이 오해 — 실행은 그대로 |
+| **③ 메인테이너 전용** | `MAINTAINING.md` | 캐시에는 복사되지만(트리 전체 복사) **읽는 소비자가 없음** — `init`도 쓰지 않습니다 | 다음 릴리스를 하는 사람만 영향 |
 
 > **계층을 가르는 것은 "배포되느냐"가 아닙니다.** 버전별 캐시는 `tests`·`scripts`·
 > `docs/superpowers`를 뺀 **트리 전체**를 복사하므로 `MAINTAINING.md`까지 거기 들어갑니다.
 > 실제 판별 기준은 **누가 읽고, 무엇이 그대로 동작하느냐**입니다 — ①은 기계가 실행하고,
 > ②는 소비자가 읽고, ③은 메인테이너만 봅니다.
 
-**①의 핵심 증거는 0.16.1입니다.** `commands/harness-codex-review.md`의 호출 예시에 `< /dev/null`이
+**①의 핵심 증거는 0.16.1입니다.** (0.21.0에서 제거된) `commands/harness-codex-review.md`의 호출 예시에 `< /dev/null`이
 빠져 있었고, 에이전트가 그대로 복사해 **이 하네스를 쓰는 모든 프로젝트에서 재발**했습니다
 (리뷰 2건이 각각 38분·63분을 blocking으로 소모). 한 줄짜리 문서 수정이었지만 **patch 릴리스로
 발행**했습니다 — 고쳐야 할 것이 사람의 이해가 아니라 **기계의 동작**이었기 때문입니다.

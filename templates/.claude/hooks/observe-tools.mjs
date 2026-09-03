@@ -1,6 +1,8 @@
 import { appendFile, chmod, lstat, mkdir, readFile, readdir, realpath, rm, stat, writeFile } from 'node:fs/promises';
 import { createHmac, randomBytes } from 'node:crypto';
 import { isAbsolute, join, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { realpathSync } from 'node:fs';
 
 export const OBSERVABILITY_VERSION = 1;
 export const RETENTION_DAYS = 14;
@@ -229,6 +231,16 @@ export async function runObserver() {
   }
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === new URL(import.meta.url).pathname) {
+// Run the observer only when this file is the entry point (not when imported by
+// tests). `URL.pathname` is percent-encoded, so on any path with a space or a
+// non-ASCII character ("Mobile Documents", a Korean folder name) it never equalled
+// the resolved argv path and the hook exited 0 without logging anything. Compare
+// real filesystem paths instead.
+function samePath(a, b) {
+  const real = (p) => { try { return realpathSync(p); } catch { return p; } };
+  return real(resolve(a)) === real(b);
+}
+
+if (process.argv[1] && samePath(process.argv[1], fileURLToPath(import.meta.url))) {
   await runObserver();
 }
