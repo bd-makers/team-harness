@@ -4,6 +4,35 @@
 
 ## 결과
 
+**인도물** (브랜치 `claude/scaffold-pm-permissions`, base `origin/main` c9945bc):
+- `src/settings-permissions.mjs` — `stackPermissions(profile, { stackId })`·`RN_STACK_IDS`·`isRnStack`. pm 게이트(npm·yarn·pnpm·bun)와 RN 게이트가 독립.
+- `templates/.claude/settings.json` — allow 15→6, deny 8→6 (pm·RN 무관 항목만).
+- `src/harness.mjs` — `planChanges`가 생성 항목을 템플릿 permissions에 합성한 뒤 deep-merge; `RN_STACK_IDS`를 새 모듈에서 import.
+- `tests/settings-permissions.test.mjs` — 16건(단위 매트릭스 10 + `planChanges` 통합 6).
+- `CHANGELOG.md` [Unreleased] Changed 1항목, `docs/harness-overview.html` 인벤토리 재생성.
+
+**검증** (2026-09-04, ship 시점 재실행 — 실제 출력):
+```
+$ npm test            # exit 0
+ℹ tests 524
+ℹ pass 523
+ℹ fail 0
+ℹ skipped 1           # tests/hooks-jq-fallback.test.mjs의 skip: !process.env.CI 게이트
+ℹ tests 1             # perf
+ℹ pass 1
+$ npm run docs:check
+harness overview 생성 상태가 최신입니다.
+```
+통합 테스트 변별력: `planChanges`의 합성 블록을 잠시 끄면 6건 중 4건 실패(4단계에서 확인, 파일은 커밋 상태로 원복).
+
+- 다이어그램: 건너뜀 (사용자 선택 — task 생성 시 옵트아웃, ship 질문에서도 건너뜀, 2026-09-04)
+
+**남은 리스크**
+- 합집합 병합으로 이미 스캐폴드된 프로젝트의 옛 `pnpm …` 항목은 남는다(무해·낡음). 테스트로 pin, CHANGELOG에 한계 명시. 자동 제거는 별도 결정.
+- stack 없이 `planChanges`를 직접 부르는 외부 호출자는 종전보다 좁은 permissions를 받는다 — 저장소 내부 호출자는 모두 stack을 넘기며 pin 테스트가 있다.
+- `npx expo install *`는 pm 무관 고정이다 — `yarn expo install`을 쓰는 팀은 그 항목을 직접 추가해야 한다.
+
+**후속 작업**: 없음(옛 항목 제거가 필요해지면 `migrate` task로).
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
@@ -29,3 +58,7 @@
 
 ## Learnings
 
+- **한 함수 안의 두 게이트는 순서가 곧 계약이다** — pm early return이 RN 게이트를 삼켜 package.json 없는 `--stack expo`에서 네이티브 deny가 사라졌다(codex P2). 독립 조건은 독립 블록으로 쓴다.
+- **감지 계약을 테스트에 단정하기 전에 감지 코드를 읽는다** — `expo`는 `--stack` 별칭이고 감지값은 `react-native`였다(4단계 가정 오류 1건).
+- **배선 뒤에 쓴 통합 테스트는 배선을 잠시 꺼서 실패하는지 본다** — 4건이 실패해야 변별력이 증명된다. 통과만 본 테스트는 증거가 아니다.
+- **신규 파일은 `git add` 후 `docs:generate`** — 이번에도 단위 스위트의 첫 실패는 overview 인벤토리 pin이었다(audit-cleanup 학습 재확인).

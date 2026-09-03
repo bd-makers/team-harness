@@ -35,7 +35,14 @@ Expo 항목이 들어간다 — RN 전용 rules 4종을 스택으로 게이트�
   `migrate`의 별도 task로 둔다.
 - stack 정보가 전혀 없는 호출(직접 `planChanges` 호출·테스트)은 RN rules 선례와 같이 pm 항목
   없이 템플릿 그대로다 — 종전 pnpm 고정보다 좁아지지만, init은 항상 stack을 넘기므로 실사용
-  경로에는 영향 없다.
+  경로에는 영향 없다(통합 테스트로 pin).
+- **구현 중 확정 (2026-09-04)**:
+  - RN 게이트는 pm 게이트와 **독립**이다(codex 리뷰 P2). package.json 없는 디렉터리에 `--stack expo`를
+    강제해도 `ios/android` deny 2종은 들어가고, Expo allow의 exec 접두는 `EXEC_PREFIX[pm] ?? 'npx'`다.
+  - `detectStack`은 Expo 의존성을 `react-native` id로 보고하고 `expo`는 `--stack` 별칭이다 — 둘 다 RN.
+  - `RN_STACK_IDS`·`isRnStack`은 `src/settings-permissions.mjs`가 정의하고 `harness.mjs`의 `excludesRnRules`가 import한다.
+  - 템플릿 잔여: allow 6(`Read`·`Edit`·`Write`·`Glob`·`Grep`·`Bash(codex:*)`), deny 6(`.env` 4·`rm -rf`·`git push --force`).
+  - TypeScript인데 typecheck 스크립트가 없으면 exec 접두(npx·yarn·pnpm·bunx)로 `tsc --noEmit`만 허용한다.
 
 ## Ontology
 *이 task가 다루는 핵심 개념의 정의. "X가 정확히 뭔가?"에 답한다.*
@@ -43,7 +50,7 @@ Expo 항목이 들어간다 — RN 전용 rules 4종을 스택으로 게이트�
 - **pm 의존 허용 항목**: `Bash(<pm> <cmd>)` 형태로 패키지 매니저 이름·호출 형식(`run` 유무)이
   바뀌는 allow 항목. test·test -- *·lint·typecheck·install·add 6종.
 - **RN 전용 항목**: Expo CLI 호출 allow 3종과 네이티브 디렉터리 deny 2종. 유효 stack id가
-  `react-native`·`expo`일 때만 존재한다.
+  `react-native`·`expo`일 때만 존재하고, pm 유무와 무관하다(pm을 모르면 exec 접두는 `npx`).
 - **유효 stack id**: 명시 `--stack`이 있으면 그것, 없으면 init이 감지해 `ctx.stackId`로 넘긴 값
   (`excludesRnRules`의 정의를 그대로 따른다).
 - **게이트 통과 근거**: 목표·제약·성공 기준·영향 파일이 위와 아래에 모두 구체화돼 있다(4/4 체크).

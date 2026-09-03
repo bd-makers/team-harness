@@ -65,3 +65,13 @@ docs/hslee/hslee-handoff.md                              |  2 +-
  .../scaffold-pm-permissions-handoff.md                   |  8 ++++++++
  .../scaffold-pm-permissions-plan.md                      |  3 ++-
  5 files changed, 29 insertions(+), 4 deletions(-)
+
+## 2026-09-03T15:58:54.708Z — 3040597 fix(init): RN 권한 게이트를 pm 게이트와 분리 — package.json 없는 --stack expo에도 ios/android deny (codex P2) + P3 테스트 2건
+docs/hslee/hslee-handoff.md                        |  2 +-
+ .../scaffold-pm-permissions-artifact.md            |  1 +
+ .../scaffold-pm-permissions-context.md             |  4 ++--
+ .../scaffold-pm-permissions-handoff.md             |  8 +++++++
+ .../scaffold-pm-permissions-plan.md                |  2 +-
+ src/settings-permissions.mjs                       | 22 ++++++++++++-------
+ tests/settings-permissions.test.mjs                | 25 ++++++++++++++++++++++
+ 7 files changed, 52 insertions(+), 12 deletions(-)

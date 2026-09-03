@@ -4,7 +4,7 @@
 scaffold-pm-permissions
 
 ## Last Commit (2026-09-03)
-801b5cd docs(task): scaffold-pm-permissions codex 리뷰 기록 — P2 1(RN 게이트가 pm 게이트에 종속)·P3 3, 전부 재현, 조치 단계 개설
+3040597 fix(init): RN 권한 게이트를 pm 게이트와 분리 — package.json 없는 --stack expo에도 ios/android deny (codex P2) + P3 테스트 2건
 
 ## Full Context
 → docs/hslee/scaffold-pm-permissions/scaffold-pm-permissions-handoff.md
