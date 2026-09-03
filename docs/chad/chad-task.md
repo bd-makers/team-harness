@@ -1,13 +1,13 @@
 # chad — Tasks
 
 ## Open
-- root-docs-0200-rubric (created 2026-08-28)
 
 ## Completed
 - ✅ doctor-eager-global
 - ✅ docs-refresh-0210
 - ✅ deprecated-review-carryover
 - ✅ done-user-handoff-freeze
+- ✅ root-docs-0200-rubric
 - ✅ adversarial-verify-rubric
 - ✅ docs-refresh-0181
 - ✅ persona-external-verify
