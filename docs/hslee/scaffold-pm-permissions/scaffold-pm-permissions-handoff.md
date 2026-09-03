@@ -15,3 +15,11 @@
 docs/hslee/hslee-handoff.md                                      | 9 ++++-----
  .../scaffold-pm-permissions/scaffold-pm-permissions-handoff.md   | 9 +++++++++
  2 files changed, 13 insertions(+), 5 deletions(-)
+
+## 2026-09-03T15:12:17.659Z — 59cfae5 test(settings-permissions): 실패 테스트 먼저 — pm×stack 매트릭스 9건 + 템플릿 계약 (red: 모듈 없음)
+docs/hslee/hslee-handoff.md                        |   2 +-
+ .../scaffold-pm-permissions-context.md             |   4 +-
+ .../scaffold-pm-permissions-handoff.md             |   5 +
+ .../scaffold-pm-permissions-plan.md                |   2 +-
+ tests/settings-permissions.test.mjs                | 101 +++++++++++++++++++++
+ 5 files changed, 110 insertions(+), 4 deletions(-)

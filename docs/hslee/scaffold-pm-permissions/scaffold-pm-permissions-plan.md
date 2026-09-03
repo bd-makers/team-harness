@@ -7,7 +7,7 @@
 ## 단계
 - [x] spec 작성 — Ambiguity 자가진단 4/4 통과 (2026-09-04)
 - [x] 실패 테스트 먼저 — `tests/settings-permissions.test.mjs`: pm(npm·yarn·pnpm·bun·none) × stack(RN·비RN·없음) 매트릭스 + 템플릿 계약 (2026-09-04, red: `ERR_MODULE_NOT_FOUND src/settings-permissions.mjs`)
-- [ ] 구현 — `src/settings-permissions.mjs` 생성 함수 + `templates/.claude/settings.json`에서 pm·RN 항목 제거 + `planChanges` 합성
+- [x] 구현 — `src/settings-permissions.mjs` `stackPermissions(profile, { stackId })` + 템플릿 allow 15→6·deny 8→6 + `planChanges` 합성, `RN_STACK_IDS`를 새 모듈에서 공유 (2026-09-04, 새 테스트 9/9 green · test:unit 506 pass/1 skip/0 fail · docs:generate 후 docs:check exit 0)
 - [ ] planChanges 통합 테스트 — node fixture: `npm test`·`npm run lint` 있음, Expo·pnpm 없음 / expo fixture: Expo allow 3·deny 2 있음
 - [ ] 전체 검증 — `npm test` green, `git add -A && npm run docs:generate`(신규 테스트 파일 인벤토리) 후 `npm run docs:check` exit 0
 - [ ] 문서 — `CHANGELOG.md` [Unreleased]에 Changed 항목(재실행 시 옛 pnpm 항목 잔존 한계 포함), 가이드에 pnpm 권한 서술이 있으면 갱신
