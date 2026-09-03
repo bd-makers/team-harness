@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: init이 쓰는 `.claude/settings.json` 권한 목록을 감지된 패키지 매니저·스택에 맞게 생성 (pnpm·Expo 고정 해소)
-- Current atomic step: 전체 검증 — `npm test`(e2e·perf 포함) green, `docs:check` exit 0 → 문서 단계(CHANGELOG [Unreleased])
+- Current atomic step: 문서 — `CHANGELOG.md` [Unreleased] Changed 항목(합집합 병합으로 옛 pnpm 항목 잔존 한계 포함); 가이드에 pnpm 권한 서술 없음(README·MAINTAINING 0건, overview 템플릿 언급은 pre-commit 훅 설명)
 - Stop / human-decision condition: 템플릿을 JSON이 아닌 형식으로 바꿔야 하거나 merge 계약을 건드려야 하면 멈추고 사용자에게
 
 ## Constraints and settled decisions

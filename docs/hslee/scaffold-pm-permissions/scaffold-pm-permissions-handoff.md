@@ -34,3 +34,11 @@ docs/harness-overview.html                         | 10 ++++++
  src/settings-permissions.mjs                       | 41 ++++++++++++++++++++++
  templates/.claude/settings.json                    | 13 +------
  8 files changed, 74 insertions(+), 17 deletions(-)
+
+## 2026-09-03T15:45:11.473Z — d8a6d42 test(init): planChanges 통합 테스트 5건 — pm·스택별 권한 합성, --stack 강제, 멱등, 옛 항목 잔존 한계 pin
+docs/hslee/hslee-handoff.md                        |  2 +-
+ .../scaffold-pm-permissions-context.md             |  4 +-
+ .../scaffold-pm-permissions-handoff.md             | 11 +++
+ .../scaffold-pm-permissions-plan.md                |  2 +-
+ tests/settings-permissions.test.mjs                | 95 ++++++++++++++++++++++
+ 5 files changed, 110 insertions(+), 4 deletions(-)
