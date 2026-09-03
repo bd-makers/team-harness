@@ -170,3 +170,21 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
 ## 2026-09-03T02:08:42.941Z — 완료
 
 태스크 종료.
+
+## 2026-09-03 — 후속: 머지 · 원장 · 0.24.0 릴리스 (세션 인수인계)
+
+task는 `done`으로 종결됐고 이 절은 그 뒤의 후속 작업 기록이다. 새 세션은 여기서 시작하면 된다.
+
+**끝난 것**
+- PR #69 머지 `d69e335`(merge commit) → 원장 `8265b77` → 릴리스 `f32b05b` + 태그 `v0.24.0`.
+  release 워크플로우 success, GitHub Release 발행(본문 = CHANGELOG 0.24.0 절, BREAKING 2건 첫 줄 표기).
+- 로컬 설치본: 캐시 `0.24.0`, installed_plugins.json 갱신, 마켓플레이스 clone `f32b05b`, `harness-team --version` = 0.24.0.
+- ship 정합 검증(codex-shipcheck): S1–S4 pass, S5(검증 인용 형식) → artifact 문서 정정. 마커 3개는 artifact `## Reviews`.
+
+**남은 것 (사용자 결정 필요)**
+1. **main 작업 트리에 미커밋 편집이 있다** — `docs/harness-task-guide.html` 3 훅크(SVG 라벨 `/harness-spec`, figcaption의 4·6번 칸 축약 이름 설명, `/harness-diagram` 어댑터 문단). 이 세션이 만든 것이 아니라 손대지 않았다(릴리스 커밋에는 footer 한 줄만 따로 스테이징해 넣었다). 커밋할지 버릴지 결정할 것.
+2. **머지된 worktree·브랜치 정리** — `.claude/worktrees/delegation-router-review-9d679d`(브랜치 `claude/delegation-router-review-9d679d`, 원격에도 있음)와 이 후속 세션의 빈 worktree `.claude/worktrees/delegation-router-audit-cleanup-d4a996`(브랜치 `claude/delegation-router-audit-cleanup-d4a996`, 커밋 0). iCloud 경로라 `git worktree prune`은 쓰지 말고 개별 `worktree remove` + `branch -d`로.
+3. 새 슬래시 커맨드 목록(23개, `apply` 없음)은 **Claude Code를 다시 열어야** 반영된다.
+4. 사용자 전역 `~/.claude/CLAUDE.md`에 `/harness-review gemini`·codex → gemini → claude 폴백 문장이 남아 있다(개인 파일, 미수정).
+5. 이 릴리스 진행 중 같은 worktree에 피어 세션(`delegation-router-review-9d679d-4b`)이 살아 있었고 커밋 사실을 통지하지 않았다. 그 세션이 아직 열려 있으면 작업이 이미 머지·릴리스됐음을 알릴 것.
+6. what-changes 0.24.0 페이지·overview 배너 산문은 이 세션(AI)이 썼다 — 사람 검토 권장.
