@@ -57,3 +57,9 @@ docs/hslee/hslee-handoff.md                        |  2 +-
  .../settings-ask-tier/settings-ask-tier-handoff.md |  6 ++++
  .../settings-ask-tier/settings-ask-tier-plan.md    |  4 +--
  4 files changed, 47 insertions(+), 7 deletions(-)
+
+## 2026-09-05T13:42:33.807Z — 7b62e40 docs(task): shipcheck #2 S5 BLOCKER 반영 — green도 출력 인용, perf 합산 누락 수정
+docs/hslee/hslee-handoff.md                        |  2 +-
+ .../settings-ask-tier-artifact.md                  | 43 ++++++++++++++++++++--
+ .../settings-ask-tier/settings-ask-tier-handoff.md |  7 ++++
+ 3 files changed, 47 insertions(+), 5 deletions(-)

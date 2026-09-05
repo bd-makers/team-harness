@@ -42,16 +42,22 @@ task 문서를 포함한 전체 수치는 이 artifact를 커밋할 때마다 �
 고정할 수 없다(shipcheck #1 S5가 잡은 낡은 `386`이 그 사례다). 전체 수치가 필요하면
 sha와 함께 읽는다: `c9ce0f8` 시점 `13 files changed, 442 insertions(+), 5 deletions(-)`.
 
-RED → green 전환 (구현 전 실행한 실제 출력):
+RED → green 전환. 테스트와 구현이 같은 커밋에 들어가 "구현 전" 상태를 가리키는 커밋이 없으므로,
+**현재 테스트에 구현 직전 제품 파일만 되돌려** 재현한다(아래가 실행한 명령과 실제 출력이다):
 
 ```
-$ node --test tests/settings-permissions.test.mjs      # ask 구현 전
+$ git checkout d23a98d^ -- templates/.claude/settings.json
+$ node --test tests/settings-permissions.test.mjs
 ℹ tests 22   ℹ pass 16   ℹ fail 6
-$ node --test tests/agent-files.test.mjs               # 신뢰 경계 줄 추가 전
+$ git checkout HEAD -- templates/.claude/settings.json
+
+$ git checkout 3c2ed3f^ -- templates/AGENTS.md.hbs AGENTS.md
+$ node --test tests/agent-files.test.mjs
 ℹ tests 31   ℹ pass 29   ℹ fail 2
+$ git checkout HEAD -- templates/AGENTS.md.hbs AGENTS.md
 ```
 
-구현 후 같은 두 명령의 실제 출력:
+되돌리지 않은 현재 상태에서 같은 두 명령의 실제 출력:
 
 ```
 $ node --test tests/settings-permissions.test.mjs
@@ -79,7 +85,8 @@ $ node --test tests/agent-files.test.mjs
 
 리뷰어가 tautological하지 않다고 확인한 것: `agent-files`의 marker 교체·root/template 드리프트
 테스트, `planChanges`의 합집합 병합 테스트. 리뷰어는 read-only 샌드박스가 `mkdtemp`를 EPERM으로
-막아 전체 스위트를 재실행하지 못했다 — 전체 green은 이 세션에서 확인했다(599/598/0).
+막아 전체 스위트를 재실행하지 못했다 — 전체 green은 이 세션에서 확인했다
+(위 `### 검증 증거` 블록의 두 스위트 합계 600/599/0/1이 정본이다).
 
 
 <!-- harness:review kind=codex scope=diff tip=cf0de7d994e48d1948a0f482917049177f061fc9 at=2026-09-05T13:28:13Z -->
@@ -121,6 +128,21 @@ rubric 외 지적: plan 목표에 무공백형 `Bash(git push*)`가 남아 spec�
 
 <!-- harness:review kind=codex-shipcheck scope=diff tip=5600e4d41358cce4e3e4328d1dc4d31ed350d038 at=2026-09-05T13:40:08Z -->
 
+
+### 2026-09-05 · codex-shipcheck #3 (`codex exec --sandbox read-only -m gpt-5.6-sol`) · scope=diff (base `origin/main`, tip `7b62e40`)
+
+#2의 S5 수정을 독립 재검증. 판정: **SHIP FAIL — BLOCKER 1 · MAJOR 0.** S1~S4 pass 유지.
+
+| id | 판정 | 발견 | 판별 | 조치 |
+|---|---|---|---|---|
+| S5 | **FAIL (BLOCKER)** | ① #2에서 고친 perf 합산 누락이 **이전 리뷰 기록 산문에 그대로 남아 있다**(`599/598/0`). ② RED 출력 `22/16/6`·`31/29/2`가 "구현 전"이라고만 쓰였고 sha가 없다 — `d23a98d`·`3c2ed3f`가 테스트와 구현을 함께 넣어 그 상태를 가리키는 커밋이 없으므로 재현 불가다 | **둘 다 진짜 결함** — ①은 고친 값이 문서의 다른 곳에 남은 전형적 누락. ②는 더 근본적이다: 재현 절차가 없는 수치는 증거가 아니라 주장이다 | ① 해당 문장을 증거 블록 참조로 교체 ② RED을 **현재 테스트 + 구현 직전 제품 파일 되돌리기**로 재현하는 명령·출력으로 교체했다(`git checkout d23a98d^ -- …` / `3c2ed3f^ -- …`). 실행 결과는 원래 관측치와 일치한다(16/6, 29/2) |
+
+독립 재계산(검증자 수행): HEAD `7b62e40` 전체 `13 files, +524/-5`, 제품 표면 `6 files, +129`,
+`c9ce0f8` pin `+442/-5`, `5600e4d` pin `+482/-5`, 신규 테스트 `6+2`. `docs:check`·perf `1/1` 통과.
+전체 `npm test`는 read-only 샌드박스의 `mkdtemp` EPERM으로 독립 재실행 불가.
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=7b62e40ee2a74239ef8b48b1295de2c63fff267b at=2026-09-05T13:47:17Z -->
+
 ## Learnings
 
 ### 2026-09-05 — 권한 규칙의 와일드카드는 "공백 뒤 `*`"가 기본형이다
@@ -156,4 +178,7 @@ shipcheck가 같은 S5를 두 번 잡았다. 1차는 낡은 diff stat(자기 자
 순간 반올림·누락·시점 어긋남이 들어간다. 자기 문서를 세는 수치는 특히 그렇다.
 **How to apply:** 증거는 `$ 명령` + 출력 블록으로 붙여넣는다. 요약이 필요하면 블록 안에
 주석으로 적어 원본과 같은 화면에 둔다. 자기 참조 수치(전체 diff stat 등)는 sha와 함께
-읽거나 자기 문서를 제외한 범위로 한정한다. 관련: [[docs-refresh-scope-generated-files]]
+읽거나 자기 문서를 제외한 범위로 한정한다. 재현 절차가 없는 수치(테스트와 구현을 한 커밋에
+넣어 사라진 RED 상태 등)는 **재현 명령을 함께 적는다** — 되돌릴 파일과 기준 sha를 명시하면
+주장이 증거가 된다. 고친 수치가 문서의 다른 곳(리뷰 기록 산문 등)에 남지 않았는지도 함께
+훑는다 — shipcheck #3이 잡은 것이 정확히 그 잔재였다. 관련: [[docs-refresh-scope-generated-files]]
