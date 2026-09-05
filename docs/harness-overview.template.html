@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.24.0</span>
+      <span class="tag tag-purple">v0.25.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.25.0 — init 권한 목록 스택 추종 · doctor D6·D7 검사 · CI docs:check:</strong>
+    <br>
+    <code>0.25.0</code> <strong>init이 쓰는 <code>.claude/settings.json</code> 권한 목록이 감지된 패키지 매니저·스택을 따른다</strong> — 템플릿에 고정돼 있던 pnpm 전용 8개와 Expo 항목이 빠지고, 새 순수 함수 <code>stackPermissions</code>(<code>src/settings-permissions.mjs</code>)가 install·add·test·lint·typecheck 허용 항목을 만들며 RN 계열에만 Expo allow와 <code>ios/android</code> deny를 더한다(pm 게이트와 RN 게이트는 독립 — codex P2). 합집합 병합이라 이미 스캐폴드된 프로젝트의 옛 항목은 남는다. <code>doctor</code>의 결정 로그 검사는 D6·D7 절 누락도 경고하고 절 ID 나열을 상수에서 파생하며, 템플릿 D-log 헤딩 집합과 검사 목록의 동등을 테스트가 고정한다. 저장소 CI에 <code>docs:check</code> 스텝이 들어가 overview 드리프트가 main에 닿지 못한다.
+    <br><br>
     <strong>🆕 0.24.0 — apply 삭제 · OpenCode/Gemini 멤버 제외(D7) · 2026-09-03 감사 발견 수정:</strong>
     <br>
     <code>0.24.0</code> <strong>BREAKING — 재실행 동사는 <code>init</code> 하나, 멤버는 Claude Code·Codex·Cursor 셋</strong> — <code>apply</code>는 <code>runInit</code>의 별칭이었고 마커 병합이 멱등이라 둘을 둘 이유가 없었다. OpenCode·Gemini는 스캐폴드·역할표·doctor·gitignore·백업 ITEMS·리뷰 엔진 체인(이제 codex → claude)·매니페스트에서 모두 빠졌다(<code>docs/decisions.md</code> D7 — 재도입은 별도 결정). 전수 점검이 잡은 결함도 함께 고쳤다: 관측 훅이 공백 경로에서 조용히 꺼져 있던 P0(<code>fileURLToPath</code>), 마커가 한쪽만 남은 파일을 두 번 <code>init</code>하면 사용자 텍스트가 지워지던 것, boundary 차단 사유가 stderr에 없던 것, <code>block-dangerous-git.sh</code> 우회 여러 갈래, post-commit 훅의 worktree·<code>core.hooksPath</code> 오설치, 스택 감지(TS 오판·<code>bun.lock</code>·<code>--stack</code> 검증), <code>.gitignore</code>의 <code>.harness/</code> 통째 무시. codex 리뷰 1차 6건 반영 후 2차 발견 0.
@@ -786,7 +790,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.24.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.25.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-09-04
+modified: 2026-09-05
 ---
 
 # Changelog
@@ -17,6 +17,8 @@ modified: 2026-09-04
 -->
 
 ## [Unreleased]
+
+## [0.25.0] - 2026-09-05
 
 ### Changed
 - **`init`이 쓰는 `.claude/settings.json` 권한 목록이 감지된 패키지 매니저·스택을 따릅니다** — 템플릿에 `pnpm test`·
