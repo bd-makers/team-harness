@@ -331,6 +331,17 @@ All checks passed.
 심볼: `✓` 정상, `✗` 실패(exit 1), `-` 선택 항목 없음(정상).
 소비자 프로젝트에서는 PATH의 `harness-team`이 `session-context`·`handoff`·`boundary`를 지원하는지도 경고로 점검합니다. 플러그인 소스 저장소는 소비자 훅을 설치하지 않으므로 이 항목이 n/a로 건너뛰어집니다.
 
+### `/harness-observe` — 관측 로그 스코어카드 · 트립와이어
+
+observe-tools 훅이 쓴 `.harness/observability/` JSONL을 읽어 일별·task별·도구 분류별 호출·실패·거부·p95를 보고하고,
+트립와이어 2종(실패·거부율이 직전 날들 평균의 2배 / 한 세션에서 같은 도구 3회 실패)을 판정합니다. read-only이며 발화 시 exit 1입니다.
+도구 이름·세션 id는 HMAC 참조라 복원하지 않고, task 참조만 로컬 `docs/<member>/<name>/`로 되돌립니다.
+
+```bash
+/harness-observe                        # 기본 7일 창
+harness-team observe --days 14 --json   # 최대 창(훅 보존 기간) · 에이전트용 envelope
+```
+
 ### `/harness-spec` — spec 초안 생성 (writer)
 
 활성 task의 `<name>-spec.md` 초안을 3소스에서 생성합니다 — Confluence(PRD·spec·policy),
@@ -696,7 +707,7 @@ cd ~/work/project-a
 - `.harness/config.json` (개인 docs 사용자명)
 - `.harness/observability/` (로컬 도구 관측 로그와 HMAC 키)
 
-Claude Code 도구 관측은 원문을 보존하지 않는 로컬 JSONL만 `.harness/observability/`에 기록합니다.
+Claude Code 도구 관측은 원문을 보존하지 않는 로컬 JSONL만 `.harness/observability/`에 기록합니다. 이 로그의 소비자는 `harness-team observe`(스코어카드·트립와이어)입니다.
 보존 데이터·권한·회전·정리 정책은 [Hooks 레퍼런스](docs/harness-overview.html#hooks)를 참조하세요.
 
 ---

@@ -18,6 +18,7 @@ import { runSessionContext } from '../src/commands/session-context.mjs';
 import { runContext } from '../src/commands/context.mjs';
 import { runBoundary } from '../src/commands/boundary.mjs';
 import { runSummary } from '../src/commands/summary.mjs';
+import { runObserve } from '../src/commands/observe.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -47,7 +48,7 @@ async function main() {
 
   const { cmd, positional, flags } = invocation;
 
-  const taskCmds = new Set(['task', 'list', 'summary', 'done', 'handoff', 'retro', 'release', 'context', 'boundary', 'session-context']);
+  const taskCmds = new Set(['task', 'list', 'summary', 'done', 'handoff', 'retro', 'release', 'context', 'boundary', 'session-context', 'observe']);
   const target = flags.target || (taskCmds.has(cmd) ? process.cwd() : positional[0]) || process.cwd();
   const ctx = {
     root: ROOT,
@@ -69,6 +70,7 @@ async function main() {
     case 'task': return runTask(ctx);
     case 'list': return runList(ctx);
     case 'summary': return runSummary(ctx);
+    case 'observe': return runObserve(ctx);
     case 'done': return runDone(ctx);
     case 'handoff': return runHandoffAuto(ctx);
     case 'context': return runContext(ctx);

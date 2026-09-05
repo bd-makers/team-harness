@@ -18,6 +18,15 @@ modified: 2026-09-05
 
 ## [Unreleased]
 
+### Added
+- **`harness-team observe` — 관측 로그의 첫 소비자** — observe-tools 훅은 도구 호출마다 `.harness/observability/v1/<day>/*.jsonl`을
+  써 왔지만 읽는 코드가 없었습니다(외부 6층 플레이북 비교 분석의 권고 ①). 새 read-only 하위명령이 창(기본 7일, `--days 1..14`) 안의
+  레코드를 일별·task별·도구 분류별로 집계하고(text는 호출·완료·failed·denied·실패거부율·p95·interrupted 열, `--json`은 succeeded·p50·바이트·usage 토큰까지), 트립와이어 2종 —
+  `failure-rate-2x`(오늘 완료 ≥20·실패+거부 ≥5·비율이 직전 날들 평균의 2배) · `repeat-failure-3x`(한 세션에서 같은 도구 3회 실패) —
+  를 판정합니다. 발화하면 exit 1이라 훅·CI가 센서로 쓸 수 있습니다. task 참조는 로컬 `.key`와 `docs/<user>/<task>/`로만 되돌리고
+  도구 이름은 복원하지 않으며, 깨진 줄·버전 불일치·심볼릭 링크는 건너뛰고 셉니다. `/harness-observe` 슬래시 명령과 Codex
+  `harness-observe` 스킬이 함께 들어갑니다. (task `observability-consumer`)
+
 ## [0.25.0] - 2026-09-05
 
 ### Changed
