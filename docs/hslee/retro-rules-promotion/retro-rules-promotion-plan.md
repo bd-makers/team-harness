@@ -57,7 +57,7 @@
 - `annotatePromoted(artifact, index, slug, date): string` — 범위 밖 index는 `RangeError`
 - `parsePathsFlag(value): string[]`
 
-- [ ] **Step 1.1: RED — 테스트 작성** `tests/rules.test.mjs`
+- [x] **Step 1.1: RED — 테스트 작성** `tests/rules.test.mjs`
 
 ```js
 import { test } from 'node:test';
@@ -161,9 +161,9 @@ test('parsePathsFlag: 쉼표 구분·trim·빈 조각 제거, 문자열 아니�
 });
 ```
 
-- [ ] **Step 1.2: RED 확인** — `node --test tests/rules.test.mjs` → `ERR_MODULE_NOT_FOUND`(rules.mjs 없음)로 실패.
+- [x] **Step 1.2: RED 확인** — `node --test tests/rules.test.mjs` → `ERR_MODULE_NOT_FOUND`(rules.mjs 없음)로 실패.
 
-- [ ] **Step 1.3: GREEN — `src/commands/rules.mjs` 순수 부분 작성**
+- [x] **Step 1.3: GREEN — `src/commands/rules.mjs` 순수 부분 작성**
 
 ```js
 import { join } from 'node:path';
@@ -267,8 +267,8 @@ export function parsePathsFlag(value) {
 
 (이 단계에서는 import만 있는 `exists`·`writeText`·`buildEnvelope`·`emitObservation`·`collectRuleFiles`·`mirrorCursorRules`·`readActive`가 미사용이다 — Task 2·4에서 쓴다. `collectRuleFiles`는 아직 export되지 않아 **import 시점에 SyntaxError**가 난다 → Step 1.3에서 `src/harness.mjs:387` `async function collectRuleFiles`를 `export async function collectRuleFiles`로 바꾼다.)
 
-- [ ] **Step 1.4: GREEN 확인** — `node --test tests/rules.test.mjs` → 8 pass. `node --test tests/cursor-rules-mirror.test.mjs` 여전히 pass(export 추가는 동작 불변).
-- [ ] **Step 1.5: 커밋** — `git add src/commands/rules.mjs src/harness.mjs tests/rules.test.mjs && git commit -m "feat(rules): Learnings 파서·유래 마커·규칙 렌더·승격 표기 순수 함수 (+collectRuleFiles export)"` → 훅이 더럽힌 handoff 2파일 `git checkout --`.
+- [x] **Step 1.4: GREEN 확인** — `node --test tests/rules.test.mjs` → 8 pass. `node --test tests/cursor-rules-mirror.test.mjs` 여전히 pass(export 추가는 동작 불변).
+- [x] **Step 1.5: 커밋** — `git add src/commands/rules.mjs src/harness.mjs tests/rules.test.mjs && git commit -m "feat(rules): Learnings 파서·유래 마커·규칙 렌더·승격 표기 순수 함수 (+collectRuleFiles export)"` → 훅이 더럽힌 handoff 2파일 `git checkout --`.
 
 ### Task 2: 러너 `runRulesPromote` / `runRules`
 
@@ -278,7 +278,7 @@ export function parsePathsFlag(value) {
 - Consumes: Task 1 전부, `readActive(targetDir)`, `mirrorCursorRules(ctx)` → `[{ path, action: 'mirror'|'prune' }]`, `buildEnvelope`/`emitObservation`
 - Produces: `runRules(ctx)` — `ctx = { targetDir, flags, taskArgs }`, `taskArgs[0]` 이 `'promote'`, `taskArgs[1]` 이 선택 번호. 반환 `{ status: 'listed'|'no-data', entries } | { status: 'success', rule, index, origin, since, paths, mirrored } | { status: 'error', code } | { status: 'invalid-action' }`
 
-- [ ] **Step 2.1: RED — 테스트 추가** (`tests/rules.test.mjs` 하단)
+- [x] **Step 2.1: RED — 테스트 추가** (`tests/rules.test.mjs` 하단)
 
 ```js
 import { runRules } from '../src/commands/rules.mjs';   // 파일 상단 import 목록에 합친다
@@ -490,9 +490,9 @@ test('runRules: 첫 토큰이 promote 가 아니면 invalid-action + usage, exit
 });
 ```
 
-- [ ] **Step 2.2: RED 확인** — `node --test tests/rules.test.mjs` → 신규 12건이 `runRules is not a function`류로 실패, 기존 8건 pass.
+- [x] **Step 2.2: RED 확인** — `node --test tests/rules.test.mjs` → 신규 12건이 `runRules is not a function`류로 실패, 기존 8건 pass.
 
-- [ ] **Step 2.3: GREEN — 러너 구현** (`src/commands/rules.mjs` 하단에 추가)
+- [x] **Step 2.3: GREEN — 러너 구현** (`src/commands/rules.mjs` 하단에 추가)
 
 ```js
 // ── I/O 부분 ───────────────────────────────────────────────────────────────
@@ -643,14 +643,14 @@ export async function runRules(ctx) {
 }
 ```
 
-- [ ] **Step 2.4: GREEN 확인** — `node --test tests/rules.test.mjs` → 20 pass.
-- [ ] **Step 2.5: 커밋** — `git add src/commands/rules.mjs tests/rules.test.mjs && git commit -m "feat(rules): rules promote 러너 — 목록·승격(규칙+표기+cursor 미러)·거부 6종(cause/retry/stop)"` → handoff 2파일 `git checkout --`.
+- [x] **Step 2.4: GREEN 확인** — `node --test tests/rules.test.mjs` → 20 pass.
+- [x] **Step 2.5: 커밋** — `git add src/commands/rules.mjs tests/rules.test.mjs && git commit -m "feat(rules): rules promote 러너 — 목록·승격(규칙+표기+cursor 미러)·거부 6종(cause/retry/stop)"` → handoff 2파일 `git checkout --`.
 
 ### Task 3: CLI 배선 (cli-args · bin 라우터)
 
 **Files:** Modify `src/cli-args.mjs:18,66`, Modify `bin/harness-team.mjs:21,51,57,79`, Modify `tests/cli-args.test.mjs`
 
-- [ ] **Step 3.1: RED — cli-args 테스트 추가** (`tests/cli-args.test.mjs` 하단)
+- [x] **Step 3.1: RED — cli-args 테스트 추가** (`tests/cli-args.test.mjs` 하단)
 
 ```js
 test('cli-args: rules promote 는 번호 positional 과 --name/--paths 값 플래그를 받고, dangling --name 은 오류', () => {
@@ -665,9 +665,9 @@ test('cli-args: rules promote 는 번호 positional 과 --name/--paths 값 플�
 });
 ```
 
-- [ ] **Step 3.2: RED 확인** — `node --test tests/cli-args.test.mjs` → `rules` unknown command로 실패.
+- [x] **Step 3.2: RED 확인** — `node --test tests/cli-args.test.mjs` → `rules` unknown command로 실패.
 
-- [ ] **Step 3.3: GREEN — 배선**
+- [x] **Step 3.3: GREEN — 배선**
 
 `src/cli-args.mjs`:
 ```js
@@ -690,8 +690,8 @@ import { runRules } from '../src/commands/rules.mjs';
     case 'rules': return runRules(ctx);
 ```
 
-- [ ] **Step 3.4: GREEN 확인** — `node --test tests/cli-args.test.mjs tests/rules.test.mjs` pass. 수동: `node bin/harness-team.mjs help rules`(usage에 `--name --paths --json --target` 노출), `node bin/harness-team.mjs rules promote`(이 저장소 → 활성 task artifact에 Learnings 없음 → `- rules promote: … Learnings 항목 없음`, exit 0), `node bin/harness-team.mjs rules nope; echo $?` → 2.
-- [ ] **Step 3.5: 커밋** — `git add src/cli-args.mjs bin/harness-team.mjs tests/cli-args.test.mjs && git commit -m "feat(cli): harness-team rules promote — COMMANDS 행·name/paths 값 플래그·라우터 배선"` → handoff 2파일 `git checkout --`.
+- [x] **Step 3.4: GREEN 확인** — `node --test tests/cli-args.test.mjs tests/rules.test.mjs` pass. 수동: `node bin/harness-team.mjs help rules`(usage에 `--name --paths --json --target` 노출), `node bin/harness-team.mjs rules promote`(이 저장소 → 활성 task artifact에 Learnings 없음 → `- rules promote: … Learnings 항목 없음`, exit 0), `node bin/harness-team.mjs rules nope; echo $?` → 2.
+- [x] **Step 3.5: 커밋** — `git add src/cli-args.mjs bin/harness-team.mjs tests/cli-args.test.mjs && git commit -m "feat(cli): harness-team rules promote — COMMANDS 행·name/paths 값 플래그·라우터 배선"` → handoff 2파일 `git checkout --`.
 
 ### Task 4: 템플릿 스탬프 + `checkRuleProvenance` + doctor 배선
 
@@ -699,7 +699,7 @@ import { runRules } from '../src/commands/rules.mjs';
 
 **Interfaces (Produces):** `checkRuleProvenance(targetDir): Promise<string|null>`
 
-- [ ] **Step 4.1: RED — 테스트 추가** (`tests/rules.test.mjs` 하단; import 목록에 `checkRuleProvenance, TEMPLATE_RULE_ORIGIN` 와 `runDoctor` 추가)
+- [x] **Step 4.1: RED — 테스트 추가** (`tests/rules.test.mjs` 하단; import 목록에 `checkRuleProvenance, TEMPLATE_RULE_ORIGIN` 와 `runDoctor` 추가)
 
 ```js
 import { checkRuleProvenance, TEMPLATE_RULE_ORIGIN } from '../src/commands/rules.mjs';
@@ -772,9 +772,9 @@ test('runDoctor --json: 마커 없는 규칙이 있으면 checks[] 에 rule prov
 });
 ```
 
-- [ ] **Step 4.2: RED 확인** — `node --test tests/rules.test.mjs` → 템플릿 계약 1건(마커 없음), provenance 3건(`checkRuleProvenance is not a function`), doctor 1건(check 없음) 실패.
+- [x] **Step 4.2: RED 확인** — `node --test tests/rules.test.mjs` → 템플릿 계약 1건(마커 없음), provenance 3건(`checkRuleProvenance is not a function`), doctor 1건(check 없음) 실패.
 
-- [ ] **Step 4.3: GREEN — 템플릿 스탬프**
+- [x] **Step 4.3: GREEN — 템플릿 스탬프**
 
 ```bash
 for f in templates/.claude/rules/*.md; do
@@ -783,7 +783,7 @@ done
 git diff --stat templates/.claude/rules   # 4 files, +1 each
 ```
 
-- [ ] **Step 4.4: GREEN — `checkRuleProvenance`** (`src/commands/rules.mjs`, `today()` 위에 추가)
+- [x] **Step 4.4: GREEN — `checkRuleProvenance`** (`src/commands/rules.mjs`, `today()` 위에 추가)
 
 ```js
 // doctor용. 마커가 없거나 origin·since 중 하나라도 빠진 규칙을 나열한다. `.claude/rules`가 없으면 검사할 것이 없다(null).
@@ -808,7 +808,7 @@ export async function checkRuleProvenance(targetDir) {
 }
 ```
 
-- [ ] **Step 4.5: GREEN — doctor 배선** (`src/commands/doctor.mjs`)
+- [x] **Step 4.5: GREEN — doctor 배선** (`src/commands/doctor.mjs`)
 
 import 블록에:
 ```js
@@ -822,16 +822,16 @@ import { checkRuleProvenance } from './rules.mjs';
   if (provenanceWarning) add('rule provenance', 'warning', provenanceWarning, `\n⚠️ ${provenanceWarning}`);
 ```
 
-- [ ] **Step 4.6: GREEN 확인** — `node --test tests/rules.test.mjs tests/doctor.test.mjs tests/cursor-rules-mirror.test.mjs tests/stack-conditional-rules.test.mjs tests/observation-commands.test.mjs` pass. 수동: `node bin/harness-team.mjs doctor`(이 저장소 — `rule provenance` 항목 없음: `.claude/rules` 부재).
-- [ ] **Step 4.7: 커밋** — `git add templates/.claude/rules src/commands/rules.mjs src/commands/doctor.mjs tests/rules.test.mjs && git commit -m "feat(doctor): rule provenance 경고 + 규칙 템플릿 4종에 harness:rule 유래 마커"` → handoff 2파일 `git checkout --`.
+- [x] **Step 4.6: GREEN 확인** — `node --test tests/rules.test.mjs tests/doctor.test.mjs tests/cursor-rules-mirror.test.mjs tests/stack-conditional-rules.test.mjs tests/observation-commands.test.mjs` pass. 수동: `node bin/harness-team.mjs doctor`(이 저장소 — `rule provenance` 항목 없음: `.claude/rules` 부재).
+- [x] **Step 4.7: 커밋** — `git add templates/.claude/rules src/commands/rules.mjs src/commands/doctor.mjs tests/rules.test.mjs && git commit -m "feat(doctor): rule provenance 경고 + 규칙 템플릿 4종에 harness:rule 유래 마커"` → handoff 2파일 `git checkout --`.
 
 ### Task 5: 이름을 부르는 표면 (manifest-sync · agent-files · overview 가 고정)
 
 **Files:** Create `commands/harness-promote.md`, Create `skills/harness-promote/SKILL.md`, Create `skills/harness-promote/agents/openai.yaml`, Modify `.claude-plugin/plugin.json:12`, Modify `README.md:352-355`, Modify `CHANGELOG.md:19`, Modify `templates/CLAUDE.md.hbs:29-35`, Modify `CLAUDE.md:29-35`, Regenerate `docs/harness-overview.html`
 
-- [ ] **Step 5.1: RED 확인** — `commands/harness-promote.md`만 먼저 만들고 `node --test tests/manifest-sync.test.mjs` → Codex 동등 스킬 없음·plugin.json 미등록으로 2건 실패. (템플릿 §3을 먼저 고치고 `node --test tests/agent-files.test.mjs` → 저장소 `CLAUDE.md` 드리프트 1건 실패도 관찰한다.)
+- [x] **Step 5.1: RED 확인** — `commands/harness-promote.md`만 먼저 만들고 `node --test tests/manifest-sync.test.mjs` → Codex 동등 스킬 없음·plugin.json 미등록으로 2건 실패. (템플릿 §3을 먼저 고치고 `node --test tests/agent-files.test.mjs` → 저장소 `CLAUDE.md` 드리프트 1건 실패도 관찰한다.)
 
-- [ ] **Step 5.2: 파일 작성**
+- [x] **Step 5.2: 파일 작성**
 
 `commands/harness-promote.md`:
 ````markdown
@@ -961,8 +961,8 @@ harness-team rules promote 2 --name api-errors --paths "src/api/**/*.ts"
   승격 대상은 사용자가 고르고, CLI가 유래 마커를 붙여 복사하며 cursor 미러를 갱신한다.
 ```
 
-- [ ] **Step 5.3: GREEN 확인** — `git add commands/harness-promote.md skills/harness-promote .claude-plugin/plugin.json README.md CHANGELOG.md templates/CLAUDE.md.hbs CLAUDE.md && npm run docs:generate && node --test tests/manifest-sync.test.mjs tests/agent-files.test.mjs tests/harness-overview-generation.test.mjs tests/documentation-inventory-pointers.test.mjs` pass → `npm test` 전체 pass, `npm run docs:check` 최신.
-- [ ] **Step 5.4: 커밋** — `git add -A commands skills .claude-plugin README.md CHANGELOG.md templates/CLAUDE.md.hbs CLAUDE.md docs/harness-overview.html && git commit -m "docs(promote): /harness-promote 명령·Codex 스킬·plugin.json·README·CHANGELOG·CLAUDE.md §3 + overview 재생성"` → handoff 2파일 `git checkout --`.
+- [x] **Step 5.3: GREEN 확인** — `git add commands/harness-promote.md skills/harness-promote .claude-plugin/plugin.json README.md CHANGELOG.md templates/CLAUDE.md.hbs CLAUDE.md && npm run docs:generate && node --test tests/manifest-sync.test.mjs tests/agent-files.test.mjs tests/harness-overview-generation.test.mjs tests/documentation-inventory-pointers.test.mjs` pass → `npm test` 전체 pass, `npm run docs:check` 최신.
+- [x] **Step 5.4: 커밋** — `git add -A commands skills .claude-plugin README.md CHANGELOG.md templates/CLAUDE.md.hbs CLAUDE.md docs/harness-overview.html && git commit -m "docs(promote): /harness-promote 명령·Codex 스킬·plugin.json·README·CHANGELOG·CLAUDE.md §3 + overview 재생성"` → handoff 2파일 `git checkout --`.
 
 ### Task 6: 검증 · 리뷰 · ship
 
