@@ -35,9 +35,18 @@ git worktree에서 일하는 세션은 기본 브랜치를 체크아웃할 수 �
   파생되므로 틀리지 않지만, push가 non-fast-forward로 실패해 사용자를 더 헷갈리게 한다.
   둘 다 거부하는 편이 단순하고 안전하다.
 
-**fail-closed를 유지한다.** `rev-parse` 어느 쪽이든 실패하면(원격 ref 없음·git 오류) 새 경로는
-성립하지 않고 **기존 거부로 떨어진다.** origin이 없는 로컬 전용 저장소는 `origin/<candidate>`가
-없으므로 지금과 정확히 같이 동작한다 — 이름이 `main`/`master`면 통과, 아니면 거부.
+**판정의 근거는 `origin/HEAD`뿐이다.** 이 저장소의 기본 브랜치를 이름 대는 유일한 ref이므로,
+없으면 판정 자체가 성립하지 않는다. `defaultBranchCandidates`의 `main`/`master` 폴백을 커밋
+판정에 쓰지 않는 이유는, 기본 브랜치가 `master`에서 `main`으로 옮겨간 뒤 옛 `origin/master`가
+남아 있는 저장소에서 그 tip에 서 있는 브랜치까지 열리기 때문이다 — 그 브랜치의 원장 커밋은
+실제 기본(`main`)으로 fast-forward 되지 않으므로 위의 behind와 정확히 같은 상황이다.
+느슨한 후보 폴백은 **이름** 판정에서는 아무것도 열지 않지만(feature 브랜치는 어차피 거부된다)
+**커밋** 판정에서는 쓰기를 연다.
+
+**fail-closed를 유지한다.** `origin/HEAD` 조회·`rev-parse` 어느 쪽이든 실패하면(원격 ref 없음·
+커밋이 하나도 없는 unborn HEAD·git 오류) 새 경로는 성립하지 않고 **기존 거부로 떨어진다.**
+origin이 없는 로컬 전용 저장소는 `origin/HEAD`가 없으므로 지금과 정확히 같이 동작한다 —
+이름이 `main`/`master`면 통과, 아니면 거부.
 
 **적용 범위는 명명된 브랜치뿐이다.** detached HEAD는 `branchState`가 `{kind:'error'}`로 보고하고
 그 분기에서 이미 거부된다. detached HEAD가 `origin/main`을 가리키는 경우도 이론상 안전하지만
@@ -52,8 +61,12 @@ git worktree에서 일하는 세션은 기본 브랜치를 체크아웃할 수 �
 - **기본 브랜치 후보**: `defaultBranchCandidates`가 내는 이름 목록. `origin/HEAD`가 있으면 그것
   하나, 없으면 `['main', 'master']`. 이 task는 이 함수를 바꾸지 않고 **소비만** 한다.
 - **동기화된 브랜치(synced branch)**: 이름은 기본 브랜치가 아니지만 HEAD 커밋이
-  `origin/<후보>` 중 하나와 **정확히 같은** 브랜치. 로컬 커밋이 0개라는 뜻이며, 이 task가
-  `--write`를 새로 허용하는 유일한 상태다.
+  **`origin/HEAD`가 가리키는 브랜치**와 **정확히 같은** 브랜치. 로컬 커밋이 0개라는 뜻이며,
+  이 task가 `--write`를 새로 허용하는 유일한 상태다.
+  *(2026-09-05 정정 — 처음에는 "`origin/<후보>` 중 하나"로 정의했다. `defaultBranchCandidates`의
+  `main`/`master` 폴백까지 대조하면 실제 기본이 `main`인 저장소에서 낡은 `origin/master` tip의
+  브랜치까지 열려, behind를 거부한 근거와 모순된다 — codex 리뷰 BRG-01. 후보 폴백은 이름
+  판정에만 남기고 커밋 판정은 `origin/HEAD`로 좁혔다.)*
 - **갈라진(divergent) 브랜치**: 로컬 커밋이 있어 HEAD가 `origin/<후보>`와 다른 브랜치.
   앞섰든 뒤졌든 계속 거부한다 — 가드가 원래 막으려던 대상이다.
 - **fail-closed**: 판정에 필요한 정보를 얻지 못하면 허용이 아니라 **거부로 떨어지는** 성질.

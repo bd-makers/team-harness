@@ -39,9 +39,56 @@ CLI exit=0
 ahead(로컬 커밋 1개 얹음) / behind(`reset --hard origin/main~1`) 둘 다 거부했고,
 일부러 stale로 만들어 둔 `docs/task_summary.md`가 그대로 남았다.
 
+**`--check` 회귀 확인** — `--check` 블록은 `return`으로 끝나고 가드는 그 아래에 있어 구조적으로
+도달하지 않지만, 코드 읽기는 관측이 아니므로 같은 clone에서 실행으로 대조했다. synced 비-기본
+브랜치 + stale 원장에서 0.29.0 코드와 수정 코드가 **같은 메시지 · 같은 exit 1 · 원장 불변**으로
+일치했다. 원장이 최신일 때도 `summary: 최신 상태 (79개 task)` exit 0.
+
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
+
+### 2026-09-05 — Codex 적대적 read-only 리뷰
+
+- Scope: `origin/main..e59be1d` (리뷰 시점 tip; 아래 조치 커밋에서 발견을 반영했다)
+- Engine/framing: Codex (`gpt-5.6-sol`) · adversarial · `--sandbox read-only`
+- 리뷰어 판정: P0/P1 없음, **P2 1건**. 핵심 exact-commit 판정은 적합하나 default-branch 조회
+  실패까지 포함한 전역 fail-closed는 성립하지 않는다.
+- **BRG-01 (P2 · 정확성/엣지/회귀) — 수용, 수정함.**
+  주장: `defaultBranchCandidates`가 `origin/HEAD` 조회 실패를 `main`/`master` 폴백으로 바꾸고,
+  새 equality 경로가 그중 존재하는 remote ref와 HEAD가 같으면 비-default 브랜치를 허용한다.
+  실제 기본이 `main`이고 `origin/HEAD`는 없으며 `origin/master`만 남은 저장소에서, `origin/master`
+  tip에 서 있는 브랜치가 변경 전과 달리 통과한다.
+
+  **재현(실행 결과).** bare 원격에 갈라진 `main`·`master`를 두고 clone 한 뒤
+  `git symbolic-ref -d refs/remotes/origin/HEAD`, 브랜치를 `origin/master`에 세웠다.
+  `bases`는 `["main","master"]`.
+  - BEFORE(0.29.0): `✗ 기본 브랜치가 아니라 원장을 쓰지 않음` · exit 1 · 원장 파일 없음
+  - AFTER(`e59be1d`): `updated: docs/task_summary.md` · exit 0 · **원장이 실제로 써짐**
+
+  **판정.** 진짜 결함이다. 그 브랜치의 원장 커밋은 실제 기본(`main`)으로 fast-forward 되지
+  않으므로, spec이 behind를 거부한 근거("push가 non-FF로 실패해 더 헷갈린다")와 정면으로
+  모순된다.
+
+  **함께 실측한 반대 근거와 그 처리.** 이름 판정도 이미 느슨하다 — `bases`가 두 개일 때
+  `master` 브랜치가 `origin/master`보다 ahead여도 0.29.0이 통과시킨다(실측: `updated:
+  docs/task_summary.md`). 그러나 이 사실은 BRG-01을 정당화하지 않는다. 기존 느슨함은 spec이
+  범위 밖으로 둔 `defaultBranchCandidates`의 계약이고, 새 경로가 그 위에 **쓰기 표면을 더한**
+  부분은 이 task의 책임이다. 느슨한 폴백은 이름 판정에서는 아무것도 열지 않지만(feature
+  브랜치는 어차피 거부된다) 커밋 판정에서는 쓰기를 연다.
+
+  **조치.** `isSyncedWithDefault`가 `defaultBranchCandidates`를 소비하지 않고 `origin/HEAD`만
+  본다. 없으면 새 경로를 열지 않는다(fail-closed). 인자 `bases`를 제거했고, spec Ontology·설계
+  절·CHANGELOG를 같은 계약으로 맞췄다. 회귀 테스트를 추가했고 mutation E(후보 전체 대조로
+  되돌림)로 그 테스트만 RED이 되는 것을 확인했다.
+- 리뷰어의 나머지 판정(재확인함): `rev-parse` 실패·unborn·detached·ahead·behind는 fail-closed.
+  origin 없는 로컬 저장소·`--force`·`--check`·JSON 엔벨로프에 회귀 없음. 완전한 `refs/remotes/...`
+  사용으로 동명 로컬 브랜치·태그가 판정을 속이지 못함. `execFile` argv 사용으로 `targetDir`
+  shell injection 없음. 무의미한 테스트 없음.
+- 리뷰어 한계: read-only 샌드박스라 전체 `npm test`를 재실행하지 못했고 `node --check`만 돌렸다
+  (알려진 제약 — 제품 결함이 아니다). 재실행은 이 세션이 했다.
+
+<!-- harness:review kind=codex-adversarial scope=diff tip=REPLACE_TIP at=2026-09-05T14:49:37Z -->
 
 
 ## Learnings

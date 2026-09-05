@@ -224,39 +224,44 @@ export async function defaultBranchCandidates(targetDir) {
   return ['main', 'master'];
 }
 
-// A branch whose HEAD is the *same commit* as `origin/<default>` has no local commits of
-// its own: the ledger commit it produces lands directly on top of `origin/<default>`, which
-// is exactly what writing from the default branch produces. The collision this guard exists
-// to prevent cannot happen there, so the name alone must not refuse it — a git worktree
-// session cannot check out the default branch at all (the primary checkout holds it) and
-// would otherwise need `--force` every single time, which turns the guard into noise.
+// A branch whose HEAD is the *same commit* as the default branch has no local commits of
+// its own: the ledger commit it produces lands directly on top of that branch, which is
+// exactly what writing from the default branch produces. The collision this guard exists to
+// prevent cannot happen there, so the name alone must not refuse it — a git worktree session
+// cannot check out the default branch at all (the primary checkout holds it) and would
+// otherwise need `--force` every single time, which turns the guard into noise.
 //
 // Exact identity only; ancestry is deliberately not accepted. Ahead means real local commits
 // — a genuine feature branch, still refused. Behind would render the ledger onto a stale base
 // and then fail to push as non-fast-forward, which is more confusing, not less.
 //
-// Fail-closed: any rev-parse failure (no such remote ref, git error) returns false and the
-// existing refusal stands. A repository with no origin therefore behaves exactly as before.
+// `origin/HEAD` alone answers, and its absence closes this path. It is the only ref that names
+// THIS repository's default branch; `defaultBranchCandidates` falls back to both conventional
+// names, and comparing against all of them would accept a branch sitting on a *stale*
+// `origin/master` in a `main` repository — whose ledger commit cannot fast-forward onto the
+// real default, which is the very situation `behind` is refused for. Tolerating that looseness
+// for NAMES protects nothing (a feature branch is refused either way); tolerating it for
+// COMMITS opens a write. So the name path keeps its fallback and this one does not.
 //
-// Matching any candidate is the same looseness `defaultBranchCandidates` already accepts for
-// names: without `origin/HEAD` an existing `origin/master` can match in a `main` repo. Being
-// at the tip of some published default branch is the property that matters here.
-async function isSyncedWithDefault(targetDir, bases) {
-  let head;
+// Fail-closed throughout: any failure — no `origin/HEAD`, no such remote ref, no commits yet
+// (unborn HEAD), git error — returns false and the existing refusal stands. A repository with
+// no origin therefore behaves exactly as before.
+async function isSyncedWithDefault(targetDir) {
+  const rev = async (...args) => {
+    const { stdout } = await pexec('git', ['-C', targetDir, ...args]);
+    return stdout.trim();
+  };
   try {
-    const { stdout } = await pexec('git', ['-C', targetDir, 'rev-parse', 'HEAD']);
-    head = stdout.trim();
-  } catch { return false; }
-  if (!head) return false;
-  for (const base of bases) {
-    try {
-      // `refs/remotes/origin/<base>` spelled in full: the short form would also resolve a
-      // local branch or tag literally named `origin/main`.
-      const { stdout } = await pexec('git', ['-C', targetDir, 'rev-parse', '--verify', `refs/remotes/origin/${base}`]);
-      if (stdout.trim() === head) return true;
-    } catch { /* no such remote ref → try the next candidate */ }
+    // `origin/main` shape. Spelled back as `refs/remotes/origin/main` below so that a local
+    // branch or tag literally named `origin/main` cannot answer in its place.
+    const base = await rev('symbolic-ref', '--short', 'refs/remotes/origin/HEAD');
+    if (!base) return false;
+    const head = await rev('rev-parse', 'HEAD');
+    if (!head) return false;
+    return (await rev('rev-parse', '--verify', `refs/remotes/${base}`)) === head;
+  } catch {
+    return false;
   }
-  return false;
 }
 
 export async function runSummary(ctx) {
@@ -329,7 +334,7 @@ export async function runSummary(ctx) {
   }
   const bases = await defaultBranchCandidates(ctx.targetDir);
   const offDefault = state.kind === 'branch' && !bases.includes(state.name) && !force;
-  if (offDefault && !(await isSyncedWithDefault(ctx.targetDir, bases))) {
+  if (offDefault && !(await isSyncedWithDefault(ctx.targetDir))) {
     process.exitCode = 1;
     return fail(json, 'summary', `기본 브랜치가 아니라 원장을 쓰지 않음 (현재: ${state.name})`, {
       cause: `공유 원장을 feature 브랜치에서 갱신하면 병렬 브랜치끼리 다시 충돌함 (기본 브랜치: ${bases.join(' 또는 ')})`,

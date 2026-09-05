@@ -32,6 +32,10 @@
 
 - 2026-09-05 신규: **동기화된 브랜치(synced branch)** · **갈라진 브랜치** 정의(spec Ontology).
   `fail-closed`는 `branchState` 주석에 있던 개념을 이 task가 명시적으로 이름 붙인 것이다.
+- 2026-09-05 정정: **동기화된 브랜치**의 기준을 "`origin/<후보>` 중 하나"에서
+  "**`origin/HEAD`가 가리키는 브랜치**"로 좁혔다 — codex 리뷰 BRG-01(재현 완료). 후보 폴백은
+  이름 판정에서는 아무것도 열지 않지만 커밋 판정에서는 쓰기를 연다. spec Ontology·설계 절과
+  구현·CHANGELOG를 함께 갱신했다.
 
 ## 참고
 - 계약 정본: `tests/summary.test.mjs`

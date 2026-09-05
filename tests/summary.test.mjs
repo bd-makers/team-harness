@@ -432,3 +432,55 @@ test('--write: 커밋이 하나도 없는 저장소의 비-기본 브랜치는 �
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+// origin/HEAD 가 없고, 갈라진 origin/main·origin/master 가 둘 다 남아 있는 저장소.
+// 기본 브랜치가 master 에서 main 으로 옮겨간 뒤 옛 브랜치를 지우지 않으면 이 모양이 된다.
+// defaultBranchCandidates 는 이때 ['main','master'] 를 내므로, 후보를 모두 대조하면
+// 실제 기본(main)이 아닌 origin/master tip 에 서 있는 브랜치까지 열리게 된다.
+async function cloneWithoutOriginHead(baseDir) {
+  const source = join(baseDir, 'source');
+  const bare = join(baseDir, 'remote.git');
+  const clone = join(baseDir, 'clone');
+  await mkdir(source, { recursive: true });
+  await initRepo(source);
+  await git(source, 'checkout', '-qb', 'master');
+  await writeFile(join(source, 'OLD.md'), 'old default\n');
+  await git(source, 'add', '-A');
+  await git(source, 'commit', '-qm', 'old default');
+  await git(source, 'checkout', '-q', 'main');
+  await writeFile(join(source, 'NEW.md'), 'new default\n');
+  await git(source, 'add', '-A');
+  await git(source, 'commit', '-qm', 'new default');
+  await pexec('git', ['init', '-q', '--bare', '-b', 'main', bare]);
+  await git(source, 'remote', 'add', 'origin', bare);
+  await git(source, 'push', '-q', 'origin', 'main', 'master');
+  await pexec('git', ['clone', '-q', bare, clone]);
+  await git(clone, 'config', 'user.email', 'test@example.com');
+  await git(clone, 'config', 'user.name', 'test');
+  await git(clone, 'symbolic-ref', '-d', 'refs/remotes/origin/HEAD');
+  return clone;
+}
+
+test('--write: origin/HEAD가 없으면 origin/master tip에 서 있어도 거부한다 (기본 브랜치를 특정할 수 없다)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-summary-nohead-'));
+  const exitCode = process.exitCode;
+  try {
+    const repo = await cloneWithoutOriginHead(dir);
+    assert.deepEqual(
+      await defaultBranchCandidates(repo), ['main', 'master'],
+      'origin/HEAD 가 없으면 관용적 이름 둘 다 후보가 된다',
+    );
+
+    // 실제 기본은 main 이다. origin/master 는 갈라진 옛 기본이므로, 그 위에 얹은 원장 커밋은
+    // main 으로 fast-forward 되지 않는다 — behind 를 거부하는 이유와 같은 상황이다.
+    await git(repo, 'checkout', '-qb', 'claude/on-old-default', 'origin/master');
+    await runTask({ targetDir: repo, flags: { member: 'chad' }, taskArgs: ['demo'] });
+
+    await runSummary({ targetDir: repo, flags: { write: true } });
+    assert.equal(process.exitCode, 1, '기본 브랜치를 특정할 수 없으면 새 경로를 열지 않는다');
+    await assert.rejects(() => readFile(join(repo, 'docs', 'task_summary.md'), 'utf8'));
+  } finally {
+    process.exitCode = exitCode;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
