@@ -19,3 +19,12 @@ CHANGELOG.md                |  6 ++++++
  .../doctor-decision-headings-spec.md               | 60 ++++++++++++++++++++++
  docs/hslee/hslee-handoff.md                        |  9 ++--
  7 files changed, 171 insertions(+), 5 deletions(-)
+
+## 2026-09-05T05:06:10.973Z — 9360f7c docs(task): doctor-decision-headings — PR #71 링크·plan 종료 항목·학습(훅 자기참조·summary 가드) 추가
+.../doctor-decision-headings/doctor-decision-headings-artifact.md     | 4 ++++
+ docs/hslee/doctor-decision-headings/doctor-decision-headings-plan.md  | 2 +-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+## 2026-09-05T05:06:11.095Z — 완료
+
+태스크 종료.
