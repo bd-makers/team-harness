@@ -16,7 +16,7 @@
         "url": "https://github.com/bd-makers/team-harness.git"
       },
       "description": "Claude-led team harness: scaffold multi-agent config (Codex, Cursor) from a single source of truth (AGENTS.md).",
-      "version": "0.25.0",
+      "version": "0.26.0",
       "category": "workflow",
       "keywords": ["harness", "team", "multi-agent", "codex", "cursor"],
       "homepage": "https://github.com/bd-makers/team-harness",

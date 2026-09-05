@@ -18,6 +18,8 @@ modified: 2026-09-05
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-09-05
+
 ### Added
 - **`harness-team observe` — 관측 로그의 첫 소비자** — observe-tools 훅은 도구 호출마다 `.harness/observability/v1/<day>/*.jsonl`을
   써 왔지만 읽는 코드가 없었습니다(외부 6층 플레이북 비교 분석의 권고 ①). 새 read-only 하위명령이 창(기본 7일, `--days 1..14`) 안의
