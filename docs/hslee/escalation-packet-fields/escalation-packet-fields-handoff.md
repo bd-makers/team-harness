@@ -10,3 +10,9 @@
  .../escalation-packet-fields-plan.md               | 15 +++++++++
  .../escalation-packet-fields-spec.md               | 39 ++++++++++++++++++++++
  6 files changed, 102 insertions(+)
+
+## 2026-09-05T10:51:27.010Z — 9e78d89 docs(task): escalation-packet-fields — spec·plan 확정 (권고 ③)
+.../escalation-packet-fields-context.md            |   14 +-
+ .../escalation-packet-fields-plan.md               | 1067 +++++++++++++++++++-
+ .../escalation-packet-fields-spec.md               |  143 ++-
+ 3 files changed, 1191 insertions(+), 33 deletions(-)
