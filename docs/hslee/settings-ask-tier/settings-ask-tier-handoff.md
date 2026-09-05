@@ -50,3 +50,10 @@ docs/hslee/hslee-handoff.md                        |  2 +-
  .../settings-ask-tier-artifact.md                  | 45 ++++++++++++++++++++++
  .../settings-ask-tier/settings-ask-tier-handoff.md | 11 ++++++
  3 files changed, 57 insertions(+), 1 deletion(-)
+
+## 2026-09-05T13:35:16.019Z — 5600e4d docs(task): shipcheck #1 S5 BLOCKER 반영 — 검증 증거를 실제 출력으로 교체
+docs/hslee/hslee-handoff.md                        |  2 +-
+ .../settings-ask-tier-artifact.md                  | 42 +++++++++++++++++++---
+ .../settings-ask-tier/settings-ask-tier-handoff.md |  6 ++++
+ .../settings-ask-tier/settings-ask-tier-plan.md    |  4 +--
+ 4 files changed, 47 insertions(+), 7 deletions(-)
