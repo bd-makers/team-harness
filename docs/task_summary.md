@@ -75,4 +75,5 @@
 | chad | doctor-eager-global | ✅ done | 2026-08-31 |
 | hslee | audit-cleanup | ✅ done | 2026-09-02 |
 | hslee | scaffold-pm-permissions | ✅ done | 2026-09-03 |
+| hslee | ci-docs-check-gitignore | ✅ done | 2026-09-05 |
 | hslee | doctor-decision-headings | ✅ done | 2026-09-05 |

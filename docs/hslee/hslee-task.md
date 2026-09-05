@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ ci-docs-check-gitignore
 - ✅ doctor-decision-headings
 - ✅ scaffold-pm-permissions
 - ✅ audit-cleanup
