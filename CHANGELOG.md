@@ -18,6 +18,8 @@ modified: 2026-09-05
 
 ## [Unreleased]
 
+## [0.28.0] - 2026-09-05
+
 ### Added
 - escalation packet 2필드 — `--json` 엔벨로프의 `error`에 `alternatives`(지금 취할 수 있는 다른
   행동)와 `safe_default`(응답이 없을 때 남는 상태)를 더했다. 스키마는 `harness/observation/v1`

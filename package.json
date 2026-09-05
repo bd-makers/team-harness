@@ -1,6 +1,6 @@
 {
   "name": "harness-aijient-team",
-  "version": "0.27.0",
+  "version": "0.28.0",
   "description": "Team harness plugin: Claude-led multi-agent (Codex/Cursor) scaffold from a single AGENTS.md",
   "type": "module",
   "bin": {

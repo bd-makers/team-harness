@@ -203,7 +203,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.27.0</span>
+      <span class="tag tag-purple">v0.28.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -211,6 +211,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.28.0 — escalation packet 5필드 <code>alternatives</code> · <code>safe_default</code>:</strong>
+    <br>
+    <code>0.28.0</code> <strong>거부가 다음 행동을 알려 준다</strong> — <code>--json</code> 엔벨로프의 <code>error</code>가 <code>root_cause</code>·<code>safe_retry</code>·<code>alternatives</code>·<code>safe_default</code>·<code>stop_condition</code> 5필드가 됐다(PDF §V.A escalation packet의 권고 ③). <code>alternatives</code>는 지금 대신 취할 수 있는 행동과 트레이드오프(없으면 빈 배열), <code>safe_default</code>는 응답이 없을 때 남는 상태다. 스키마는 <code>harness/observation/v1</code> 유지 — <strong>additive</strong>라 3키를 읽던 소비자는 그대로 동작한다. 값을 손으로 만들던 <strong>생산자 9곳</strong>이 새 헬퍼 <code>buildErrorPacket</code>/<code>renderErrorPacket</code>을 경유하고, 필드를 빠뜨리면 <code>TypeError</code>로 터진다. <code>buildEnvelope</code>는 pass-through를 유지해 기존 3키 계약 테스트가 그대로 통과한다. text 출력에는 <code>alternatives:</code>(대안이 있을 때만)·<code>default:</code> 두 줄이 늘고, <code>done</code> 가드의 <code>--force</code> 안내가 <code>stop:</code>에서 <code>alternatives:</code>로 옮겨 갔다. 사람용 <code>CLAUDE.md</code> §5-A 복잡도 게이트도 "1줄 권유"를 5항목 패킷(결정 요청·권장안·시도한 대안·기다림의 비용·안전 기본값)으로 교체했다 — 두 패킷은 항목이 하나씩 다르다(기계용은 기다림의 비용 자리에 <code>stop_condition</code>).
+    <br>
     <strong>🆕 0.27.0 — 학습이 규칙이 되는 길 <code>harness-team rules promote</code> · 유래 마커 · doctor <code>rule provenance</code>:</strong>
     <br>
     <code>0.27.0</code> <strong>활성 task artifact의 Learnings 항목을 사용자 승인 후 <code>.claude/rules/&lt;slug&gt;.md</code>로 복사하는 read-only 목록 + 승격 하위명령</strong> — 규칙 본문 첫 줄에 <code>&lt;!-- harness:rule origin=&lt;user&gt;/&lt;task&gt; since=&lt;YYYY-MM-DD&gt; --&gt;</code>가 붙고, artifact 원 항목 끝에는 <code>(→ rules/&lt;slug&gt;.md, &lt;날짜&gt;)</code>가 남아 재승격을 거부하며, cursor 미러가 재생성된다. 거부(<code>no-active-task</code>·<code>invalid-index</code>·<code>already-promoted</code>·<code>invalid-name</code>·<code>rule-exists</code> 등)는 전부 파일 무변경이고 대상 이름은 <code>lstat</code>로 점유를 봐 dangling symlink 탈출을 막는다. 규칙 템플릿 4종에 <code>origin=harness-aijient-team/templates</code> 마커, doctor에 마커 없는 규칙을 나열하는 <code>rule provenance</code> 경고(warning). <code>/harness-promote</code> 슬래시 명령과 Codex <code>harness-promote</code> 스킬이 함께 들어갔다. LLM 자동 승격은 없다.
@@ -2406,7 +2410,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.27.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.28.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
