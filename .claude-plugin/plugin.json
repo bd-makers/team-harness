@@ -9,6 +9,7 @@
     "./commands/harness-init.md",
     "./commands/harness-sync.md",
     "./commands/harness-doctor.md",
+    "./commands/harness-observe.md",
     "./commands/harness-task.md",
     "./commands/harness-ship.md",
     "./commands/harness-diagram.md",

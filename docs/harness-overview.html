@@ -451,6 +451,12 @@
             <td>하네스 무결성 점검 (파일, hooks, CLI PATH)</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Validation</span></td>
           </tr>
+          <tr data-command-source="commands/harness-observe.md">
+            <td><span class="cmd">/harness-observe</span></td>
+            <td><code>commands/harness-observe.md</code></td>
+            <td>관측 로그(.harness/observability) 스코어카드와 트립와이어 판정 — read-only, 발화 시 exit 1</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Validation</span></td>
+          </tr>
           <tr data-command-source="commands/harness-task.md">
             <td><span class="cmd">/harness-task</span></td>
             <td><code>commands/harness-task.md</code></td>
@@ -1350,6 +1356,11 @@
             <td>구버전 구조를 최신으로 마이그레이션 — backup dir 스크립트 → project root, task 구조(pre-0.6→0.6, 0.6→0.7 artifact.md 분리)</td>
           </tr>
           <tr>
+            <td><code>commands/harness-observe.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>관측 로그(.harness/observability) 스코어카드와 트립와이어 판정 — read-only, 발화 시 exit 1</td>
+          </tr>
+          <tr>
             <td><code>commands/harness-release.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
             <td>4개 매니페스트(package.json/.claude-plugin/plugin.json/.claude-plugin/marketplace.json/.codex-plugin/plugin.json) 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화. 휴먼 에러(manifest 누락·버전 불일치) 차단.</td>
@@ -1605,6 +1616,16 @@
             <td>Codex skill 표시 메타데이터</td>
           </tr>
           <tr>
+            <td><code>skills/harness-observe/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-observe/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
             <td><code>skills/harness-release/SKILL.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
             <td>Codex용 harness workflow 지침</td>
@@ -1783,6 +1804,11 @@
             <td><code>src/commands/migrate.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
             <td>harness-team migrate CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/observe.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team observe CLI 구현</td>
           </tr>
           <tr>
             <td><code>src/commands/release.mjs</code></td>
@@ -2241,6 +2267,11 @@
           </tr>
           <tr>
             <td><code>tests/observe-tools-entry.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/observe.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>

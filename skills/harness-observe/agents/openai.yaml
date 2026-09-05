@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Observe"
+  short_description: "Scorecard and trip wires from observability logs."
+  default_prompt: "Use $harness-observe to report tool-call health and trip wires."
