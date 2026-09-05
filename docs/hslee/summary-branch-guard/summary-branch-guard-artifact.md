@@ -5,19 +5,22 @@
 ## 결과
 
 `summary --write` 가드의 판정 기준을 브랜치 **이름**에서 **HEAD 커밋 동일성**으로 바꿨다.
-`src/commands/summary.mjs`에 `isSyncedWithDefault(targetDir, bases)`를 신설하고, 가드 조건을
-`offDefault && !(await isSyncedWithDefault(...))`로 바꿨다. 커밋 `e59be1d`.
+`src/commands/summary.mjs`에 `isSyncedWithDefault(targetDir)`를 신설하고, 가드 조건을
+`offDefault && !(await isSyncedWithDefault(ctx.targetDir))`로 바꿨다.
+커밋 `e59be1d`(초안) → `139bd3f`(리뷰 BRG-01 반영, 최종 계약).
 
 동작:
-- 이름이 기본 브랜치가 아니어도 HEAD가 `refs/remotes/origin/<후보>` 중 하나와 **정확히 같으면** 허용
+- 이름이 기본 브랜치가 아니어도 HEAD가 **`origin/HEAD`가 가리키는 브랜치**와 **정확히 같으면** 허용
 - ahead·behind는 계속 거부 (ancestor 관계 불인정)
+- `origin/HEAD`가 없으면 새 경로를 열지 않는다 — 기본 브랜치를 특정할 수 없기 때문
 - `rev-parse` 실패는 전부 `false` → 기존 거부 (fail-closed)
 - origin 없는 로컬 전용 저장소·detached HEAD·거부 메시지·`defaultBranchCandidates`는 불변
+  (helper가 `defaultBranchCandidates`를 아예 호출하지 않으므로 "소비만 한다"보다 결합이 더 얕다)
 
 **검증 (전부 실행 결과)**
 
-`npm test` — 603 tests / 602 pass / 0 fail / 1 skip, 그리고 perf 1/1.
-(직전 기준선 599/598/0/1 + perf 1 → 새 테스트 4개만큼 늘었다.)
+`npm test` — 604 tests / 603 pass / 0 fail / 1 skip, 그리고 perf 1/1.
+(직전 기준선 599/598/0/1 + perf 1 → 새 테스트 5개만큼 늘었다.)
 
 `npm run docs:check` → `harness overview 생성 상태가 최신입니다.` exit 0
 `node bin/harness-team.mjs doctor` → `All checks passed (plugin-dev mode).` exit 0
@@ -38,6 +41,9 @@ CLI exit=0
 ```
 ahead(로컬 커밋 1개 얹음) / behind(`reset --hard origin/main~1`) 둘 다 거부했고,
 일부러 stale로 만들어 둔 `docs/task_summary.md`가 그대로 남았다.
+
+BRG-01 반영 후 같은 clone에서 다시 확인했다 — ① synced 통과(원장 복원) ② ahead 거부
+③ `git symbolic-ref -d refs/remotes/origin/HEAD` 후 같은 synced 브랜치가 **거부**(새 계약).
 
 **`--check` 회귀 확인** — `--check` 블록은 `return`으로 끝나고 가드는 그 아래에 있어 구조적으로
 도달하지 않지만, 코드 읽기는 관측이 아니므로 같은 clone에서 실행으로 대조했다. synced 비-기본
@@ -88,7 +94,7 @@ ahead(로컬 커밋 1개 얹음) / behind(`reset --hard origin/main~1`) 둘 다 
 - 리뷰어 한계: read-only 샌드박스라 전체 `npm test`를 재실행하지 못했고 `node --check`만 돌렸다
   (알려진 제약 — 제품 결함이 아니다). 재실행은 이 세션이 했다.
 
-<!-- harness:review kind=codex-adversarial scope=diff tip=REPLACE_TIP at=2026-09-05T14:49:37Z -->
+<!-- harness:review kind=codex-adversarial scope=diff tip=139bd3f08aff57bdd9b257960a295614d2a0eea7 at=2026-09-05T14:49:37Z -->
 
 
 ## Learnings
@@ -113,6 +119,29 @@ A가 뚫린 이유는 도달 경로를 잘못 짚었기 때문이다. `rev-parse
 구분하지 않으면 커버리지 구멍이 초록불 뒤에 숨는다.
 **How to apply:** 구현 후에도 통과 상태로 남는 테스트를 plan에 세울 때는, 그 테스트가 지키는
 불변식을 깨는 mutation을 한 번 넣고 RED을 본다. 통과만 보고 체크박스를 닫지 않는다.
+
+**주석으로 문서화한 느슨함은 고친 것이 아니다.**
+구현 중에 "후보가 여러 개일 때 실제 기본이 아닌 것과 매칭될 수 있다"는 점을 알고 있었고,
+"이름 판정이 이미 갖던 성질"이라는 근거로 **주석 한 문단을 달아 두는 것으로 처리**했다.
+codex는 그 지점을 정확히 P2로 짚었고(BRG-01), 재현해 보니 실제로 0.29.0이 거부하던 상태를
+새 코드가 통과시켜 원장을 썼다.
+
+판정을 가른 것은 "기존에도 느슨했다"가 아니라 **느슨함이 무엇을 여는가**였다. 같은 폴백이라도
+이름 판정에서는 아무것도 열지 않는다(feature 브랜치는 어차피 거부된다). 커밋 판정에서는 쓰기를
+연다. 그리고 그렇게 열린 상태는 spec이 behind를 거부한 근거(push가 non-FF로 실패한다)와 정확히
+같은 상황이라, **spec 자체와 모순**됐다.
+
+**Why:** "알고 있다"를 주석으로 적으면 인지 부채가 문서 부채로 바뀔 뿐 동작은 그대로다.
+리뷰어는 주석을 읽고 넘어가지 않는다 — 동작을 본다.
+**How to apply:** 구현 중 "이건 좀 느슨하지만 기존도 그렇다"는 생각이 들면, 기존 느슨함이
+무엇을 열었고 새 코드가 무엇을 더 여는지 한 줄로 비교한다. 답이 "쓰기"면 주석이 아니라 코드를
+고친다. 비교가 안 되면 그때 주석을 단다.
+
+**리뷰 발견은 재현한 뒤에 판정한다 — 양쪽 근거를 다 실측하고.**
+BRG-01은 "기존 계약과 일치하니 기각"으로 닫을 뻔했다. 실제로 두 가지를 다 돌려봤다:
+발견 시나리오(BEFORE 거부 / AFTER 원장 써짐)와 내 반론(이름 판정도 ahead인 master를 통과시킨다).
+반론은 사실이었지만 발견을 무효화하지 않았다 — 범위가 다른 문제였기 때문이다. 실측하지 않았다면
+"둘 다 느슨하니 같은 급"이라는 잘못된 등치로 기각했을 것이다.
 
 **plan의 단계를 실행하지 않고 닫을 때는 사유를 붙여 닫는다.**
 ④는 기존 테스트가 이미 커버해 중복 테스트를 만들지 않았다. 체크박스를 그냥 `- [x]`로 켜면

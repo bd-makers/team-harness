@@ -16,3 +16,14 @@ docs/hslee/hslee-handoff.md                        |  9 ++--
  .../summary-branch-guard-handoff.md                |  7 +++
  .../summary-branch-guard-plan.md                   |  3 +-
  5 files changed, 91 insertions(+), 21 deletions(-)
+
+## 2026-09-05T14:56:34.251Z — 139bd3f fix(summary): synced 판정을 origin/HEAD 로 좁힌다 (codex BRG-01)
+CHANGELOG.md                                       | 16 +++---
+ docs/hslee/hslee-handoff.md                        |  2 +-
+ .../summary-branch-guard-artifact.md               | 47 ++++++++++++++++++
+ .../summary-branch-guard-handoff.md                |  8 +++
+ .../summary-branch-guard-plan.md                   |  4 ++
+ .../summary-branch-guard-spec.md                   | 23 +++++++--
+ src/commands/summary.mjs                           | 57 ++++++++++++----------
+ tests/summary.test.mjs                             | 52 ++++++++++++++++++++
+ 8 files changed, 171 insertions(+), 38 deletions(-)
