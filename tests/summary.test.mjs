@@ -314,6 +314,7 @@ test('summary --json: --write와 --check 동시 지정 → error 패킷에 alter
     assert.equal(env.status, 'error');
     assert.ok(env.error.alternatives.length > 0, '대안이 최소 하나');
     assert.ok(env.error.safe_default, '무응답 시 남는 상태');
+    assert.equal(typeof env.error.root_cause, 'string', 'JSON 엔벨로프의 root_cause 는 string (배열은 text 전용)');
   } finally { console.log = orig; process.exitCode = prev; await rm(dir, { recursive: true, force: true }); }
 });
 

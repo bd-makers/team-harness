@@ -21,10 +21,10 @@
 - `buildEnvelope`는 수정하지 않는다. `error`는 pass-through다.
 - `alternatives`는 `string[]`(빈 배열 허용), `safe_default`는 비어 있지 않은 `string`.
 - JSON 엔벨로프를 내보내는 생산자는 `cause`에 **string만** 넘긴다. 배열 형태는 text 전용
-  (`runDone` 가드의 issue별 출력 보존용)이며 Task 9의 pin 테스트가 이를 고정한다.
+  (`runDone` 가드의 issue별 출력 보존용)이며 Task 8의 pin 테스트가 이를 고정한다.
 - text 미러 줄 이름: `cause:` · `retry:` · `alternatives:` · `default:` · `stop:`.
-- `src/commands/*.mjs`에는 리터럴 `root_cause:`가 남지 않는다(Task 9의 grep pin).
-- `docs/harness-overview-<version>.html` 12개 스냅샷은 동결본이다 — 건드리지 않는다.
+- `src/commands/*.mjs`에는 리터럴 `root_cause:`가 남지 않는다(Task 8의 grep pin).
+- `docs/harness-overview-<version>.html` 스냅샷(현재 13개)은 동결본이다 — 건드리지 않는다.
   생성기는 `docs/harness-overview.html` 하나만 쓴다.
 - 기준 커밋 `a0266b2`. 시작 상태: `npm test` → 580 tests / 579 pass / 0 fail / 1 skipped, perf 1/1.
 - 커밋 직후 post-commit 훅이 `docs/hslee/hslee-handoff.md`·
@@ -1061,9 +1061,10 @@ read-only 샌드박스는 `mkdtemp EPERM`이라 I/O 테스트를 돌리지 못�
 
 - [x] **Step 3: shipcheck (같은 엔진, S1~S5 루브릭, `kind=codex-shipcheck`, ~6분)**
 
-지적이 문서 정합이면 정정 후 재검증한다. **실측**: #1(tip `987a8d3`) NOT READY → S2~S5 반영 →
-#2(tip `9271f20`) 이전 지적 5건 전부 해소 확인, 새 결함 4건 → 반영 → #3으로 종결 확인.
-각 회차의 발견·판별·조치는 artifact의 `## Reviews`가 정본이다.
+지적이 문서 정합이면 정정 후 재검증한다. **실측**(각 회차의 발견·판별·조치는 artifact의
+`## Reviews`가 정본이다 — 이 줄은 요약일 뿐이며, 아직 돌지 않은 회차는 적지 않는다):
+#1 `987a8d3` NOT READY(S2~S5) → 반영 · #2 `9271f20` #1 지적 전부 해소·새 결함 4건 → 반영 ·
+#3 `e098493` S1·S4 PASS, S2·S3·S5 → 반영.
 
 - [ ] **Step 4: `harness-team ship`으로 spec·plan·artifact 최종 갱신**
 
@@ -1090,9 +1091,11 @@ gh-axi pr create --base main --head claude/escalation-packet-fields-380f1f \
 
 ## Ontology 변경 로그
 
-- `escalation packet` — 기계용(엔벨로프 `error`)과 사람용(`CLAUDE.md` §5-A) 두 형태를 같은
-  5항목으로 정의. spec.md의 Ontology 절에 기록됨.
-- `alternatives` — "시도 이력"이 아니라 "지금 취할 수 있는 다른 행동"으로 확정.
+- `escalation packet` — 기계용(엔벨로프 `error`)과 사람용(`CLAUDE.md` §5-A) 두 형태. PDF의 5항목
+  **구조**를 공유하지만 항목 집합은 다르다 — 기계용은 기다림의 비용 자리에 `stop_condition`을 두고,
+  사람용은 stop 항목이 없다. spec.md의 Ontology 절이 정본이다.
+- `alternatives` — **기계용**은 "시도 이력"이 아니라 "지금 취할 수 있는 다른 행동"(CLI 거부 시점에는
+  시도 이력이 없다). **사람용** §5-A는 PDF 원문대로 "세션 안에서 검토·기각한 경로"다.
 - `safe_default` — "자동 실행할 행동"이 아니라 "무행동의 결과"로 확정.
 
 ## 참고

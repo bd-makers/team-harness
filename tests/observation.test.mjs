@@ -48,7 +48,9 @@ test('emitObservation: stdout에 단일 유효 JSON 객체만', () => {
   assert.equal(parsed.schema, OBSERVATION_SCHEMA);
 });
 
-// escalation packet (권고 ③) — PDF §V.A의 5항목 중 "시도한 대안"과 "무응답 시 안전 기본값".
+// escalation packet (권고 ③) — PDF §V.A의 5항목 구조에서 온 두 필드. 기계용에서는 PDF 문구를
+// 그대로 쓰지 않는다: `alternatives`는 "이미 시도한 대안"이 아니라 "지금 취할 수 있는 다른 행동"이고
+// (CLI 거부 시점에는 시도 이력이 없다), 기다림의 비용 자리에는 `stop_condition`이 온다.
 // 강제는 이 헬퍼가 전담한다. buildEnvelope는 error를 그대로 통과시키는 성질을 유지한다.
 test('buildErrorPacket: 5키 패킷 — alternatives 기본값은 빈 배열', () => {
   const packet = buildErrorPacket({ cause: 'c', retry: 'r', safeDefault: 'd', stop: 's' });

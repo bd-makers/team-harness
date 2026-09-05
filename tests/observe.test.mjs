@@ -267,6 +267,7 @@ test('runObserve: --days outside 1..14 or non-integer is a usage error (exit 2, 
       assert.ok(Array.isArray(out.error.alternatives) && out.error.alternatives.length === 1, `alternatives 1개 (${days})`);
       assert.match(out.error.alternatives[0], /--days 없이 실행하면 기본 창/);
       assert.ok(out.error.safe_default, `safe_default는 비어 있지 않다 (${days})`);
+      assert.equal(typeof out.error.root_cause, 'string', `root_cause 는 string (${days})`);
     }
     process.exitCode = 0;
   } finally { await cleanup(); }
