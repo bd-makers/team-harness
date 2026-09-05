@@ -21,6 +21,26 @@ PDF 6층 비교 권고 ④를 두 갈래로 인도했다.
 프로젝트의 낡은 항목 제거(migrate)도 별도 task다.
 
 
+### 검증 증거 (실제 출력)
+
+```
+$ npm test
+ℹ tests 599   ℹ pass 598   ℹ fail 0   ℹ skipped 1     (unit+e2e)
+ℹ tests 1     ℹ pass 1     ℹ fail 0                    (perf)
+
+$ npm run docs:check
+harness overview 생성 상태가 최신입니다.
+
+$ git diff --stat origin/main...HEAD | tail -1
+ 13 files changed, 386 insertions(+), 5 deletions(-)
+```
+
+RED 확인: 구현 전 `node --test tests/settings-permissions.test.mjs` → `fail 6`,
+`node --test tests/agent-files.test.mjs` → `fail 2`. 각각 구현 후 0으로 전환됐다.
+
+- 다이어그램: 건너뜀 — task 생성 시 옵트인에서 사용자가 "아니오"를 선택했다(2026-09-05).
+  plan에 다이어그램 단계가 없는 것이 곧 그 상태다.
+
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
@@ -39,7 +59,32 @@ PDF 6층 비교 권고 ④를 두 갈래로 인도했다.
 테스트, `planChanges`의 합집합 병합 테스트. 리뷰어는 read-only 샌드박스가 `mkdtemp`를 EPERM으로
 막아 전체 스위트를 재실행하지 못했다 — 전체 green은 이 세션에서 확인했다(599/598/0).
 
+
 <!-- harness:review kind=codex scope=diff tip=cf0de7d994e48d1948a0f482917049177f061fc9 at=2026-09-05T13:28:13Z -->
 
 ## Learnings
+
+### 2026-09-05 — 권한 규칙의 와일드카드는 "공백 뒤 `*`"가 기본형이다
+
+`Bash(git push*)`처럼 공백 없이 붙이면 `git pushy`까지 매칭한다. 공백형을 피한 이유가
+"인자 없는 `git push`를 놓칠까 봐"였는데, 공식 문서의 와일드카드 표가 `Bash(npm run *)`는
+bare `npm run`도 매칭한다고 명시한다 — 공백 뒤 `*`는 빈 문자열도 덮는다. 즉 공백형이
+커버리지 손해 없이 과매치만 없앤다. 문서 예시 자체가 `"Bash(git push *)"`다.
+
+**Why:** 규칙 문법을 유추로 정하면 과/과소 매칭이 조용히 남는다. 매처는 Claude Code가
+소유해 이 저장소 테스트로는 잡히지 않는다 — 리터럴 동일성만 고정될 뿐이다.
+**How to apply:** 권한 규칙을 새로 쓸 때는 공식 permissions 문서의 와일드카드 표를 먼저
+확인하고, 유추한 형태를 그대로 커밋하지 않는다. 관련: [[docs-no-future-version-numbers]]
+
+### 2026-09-05 — 합집합 병합 위에 올리는 기본값은 "빼기 비용"부터 계산한다
+
+`deepMergeJson`이 배열을 합집합으로 병합하므로 템플릿에 실은 항목은 기존 프로젝트에서
+사라지지 않는다. 낡은 `allow` 항목은 무해했지만 `ask`는 다르다 — trust 없이 즉시 적용되고,
+auto 모드에서도 프롬프트하며, PreToolUse 훅의 `"allow"`로도 꺼지지 않는다. 잘못 실으면
+모든 스캐폴드 프로젝트에 영구 소음이 된다.
+
+**Why:** 되돌릴 수 없는 기본값은 "추가 비용"이 아니라 "제거 불가 비용"으로 판단해야 한다.
+**How to apply:** 템플릿 배열에 항목을 더할 때는 (1) 제거 경로가 있는지 (2) 없다면 잘못
+실렸을 때 무해한지를 먼저 답하고, 둘 다 아니면 규범이 확실한 최소 집합만 싣는다.
+
 

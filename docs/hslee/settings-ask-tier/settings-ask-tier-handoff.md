@@ -33,3 +33,14 @@ AGENTS.md                                          |  2 ++
 docs/hslee/hslee-handoff.md                               |  2 +-
  docs/hslee/settings-ask-tier/settings-ask-tier-handoff.md | 10 ++++++++++
  2 files changed, 11 insertions(+), 1 deletion(-)
+
+## 2026-09-05T13:28:27.347Z — 40d9aad fix(settings): ask 규칙을 공식 canonical 형태로 교체 + codex 리뷰 기록 (P2 #1)
+CHANGELOG.md                                       |  4 ++-
+ docs/hslee/hslee-handoff.md                        |  2 +-
+ .../settings-ask-tier-artifact.md                  | 31 ++++++++++++++++++++++
+ .../settings-ask-tier/settings-ask-tier-handoff.md |  5 ++++
+ .../settings-ask-tier/settings-ask-tier-plan.md    |  2 +-
+ .../settings-ask-tier/settings-ask-tier-spec.md    | 11 +++++++-
+ templates/.claude/settings.json                    |  6 ++---
+ tests/settings-permissions.test.mjs                | 10 +++++--
+ 8 files changed, 62 insertions(+), 9 deletions(-)
