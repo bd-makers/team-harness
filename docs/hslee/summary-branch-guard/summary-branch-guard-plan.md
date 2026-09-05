@@ -22,7 +22,8 @@
 - [x] 구현: `runSummary`의 `--write` 가드에 synced-branch 판정 추가 — `rev-parse` 실패는
       fail-closed로 기존 거부에 떨어뜨린다
 - [x] `CHANGELOG.md` `[Unreleased]`에 기록 (동작 완화이므로 Changed)
-- [ ] `npm test` 전체 green · `npm run docs:check` exit 0
+- [x] `npm test` 전체 green (603 tests / 602 pass / 0 fail / 1 skip + perf 1/1) · `npm run docs:check` exit 0
+      · 추가로 clone 에서 end-to-end 실증 (BEFORE 거부 → AFTER `updated: docs/task_summary.md`)
 - [ ] codex read-only 리뷰 → artifact `## Reviews`에 마커와 함께 기록, 발견 재현·판별 후 반영
 - [ ] ship — spec·plan·artifact 최종 갱신 후 준비 완료 보고 (PR 생성은 사용자 지시 후)
 

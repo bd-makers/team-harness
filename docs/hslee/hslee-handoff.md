@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+summary-branch-guard
 
-## Last Completed Task (2026-09-05)
-`settings-ask-tier` — done
+## Last Commit (2026-09-05)
+e59be1d feat(summary): --write 가드를 브랜치 이름 대신 커밋 동일성으로 판정
 
 ## Full Context
-→ docs/hslee/settings-ask-tier/settings-ask-tier-handoff.md
+→ docs/hslee/summary-branch-guard/summary-branch-guard-handoff.md
