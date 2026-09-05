@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-settings-ask-tier
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-05)
-68bce79 docs(task): ship 종결 — 사용자 결정 2건 기록
+## Last Completed Task (2026-09-05)
+`settings-ask-tier` — done
 
 ## Full Context
 → docs/hslee/settings-ask-tier/settings-ask-tier-handoff.md

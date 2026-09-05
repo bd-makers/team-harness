@@ -83,3 +83,12 @@ docs/hslee/hslee-handoff.md                               |  2 +-
  docs/hslee/settings-ask-tier/settings-ask-tier-handoff.md |  7 +++++++
  docs/hslee/settings-ask-tier/settings-ask-tier-plan.md    |  7 ++++---
  4 files changed, 27 insertions(+), 4 deletions(-)
+
+## 2026-09-05T14:10:54.935Z — abc96ec docs(task): post-commit handoff 갱신 (머지 후)
+docs/hslee/hslee-handoff.md                               | 2 +-
+ docs/hslee/settings-ask-tier/settings-ask-tier-handoff.md | 7 +++++++
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+## 2026-09-05T14:10:55.060Z — 완료
+
+태스크 종료.
