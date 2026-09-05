@@ -1102,7 +1102,7 @@ git add docs/hslee/escalation-packet-fields/
 git commit -m "docs(task): escalation-packet-fields — 리뷰·shipcheck 기록, ship 준비 완료"
 ```
 
-- [ ] **Step 6: push·PR은 사용자 지시 후**
+- [x] **Step 6: push·PR은 사용자 지시 후** — PR #75 생성 → CI `test (24)` SUCCESS(17s) → merge(`d3c7a7c`)
 
 ```bash
 git push -u origin claude/escalation-packet-fields-380f1f
