@@ -263,6 +263,10 @@ test('runObserve: --days outside 1..14 or non-integer is a usage error (exit 2, 
       process.exitCode = 0;
       const out = JSON.parse(await captureStdout(() => runObserve({ targetDir: dir, flags: { json: true, days } })));
       assert.equal(out.status, 'error', days); assert.match(out.error.root_cause, /1\.\.14/); assert.equal(process.exitCode, 2, days);
+      // escalation packet (권고 ③) — 거부하면서 다른 경로와 무응답 시 남는 상태를 함께 준다.
+      assert.ok(Array.isArray(out.error.alternatives) && out.error.alternatives.length === 1, `alternatives 1개 (${days})`);
+      assert.match(out.error.alternatives[0], /--days 없이 실행하면 기본 창/);
+      assert.ok(out.error.safe_default, `safe_default는 비어 있지 않다 (${days})`);
     }
     process.exitCode = 0;
   } finally { await cleanup(); }

@@ -6,7 +6,7 @@
 import { createHmac } from 'node:crypto';
 import { lstat, readdir, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
-import { buildEnvelope, emitObservation } from '../observation.mjs';
+import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 
 export const OBSERVABILITY_BASE = '.harness/observability/v1';
 export const OBSERVE_DEFAULT_DAYS = 7;
@@ -225,17 +225,18 @@ export function summarizeObservability(records, { now, days, taskNames = new Map
   };
 }
 
-function fail(json, summary, rootCause, safeRetry) {
+function fail(json, summary, { cause, retry, alternatives = [], safeDefault }) {
+  const packet = buildErrorPacket({
+    cause, retry, alternatives, safeDefault,
+    stop: '원인을 해소하기 전에는 재시도하지 말 것',
+  });
   if (json) {
     emitObservation(buildEnvelope({
-      command: 'observe', status: 'error', summary: `observe 실패: ${summary}`,
-      error: { root_cause: rootCause, safe_retry: safeRetry, stop_condition: '원인을 해소하기 전에는 재시도하지 말 것' },
+      command: 'observe', status: 'error', summary: `observe 실패: ${summary}`, error: packet,
     }));
   } else {
     console.log(`✗ observe: ${summary}`);
-    console.log(`cause: ${rootCause}`);
-    console.log(`retry: ${safeRetry}`);
-    console.log('stop: 원인을 해소하기 전에는 재시도하지 말 것');
+    for (const line of renderErrorPacket(packet)) console.log(line);
   }
 }
 
@@ -286,8 +287,12 @@ export async function runObserve(ctx) {
   const days = parseDays(rawDays);
   if (days === null) {
     process.exitCode = 2;
-    return fail(json, `--days 값이 잘못됨 (${rawDays})`, `--days는 1..${OBSERVE_MAX_DAYS} 정수만 허용 (훅 보존 기간 ${OBSERVE_MAX_DAYS}일)`,
-      '`harness-team observe --days 7`처럼 정수를 지정');
+    return fail(json, `--days 값이 잘못됨 (${rawDays})`, {
+      cause: `--days는 1..${OBSERVE_MAX_DAYS} 정수만 허용 (훅 보존 기간 ${OBSERVE_MAX_DAYS}일)`,
+      retry: `1..${OBSERVE_MAX_DAYS} 범위의 정수를 주고 재실행`,
+      alternatives: [`--days 없이 실행하면 기본 창(${OBSERVE_DEFAULT_DAYS}일)으로 스코어카드를 낸다`],
+      safeDefault: '스코어카드를 내지 않고 종료한다 — 로그 파일은 읽지도 쓰지도 않는다',
+    });
   }
   const now = new Date();
   const read = await readObservabilityRecords(ctx.targetDir, { now, days });
