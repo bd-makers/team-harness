@@ -1062,7 +1062,8 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
 > - shipcheck #3(커밋 `2a0c90b`): `tests/summary.test.mjs`·`tests/observe.test.mjs`(타입 가드 8/8 완성) ·
 >   `tests/observation.test.mjs`(주석) · `spec.md`·`plan.md`·`artifact.md`
 > - shipcheck #4(커밋 `76facb7`): `spec.md`·`plan.md`·`artifact.md`만 (코드·문서 표면은 S1·S4 PASS로 확정)
-> - shipcheck #5: `plan.md`(Task 5·6의 유령 파일 참조 8곳)·`artifact.md`만
+> - shipcheck #5(커밋 `597154e`): `plan.md`(Task 5·6의 유령 파일 참조 8곳)·`artifact.md`만
+> - shipcheck #6: READY — 수정 없음. `artifact.md`에 판정과 회차 요약만 기록
 
 - [x] **Step 1: codex 외부 리뷰 (백그라운드, ~7분)**
 
@@ -1085,13 +1086,15 @@ read-only 샌드박스는 `mkdtemp EPERM`이라 I/O 테스트를 돌리지 못�
 지적이 문서 정합이면 정정 후 재검증한다. **실측**(각 회차의 발견·판별·조치는 artifact의
 `## Reviews`가 정본이다 — 이 줄은 요약일 뿐이며, 아직 돌지 않은 회차는 적지 않는다):
 #1 `987a8d3` NOT READY(S2~S5) → 반영 · #2 `9271f20` #1 지적 전부 해소·새 결함 4건 → 반영 ·
-#3 `e098493` S1·S4 PASS, S2·S3·S5 → 반영.
+#3 `e098493` S1·S4 PASS, S2·S3·S5 → 반영 · #4 `2a0c90b` S1·S4 PASS, 나머지는 plan/spec 정합 → 반영 ·
+#5 `76facb7` S1·S3·S4 PASS, Task 6 유령 참조 → 반영 · **#6 `597154e` READY (S1~S5 PASS)**.
 
-- [ ] **Step 4: `harness-team ship`으로 spec·plan·artifact 최종 갱신**
+- [x] **Step 4: ship 정리 — spec·plan·artifact 최종 갱신**
 
 다이어그램은 이 task에서 옵트인하지 않았으므로 갱신 대상이 아니다.
+`harness-team`에 `ship` 하위명령은 없다 — ship은 `/harness-ship` 스킬이 규정하는 절차다(실행 중 확인).
 
-- [ ] **Step 5: 최종 검증 + 커밋**
+- [x] **Step 5: 최종 검증 + 커밋**
 
 ```bash
 npm test && npm run docs:check

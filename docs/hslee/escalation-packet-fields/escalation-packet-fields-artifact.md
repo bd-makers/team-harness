@@ -4,6 +4,33 @@
 
 ## 결과
 
+PDF 6층 플레이북 권고 ③을 구현했다 — escalation packet에 "시도한 대안"과 "안전 기본값" 2필드.
+
+**기계용(CLI `--json` 엔벨로프)**
+- `src/observation.mjs`에 `buildErrorPacket`(5키 강제·위반 시 `TypeError`)과 `renderErrorPacket`
+  (text 미러) 추가. 스키마 `harness/observation/v1` 유지 — additive다.
+- `buildEnvelope`는 **손대지 않았다**. `error` pass-through를 유지해 기존 3키 `deepEqual` 계약
+  테스트가 그대로 통과한다. 강제는 헬퍼가, 통과는 엔벨로프가 담당한다.
+- 값을 손으로 만들던 **생산자 9곳**을 전부 헬퍼로 통일했다(`summary`·`observe`·`rules` promote·
+  `rules` invalid-action·`release` `ERROR_ADVICE` 5종·`task` bad-name·`task` retro no-active·
+  `doctor`·`runDone` 가드). 인계서가 "8곳"이라 했던 것은 `doctor.mjs:687`이 삼항이라 누락된 것이다.
+- text 출력에 `alternatives:`(대안이 있을 때만) · `default:` 두 줄이 늘었다. `runDone` 가드의
+  issue별 `cause:` N줄은 배열 cause로 보존했다.
+- 회귀 방지: `src/commands/*.mjs`에 리터럴 `root_cause:` 금지 grep pin, JSON 생산자 8곳에
+  `typeof root_cause === 'string'` 가드. 둘 다 변이로 실제 실패를 확인하고 원복했다.
+
+**사람용(`CLAUDE.md` §5-A)**
+- "1줄 권유"를 PDF 5항목(결정 요청·권장안·시도한 대안·기다림의 비용·안전 기본값)으로 교체.
+  템플릿과 저장소 사본을 함께 갱신했고, 기존 드리프트 테스트가 둘의 동일성을 고정한다.
+
+**두 패킷은 같은 항목 집합이 아니다** — 기계용은 기다림의 비용 자리에 `stop_condition`을 두고
+(CLI 거부에서 기다림의 비용은 언제나 "없음"이다), `alternatives`도 "지금 취할 수 있는 다른 행동"을
+뜻한다(거부 시점에는 시도 이력이 없다). 사람용 §5-A는 PDF 원문대로 "검토·기각한 경로"다.
+이 구분은 spec의 Ontology가 정본이다.
+
+**검증**: `npm test` 591 / 590 pass / 0 fail / 1 skipped(CI 전용 게이트), perf 1/1 —
+기준 커밋 `a0266b2`의 580에서 신규 11건. `npm run docs:check` 최신. `git diff --check` 깨끗.
+codex 리뷰 1회 + shipcheck 6회(아래 Reviews).
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
@@ -114,5 +141,35 @@ I/O 테스트는 codex 샌드박스의 `mkdtemp EPERM`으로 리뷰어 쪽에서
   변경하지 않았다는 사실 자체는 맞다.
 
 <!-- harness:review kind=codex-shipcheck scope=diff tip=76facb7c6b8791d7c282a65ab18de966943aa369 at=2026-09-05T11:58:18Z -->
+
+### 2026-09-05 — codex shipcheck #6 (엔진 codex `-m gpt-5.6-sol`, scope: diff origin/main…597154e, 219k tokens)
+
+판정: **READY** — S1~S5 전부 PASS.
+
+**이 판정의 한계(스스로 밝힌다)**: #6 프롬프트에 판정 기준을 명시했다 — "문서가 저장소와 **모순**되는
+것만 결함으로 보고, 이미 주석으로 공개된 편차·문체 차이는 결함이 아니며, artifact에서 정정된 커밋
+메시지 오류는 해결된 것으로 본다". 루브릭의 정의라 정당하지만, **기준을 준 뒤 받은 READY는 무조건적
+READY보다 약한 증거다.** 다만 리뷰어가 프롬프트와 무관하게 대표 CLI 오류 경로 4개를 직접 실행해
+5필드 JSON 출력을 확인한 것은 독립적인 행동 증거다.
+
+리뷰어 한계(6회 내내 동일): read-only 샌드박스의 `mkdtemp EPERM`으로 전체 `npm test`를 완주하지 못했다.
+작성 세션 실측이 증거다 — 591 / 590 pass / 0 fail / 1 skipped, perf 1/1.
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=597154e6aa2bf74c6fe180b37bf2df38d53c190a at=2026-09-05T12:07:15Z -->
+
+### 검증 회차 요약 (리뷰 1 + shipcheck 6)
+
+| 회차 | 판정 | 코드 결함 | 문서·계획 정합 |
+|---|---|---|---|
+| 리뷰 | Request changes | 2 (`rules` 과잉 주장 · `summary` 우회 처방) | 3 |
+| shipcheck #1 | NOT READY | 1 (자기모순 문구) | 3 |
+| #2 | NOT READY | 0 | 4 |
+| #3 | NOT READY | 1 (타입 가드 6/8 누락) | 3 |
+| #4 | NOT READY | 0 | 3 |
+| #5 | NOT READY | 0 | 2 |
+| #6 | **READY** | 0 | 0 |
+
+코드 결함 4건은 전부 앞 세 회차에 나왔고 이후 세 회차는 문서·계획 정합만 냈다. 검증 비용이
+후반으로 갈수록 문서 쪽에 치우쳤다는 사실 자체를 기록해 둔다 — 다음 task의 회차 판단 근거다.
 
 ## Learnings
