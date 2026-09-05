@@ -35,3 +35,12 @@ docs/hslee/hslee-handoff.md                        |  2 +-
  .../summary-branch-guard-handoff.md                | 11 ++++++
  .../summary-branch-guard-plan.md                   |  6 ++--
  5 files changed, 59 insertions(+), 15 deletions(-)
+
+## 2026-09-05T15:06:28.641Z — 0aa6711 docs(task): shipcheck REJECT 2건 반영 — 옛 계약 잔존 제거·검증 증거를 출력 인용으로 교체
+docs/hslee/hslee-handoff.md                        |   2 +-
+ .../summary-branch-guard-artifact.md               | 109 +++++++++++++++++----
+ .../summary-branch-guard-context.md                |   2 +-
+ .../summary-branch-guard-handoff.md                |   8 ++
+ .../summary-branch-guard-plan.md                   |   4 +-
+ .../summary-branch-guard-spec.md                   |  18 ++--
+ 6 files changed, 112 insertions(+), 31 deletions(-)

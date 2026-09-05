@@ -27,7 +27,9 @@
 - [x] codex read-only 리뷰 → artifact `## Reviews`에 마커와 함께 기록, 발견 재현·판별 후 반영
       — P2 1건(BRG-01). 재현 후 **수용**하고 `139bd3f`에서 고쳤다(synced 판정을 `origin/HEAD`로
       좁힘). 회귀 테스트 추가 + mutation E로 커버리지 실증. 마커 `tip=`은 조치 커밋을 가리킨다
-- [ ] ship — spec·plan·artifact 최종 갱신 후 준비 완료 보고 (PR 생성은 사용자 지시 후)
+- [x] ship — spec·plan·artifact 최종 갱신 후 준비 완료 보고 (PR 생성은 사용자 지시 후)
+      — 다이어그램: 건너뜀(사용자 선택). 정합 검증(shipcheck): 실행 → REJECT(S1·S5 BLOCKER)
+      → 둘 다 수용·수정 후 재대조 통과. PR 생성은 지시 대기
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

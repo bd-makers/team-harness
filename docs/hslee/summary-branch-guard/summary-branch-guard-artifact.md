@@ -167,7 +167,7 @@ $ node bin/harness-team.mjs summary --check   # after
 - 리뷰어 한계: read-only 샌드박스라 전체 `npm test`를 재실행하지 못했다(알려진 제약).
   S5는 "인용의 형태와 수치 정합"으로 판정했고, 수치 간 모순은 없다고 확인했다.
 
-<!-- harness:review kind=codex-shipcheck scope=diff tip=SHIPCHECK_TIP at=2026-09-06T00:03:04Z -->
+<!-- harness:review kind=codex-shipcheck scope=diff tip=0aa6711d201cc2243a9f4ab644afb3b0ca046bd2 at=2026-09-06T00:03:04Z -->
 
 ## Learnings
 

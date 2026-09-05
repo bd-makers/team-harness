@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: `summary --write` 가드를 브랜치 이름이 아니라 HEAD == `origin/HEAD` 가리키는 브랜치로 판정
-- Current atomic step: ship 완료 보고 (구현·테스트·CHANGELOG·E2E·codex 리뷰 반영 전부 끝)
+- Current atomic step: 없음 — ship 완료. 다음 행동은 사용자 지시(PR 생성 / done)
 - Stop / human-decision condition: PR 생성은 사용자 지시가 있어야 한다. `[Unreleased]` 릴리스
   여부(0.30.0 후보)도 별도 결정.
 
@@ -26,7 +26,8 @@
 ## Resume checklist
 - 활성 task 설정돼 있는지 확인 (`.harness/active.json` — 새 워크트리에는 없다)
 - 커밋: `5bdf3d1`(spec·plan, cherry-pick) · `e59be1d`(구현·테스트·CHANGELOG)
-  · `4903262`(artifact·TCC) · `139bd3f`(BRG-01 수정)
+  · `4903262`(artifact·TCC) · `139bd3f`(BRG-01 수정) · `081b204`(학습 기록)
+  · `0aa6711`(shipcheck S1·S5 반영)
 - 남은 결정: PR 생성(사용자 지시) · `[Unreleased]` 릴리스 여부(0.30.0 후보, 버전 번호는 아직 쓰지 않는다)
 - 원본 브랜치 `claude/summary-branch-guard`(워크트리 todos-6ee0b5)는 방치했다 — 같은 내용이
   이 브랜치에 cherry-pick 돼 있다
