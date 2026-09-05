@@ -106,11 +106,12 @@ test('pin: src/commands/*.mjs 는 리터럴 root_cause: 를 쓰지 않는다 (�
   assert.deepEqual(offenders, [], `리터럴 root_cause: 를 쓰는 생산자: ${offenders.join(', ')}`);
 });
 
-// 배열 cause는 runDone 가드의 text 전용 출력에만 쓴다. buildEnvelope가 error를
-// 정규화하지 않는다는 사실이 기존 deepEqual 3키 계약(위 테스트)을 살리는 근거다.
+// buildEnvelope가 error를 정규화하지 않는다는 사실이 기존 deepEqual 3키 계약(위 테스트)을
+// 살리는 근거다. 이 테스트는 그 pass-through만 고정한다 — "배열 cause가 엔벨로프로 나가지
+// 않는다"는 규칙은 여기서 강제할 수 없고(엔벨로프는 무엇이든 통과시킨다), 실제 JSON 생산자의
+// root_cause 타입을 보는 tests/observation-commands.test.mjs·tests/rules.test.mjs가 고정한다.
 test('pin: buildEnvelope는 error를 정규화하지 않는다 (pass-through)', () => {
-  const packet = buildErrorPacket({ cause: ['a', 'b'], retry: 'r', safeDefault: 'd', stop: 's' });
-  assert.ok(Array.isArray(packet.root_cause), '헬퍼는 배열 cause를 그대로 보존한다');
+  const packet = buildErrorPacket({ cause: 'c', retry: 'r', safeDefault: 'd', stop: 's' });
   const env = buildEnvelope({ command: 'x', status: 'error', summary: 's', error: packet });
   assert.equal(env.error, packet, 'buildEnvelope는 같은 객체를 그대로 통과시킨다');
 });

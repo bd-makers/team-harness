@@ -276,10 +276,11 @@ export async function runRulesPromote(ctx) {
     await unlink(rulePath).catch(() => {});
     return fail(ctx, {
       code: 'artifact-write-failed',
-      cause: `${relArtifact} 쓰기 실패(${error?.code ?? error?.message}) — 방금 쓴 ${relRule} 은 되돌렸다`,
+      cause: `${relArtifact} 쓰기 실패(${error?.code ?? error?.message}) — 방금 쓴 ${relRule} 은 되돌리려 시도했다`,
       retry: 'artifact.md 의 권한·잠금을 확인한 뒤 같은 명령을 다시 실행',
       alternatives: ['artifact 쓰기가 계속 실패하면 규칙 파일만 수동으로 만들고 표기를 손으로 추가한다 — 표기 없는 규칙은 재승격을 막지 못한다'],
-      safeDefault: `${relRule} 은 되돌렸고 ${relArtifact} 도 바뀌지 않았다 — 승격 전 상태다`,
+      // unlink 실패는 삼켜지고 writeText는 원자적이지 않다 — 보장하지 못하는 상태를 주장하지 않는다.
+      safeDefault: `artifact 표기는 기록되지 않았다. ${relRule} 은 되돌리기까지 실패했으면 남아 있을 수 있고 ${relArtifact} 도 일부만 쓰였을 수 있다 — 재실행 전에 두 파일을 확인하라`,
       stop: 'artifact 표기 없이 규칙만 남기지 않는다',
     });
   }

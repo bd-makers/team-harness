@@ -290,6 +290,7 @@ test('runRules promote: 활성 task 없음 → no-active-task, exit 1, escalatio
     // escalation packet (권고 ③) — 대안과 무응답 시 남는 상태를 함께 준다.
     assert.ok(Array.isArray(env.error.alternatives) && env.error.alternatives.length > 0, 'alternatives');
     assert.ok(env.error.safe_default, 'safe_default');
+    assert.equal(typeof env.error.root_cause, 'string', 'JSON 엔벨로프의 root_cause 는 string (배열은 text 전용)');
     assert.equal(env.code, 'no-active-task');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
@@ -454,6 +455,7 @@ test('runRules --json: 첫 토큰이 promote 가 아니면 error envelope (code 
     // escalation packet (권고 ③) — 대안과 무응답 시 남는 상태를 함께 준다.
     assert.ok(Array.isArray(env.error.alternatives) && env.error.alternatives.length > 0, 'alternatives');
     assert.ok(env.error.safe_default, 'safe_default');
+    assert.equal(typeof env.error.root_cause, 'string', 'JSON 엔벨로프의 root_cause 는 string (배열은 text 전용)');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

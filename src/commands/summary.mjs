@@ -298,7 +298,9 @@ export async function runSummary(ctx) {
     return fail(json, 'summary', `기본 브랜치가 아니라 원장을 쓰지 않음 (현재: ${state.name})`, {
       cause: `공유 원장을 feature 브랜치에서 갱신하면 병렬 브랜치끼리 다시 충돌함 (기본 브랜치: ${bases.join(' 또는 ')})`,
       retry: `\`${bases[0]}\` 로 전환한 뒤 \`harness-team summary --write\` 실행`,
-      alternatives: ['머지 직후 워크트리에서 갱신해야 하면 `--force`로 가드를 무시하고 `git push origin HEAD:main` 으로 올린다'],
+      // 우회 경로는 이 명령의 escape hatch(--force)까지만 안내한다 — 어떻게 반영할지(직접 push냐
+      // PR이냐)는 프로젝트 정책이라 범용 CLI가 처방하지 않는다.
+      alternatives: ['기본 브랜치로 옮기기 어려운 상황이면 `--force`로 가드를 무시한다 — 반영 경로는 프로젝트의 브랜치 정책을 따를 것'],
       safeDefault: '원장 파일은 하나도 바뀌지 않는다',
     });
   }

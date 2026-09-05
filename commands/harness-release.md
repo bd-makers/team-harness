@@ -41,7 +41,7 @@ bump/검증/복사 로직은 모두 CLI(`harness-team release`)가 소유한다 
    - 어떤 파일도 변경되지 않는다. 출력된 계획(old→new, 캐시 경로, 마켓플레이스 경로)을 사용자에게 보여준다.
 
 3. **버전 불일치/스키마 에러가 나오면 멈춘다**:
-   - `✗ release:` 줄과 `cause:`/`retry:`/`stop:` 힌트를 사용자에게 그대로 전달한다.
+   - `✗ release:` 줄과 escalation 패킷 줄(`cause:`/`retry:`/`alternatives:`/`default:`/`stop:` — `alternatives:`는 대안이 있을 때만 나온다)을 사용자에게 그대로 전달한다.
    - 네 매니페스트의 `version`을 동일하게 맞추거나, `marketplace.json.plugins` 안에
      `plugin.json.name`과 같은 이름의 **자기 항목이 정확히 1개**가 되도록 고친 뒤 2번을 다시 실행한다.
      동반 플러그인 항목(외부 플러그인을 `source.sha`로 핀한 항목)은 버전 동기화 대상이 아니므로
