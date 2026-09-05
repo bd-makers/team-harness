@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: artifact `## Learnings` 항목을 사용자 승인 후 기계적으로 `.claude/rules/<slug>.md`(유래 메타 포함)로 승격하는 경로를 만든다 (PDF 권고 ②).
-- Current atomic step: Task 6.3 ship — 문서 최종 커밋 → codex shipcheck(S1~S5) → 준비 완료 보고 → push·PR(사용자 지시 후)
+- Current atomic step: Task 6.3 ship — shipcheck #1 NOT READY(S2·S5 문서 정합) 정정 커밋 → shipcheck #2 → 준비 완료 보고 → push·PR(사용자 지시 후)
 - Stop / human-decision condition: PR 생성·머지·릴리스는 사용자 지시. 리뷰 발견은 재현 후 반영/기각(자동 반영 금지).
 
 ## Constraints and settled decisions

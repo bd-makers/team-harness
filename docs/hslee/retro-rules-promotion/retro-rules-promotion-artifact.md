@@ -9,15 +9,45 @@
 **만든 것**
 - `harness-team rules promote [<n>] [--name <slug>] [--paths <a,b>]` — 활성 task artifact의 `## Learnings` 항목을 번호 목록으로 보여 주고(read-only),
   사용자가 고른 항목을 `.claude/rules/<slug>.md`로 복사(유래 마커 `<!-- harness:rule origin=<user>/<task> since=<YYYY-MM-DD> -->`) → artifact 원 항목 끝에
-  `(→ rules/<slug>.md, <날짜>)` 표기 → cursor 미러 재생성. 거부 6종(`no-active-task` exit 1 · `no-artifact`·`invalid-index`·`already-promoted`·`invalid-name`·`rule-exists` exit 2)은 모두 파일 무변경.
+  `(→ rules/<slug>.md, <날짜>)` 표기 → cursor 미러 재생성. 거부 7종(`no-active-task` exit 1 · `no-artifact`·`invalid-index`·`already-promoted`·`invalid-name`·`rule-exists`·`invalid-action` exit 2)은 모두 파일 무변경.
+  규칙을 쓴 뒤 artifact 표기 쓰기가 실패하면 방금 쓴 규칙을 되돌리고 `artifact-write-failed`(exit 2), cursor 미러 실패는 승격 유지 + `⚠️` 경고 + `harness-team sync` 안내(codex 리뷰 반영 후 상태).
 - `src/commands/rules.mjs` 한 모듈(순수: `parseLearnings`·`parseRuleMarker`·`renderRule`·`annotatePromoted` / I/O: `checkRuleProvenance`·`runRulesPromote`·`runRules`). `harness.mjs`는 `collectRuleFiles` export 한 단어만 변경.
 - doctor `rule provenance` warning(마커 없는 규칙 나열, exit 영향 없음, plugin-dev 게이트 없음). 규칙 템플릿 4종에 `origin=harness-aijient-team/templates since=2026-09-05` 마커.
 - 표면: `cli-args`(`rules` 행, `name`·`paths` 값 플래그) · `bin` 라우터 · `commands/harness-promote.md` · `skills/harness-promote/{SKILL.md,agents/openai.yaml}` · `plugin.json` · README 절 · CHANGELOG `[Unreleased]` · `templates/CLAUDE.md.hbs`§3 + 저장소 `CLAUDE.md`§3 한 줄 · overview 재생성.
 
-**검증**
-- `npm test` → unit+e2e 572 / pass 571 / fail 0 / skipped 1(CI 전용 게이트), perf 1/1. `npm run docs:check` → 최신.
-- `tests/rules.test.mjs` 25건(파서·렌더 왕복·러너 12분기·provenance 4·템플릿 계약·doctor 배선), `tests/cli-args.test.mjs` +1. 모든 Task에서 RED를 먼저 관찰했다(모듈 없음 → ESM export 없음 → unknown command → 마커 없음/export 없음 → manifest·agent-files 드리프트 3건).
-- 커밋: 7e17a8e(순수) → 646197e(러너) → d279791(CLI) → 3c11ba6(doctor·템플릿) → 57e3de6(표면) → 2a3c2fa(plan).
+**검증** — 리뷰 반영 뒤 최신 HEAD(`d21bddc`, 2026-09-05)에서 다시 실행한 원문 발췌(`skipped 1`은 CI 전용 게이트):
+
+```text
+$ git rev-parse --short HEAD
+d21bddc
+
+$ npm test    # 요약 줄만 발췌 (unit+e2e 러너 → perf 러너 순)
+ℹ tests 580
+ℹ pass 579
+ℹ fail 0
+ℹ skipped 1
+ℹ tests 1
+ℹ pass 1
+ℹ fail 0
+ℹ skipped 0
+
+$ npm run docs:check
+harness overview 생성 상태가 최신입니다.
+
+$ node --test tests/rules.test.mjs tests/cli-args.test.mjs
+ℹ tests 52
+ℹ pass 52
+ℹ fail 0
+ℹ skipped 0
+
+$ grep -c '^test(' tests/rules.test.mjs
+32
+```
+
+- `tests/rules.test.mjs` 32건 = 순수 8(파서·렌더 왕복·표기) + 러너 12(목록·성공·거부·json) + provenance/템플릿 계약/doctor 배선 5 + codex 리뷰 재현 7. `tests/cli-args.test.mjs` +2(rules 파싱·`--json` 도움말).
+- 모든 Task에서 RED를 먼저 관찰했다(모듈 없음 → ESM export 없음 → unknown command → 마커 없음/export 없음 → manifest·agent-files 드리프트 3건 → 리뷰 재현 8건 fail).
+- 커밋: 7e17a8e(순수) → 646197e(러너) → d279791(CLI) → 3c11ba6(doctor·템플릿) → 57e3de6(표면) → 2a3c2fa(plan) → 506e59a(리뷰 7건 반영) → d21bddc(리뷰 기록·spec 갱신).
+- 리뷰 전 수치(572/571, rules 25건)는 커밋 `57e3de6` 시점 값이며 위 원문으로 대체했다(shipcheck #1 S5 지적).
 
 **실제 실행 증거** — 임시 소비자 프로젝트(`tester/demo`, Learnings 3개), `node bin/harness-team.mjs … --target <tmp>`:
 
@@ -81,17 +111,33 @@ $ harness-team rules promote                       # 승격 후 목록
   2. [날짜 없음] 테스트 fixture는 mkdtemp로 만들고 finally에서 rm 한다
   3. … [promoted → rules/threshold-tests.md, 2026-09-05]
 
-$ printf "# 유래 없는 규칙\n" > .claude/rules/legacy.md; harness-team doctor --json | checks[label="rule provenance"]
+$ printf '# 유래 없는 규칙\n' > .claude/rules/legacy.md; harness-team doctor --json   # 아래는 envelope checks[] 중 label=rule provenance 항목만 발췌
 { "label": "rule provenance", "status": "warning",
   "detail": ".claude/rules에 유래 없는 규칙 1개: legacy.md — 각 파일 본문 첫 줄(frontmatter 뒤)에 `<!-- harness:rule origin=<user>/<task> since=<YYYY-MM-DD> -->`를 추가하거나 `harness-team rules promote`로 승격한 규칙만 두라" }
 ```
 
-이 저장소 자체: retro 전에는 `rules promote` → `no-data`(exit 0, retro 안내), retro로 이 task의 Learnings 5개를 기록한 뒤에는 같은 명령이 5개를 번호 목록으로 나열했다(승격은 하지 않음 — 이 저장소는 `.claude/rules`를 두지 않는다, D7). `doctor` → `.claude/rules` 부재라 `rule provenance` 항목 없음(0건).
+이 저장소 자체(승격은 하지 않음 — 이 저장소는 `.claude/rules`를 두지 않는다, D7). retro 전 출력은 `- rules promote: docs/hslee/retro-rules-promotion/retro-rules-promotion-artifact.md — Learnings 항목 없음` / `next: \`harness-team retro "<학습>"\` 으로 Learnings를 먼저 기록`(exit 0)이었고, retro 후:
+
+```text
+$ node bin/harness-team.mjs rules promote          # 이 저장소, retro로 Learnings 기록 후
+✓ rules promote: docs/hslee/retro-rules-promotion/retro-rules-promotion-artifact.md — Learnings 6개
+  1. [2026-09-05] cli-args의 '선언된 플래그는 읽힌다' 가드는 `flags.<key>`·`flags['<key>']` 리
+  2. [2026-09-05] ESM에서 아직 없는 named export를 import하는 테스트는 그 파일 전체가 link 
+  3. [2026-09-05] macOS perl `-0pi`로 소스를 스플라이스할 때 `─+`처럼 멀티바이트 문자에
+  4. [2026-09-05] zsh는 `CLI="node bin/x.mjs"; $CLI args`를 단어 분리하지 않아 `no such file or dire
+  5. [2026-09-05] 문서상 `.claude/rules` frontmatter 공인 키는 `paths`뿐이라 유래 같은 메타는
+  6. [2026-09-05] JavaScript `String.prototype.replace`의 문자열 치환은 `$&`·`` $` ``·`$'` 같은 `$`
+next: 승격할 항목을 골라 `harness-team rules promote [<n>] [--name <slug>] [--paths <a,b>]` 실행 —
+exit=0
+
+$ node bin/harness-team.mjs doctor 2>&1 | grep -c "rule provenance"   # .claude/rules 부재 → 항목 없음
+0
+```
 
 **리스크·미검증**
 - Claude Code가 `.claude/rules` 파일의 block-level HTML 주석도 컨텍스트 주입 전에 제거하는지는 문서가 "CLAUDE.md files"라고만 말해 미확인. 제거되지 않아도 마커 한 줄이 실릴 뿐 동작은 같다.
 - 기존 소비자 설치의 템플릿 사본(마커 없음)은 doctor 경고 대상 — 브레인스토밍에서 수용한 트레이드오프. 안내문에 수동 스탬프 방법을 넣었다.
-- `annotatePromoted`는 줄 단위로 다시 합치므로 CRLF artifact는 LF로 정규화된다(주석·spec에 명시). 사용자 Learnings 항목이 `paths` 없이 승격되면 항상 로드되는 규칙이 된다 — 슬래시 명령 2단계가 이를 알린다.
+- (해소) CRLF artifact의 LF 정규화는 처음에 "알려진 제약"으로 적었으나 codex 리뷰 P2로 격상돼 EOL 유지로 고쳤다(테스트로 고정). 남은 것: 사용자 Learnings 항목이 `paths` 없이 승격되면 항상 로드되는 규칙이 된다 — 슬래시 명령 2단계가 이를 알린다.
 - codex read-only 샌드박스는 `mkdtemp EPERM`이라 통합 테스트를 못 돌린다 — 리뷰는 정적 대조이며 `npm test`는 이 세션의 출력이 증거다.
 
 
@@ -119,6 +165,20 @@ I/O 테스트는 codex 샌드박스의 `mkdtemp EPERM`으로 리뷰어 쪽에서
 재리뷰: 생략(수정 범위가 한 모듈 안 ~40행 — handoff §3 결정). 대신 문서↔diff 정합은 별도 shipcheck 검증자(아래)에 맡긴다.
 
 <!-- harness:review kind=codex scope=diff tip=bc65ad32a3904e917a7ac9129c8a17534333271e at=2026-09-05T09:51:21Z -->
+
+### 2026-09-05 — codex shipcheck #1 (엔진 codex `-m gpt-5.6-sol`, 루브릭 S1~S5, scope: diff origin/main…d21bddc, 113k tokens)
+
+판정: **NOT READY** — S1·S3·S4 PASS, **S2 FAIL(MAJOR)**, **S5 FAIL(BLOCKER)**. 코드 결함 지적은 없음(문서 정합만).
+
+| id | 발견 | 판별 | 조치(문서만) |
+|---|---|---|---|
+| S5 | artifact 검증 항목이 산문이고 수치가 리뷰 전 상태(572/571·rules 25건)라 리뷰 후 기록(580/579·32건)과 충돌; `docs:check → 최신`도 출력 인용 아님; doctor 예시 `… \| checks[label=…]`는 실행 가능한 필터가 아님 | 진짜 — 리뷰 반영 뒤 검증 문단을 갱신하지 않았다 | 최신 HEAD에서 `npm test`·`docs:check`·`node --test`를 다시 실행해 **원문 발췌**로 교체, doctor 예시를 실제 명령 + "발췌" 주석으로 정정 |
+| S2 | plan Step 6.1이 `rules promote 2 --name api-errors`를 인용했다고 적었지만 실제 증거는 `1 --name api-input-validation`; 저장소 자체 실행은 산문 선언 | 진짜 — 계획 시점 서술을 실행 뒤 고치지 않았다 | plan 6.1을 실제 실행(번호·slug·명령)에 맞춰 정정하고 정정 사유 병기; 저장소 자체 실행 출력을 artifact에 인용 |
+| MAJOR | artifact 결과·리스크가 리뷰 전 상태 — "CRLF는 LF로 정규화" (구현은 EOL 유지), "거부 6종" (현재 7종 + `artifact-write-failed` 롤백 + 미러 경고) | 진짜 | 해당 문장 갱신 |
+| S4 | 이 shipcheck 자체를 `kind=codex-shipcheck` 마커로 기록해야 함 | 진짜 | 이 항목이 그 기록 |
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=d21bddcc34b2fc3a5de5d124d20854ca925814eb at=2026-09-05T10:04:11Z -->
+
 
 
 ## Learnings
