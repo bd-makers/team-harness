@@ -18,6 +18,8 @@ modified: 2026-09-05
 
 ## [Unreleased]
 
+## [0.27.0] - 2026-09-05
+
 ### Added
 - **`harness-team rules promote` / `/harness-promote` — retro → rules 승격 경로** — `harness-team retro`는 활성 task `artifact.md`의
   `## Learnings`에 append만 했고 학습을 `.claude/rules`로 올리는 코드 경로가 없었습니다(외부 6층 플레이북 비교 분석의 권고 ②).

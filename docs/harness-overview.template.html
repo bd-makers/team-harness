@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.26.0</span>
+      <span class="tag tag-purple">v0.27.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.27.0 — 학습이 규칙이 되는 길 <code>harness-team rules promote</code> · 유래 마커 · doctor <code>rule provenance</code>:</strong>
+    <br>
+    <code>0.27.0</code> <strong>활성 task artifact의 Learnings 항목을 사용자 승인 후 <code>.claude/rules/&lt;slug&gt;.md</code>로 복사하는 read-only 목록 + 승격 하위명령</strong> — 규칙 본문 첫 줄에 <code>&lt;!-- harness:rule origin=&lt;user&gt;/&lt;task&gt; since=&lt;YYYY-MM-DD&gt; --&gt;</code>가 붙고, artifact 원 항목 끝에는 <code>(→ rules/&lt;slug&gt;.md, &lt;날짜&gt;)</code>가 남아 재승격을 거부하며, cursor 미러가 재생성된다. 거부(<code>no-active-task</code>·<code>invalid-index</code>·<code>already-promoted</code>·<code>invalid-name</code>·<code>rule-exists</code> 등)는 전부 파일 무변경이고 대상 이름은 <code>lstat</code>로 점유를 봐 dangling symlink 탈출을 막는다. 규칙 템플릿 4종에 <code>origin=harness-aijient-team/templates</code> 마커, doctor에 마커 없는 규칙을 나열하는 <code>rule provenance</code> 경고(warning). <code>/harness-promote</code> 슬래시 명령과 Codex <code>harness-promote</code> 스킬이 함께 들어갔다. LLM 자동 승격은 없다.
+    <br><br>
     <strong>🆕 0.26.0 — 관측 로그의 첫 소비자 <code>harness-team observe</code>:</strong>
     <br>
     <code>0.26.0</code> <strong>observe-tools 훅이 써 온 JSONL을 읽는 read-only 하위명령</strong> — 창(기본 7일, 상한 14일) 안의 레코드를 일별·task별·도구 분류별로 집계하고(text 7열, <code>--json</code>은 전체 필드), 트립와이어 2종 <code>failure-rate-2x</code>(오늘 완료 ≥20·실패+거부 ≥5·비율이 직전 날들 평균의 2배)·<code>repeat-failure-3x</code>(한 세션 같은 도구 3회 실패)를 판정한다. 발화하면 exit 1이라 훅·CI의 센서가 된다. task 참조는 로컬 <code>.key</code>와 <code>docs/</code> 메타로만 HMAC을 재계산해 되돌리고(훅 파일 import 없음, 동일성은 테스트가 고정), 도구 이름은 복원하지 않는다. <code>/harness-observe</code> 슬래시 명령과 Codex <code>harness-observe</code> 스킬이 함께 들어갔다. 임계값 넷은 export 상수라 실사용 보정은 한 줄이다.
@@ -794,7 +798,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.26.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.27.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
