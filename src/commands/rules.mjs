@@ -1,7 +1,8 @@
 import { join } from 'node:path';
+import { lstat, unlink } from 'node:fs/promises';
 import { exists, readTextSafe, writeText } from '../fsx.mjs';
 import { buildEnvelope, emitObservation } from '../observation.mjs';
-import { collectRuleFiles, mirrorCursorRules } from '../harness.mjs';
+import { collectRuleFiles, mirrorCursorRules, splitRulePaths } from '../harness.mjs';
 import { readActive } from './task.mjs';
 
 // ── 순수 부분 ──────────────────────────────────────────────────────────────
@@ -28,8 +29,11 @@ export function ruleMarker({ origin, since }) {
 }
 
 export function parseRuleMarker(content) {
-  const match = RULE_MARKER_RE.exec(content ?? '');
-  if (!match) return null;
+  // 마커는 frontmatter 뒤 본문 *첫 줄*(앞 빈 줄 허용)에 있어야 유래다 — 본문 중간이나 fenced 예시에 적힌
+  // 마커 문자열을 유래로 치면 doctor가 유래 없는 규칙을 놓친다(codex 리뷰 P2, 2026-09-05).
+  const { body } = splitRulePaths(content ?? '');
+  const match = RULE_MARKER_RE.exec(body.trimStart());
+  if (!match || match.index !== 0) return null;
   const attrs = {};
   for (const kv of match[1].matchAll(/([a-z][a-z0-9-]*)=("[^"]*"|\S+)/gi)) {
     attrs[kv[1].toLowerCase()] = kv[2].replace(/^"|"$/g, '');
@@ -82,13 +86,15 @@ export function renderRule({ slug, text, origin, since, paths = [] }) {
 }
 
 // 표기는 항목의 *마지막* 줄에 붙는다 — 이어지는 줄이 있는 항목의 첫 줄에 붙이면 합친 본문 한가운데에 들어가
-// PROMOTED_SUFFIX_RE(`$` 앵커)가 못 본다. 줄 단위로 다시 합치므로 CRLF 파일은 LF로 정규화된다.
+// PROMOTED_SUFFIX_RE(`$` 앵커)가 못 본다. 줄바꿈은 파일이 쓰던 것(LF/CRLF)을 그대로 쓴다 — LF로 재조립하면
+// 표기 한 건 외의 모든 줄이 diff에 잡힌다(codex 리뷰 P2).
 export function annotatePromoted(artifact, index, slug, date) {
   const entry = parseLearnings(artifact).find(e => e.index === index);
   if (!entry) throw new RangeError(`no Learnings entry at index ${index}`);
+  const eol = artifact.includes('\r\n') ? '\r\n' : '\n';
   const lines = artifact.split(/\r?\n/);
   lines[entry.end] = `${lines[entry.end].replace(/\s+$/, '')} (→ rules/${slug}.md, ${date})`;
-  return lines.join('\n');
+  return lines.join(eol);
 }
 
 export function parsePathsFlag(value) {
@@ -110,13 +116,23 @@ export async function checkRuleProvenance(targetDir) {
     return `.claude/rules 읽기 실패(${error?.code ?? error?.message}) — 디렉터리 상태를 확인하라`;
   }
   const missing = [];
+  const unreadable = [];
   for (const rel of files) {
-    if (!parseRuleMarker(await readTextSafe(join(dir, rel)))) missing.push(rel);
+    const content = await readTextSafe(join(dir, rel));
+    // 읽기 실패(권한·dangling symlink)는 "유래 없음"과 처방이 다르다 — 스탬프를 권하면 잘못된 안내다(codex 리뷰 P3).
+    if (content === null) unreadable.push(rel);
+    else if (!parseRuleMarker(content)) missing.push(rel);
   }
-  if (!missing.length) return null;
-  missing.sort();
-  const stamp = ruleMarker({ origin: '<user>/<task>', since: '<YYYY-MM-DD>' });
-  return `.claude/rules에 유래 없는 규칙 ${missing.length}개: ${missing.join(', ')} — 각 파일 본문 첫 줄(frontmatter 뒤)에 \`${stamp}\`를 추가하거나 \`harness-team rules promote\`로 승격한 규칙만 두라`;
+  if (!missing.length && !unreadable.length) return null;
+  const parts = [];
+  if (missing.length) {
+    const stamp = ruleMarker({ origin: '<user>/<task>', since: '<YYYY-MM-DD>' });
+    parts.push(`유래 없는 규칙 ${missing.length}개: ${missing.sort().join(', ')} — 각 파일 본문 첫 줄(frontmatter 뒤)에 \`${stamp}\`를 추가하거나 \`harness-team rules promote\`로 승격한 규칙만 두라`);
+  }
+  if (unreadable.length) {
+    parts.push(`읽을 수 없는 규칙 ${unreadable.length}개: ${unreadable.sort().join(', ')} — 권한이나 심볼릭 링크 대상을 확인하라`);
+  }
+  return `.claude/rules에 ${parts.join('; ')}`;
 }
 
 function today() {
@@ -225,7 +241,10 @@ export async function runRulesPromote(ctx) {
   }
   const relRule = `.claude/rules/${name}.md`;
   const rulePath = join(ctx.targetDir, relRule);
-  if (await exists(rulePath)) {
+  // lstat: 무엇이든 그 이름을 차지하고 있으면 거부한다. exists()는 symlink를 따라가므로 dangling symlink를
+  // "없음"으로 보고, 이어지는 writeFile이 링크 대상(디렉터리 밖일 수 있다)을 만들어 버린다(codex 리뷰 P1).
+  const occupied = await lstat(rulePath).then(() => true, () => false);
+  if (occupied) {
     return fail(ctx, {
       code: 'rule-exists',
       cause: `${relRule} 이(가) 이미 있음 — 덮어쓰지 않는다`,
@@ -239,29 +258,65 @@ export async function runRulesPromote(ctx) {
   const origin = `${user}/${task}`;
   // 검증은 위에서 끝났다. 쓰기 순서: 규칙 → artifact 표기 → 미러. 표기가 먼저면 규칙 쓰기 실패 시 유령 표기가 남는다.
   await writeText(rulePath, renderRule({ slug: name, text: entry.text, origin, since, paths }));
-  await writeText(artifactPath, annotatePromoted(artifact, entry.index, name, since));
-  const mirrored = (await mirrorCursorRules(ctx)).filter(r => r.action === 'mirror').length;
+  try {
+    await writeText(artifactPath, annotatePromoted(artifact, entry.index, name, since));
+  } catch (error) {
+    // 표기 없이 규칙만 남으면 재시도가 rule-exists로 막힌다 — 방금 쓴 규칙을 되돌려 재시도 가능하게 한다(codex 리뷰 P2).
+    await unlink(rulePath).catch(() => {});
+    return fail(ctx, {
+      code: 'artifact-write-failed',
+      cause: `${relArtifact} 쓰기 실패(${error?.code ?? error?.message}) — 방금 쓴 ${relRule} 은 되돌렸다`,
+      retry: 'artifact.md 의 권한·잠금을 확인한 뒤 같은 명령을 다시 실행',
+      stop: 'artifact 표기 없이 규칙만 남기지 않는다',
+    });
+  }
+  // 미러는 파생물이라 실패해도 승격을 되돌리지 않는다 — `harness-team sync`가 같은 결과를 다시 만든다.
+  let mirrored = null;
+  let mirrorError = null;
+  try {
+    mirrored = (await mirrorCursorRules(ctx)).filter(r => r.action === 'mirror').length;
+  } catch (error) {
+    mirrorError = error?.code ?? error?.message ?? String(error);
+  }
 
   const summary = `${relRule} 승격 (origin=${origin} since=${since}${paths.length ? `, paths=${paths.join(',')}` : ''})`;
   const nextActions = ['규칙 본문을 다듬고 커밋하라', '되돌리려면 규칙 파일 삭제 + artifact 표기 제거 + `harness-team sync`'];
+  if (mirrorError) nextActions.unshift('`harness-team sync` 로 cursor 미러를 다시 만들어라');
   if (ctx.flags?.json) {
     emitObservation(buildEnvelope({
       command: 'rules', status: 'success', summary, nextActions, artifacts: [relRule, relArtifact],
-      extra: { action: 'promote', index: entry.index, rule: relRule, origin, since, paths, mirrored },
+      extra: { action: 'promote', index: entry.index, rule: relRule, origin, since, paths, mirrored, mirror_error: mirrorError },
     }));
   } else {
     console.log(`✓ rules promote: ${summary}`);
     console.log(`✓ artifact: ${relArtifact} #${entry.index} 에 승격 표기`);
-    console.log(`✓ cursor mirror: ${mirrored} rule(s)`);
+    if (mirrorError) console.log(`⚠️ cursor mirror: 실패(${mirrorError}) — \`harness-team sync\` 로 재생성하라`);
+    else console.log(`✓ cursor mirror: ${mirrored} rule(s)`);
     console.log(`next: ${nextActions[0]}`);
   }
-  return { status: 'success', rule: relRule, index: entry.index, origin, since, paths, mirrored };
+  return { status: 'success', rule: relRule, index: entry.index, origin, since, paths, mirrored, mirrorError };
 }
 
 export async function runRules(ctx) {
-  if ((ctx.taskArgs || [])[0] === 'promote') return runRulesPromote(ctx);
+  const action = (ctx.taskArgs || [])[0];
+  if (action === 'promote') return runRulesPromote(ctx);
   process.exitCode = 2;
-  console.log('rules: invalid-action');
-  console.log(`usage: ${USAGE}`);
+  if (ctx.flags?.json) {
+    // --json 계약은 명령 전체에 걸친다 — 잘못된 하위동작도 envelope로 답한다(codex 리뷰 P2).
+    emitObservation(buildEnvelope({
+      command: 'rules',
+      status: 'error',
+      summary: 'rules 실패: invalid-action',
+      error: {
+        root_cause: `알 수 없는 하위동작 ${JSON.stringify(action ?? null)} — 지원: promote`,
+        safe_retry: `\`${USAGE}\` 로 다시 실행`,
+        stop_condition: '하위동작이 promote 가 아니면 아무것도 쓰지 않는다',
+      },
+      extra: { action: action ?? null, code: 'invalid-action' },
+    }));
+  } else {
+    console.log('rules: invalid-action');
+    console.log(`usage: ${USAGE}`);
+  }
   return { status: 'invalid-action' };
 }

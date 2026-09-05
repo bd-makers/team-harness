@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, readFile, readdir, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, readdir, rm, symlink, chmod } from 'node:fs/promises';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
@@ -375,4 +375,90 @@ test('runDoctor --json: 마커 없는 규칙이 있으면 checks[] 에 rule prov
     assert.equal(check.status, 'warning');
     assert.match(check.detail, /orphan\.md/);
   } finally { restore(); process.exitCode = prev; await rm(dir, { recursive: true, force: true }); }
+});
+
+// ── codex 리뷰(2026-09-05) 발견 재현 ──────────────────────────────────────
+
+test('runRules promote: 대상 이름이 dangling symlink 여도 rule-exists — 링크 바깥으로 쓰지 않는다 (codex P1)', async () => {
+  const dir = await makeProject();
+  const outside = join(dir, 'outside-target.md');
+  try {
+    await mkdir(join(dir, '.claude/rules'), { recursive: true });
+    await symlink(outside, join(dir, '.claude/rules/evil.md'));
+    const { result, exitCode } = await run(dir, ['promote', '1'], { name: 'evil' });
+    assert.equal(exitCode, 2);
+    assert.equal(result.code, 'rule-exists');
+    assert.equal(await exists(outside), false, '링크 대상이 생성되면 안 된다');
+    assert.equal(await readFile(join(dir, ARTIFACT_PATH), 'utf8'), ARTIFACT);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('runRules promote: artifact 쓰기 실패 시 방금 쓴 규칙 파일을 되돌리고 artifact-write-failed (codex P2)',
+  { skip: process.getuid?.() === 0 ? 'root 는 권한 비트를 무시한다' : false }, async () => {
+  const dir = await makeProject();
+  try {
+    await chmod(join(dir, ARTIFACT_PATH), 0o444);
+    const { result, exitCode } = await run(dir, ['promote', '1'], { name: 'orphan' });
+    assert.equal(exitCode, 2);
+    assert.equal(result.code, 'artifact-write-failed');
+    assert.equal(await exists(join(dir, '.claude/rules/orphan.md')), false, '고아 규칙이 남으면 안 된다');
+    assert.equal(await readFile(join(dir, ARTIFACT_PATH), 'utf8'), ARTIFACT);
+  } finally { await chmod(join(dir, ARTIFACT_PATH), 0o644).catch(() => {}); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('runRules promote: cursor 미러 실패는 승격을 되돌리지 않고 경고 + sync 안내 (codex P2)', async () => {
+  const dir = await makeProject();
+  try {
+    await mkdir(join(dir, '.cursor'), { recursive: true });
+    await writeFile(join(dir, '.cursor/rules'), 'not a directory\n');   // mkdir .cursor/rules 가 실패한다
+    const { result, logs, exitCode } = await run(dir, ['promote', '1'], { name: 'first' });
+    assert.equal(exitCode, undefined);
+    assert.equal(result.status, 'success');
+    assert.equal(result.mirrored, null);
+    assert.equal(await exists(join(dir, '.claude/rules/first.md')), true);
+    assert.deepEqual(parseLearnings(await readFile(join(dir, ARTIFACT_PATH), 'utf8'))[0].promoted?.rule, 'first');
+    assert.match(logs.join('\n'), /⚠️ cursor mirror: .*harness-team sync/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('parseRuleMarker: 마커는 frontmatter 뒤 본문 첫 줄(앞 빈 줄 허용)에만 유효 — 본문 중간·fenced 예시는 무시 (codex P2)', () => {
+  assert.equal(parseRuleMarker('# 규칙\n\n예시:\n```\n<!-- harness:rule origin=u/t since=2026-09-05 -->\n```\n'), null);
+  assert.deepEqual(parseRuleMarker('\n\n<!-- harness:rule origin=u/t since=2026-09-05 -->\n# x\n'), { origin: 'u/t', since: '2026-09-05' });
+  assert.deepEqual(parseRuleMarker('---\npaths:\n  - "a"\n---\n\n<!-- harness:rule origin=u/t since=2026-09-05 -->\n'), { origin: 'u/t', since: '2026-09-05' });
+});
+
+test('annotatePromoted: CRLF artifact 는 CRLF 를 유지하고 표기 한 건만 바뀐다 (codex P2)', () => {
+  const crlf = ARTIFACT.replace(/\n/g, '\r\n');
+  const out = annotatePromoted(crlf, 1, 'first', '2026-09-06');
+  assert.equal((out.match(/\r\n/g) || []).length, (crlf.match(/\r\n/g) || []).length);
+  assert.equal(out.replace(' (→ rules/first.md, 2026-09-06)', ''), crlf);
+  assert.match(out, /- 첫 학습 — 한 줄 \(→ rules\/first\.md, 2026-09-06\)\r\n/);
+  assert.deepEqual(parseLearnings(out)[0].promoted, { rule: 'first', at: '2026-09-06' });
+});
+
+test('runRules --json: 첫 토큰이 promote 가 아니면 error envelope (code invalid-action), exit 2 (codex P2)', async () => {
+  const dir = await makeProject();
+  try {
+    const { logs, exitCode } = await run(dir, ['nope'], { json: true });
+    assert.equal(exitCode, 2);
+    assert.equal(logs.length, 1);
+    const env = JSON.parse(logs[0]);
+    assert.equal(env.command, 'rules');
+    assert.equal(env.status, 'error');
+    assert.equal(env.code, 'invalid-action');
+    assert.ok(env.error.root_cause && env.error.safe_retry && env.error.stop_condition);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkRuleProvenance: 읽을 수 없는 규칙(dangling symlink)은 "유래 없음"이 아니라 별도 항목으로 보고 (codex P3)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-prov-unread-'));
+  try {
+    await mkdir(join(dir, '.claude/rules'), { recursive: true });
+    await writeFile(join(dir, '.claude/rules/ok.md'), `${ruleMarker({ origin: 'u/t', since: '2026-09-05' })}\n# ok\n`);
+    await symlink(join(dir, 'gone.md'), join(dir, '.claude/rules/broken.md'));
+    const w = await checkRuleProvenance(dir);
+    assert.ok(typeof w === 'string');
+    assert.match(w, /읽을 수 없는 규칙 1개: broken\.md/);
+    assert.doesNotMatch(w, /유래 없는 규칙/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });
