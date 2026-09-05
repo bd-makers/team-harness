@@ -18,3 +18,13 @@ docs/hslee/hslee-handoff.md                        |  9 ++--
  templates/.claude/settings.json                    |  5 ++
  tests/settings-permissions.test.mjs                | 61 ++++++++++++++++++++++
  5 files changed, 82 insertions(+), 8 deletions(-)
+
+## 2026-09-05T13:14:45.553Z — 3c2ed3f feat(agents): 핵심 원칙에 신뢰 경계 한 줄 + CHANGELOG (권고 ④)
+AGENTS.md                                          |  2 ++
+ CHANGELOG.md                                       | 18 ++++++++++++
+ docs/hslee/hslee-handoff.md                        |  2 +-
+ .../settings-ask-tier/settings-ask-tier-handoff.md |  8 ++++++
+ .../settings-ask-tier/settings-ask-tier-plan.md    | 10 +++----
+ templates/AGENTS.md.hbs                            |  2 ++
+ tests/agent-files.test.mjs                         | 33 ++++++++++++++++++++++
+ 7 files changed, 69 insertions(+), 6 deletions(-)
