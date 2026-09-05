@@ -5,6 +5,7 @@
 ## Completed
 - ✅ ci-docs-check-gitignore
 - ✅ doctor-decision-headings
+- ✅ escalation-packet-fields
 - ✅ observability-consumer
 - ✅ retro-rules-promotion
 - ✅ scaffold-pm-permissions

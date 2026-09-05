@@ -77,5 +77,6 @@
 | hslee | scaffold-pm-permissions | ✅ done | 2026-09-03 |
 | hslee | ci-docs-check-gitignore | ✅ done | 2026-09-05 |
 | hslee | doctor-decision-headings | ✅ done | 2026-09-05 |
+| hslee | escalation-packet-fields | ✅ done | 2026-09-05 |
 | hslee | observability-consumer | ✅ done | 2026-09-05 |
 | hslee | retro-rules-promotion | ✅ done | 2026-09-05 |
