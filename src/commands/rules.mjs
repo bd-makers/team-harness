@@ -149,6 +149,8 @@ function listLearnings(ctx, { entries, relArtifact }) {
 }
 
 export async function runRulesPromote(ctx) {
+  // 값 플래그는 `flags.<key>` 리터럴로 읽는다 — cli-args 가드 테스트가 선언된 플래그의 소비를 이 형태로 확인한다.
+  const flags = ctx.flags ?? {};
   const active = await readActive(ctx.targetDir);
   if (!active || !active.task) {
     return fail(ctx, {
@@ -191,7 +193,7 @@ export async function runRulesPromote(ctx) {
       stop: '같은 항목을 두 번 승격하지 않는다',
     });
   }
-  const name = ctx.flags?.name;
+  const name = flags.name;
   if (typeof name !== 'string' || !RULE_NAME_RE.test(name)) {
     return fail(ctx, {
       code: 'invalid-name',
@@ -211,7 +213,7 @@ export async function runRulesPromote(ctx) {
     });
   }
 
-  const paths = parsePathsFlag(ctx.flags?.paths);
+  const paths = parsePathsFlag(flags.paths);
   const since = today();
   const origin = `${user}/${task}`;
   // 검증은 위에서 끝났다. 쓰기 순서: 규칙 → artifact 표기 → 미러. 표기가 먼저면 규칙 쓰기 실패 시 유령 표기가 남는다.

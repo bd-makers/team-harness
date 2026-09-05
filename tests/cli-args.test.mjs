@@ -180,3 +180,14 @@ test('cli-args: the CLI exits 0 on --help and 2 on an unknown flag', async () =>
   assert.equal(failure.code, 2);
   assert.match(failure.stderr, /unknown flag --bogus/);
 });
+
+test('cli-args: rules promote 는 번호 positional 과 --name/--paths 값 플래그를 받고, dangling --name 은 오류', () => {
+  const inv = resolveInvocation(['rules', 'promote', '2', '--name', 'api-errors', '--paths', 'src/**/*.ts,lib/**']);
+  assert.equal(inv.kind, 'run');
+  assert.deepEqual(inv.positional, ['promote', '2']);
+  assert.equal(inv.flags.name, 'api-errors');
+  assert.equal(inv.flags.paths, 'src/**/*.ts,lib/**');
+  assert.equal(resolveInvocation(['rules', 'promote']).kind, 'run');
+  assert.equal(resolveInvocation(['rules', 'promote', '1', '--name']).kind, 'error');
+  assert.equal(resolveInvocation(['rules', 'promote', '--days', '3']).kind, 'error', 'rules 는 --days 를 받지 않는다');
+});
