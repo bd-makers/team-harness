@@ -4,7 +4,7 @@
 settings-ask-tier
 
 ## Last Commit (2026-09-05)
-967af5b docs(task): settings-ask-tier — spec·plan 작성 (PDF 권고 ④)
+d23a98d feat(settings): permissions.ask 계층 도입 — push·PR 생성/머지 (권고 ④)
 
 ## Full Context
 → docs/hslee/settings-ask-tier/settings-ask-tier-handoff.md
