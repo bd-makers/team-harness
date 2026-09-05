@@ -619,9 +619,16 @@ export async function runDone(ctx) {
   if (issues.length && !force) {
     process.exitCode = 1;
     console.log(`✗ done: 종결 가드에 걸림 (${issues.length}개)`);
-    for (const i of issues) console.log(`cause: ${i}`);
-    console.log(`retry: 위 항목을 해소한 뒤 다시 \`harness-team done\` 실행`);
-    console.log(`stop: 의도적으로 무시하려면 \`harness-team done --force\``);
+    // 배열 cause로 issue별 줄을 보존한다(text 전용). --force는 우회 경로이므로
+    // stop_condition이 아니라 alternatives에 둔다.
+    const packet = buildErrorPacket({
+      cause: issues,
+      retry: '위 항목을 해소한 뒤 다시 `harness-team done` 실행',
+      alternatives: ['`harness-team done --force` 로 가드를 무시하고 종결한다 — 무시한 사유를 artifact.md 에 남길 것'],
+      safeDefault: 'task는 활성으로 남고 handoff·artifact 어느 파일도 바뀌지 않는다',
+      stop: '가드가 지적한 증거가 실제로 없으면 종결하지 말 것',
+    });
+    for (const line of renderErrorPacket(packet)) console.log(line);
     return;
   }
   if (issues.length && force) {
