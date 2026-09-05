@@ -5,7 +5,7 @@
 새 작업은 `harness-team task <name>` 으로 시작한다.
 
 ## Last Completed Task (2026-09-05)
-`doctor-decision-headings` — done
+`ci-docs-check-gitignore` — done
 
 ## Full Context
-→ docs/hslee/doctor-decision-headings/doctor-decision-headings-handoff.md
+→ docs/hslee/ci-docs-check-gitignore/ci-docs-check-gitignore-handoff.md
