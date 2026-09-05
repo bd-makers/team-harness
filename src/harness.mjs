@@ -384,7 +384,7 @@ export function splitRulePaths(content) {
 // visited: a link is circular only when it reaches a directory it is already inside.
 // A global visited set would also swallow two separate aliases of one shared rules
 // directory, dropping the second alias's rules — the same silent omission this walk exists to fix.
-async function collectRuleFiles(dir, { base = '', chain = new Set() } = {}) {
+export async function collectRuleFiles(dir, { base = '', chain = new Set() } = {}) {
   const { readdir, realpath, stat } = await import('node:fs/promises');
   const real = await realpath(dir).catch(() => dir);
   if (chain.has(real)) return [];
