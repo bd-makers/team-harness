@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-escalation-packet-fields
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-05)
-9e78d89 docs(task): escalation-packet-fields — spec·plan 확정 (권고 ③)
+## Last Completed Task (2026-09-05)
+`escalation-packet-fields` — done
 
 ## Full Context
 → docs/hslee/escalation-packet-fields/escalation-packet-fields-handoff.md
