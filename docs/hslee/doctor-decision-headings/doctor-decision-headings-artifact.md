@@ -13,6 +13,8 @@
 - `CHANGELOG.md` [Unreleased] Fixed 항목.
 - 검증: TDD RED(단언 3건 의도한 사유로 실패) → GREEN. 드리프트 가드는 `## D7`을 상수에서 임시 제거해 실패를 확인한 뒤
   복원. `npm test` 전체 통과(unit+e2e 526, perf 1), `npm run docs:check` 최신.
+- ship(2026-09-05): 다이어그램 건너뜀(task 생성 시 옵트아웃). 정합 검증(shipcheck) 미실행 — 상수 1줄·테스트·문서
+  규모라 codex 일반 리뷰(위 Reviews)로 대체. 커밋 dc48bf3(fix)·949ef51(task docs), base origin/main.
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
