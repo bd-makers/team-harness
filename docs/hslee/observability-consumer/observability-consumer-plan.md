@@ -709,7 +709,7 @@ CHANGELOG `[Unreleased]`:
 
 - [x] **Step 5.1: 실제 실행 증거** — 임시 프로젝트에 훅으로 레코드 30건(실패 5 포함)을 만들고 `node bin/harness-team.mjs observe`·`--json`·`--days 1` 출력을 artifact `## 결과`에 인용. 이 저장소에서는 `not-installed` 안내가 나오는 것을 인용.
 - [x] **Step 5.2: 외부 read-only 리뷰** — `/harness-review codex` 절차(`-m gpt-5.6-sol`, `< /dev/null`), 발견 재현·판별 후 반영, artifact `## Reviews` 마커.
-- [ ] **Step 5.3: ship** — spec·plan 최종 갱신, artifact 결과·검증 출력·리스크·학습, 다이어그램 건너뜀 기록 → 커밋·push·PR(사용자 지시 후) → CI pass 확인.
+- [x] **Step 5.3: ship** — PR #73, CI run 33954164845 success(Run tests ✓ · Check generated docs ✓) — spec·plan 최종 갱신, artifact 결과·검증 출력·리스크·학습, 다이어그램 건너뜀 기록 → 커밋·push·PR(사용자 지시 후) → CI pass 확인.
 - [ ] **Step 5.4: 머지 후 `harness-team done` → 기본 브랜치에서 `summary --write`**
 
 ## Ontology 변경 로그

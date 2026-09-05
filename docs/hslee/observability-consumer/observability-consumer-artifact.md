@@ -70,6 +70,7 @@ $ node bin/harness-team.mjs observe --days 99   # exit 2 — ✗ observe: --days
 - 이 저장소는 훅을 dogfood하지 않아 `observe`가 항상 `not-installed`다 — 소비자 프로젝트에서만 데이터가 보인다.
 
 - 다이어그램: 건너뜀 (task 생성 시 옵트아웃, 2026-09-05)
+- PR: https://github.com/bd-makers/team-harness/pull/73 — CI run 33954164845 `test (24)` success (Run tests ✓ · Check generated docs ✓). 머지·done은 지시 대기.
 
 
 ## Reviews
