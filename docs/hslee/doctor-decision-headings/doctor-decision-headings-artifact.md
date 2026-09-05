@@ -15,6 +15,7 @@
   복원. `npm test` 전체 통과(unit+e2e 526, perf 1), `npm run docs:check` 최신.
 - ship(2026-09-05): 다이어그램 건너뜀(task 생성 시 옵트아웃). 정합 검증(shipcheck) 미실행 — 상수 1줄·테스트·문서
   규모라 codex 일반 리뷰(위 Reviews)로 대체. 커밋 dc48bf3(fix)·949ef51(task docs), base origin/main.
+- PR: https://github.com/bd-makers/team-harness/pull/71 — CI `test (24)` pass, merge commit 458487e (2026-09-05).
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
@@ -43,3 +44,6 @@
 - "검사 목록 ⊆ 정본" 형태의 계약 테스트는 정본이 자라는 드리프트를 못 잡는다 — 집합 동등으로 고정한다.
 - CHANGELOG 헤더 주석에 `## [Unreleased]` 문구가 있어 단순 문자열 첫 매치가 주석에 걸린다 — 줄 시작 앵커로 실제 헤딩을 찾는다.
 - codex 설정 모델이 CLI 버전보다 앞서면 `exec`가 400으로 죽는다 — `-m`으로 캐시의 하위 모델을 지정해 재시도하고 artifact에 명기한다.
+- post-commit 훅(`harness-team handoff`)은 방금 커밋을 handoff에 기록하므로 handoff를 커밋하면 다시 dirty가 된다 —
+  handoff 커밋 직후의 자기참조 갱신분은 `git checkout -- <handoff 2파일>`로 버려야 트리가 깨끗해진다(main이 깨끗한 이유).
+- `summary --write`는 기본 브랜치 가드가 있어 worktree의 feature 브랜치에서는 돌지 않는다 — 원장 갱신은 main 체크아웃에서만.
