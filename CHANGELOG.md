@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-09-05
+modified: 2026-09-06
 ---
 
 # Changelog
@@ -17,6 +17,8 @@ modified: 2026-09-05
 -->
 
 ## [Unreleased]
+
+## [0.30.0] - 2026-09-06
 
 ### Changed
 - **`summary --write` 가드가 브랜치 이름 대신 커밋을 본다** — 브랜치 이름이 기본 브랜치가
