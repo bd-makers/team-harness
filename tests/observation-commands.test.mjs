@@ -66,6 +66,9 @@ test('release --json: 에러(빈 dir → manifest 부재) → status error + err
     assert.equal(env.command, 'release');
     assert.equal(env.status, 'error');
     assert.ok(env.error && env.error.root_cause && env.error.safe_retry && env.error.stop_condition);
+    // escalation packet (권고 ③)
+    assert.ok(Array.isArray(env.error.alternatives), 'alternatives는 배열');
+    assert.ok(env.error.safe_default, 'safe_default는 비어 있지 않다');
     assert.equal(process.exitCode, 1);
   } finally {
     cap.restore(); process.exitCode = prev;

@@ -3,7 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { buildEnvelope, emitObservation } from '../observation.mjs';
+import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 
 const pexec = promisify(execFile);
 
@@ -450,48 +450,58 @@ export async function runRelease(ctx) {
     return res;
   } catch (err) {
     process.exitCode = 1;
-    const advice = ERROR_ADVICE[err.kind] || ERROR_ADVICE.generic;
+    const packet = buildErrorPacket(ERROR_ADVICE[err.kind] || ERROR_ADVICE.generic);
     if (json) {
       emitObservation(buildEnvelope({
         command: 'release',
         status: 'error',
         summary: `release 실패: ${err.message}`,
-        error: { root_cause: advice.cause, safe_retry: advice.retry, stop_condition: advice.stop },
+        error: packet,
       }));
     } else {
       console.log(`✗ release: ${err.message}`);
-      console.log(`cause: ${advice.cause}`);
-      console.log(`retry: ${advice.retry}`);
-      console.log(`stop: ${advice.stop}`);
+      for (const line of renderErrorPacket(packet)) console.log(line);
     }
   }
 }
 
-// Per-kind cause/retry/stop advice so the catch block never misdirects the user.
+// Per-kind escalation packet so the catch block never misdirects the user. 아래 4개 kind는
+// 전부 첫 writeFile(‘4. Compute the SURGICAL rewrites’ 블록 뒤) 이전에 throw하므로 '무변경'이
+// 사실이다. generic만 쓰기 이후의 예기치 못한 오류를 포함할 수 있어 문구가 다르다.
 const ERROR_ADVICE = {
   'version-mismatch': {
     cause: '4개 매니페스트(package.json/.claude-plugin/plugin.json/.claude-plugin/marketplace.json/.codex-plugin/plugin.json)의 version이 서로 다름',
     retry: '네 파일의 version을 동일한 현재 버전으로 맞춘 뒤 재실행',
+    alternatives: ['`git log -p -- package.json` 으로 마지막 합의된 버전을 확인해 네 파일을 그 값으로 맞춘다'],
+    safeDefault: '매니페스트·태그·커밋 어느 것도 만들어지지 않는다',
     stop: '어느 값이 옳은지 모호하면 git history로 마지막 합의된 버전을 확인하라',
   },
   'bad-bump': {
     cause: 'bump 인자가 major|minor|patch 또는 유효한 x.y.z(선행 0 불가)가 아님',
     retry: 'major|minor|patch 또는 올바른 semver를 인자로 주고 재실행',
+    alternatives: ['버전을 직접 고르지 말고 `major|minor|patch` 중 하나를 주어 자동 계산에 맡긴다'],
+    safeDefault: '버전은 현재 값 그대로 남는다',
     stop: '명시적 버전은 선행 0 없는 정수 3개여야 한다 (예: 1.2.3, not 01.02.03)',
   },
   schema: {
     cause: '플러그인 매니페스트 스키마 위반 — marketplace.json에 자기 항목(plugin.json.name과 같은 이름)이 정확히 1개가 아니거나 Claude/Codex plugin name이 불일치',
     retry: 'marketplace.json.plugins 안에서 자기 항목을 정확히 1개로 만들고(동반 플러그인 항목은 그대로 둔다) .claude-plugin/plugin.json 및 .codex-plugin/plugin.json의 name을 일치시킨 뒤 재실행',
+    alternatives: ['동반 플러그인 항목이 원인이면 그 항목은 그대로 두고 자기 항목만 1개로 정리한다 — 핀은 source.sha로 표현한다'],
+    safeDefault: '매니페스트·마켓플레이스 파일 모두 바뀌지 않는다',
     stop: '스키마는 수동 점검이 필요하다 — 자동 수정하지 말 것. 동반 항목에는 version 필드를 넣지 않는다(핀은 source.sha로 표현한다)',
   },
   'manifest-format': {
     cause: '매니페스트의 `"version": "x"` 필드가 정확히 1회 나타나지 않음 — 형식이 예상과 다름',
     retry: '해당 파일에서 version 필드를 표준 형식(`"version": "x.y.z"`, 공백 1개)으로 정규화한 뒤 재실행',
+    alternatives: ['손으로 정규화하기 어려우면 마지막 정상 커밋에서 그 파일만 복원한 뒤 재실행한다'],
+    safeDefault: '자동 치환을 중단했으므로 파일은 원래 내용 그대로다',
     stop: '안전을 위해 자동 치환을 중단했다 — 파일 포맷을 직접 확인하라',
   },
   generic: {
     cause: '파일 시스템 오류 또는 예기치 못한 오류 가능 — 경로/권한 확인',
     retry: '원인 메시지를 확인하고 수정 후 재실행',
+    alternatives: [],
+    safeDefault: '실패 시점까지의 변경이 남을 수 있다 — `git status` 로 확인한 뒤 되돌리고 재실행',
     stop: '반복 실패 시 수동 점검',
   },
 };
