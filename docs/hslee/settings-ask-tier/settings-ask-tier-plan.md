@@ -2,8 +2,8 @@
 
 ## 목표
 
-init이 쓰는 settings 템플릿에 `permissions.ask` 3개(`Bash(git push*)`·`Bash(gh pr create*)`·
-`Bash(gh pr merge*)`)를 넣고, `AGENTS.md` 핵심 원칙에 신뢰 경계 한 줄을 더한다.
+init이 쓰는 settings 템플릿에 `permissions.ask` 3개(`Bash(git push *)`·`Bash(gh pr create *)`·
+`Bash(gh pr merge *)`)를 넣고, `AGENTS.md` 핵심 원칙에 신뢰 경계 한 줄을 더한다.
 `src/`는 무변경 — 템플릿과 테스트만 바뀐다.
 
 ## 단계

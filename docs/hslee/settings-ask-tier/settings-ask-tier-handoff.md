@@ -44,3 +44,9 @@ CHANGELOG.md                                       |  4 ++-
  templates/.claude/settings.json                    |  6 ++---
  tests/settings-permissions.test.mjs                | 10 +++++--
  8 files changed, 62 insertions(+), 9 deletions(-)
+
+## 2026-09-05T13:30:06.739Z — c9ce0f8 docs(task): artifact 결과·검증 증거·학습 기록 (ship 3~5단계)
+docs/hslee/hslee-handoff.md                        |  2 +-
+ .../settings-ask-tier-artifact.md                  | 45 ++++++++++++++++++++++
+ .../settings-ask-tier/settings-ask-tier-handoff.md | 11 ++++++
+ 3 files changed, 57 insertions(+), 1 deletion(-)

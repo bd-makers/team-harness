@@ -31,12 +31,25 @@ $ npm test
 $ npm run docs:check
 harness overview 생성 상태가 최신입니다.
 
-$ git diff --stat origin/main...HEAD | tail -1
- 13 files changed, 386 insertions(+), 5 deletions(-)
+$ git diff --stat origin/main...HEAD -- templates/ tests/ AGENTS.md CHANGELOG.md | tail -1
+ 6 files changed, 129 insertions(+)
 ```
 
-RED 확인: 구현 전 `node --test tests/settings-permissions.test.mjs` → `fail 6`,
-`node --test tests/agent-files.test.mjs` → `fail 2`. 각각 구현 후 0으로 전환됐다.
+diff stat은 **제품 표면(templates·tests·AGENTS.md·CHANGELOG)** 으로 한정해 인용한다 —
+task 문서를 포함한 전체 수치는 이 artifact를 커밋할 때마다 자기 자신을 세느라 바뀌므로
+고정할 수 없다(shipcheck #1 S5가 잡은 낡은 `386`이 그 사례다). 전체 수치가 필요하면
+sha와 함께 읽는다: `c9ce0f8` 시점 `13 files changed, 442 insertions(+), 5 deletions(-)`.
+
+RED → green 전환 (구현 전 실행한 실제 출력):
+
+```
+$ node --test tests/settings-permissions.test.mjs      # ask 구현 전
+ℹ tests 22   ℹ pass 16   ℹ fail 6
+$ node --test tests/agent-files.test.mjs               # 신뢰 경계 줄 추가 전
+ℹ tests 31   ℹ pass 29   ℹ fail 2
+```
+
+구현 후 같은 명령은 각각 `fail 0`(22/22, 31/31)이다.
 
 - 다이어그램: 건너뜀 — task 생성 시 옵트인에서 사용자가 "아니오"를 선택했다(2026-09-05).
   plan에 다이어그램 단계가 없는 것이 곧 그 상태다.
@@ -61,6 +74,27 @@ RED 확인: 구현 전 `node --test tests/settings-permissions.test.mjs` → `fa
 
 
 <!-- harness:review kind=codex scope=diff tip=cf0de7d994e48d1948a0f482917049177f061fc9 at=2026-09-05T13:28:13Z -->
+
+
+### 2026-09-05 · codex-shipcheck #1 (`codex exec --sandbox read-only -m gpt-5.6-sol`) · scope=diff (base `origin/main`, tip `c9ce0f8`)
+
+ship 7단계 정합 검증(D6 적대적 검증). 판정: **SHIP FAIL — BLOCKER 1 · MAJOR 0.**
+
+| id | 판정 | 발견 | 판별 | 조치 |
+|---|---|---|---|---|
+| S1 | pass | spec 요구사항 3개가 모두 diff에 대응하고 제외 범위도 기록됨 | — | — |
+| S2 | pass | plan의 `- [x]`가 `967af5b`~`c9ce0f8` 커밋에 대응 | — | — |
+| S3 | pass | 제품 변경이 templates·AGENTS.md·tests·CHANGELOG로 한정, `src/` 무변경 | — | — |
+| S4 | pass | codex 리뷰가 마커와 함께 기록됨 | — | — |
+| S5 | **FAIL (BLOCKER)** | artifact가 `386 insertions`를 실제 출력이라 적었으나 현재 diff는 `442`다. RED 결과도 출력 인용이 아닌 산문(`fail 6`·`fail 2`)이다 | **진짜 결함** — 전체 diff stat은 artifact 자신을 커밋할 때마다 바뀌는데 그 사실을 적지 않고 한 시점 값을 고정값처럼 인용했다. RED도 실제로 돌렸으나 출력을 옮기지 않았다 | diff stat 인용을 **제품 표면 한정**(`6 files changed, 129 insertions(+)`)으로 바꾸고 전체 수치는 sha와 함께만 읽도록 명시. RED 출력 2건을 실제 텍스트로 인용 |
+
+rubric 외 지적: plan 목표에 무공백형 `Bash(git push*)`가 남아 spec·구현과 불일치 →
+**진짜 결함**, 공백형으로 정리했다.
+
+검증자 한계: read-only 샌드박스가 `mkdtemp`를 EPERM으로 막아 전체 스위트를 독립 재실행하지
+못했다(`docs:check` exit 0과 쓰기 없는 ask 테스트 3개는 재실행해 통과 확인).
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=c9ce0f88f6ce437295f34c54736fdebff88dcc32 at=2026-09-05T13:35:15Z -->
 
 ## Learnings
 
