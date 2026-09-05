@@ -5,6 +5,7 @@ paths:
   - "src/features/**/hooks/**/*.ts"
   - "src/services/**/*.ts"
 ---
+<!-- harness:rule origin=harness-aijient-team/templates since=2026-09-05 -->
 # 상태 관리 규칙
 
 ## 상태 분류 및 도구 선택

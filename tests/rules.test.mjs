@@ -11,6 +11,8 @@ import { splitRulePaths } from '../src/harness.mjs';
 import { runRules } from '../src/commands/rules.mjs';
 import { exists } from '../src/fsx.mjs';
 import { OBSERVATION_SCHEMA } from '../src/observation.mjs';
+import { checkRuleProvenance, TEMPLATE_RULE_ORIGIN } from '../src/commands/rules.mjs';
+import { runDoctor } from '../src/commands/doctor.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -305,4 +307,72 @@ test('runRules: 첫 토큰이 promote 가 아니면 invalid-action + usage, exit
     assert.equal(result.status, 'invalid-action');
     assert.match(logs[1], /^usage: harness-team rules promote \[<n>\] \[--name <slug>\] \[--paths <a,b>\]$/);
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// ── 유래 검사 · 템플릿 계약 · doctor 배선 ────────────────────────────────────
+
+const TEMPLATE_RULES_DIR = join(ROOT, 'templates/.claude/rules');
+
+// 템플릿이 곧 가장 강한 "유래 있음" fixture — 마커를 빼먹으면 모든 신규 설치가 doctor 경고를 받는다(checkDecisionLog 계약과 같은 방식).
+test('templates/.claude/rules 4종은 본문 첫 줄에 유효한 harness:rule 마커를 지닌다 (템플릿↔검사 계약)', async () => {
+  const files = (await readdir(TEMPLATE_RULES_DIR)).filter(f => f.endsWith('.md')).sort();
+  assert.deepEqual(files, ['navigation.md', 'state-management.md', 'styling.md', 'testing.md']);
+  for (const f of files) {
+    const content = await readFile(join(TEMPLATE_RULES_DIR, f), 'utf8');
+    const marker = parseRuleMarker(content);
+    assert.ok(marker, `${f}: 마커 없음`);
+    assert.equal(marker.origin, TEMPLATE_RULE_ORIGIN, f);
+    const { paths, body } = splitRulePaths(content);
+    assert.ok(paths.length > 0, `${f}: paths frontmatter 는 유지돼야 한다`);
+    assert.ok(body.startsWith('<!-- harness:rule '), `${f}: 마커는 frontmatter 뒤 본문 첫 줄`);
+  }
+});
+
+test('checkRuleProvenance: .claude/rules 없음 → null', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-prov-'));
+  try { assert.equal(await checkRuleProvenance(dir), null); }
+  finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkRuleProvenance: 템플릿 4종을 복사한 설치 → null', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-prov-tpl-'));
+  try {
+    await mkdir(join(dir, '.claude/rules'), { recursive: true });
+    for (const f of await readdir(TEMPLATE_RULES_DIR)) {
+      await writeFile(join(dir, '.claude/rules', f), await readFile(join(TEMPLATE_RULES_DIR, f)));
+    }
+    assert.equal(await checkRuleProvenance(dir), null);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkRuleProvenance: 마커 없음·since 없음 규칙(하위 디렉터리 포함)만 정렬해 나열 + 스탬프 안내', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-prov-miss-'));
+  try {
+    await mkdir(join(dir, '.claude/rules/sub'), { recursive: true });
+    await writeFile(join(dir, '.claude/rules/ok.md'), `${ruleMarker({ origin: 'u/t', since: '2026-09-05' })}\n# ok\n`);
+    await writeFile(join(dir, '.claude/rules/zeta.md'), '<!-- harness:rule origin=u/t -->\n# since 없음\n');
+    await writeFile(join(dir, '.claude/rules/sub/alpha.md'), '# 마커 없음\n');
+    const w = await checkRuleProvenance(dir);
+    assert.ok(typeof w === 'string');
+    assert.match(w, /유래 없는 규칙 2개: sub\/alpha\.md, zeta\.md/);
+    assert.doesNotMatch(w, /ok\.md/);
+    assert.match(w, /<!-- harness:rule origin=<user>\/<task> since=<YYYY-MM-DD> -->/);
+    assert.match(w, /harness-team rules promote/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('runDoctor --json: 마커 없는 규칙이 있으면 checks[] 에 rule provenance warning (fail 아님)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-prov-doctor-'));
+  await mkdir(join(dir, '.claude/rules'), { recursive: true });
+  await writeFile(join(dir, '.claude/rules/orphan.md'), '# 유래 없는 규칙\n');
+  const { logs, restore } = capture();
+  const prev = process.exitCode;
+  try {
+    await runDoctor({ targetDir: dir, root: ROOT, flags: { json: true } });
+    const env = JSON.parse(logs.join('\n'));
+    const check = env.checks.find(c => c.label === 'rule provenance');
+    assert.ok(check, 'rule provenance check 존재');
+    assert.equal(check.status, 'warning');
+    assert.match(check.detail, /orphan\.md/);
+  } finally { restore(); process.exitCode = prev; await rm(dir, { recursive: true, force: true }); }
 });

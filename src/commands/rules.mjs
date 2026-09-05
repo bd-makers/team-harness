@@ -98,6 +98,27 @@ export function parsePathsFlag(value) {
 
 // ── I/O 부분 ───────────────────────────────────────────────────────────────
 
+// doctor용. 마커가 없거나 origin·since 중 하나라도 빠진 규칙을 나열한다. `.claude/rules`가 없으면 검사할 것이 없다(null).
+// 읽기 실패도 경고로 돌려준다 — warn 수준 검사가 doctor를 crash 시키면 envelope 자체가 안 나온다.
+export async function checkRuleProvenance(targetDir) {
+  const dir = join(targetDir, '.claude/rules');
+  if (!(await exists(dir))) return null;
+  let files;
+  try {
+    files = await collectRuleFiles(dir);
+  } catch (error) {
+    return `.claude/rules 읽기 실패(${error?.code ?? error?.message}) — 디렉터리 상태를 확인하라`;
+  }
+  const missing = [];
+  for (const rel of files) {
+    if (!parseRuleMarker(await readTextSafe(join(dir, rel)))) missing.push(rel);
+  }
+  if (!missing.length) return null;
+  missing.sort();
+  const stamp = ruleMarker({ origin: '<user>/<task>', since: '<YYYY-MM-DD>' });
+  return `.claude/rules에 유래 없는 규칙 ${missing.length}개: ${missing.join(', ')} — 각 파일 본문 첫 줄(frontmatter 뒤)에 \`${stamp}\`를 추가하거나 \`harness-team rules promote\`로 승격한 규칙만 두라`;
+}
+
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
