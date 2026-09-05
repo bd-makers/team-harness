@@ -117,6 +117,28 @@ test('trip wire repeat-failure-3x: 3 failed of the same session+tool fires; 2, o
   assert.equal(summarizeObservability(spread, { now: NOW, days: 1 }).trip_wires[1].fired, false);
 });
 
+// ---- codex 리뷰(2026-09-05) 반영: 타입 방어 · UTC 일 판정 · 정확한 2× 경계
+test('summarize: a non-string task_ref never throws — it is treated as (no task)', () => {
+  const out = summarizeObservability([rec({ task_ref: 123 }), rec({ task_ref: { x: 1 } })], { now: NOW, days: 1 });
+  assert.deepEqual(out.by_task.map(t => t.label), ['(no task)']);
+  assert.equal(out.by_task[0].finished, 2);
+});
+
+test('summarize: recorded_at is bucketed by its UTC instant, not by its first 10 characters', () => {
+  // 2026-09-04T23:30-02:00 == 2026-09-05T01:30Z → 오늘
+  const out = summarizeObservability([rec({ recorded_at: '2026-09-04T23:30:00.000-02:00' })], { now: NOW, days: 2 });
+  assert.equal(out.by_day.find(d => d.day === '2026-09-05').finished, 1);
+  assert.equal(out.by_day.find(d => d.day === '2026-09-04').finished, 0);
+});
+
+test('trip wire failure-rate-2x: exactly 2x baseline fires (>=), just under does not', () => {
+  const baseline = [...day('2026-09-04', 15), ...day('2026-09-04', 5, { phase: 'failed' })]; // 0.25
+  const exact = summarizeObservability([...baseline, ...day('2026-09-05', 10), ...day('2026-09-05', 10, { phase: 'failed' })], { now: NOW, days: 7 }); // 0.50
+  assert.equal(exact.trip_wires[0].fired, true);
+  const under = summarizeObservability([...baseline, ...day('2026-09-05', 11), ...day('2026-09-05', 9, { phase: 'failed' })], { now: NOW, days: 7 }); // 0.45
+  assert.equal(under.trip_wires[0].fired, false);
+});
+
 // ---- 읽기 · 역매핑: fixture는 실제 훅으로 쓴다 (작성자와 같은 바이트를 보는지가 요점)
 function hookPayload(event, over = {}) {
   seq += 1;
@@ -147,13 +169,15 @@ test('read: hook-written records are read back; malformed lines, symlinks, non-j
     await observeToolEvent(hookPayload('PostToolUseFailure', { error: 'boom' }), { projectDir: dir, now: new Date('2026-09-04T10:00:00.000Z') });
     await observeToolEvent(hookPayload('PostToolUse'), { projectDir: dir, now: new Date('2026-08-20T10:00:00.000Z') }); // 창 밖
     const today = join(dir, OBSERVABILITY_BASE, '2026-09-05');
-    await writeFile(join(today, 'zz-000.jsonl'), 'not json\n{"v":2,"phase":"succeeded"}\n{"v":1,"phase":"succeeded"}\n');
+    await writeFile(join(today, 'zz-000.jsonl'), 'not json\n{"v":2,"phase":"succeeded"}\n{"v":1,"phase":"succeeded"}\n'
+      + '{"v":1,"phase":"succeeded","session_ref":"x","tool_category":"shell","recorded_at":"2026-09-05T10:00:00.000Z","task_ref":123}\n'
+      + '{"v":1,"phase":"succeeded","session_ref":"x","tool_category":"shell","recorded_at":"not-a-date"}\n');
     await writeFile(join(today, 'notes.txt'), '{"v":1}\n');
     await symlink(join(today, 'zz-000.jsonl'), join(today, 'link-000.jsonl'));
     const out = await readObservabilityRecords(dir, { now, days: 7 });
     assert.equal(out.status, 'ok');
     assert.deepEqual(out.records.map(r => r.phase).sort(), ['failed', 'started', 'succeeded']);
-    assert.equal(out.skippedLines, 3, 'bad json + v2 + missing fields');
+    assert.equal(out.skippedLines, 5, 'bad json + v2 + missing fields + non-string task_ref + unparseable date');
   } finally { await cleanup(); }
 });
 

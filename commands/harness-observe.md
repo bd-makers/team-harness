@@ -9,7 +9,8 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" observe $ARGUMENTS
 ```
 
 observe-tools 훅이 쓴 도구 관측 JSONL(`.harness/observability/v1/<day>/*.jsonl`)을 읽어 **일별·task별·도구 분류별
-스코어카드**(호출·완료·failed·denied·실패거부율·p50/p95·바이트·usage 토큰)와 **트립와이어 2종**을 보고한다.
+스코어카드**와 **트립와이어 2종**을 보고한다. text 표는 started·finished·failed·denied·rate·p95·intr 열이고,
+`--json`의 `scorecard`에 succeeded·p50·바이트·usage 토큰까지 전체 필드가 있다.
 로그를 수정·삭제하지 않는다. 도구 이름·세션 id는 HMAC 참조라 복원하지 않고, task 참조만 로컬 `docs/<user>/<task>/`로 되돌린다.
 
 - `failure-rate-2x` — 오늘(UTC) 완료 ≥ 20건·실패+거부 ≥ 5건이고 실패·거부율이 직전 날들 평균의 2배 이상.

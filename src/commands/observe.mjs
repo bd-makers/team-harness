@@ -111,7 +111,7 @@ function repeatFailureTripWire(records) {
       tool_category: record.tool_category, count: 0, last_at: '',
     };
     run.count += 1;
-    if (record.recorded_at > run.last_at) run.last_at = record.recorded_at;
+    if (run.last_at === '' || Date.parse(record.recorded_at) > Date.parse(run.last_at)) run.last_at = record.recorded_at;
     runs.set(key, run);
   }
   const hits = [...runs.values()]
@@ -136,9 +136,13 @@ async function regularEntry(path, { dir = false } = {}) {
   } catch { return false; }
 }
 
+// A line that reaches summarize must not be able to crash it: task_ref is used as a
+// string key and recorded_at as an instant, so both are checked here (codex P2, 2026-09-05).
 function validRecord(value) {
   return value !== null && typeof value === 'object' && value.v === 1
-    && REQUIRED_FIELDS.every(field => typeof value[field] === 'string');
+    && REQUIRED_FIELDS.every(field => typeof value[field] === 'string')
+    && (value.task_ref === null || value.task_ref === undefined || typeof value.task_ref === 'string')
+    && !Number.isNaN(Date.parse(value.recorded_at));
 }
 
 export async function readObservabilityRecords(targetDir, { now = new Date(), days = OBSERVE_DEFAULT_DAYS } = {}) {
@@ -190,12 +194,19 @@ export async function resolveTaskRefs(targetDir) {
   return refs;
 }
 
+// Day of a record = the UTC day of its instant. The hook writes toISOString() (always Z),
+// but an offset timestamp near midnight must still land on the right UTC day (codex P3).
+function recordDay(record) {
+  const ms = typeof record.recorded_at === 'string' ? Date.parse(record.recorded_at) : NaN;
+  return Number.isNaN(ms) ? null : utcDay(new Date(ms));
+}
+
 export function summarizeObservability(records, { now, days, taskNames = new Map() }) {
   const window = windowDays(now, days);
-  const inWindow = records.filter(r => window.includes(String(r.recorded_at).slice(0, 10)));
-  const dayGroups = groupBy(inWindow, r => r.recorded_at.slice(0, 10));
+  const inWindow = records.filter(r => window.includes(recordDay(r)));
+  const dayGroups = groupBy(inWindow, recordDay);
   const by_day = window.map(day => ({ day, ...finishBucket(dayGroups.get(day) ?? newBucket()) }));
-  const by_task = [...groupBy(inWindow, r => r.task_ref ?? null)]
+  const by_task = [...groupBy(inWindow, r => (typeof r.task_ref === 'string' ? r.task_ref : null))]
     .map(([task_ref, bucket]) => ({
       task_ref,
       label: task_ref === null ? '(no task)' : (taskNames.get(task_ref) ?? task_ref.slice(0, 8)),
