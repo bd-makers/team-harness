@@ -96,4 +96,23 @@ I/O 테스트는 codex 샌드박스의 `mkdtemp EPERM`으로 리뷰어 쪽에서
 
 <!-- harness:review kind=codex-shipcheck scope=diff tip=2a0c90b7e4981e222199162278010c0e6d2eb380 at=2026-09-05T11:48:41Z -->
 
+### 2026-09-05 — codex shipcheck #5 (엔진 codex `-m gpt-5.6-sol`, scope: diff origin/main…76facb7, 153k tokens)
+
+판정: **NOT READY** — **S1·S3·S4 PASS**(S3가 이번에 PASS로 올라와 3/5). 남은 S2·S5 두 건 모두 진짜다.
+
+| id | 발견 | 판별 | 조치 |
+|---|---|---|---|
+| S2 | 닫힌 Task 6이 `tests/task.test.mjs`와 `makeGuardedTaskFixture()`를 실행·커밋했다고 기록하는데 **둘 다 존재하지 않는다**. 실제 `ae378d0`은 `tests/done-guard.test.mjs`의 `makeFixture`를 썼고 이 편차는 어디에도 기록되지 않았다 | 진짜 — 계획 단계에서 "기존 setup을 재사용하라"고 적으면서 그 파일·헬퍼 이름을 **확인하지 않고 지어냈고**, 구현할 때 실제 이름을 찾아 쓰고는 plan을 고치지 않았다. `for f in $(grep -o "tests/[a-z-]*\.test\.mjs" plan)`로 전수 대조해 유령 참조가 이 하나뿐임을 확인 | plan의 8개 참조를 실제 파일·헬퍼·코드로 정정하고 Task 6에 "실행 중 변경" 블록으로 사유를 남겼다 |
+| S5 | 커밋 `ae378d0` 본문이 "Task 8의 pin이 배열 root_cause의 JSON 유출을 고정한다"고 주장하지만, 그 pin은 이를 전혀 강제하지 못했다(리뷰 P2-3). MINOR: `117db1d` 본문의 "스냅샷 12개"는 그 커밋 시점에도 13개였다 | 진짜 — 둘 다 **커밋 메시지의 사실 오류**다 | 커밋 메시지는 되쓰지 않는다(메시지 정정만을 위해 8개 커밋을 rebase하는 것은 위험 대비 이득이 없다). 대신 아래 "커밋 메시지 정정"에 남겨 기록이 거짓으로 남지 않게 한다 |
+
+#### 커밋 메시지 정정
+
+- `ae378d0` — "Task 8의 pin이 고정" **틀림**. 그 pin은 pass-through만 검사했고 배열의 JSON 유출을
+  막지 못했다. 실제 보장은 생산자별 `typeof root_cause === 'string'` 가드 8곳이며, 이는 리뷰 P2-3
+  이후에 들어왔다(`987a8d3`에서 6곳, `2a0c90b`에서 8곳 완성).
+- `117db1d` — "버전 스냅샷 12개" **틀림**. 그 커밋 시점에도 `docs/harness-overview-*.html`은 13개였다.
+  변경하지 않았다는 사실 자체는 맞다.
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=76facb7c6b8791d7c282a65ab18de966943aa369 at=2026-09-05T11:58:18Z -->
+
 ## Learnings

@@ -629,7 +629,7 @@ retro no-active(`:661-680`):
 
 - [x] **Step 4: GREEN 관찰**
 
-Run: `node --test tests/observation-commands.test.mjs tests/task.test.mjs`
+Run: `node --test tests/observation-commands.test.mjs tests/done-guard.test.mjs`
 Expected: PASS.
 
 - [x] **Step 5: 커밋**
@@ -646,7 +646,13 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
 
 **Files:**
 - Modify: `src/commands/task.mjs:611-625`
-- Test: `tests/task.test.mjs` (done 가드 테스트)
+- Test: `tests/done-guard.test.mjs` (done 가드 테스트)
+
+> **실행 중 변경**: 계획을 쓸 때 `tests/task.test.mjs`와 `makeGuardedTaskFixture()`라는 이름을
+> 적었으나 **둘 다 존재하지 않는다** — done 가드 테스트의 실제 위치는 `tests/done-guard.test.mjs`이고
+> fixture 헬퍼는 `makeFixture({ plan, artifact })`, 로그 캡처는 `captureLogs()`다. 아래 Step들은
+> 실제로 쓴 코드로 정정했다. (계획 단계에서 "기존 setup을 재사용하라"고만 적고 그 이름을
+> 확인하지 않은 채 지어낸 것이 원인 — shipcheck #5가 잡았다.)
 
 **Interfaces:**
 - Consumes: `buildErrorPacket`, `renderErrorPacket` (Task 1)
@@ -654,32 +660,34 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
 
 - [x] **Step 1: RED**
 
-`tests/task.test.mjs`에 done 가드 출력 테스트를 추가한다(기존 가드 테스트가 있으면 그 옆에).
+`tests/done-guard.test.mjs` 끝에 done 가드 출력 테스트를 추가한다.
 
 ```js
-// setup은 기존 done 가드 테스트에서 그대로 가져온다 — `grep -n "runDone" tests/task.test.mjs` 로
-// 가드에 걸리는 fixture를 찾아 복사한다. collectDoneIssues 는 plan 체크박스 외에도 여러 증거를
-// 보므로 fixture를 새로 지어내면 가드에 안 걸려 테스트가 조용히 무의미해진다.
+// setup은 그 파일의 기존 헬퍼를 그대로 쓴다 — collectDoneIssues 는 plan 체크박스 외에도 여러
+// 증거를 보므로 fixture를 새로 지어내면 가드에 안 걸려 테스트가 조용히 무의미해진다.
+// artifact 인자를 생략하면 "artifact.md 없음" + "미완 체크박스"로 issue가 2개 이상 나온다.
 test('done 가드: issue별 cause 줄을 보존하고 alternatives·default 줄을 낸다', async () => {
-  const dir = await makeGuardedTaskFixture(); // ← 기존 테스트의 setup을 그대로 재사용
-  const logs = [];
-  const orig = console.log;
-  console.log = (...a) => logs.push(a.join(' '));
-  const prev = process.exitCode;
+  const { dir } = await makeFixture({ plan: '# demo — Plan\n\n## 단계\n- [ ] 미완\n' });
+  const prevExit = process.exitCode;
+  const { logs, restore } = captureLogs();
   try {
     await runDone({ targetDir: dir, flags: {} });
     const causes = logs.filter(l => l.startsWith('cause: '));
-    assert.ok(causes.length >= 1, 'issue마다 cause 줄');
-    assert.ok(logs.some(l => l.startsWith('alternatives: ')), 'alternatives 줄');
-    assert.ok(logs.some(l => l.startsWith('default: ')), 'default 줄');
-    assert.ok(logs.some(l => l.startsWith('stop: ')), 'stop 줄');
-  } finally { console.log = orig; process.exitCode = prev; await rm(dir, { recursive: true, force: true }); }
+    assert.ok(causes.length >= 2, `issue마다 cause 줄 (got ${causes.length})`);
+    const alternatives = logs.filter(l => l.startsWith('alternatives: '));
+    assert.equal(alternatives.length, 1, 'alternatives 줄 1개');
+    assert.match(alternatives[0], /--force/, '우회 경로는 alternatives에 있다');
+    assert.equal(logs.filter(l => l.startsWith('default: ')).length, 1, 'default 줄 1개');
+    const stops = logs.filter(l => l.startsWith('stop: '));
+    assert.equal(stops.length, 1, 'stop 줄 1개');
+    assert.doesNotMatch(stops[0], /--force/, 'stop은 우회 방법을 담지 않는다');
+  } finally { restore(); process.exitCode = prevExit; await rm(dir, { recursive: true, force: true }); }
 });
 ```
 
 - [x] **Step 2: RED 관찰**
 
-Run: `node --test tests/task.test.mjs`
+Run: `node --test tests/done-guard.test.mjs`
 Expected: FAIL — `alternatives: ` 줄이 없다.
 
 - [x] **Step 3: GREEN**
@@ -705,14 +713,14 @@ Expected: FAIL — `alternatives: ` 줄이 없다.
 
 - [x] **Step 4: GREEN 관찰**
 
-Run: `node --test tests/task.test.mjs tests/e2e/*.test.mjs`
+Run: `node --test tests/done-guard.test.mjs tests/e2e/*.test.mjs`
 Expected: PASS. e2e에 `stop: 의도적으로 무시하려면` 문자열을 고정한 테스트가 있으면 새 문구로 고친다
 (`grep -rn "의도적으로 무시하려면" tests`로 먼저 확인).
 
 - [x] **Step 5: 커밋**
 
 ```bash
-git add src/commands/task.mjs tests/task.test.mjs
+git add src/commands/task.mjs tests/done-guard.test.mjs
 git commit -m "feat(task): done 가드에 alternatives·safe_default — issue별 cause 줄 보존"
 git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/escalation-packet-fields-handoff.md
 ```
@@ -1053,7 +1061,8 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
 >   `tests/agent-files.test.mjs`(주석) · `spec.md`·`plan.md`
 > - shipcheck #3(커밋 `2a0c90b`): `tests/summary.test.mjs`·`tests/observe.test.mjs`(타입 가드 8/8 완성) ·
 >   `tests/observation.test.mjs`(주석) · `spec.md`·`plan.md`·`artifact.md`
-> - shipcheck #4: `spec.md`·`plan.md`·`artifact.md`만 (코드·문서 표면은 S1·S4 PASS로 확정)
+> - shipcheck #4(커밋 `76facb7`): `spec.md`·`plan.md`·`artifact.md`만 (코드·문서 표면은 S1·S4 PASS로 확정)
+> - shipcheck #5: `plan.md`(Task 5·6의 유령 파일 참조 8곳)·`artifact.md`만
 
 - [x] **Step 1: codex 외부 리뷰 (백그라운드, ~7분)**
 
