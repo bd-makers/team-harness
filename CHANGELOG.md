@@ -31,6 +31,12 @@ modified: 2026-09-04
   `pnpm …` 항목은 남습니다(무해하지만 낡음) — 필요하면 손으로 지우십시오. 자동 제거는 별도 결정으로 둡니다.
   (task `scaffold-pm-permissions`)
 
+### Fixed
+- **`doctor`의 결정 로그 검사가 D6·D7 절 누락도 경고합니다** — `docs/decisions.md`에 D6(적대적 검증)·D7(멤버 제외)이
+  추가된 뒤에도 `DECISION_HEADINGS`는 D2/D4/D5에 머물러 있어, 그 이전에 스캐폴드된 프로젝트는 AGENTS.md 코어가
+  가리키는 절이 없어도 doctor가 침묵했습니다(스캐폴드는 기존 파일을 덮어쓰지 않으므로 이 경고가 유일한 신호).
+  부재 메시지가 나열하는 절 ID도 같은 상수에서 파생해 재드리프트를 막습니다. (task `doctor-decision-headings`)
+
 ## [0.24.0] - 2026-09-03
 
 ### Removed
