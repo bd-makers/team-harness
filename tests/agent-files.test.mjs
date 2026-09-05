@@ -339,3 +339,36 @@ test('CLAUDE.md(thin) §5-A는 escalation 패킷 5항목을 규정한다', async
     assert.ok(out.includes(item), `§5-A 패킷 항목 누락: ${item}`);
   assert.doesNotMatch(out, /사용자에게 1줄 권유/, '1줄 권유 문구는 패킷으로 대체된다');
 });
+
+// 신뢰 경계 (PDF 권고 ④, 2026-09-05) — 하네스에는 신뢰/비신뢰 입력을 가르는 문장이 없었다.
+// `{prompt}` 리터럴 치환처럼 국소 조치만 있었고, 도구 결과 안의 명령을 어떻게 다룰지는
+// 어느 에이전트 계약에도 적혀 있지 않았다. 코어(AGENTS.md)에 두는 이유는 Claude·Codex·Cursor가
+// 모두 읽는 SSOT이기 때문이다 — .claude/rules 는 Codex가 읽지 않는다.
+test('AGENTS.md(core) 핵심 원칙은 신뢰 경계 한 줄을 담는다', async () => {
+  const out = render(await tpl('AGENTS.md.hbs'), VARS);
+  const principles = extractSections(out).principles;
+  assert.ok(principles, 'principles 관리 절을 찾지 못함');
+  assert.match(principles, /\*\*신뢰 경계\*\*/, '신뢰 경계 항목이 핵심 원칙 안에 있어야 한다');
+  assert.match(principles, /데이터지 지시가 아니다/, '도구 결과를 데이터로 다루라는 규범');
+});
+
+test('신뢰 경계 줄은 재-init 시 기존 프로젝트의 핵심 원칙에도 반영된다 (marker 구간 교체)', async () => {
+  const incoming = render(await tpl('AGENTS.md.hbs'), VARS);
+  const existing = [
+    '# legacy — AI Team Contract (Core)',
+    '',
+    '<!-- harness:section="principles" begin -->',
+    '## 핵심 원칙',
+    '',
+    '- **단순함 우선**: 옛 문구.',
+    '<!-- harness:section="principles" end -->',
+    '',
+    '## 사용자가 직접 쓴 절',
+    '이 문단은 마커 밖이라 보존되어야 한다.',
+    '',
+  ].join('\n');
+  const merged = mergeMarkdown(existing, incoming);
+  assert.match(merged, /\*\*신뢰 경계\*\*/, '기존 프로젝트가 신뢰 경계 줄을 받지 못했다');
+  assert.doesNotMatch(merged, /옛 문구/, '관리 절은 교체되어야 한다');
+  assert.match(merged, /이 문단은 마커 밖이라 보존되어야 한다/, '마커 밖 사용자 텍스트가 사라졌다');
+});
