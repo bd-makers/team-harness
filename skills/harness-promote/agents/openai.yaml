@@ -1,0 +1,4 @@
+interface:
+  display_name: "Harness Promote"
+  short_description: "Promote a task learning into .claude/rules with provenance."
+  default_prompt: "Use $harness-promote to list Learnings candidates and promote the one the user picks into .claude/rules."

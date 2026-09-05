@@ -4,6 +4,7 @@ paths:
   - "src/features/**/components/**/*.tsx"
   - "app/**/*.tsx"
 ---
+<!-- harness:rule origin=harness-aijient-team/templates since=2026-09-05 -->
 # 스타일링 규칙 (React Native)
 
 ## 기본 원칙

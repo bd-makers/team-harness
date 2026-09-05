@@ -5,6 +5,7 @@ paths:
   - "**/*.test.ts"
   - "**/*.test.tsx"
 ---
+<!-- harness:rule origin=harness-aijient-team/templates since=2026-09-05 -->
 # 테스트 규칙 (React Native + TypeScript)
 
 ## 테스트 도구

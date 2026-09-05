@@ -461,6 +461,12 @@
             <td>관측 로그(.harness/observability) 스코어카드와 트립와이어 판정 — read-only, 발화 시 exit 1</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Validation</span></td>
           </tr>
+          <tr data-command-source="commands/harness-promote.md">
+            <td><span class="cmd">/harness-promote</span></td>
+            <td><code>commands/harness-promote.md</code></td>
+            <td>활성 task artifact의 Learnings 항목을 사용자 승인 후 .claude/rules/&lt;slug&gt;.md로 승격 — 유래 마커 부착·cursor 미러 재생성</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
           <tr data-command-source="commands/harness-task.md">
             <td><span class="cmd">/harness-task</span></td>
             <td><code>commands/harness-task.md</code></td>
@@ -1365,6 +1371,11 @@
             <td>관측 로그(.harness/observability) 스코어카드와 트립와이어 판정 — read-only, 발화 시 exit 1</td>
           </tr>
           <tr>
+            <td><code>commands/harness-promote.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>활성 task artifact의 Learnings 항목을 사용자 승인 후 .claude/rules/&lt;slug&gt;.md로 승격 — 유래 마커 부착·cursor 미러 재생성</td>
+          </tr>
+          <tr>
             <td><code>commands/harness-release.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
             <td>4개 매니페스트(package.json/.claude-plugin/plugin.json/.claude-plugin/marketplace.json/.codex-plugin/plugin.json) 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화. 휴먼 에러(manifest 누락·버전 불일치) 차단.</td>
@@ -1630,6 +1641,16 @@
             <td>Codex skill 표시 메타데이터</td>
           </tr>
           <tr>
+            <td><code>skills/harness-promote/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-promote/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
             <td><code>skills/harness-release/SKILL.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
             <td>Codex용 harness workflow 지침</td>
@@ -1818,6 +1839,11 @@
             <td><code>src/commands/release.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
             <td>harness-team release CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/rules.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team rules CLI 구현</td>
           </tr>
           <tr>
             <td><code>src/commands/session-context.mjs</code></td>
@@ -2296,6 +2322,11 @@
           </tr>
           <tr>
             <td><code>tests/retro.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/rules.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>

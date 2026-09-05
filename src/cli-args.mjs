@@ -15,7 +15,7 @@
 
 import { KNOWN_STACK_IDS } from './detect-stack.mjs';
 
-export const VALUE_FLAGS = new Set(['stack', 'member', 'target', 'backup-dir', 'backup-parent', 'days']);
+export const VALUE_FLAGS = new Set(['stack', 'member', 'target', 'backup-dir', 'backup-parent', 'days', 'name', 'paths']);
 
 // Accepted on every command: they change where the harness looks or how it
 // reports, not what it does. Keeping them global means a hook can pass --target
@@ -64,6 +64,9 @@ export const COMMANDS = [
   { name: 'boundary', args: 'check', summary: 'Compare declared JSON Schema producer/consumer boundaries', flags: [] },
   { name: 'session-context', args: '', summary: 'Emit bounded SessionStart Context Card or no-task nudge', flags: [] },
   { name: 'retro', args: '[text]', summary: "Append a dated Learnings entry to the active task's artifact.md", flags: [] },
+  { name: 'rules', args: 'promote [<n>] [--name <slug>] [--paths <a,b>]',
+    summary: "Promote a Learnings entry from the active task's artifact.md into .claude/rules/<slug>.md (lists entries when <n> is omitted)",
+    flags: ['name', 'paths'] },
   { name: 'observe', args: '[--days <1..14>]',
     summary: 'Scorecard + trip wires from .harness/observability logs (read-only; exit 1 when a trip wire fires)',
     flags: ['days'] },
@@ -89,7 +92,7 @@ const OPTIONS_HELP = `Options:
   --target <dir>       Target directory (default: cwd)
   --gitignore-ai       Add AI tool entries to .gitignore without prompting
   --no-gitignore-ai    Skip AI gitignore entries without prompting
-  --json               Structured JSON envelope output for drive commands (task/retro/release/doctor/summary)`;
+  --json               Structured JSON envelope output for drive commands (task/retro/release/doctor/summary/observe/rules)`;
 
 // `doctor` proves the hook CLI is reachable by matching `session-context` and
 // `handoff` at the start of a line in this output, so the two-space indent is a

@@ -353,6 +353,22 @@ Figma(wireframe·design-spec), task 이름 기반 인터뷰. 프로젝트별 소
 
 아래 [task 관리](#task-관리-팀원기능별) 섹션 참조.
 
+### `/harness-promote` — Learnings → `.claude/rules` 승격
+
+활성 task `artifact.md`의 `## Learnings` 항목 하나를 골라 `.claude/rules/<slug>.md`로 **기계적으로 복사**하고 cursor 미러를
+재생성합니다. 규칙 본문 첫 줄에 유래 마커 `<!-- harness:rule origin=<user>/<task> since=<YYYY-MM-DD> -->`가 붙고, artifact의
+원 항목 끝에는 `(→ rules/<slug>.md, <날짜>)`가 남아 재승격을 막습니다. 어떤 항목을 올릴지는 사용자가 고릅니다 — 같은 교정이
+3회 이상 반복되고, 주관 없이 검사할 수 있으며, 어기면 재작업이 따르는 학습이 후보입니다. LLM이 스스로 승격하는 경로는 없습니다.
+
+```bash
+/harness-promote                                     # 후보 나열 → 항목·slug·paths 확인 → 승격
+harness-team rules promote                           # Learnings 항목 번호 목록 (read-only)
+harness-team rules promote 2 --name api-errors --paths "src/api/**/*.ts"
+```
+
+`harness-team doctor`는 마커 없는 규칙을 `rule provenance` 경고로 나열합니다. 템플릿 4종(navigation·state-management·styling·testing)에는
+`origin=harness-aijient-team/templates` 마커가 들어 있으며, 그 이전에 설치된 사본에는 같은 형식의 마커 한 줄을 본문 첫 줄에 직접 추가하면 됩니다.
+
 ### `/harness-ship` — PR/MR 직전 최종 갱신
 
 활성 task의 spec·plan·artifact를 코드 현실과 맞춘 뒤 **PR/MR 준비 완료 상태를 보고**합니다.

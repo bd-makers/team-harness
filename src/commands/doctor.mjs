@@ -7,6 +7,7 @@ import { exists } from '../fsx.mjs';
 import { loadBackupDir, settingsHasBoundaryCheckpoint, codexHooksHaveSessionContext } from '../harness.mjs';
 import { buildEnvelope, emitObservation } from '../observation.mjs';
 import { settingsHasSessionGate } from './session-context.mjs';
+import { checkRuleProvenance } from './rules.mjs';
 
 const pexec = promisify(execFile);
 
@@ -614,6 +615,11 @@ export async function runDoctor(ctx) {
   // reason the 24 KiB budget was picked, so it must be measured here too.
   const eagerTierWarning = await checkEagerTierSize(ctx.targetDir);
   if (eagerTierWarning) add('eager tier size', 'warning', eagerTierWarning, `\n⚠️ ${eagerTierWarning}`);
+
+  // Not gated on pluginDev: a rule without provenance is drift wherever it lives —
+  // and this repo ships no .claude/rules of its own, so the source tree stays silent.
+  const provenanceWarning = await checkRuleProvenance(ctx.targetDir);
+  if (provenanceWarning) add('rule provenance', 'warning', provenanceWarning, `\n⚠️ ${provenanceWarning}`);
 
   // Like the hook-presence checks above, this is consumer-only. plugin-dev uses
   // `node bin/harness-team.mjs` and deliberately does not install consumer hooks.

@@ -4,6 +4,7 @@ paths:
   - "src/**/*navigation*"
   - "src/**/*router*"
 ---
+<!-- harness:rule origin=harness-aijient-team/templates since=2026-09-05 -->
 # 네비게이션 규칙 (Expo Router)
 
 ## 기본 원칙
