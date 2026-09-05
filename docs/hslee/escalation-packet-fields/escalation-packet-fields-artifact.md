@@ -52,4 +52,21 @@ I/O 테스트는 codex 샌드박스의 `mkdtemp EPERM`으로 리뷰어 쪽에서
 
 <!-- harness:review kind=codex-shipcheck scope=diff tip=987a8d3b39470f9eccfa2073842709b4c4646913 at=2026-09-05T11:19:35Z -->
 
+### 2026-09-05 — codex shipcheck #2 (엔진 codex `-m gpt-5.6-sol`, scope: diff origin/main…9271f20)
+
+판정: **NOT READY** — #1의 지적 5건은 **전부 해소 확인**(리뷰어가 항목별로 명시), 그러나 **새 결함 4건**.
+#1을 고치는 과정이 만든 것이 아니라 #1이 놓쳤던 표면이다.
+
+| id | 발견 | 판별 | 조치 |
+|---|---|---|---|
+| S3·S4 | `docs/harness-workflow-simulation.html:661`의 done 예시가 옛 출력 — artifact의 "남은 3키 표면은 전부 동결본·과거 task"라는 단정이 틀렸다 | 진짜. **내 sweep이 틀린 이유**: `stop:` 뒤 공백이 **2개**라 `"stop: 의도적으로"`(공백 1개) grep이 0건을 반환했다. 정확 문자열 grep으로 "없음"을 결론지은 것이 잘못이다 | 무버전본만 갱신(버전본 8개는 동결본). sweep을 `retry: 위 항목을 해소한 뒤`(공백 의존 없는 앵커)로 다시 돌려 현재형 문서를 전수 확인 |
+| S4 | overview `template:382`가 여전히 "4커맨드 공통" — #1에서 두 infobox만 고치고 같은 절의 세 번째 문장을 놓쳤다 | 진짜 | "`--json`을 지원하는 커맨드 공통"으로 정정, 재생성 |
+| S5 | spec은 기계용/사람용의 의미 차이와 `cost of waiting` 생략을 명시하면서, 다른 문단·`CLAUDE.md`·테스트 주석은 "같은 5항목/같은 모양"이라 주장 | 진짜 — 두 패킷은 **같은 항목 집합이 아니다**. 기계용은 기다림의 비용 자리에 `stop_condition`을 두고, 사람용은 stop 항목이 없다 | 네 표면(spec Ontology · `templates/CLAUDE.md.hbs` · `CLAUDE.md` · 테스트 주석 · plan 본문)을 "같은 목적의 구조이되 항목이 하나씩 다르다"로 통일 |
+| S2 | Step 3이 "정정 후 재검증"을 요구하며 닫혔는데 기록된 shipcheck는 수정 전 tip 하나뿐. Task 11의 Files 목록도 리뷰·shipcheck가 실제로 바꾼 파일들을 deviation으로 기록하지 않음 | 진짜 | Step 3에 회차별 실측(#1→#2→#3)을 적고, Task 11에 세 커밋이 건드린 파일을 회차별로 나열 |
+
+리뷰어가 스스로 명기한 한계(변함없음): read-only 샌드박스의 `mkdtemp EPERM`으로 전체 `npm test`를 재실행하지 못했다.
+작성 세션 실측이 증거다 — 591 / 590 pass / 0 fail / 1 skipped, perf 1/1.
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=9271f20 at=2026-09-05T11:31:00Z -->
+
 ## Learnings

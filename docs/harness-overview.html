@@ -617,7 +617,7 @@
   <span style="color:#50c8f5">"error"</span>: <span style="color:#7a82a0">null</span> | { <span style="color:#50c8f5">"root_cause"</span>, <span style="color:#50c8f5">"safe_retry"</span>, <span style="color:#50c8f5">"alternatives"</span>, <span style="color:#50c8f5">"safe_default"</span>, <span style="color:#50c8f5">"stop_condition"</span> }
 }</pre>
       <p style="margin-top:0.8rem;font-size:0.83rem;color:var(--muted)">
-        <strong style="color:var(--text)">불변식:</strong> <code>status === "error" ⟺ error !== null</code> — 4커맨드 공통.
+        <strong style="color:var(--text)">불변식:</strong> <code>status === "error" ⟺ error !== null</code> — <code>--json</code>을 지원하는 커맨드 공통.
         에이전트는 커맨드별 분기 없이 <code>if (env.error) …</code> 한 패턴으로 파싱한다. 계약은 "가장 약한 커맨드"만큼만 강하다.
       </p>
     </div>

@@ -864,7 +864,8 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
 
 ```js
 // 권고 ③ (PDF §V.A "Escalation Is Not Failure") — 사람에게 넘길 때도 기계용 엔벨로프와
-// 같은 5항목을 준다. 1줄 권유만 남으면 사용자는 대안도, 안 답했을 때 남는 상태도 모른다.
+// 같은 목적의 패킷을 준다(항목 구성은 하나씩 다르다). 1줄 권유만 남으면 사용자는
+// 대안도, 답하지 않았을 때 남는 상태도 모른다.
 test('CLAUDE.md(thin) §5-A는 escalation 패킷 5항목을 규정한다', async () => {
   const out = render(await tpl('CLAUDE.md.hbs'), VARS);
   for (const item of ['결정 요청', '권장안', '시도한 대안', '기다림의 비용', '안전 기본값'])
@@ -908,7 +909,9 @@ Expected: FAIL 1건(§5-A 패킷 항목 없음). 두 번째 테스트는 이 시
 
 - **Why:** 모델·effort·advisor 전환은 Claude 권한 밖(사용자/harness 소관)이라 자기실행 지시는 준수 불가능.
   감지해서 **결정 가능한 형태로** 넘기는 것까지가 Claude의 역할이다 — 1줄 권유만으로는 사용자가
-  대안도, 안 답했을 때의 결과도 알 수 없다. 기계용 엔벨로프의 `error` 5필드와 같은 모양이다.
+  대안도, 답하지 않았을 때의 결과도 모른 채 정해야 한다. `--json` 엔벨로프의 `error` 패킷과 같은 목적의
+  구조이되 항목이 하나씩 다르다 — 기계용은 기다림의 비용 대신 `stop_condition`을 담고, 그쪽 `alternatives`는
+  "지금 취할 수 있는 다른 행동"을 뜻한다(CLI 거부 시점에는 시도 이력이 없다).
 - **How to apply:** 위 조건 충족 시 1회. 작은 버그·문서 수정에는 생략.
 ```
 
@@ -1028,6 +1031,18 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
 - Modify: `docs/hslee/escalation-packet-fields/escalation-packet-fields-artifact.md`
 - Modify: `docs/hslee/escalation-packet-fields/escalation-packet-fields-context.md`
 
+> **실행 중 변경 — 리뷰·shipcheck가 만든 추가 수정**: 이 Task는 원래 문서만 건드릴 예정이었으나
+> 검증에서 나온 발견을 반영하느라 아래 파일도 바뀌었다. plan은 실행 기록이므로 여기에 남긴다.
+> - codex 리뷰(커밋 `987a8d3`): `src/commands/rules.mjs`(safe_default 과잉 주장) ·
+>   `src/commands/summary.mjs`(우회 처방 제거) · `tests/observation.test.mjs`(pin 범위 축소) ·
+>   `tests/observation-commands.test.mjs`·`tests/rules.test.mjs`(root_cause 타입 가드 신설) ·
+>   `docs/harness-task-guide.html` · `commands/harness-release.md`
+> - shipcheck #1(커밋 `9271f20`): `src/commands/rules.mjs`(자기모순 문구) ·
+>   `docs/harness-overview.template.html`(+ 생성물) · 이 task의 `spec.md`·`plan.md`
+> - shipcheck #2: `docs/harness-workflow-simulation.html`(무버전본만) ·
+>   `docs/harness-overview.template.html`(+ 생성물) · `templates/CLAUDE.md.hbs`·`CLAUDE.md` ·
+>   `tests/agent-files.test.mjs`(주석) · `spec.md`·`plan.md`
+
 - [x] **Step 1: codex 외부 리뷰 (백그라운드, ~7분)**
 
 ```bash
@@ -1046,7 +1061,9 @@ read-only 샌드박스는 `mkdtemp EPERM`이라 I/O 테스트를 돌리지 못�
 
 - [x] **Step 3: shipcheck (같은 엔진, S1~S5 루브릭, `kind=codex-shipcheck`, ~6분)**
 
-지적이 문서 정합이면 정정 후 재검증한다.
+지적이 문서 정합이면 정정 후 재검증한다. **실측**: #1(tip `987a8d3`) NOT READY → S2~S5 반영 →
+#2(tip `9271f20`) 이전 지적 5건 전부 해소 확인, 새 결함 4건 → 반영 → #3으로 종결 확인.
+각 회차의 발견·판별·조치는 artifact의 `## Reviews`가 정본이다.
 
 - [ ] **Step 4: `harness-team ship`으로 spec·plan·artifact 최종 갱신**
 

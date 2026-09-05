@@ -331,7 +331,7 @@ test('mergeMarkdown: 마커 개수가 같아도 순서·중첩이 틀리면 거�
 });
 
 // escalation packet (권고 ③, PDF §V.A "Escalation Is Not Failure") — 사람에게 넘길 때도
-// 기계용 엔벨로프와 같은 항목을 준다. "1줄 권유"만 남으면 사용자는 대안도, 답하지 않았을 때
+// 기계용 엔벨로프와 같은 목적의 패킷을 준다(항목 구성은 하나씩 다르다 — spec의 Ontology 참조). "1줄 권유"만 남으면 사용자는 대안도, 답하지 않았을 때
 // 남는 상태도 모른 채 결정해야 한다. 레포본과의 동기화는 위의 드리프트 테스트가 이미 고정한다.
 test('CLAUDE.md(thin) §5-A는 escalation 패킷 5항목을 규정한다', async () => {
   const out = render(await tpl('CLAUDE.md.hbs'), VARS);
