@@ -17,9 +17,10 @@ init이 쓰는 settings 템플릿에 `permissions.ask` 3개(`Bash(git push *)`·
 - [x] `npm run docs:check` exit 0 (필요하면 `docs:generate` 후 재확인)
 - [x] `npm test` 전체 green
 - [x] codex read-only 리뷰 실행 → `settings-ask-tier-artifact.md`의 `## Reviews`에 결과 기록, P1/P2 반영
-- [ ] ship — spec·plan·artifact 최종 갱신 완료. **"준비 완료" 선언은 보류** — shipcheck가
-      4라운드에서 S1~S4는 계속 pass, S5는 매 라운드 서로 다른 문서 정합 결함을 잡았고 전부
-      조치했으나 #4의 조치는 아직 독립 재검증하지 않았다. 재검증 여부는 사용자 결정 대기.
+- [x] ship — spec·plan·artifact 최종 갱신, 준비 완료 보고. shipcheck 4라운드에서 S1~S4는 계속
+      pass, S5는 매 라운드 다른 문서 정합 결함을 잡았고 전부 조치했다. #4 조치의 독립 재검증은
+      **사용자 결정으로 생략**했다(2026-09-05) — 근거는 artifact `## Reviews`의 사용자 결정 기록.
+      PR 생성은 별도 지시 대기.
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

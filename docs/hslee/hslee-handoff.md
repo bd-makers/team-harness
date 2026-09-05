@@ -4,7 +4,7 @@
 settings-ask-tier
 
 ## Last Commit (2026-09-05)
-56233f1 docs(task): shipcheck #3 S5 BLOCKER 반영 — RED을 재현 가능한 절차로 교체
+aa5cc38 docs(task): shipcheck #4 S5 반영 — 자기 이력을 세는 서술 제거
 
 ## Full Context
 → docs/hslee/settings-ask-tier/settings-ask-tier-handoff.md

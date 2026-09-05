@@ -69,3 +69,10 @@ docs/hslee/hslee-handoff.md                        |  2 +-
  .../settings-ask-tier-artifact.md                  | 37 ++++++++++++++++++----
  .../settings-ask-tier/settings-ask-tier-handoff.md |  6 ++++
  3 files changed, 38 insertions(+), 7 deletions(-)
+
+## 2026-09-05T13:59:48.901Z — aa5cc38 docs(task): shipcheck #4 S5 반영 — 자기 이력을 세는 서술 제거
+docs/hslee/hslee-handoff.md                        |  2 +-
+ .../settings-ask-tier-artifact.md                  | 32 +++++++++++++++++++---
+ .../settings-ask-tier/settings-ask-tier-handoff.md |  6 ++++
+ .../settings-ask-tier/settings-ask-tier-plan.md    |  4 ++-
+ 4 files changed, 38 insertions(+), 6 deletions(-)
