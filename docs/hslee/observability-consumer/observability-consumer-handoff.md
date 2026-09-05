@@ -39,3 +39,11 @@ CHANGELOG.md                |  2 +-
  src/commands/observe.mjs    | 21 ++++++++++++++++-----
  tests/observe.test.mjs      | 28 ++++++++++++++++++++++++++--
  5 files changed, 49 insertions(+), 14 deletions(-)
+
+## 2026-09-05T08:05:28.877Z — d0f1945 docs(task): observability-consumer — plan 종료 항목(PR #73 머지)
+docs/hslee/observability-consumer/observability-consumer-plan.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+## 2026-09-05T08:05:29.000Z — 완료
+
+태스크 종료.

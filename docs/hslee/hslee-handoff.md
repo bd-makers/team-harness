@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-observability-consumer
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-05)
-4785175 fix(observe): codex 리뷰 반영 — task_ref 타입 방어(P2), UTC instant 일 판정(P3), 정확한 2× 경계 테스트(P3), text 열 범위 문서화(P2)
+## Last Completed Task (2026-09-05)
+`observability-consumer` — done
 
 ## Full Context
 → docs/hslee/observability-consumer/observability-consumer-handoff.md
