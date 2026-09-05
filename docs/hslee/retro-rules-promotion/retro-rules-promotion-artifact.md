@@ -100,6 +100,27 @@ $ printf "# 유래 없는 규칙\n" > .claude/rules/legacy.md; harness-team doct
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
 
 
+### 2026-09-05 — codex read-only 리뷰 (엔진 codex, `-m gpt-5.6-sol`, scope: diff origin/main…bc65ad3, 27 files, 218k tokens)
+
+요약: **Request changes** — P1 1 · P2 4 · P3 2. continuation·`###` 소제목·suffix 파싱과 템플릿·manifest·README 표면 정합은 문제 없음.
+I/O 테스트는 codex 샌드박스의 `mkdtemp EPERM`으로 리뷰어 쪽에서 미실행 — 작성 세션의 `npm test` 출력이 증거.
+7건 모두 RED 테스트로 먼저 재현한 뒤 진짜 결함으로 판별하고 반영했다(커밋 `506e59a`, 테스트 +8, `npm test` 580/579 pass·1 skipped).
+
+| # | 심각도 | 발견 | 판별 | 조치 |
+|---|---|---|---|---|
+| 1 | P1 | `exists()`가 symlink를 따라가므로 dangling `<slug>.md` symlink를 "없음"으로 보고 `writeFile`이 링크 대상(디렉터리 밖 가능)을 생성 — path confinement·no-overwrite 우회 | 진짜 — dangling symlink fixture로 바깥 파일 생성 재현 | `lstat`로 이름 점유 여부 판정 → `rule-exists` 거부. 회귀 테스트 |
+| 2 | P2 | 규칙→artifact→미러 중 후속 쓰기 실패 시 고아 규칙 또는 미러 없는 표기가 남고 재시도가 `rule-exists`/`already-promoted`로 막힘 | 진짜 — artifact 0o444·`.cursor/rules`를 파일로 만들어 재현 | artifact 쓰기 실패 → 방금 쓴 규칙 unlink + `artifact-write-failed`(exit 2). 미러 실패 → 승격 유지·`⚠️` 경고·`harness-team sync` 안내(`mirrored: null`, json `mirror_error`) |
+| 3 | P2 | `parseRuleMarker`가 파일 어디서나 마커를 찾아 본문·fenced 예시의 마커도 유효 판정 → doctor false negative | 진짜 — fenced 예시로 재현 | frontmatter 뒤 본문 첫 비공백 줄에서만 인정(`splitRulePaths` + index 0) |
+| 4 | P2 | `annotatePromoted`가 CRLF를 LF로 재조립해 표기 한 건 외의 모든 줄이 바뀜 | 진짜 — CRLF 5→0 재현. 작성 세션이 "알려진 제약"으로 적어 둔 것을 리뷰어가 결함으로 격상 — 수용 | 파일의 EOL(LF/CRLF) 감지·유지 |
+| 5 | P2 | `rules nope --json`이 envelope 대신 text 출력 — `--json` 계약 위반 | 진짜 | invalid-action도 `status: error` envelope(code `invalid-action`) |
+| 6 | P3 | provenance 검사가 읽기 실패(unreadable·dangling symlink)를 "마커 없음"으로 세어 스탬프 처방을 잘못 안내 | 진짜 — dangling symlink로 재현 | "읽을 수 없는 규칙 N개" 항목으로 분리 보고 |
+| 7 | P3 | 전역 도움말 `--json` 지원 목록에 `rules` 누락(기존 `observe`도 누락돼 있었음) | 진짜 | 목록에 `observe/rules` 추가 + pin 테스트 |
+
+재리뷰: 생략(수정 범위가 한 모듈 안 ~40행 — handoff §3 결정). 대신 문서↔diff 정합은 별도 shipcheck 검증자(아래)에 맡긴다.
+
+<!-- harness:review kind=codex scope=diff tip=bc65ad32a3904e917a7ac9129c8a17534333271e at=2026-09-05T09:51:21Z -->
+
+
 ## Learnings
 
 
@@ -110,3 +131,4 @@ $ printf "# 유래 없는 규칙\n" > .claude/rules/legacy.md; harness-team doct
 - macOS perl `-0pi`로 소스를 스플라이스할 때 `─+`처럼 멀티바이트 문자에 양화사를 걸면 바이트 단위로 매칭돼 조용히 실패한다(치환 0건, exit 0). 유니코드 앵커는 node 스크립트로 `includes` 확인 후 치환하고, 앵커 부재는 throw로 드러낸다.
 - zsh는 `CLI="node bin/x.mjs"; $CLI args`를 단어 분리하지 않아 `no such file or directory: node bin/x.mjs`가 난다 — 스크립트에서는 함수(`cli() { node bin/x.mjs "$@"; }`)로 감싼다.
 - 문서상 `.claude/rules` frontmatter 공인 키는 `paths`뿐이라 유래 같은 메타는 frontmatter 키가 아니라 저장소 마커 관례(HTML 주석 `harness:*`)로 싣는 편이 안전했다 — `splitRulePaths`가 frontmatter만 벗기므로 마커는 cursor 미러에도 그대로 실린다.
+- JavaScript `String.prototype.replace`의 문자열 치환은 `$&`·`` $` ``·`$'` 같은 `$` 패턴을 해석한다 — 치환문에 `` `$` `` 조각이 있으면 매치 앞 본문 전체가 삽입된다. 코드 스플라이스는 함수 replacer(`s.replace(from, () => to)`)나 Python `str.replace`를 쓴다.

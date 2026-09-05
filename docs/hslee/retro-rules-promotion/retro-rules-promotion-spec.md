@@ -12,20 +12,22 @@
 2. **승격 = 복사 + 표기** — `<n>`이 있으면 `.claude/rules/<slug>.md`를 쓰고, artifact의 해당 항목 **마지막 줄 끝**에 ` (→ rules/<slug>.md, YYYY-MM-DD)`를 붙인 뒤,
    `mirrorCursorRules`로 `.cursor/rules`를 재생성한다. artifact 항목은 지우지 않는다(학습 이력의 SSOT). 표기가 있는 항목은 목록에서 승격됨으로 보이고 재승격을 거부한다.
 3. **규칙 파일 형식** — `--paths`가 있을 때만 `paths:` frontmatter(쉼표 구분, 공백 trim, 빈 조각 제거, 각 값은 큰따옴표). 본문 첫 줄은 유래 마커
-   `<!-- harness:rule origin=<user>/<task> since=<YYYY-MM-DD> -->`, 이어서 `# <slug>`, 빈 줄, `- <학습 본문>`. 마커는 기존 `harness:review`와 같은
+   `<!-- harness:rule origin=<user>/<task> since=<YYYY-MM-DD> -->`(파서도 이 위치 — frontmatter 뒤 첫 비공백 줄 — 에서만 인정한다), 이어서 `# <slug>`, 빈 줄, `- <학습 본문>`. 마커는 기존 `harness:review`와 같은
    `key=value` 속성 문법이며 `paths` 처리(`splitRulePaths`)는 frontmatter만 벗기므로 마커는 cursor 미러 `.mdc`에도 그대로 실린다.
 4. **Learnings 파싱 규약** — `## Learnings` 또는 `## Learnings (YYYY-MM-DD)` 헤더 아래의 `- ` 불릿이 항목이다. 들여쓴 다음 줄은 같은 항목의 이어지는 줄로
    공백 하나로 합친다. `#`·`##` 헤더를 만나면 절이 끝난다(`###` 이하는 절 안). 본문이 빈 불릿(retro가 인수 없이 만든 `-`)은 세지 않는다.
    번호는 파일 순서 1부터이며 승격 표기 여부와 무관하게 안정적이다(표기는 삭제가 아니므로).
 5. **거부 — 모두 파일 무변경** — 활성 task 없음 → exit 1(retro와 같은 `cause/retry/stop` 계약). 다음은 exit 2: artifact 없음(`no-artifact`), `<n>`이 정수가 아니거나
-   1..N 밖(`invalid-index`), 이미 승격된 항목(`already-promoted`), `--name` 없음 또는 `^[\w.-]+$` 위반(`invalid-name`), `.claude/rules/<slug>.md` 이미 존재(`rule-exists`),
-   첫 토큰이 `promote`가 아님(`invalid-action`). 쓰기 순서는 규칙 파일 → artifact 표기 → 미러이며, 검증은 모두 첫 쓰기 전에 끝낸다.
+   1..N 밖(`invalid-index`), 이미 승격된 항목(`already-promoted`), `--name` 없음 또는 `^[\w.-]+$` 위반(`invalid-name`), `.claude/rules/<slug>.md` 이름이 이미 점유됨(`rule-exists` — 파일·디렉터리·symlink 무엇이든, dangling symlink 포함, `lstat`로 판정),
+   첫 토큰이 `promote`가 아님(`invalid-action`, `--json`이면 error envelope). 쓰기 순서는 규칙 파일 → artifact 표기 → 미러이며, 검증은 모두 첫 쓰기 전에 끝낸다.
+   규칙을 쓴 뒤 artifact 표기 쓰기가 실패하면 방금 쓴 규칙을 지우고 `artifact-write-failed`(exit 2)로 끝낸다(재시도 가능). cursor 미러 실패는 승격을 되돌리지 않고
+   `⚠️` 경고 + `harness-team sync` 안내로 끝낸다(`mirrored: null`, json `mirror_error`) — 미러는 파생물이라 `sync`가 같은 결과를 다시 만든다.
 6. **출력** — text: 성공 시 `✓ rules promote: .claude/rules/<slug>.md 승격 (origin=… since=…[, paths=…])` · `✓ artifact: <rel> #<n> 에 승격 표기` · `✓ cursor mirror: N rule(s)` · `next:` 한 줄.
    `--json`: `buildEnvelope({ command: 'rules', status: 'listed'|'no-data'|'success'|'error', summary, next_actions, artifacts, error, extra: { action: 'promote', … } })`.
 7. **템플릿 4종 스탬프** — `templates/.claude/rules/{navigation,state-management,styling,testing}.md`의 frontmatter 닫는 `---` 바로 다음 줄에
    `<!-- harness:rule origin=harness-aijient-team/templates since=2026-09-05 -->`를 넣는다. 본문·paths는 바꾸지 않는다. 날짜를 쓰고 릴리스 번호를 쓰지 않는다.
-8. **doctor `rule provenance` 경고** — `.claude/rules/**/*.md`(하위 디렉터리·심볼릭 링크 포함, `collectRuleFiles` 재사용) 중 유효한 마커(origin과 `YYYY-MM-DD` since 둘 다)가
-   없는 파일을 정렬해 나열하고 수동 스탬프 방법을 안내한다. warning이며 fail 카운트·exit code에 영향 없음. 디렉터리가 없으면 null. plugin-dev 게이트 없음.
+8. **doctor `rule provenance` 경고** — `.claude/rules/**/*.md`(하위 디렉터리·심볼릭 링크 포함, `collectRuleFiles` 재사용) 중 유효한 마커(origin과 `YYYY-MM-DD` since 둘 다, frontmatter 뒤 본문 첫 줄)가
+   없는 파일을 정렬해 나열하고 수동 스탬프 방법을 안내한다. 읽을 수 없는 파일(권한·dangling symlink)은 처방이 다르므로 "읽을 수 없는 규칙 N개"로 따로 나열한다. warning이며 fail 카운트·exit code에 영향 없음. 디렉터리가 없으면 null. plugin-dev 게이트 없음.
 9. **이름을 부르는 표면 전부** — `src/cli-args.mjs`(COMMANDS `rules` 행, `VALUE_FLAGS`에 `name`·`paths`), `bin/harness-team.mjs`(import·`taskCmds`·`taskArgs`·`case 'rules'`),
    `commands/harness-promote.md`, `skills/harness-promote/SKILL.md` + `agents/openai.yaml`, `.claude-plugin/plugin.json`, README 명령어 레퍼런스 절, CHANGELOG `[Unreleased]`,
    overview 재생성. `templates/CLAUDE.md.hbs` §3 자기개선 루프와 이 저장소 `CLAUDE.md` §3에 승격 안내 한 줄(관리 구획 `workflow` 안이라 init 재실행으로 전파).
@@ -95,3 +97,4 @@ Codex 쪽 규칙 미러(cursor만), 릴리스.
 - 근거 문서: `.claude/handoffs/2026-09-05-1330-harness-pdf-6layer-comparison.evidence.md` #3·#4·#5·#32, PDF "harness_final" TABLE IX·§X.F "When to Harden a Rule", Claude Code memory 문서(`.claude/rules` 절, 2026-09-05)
 - 브레인스토밍 결정(2026-09-05): 형태 = `rules promote` 하위명령(retro 불변), 유래 = HTML 주석 마커, doctor = 유래 없는 규칙 경고 + 템플릿 4종 스탬프, 다이어그램 = 아니오
 - 실행 증거·검증 출력·리뷰 판별: `retro-rules-promotion-artifact.md` `## 결과`·`## Reviews`
+- codex 리뷰(2026-09-05) 7건 전부 진짜로 판별해 반영 — 요구 5·8의 lstat 점유 판정·롤백·미러 경고·마커 위치·읽기 실패 분리는 그 결과다(테스트 8건으로 고정)

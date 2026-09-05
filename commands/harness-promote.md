@@ -32,6 +32,8 @@ artifact의 원 항목 끝에는 `(→ rules/<slug>.md, <날짜>)`가 남아 재
    ```
    - 성공 시 `✓ rules promote:` · `✓ artifact:` · `✓ cursor mirror:` 세 줄이 나온다.
    - `✗ rules promote: <code>`는 그대로 전달한다. `already-promoted`·`rule-exists`·`invalid-name`은 2단계로 돌아가 다른 항목·이름을 묻는다.
+   - `artifact-write-failed`는 방금 쓴 규칙 파일을 되돌린 상태다 — artifact 권한을 확인하고 재실행한다. `⚠️ cursor mirror:` 경고가 나오면
+     승격은 완료된 것이며 `harness-team sync`로 미러만 다시 만든다.
 
 4. **결과 표시** — 생성된 `.claude/rules/<slug>.md` 전문과 `git diff --stat`를 보여 준다. 커밋은 사용자 지시 후.
 

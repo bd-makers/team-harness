@@ -24,7 +24,8 @@ modified: 2026-09-05
   새 하위명령이 Learnings 항목을 번호 목록으로 보여 주고(`rules promote`, read-only), 사용자가 고른 항목을
   `rules promote <n> --name <slug> [--paths a,b]`로 `.claude/rules/<slug>.md`에 복사한 뒤 cursor 미러를 재생성합니다. 규칙 본문 첫 줄에
   유래 마커 `<!-- harness:rule origin=<user>/<task> since=<YYYY-MM-DD> -->`가 붙고, artifact 원 항목 끝에는 `(→ rules/<slug>.md, <날짜>)`가
-  남아 재승격을 거부합니다. 승격 대상 판단은 사용자 승인이며 LLM 자동 승격은 없습니다. 기존 규칙 파일은 덮어쓰지 않고 artifact 항목은 지우지 않습니다.
+  남아 재승격을 거부합니다. 승격 대상 판단은 사용자 승인이며 LLM 자동 승격은 없습니다. 기존 규칙 파일은 덮어쓰지 않고 artifact 항목은 지우지 않습니다. 대상 이름이
+  파일·symlink로 이미 점유돼 있으면(dangling symlink 포함) 거부하고, artifact 표기 쓰기가 실패하면 방금 쓴 규칙을 되돌립니다.
   `--json`은 `harness/observation/v1` envelope입니다.
 - **doctor `rule provenance` 경고** — `.claude/rules/**/*.md` 중 유래 마커가 없는 파일을 나열합니다(warning, exit code 영향 없음).
 

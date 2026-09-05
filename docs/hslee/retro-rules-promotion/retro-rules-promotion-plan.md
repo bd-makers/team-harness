@@ -970,7 +970,7 @@ harness-team rules promote 2 --name api-errors --paths "src/api/**/*.ts"
   `node bin/harness-team.mjs rules promote --target <tmp>`(목록) → `rules promote 2 --name api-errors --paths "src/api/**/*.ts" --target <tmp>`(성공 3줄, 생성된 규칙·`.mdc`·artifact 표기 `cat`) →
   같은 명령 재실행(`already-promoted`, exit 2) → `rules promote 1 --name api-errors --target <tmp>`(`rule-exists`) → `doctor --json --target <tmp> | grep -A1 'rule provenance'`(마커 없는 규칙을 하나 더 넣은 뒤) 출력을 artifact `## 결과`에 인용.
   이 저장소에서는 `rules promote`가 활성 task Learnings를 나열하는 것(retro 뒤)과 `doctor`에 `rule provenance` 항목이 없는 것(`.claude/rules` 부재)을 인용.
-- [ ] **Step 6.2: 외부 read-only 리뷰** — `/harness-review codex` 절차(`codex exec --sandbox read-only -m gpt-5.6-sol "<공용 프롬프트+focus>" < /dev/null` 백그라운드),
+- [x] **Step 6.2: 외부 read-only 리뷰** — codex P1 1·P2 4·P3 2 → 8건 RED 재현 후 전부 반영(`506e59a`), artifact `## Reviews` 마커 기록. — `/harness-review codex` 절차(`codex exec --sandbox read-only -m gpt-5.6-sol "<공용 프롬프트+focus>" < /dev/null` 백그라운드),
   focus: 승격 표기 파싱의 경계(이어지는 줄·CRLF·`###`), slug 경로 탈출, 쓰기 순서와 부분 실패, doctor 경고 오탐(템플릿 사본). 발견을 테스트로 재현·판별 후 반영/기각, artifact `## Reviews`에 판별·마커.
 - [ ] **Step 6.3: ship** — `/harness-ship` 절차: spec·plan 최종 갱신(Ontology 변경 로그 포함), artifact `## 결과`(실행 증거)·검증 출력·리스크(미검증 가정: rules 파일의 HTML 주석 제거)·`## Learnings`(retro) → task 문서 커밋 → push·PR(사용자 지시 후) → CI pass 확인.
 - [ ] **Step 6.4: PR 머지 → `harness-team done` → 기본 브랜치에서 `summary --write`** (사용자 지시 후; 머지 후 절차는 handoff §3 마지막 결정 그대로)
