@@ -47,7 +47,7 @@
     비어 있지 않은 string. `alternatives`는 string[]. 위반 시 `TypeError`.
   - `renderErrorPacket(packet)` → `string[]`.
 
-- [ ] **Step 1: RED — 테스트를 먼저 쓴다**
+- [x] **Step 1: RED — 테스트를 먼저 쓴다**
 
 `tests/observation.test.mjs` 상단 import를 바꾸고 테스트 5개를 파일 끝에 추가한다.
 
@@ -102,7 +102,7 @@ test('renderErrorPacket: cause가 배열이면 항목마다 cause 줄', () => {
 });
 ```
 
-- [ ] **Step 2: RED 관찰**
+- [x] **Step 2: RED 관찰**
 
 Run: `node --test tests/observation.test.mjs`
 
@@ -111,7 +111,7 @@ Expected: **파일 전체가 링크 단계에서 죽는다** —
 개별 테스트 실패가 아니라 파일 단위 실패가 정상이며, 이것이 이 Task의 RED다.
 "기존 N pass + 신규 M fail"로 적지 말 것 — ESM은 없는 named export를 만나면 모듈을 링크하지 못한다.
 
-- [ ] **Step 3: GREEN — 헬퍼 구현**
+- [x] **Step 3: GREEN — 헬퍼 구현**
 
 `src/observation.mjs` 끝에 추가한다.
 
@@ -151,12 +151,12 @@ export function renderErrorPacket(packet) {
 }
 ```
 
-- [ ] **Step 4: GREEN 관찰**
+- [x] **Step 4: GREEN 관찰**
 
 Run: `node --test tests/observation.test.mjs`
 Expected: PASS (기존 테스트 + 신규 5개).
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add src/observation.mjs tests/observation.test.mjs
@@ -179,7 +179,7 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
   `observe.mjs`의 `fail(json, summary, { cause, retry, alternatives = [], safeDefault })`.
   둘 다 `stop`은 기존 고정 문자열 `'원인을 해소하기 전에는 재시도하지 말 것'`을 유지한다.
 
-- [ ] **Step 1: RED — 기존 계약 테스트에 새 필드를 요구한다**
+- [x] **Step 1: RED — 기존 계약 테스트에 새 필드를 요구한다**
 
 `tests/observe.test.mjs:265` 근처의 `--days` 거부 테스트에 두 줄을 더한다.
 
@@ -210,13 +210,13 @@ test('summary --json: --write와 --check 동시 지정 → error 패킷에 alter
 `captureJson`·`runSummary` import가 그 파일에 없으면 `tests/observation-commands.test.mjs:14-28`의
 `captureJson` 구현을 그대로 복사해 쓴다.
 
-- [ ] **Step 2: RED 관찰**
+- [x] **Step 2: RED 관찰**
 
 Run: `node --test tests/observe.test.mjs tests/summary.test.mjs`
 Expected: FAIL — `alternatives`가 `undefined`라 `deepEqual`/`length` 접근에서 실패한다.
 (import는 모두 존재하므로 이번에는 파일 링크가 아니라 개별 테스트가 실패한다.)
 
-- [ ] **Step 3: GREEN — 두 `fail()`을 헬퍼로 바꾼다**
+- [x] **Step 3: GREEN — 두 `fail()`을 헬퍼로 바꾼다**
 
 `src/commands/observe.mjs`:
 
@@ -314,12 +314,12 @@ function fail(json, command, summary, { cause, retry, alternatives = [], safeDef
     });
 ```
 
-- [ ] **Step 4: GREEN 관찰**
+- [x] **Step 4: GREEN 관찰**
 
 Run: `node --test tests/observe.test.mjs tests/summary.test.mjs`
 Expected: PASS.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add src/commands/summary.mjs src/commands/observe.mjs tests/summary.test.mjs tests/observe.test.mjs
@@ -339,7 +339,7 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
 - Consumes: `buildErrorPacket`, `renderErrorPacket` (Task 1)
 - Produces: `fail(ctx, { code, cause, retry, alternatives = [], safeDefault, stop, exitCode = 2 })`
 
-- [ ] **Step 1: RED**
+- [x] **Step 1: RED**
 
 `tests/rules.test.mjs:288`과 `:449`의 3키 truthy 검사 다음 줄에 각각 추가한다.
 
@@ -348,12 +348,12 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
     assert.ok(env.error.safe_default, 'safe_default는 비어 있지 않다');
 ```
 
-- [ ] **Step 2: RED 관찰**
+- [x] **Step 2: RED 관찰**
 
 Run: `node --test tests/rules.test.mjs`
 Expected: FAIL 2건 — `alternatives`가 `undefined`.
 
-- [ ] **Step 3: GREEN**
+- [x] **Step 3: GREEN**
 
 ```js
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
@@ -425,12 +425,12 @@ invalid-action(`:305-320`)은 **JSON 분기만** 패킷으로 바꾼다. text �
       }),
 ```
 
-- [ ] **Step 4: GREEN 관찰**
+- [x] **Step 4: GREEN 관찰**
 
 Run: `node --test tests/rules.test.mjs`
 Expected: PASS — 특히 `:308`의 `usage:` 고정 테스트가 여전히 통과해야 한다.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add src/commands/rules.mjs tests/rules.test.mjs
@@ -450,14 +450,14 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
 - Consumes: `buildErrorPacket`, `renderErrorPacket` (Task 1)
 - Produces: `ERROR_ADVICE[kind] = { cause, retry, alternatives, safeDefault, stop }` (5종)
 
-- [ ] **Step 1: 사전 확인 — "무변경"이 사실인지 본다**
+- [x] **Step 1: 사전 확인 — "무변경"이 사실인지 본다**
 
 Run: `grep -n "writeFile\|await write" src/commands/release.mjs | head -20`
 `version-mismatch`·`bad-bump`·`schema`·`manifest-format`이 **쓰기 이전**의 검증에서 throw하는지
 확인한다. 쓰기 이후에도 throw할 수 있으면 그 kind의 `safeDefault`를 아래 문구 대신
 `'실패 시점까지의 변경이 남을 수 있다 — `git status` 로 확인한 뒤 되돌리고 재실행'`으로 바꾼다.
 
-- [ ] **Step 2: RED**
+- [x] **Step 2: RED**
 
 `tests/observation-commands.test.mjs:68`의 3키 truthy 검사 다음 줄에 추가한다.
 
@@ -466,12 +466,12 @@ Run: `grep -n "writeFile\|await write" src/commands/release.mjs | head -20`
     assert.ok(env.error.safe_default, 'safe_default는 비어 있지 않다');
 ```
 
-- [ ] **Step 3: RED 관찰**
+- [x] **Step 3: RED 관찰**
 
 Run: `node --test tests/observation-commands.test.mjs`
 Expected: FAIL 1건 (release 에러 테스트).
 
-- [ ] **Step 4: GREEN**
+- [x] **Step 4: GREEN**
 
 ```js
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
@@ -523,12 +523,12 @@ catch 블록:
   },
 ```
 
-- [ ] **Step 5: GREEN 관찰**
+- [x] **Step 5: GREEN 관찰**
 
 Run: `node --test tests/observation-commands.test.mjs tests/release.test.mjs`
 Expected: PASS.
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add src/commands/release.mjs tests/observation-commands.test.mjs
@@ -547,7 +547,7 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
 **Interfaces:**
 - Consumes: `buildErrorPacket`, `renderErrorPacket` (Task 1)
 
-- [ ] **Step 1: RED**
+- [x] **Step 1: RED**
 
 `tests/observation-commands.test.mjs:54`(retro no-active)와 `:99`(task bad-name)의 truthy 검사
 다음 줄에 각각 추가한다.
@@ -557,12 +557,12 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
     assert.ok(env.error.safe_default, 'safe_default는 비어 있지 않다');
 ```
 
-- [ ] **Step 2: RED 관찰**
+- [x] **Step 2: RED 관찰**
 
 Run: `node --test tests/observation-commands.test.mjs`
 Expected: FAIL 2건.
 
-- [ ] **Step 3: GREEN**
+- [x] **Step 3: GREEN**
 
 ```js
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
@@ -620,12 +620,12 @@ retro no-active(`:661-680`):
 기존 text 출력을 문자열로 고정한 테스트가 있는지 `grep -rn "잘못된 task 이름" tests`로 확인하고,
 있으면 새 문구에 맞춘다.
 
-- [ ] **Step 4: GREEN 관찰**
+- [x] **Step 4: GREEN 관찰**
 
 Run: `node --test tests/observation-commands.test.mjs tests/task.test.mjs`
 Expected: PASS.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add src/commands/task.mjs tests/observation-commands.test.mjs
@@ -645,7 +645,7 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
 - Consumes: `buildErrorPacket`, `renderErrorPacket` (Task 1)
 - 이 지점은 `--json` 분기가 없다 — 범위 밖이므로 추가하지 않는다.
 
-- [ ] **Step 1: RED**
+- [x] **Step 1: RED**
 
 `tests/task.test.mjs`에 done 가드 출력 테스트를 추가한다(기존 가드 테스트가 있으면 그 옆에).
 
@@ -670,12 +670,12 @@ test('done 가드: issue별 cause 줄을 보존하고 alternatives·default 줄�
 });
 ```
 
-- [ ] **Step 2: RED 관찰**
+- [x] **Step 2: RED 관찰**
 
 Run: `node --test tests/task.test.mjs`
 Expected: FAIL — `alternatives: ` 줄이 없다.
 
-- [ ] **Step 3: GREEN**
+- [x] **Step 3: GREEN**
 
 ```js
   if (issues.length && !force) {
@@ -696,13 +696,13 @@ Expected: FAIL — `alternatives: ` 줄이 없다.
 기존 `stop:` 문구(`의도적으로 무시하려면 \`harness-team done --force\``)는 `alternatives`로
 옮겼다 — `stop_condition`은 "언제 멈춰야 하는가"이지 "어떻게 우회하는가"가 아니다.
 
-- [ ] **Step 4: GREEN 관찰**
+- [x] **Step 4: GREEN 관찰**
 
 Run: `node --test tests/task.test.mjs tests/e2e/*.test.mjs`
 Expected: PASS. e2e에 `stop: 의도적으로 무시하려면` 문자열을 고정한 테스트가 있으면 새 문구로 고친다
 (`grep -rn "의도적으로 무시하려면" tests`로 먼저 확인).
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add src/commands/task.mjs tests/task.test.mjs
@@ -714,6 +714,10 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
 
 ### Task 7: `doctor`
 
+> **실행 중 변경**: Task 5와 한 커밋(`9a9e7ea`)으로 묶었다 — 둘 다 같은 모양의 인라인
+> 리터럴 치환이고 RED 어서션이 `tests/observation-commands.test.mjs` 한 파일에 함께 있어,
+> 리뷰어가 한쪽만 기각할 수 있는 경계가 아니다.
+
 **Files:**
 - Modify: `src/commands/doctor.mjs:8`(import), `:685-691`
 - Test: `tests/observation-commands.test.mjs:131`
@@ -721,7 +725,7 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
 **Interfaces:**
 - Consumes: `buildErrorPacket` (Task 1)
 
-- [ ] **Step 1: RED**
+- [x] **Step 1: RED**
 
 `tests/observation-commands.test.mjs:131`의 검사에 추가한다.
 
@@ -730,12 +734,12 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
     assert.ok(env.error.safe_default, 'safe_default는 비어 있지 않다');
 ```
 
-- [ ] **Step 2: RED 관찰**
+- [x] **Step 2: RED 관찰**
 
 Run: `node --test tests/observation-commands.test.mjs`
 Expected: FAIL 1건 (doctor).
 
-- [ ] **Step 3: GREEN**
+- [x] **Step 3: GREEN**
 
 ```js
 import { buildEnvelope, buildErrorPacket, emitObservation } from '../observation.mjs';
@@ -753,12 +757,12 @@ import { buildEnvelope, buildErrorPacket, emitObservation } from '../observation
 
 `doctor.mjs`는 text 분기에서 `cause:` 줄을 찍지 않으므로 `renderErrorPacket`은 import하지 않는다.
 
-- [ ] **Step 4: GREEN 관찰**
+- [x] **Step 4: GREEN 관찰**
 
 Run: `node --test tests/observation-commands.test.mjs tests/doctor.test.mjs`
 Expected: PASS.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add src/commands/doctor.mjs tests/observation-commands.test.mjs
@@ -776,7 +780,7 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
 **Interfaces:**
 - Consumes: Task 2~7이 끝난 상태의 `src/commands/*.mjs`
 
-- [ ] **Step 1: 테스트를 쓴다 (이 시점에는 이미 GREEN이어야 한다 — 회귀 방지용 pin)**
+- [x] **Step 1: 테스트를 쓴다 (이 시점에는 이미 GREEN이어야 한다 — 회귀 방지용 pin)**
 
 ```js
 import { readdir, readFile } from 'node:fs/promises';
@@ -810,23 +814,23 @@ test('pin: 엔벨로프로 나가는 root_cause 는 string (배열은 text 전�
 });
 ```
 
-- [ ] **Step 2: 관찰**
+- [x] **Step 2: 관찰**
 
 Run: `node --test tests/observation.test.mjs`
 Expected: PASS. 실패하면 Task 2~7에서 놓친 생산자가 있다는 뜻이므로 그 파일로 돌아간다.
 
-- [ ] **Step 3: 변이로 pin이 실제로 잡는지 확인**
+- [x] **Step 3: 변이로 pin이 실제로 잡는지 확인**
 
 `src/commands/doctor.mjs`의 `buildErrorPacket({` 호출을 일시적으로
 `{ root_cause: 'x', safe_retry: 'y', stop_condition: 'z' }` 리터럴로 바꾸고 위 테스트를 돌린다.
 Expected: FAIL(`리터럴 root_cause: 를 쓰는 생산자: doctor.mjs`). 확인 후 **원복**한다.
 
-- [ ] **Step 4: 전체 스위트**
+- [x] **Step 4: 전체 스위트**
 
 Run: `npm test`
 Expected: 0 fail. 총 테스트 수는 580보다 커진다(신규 추가분).
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add tests/observation.test.mjs
@@ -846,7 +850,7 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
 **Interfaces:**
 - 독립 Task — Task 1~8과 코드 의존이 없다.
 
-- [ ] **Step 1: RED**
+- [x] **Step 1: RED**
 
 `tests/agent-files.test.mjs`에 추가한다.
 
@@ -873,13 +877,13 @@ test('레포 CLAUDE.md의 workflow 구획은 템플릿 렌더 결과와 동일�
 });
 ```
 
-- [ ] **Step 2: RED 관찰**
+- [x] **Step 2: RED 관찰**
 
 Run: `node --test tests/agent-files.test.mjs`
 Expected: FAIL 1건(§5-A 패킷 항목 없음). 두 번째 테스트는 이 시점에 **PASS**한다
 (현재 두 파일이 이미 동일하기 때문) — Step 3에서 한쪽만 고치면 이 테스트가 잡는다.
 
-- [ ] **Step 3: GREEN — 템플릿 §5-A 교체**
+- [x] **Step 3: GREEN — 템플릿 §5-A 교체**
 
 `templates/CLAUDE.md.hbs`의 "이때 Claude가 직접 하는 것" 블록을 아래로 교체한다.
 
@@ -900,7 +904,7 @@ Expected: FAIL 1건(§5-A 패킷 항목 없음). 두 번째 테스트는 이 시
 - **How to apply:** 위 조건 충족 시 1회. 작은 버그·문서 수정에는 생략.
 ```
 
-- [ ] **Step 4: 저장소 `CLAUDE.md` 동기**
+- [x] **Step 4: 저장소 `CLAUDE.md` 동기**
 
 ```bash
 node -e "
@@ -917,13 +921,15 @@ console.log('synced');
 템플릿에 Handlebars 변수(`{{...}}`)가 §5-A 구획에 없음을 먼저 확인한다
 (`grep -n '{{' templates/CLAUDE.md.hbs | sed -n '1,40p'`). 있으면 위 복사 대신 `render` 결과를 써야 한다.
 
-- [ ] **Step 5: GREEN 관찰**
+- [x] **Step 5: GREEN 관찰**
 
 Run: `node --test tests/agent-files.test.mjs`
-Expected: PASS 2건. 그리고 `node --test tests/*.test.mjs`로 §5-A 문구를 고정한 다른 테스트가
+Expected: PASS. **실행 중 변경**: 계획의 두 번째 테스트(레포본↔템플릿 동기화)는 만들지 않았다 —
+`tests/agent-files.test.mjs`에 이미 `저장소 루트 CLAUDE.md는 렌더된 템플릿의 관리 절과
+드리프트하지 않는다`가 있어 같은 것을 고정하므로 중복이다. 내용 테스트 1건만 추가했다. 그리고 `node --test tests/*.test.mjs`로 §5-A 문구를 고정한 다른 테스트가
 깨지지 않았는지 확인한다(`grep -rn "1줄 권유" tests templates commands skills`로 사전 확인).
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add templates/CLAUDE.md.hbs CLAUDE.md tests/agent-files.test.mjs
@@ -944,7 +950,7 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
 **Interfaces:**
 - Consumes: Task 1~9의 최종 계약.
 
-- [ ] **Step 1: overview 템플릿 — 엔벨로프 스키마 예시**
+- [x] **Step 1: overview 템플릿 — 엔벨로프 스키마 예시**
 
 `docs/harness-overview.template.html:379`의 한 줄에서 3키를 5키로 바꾼다.
 
@@ -958,7 +964,7 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
         <p>created / activated / no-active / bad-name 분기마다 엔벨로프. 에러 경로도 <code>root_cause</code> + <code>safe_retry</code> + <code>alternatives</code> + <code>safe_default</code> + <code>stop_condition</code>로 정합 — PDF §V.A escalation 패킷 5항목.</p>
 ```
 
-- [ ] **Step 2: 생성물 재생성**
+- [x] **Step 2: 생성물 재생성**
 
 ```bash
 npm run docs:generate && npm run docs:check
@@ -967,13 +973,13 @@ npm run docs:generate && npm run docs:check
 Expected: `docs:check`가 최신이라고 답한다. `docs/harness-overview-<version>.html` 12개는
 `git status`에 나타나지 않아야 한다 — 나타나면 생성기 범위를 잘못 건드린 것이다.
 
-- [ ] **Step 3: `skills/harness-team/SKILL.md:51`**
+- [x] **Step 3: `skills/harness-team/SKILL.md:51`**
 
 ```markdown
 - `error.root_cause`, `error.safe_retry`, `error.alternatives`, `error.safe_default`, `error.stop_condition` on failure
 ```
 
-- [ ] **Step 4: CHANGELOG `[Unreleased]`**
+- [x] **Step 4: CHANGELOG `[Unreleased]`**
 
 ```markdown
 ## [Unreleased]
@@ -990,7 +996,7 @@ Expected: `docs:check`가 최신이라고 답한다. `docs/harness-overview-<ver
   text 미러에 `alternatives:`·`default:` 줄이 추가된다(빈 `alternatives`는 줄을 내지 않는다).
 ```
 
-- [ ] **Step 5: 전체 검증**
+- [x] **Step 5: 전체 검증**
 
 ```bash
 npm test && npm run docs:check
@@ -998,7 +1004,7 @@ npm test && npm run docs:check
 
 Expected: 0 fail · docs 최신.
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add docs/harness-overview.template.html docs/harness-overview.html skills/harness-team/SKILL.md CHANGELOG.md

@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: escalation packet(envelope `error` 3필드 + CLAUDE.md §5-A 1줄 권유)에 PDF 권고 ③의 "시도한 대안·안전 기본값"을 더한다.
-- Current atomic step: plan Task 1 — `buildErrorPacket`/`renderErrorPacket` RED(테스트 먼저) → GREEN
+- Current atomic step: plan Task 11 — codex 리뷰 발견 검증 → artifact Reviews 기록 → shipcheck
 - Stop / human-decision condition: 설계 승인됨(2026-09-05). PR·머지·릴리스는 사용자 지시.
 
 ## Constraints and settled decisions
@@ -14,8 +14,8 @@
 ## JIT retrieval map
 - Identifiers / symbols: `buildErrorPacket`, `renderErrorPacket`, `buildEnvelope`, `ERROR_ADVICE`, `fail(`, `runDone`
 - Narrow globs: `src/observation.mjs`, `src/commands/{release,summary,observe,task,doctor,rules}.mjs`, `tests/observation*.test.mjs`, `templates/CLAUDE.md.hbs` §5-A, `docs/harness-overview.template.html:379-394`
-- Read next: `<name>-plan.md` Task 1~11 (실행 순서·코드 포함), `<name>-spec.md`
-- Verification command: `npm test` · `npm run docs:check`
+- Read next: `<name>-plan.md` Task 11, `commands/harness-review.md`(마커 계약), 직전 task artifact의 Reviews 형식
+- Verification command: `npm test` (591/590 pass/0 fail/1 skip, perf 1/1) · `npm run docs:check` (최신)
 
 ## Failure capsules (max 3 unresolved)
 (none)
