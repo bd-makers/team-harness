@@ -80,3 +80,4 @@
 | hslee | escalation-packet-fields | ✅ done | 2026-09-05 |
 | hslee | observability-consumer | ✅ done | 2026-09-05 |
 | hslee | retro-rules-promotion | ✅ done | 2026-09-05 |
+| hslee | settings-ask-tier | ✅ done | 2026-09-05 |

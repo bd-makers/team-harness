@@ -8,6 +8,7 @@
 - ✅ escalation-packet-fields
 - ✅ observability-consumer
 - ✅ retro-rules-promotion
+- ✅ settings-ask-tier
 - ✅ scaffold-pm-permissions
 - ✅ audit-cleanup
 - ✅ claude5-context-apply
