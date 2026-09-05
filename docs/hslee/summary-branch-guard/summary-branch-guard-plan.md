@@ -2,8 +2,8 @@
 
 ## 목표
 
-`summary --write` 가드가 브랜치 **이름** 대신 **HEAD 커밋이 `origin/<기본브랜치>`와 같은지**를
-보게 한다. 워크트리 세션의 상시 `--force` 우회를 없애되, 갈라진 브랜치는 계속 거부한다.
+`summary --write` 가드가 브랜치 **이름** 대신 **HEAD 커밋이 `origin/HEAD`가 가리키는 브랜치와
+같은지**를 보게 한다. 워크트리 세션의 상시 `--force` 우회를 없애되, 갈라진 브랜치는 계속 거부한다.
 
 ## 단계
 - [x] spec.md 작성 · Ambiguity 게이트 통과(4/4) · Done evidence 선언(`review: required`)

@@ -27,3 +27,11 @@ CHANGELOG.md                                       | 16 +++---
  src/commands/summary.mjs                           | 57 ++++++++++++----------
  tests/summary.test.mjs                             | 52 ++++++++++++++++++++
  8 files changed, 171 insertions(+), 38 deletions(-)
+
+## 2026-09-05T14:58:16.338Z — 081b204 docs(task): summary-branch-guard — BRG-01 반영 결과·학습 기록, ship 준비
+docs/hslee/hslee-handoff.md                        |  2 +-
+ .../summary-branch-guard-artifact.md               | 41 ++++++++++++++++++----
+ .../summary-branch-guard-context.md                | 14 ++++----
+ .../summary-branch-guard-handoff.md                | 11 ++++++
+ .../summary-branch-guard-plan.md                   |  6 ++--
+ 5 files changed, 59 insertions(+), 15 deletions(-)

@@ -4,7 +4,7 @@
 summary-branch-guard
 
 ## Last Commit (2026-09-05)
-139bd3f fix(summary): synced 판정을 origin/HEAD 로 좁힌다 (codex BRG-01)
+081b204 docs(task): summary-branch-guard — BRG-01 반영 결과·학습 기록, ship 준비
 
 ## Full Context
 → docs/hslee/summary-branch-guard/summary-branch-guard-handoff.md

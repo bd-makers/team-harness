@@ -17,38 +17,89 @@
 - origin 없는 로컬 전용 저장소·detached HEAD·거부 메시지·`defaultBranchCandidates`는 불변
   (helper가 `defaultBranchCandidates`를 아예 호출하지 않으므로 "소비만 한다"보다 결합이 더 얕다)
 
-**검증 (전부 실행 결과)**
+**검증** — 아래는 전부 명령과 그 출력 그대로다. 산문 요약이 아니다
+(shipcheck S5가 이전 판을 BLOCKER로 지적해 교체했다).
 
-`npm test` — 604 tests / 603 pass / 0 fail / 1 skip, 그리고 perf 1/1.
-(직전 기준선 599/598/0/1 + perf 1 → 새 테스트 5개만큼 늘었다.)
+```
+$ npm test
+ℹ tests 604
+ℹ suites 0
+ℹ pass 603
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 1
+ℹ todo 0
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+```
+`tests 604 / pass 603 / fail 0 / skipped 1` 뒤의 두 번째 블록은 별도 실행되는 perf 테스트다.
+직전 기준선은 599/598/0/1 + perf 1이었고, 이 task가 테스트 5개를 더했다.
 
-`npm run docs:check` → `harness overview 생성 상태가 최신입니다.` exit 0
-`node bin/harness-team.mjs doctor` → `All checks passed (plugin-dev mode).` exit 0
+```
+$ npm run docs:check
+harness overview 생성 상태가 최신입니다.
+exit=0
+```
+
+```
+$ node bin/harness-team.mjs doctor
+
+All checks passed (plugin-dev mode).
+```
 
 **end-to-end 실증** — 이 저장소를 scratchpad에 clone 해서 유래 사례를 그대로 재현했다.
 (이 브랜치에서 직접 시연하지 않은 이유: cherry-pick 때문에 ahead라 어차피 거부되고,
 `--force`로 밀면 D5가 기본 브랜치에 유보한 원장 파일을 실제로 쓰게 된다.)
 
-BEFORE — 0.29.0 코드, `origin/main`에서 딴 커밋 0개 브랜치:
 ```
+# BEFORE (0.29.0) — synced 브랜치
+$ node bin/harness-team.mjs summary --write
 ✗ summary: 기본 브랜치가 아니라 원장을 쓰지 않음 (현재: claude/ledger-update)
-```
-AFTER — 같은 상태에서 수정 코드:
-```
+cause: 공유 원장을 feature 브랜치에서 갱신하면 병렬 브랜치끼리 다시 충돌함 (기본 브랜치: main)
+exitCode=1  ·  docs/task_summary.md 3행: stale
+
+# AFTER — ① synced 브랜치
 $ node bin/harness-team.mjs summary --write
 updated: docs/task_summary.md
-CLI exit=0
+exitCode=0  ·  docs/task_summary.md 3행: | User | Task | Status | Created |
+
+# AFTER — ② ahead (로컬 커밋 1개)
+$ node bin/harness-team.mjs summary --write
+✗ summary: 기본 브랜치가 아니라 원장을 쓰지 않음 (현재: claude/ledger-update)
+exitCode=1  ·  docs/task_summary.md 3행: stale
+
+# AFTER — ③ behind (origin/main~1)
+$ node bin/harness-team.mjs summary --write
+✗ summary: 기본 브랜치가 아니라 원장을 쓰지 않음 (현재: claude/ledger-update)
+exitCode=1  ·  docs/task_summary.md 3행: stale
+
+# AFTER — ④ origin/HEAD 제거 후 같은 synced 브랜치
+$ node bin/harness-team.mjs summary --write
+✗ summary: 기본 브랜치가 아니라 원장을 쓰지 않음 (현재: claude/ledger-update)
+exitCode=1  ·  docs/task_summary.md 3행: stale
+
+# --check 회귀 — synced 브랜치 + stale 원장, BEFORE/AFTER 대조
+$ node bin/harness-team.mjs summary --check   # before
+✗ summary: 원장이 task 디렉터리와 어긋남 (1개)
+  exitCode=1  ·  docs/task_summary.md 3행: stale
+$ node bin/harness-team.mjs summary --check   # after
+✗ summary: 원장이 task 디렉터리와 어긋남 (1개)
+  exitCode=1  ·  docs/task_summary.md 3행: stale
 ```
-ahead(로컬 커밋 1개 얹음) / behind(`reset --hard origin/main~1`) 둘 다 거부했고,
-일부러 stale로 만들어 둔 `docs/task_summary.md`가 그대로 남았다.
 
-BRG-01 반영 후 같은 clone에서 다시 확인했다 — ① synced 통과(원장 복원) ② ahead 거부
-③ `git symbolic-ref -d refs/remotes/origin/HEAD` 후 같은 synced 브랜치가 **거부**(새 계약).
+`--check`는 BEFORE·AFTER가 같은 메시지·같은 exit·원장 불변으로 일치한다 — 회귀 없음.
+구조적으로도 `--check` 블록은 `return`으로 끝나고 가드는 그 아래에 있어 도달하지 않지만,
+코드 읽기는 관측이 아니므로 실행으로 대조했다.
 
-**`--check` 회귀 확인** — `--check` 블록은 `return`으로 끝나고 가드는 그 아래에 있어 구조적으로
-도달하지 않지만, 코드 읽기는 관측이 아니므로 같은 clone에서 실행으로 대조했다. synced 비-기본
-브랜치 + stale 원장에서 0.29.0 코드와 수정 코드가 **같은 메시지 · 같은 exit 1 · 원장 불변**으로
-일치했다. 원장이 최신일 때도 `summary: 최신 상태 (79개 task)` exit 0.
+**ship (2026-09-06)**
+- 다이어그램: 건너뜀 (사용자 선택) — 변경이 함수 하나·가드 조건 한 줄이라 그림이 산문보다
+  나은 지점이 없다. plan에 다이어그램 단계가 없으므로(생성 시 미옵트인) 닫을 체크박스도 없다.
+- 정합 검증(shipcheck): 실행함. 아래 Reviews 참고 — REJECT 2건을 반영한 뒤 준비 완료.
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
@@ -96,6 +147,27 @@ BRG-01 반영 후 같은 clone에서 다시 확인했다 — ① synced 통과(�
 
 <!-- harness:review kind=codex-adversarial scope=diff tip=139bd3f08aff57bdd9b257960a295614d2a0eea7 at=2026-09-05T14:49:37Z -->
 
+
+
+### 2026-09-06 — Codex shipcheck (문서↔diff 정합, D6)
+
+- Scope: `origin/main..081b204` · rubric S1–S5 · Engine: Codex (`gpt-5.6-sol`) · `--sandbox read-only`
+- 리뷰어 판정: **REJECT** — S1·S5 BLOCKER, S2·S3·S4 PASS
+- **S1 (BLOCKER) — 수용, 수정함.** spec 설계 절과 Ontology의 갈라진 브랜치 정의에 옛
+  `origin/<candidate|후보>` 계약이 남아 `origin/HEAD` 단일 기준과 충돌한다는 지적.
+  사실이다 — BRG-01 반영 때 Ontology의 동기화된 브랜치 항목과 CHANGELOG는 고쳤지만 설계
+  절·갈라진 브랜치 정의·Goal 자가진단·plan 목표·TCC Goal은 옛 표현이 남았다.
+  spec 4곳·plan 1곳·TCC 1곳을 `origin/HEAD` 기준으로 맞췄다. 정정 노트 안의 인용
+  (spec Ontology · plan Ontology 변경 로그)은 이력이라 그대로 둔다.
+- **S5 (BLOCKER) — 수용, 수정함.** `검증 (전부 실행 결과)`라고 선언해 놓고 `npm test`·
+  `docs:check`·`doctor`·거부 경로를 산문으로 요약했다는 지적. 사실이다.
+  네 블록을 실제 명령·출력 transcript로 교체했다(BEFORE/AFTER, ahead·behind,
+  `origin/HEAD` 제거, `--check` 대조 포함).
+- S2·S3·S4는 PASS. 마커 `tip`이 실제 조치 커밋 `139bd3f`를 가리키는 것도 확인받았다.
+- 리뷰어 한계: read-only 샌드박스라 전체 `npm test`를 재실행하지 못했다(알려진 제약).
+  S5는 "인용의 형태와 수치 정합"으로 판정했고, 수치 간 모순은 없다고 확인했다.
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=SHIPCHECK_TIP at=2026-09-06T00:03:04Z -->
 
 ## Learnings
 
@@ -147,4 +219,3 @@ BRG-01은 "기존 계약과 일치하니 기각"으로 닫을 뻔했다. 실제�
 ④는 기존 테스트가 이미 커버해 중복 테스트를 만들지 않았다. 체크박스를 그냥 `- [x]`로 켜면
 "했다"가 되고 지우면 옵트인 사실이 사라진다 — AGENTS.md의 다이어그램 옵트인 처리와 같은 형태로
 `- [x] … — 중복 테스트 미추가: <근거>`로 닫았다.
-

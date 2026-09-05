@@ -2,7 +2,7 @@
 <!-- working set only; UTF-8 <= 6 KiB, nonblank lines <= 100 -->
 
 ## Now
-- Goal: `summary --write` 가드를 브랜치 이름이 아니라 HEAD == `origin/<기본브랜치>` 로 판정
+- Goal: `summary --write` 가드를 브랜치 이름이 아니라 HEAD == `origin/HEAD` 가리키는 브랜치로 판정
 - Current atomic step: ship 완료 보고 (구현·테스트·CHANGELOG·E2E·codex 리뷰 반영 전부 끝)
 - Stop / human-decision condition: PR 생성은 사용자 지시가 있어야 한다. `[Unreleased]` 릴리스
   여부(0.30.0 후보)도 별도 결정.
