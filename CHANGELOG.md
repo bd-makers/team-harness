@@ -18,6 +18,8 @@ modified: 2026-09-05
 
 ## [Unreleased]
 
+## [0.29.0] - 2026-09-05
+
 ### Added
 - **`permissions.ask` 계층** — `init`이 쓰는 `.claude/settings.json`에 ask 항목 3개
   (`Bash(git push *)` · `Bash(gh pr create *)` · `Bash(gh pr merge *)`)를 넣습니다. 지금까지 하네스의

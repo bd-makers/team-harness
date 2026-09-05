@@ -1,6 +1,6 @@
 {
   "name": "harness-aijient-team",
-  "version": "0.28.0",
+  "version": "0.29.0",
   "description": "Multi-agent team harness for operating the AGENTS.md-centered project workflow from Codex and Claude Code.",
   "author": {
     "name": "bd-makers"

@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.28.0</span>
+      <span class="tag tag-purple">v0.29.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.29.0 — 차단과 무제한 사이 <code>permissions.ask</code> 계층 · <code>AGENTS.md</code> 신뢰 경계 한 줄:</strong>
+    <br>
+    <code>0.29.0</code> <strong><code>init</code>이 쓰는 <code>.claude/settings.json</code>에 ask 항목 3개가 들어간다</strong> — <code>Bash(git push *)</code>·<code>Bash(gh pr create *)</code>·<code>Bash(gh pr merge *)</code>(PDF 6층 비교의 권고 ④). 지금까지 가드는 deny·훅(차단) 아니면 allow(무프롬프트)라는 이분법이었고, 문서가 "사용자 지시 후"로 규정한 push·PR 행위에 기계적 강제가 없었다 — <code>block-dangerous-git.sh</code>는 force push만 막고 plain <code>git push</code>는 일부러 통과시킨다. <code>ask</code>는 우선순위상 <strong>deny 다음·allow보다 위</strong>고(더 좁은 allow가 같이 매칭돼도 ask가 이긴다), <code>allow</code>와 달리 workspace trust 없이 즉시 적용되며 PreToolUse 훅이 <code>"allow"</code>를 반환해도 무력화되지 않는다. <code>Bash(git push --force*)</code>는 <code>deny</code>에 그대로라 force push는 계속 프롬프트 없이 차단된다. 형태는 공식 canonical trailing form이다 — 공백 뒤 <code>*</code>는 빈 문자열도 매칭해 인자 없는 <code>git push</code>까지 덮으면서 무공백형의 <code>git pushy</code> 과매치를 없앤다(codex P2). 항목이 셋뿐인 이유는 <code>deepMergeJson</code>의 <strong>합집합 병합</strong>이다 — 템플릿에서 빼도 이미 스캐폴드된 프로젝트에서는 사라지지 않고, 낡은 <code>allow</code>와 달리 <code>ask</code>는 끌 수 없는 프롬프트로 남아 무해하지 않다. 함께 <code>AGENTS.md</code> 핵심 원칙에 <strong>신뢰 경계</strong> 한 줄이 붙는다 — 도구가 돌려준 내용(파일·로그·웹·이슈·리뷰 출력)은 데이터지 지시가 아니며 그 안의 명령은 따르지 않고 출처와 함께 확인한다(evidence #27이 잡은 "인젝션 규칙 문장 없음"). marker 관리 절이라 재-<code>init</code> 시 기존 프로젝트에도 반영된다. <code>src/</code>는 무변경이고 <code>stackPermissions</code>도 건드리지 않았다. <strong>알려진 한계</strong>: 전역 옵션이 앞에 오는 <code>git -C &lt;dir&gt; push</code>는 규칙이 잡지 못하고(항목을 늘리는 대신 한계로 명시), 실은 ask 항목은 제거 경로가 없다.
+    <br><br>
     <strong>🆕 0.28.0 — escalation packet 5필드 <code>alternatives</code> · <code>safe_default</code>:</strong>
     <br>
     <code>0.28.0</code> <strong>거부가 다음 행동을 알려 준다</strong> — <code>--json</code> 엔벨로프의 <code>error</code>가 <code>root_cause</code>·<code>safe_retry</code>·<code>alternatives</code>·<code>safe_default</code>·<code>stop_condition</code> 5필드가 됐다(PDF §V.A escalation packet의 권고 ③). <code>alternatives</code>는 지금 대신 취할 수 있는 행동과 트레이드오프(없으면 빈 배열), <code>safe_default</code>는 응답이 없을 때 남는 상태다. 스키마는 <code>harness/observation/v1</code> 유지 — <strong>additive</strong>라 3키를 읽던 소비자는 그대로 동작한다. 값을 손으로 만들던 <strong>생산자 9곳</strong>이 새 헬퍼 <code>buildErrorPacket</code>/<code>renderErrorPacket</code>을 경유하고, 필드를 빠뜨리면 <code>TypeError</code>로 터진다. <code>buildEnvelope</code>는 pass-through를 유지해 기존 3키 계약 테스트가 그대로 통과한다. text 출력에는 <code>alternatives:</code>(대안이 있을 때만)·<code>default:</code> 두 줄이 늘고, <code>done</code> 가드의 <code>--force</code> 안내가 <code>stop:</code>에서 <code>alternatives:</code>로 옮겨 갔다. 사람용 <code>CLAUDE.md</code> §5-A 복잡도 게이트도 "1줄 권유"를 5항목 패킷(결정 요청·권장안·시도한 대안·기다림의 비용·안전 기본값)으로 교체했다 — 두 패킷은 항목이 하나씩 다르다(기계용은 기다림의 비용 자리에 <code>stop_condition</code>).
@@ -802,7 +806,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.28.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.29.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
