@@ -18,6 +18,19 @@ modified: 2026-09-05
 
 ## [Unreleased]
 
+### Added
+- escalation packet 2필드 — `--json` 엔벨로프의 `error`에 `alternatives`(지금 취할 수 있는 다른
+  행동)와 `safe_default`(응답이 없을 때 남는 상태)를 더했다. 스키마는 `harness/observation/v1`
+  유지(additive) — 기존 3키를 읽는 소비자는 그대로 동작한다.
+- `CLAUDE.md` §5-A 복잡도 게이트가 escalation 패킷 5항목(결정 요청·권장안·시도한 대안·기다림의
+  비용·안전 기본값)을 규정한다 — 기존 "1줄 권유"를 대체한다.
+
+### Changed
+- 에러 엔벨로프를 만드는 생산자 9곳이 공용 `buildErrorPacket`/`renderErrorPacket`을 경유한다.
+  필드를 빠뜨리면 `TypeError`로 즉시 드러나고, 리터럴 `root_cause:` 사용은 테스트가 막는다.
+- text 출력에 `alternatives:`·`default:` 줄이 추가된다(빈 `alternatives`는 줄을 내지 않는다).
+  `harness-team done` 가드의 `--force` 안내는 `stop:`에서 `alternatives:`로 옮겼다.
+
 ## [0.27.0] - 2026-09-05
 
 ### Added

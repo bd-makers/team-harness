@@ -376,7 +376,7 @@
   <span style="color:#50c8f5">"summary"</span>: <span style="color:#4df0aa">"사람이 읽는 한 줄 요약"</span>,
   <span style="color:#50c8f5">"next_actions"</span>: [<span style="color:#4df0aa">"에이전트가 다음에 할 행동"</span>],
   <span style="color:#50c8f5">"artifacts"</span>: [<span style="color:#4df0aa">"생성·변경된 경로"</span>],
-  <span style="color:#50c8f5">"error"</span>: <span style="color:#7a82a0">null</span> | { <span style="color:#50c8f5">"root_cause"</span>, <span style="color:#50c8f5">"safe_retry"</span>, <span style="color:#50c8f5">"stop_condition"</span> }
+  <span style="color:#50c8f5">"error"</span>: <span style="color:#7a82a0">null</span> | { <span style="color:#50c8f5">"root_cause"</span>, <span style="color:#50c8f5">"safe_retry"</span>, <span style="color:#50c8f5">"alternatives"</span>, <span style="color:#50c8f5">"safe_default"</span>, <span style="color:#50c8f5">"stop_condition"</span> }
 }</pre>
       <p style="margin-top:0.8rem;font-size:0.83rem;color:var(--muted)">
         <strong style="color:var(--text)">불변식:</strong> <code>status === "error" ⟺ error !== null</code> — 4커맨드 공통.
@@ -391,7 +391,7 @@
       </div>
       <div class="card card-accent-green">
         <h3>task / retro --json</h3>
-        <p>created / activated / no-active / bad-name 분기마다 엔벨로프. 에러 경로도 <code>root_cause</code> + <code>safe_retry</code> + <code>stop_condition</code>로 정합.</p>
+        <p>created / activated / no-active / bad-name 분기마다 엔벨로프. 에러 경로는 <code>root_cause</code> + <code>safe_retry</code> + <code>alternatives</code> + <code>safe_default</code> + <code>stop_condition</code> 5필드로 정합 — escalation 패킷은 대안과 무응답 시 남는 상태까지 담는다. 값을 만드는 지점은 <code>buildErrorPacket</code> 하나다.</p>
       </div>
       <div class="card card-accent-purple">
         <h3>release --json</h3>
