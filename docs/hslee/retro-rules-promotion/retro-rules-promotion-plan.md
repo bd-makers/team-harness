@@ -966,7 +966,7 @@ harness-team rules promote 2 --name api-errors --paths "src/api/**/*.ts"
 
 ### Task 6: 검증 · 리뷰 · ship
 
-- [ ] **Step 6.1: 실제 실행 증거** — 임시 프로젝트(mkdtemp)에 `.harness/active.json`(`tester/demo`) + Learnings 3개짜리 artifact를 만들고
+- [x] **Step 6.1: 실제 실행 증거** — 임시 프로젝트(mkdtemp)에 `.harness/active.json`(`tester/demo`) + Learnings 3개짜리 artifact를 만들고
   `node bin/harness-team.mjs rules promote --target <tmp>`(목록) → `rules promote 2 --name api-errors --paths "src/api/**/*.ts" --target <tmp>`(성공 3줄, 생성된 규칙·`.mdc`·artifact 표기 `cat`) →
   같은 명령 재실행(`already-promoted`, exit 2) → `rules promote 1 --name api-errors --target <tmp>`(`rule-exists`) → `doctor --json --target <tmp> | grep -A1 'rule provenance'`(마커 없는 규칙을 하나 더 넣은 뒤) 출력을 artifact `## 결과`에 인용.
   이 저장소에서는 `rules promote`가 활성 task Learnings를 나열하는 것(retro 뒤)과 `doctor`에 `rule provenance` 항목이 없는 것(`.claude/rules` 부재)을 인용.

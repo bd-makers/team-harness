@@ -20,7 +20,7 @@
 5. **거부 — 모두 파일 무변경** — 활성 task 없음 → exit 1(retro와 같은 `cause/retry/stop` 계약). 다음은 exit 2: artifact 없음(`no-artifact`), `<n>`이 정수가 아니거나
    1..N 밖(`invalid-index`), 이미 승격된 항목(`already-promoted`), `--name` 없음 또는 `^[\w.-]+$` 위반(`invalid-name`), `.claude/rules/<slug>.md` 이미 존재(`rule-exists`),
    첫 토큰이 `promote`가 아님(`invalid-action`). 쓰기 순서는 규칙 파일 → artifact 표기 → 미러이며, 검증은 모두 첫 쓰기 전에 끝낸다.
-6. **출력** — text: 성공 시 `✓ rules promote: .claude/rules/<slug>.md (origin=… since=…[, paths=…])` · `✓ artifact: <rel> #<n> 에 승격 표기` · `✓ cursor mirror: N rule(s)` · `next:` 한 줄.
+6. **출력** — text: 성공 시 `✓ rules promote: .claude/rules/<slug>.md 승격 (origin=… since=…[, paths=…])` · `✓ artifact: <rel> #<n> 에 승격 표기` · `✓ cursor mirror: N rule(s)` · `next:` 한 줄.
    `--json`: `buildEnvelope({ command: 'rules', status: 'listed'|'no-data'|'success'|'error', summary, next_actions, artifacts, error, extra: { action: 'promote', … } })`.
 7. **템플릿 4종 스탬프** — `templates/.claude/rules/{navigation,state-management,styling,testing}.md`의 frontmatter 닫는 `---` 바로 다음 줄에
    `<!-- harness:rule origin=harness-aijient-team/templates since=2026-09-05 -->`를 넣는다. 본문·paths는 바꾸지 않는다. 날짜를 쓰고 릴리스 번호를 쓰지 않는다.
@@ -39,9 +39,10 @@ Codex 쪽 규칙 미러(cursor만), 릴리스.
 
 - **모듈** `src/commands/rules.mjs` 한 파일. 순수 함수와 I/O를 나눈다.
   - 순수: `parseLearnings(artifact) → [{ index, date|null, start, end, text, promoted: { rule, at }|null }]`, `parseRuleMarker(content) → { origin, since }|null`,
-    `ruleMarker({ origin, since })`, `renderRule({ slug, text, origin, since, paths = [] })`, `annotatePromoted(artifact, index, slug, date)`(범위 밖 index는 throw).
+    `ruleMarker({ origin, since })`, `renderRule({ slug, text, origin, since, paths = [] })`, `annotatePromoted(artifact, index, slug, date)`(범위 밖 index는 `RangeError`), `parsePathsFlag(value)`.
     상수 `RULE_MARKER_RE`, `RULE_NAME_RE = /^[\w.-]+$/`(task 이름 규칙과 동일), `PROMOTED_SUFFIX_RE`, `TEMPLATE_RULE_ORIGIN = 'harness-aijient-team/templates'`.
   - I/O: `checkRuleProvenance(targetDir) → string|null`(doctor가 import), `runRulesPromote(ctx)`, `runRules(ctx)`(첫 토큰 디스패치 — `runBoundary`·`runContext`와 같은 모양).
+    값 플래그는 `const flags = ctx.flags ?? {}` 뒤 `flags.name`·`flags.paths` 리터럴로 읽는다 — `tests/cli-args.test.mjs`의 "선언된 플래그는 읽힌다" 가드가 이 리터럴을 대조한다(구현 중 확인).
   - 의존: `readActive`(task.mjs), `collectRuleFiles`(harness.mjs — **export만 추가**)·`mirrorCursorRules`·`splitRulePaths`, `fsx`(`exists`·`readTextSafe`·`writeText`), `observation`(envelope).
 - **CLI 표면** — `{ name: 'rules', args: 'promote [<n>] [--name <slug>] [--paths <a,b>]', flags: ['name', 'paths'] }`. `--json`·`--target`은 GLOBAL. 라우터는 `rules`를 `taskCmds`(cwd 대상)와
   `taskArgs` 전달 목록에 넣는다.
@@ -93,3 +94,4 @@ Codex 쪽 규칙 미러(cursor만), 릴리스.
 - pin 테스트: `tests/cli-args.test.mjs` · `tests/manifest-sync.test.mjs`(commands⟺plugin.json, Codex 동등 스킬, README 포인터, 라우터 case) · `tests/agent-files.test.mjs`(템플릿↔저장소 CLAUDE.md 관리 구획) · `tests/harness-overview-generation.test.mjs`
 - 근거 문서: `.claude/handoffs/2026-09-05-1330-harness-pdf-6layer-comparison.evidence.md` #3·#4·#5·#32, PDF "harness_final" TABLE IX·§X.F "When to Harden a Rule", Claude Code memory 문서(`.claude/rules` 절, 2026-09-05)
 - 브레인스토밍 결정(2026-09-05): 형태 = `rules promote` 하위명령(retro 불변), 유래 = HTML 주석 마커, doctor = 유래 없는 규칙 경고 + 템플릿 4종 스탬프, 다이어그램 = 아니오
+- 실행 증거·검증 출력·리뷰 판별: `retro-rules-promotion-artifact.md` `## 결과`·`## Reviews`
