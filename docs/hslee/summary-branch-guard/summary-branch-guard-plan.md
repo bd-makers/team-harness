@@ -7,13 +7,21 @@
 
 ## 단계
 - [x] spec.md 작성 · Ambiguity 게이트 통과(4/4) · Done evidence 선언(`review: required`)
-- [ ] 실패 테스트 ①: origin/main과 **같은 커밋**의 비-main 브랜치에서 `--write`가 성공한다
-- [ ] 실패 테스트 ②: 그 브랜치에 커밋을 하나 얹으면(ahead) 다시 거부하고 파일을 쓰지 않는다
-- [ ] 실패 테스트 ③: origin/main보다 **뒤진**(behind) 브랜치도 거부한다
-- [ ] 실패 테스트 ④: origin 없는 로컬 전용 저장소는 종전과 동일하다 (이름 판정만, 회귀 방지)
-- [ ] 구현: `runSummary`의 `--write` 가드에 synced-branch 판정 추가 — `rev-parse` 실패는
+- [x] 실패 테스트 ①: origin/main과 **같은 커밋**의 비-main 브랜치에서 `--write`가 성공한다
+      — RED 확인(가드 거부로 실패) 후 구현으로 GREEN
+- [x] 실패 테스트 ②: 그 브랜치에 커밋을 하나 얹으면(ahead) 다시 거부하고 파일을 쓰지 않는다
+      — 이름 판정 시절부터 통과하는 회귀 방지 테스트다. 커버리지는 mutation B(정확 동일성 →
+      ref 존재만으로 허용)로 실증했다 — ②③이 함께 RED이 된다
+- [x] 실패 테스트 ③: origin/main보다 **뒤진**(behind) 브랜치도 거부한다 — ②와 같은 mutation B로 실증
+- [x] 실패 테스트 ④: origin 없는 로컬 전용 저장소는 종전과 동일하다 (이름 판정만, 회귀 방지)
+      — **중복 테스트 미추가**: 기존 `--write: origin 없는 master 저장소에서도 기본 브랜치로
+      인정한다`와 `--write는 기본 브랜치가 아니면 거부한다`가 이 케이스를 이미 고정한다.
+      mutation C(origin ref 없을 때 fail-open)로 둘이 RED이 되는 것을 확인했다.
+      대신 mutation A가 드러낸 **미커버 경로**에 테스트를 새로 넣었다 — 커밋이 하나도 없는
+      (unborn HEAD) 저장소에서 `rev-parse HEAD` 실패를 '동기화됨'으로 읽지 않는지
+- [x] 구현: `runSummary`의 `--write` 가드에 synced-branch 판정 추가 — `rev-parse` 실패는
       fail-closed로 기존 거부에 떨어뜨린다
-- [ ] `CHANGELOG.md` `[Unreleased]`에 기록 (동작 완화이므로 Changed)
+- [x] `CHANGELOG.md` `[Unreleased]`에 기록 (동작 완화이므로 Changed)
 - [ ] `npm test` 전체 green · `npm run docs:check` exit 0
 - [ ] codex read-only 리뷰 → artifact `## Reviews`에 마커와 함께 기록, 발견 재현·판별 후 반영
 - [ ] ship — spec·plan·artifact 최종 갱신 후 준비 완료 보고 (PR 생성은 사용자 지시 후)

@@ -332,3 +332,103 @@ test('summary(text): --write와 --check 동시 지정 → alternatives·default 
     assert.ok(logs.some(l => l.startsWith('stop: ')), 'stop 줄');
   } finally { console.log = orig; process.exitCode = prev; await rm(dir, { recursive: true, force: true }); }
 });
+
+// origin/<기본브랜치>와 같은 커밋에 서 있는 브랜치("동기화된 브랜치")를 만든다.
+// bare 원격에서 clone 하는 이유는 origin/HEAD 를 함께 얻기 위해서다 — 워크트리 세션이 보는
+// 실제 형태이고, 이때 defaultBranchCandidates 는 후보 하나만 낸다.
+async function cloneWithOrigin(baseDir) {
+  const source = join(baseDir, 'source');
+  const bare = join(baseDir, 'remote.git');
+  const clone = join(baseDir, 'clone');
+  await mkdir(source, { recursive: true });
+  await initRepo(source);
+  // 두 번째 커밋 — behind 케이스가 HEAD~1 로 되감을 자리를 만든다.
+  await writeFile(join(source, 'README.md'), '# seed\n\nsecond\n');
+  await git(source, 'add', '-A');
+  await git(source, 'commit', '-qm', 'second');
+  await pexec('git', ['init', '-q', '--bare', '-b', 'main', bare]);
+  await git(source, 'remote', 'add', 'origin', bare);
+  await git(source, 'push', '-q', 'origin', 'main');
+  await pexec('git', ['clone', '-q', bare, clone]);
+  await git(clone, 'config', 'user.email', 'test@example.com');
+  await git(clone, 'config', 'user.name', 'test');
+  return clone;
+}
+
+test('--write: origin/main과 같은 커밋이면 비-main 브랜치에서도 원장을 쓴다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-summary-synced-'));
+  const exitCode = process.exitCode;
+  try {
+    const repo = await cloneWithOrigin(dir);
+    assert.deepEqual(await defaultBranchCandidates(repo), ['main'], 'clone 은 origin/HEAD 를 갖는다');
+
+    await git(repo, 'checkout', '-qb', 'claude/worktree-session');
+    await runTask({ targetDir: repo, flags: { member: 'chad' }, taskArgs: ['demo'] });
+
+    await runSummary({ targetDir: repo, flags: { write: true } });
+    assert.notEqual(process.exitCode, 1, 'origin/main 과 같은 커밋이면 거부되면 안 된다');
+    const summary = await readFile(join(repo, 'docs', 'task_summary.md'), 'utf8');
+    assert.match(summary, /\| chad \| demo \| 🔄 open \|/);
+  } finally {
+    process.exitCode = exitCode;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('--write: origin/main보다 앞선(ahead) 브랜치는 계속 거부한다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-summary-ahead-'));
+  const exitCode = process.exitCode;
+  try {
+    const repo = await cloneWithOrigin(dir);
+    await git(repo, 'checkout', '-qb', 'claude/feature');
+    await runTask({ targetDir: repo, flags: { member: 'chad' }, taskArgs: ['demo'] });
+    await git(repo, 'add', '-A');
+    await git(repo, 'commit', '-qm', 'local work');
+
+    await runSummary({ targetDir: repo, flags: { write: true } });
+    assert.equal(process.exitCode, 1, '로컬 커밋이 있으면 진짜 feature 브랜치다');
+    await assert.rejects(() => readFile(join(repo, 'docs', 'task_summary.md'), 'utf8'));
+  } finally {
+    process.exitCode = exitCode;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('--write: origin/main보다 뒤진(behind) 브랜치도 거부한다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-summary-behind-'));
+  const exitCode = process.exitCode;
+  try {
+    const repo = await cloneWithOrigin(dir);
+    await git(repo, 'checkout', '-qb', 'claude/stale');
+    await git(repo, 'reset', '-q', '--hard', 'HEAD~1');
+    await runTask({ targetDir: repo, flags: { member: 'chad' }, taskArgs: ['demo'] });
+
+    await runSummary({ targetDir: repo, flags: { write: true } });
+    assert.equal(process.exitCode, 1, '낡은 base 위에 원장을 쓰면 push 가 non-FF 로 실패한다');
+    await assert.rejects(() => readFile(join(repo, 'docs', 'task_summary.md'), 'utf8'));
+  } finally {
+    process.exitCode = exitCode;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('--write: 커밋이 하나도 없는 저장소의 비-기본 브랜치는 거부한다 (HEAD 조회 실패는 fail-closed)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-summary-unborn-'));
+  const exitCode = process.exitCode;
+  try {
+    // unborn HEAD: `branch --show-current` 는 이름을 내지만 `rev-parse HEAD` 는 실패한다.
+    // 그 실패를 "동기화됨"으로 읽으면 가드가 조용히 열린다.
+    await git(dir, 'init', '-q', '-b', 'claude/fresh');
+    await git(dir, 'config', 'user.email', 'test@example.com');
+    await git(dir, 'config', 'user.name', 'test');
+    await writeFile(join(dir, '.gitignore'), '.harness/\n');
+    await runTask({ targetDir: dir, flags: { member: 'chad' }, taskArgs: ['demo'] });
+
+    await runSummary({ targetDir: dir, flags: { write: true } });
+    assert.equal(process.exitCode, 1, 'HEAD 를 못 읽으면 허용이 아니라 거부로 떨어져야 한다');
+    await assert.rejects(() => readFile(join(dir, 'docs', 'task_summary.md'), 'utf8'));
+  } finally {
+    process.exitCode = exitCode;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
