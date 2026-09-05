@@ -28,3 +28,8 @@ AGENTS.md                                          |  2 ++
  templates/AGENTS.md.hbs                            |  2 ++
  tests/agent-files.test.mjs                         | 33 ++++++++++++++++++++++
  7 files changed, 69 insertions(+), 6 deletions(-)
+
+## 2026-09-05T13:15:15.969Z — cf0de7d docs(task): post-commit handoff 갱신
+docs/hslee/hslee-handoff.md                               |  2 +-
+ docs/hslee/settings-ask-tier/settings-ask-tier-handoff.md | 10 ++++++++++
+ 2 files changed, 11 insertions(+), 1 deletion(-)

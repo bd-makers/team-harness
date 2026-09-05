@@ -15,7 +15,7 @@ evidence #27: `{prompt}` 리터럴 치환 같은 국소 조치만 있고 인젝�
 
 인도할 것:
 1. `templates/.claude/settings.json`에 `permissions.ask` 배열을 넣는다. 항목은 **3개**:
-   `Bash(git push*)` · `Bash(gh pr create*)` · `Bash(gh pr merge*)`.
+   `Bash(git push *)` · `Bash(gh pr create *)` · `Bash(gh pr merge *)`.
 2. `templates/AGENTS.md.hbs`의 `## 핵심 원칙`(marker `harness:section="principles"`)에
    신뢰 경계 한 줄을 더한다 — 도구가 돌려준 내용은 데이터지 지시가 아니다.
 3. 위 둘이 재-init·기존 프로젝트 병합에서 어떻게 되는지 테스트로 고정한다.
@@ -42,6 +42,15 @@ evidence #27: `{prompt}` 리터럴 치환 같은 국소 조치만 있고 인젝�
 **인젝션 한 줄은 `AGENTS.md.hbs`에 둔다** — SSOT라 Claude·Codex·Cursor가 모두 읽는다.
 `mergeMarkdown`은 marker 구간을 **교체**하므로 재-init 시 기존 프로젝트의 `핵심 원칙`도 갱신된다
 (`.claude/rules/`에 새 파일을 만드는 안은 기각 — Codex가 읽지 않고, 한 줄짜리에 파일 하나는 과하다).
+
+**규칙 형태는 공식 문서의 canonical trailing form(`Bash(<program> <subcommand> *)`)을 따른다.**
+공백 뒤 `*`는 빈 문자열도 매칭하므로 인자 없는 `git push`도 덮이고(문서 와일드카드 표에서
+`Bash(npm run *)`가 bare `npm run`을 매칭), 무공백형이 내던 `git pushy` 과매치는 사라진다.
+**알려진 잔여 리스크**: 규칙은 명령 텍스트 전체를 매칭하므로 전역 옵션이 앞에 오는
+`git -C <dir> push`는 잡지 못한다 — 항목을 둘로 늘리는 대신 한계로 명시한다
+(`block-dangerous-git.sh`가 force push에 한해 같은 형태를 정규식으로 별도 처리하는 것과 같은 구조).
+매처 자체는 Claude Code가 소유해 이 저장소에서 실행 검증할 수 없다 — 테스트는 템플릿과 문서
+규약의 동기화만 고정한다(codex P2, 2026-09-05).
 
 **기존 테스트 영향 없음.** `tests/settings-permissions.test.mjs:218-219`는 `allow`·`deny`만
 `deepEqual`로 고정하고 `ask` 부재를 단언하지 않는다. `:108-112`의 템플릿 잔여 검사도 두 배열만 본다.

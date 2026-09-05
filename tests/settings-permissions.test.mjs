@@ -227,7 +227,13 @@ test('planChanges: stack 없이 직접 부르면 permissions는 템플릿 JSON �
 // workspace trust 없이 즉시 적용되며 PreToolUse 훅의 "allow"로도 무력화되지 않는다.
 // 그래서 목록은 하네스 문서가 이미 "사용자 지시 후"로 규정한 3개로 고정한다 —
 // deepMergeJson의 합집합 병합 때문에 한 번 실으면 제거 경로가 없다.
-const ASK_ENTRIES = ['Bash(git push*)', 'Bash(gh pr create*)', 'Bash(gh pr merge*)'];
+// 형태는 공식 문서의 canonical trailing form(`Bash(git push *)`)이다 — 공백 뒤 `*`는 빈 문자열도
+// 매칭하므로 인자 없는 `git push`까지 덮으면서(문서의 와일드카드 표: `Bash(npm run *)`가 bare
+// `npm run`도 매칭한다) 무공백형이 내던 `git pushy` 과매치는 피한다. 매처는 Claude Code가
+// 소유하므로 여기서 실행 검증할 수 없고, 이 상수는 템플릿과 문서 규약의 동기화만 고정한다.
+// 알려진 잔여 리스크: 전역 옵션이 앞에 오는 `git -C <dir> push`는 이 규칙이 잡지 못한다
+// (`block-dangerous-git.sh`는 같은 형태를 정규식으로 별도 처리한다 — codex P2, 2026-09-05).
+const ASK_ENTRIES = ['Bash(git push *)', 'Bash(gh pr create *)', 'Bash(gh pr merge *)'];
 
 test('템플릿 settings.json의 permissions.ask는 규범이 확실한 3개뿐이다', async () => {
   const tpl = JSON.parse(await readFile(join(ROOT, 'templates/.claude/settings.json'), 'utf8'));
@@ -245,7 +251,7 @@ test('ask는 pm·스택에 의존하지 않는다 — 템플릿 정적 항목이
 test('force push는 deny에 그대로 있고 plain push는 ask다 — deny > ask 우선순위라 충돌하지 않는다', async () => {
   const tpl = JSON.parse(await readFile(join(ROOT, 'templates/.claude/settings.json'), 'utf8'));
   assert.ok(tpl.permissions.deny.includes('Bash(git push --force*)'), 'force push deny가 사라졌다');
-  assert.ok(tpl.permissions.ask.includes('Bash(git push*)'), 'plain push ask가 없다');
+  assert.ok(tpl.permissions.ask.includes('Bash(git push *)'), 'plain push ask가 없다');
   assert.ok(!tpl.permissions.allow.some(e => /git push/.test(e)), 'push를 allow에 두면 ask가 무의미해 보이므로 두지 않는다');
 });
 

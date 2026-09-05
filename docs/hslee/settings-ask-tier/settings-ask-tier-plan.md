@@ -16,7 +16,7 @@ init이 쓰는 settings 템플릿에 `permissions.ask` 3개(`Bash(git push*)`·`
 - [x] `CHANGELOG.md` `[Unreleased]`에 Added 기록 — ask 계층 도입과 **합집합 병합으로 제거 불가**라는 한계를 함께 적는다
 - [x] `npm run docs:check` exit 0 (필요하면 `docs:generate` 후 재확인)
 - [x] `npm test` 전체 green
-- [ ] codex read-only 리뷰 실행 → `settings-ask-tier-artifact.md`의 `## Reviews`에 결과 기록, P1/P2 반영
+- [x] codex read-only 리뷰 실행 → `settings-ask-tier-artifact.md`의 `## Reviews`에 결과 기록, P1/P2 반영
 - [ ] ship — spec·plan·artifact 최종 갱신 후 PR 준비 완료 보고 (PR 생성은 사용자 지시 후)
 
 ## Ontology 변경 로그
