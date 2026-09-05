@@ -28,7 +28,7 @@ I/O 테스트는 codex 샌드박스의 `mkdtemp EPERM`으로 리뷰어 쪽에서
 
 리뷰가 짚지 않았지만 같은 사유로 함께 확인한 것: 옛 3키 서술이 남은 나머지 표면은 전부
 **완료된 과거 task 문서**(`docs/chad/cli-json-contract/*`, `docs/superpowers/plans/2026-05-29-*`)와
-**동결 릴리스 노트**(`docs/what-changes-0.2x.html`, `harness-overview-<version>.html` 12개)다 —
+**동결 릴리스 노트**(`docs/what-changes-0.2x.html`, `harness-overview-<version>.html` 스냅샷)다 —
 그 시점의 계약을 기록한 이력이라 고치면 역사를 위조하는 것이므로 그대로 둔다.
 
 재리뷰: 생략 — 수정이 문구 4곳 + 테스트 어서션 6줄이고, 그중 유일한 동작 변경(타입 가드)은
@@ -82,5 +82,18 @@ I/O 테스트는 codex 샌드박스의 `mkdtemp EPERM`으로 리뷰어 쪽에서
 | MINOR | plan이 pin을 "Task 9"라 지칭(실제 Task 8), overview 스냅샷을 12개라 서술(실제 13개) | 진짜 | 둘 다 정정 |
 
 <!-- harness:review kind=codex-shipcheck scope=diff tip=e098493 at=2026-09-05T11:44:00Z -->
+
+### 2026-09-05 — codex shipcheck #4 (엔진 codex `-m gpt-5.6-sol`, scope: diff origin/main…2a0c90b, 332k tokens)
+
+판정: **NOT READY** — **S1·S4 PASS**(2회 연속). 남은 S2(MAJOR)·S3(MINOR)·S5(MAJOR)는 전부
+**plan/spec 문서가 리뷰 이전 계획의 스냅샷으로 남아 트리와 어긋나는 문제**다. 코드·문서 표면에는 지적이 없다.
+
+| id | 발견 | 판별 | 조치 |
+|---|---|---|---|
+| S2·S5 | Task 8의 "리뷰 후 변경" 블록이 가드 6곳·변이 1회로 적혀 있고(실제 8곳·3회), Task 1의 임베디드 주석이 트리와 다르며, Task 11 deviation 목록이 shipcheck #2에서 끊겼다 | 진짜 — 회차마다 한 곳씩 잡히던 같은 부류다. 개별 대응 대신 **전수 sweep**(`6곳\|12개\|같은 5항목\|2357\|스냅샷`)으로 한 번에 훑었다 | plan 5곳 정정 + 머리말에 "이 문서를 읽는 법"을 넣어 **트리와 artifact의 Reviews가 정본**임을 명시. 회차별 deviation 목록을 #4까지 채움 |
+| S3 | Reviews는 12→13 스냅샷 수를 고쳤다고 했는데 닫힌 plan step에 12가 남아 있었다 | 진짜 | plan Task 10 Step 2 정정. artifact 본문의 "12개"도 수치 대신 "스냅샷"으로 |
+| S5 | spec이 workflow 구획을 "2357 B, 실측"이라 적었는데 지금은 5690 B | 진짜 — **문서에 박은 측정값은 다음 변경에서 곧바로 낡는다.** 이 task에서만 세 번째로 같은 부류를 냈다 | 수치를 지우고 "`tests/agent-files.test.mjs`의 드리프트 테스트가 고정한다"로 대체. spec의 "테스트 6곳" 같은 다른 하드코딩 수치도 함께 제거 |
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=2a0c90b7e4981e222199162278010c0e6d2eb380 at=2026-09-05T11:48:41Z -->
 
 ## Learnings

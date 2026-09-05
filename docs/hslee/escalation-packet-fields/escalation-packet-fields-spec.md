@@ -92,12 +92,14 @@ PDF의 "cost of waiting"은 CLI 거부에서는 언제나 "없음 — 파일 무
 ### 사람용 §5-A
 
 `templates/CLAUDE.md.hbs`의 §5-A "1줄 권유"를 PDF 5항목 패킷으로 교체한다. 저장소 `CLAUDE.md`의
-`harness:section="workflow"` 구획은 템플릿 렌더 결과와 바이트 동일하므로(2357 B, 실측) 같이 갱신한다.
+`harness:section="workflow"` 구획은 템플릿 렌더 결과와 바이트 동일해야 하므로 같이 갱신한다 —
+이 불변식은 `tests/agent-files.test.mjs`의 드리프트 테스트가 고정한다(바이트 수는 적지 않는다.
+문서에 박은 수치는 다음 변경에서 곧바로 낡는다).
 
 ### 문서 표면
 
 - `docs/harness-overview.template.html:379,394` → `npm run docs:generate`.
-  생성기는 `docs/harness-overview.html` 하나만 쓴다 — `docs/harness-overview-<version>.html` 12개
+  생성기는 `docs/harness-overview.html` 하나만 쓴다 — `docs/harness-overview-<version>.html`
   스냅샷은 동결본이라 건드리지 않는다.
 - `skills/harness-team/SKILL.md:51` — 3키를 열거하는 유일한 문서 표면.
 - `CHANGELOG.md` `[Unreleased]`.
@@ -129,8 +131,8 @@ PDF의 "cost of waiting"은 CLI 거부에서는 언제나 "없음 — 파일 무
       `buildEnvelope` pass-through 유지 · D4 단일 스레드 · 이름을 부르는 문서 표면 동시 갱신.
 - [x] **Success 기준** (30%) — `npm test` green(기존 580 유지 + 신규) · `npm run docs:check` 최신 ·
       grep pin(`src/commands/*.mjs`에 리터럴 `root_cause:` 없음) · codex 리뷰 + shipcheck 통과.
-- [x] **Context 명확도** (brownfield) — 생산자 9곳·테스트 6곳·문서 4곳을 위 표와 문서 표면 절에
-      경로·행 번호로 확정했다(기준 커밋 `a0266b2`).
+- [x] **Context 명확도** (brownfield) — 영향 받는 생산자 9곳과 문서 표면을 위 표·문서 표면 절에
+      경로·행 번호로 확정했다(기준 커밋 `a0266b2`). 실제로 바뀐 테스트 파일 목록은 트리가 정본이다.
 - [x] **Ambiguity ≤ 0.2** — 가중합 1.0.
 
 게이트 통과 근거: 위 Ontology가 `alternatives`(취할 수 있는 다른 행동 ≠ 시도 이력)와

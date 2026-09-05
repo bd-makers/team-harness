@@ -15,6 +15,11 @@
 
 **Spec:** `docs/hslee/escalation-packet-fields/escalation-packet-fields-spec.md`
 
+> **이 문서를 읽는 법:** 각 Task의 코드 블록은 **실행 당시 실제로 쓴 코드**다. 리뷰·shipcheck가
+> 결과를 바꾼 지점은 그 자리에 `리뷰 후 변경` 블록으로 사유와 최종 형태를 적었다. 그래도 트리와
+> 이 문서가 어긋나면 **트리와 artifact의 `## Reviews`가 정본**이다 — 이 plan은 실행 기록이지
+> 트리의 거울이 아니다.
+
 ## Global Constraints
 
 - 스키마는 `harness/observation/v1`을 유지한다 — additive 변경이며 bump하지 않는다.
@@ -57,7 +62,9 @@ import { buildEnvelope, buildErrorPacket, renderErrorPacket, OBSERVATION_SCHEMA 
 ```
 
 ```js
-// escalation packet (권고 ③) — PDF §V.A의 5항목 중 "시도한 대안"과 "무응답 시 안전 기본값".
+// escalation packet (권고 ③) — PDF §V.A의 5항목 구조에서 온 두 필드. 기계용에서는 PDF 문구를
+// 그대로 쓰지 않는다: `alternatives`는 "이미 시도한 대안"이 아니라 "지금 취할 수 있는 다른 행동"이고
+// (CLI 거부 시점에는 시도 이력이 없다), 기다림의 비용 자리에는 `stop_condition`이 온다.
 // 강제는 이 헬퍼가 전담한다. buildEnvelope는 error를 그대로 통과시키는 성질을 유지한다.
 test('buildErrorPacket: 5키 패킷 — alternatives 기본값은 빈 배열', () => {
   const packet = buildErrorPacket({ cause: 'c', retry: 'r', safeDefault: 'd', stop: 's' });
@@ -815,9 +822,11 @@ test('pin: buildEnvelope는 error를 정규화하지 않는다 (pass-through)', 
 > **리뷰 후 변경(codex P2-3)**: 계획의 원래 두 번째 pin은 배열 `root_cause`를 엔벨로프에 넣고
 > 통과를 확인해, 이름과 달리 "배열은 text 전용"을 **전혀 막지 못했다** — 엔벨로프는 무엇이든
 > 통과시키므로 그 규칙을 여기서 강제할 수 없다. pin의 범위를 pass-through 검사로 좁히고,
-> 진짜 가드는 실제 JSON 생산자 쪽에 뒀다: `tests/observation-commands.test.mjs`(4곳)와
-> `tests/rules.test.mjs`(2곳)에 `assert.equal(typeof env.error.root_cause, 'string')`.
-> `retro` no-active의 cause를 배열로 바꾸는 변이로 새 가드가 실패를 내는 것을 확인하고 원복했다.
+> 진짜 가드는 실제 JSON 생산자 쪽에 뒀다: `assert.equal(typeof env.error.root_cause, 'string')`.
+> **처음엔 6곳(`observation-commands` 4 + `rules` 2)만 덮어 `summary`·`observe`가 빠졌고
+> shipcheck #3이 이를 잡았다 — 지금은 JSON 생산자 8곳 전부다**(위 두 파일 + `summary.test.mjs`
+> + `observe.test.mjs`). 세 차례 변이(`retro` no-active · `summary` 상호배타 · `observe --days`의
+> cause를 각각 배열로)로 가드가 실패를 내는 것을 확인하고 모두 원복했다.
 
 ```js
 ```
@@ -981,7 +990,7 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
 npm run docs:generate && npm run docs:check
 ```
 
-Expected: `docs:check`가 최신이라고 답한다. `docs/harness-overview-<version>.html` 12개는
+Expected: `docs:check`가 최신이라고 답한다. `docs/harness-overview-<version>.html` 스냅샷(13개)은
 `git status`에 나타나지 않아야 한다 — 나타나면 생성기 범위를 잘못 건드린 것이다.
 
 - [x] **Step 3: `skills/harness-team/SKILL.md:51`**
@@ -1039,9 +1048,12 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
 >   `docs/harness-task-guide.html` · `commands/harness-release.md`
 > - shipcheck #1(커밋 `9271f20`): `src/commands/rules.mjs`(자기모순 문구) ·
 >   `docs/harness-overview.template.html`(+ 생성물) · 이 task의 `spec.md`·`plan.md`
-> - shipcheck #2: `docs/harness-workflow-simulation.html`(무버전본만) ·
+> - shipcheck #2(커밋 `e098493`): `docs/harness-workflow-simulation.html`(무버전본만) ·
 >   `docs/harness-overview.template.html`(+ 생성물) · `templates/CLAUDE.md.hbs`·`CLAUDE.md` ·
 >   `tests/agent-files.test.mjs`(주석) · `spec.md`·`plan.md`
+> - shipcheck #3(커밋 `2a0c90b`): `tests/summary.test.mjs`·`tests/observe.test.mjs`(타입 가드 8/8 완성) ·
+>   `tests/observation.test.mjs`(주석) · `spec.md`·`plan.md`·`artifact.md`
+> - shipcheck #4: `spec.md`·`plan.md`·`artifact.md`만 (코드·문서 표면은 S1·S4 PASS로 확정)
 
 - [x] **Step 1: codex 외부 리뷰 (백그라운드, ~7분)**
 
