@@ -1,6 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readdir, readFile } from 'node:fs/promises';
+import { join, resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { OBSERVATION_SCHEMA, buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../src/observation.mjs';
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 test('buildEnvelope: 성공 기본값 (error null, 배열 기본 [])', () => {
   const env = buildEnvelope({ command: 'task', status: 'success', summary: 'created' });
@@ -85,4 +90,27 @@ test('renderErrorPacket: cause가 배열이면 항목마다 cause 줄', () => {
     cause: ['i1', 'i2'], retry: 'r', safeDefault: 'd', stop: 's',
   }));
   assert.deepEqual(lines, ['cause: i1', 'cause: i2', 'retry: r', 'default: d', 'stop: s']);
+});
+
+// 생산자가 error 객체를 리터럴로 만들면 새 필드를 빠뜨린 채 통과한다 — 강제 지점은
+// buildErrorPacket 하나여야 한다. observation.mjs 자신과 테스트는 정당한 예외라
+// scope를 src/commands/ 로 한정한다.
+test('pin: src/commands/*.mjs 는 리터럴 root_cause: 를 쓰지 않는다 (헬퍼 경유만)', async () => {
+  const dir = join(ROOT, 'src', 'commands');
+  const files = (await readdir(dir)).filter(f => f.endsWith('.mjs'));
+  assert.ok(files.length >= 6, `명령 파일이 있어야 함, got ${files.length}`);
+  const offenders = [];
+  for (const f of files) {
+    if (/root_cause\s*:/.test(await readFile(join(dir, f), 'utf8'))) offenders.push(f);
+  }
+  assert.deepEqual(offenders, [], `리터럴 root_cause: 를 쓰는 생산자: ${offenders.join(', ')}`);
+});
+
+// 배열 cause는 runDone 가드의 text 전용 출력에만 쓴다. buildEnvelope가 error를
+// 정규화하지 않는다는 사실이 기존 deepEqual 3키 계약(위 테스트)을 살리는 근거다.
+test('pin: buildEnvelope는 error를 정규화하지 않는다 (pass-through)', () => {
+  const packet = buildErrorPacket({ cause: ['a', 'b'], retry: 'r', safeDefault: 'd', stop: 's' });
+  assert.ok(Array.isArray(packet.root_cause), '헬퍼는 배열 cause를 그대로 보존한다');
+  const env = buildEnvelope({ command: 'x', status: 'error', summary: 's', error: packet });
+  assert.equal(env.error, packet, 'buildEnvelope는 같은 객체를 그대로 통과시킨다');
 });
