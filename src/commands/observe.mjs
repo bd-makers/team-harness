@@ -213,3 +213,103 @@ export function summarizeObservability(records, { now, days, taskNames = new Map
     trip_wires: [failureRateTripWire(by_day, window), repeatFailureTripWire(inWindow)],
   };
 }
+
+function fail(json, summary, rootCause, safeRetry) {
+  if (json) {
+    emitObservation(buildEnvelope({
+      command: 'observe', status: 'error', summary: `observe 실패: ${summary}`,
+      error: { root_cause: rootCause, safe_retry: safeRetry, stop_condition: '원인을 해소하기 전에는 재시도하지 말 것' },
+    }));
+  } else {
+    console.log(`✗ observe: ${summary}`);
+    console.log(`cause: ${rootCause}`);
+    console.log(`retry: ${safeRetry}`);
+    console.log('stop: 원인을 해소하기 전에는 재시도하지 말 것');
+  }
+}
+
+function parseDays(raw) {
+  if (raw === undefined) return OBSERVE_DEFAULT_DAYS;
+  if (!/^\d+$/.test(String(raw))) return null;
+  const days = Number(raw);
+  return days >= 1 && days <= OBSERVE_MAX_DAYS ? days : null;
+}
+
+const pct = value => (value === null || value === undefined ? '-' : `${(value * 100).toFixed(1)}%`);
+const num = value => (value === null || value === undefined ? '-' : String(value));
+const COLUMNS = [['started', 7], ['finished', 8], ['failed', 6], ['denied', 6], ['rate', 7], ['p95ms', 7], ['intr', 5]];
+
+function statsRow(label, cells) {
+  return [label.padEnd(22), ...cells.map((cell, i) => String(cell).padStart(COLUMNS[i][1]))].join(' ');
+}
+const HEADER = statsRow('', COLUMNS.map(([name]) => name));
+function statsCells(s) {
+  return [num(s.started), num(s.finished), num(s.failed), num(s.denied), pct(s.failure_rate), num(s.duration_p95_ms), num(s.interrupted)];
+}
+
+export function renderObserveText(result, { records, skippedLines }) {
+  const lines = [`observe: ${result.window.days}일 창 (${result.window.from} → ${result.window.to}) · 레코드 ${records} · 건너뜀 ${skippedLines}`];
+  for (const wire of result.trip_wires) {
+    const mark = wire.fired ? '✗' : '✓';
+    if (wire.id === 'failure-rate-2x') {
+      const d = wire.detail;
+      lines.push(`${mark} ${wire.id}: ${wire.status} (오늘 ${pct(d.failure_rate)} vs 기준 ${pct(d.baseline_rate)} · finished ${d.finished} · failures ${d.failures} · 기준일 ${d.baseline_days})`);
+    } else {
+      const hits = wire.detail.hits.map(h => `session ${h.session_ref} ${h.tool_category} ×${h.count} (마지막 ${h.last_at})`).join('; ');
+      lines.push(`${mark} ${wire.id}: ${wire.status}${hits ? ` — ${hits}` : ''}`);
+    }
+  }
+  const section = (title, rows) => {
+    lines.push('', title, HEADER);
+    for (const [label, stats] of rows) lines.push(statsRow(label, statsCells(stats)));
+  };
+  section('일별', result.by_day.map(d => [d.day, d]));
+  section('task별', result.by_task.map(t => [t.label, t]));
+  section('도구 분류별', result.by_category.map(c => [c.tool_category, c]));
+  return lines.join('\n');
+}
+
+export async function runObserve(ctx) {
+  const json = !!(ctx.flags && ctx.flags.json);
+  const rawDays = ctx.flags && ctx.flags.days;
+  const days = parseDays(rawDays);
+  if (days === null) {
+    process.exitCode = 2;
+    return fail(json, `--days 값이 잘못됨 (${rawDays})`, `--days는 1..${OBSERVE_MAX_DAYS} 정수만 허용 (훅 보존 기간 ${OBSERVE_MAX_DAYS}일)`,
+      '`harness-team observe --days 7`처럼 정수를 지정');
+  }
+  const now = new Date();
+  const read = await readObservabilityRecords(ctx.targetDir, { now, days });
+  if (read.status === 'not-installed') {
+    const summary = `관측 로그 없음 — ${OBSERVABILITY_BASE} 미존재 (observe-tools 훅이 아직 기록하지 않음)`;
+    if (json) {
+      emitObservation(buildEnvelope({
+        command: 'observe', status: 'not-installed', summary,
+        nextActions: ['harness-team init (observe-tools 훅 설치) 후 Claude Code 세션에서 도구를 사용하면 기록됨'],
+      }));
+    } else {
+      console.log(`- observe: ${summary}`);
+    }
+    return;
+  }
+  const result = summarizeObservability(read.records, { now, days, taskNames: await resolveTaskRefs(ctx.targetDir) });
+  const fired = result.trip_wires.filter(wire => wire.fired);
+  const status = fired.length ? 'tripped' : read.status; // 'ok' | 'no-data'
+  if (fired.length) process.exitCode = 1;
+  if (json) {
+    emitObservation(buildEnvelope({
+      command: 'observe',
+      status,
+      summary: fired.length ? `트립와이어 발화: ${fired.map(wire => wire.id).join(', ')}` : `${read.records.length}개 레코드, 트립와이어 없음`,
+      nextActions: fired.length ? [`해당 세션 로그(${OBSERVABILITY_BASE}/<day>/<session_ref>-NNN.jsonl)를 열어 실패한 도구 호출을 추적`] : [],
+      extra: {
+        window: result.window,
+        scorecard: { by_day: result.by_day, by_task: result.by_task, by_category: result.by_category },
+        trip_wires: result.trip_wires,
+        skipped_lines: read.skippedLines,
+      },
+    }));
+  } else {
+    console.log(renderObserveText(result, { records: read.records.length, skippedLines: read.skippedLines }));
+  }
+}

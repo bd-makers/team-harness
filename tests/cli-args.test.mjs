@@ -107,6 +107,11 @@ test('cli-args: real invocations still resolve to a run', () => {
   assert.equal(init.flags.stack, 'react-native');
   assert.deepEqual(init.positional, ['/tmp/x']);
   assert.equal(resolveInvocation(['init', '--stack=next']).flags.stack, 'next');
+
+  assert.equal(resolveInvocation(['observe']).kind, 'run');
+  assert.equal(resolveInvocation(['observe', '--days', '3']).flags.days, '3');
+  assert.equal(resolveInvocation(['observe', '--days=14', '--json']).flags.days, '14');
+  assert.equal(resolveInvocation(['observe', '--days']).kind, 'error');
 });
 
 test('cli-args: --no-gitignore-ai normalizes to the key init reads', () => {

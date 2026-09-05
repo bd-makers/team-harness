@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { observeToolEvent } from '../templates/.claude/hooks/observe-tools.mjs';
 import {
   percentile, windowDays, summarizeObservability, TRIP_WIRE_MIN_FINISHED, TRIP_WIRE_MIN_FAILURES,
-  readObservabilityRecords, resolveTaskRefs, hmacRef, OBSERVABILITY_BASE,
+  readObservabilityRecords, resolveTaskRefs, hmacRef, OBSERVABILITY_BASE, runObserve,
 } from '../src/commands/observe.mjs';
 
 const NOW = new Date('2026-09-05T12:00:00.000Z');
@@ -184,4 +184,62 @@ test('resolveTaskRefs: hmac over docs/<user>/<task> meta matches the task_ref th
 test('resolveTaskRefs: no key or no docs → empty map, never throws', async () => {
   const { dir, cleanup } = await project();
   try { assert.equal((await resolveTaskRefs(dir)).size, 0); } finally { await cleanup(); }
+});
+
+// ---- 러너: envelope · 종료 코드 · --days 검증
+function captureStdout(fn) {
+  const chunks = [];
+  const original = console.log;
+  console.log = (...args) => chunks.push(args.join(' '));
+  return Promise.resolve().then(fn).finally(() => { console.log = original; }).then(() => chunks.join('\n'));
+}
+
+test('runObserve --json: not-installed envelope, exit 0, next action points at init', async () => {
+  const { dir, cleanup } = await project();
+  try {
+    process.exitCode = 0;
+    const out = JSON.parse(await captureStdout(() => runObserve({ targetDir: dir, flags: { json: true } })));
+    assert.equal(out.schema, 'harness/observation/v1'); assert.equal(out.command, 'observe'); assert.equal(out.status, 'not-installed');
+    assert.equal(out.error, null); assert.match(out.next_actions[0], /harness-team init/); assert.equal(process.exitCode, 0);
+  } finally { await cleanup(); }
+});
+
+test('runObserve --json: ok envelope carries window, scorecard and trip wires; text mode prints ✓ lines', async () => {
+  const { dir, cleanup } = await project();
+  try {
+    await observeToolEvent(hookPayload('PostToolUse'), { projectDir: dir, now: new Date() });
+    const out = JSON.parse(await captureStdout(() => runObserve({ targetDir: dir, flags: { json: true, days: '3' } })));
+    assert.equal(out.status, 'ok'); assert.equal(out.window.days, 3);
+    assert.equal(out.scorecard.by_category[0].tool_category, 'shell'); assert.equal(out.trip_wires.length, 2); assert.equal(out.skipped_lines, 0);
+    const text = await captureStdout(() => runObserve({ targetDir: dir, flags: { days: '3' } }));
+    assert.match(text, /observe: 3일 창/); assert.match(text, /✓ failure-rate-2x/); assert.match(text, /shell/);
+  } finally { await cleanup(); }
+});
+
+test('runObserve: three hook failures of one tool in one session → tripped, exitCode 1', async () => {
+  const { dir, cleanup } = await project();
+  try {
+    for (let i = 0; i < 3; i += 1) {
+      await observeToolEvent(hookPayload('PostToolUseFailure', { error: 'boom' }), { projectDir: dir, now: new Date() });
+    }
+    process.exitCode = 0;
+    const out = JSON.parse(await captureStdout(() => runObserve({ targetDir: dir, flags: { json: true } })));
+    assert.equal(out.status, 'tripped'); assert.equal(out.trip_wires[1].fired, true); assert.equal(process.exitCode, 1);
+    process.exitCode = 0;
+    const text = await captureStdout(() => runObserve({ targetDir: dir, flags: {} }));
+    assert.match(text, /✗ repeat-failure-3x/);
+    process.exitCode = 0;
+  } finally { await cleanup(); }
+});
+
+test('runObserve: --days outside 1..14 or non-integer is a usage error (exit 2, status error)', async () => {
+  const { dir, cleanup } = await project();
+  try {
+    for (const days of ['0', '15', 'abc', '2.5']) {
+      process.exitCode = 0;
+      const out = JSON.parse(await captureStdout(() => runObserve({ targetDir: dir, flags: { json: true, days } })));
+      assert.equal(out.status, 'error', days); assert.match(out.error.root_cause, /1\.\.14/); assert.equal(process.exitCode, 2, days);
+    }
+    process.exitCode = 0;
+  } finally { await cleanup(); }
 });
