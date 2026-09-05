@@ -99,3 +99,12 @@ jobs:
               | head -40 | annotate error || true
           fi
           exit "$status"
+
+      # docs/harness-overview.html is generated from the source tree
+      # (scripts/generate-harness-overview.mjs). `--check` re-renders and compares
+      # bytes; it only reads the tree via `git ls-files`, so the shallow checkout
+      # above is enough. Runs after the suite so a test failure is what the job
+      # reports first; until this step existed the check ran only on maintainer
+      # machines and overview drift could land on main unnoticed.
+      - name: Check generated docs
+        run: npm run docs:check

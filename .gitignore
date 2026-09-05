@@ -6,5 +6,6 @@ node_modules/
 .harness/config.json
 .claude/launch.json
 .claude/settings.local.json
+.claude/handoffs/
 .superpowers/
 tests/fixtures/**/actual/
