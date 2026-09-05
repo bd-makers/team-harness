@@ -4,7 +4,7 @@
 settings-ask-tier
 
 ## Last Commit (2026-09-05)
-aa5cc38 docs(task): shipcheck #4 S5 반영 — 자기 이력을 세는 서술 제거
+68bce79 docs(task): ship 종결 — 사용자 결정 2건 기록
 
 ## Full Context
 → docs/hslee/settings-ask-tier/settings-ask-tier-handoff.md

@@ -76,3 +76,10 @@ docs/hslee/hslee-handoff.md                        |  2 +-
  .../settings-ask-tier/settings-ask-tier-handoff.md |  6 ++++
  .../settings-ask-tier/settings-ask-tier-plan.md    |  4 ++-
  4 files changed, 38 insertions(+), 6 deletions(-)
+
+## 2026-09-05T14:01:34.626Z — 68bce79 docs(task): ship 종결 — 사용자 결정 2건 기록
+docs/hslee/hslee-handoff.md                               |  2 +-
+ .../hslee/settings-ask-tier/settings-ask-tier-artifact.md | 15 +++++++++++++++
+ docs/hslee/settings-ask-tier/settings-ask-tier-handoff.md |  7 +++++++
+ docs/hslee/settings-ask-tier/settings-ask-tier-plan.md    |  7 ++++---
+ 4 files changed, 27 insertions(+), 4 deletions(-)
