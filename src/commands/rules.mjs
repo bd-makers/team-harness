@@ -95,3 +95,150 @@ export function parsePathsFlag(value) {
   if (typeof value !== 'string') return [];
   return value.split(',').map(p => p.trim()).filter(Boolean);
 }
+
+// ── I/O 부분 ───────────────────────────────────────────────────────────────
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+const USAGE = 'harness-team rules promote [<n>] [--name <slug>] [--paths <a,b>]';
+
+// retro·task와 같은 cause/retry/stop 계약. exitCode 기본 2(인수·상태 거부), 활성 task 없음만 1(retro와 동일).
+function fail(ctx, { code, cause, retry, stop, exitCode = 2 }) {
+  process.exitCode = exitCode;
+  if (ctx.flags?.json) {
+    emitObservation(buildEnvelope({
+      command: 'rules',
+      status: 'error',
+      summary: `rules promote 실패: ${code}`,
+      error: { root_cause: cause, safe_retry: retry, stop_condition: stop },
+      extra: { action: 'promote', code },
+    }));
+  } else {
+    console.log(`✗ rules promote: ${code}`);
+    console.log(`cause: ${cause}`);
+    console.log(`retry: ${retry}`);
+    console.log(`stop: ${stop}`);
+  }
+  return { status: 'error', code };
+}
+
+function listLearnings(ctx, { entries, relArtifact }) {
+  const status = entries.length ? 'listed' : 'no-data';
+  const summary = entries.length
+    ? `${relArtifact} — Learnings ${entries.length}개`
+    : `${relArtifact} — Learnings 항목 없음`;
+  const nextActions = entries.length
+    ? [`승격할 항목을 골라 \`${USAGE}\` 실행 — 선택은 사용자 승인`]
+    : ['`harness-team retro "<학습>"` 으로 Learnings를 먼저 기록'];
+  if (ctx.flags?.json) {
+    emitObservation(buildEnvelope({
+      command: 'rules', status, summary, nextActions, artifacts: [relArtifact],
+      extra: { action: 'promote', learnings: entries.map(({ index, date, text, promoted }) => ({ index, date, text, promoted })) },
+    }));
+  } else {
+    console.log(`${entries.length ? '✓' : '-'} rules promote: ${summary}`);
+    for (const e of entries) {
+      const flag = e.promoted ? `  [promoted → rules/${e.promoted.rule}.md, ${e.promoted.at}]` : '';
+      console.log(`  ${e.index}. [${e.date ?? '날짜 없음'}] ${e.text}${flag}`);
+    }
+    console.log(`next: ${nextActions[0]}`);
+  }
+  return { status, entries };
+}
+
+export async function runRulesPromote(ctx) {
+  const active = await readActive(ctx.targetDir);
+  if (!active || !active.task) {
+    return fail(ctx, {
+      code: 'no-active-task', exitCode: 1,
+      cause: '.harness/active.json 에 활성 task가 없어 승격 원천 artifact.md를 찾을 수 없음',
+      retry: '`harness-team task <name>` 로 task를 활성화한 뒤 다시 실행',
+      stop: 'task가 하나도 없으면 먼저 task를 생성하라',
+    });
+  }
+  const { user, task } = active;
+  const relArtifact = `docs/${user}/${task}/${task}-artifact.md`;
+  const artifactPath = join(ctx.targetDir, relArtifact);
+  const artifact = await readTextSafe(artifactPath);
+  if (artifact === null) {
+    return fail(ctx, {
+      code: 'no-artifact',
+      cause: `${relArtifact} 이(가) 없음`,
+      retry: '`harness-team retro "<학습>"` 으로 Learnings를 먼저 기록한 뒤 다시 실행',
+      stop: 'artifact.md가 없으면 승격할 항목이 없다',
+    });
+  }
+  const entries = parseLearnings(artifact);
+  const selector = (ctx.taskArgs || [])[1];
+  if (selector === undefined) return listLearnings(ctx, { entries, relArtifact });
+
+  if (!/^\d+$/.test(selector) || Number(selector) < 1 || Number(selector) > entries.length) {
+    return fail(ctx, {
+      code: 'invalid-index',
+      cause: `"${selector}" 은(는) 1..${entries.length} 범위의 정수가 아님`,
+      retry: '`harness-team rules promote` 로 번호 목록을 확인한 뒤 다시 실행',
+      stop: '항목이 0개면 승격할 것이 없다',
+    });
+  }
+  const entry = entries[Number(selector) - 1];
+  if (entry.promoted) {
+    return fail(ctx, {
+      code: 'already-promoted',
+      cause: `#${entry.index} 은(는) 이미 rules/${entry.promoted.rule}.md 로 승격됨 (${entry.promoted.at})`,
+      retry: '다른 항목 번호를 고르거나, 되돌리려면 규칙 파일 삭제 + artifact 표기 제거를 수동으로',
+      stop: '같은 항목을 두 번 승격하지 않는다',
+    });
+  }
+  const name = ctx.flags?.name;
+  if (typeof name !== 'string' || !RULE_NAME_RE.test(name)) {
+    return fail(ctx, {
+      code: 'invalid-name',
+      cause: `--name 이 없거나 이름 규칙(^[\\w.-]+$)을 만족하지 않음: ${JSON.stringify(name ?? null)}`,
+      retry: '`--name <slug>` 를 영문·숫자·`_`·`.`·`-` 만으로 지정',
+      stop: '경로 구분자가 들어간 이름으로는 만들지 않는다',
+    });
+  }
+  const relRule = `.claude/rules/${name}.md`;
+  const rulePath = join(ctx.targetDir, relRule);
+  if (await exists(rulePath)) {
+    return fail(ctx, {
+      code: 'rule-exists',
+      cause: `${relRule} 이(가) 이미 있음 — 덮어쓰지 않는다`,
+      retry: '다른 `--name` 을 쓰거나 기존 규칙을 직접 편집',
+      stop: '기존 규칙 파일은 보존한다',
+    });
+  }
+
+  const paths = parsePathsFlag(ctx.flags?.paths);
+  const since = today();
+  const origin = `${user}/${task}`;
+  // 검증은 위에서 끝났다. 쓰기 순서: 규칙 → artifact 표기 → 미러. 표기가 먼저면 규칙 쓰기 실패 시 유령 표기가 남는다.
+  await writeText(rulePath, renderRule({ slug: name, text: entry.text, origin, since, paths }));
+  await writeText(artifactPath, annotatePromoted(artifact, entry.index, name, since));
+  const mirrored = (await mirrorCursorRules(ctx)).filter(r => r.action === 'mirror').length;
+
+  const summary = `${relRule} 승격 (origin=${origin} since=${since}${paths.length ? `, paths=${paths.join(',')}` : ''})`;
+  const nextActions = ['규칙 본문을 다듬고 커밋하라', '되돌리려면 규칙 파일 삭제 + artifact 표기 제거 + `harness-team sync`'];
+  if (ctx.flags?.json) {
+    emitObservation(buildEnvelope({
+      command: 'rules', status: 'success', summary, nextActions, artifacts: [relRule, relArtifact],
+      extra: { action: 'promote', index: entry.index, rule: relRule, origin, since, paths, mirrored },
+    }));
+  } else {
+    console.log(`✓ rules promote: ${summary}`);
+    console.log(`✓ artifact: ${relArtifact} #${entry.index} 에 승격 표기`);
+    console.log(`✓ cursor mirror: ${mirrored} rule(s)`);
+    console.log(`next: ${nextActions[0]}`);
+  }
+  return { status: 'success', rule: relRule, index: entry.index, origin, since, paths, mirrored };
+}
+
+export async function runRules(ctx) {
+  if ((ctx.taskArgs || [])[0] === 'promote') return runRulesPromote(ctx);
+  process.exitCode = 2;
+  console.log('rules: invalid-action');
+  console.log(`usage: ${USAGE}`);
+  return { status: 'invalid-action' };
+}
