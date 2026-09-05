@@ -179,6 +179,19 @@ I/O 테스트는 codex 샌드박스의 `mkdtemp EPERM`으로 리뷰어 쪽에서
 
 <!-- harness:review kind=codex-shipcheck scope=diff tip=d21bddcc34b2fc3a5de5d124d20854ca925814eb at=2026-09-05T10:04:11Z -->
 
+### 2026-09-05 — codex shipcheck #2 (엔진 codex `-m gpt-5.6-sol`, 루브릭 S1~S5 재판정, scope: diff origin/main…7553c4e, 125k tokens)
+
+판정: **NOT READY(MAJOR 1, BLOCKER 0)** — S1·S3·S4·S5 PASS(#1의 S5 BLOCKER 해소 확인: 검증 블록이 원문 출력이고 32/2/52건이 현재 트리와 일치), **S2 FAIL(MAJOR)**.
+
+| id | 발견 | 판별 | 조치(문서만) |
+|---|---|---|---|
+| S2 | plan Step 2.2("기존 8건 pass + 신규 12건 fail")·4.2("템플릿 1 + provenance 3 + doctor 1 실패")의 RED 서술이 실제와 다름 — 없는 named export를 정적 import하면 ESM link 단계에서 파일 전체가 실패한다. artifact Learnings에는 이 특성을 적어 두어 plan과 자기모순 | 진짜 — 계획 시점 서술을 실행 뒤 고치지 않았다(6.1과 같은 부류) | 두 단계를 실제 관찰(`SyntaxError: … does not provide an export named …`)로 정정. 그때 개별 RED를 못 본 가드 2개는 변이로 사후 확인: 템플릿 마커 한 줄 제거 → 계약 테스트 fail, doctor 배선 무력화 → 배선 테스트 fail, 원복 후 32/32 |
+
+재검증(shipcheck #3): 생략 — 사용자 지시로 PR #74가 이미 머지됐고(`659cf84`), 남은 지적은 코드가 아니라 plan 문장 두 줄이라 이 기록으로 닫는다.
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=7553c4ecee0b64b799b1b2f8762b7ead64e83088 at=2026-09-05T10:13:01Z -->
+
+
 
 
 ## Learnings

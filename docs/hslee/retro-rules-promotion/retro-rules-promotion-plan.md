@@ -490,7 +490,7 @@ test('runRules: 첫 토큰이 promote 가 아니면 invalid-action + usage, exit
 });
 ```
 
-- [x] **Step 2.2: RED 확인** — `node --test tests/rules.test.mjs` → 신규 12건이 `runRules is not a function`류로 실패, 기존 8건 pass.
+- [x] **Step 2.2: RED 확인** — `node --test tests/rules.test.mjs` → `SyntaxError: The requested module '../src/commands/rules.mjs' does not provide an export named 'runRules'` — 없는 named export를 정적 import하므로 테스트 등록 전 link 단계에서 파일 전체가 실패한다(개별 12건 fail이 아님). *계획 시점 서술을 실제 관찰로 정정 — shipcheck #2 S2.*
 
 - [x] **Step 2.3: GREEN — 러너 구현** (`src/commands/rules.mjs` 하단에 추가)
 
@@ -772,7 +772,7 @@ test('runDoctor --json: 마커 없는 규칙이 있으면 checks[] 에 rule prov
 });
 ```
 
-- [x] **Step 4.2: RED 확인** — `node --test tests/rules.test.mjs` → 템플릿 계약 1건(마커 없음), provenance 3건(`checkRuleProvenance is not a function`), doctor 1건(check 없음) 실패.
+- [x] **Step 4.2: RED 확인** — `node --test tests/rules.test.mjs` → `SyntaxError: … does not provide an export named 'checkRuleProvenance'` — 2.2와 같은 link 실패로 파일 전체가 죽는다(템플릿·provenance·doctor 개별 fail이 아님). *실제 관찰로 정정 — shipcheck #2 S2.* 이 때문에 개별 RED를 못 본 가드 2개는 머지 후 변이로 확인했다: `navigation.md` 마커 한 줄 제거 → 템플릿 계약 테스트 `navigation.md: 마커 없음`으로 fail, doctor의 `add('rule provenance', …)` 무력화 → 배선 테스트 `rule provenance check 존재`로 fail, 각각 원복 후 32/32.
 
 - [x] **Step 4.3: GREEN — 템플릿 스탬프**
 
@@ -973,8 +973,8 @@ harness-team rules promote 2 --name api-errors --paths "src/api/**/*.ts"
   *(계획 시점에 적었던 번호·slug·grep 명령은 실행 때 바꿨는데 서술을 고치지 않았다 — shipcheck #1 S2 지적으로 실제 실행에 맞춰 정정, 2026-09-05.)*
 - [x] **Step 6.2: 외부 read-only 리뷰** — codex P1 1·P2 4·P3 2 → 8건 RED 재현 후 전부 반영(`506e59a`), artifact `## Reviews` 마커 기록. — `/harness-review codex` 절차(`codex exec --sandbox read-only -m gpt-5.6-sol "<공용 프롬프트+focus>" < /dev/null` 백그라운드),
   focus: 승격 표기 파싱의 경계(이어지는 줄·CRLF·`###`), slug 경로 탈출, 쓰기 순서와 부분 실패, doctor 경고 오탐(템플릿 사본). 발견을 테스트로 재현·판별 후 반영/기각, artifact `## Reviews`에 판별·마커.
-- [ ] **Step 6.3: ship** — shipcheck #1 NOT READY(S2·S5, 문서 정합) → 정정 후 shipcheck #2 재검증. `/harness-ship` 절차: spec·plan 최종 갱신(Ontology 변경 로그 포함), artifact `## 결과`(실행 증거)·검증 출력·리스크(미검증 가정: rules 파일의 HTML 주석 제거)·`## Learnings`(retro) → task 문서 커밋 → push·PR(사용자 지시 후) → CI pass 확인.
-- [ ] **Step 6.4: PR 머지 → `harness-team done` → 기본 브랜치에서 `summary --write`** (사용자 지시 후; 머지 후 절차는 handoff §3 마지막 결정 그대로)
+- [x] **Step 6.3: ship** — shipcheck #1 NOT READY(S2·S5, 문서 정합) → 정정(`7553c4e`) → shipcheck #2(결과는 artifact `## Reviews`) → 사용자 지시로 push·PR #74 → CI `test (24)` pass(run 33959866946). 다이어그램: 건너뜀(task 생성 시 옵트아웃, 재질문 없음). `/harness-ship` 절차: spec·plan 최종 갱신(Ontology 변경 로그 포함), artifact `## 결과`(실행 증거)·검증 출력·리스크(미검증 가정: rules 파일의 HTML 주석 제거)·`## Learnings`(retro) → task 문서 커밋 → push·PR(사용자 지시 후) → CI pass 확인.
+- [x] **Step 6.4: PR 머지 → `harness-team done` → 기본 브랜치에서 `summary --write`** — PR #74 머지 커밋 `659cf84`(2026-09-05, 사용자 지시) → 워크트리 `claude/retro-rules-promotion-done`(origin/main 기준)에서 done·`summary --write --force` → `git push origin HEAD:main`.
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
