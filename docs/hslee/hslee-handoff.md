@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-summary-branch-guard
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-05)
-389f79d docs(task): ship 완료 — shipcheck 재대조 통과, plan·TCC 마감
+## Last Completed Task (2026-09-05)
+`summary-branch-guard` — done
 
 ## Full Context
 → docs/hslee/summary-branch-guard/summary-branch-guard-handoff.md
