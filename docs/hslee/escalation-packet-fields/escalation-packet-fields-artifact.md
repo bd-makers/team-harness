@@ -36,5 +36,20 @@ I/O 테스트는 codex 샌드박스의 `mkdtemp EPERM`으로 리뷰어 쪽에서
 
 <!-- harness:review kind=codex scope=diff tip=cadada5479d6ae70ba23668a3c33a9e00443e208 at=2026-09-05T11:09:42Z -->
 
-## Learnings
+### 2026-09-05 — codex shipcheck #1 (엔진 codex `-m gpt-5.6-sol`, 루브릭 S1~S5, scope: diff origin/main…987a8d3, 130k tokens)
 
+판정: **NOT READY** — S1 PASS, **S2~S5 FAIL(MAJOR)** + `git diff --check` 위반 1건. 코드 결함 지적은 S3 하나뿐이고
+나머지는 문서·계획 정합이다. 리뷰어는 read-only 샌드박스라 `npm test`를 재실행하지 못했고, 그 사실을 스스로 명기했다
+("590 pass 주장은 기존 artifact 기록일 뿐 이번 검증에서 재확인된 결과는 아니다") — 정당한 지적이라 그대로 남긴다.
+
+| id | 발견 | 판별 | 조치 |
+|---|---|---|---|
+| S2 | Task 11 Step 1~2를 이미 수행했는데 열린 채였고, 리뷰로 바뀐 Task 8 pin 설계가 닫힌 계획 본문에 반영되지 않음 | 진짜 — plan은 실행 기록이므로 "한 것"과 "적힌 것"이 어긋나면 다음 세션이 잘못 재개한다 | Step 1~3 닫고, Task 8 본문의 옛 pin 코드를 실제 코드로 교체하며 "리뷰 후 변경" 블록으로 사유를 남겼다 |
+| S3 | 리뷰 #1을 고쳤다면서 `safe_default`가 여전히 "artifact 표기는 기록되지 않았다"고 단정 — 같은 문장 뒤에서 "일부만 쓰였을 수 있다"고 말해 자기모순 | 진짜 — 같은 부류의 결함을 한 번 더 냈다. non-atomic write는 부분 기록을 배제하지 못한다 | 단정을 없앴다: "승격은 완료되지 않았다 — 표기는 없거나 일부만 쓰였을 수 있고, 규칙 파일은 되돌리기까지 실패했으면 남아 있을 수 있다" |
+| S4 | overview가 "drive 4커맨드만", "나머지는 후속 opt-in", "human 포맷 무변경"이라 서술 | 진짜 — 앞 둘은 이 task 이전부터의 드리프트(`src/cli-args.mjs:95`가 7커맨드를 명시), 셋째는 **이번 변경이 반증한 주장**(text 미러에 2줄 추가) | 두 infobox를 현재 상태로 정정하고 0.8.0 당시 수치는 그 시점 기록으로 명시해 보존. `docs:generate` 재실행 |
+| S5 | spec의 목적은 PDF "이미 시도한 대안"을 구현한다면서 Ontology는 "시도 이력이 아니다"라고 정의 — 정면 모순. 또 spec의 헬퍼 계약이 `cause`를 string-only로 적었는데 구현은 배열도 받는다 | 진짜 — 둘 다 spec 본문의 사실 오류 | ① "PDF 문구에서 의도적으로 벗어난 지점" 절을 신설해 기계용(시도 이력이 존재하지 않음)과 사람용(§5-A는 원문 그대로)의 의미 차이를 명시하고 Ontology에서 상호 참조 ② 헬퍼 계약을 `string \| string[]`로 정정하고 배열이 text 전용인 근거를 적었다 |
+| — | `git diff --check`: artifact.md EOF 빈 줄 | 진짜 | 제거 |
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=987a8d3b39470f9eccfa2073842709b4c4646913 at=2026-09-05T11:19:35Z -->
+
+## Learnings

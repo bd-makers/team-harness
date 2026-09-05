@@ -280,7 +280,7 @@ export async function runRulesPromote(ctx) {
       retry: 'artifact.md 의 권한·잠금을 확인한 뒤 같은 명령을 다시 실행',
       alternatives: ['artifact 쓰기가 계속 실패하면 규칙 파일만 수동으로 만들고 표기를 손으로 추가한다 — 표기 없는 규칙은 재승격을 막지 못한다'],
       // unlink 실패는 삼켜지고 writeText는 원자적이지 않다 — 보장하지 못하는 상태를 주장하지 않는다.
-      safeDefault: `artifact 표기는 기록되지 않았다. ${relRule} 은 되돌리기까지 실패했으면 남아 있을 수 있고 ${relArtifact} 도 일부만 쓰였을 수 있다 — 재실행 전에 두 파일을 확인하라`,
+      safeDefault: `승격은 완료되지 않았다 — ${relArtifact} 의 표기는 없거나 일부만 쓰였을 수 있고, ${relRule} 은 되돌리기까지 실패했으면 남아 있을 수 있다. 재실행 전에 두 파일을 눈으로 확인하라`,
       stop: 'artifact 표기 없이 규칙만 남기지 않는다',
     });
   }

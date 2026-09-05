@@ -364,7 +364,7 @@
     <p class="section-sub">P2 (0.8.0) — Codex 같은 외부 에이전트가 <code>harness-team</code> CLI를 Bash로 호출하면 stdout이 곧 observation이 된다. 사람용 출력과 별도로 <code>--json</code>으로 구조화 엔벨로프를 opt-in</p>
 
     <div class="infobox">
-      <strong>동작 방식:</strong> drive 4커맨드(<code>task</code> · <code>retro</code> · <code>release</code> · <code>doctor</code>)에 <code>--json</code>을 주면 stdout에 단일 JSON 엔벨로프 1개만 출력하고 <code>process.exitCode</code>로 신호한다. 사람용 출력은 각 커맨드의 별도 계약을 따르며, <code>task</code>는 생성·재활성화 뒤 다음 단계 안내를 출력한다. 헬퍼는 <code>src/observation.mjs</code>의 <code>buildEnvelope</code> · <code>emitObservation</code>.
+      <strong>동작 방식:</strong> <code>--json</code>을 지원하는 커맨드(<code>task</code> · <code>retro</code> · <code>release</code> · <code>doctor</code> · <code>summary</code> · <code>observe</code> · <code>rules</code> — 정본은 <code>src/cli-args.mjs</code>의 도움말)에 주면 stdout에 단일 JSON 엔벨로프 1개만 출력하고 <code>process.exitCode</code>로 신호한다. 사람용 출력은 각 커맨드의 별도 계약을 따르며, <code>task</code>는 생성·재활성화 뒤 다음 단계 안내를 출력한다. 헬퍼는 <code>src/observation.mjs</code>의 <code>buildEnvelope</code> · <code>emitObservation</code> · <code>buildErrorPacket</code> · <code>renderErrorPacket</code>.
     </div>
 
     <div class="card">
@@ -400,7 +400,7 @@
     </div>
 
     <div class="infobox" style="margin-top:1rem">
-      <strong>범위:</strong> drive 4커맨드만 (파킹 문서 결정). <code>src/observation.mjs</code> 헬퍼가 제네릭이라 나머지 커맨드는 후속 opt-in 가능 (YAGNI). 파서 · human 포맷 무변경. baseline 71 → 84 테스트 pass.
+      <strong>범위:</strong> 0.8.0은 drive 4커맨드로 시작했고(파킹 문서 결정, baseline 71 → 84 테스트 pass) 헬퍼가 제네릭이라 <code>summary</code> · <code>observe</code> · <code>rules</code>가 뒤이어 opt-in 했다 — 현재 7커맨드. 파서는 무변경이지만 <strong>human 포맷은 더 이상 무변경이 아니다</strong>: escalation packet이 들어오면서 에러 경로의 text 미러에 <code>alternatives:</code>(대안이 있을 때만) · <code>default:</code> 두 줄이 추가됐다.
     </div>
   </section>
 

@@ -804,14 +804,22 @@ test('pin: src/commands/*.mjs 는 리터럴 root_cause: 를 쓰지 않는다 (�
   assert.deepEqual(offenders, [], `리터럴 root_cause: 를 쓰는 생산자: ${offenders.join(', ')}`);
 });
 
-// JSON 엔벨로프로 나가는 root_cause 는 string 이다. 배열 형태는 runDone 가드의
-// text 전용 출력에만 쓴다 — 소비자가 두 타입을 분기하지 않게 한다.
-test('pin: 엔벨로프로 나가는 root_cause 는 string (배열은 text 전용)', () => {
-  const packet = buildErrorPacket({ cause: ['a', 'b'], retry: 'r', safeDefault: 'd', stop: 's' });
-  assert.ok(Array.isArray(packet.root_cause), '헬퍼는 배열을 그대로 보존한다');
+// buildEnvelope가 error를 정규화하지 않는다는 사실이 기존 deepEqual 3키 계약을 살리는 근거다.
+test('pin: buildEnvelope는 error를 정규화하지 않는다 (pass-through)', () => {
+  const packet = buildErrorPacket({ cause: 'c', retry: 'r', safeDefault: 'd', stop: 's' });
   const env = buildEnvelope({ command: 'x', status: 'error', summary: 's', error: packet });
-  assert.equal(env.error, packet, 'buildEnvelope 는 error 를 정규화하지 않는다 (pass-through)');
+  assert.equal(env.error, packet, 'buildEnvelope는 같은 객체를 그대로 통과시킨다');
 });
+```
+
+> **리뷰 후 변경(codex P2-3)**: 계획의 원래 두 번째 pin은 배열 `root_cause`를 엔벨로프에 넣고
+> 통과를 확인해, 이름과 달리 "배열은 text 전용"을 **전혀 막지 못했다** — 엔벨로프는 무엇이든
+> 통과시키므로 그 규칙을 여기서 강제할 수 없다. pin의 범위를 pass-through 검사로 좁히고,
+> 진짜 가드는 실제 JSON 생산자 쪽에 뒀다: `tests/observation-commands.test.mjs`(4곳)와
+> `tests/rules.test.mjs`(2곳)에 `assert.equal(typeof env.error.root_cause, 'string')`.
+> `retro` no-active의 cause를 배열로 바꾸는 변이로 새 가드가 실패를 내는 것을 확인하고 원복했다.
+
+```js
 ```
 
 - [x] **Step 2: 관찰**
@@ -1020,7 +1028,7 @@ git checkout -- docs/hslee/hslee-handoff.md docs/hslee/escalation-packet-fields/
 - Modify: `docs/hslee/escalation-packet-fields/escalation-packet-fields-artifact.md`
 - Modify: `docs/hslee/escalation-packet-fields/escalation-packet-fields-context.md`
 
-- [ ] **Step 1: codex 외부 리뷰 (백그라운드, ~7분)**
+- [x] **Step 1: codex 외부 리뷰 (백그라운드, ~7분)**
 
 ```bash
 codex exec --sandbox read-only -m gpt-5.6-sol "$(cat <프롬프트 파일>)" < /dev/null
@@ -1031,12 +1039,12 @@ focus(escalation packet 계약 · 생산자 마이그레이션 누락 · text �
 read-only 샌드박스는 `mkdtemp EPERM`이라 I/O 테스트를 돌리지 못한다 — 작성 세션의 `npm test`
 출력이 증거다. 로그의 `codex_models_manager … failed to renew cache TTL` ERROR 줄은 무해하다.
 
-- [ ] **Step 2: 발견을 RED 테스트로 재현한 뒤 반영/기각**
+- [x] **Step 2: 발견을 RED 테스트로 재현한 뒤 반영/기각**
 
 각 발견을 심각도·판정(반영/기각)·근거와 함께 `artifact.md`의 `## Reviews`에 판별표로 남긴다.
 직전 task `docs/hslee/retro-rules-promotion/retro-rules-promotion-artifact.md`의 형식을 따른다.
 
-- [ ] **Step 3: shipcheck (같은 엔진, S1~S5 루브릭, `kind=codex-shipcheck`, ~6분)**
+- [x] **Step 3: shipcheck (같은 엔진, S1~S5 루브릭, `kind=codex-shipcheck`, ~6분)**
 
 지적이 문서 정합이면 정정 후 재검증한다.
 
