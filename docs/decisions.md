@@ -4,7 +4,7 @@ AI 팀 운영 규범의 근거와 이력. `AGENTS.md`의 역할·프로토콜 �
 요약한 것이며, 전문(배경·근거·재평가 조건)은 이 파일이 정본이다.
 새 결정은 번호를 이어 아래에 append 한다 — 규범이 바뀌면 `AGENTS.md`의 요약도 함께 갱신한다.
 
-> 상류 출처: D2·D4·D5·D6는 team-harness 플러그인 기본값의 결정 이력이다(bd-makers/team-harness).
+> 상류 출처: D2·D4·D5·D6·D7은 team-harness 플러그인 기본값의 결정 이력이다(bd-makers/team-harness).
 > 프로젝트 고유 결정은 그 아래에 이어서 기록한다.
 
 ## D2 (2026-06-11) — drive/리뷰어 역할 분리

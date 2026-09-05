@@ -6,7 +6,7 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from 'node:fs
 import { tmpdir, homedir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
+import { checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, DECISION_HEADINGS, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
 import { POST_COMMIT_HOOK } from '../src/git-hooks.mjs';
 import { cloudSyncPathWarning } from '../src/harness.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
@@ -180,6 +180,15 @@ test('checkDecisionLog: 템플릿 원본(D2/D4/D5 포함) → null (템플릿↔
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+// 위 ⊆ 계약은 템플릿에 절이 추가됐는데 검사 목록이 그대로여도 통과한다 — 바로 D6·D7 드리프트가
+// 그렇게 생겼다(codex 리뷰 P2). 템플릿의 모든 `## D<n>` 헤딩과 DECISION_HEADINGS를 집합으로 대조한다.
+test('checkDecisionLog: 템플릿 D-log의 ## D<n> 헤딩 집합 == DECISION_HEADINGS (드리프트 가드)', async () => {
+  const log = await readFile(join(ROOT, 'templates/docs/decisions.md'), 'utf8');
+  const inTemplate = [...log.matchAll(/^## D\d+\b/gm)].map(m => m[0]);
+  assert.deepEqual([...inTemplate].sort(), [...DECISION_HEADINGS].sort(),
+    '템플릿 D-log에 절을 추가·삭제했으면 DECISION_HEADINGS도 함께 갱신하라');
+});
+
 test('checkDecisionLog: docs/decisions.md 부재 → 경고 (init 스캐폴드 유도)', async () => {
   const dir = await makeDecisionLogFixture(undefined);
   try {
@@ -187,6 +196,7 @@ test('checkDecisionLog: docs/decisions.md 부재 → 경고 (init 스캐폴드 �
     assert.ok(typeof w === 'string', 'returns a warning string');
     assert.match(w, /없음/);
     assert.match(w, /harness-team init/, '부재는 init 스캐폴드가 해결하므로 init로 유도');
+    assert.match(w, /D2\/D4\/D5\/D6\/D7/, '검사 대상 절 ID를 DECISION_HEADINGS에서 파생해 나열');
     assert.match(w, /templates\/docs\/decisions\.md/, '가져올 원본 위치를 안내');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
@@ -199,10 +209,25 @@ test('checkDecisionLog: 일부 절 누락 → 누락 절만 나열 + 템플릿 �
   try {
     const w = await checkDecisionLog(dir);
     assert.ok(typeof w === 'string', 'returns a warning string');
-    assert.match(w, /## D4, ## D5 절 없음/, '누락된 절만 정확히 나열');
+    assert.match(w, /## D4, ## D5, ## D6, ## D7 절 없음/, '누락된 절만 정확히 나열');
     assert.doesNotMatch(w, /## D2/, '존재하는 D2는 누락 목록에 없어야 한다');
     assert.doesNotMatch(w, /init/, 'skipExisting이라 init로는 해결 불가 — 수동 병합 안내만');
     assert.match(w, /templates\/docs\/decisions\.md/, '가져올 원본 위치를 안내');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// D6(2026-08-26)·D7(2026-09-03)이 D-log에 추가된 뒤에도 검사 목록은 D2/D4/D5에 머물러 있었다 —
+// D6/D7 이전에 스캐폴드된 소비자는 AGENTS.md 코어가 가리키는 절이 없어도 doctor가 침묵했다.
+// 검사 목록이 템플릿 D-log와 함께 움직이는지 고정한다.
+test('checkDecisionLog: D6·D7 이전 스캐폴드(D2/D4/D5만) → D6, D7 누락 경고', async () => {
+  const dir = await makeDecisionLogFixture(
+    '# Team Decision Log\n\n## D2 (2026-06-11) — a\n\n## D4 (2026-07-28) — b\n\n## D5 (2026-08-20) — c\n',
+  );
+  try {
+    const w = await checkDecisionLog(dir);
+    assert.ok(typeof w === 'string', 'returns a warning string');
+    assert.match(w, /## D6, ## D7 절 없음/, 'D6·D7만 누락으로 나열');
+    assert.doesNotMatch(w, /## D[245]\b/, '존재하는 D2/D4/D5는 누락 목록에 없어야 한다');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

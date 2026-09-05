@@ -286,11 +286,14 @@ export async function checkCodexSessionHook(targetDir) {
 
 // docs/decisions.md is scaffolded with skipExisting (copyStaticAssets), so a project
 // that already had the file when the D-log migration shipped never receives the
-// upstream D2/D4/D5 sections — and init cannot deliver them without clobbering the
-// team's own log. Warn-level: a missing file is fixable by init (scaffold copies it),
-// missing sections need a manual merge from the plugin's templates/docs/decisions.md.
+// upstream D-log sections (DECISION_HEADINGS) — and init cannot deliver them without
+// clobbering the team's own log. Warn-level: a missing file is fixable by init (scaffold
+// copies it); missing sections need a manual merge from the plugin's
+// templates/docs/decisions.md.
 export const DECISION_LOG_PATH = 'docs/decisions.md';
-export const DECISION_HEADINGS = ['## D2', '## D4', '## D5'];
+export const DECISION_HEADINGS = ['## D2', '## D4', '## D5', '## D6', '## D7'];
+// Derived so the absence message cannot drift from the list it describes.
+const DECISION_IDS = DECISION_HEADINGS.map(h => h.replace(/^## /, '')).join('/');
 
 export async function checkDecisionLog(targetDir) {
   let body;
@@ -298,7 +301,7 @@ export async function checkDecisionLog(targetDir) {
     body = await readFile(join(targetDir, DECISION_LOG_PATH), 'utf8');
   } catch (error) {
     if (error?.code === 'ENOENT') {
-      return `${DECISION_LOG_PATH} 없음 — 팀 결정 로그(D2/D4/D5 전문)가 프로젝트에 없다; run: harness-team init (플러그인 templates/docs/decisions.md를 스캐폴드)`;
+      return `${DECISION_LOG_PATH} 없음 — 팀 결정 로그(${DECISION_IDS} 전문)가 프로젝트에 없다; run: harness-team init (플러그인 templates/docs/decisions.md를 스캐폴드)`;
     }
     // A directory or an unreadable file must stay a warning too — a warn-level
     // check crashing doctor before it can emit its envelope defeats its purpose.
