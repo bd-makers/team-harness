@@ -219,3 +219,64 @@ test('planChanges: stack 없이 직접 부르면 permissions는 템플릿 JSON �
     assert.deepEqual(deny, tpl.permissions.deny);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+// ---- ask 계층 (PDF 권고 ④) --------------------------------------------------
+// 하네스의 가드는 deny·훅(차단) 아니면 allow(무프롬프트)라는 이분법이었다. 그 중간인
+// "실행 전에 사람에게 묻는다"는 harness-ship 문서 산문으로만 있었고 강제되지 않았다.
+// ask는 deny 다음·allow보다 강하고(더 좁은 allow가 같이 매칭돼도 ask가 이긴다),
+// workspace trust 없이 즉시 적용되며 PreToolUse 훅의 "allow"로도 무력화되지 않는다.
+// 그래서 목록은 하네스 문서가 이미 "사용자 지시 후"로 규정한 3개로 고정한다 —
+// deepMergeJson의 합집합 병합 때문에 한 번 실으면 제거 경로가 없다.
+const ASK_ENTRIES = ['Bash(git push*)', 'Bash(gh pr create*)', 'Bash(gh pr merge*)'];
+
+test('템플릿 settings.json의 permissions.ask는 규범이 확실한 3개뿐이다', async () => {
+  const tpl = JSON.parse(await readFile(join(ROOT, 'templates/.claude/settings.json'), 'utf8'));
+  assert.deepEqual(tpl.permissions.ask, ASK_ENTRIES);
+});
+
+test('ask는 pm·스택에 의존하지 않는다 — 템플릿 정적 항목이고 stackPermissions는 만들지 않는다', async () => {
+  const tpl = JSON.parse(await readFile(join(ROOT, 'templates/.claude/settings.json'), 'utf8'));
+  assert.ok(!tpl.permissions.ask.some(e => /\b(pnpm|npm|yarn|bun|npx)\b|expo/.test(e)),
+    `ask에 pm·RN 의존 항목: ${tpl.permissions.ask.join(', ')}`);
+  const out = stackPermissions({ id: 'react-native', language: 'TypeScript', packageManager: 'pnpm', cmdInstall: 'pnpm install', cmdTest: 'pnpm test', cmdLint: '(configure)', cmdTypecheck: '(configure)' }, { stackId: 'react-native' });
+  assert.deepEqual(Object.keys(out).sort(), ['allow', 'deny'], 'stackPermissions 반환 계약은 {allow, deny} 그대로다');
+});
+
+test('force push는 deny에 그대로 있고 plain push는 ask다 — deny > ask 우선순위라 충돌하지 않는다', async () => {
+  const tpl = JSON.parse(await readFile(join(ROOT, 'templates/.claude/settings.json'), 'utf8'));
+  assert.ok(tpl.permissions.deny.includes('Bash(git push --force*)'), 'force push deny가 사라졌다');
+  assert.ok(tpl.permissions.ask.includes('Bash(git push*)'), 'plain push ask가 없다');
+  assert.ok(!tpl.permissions.allow.some(e => /git push/.test(e)), 'push를 allow에 두면 ask가 무의미해 보이므로 두지 않는다');
+});
+
+test('planChanges: 생성된 settings에 ask 3개가 들어간다 (pm·스택과 무관)', async () => {
+  const dir = await fixture({ 'package.json': { name: 'svc', scripts: { test: 'node --test' } } });
+  try {
+    const { settings } = await planSettings(dir);
+    assert.deepEqual(settings.permissions.ask, ASK_ENTRIES);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('planChanges: 사용자가 쓴 ask 항목은 보존되고 템플릿 ask가 합집합으로 더해진다', async () => {
+  const dir = await fixture({
+    'package.json': { name: 'svc', scripts: { test: 'node --test' } },
+    '.claude/settings.json': { permissions: { allow: ['Read'], ask: ['Bash(terraform apply*)'], deny: [] } },
+  });
+  try {
+    const { settings } = await planSettings(dir);
+    const { ask } = settings.permissions;
+    assert.ok(ask.includes('Bash(terraform apply*)'), '사용자 ask 항목이 사라졌다');
+    for (const e of ASK_ENTRIES) assert.ok(ask.includes(e), `템플릿 ask ${e}가 더해지지 않았다: ${ask.join(', ')}`);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('planChanges: ask가 없던 옛 스캐폴드도 재실행 한 번으로 ask를 받는다', async () => {
+  const dir = await fixture({
+    'package.json': { name: 'svc', scripts: { test: 'node --test' } },
+    '.claude/settings.json': { permissions: { allow: ['Read'], deny: ['Read(./.env)'] } },
+  });
+  try {
+    const { settings } = await planSettings(dir);
+    assert.deepEqual(settings.permissions.ask, ASK_ENTRIES);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

@@ -8,9 +8,9 @@ init이 쓰는 settings 템플릿에 `permissions.ask` 3개(`Bash(git push*)`·`
 
 ## 단계
 - [x] spec.md 작성 · Ambiguity 게이트 통과(4/4) · Done evidence 선언(`review: required`)
-- [ ] 실패 테스트 ①: 템플릿 `permissions.ask`가 3개 항목을 갖고, `git push --force*`는 `deny`에 그대로 있다
-- [ ] 구현 ①: `templates/.claude/settings.json`에 `ask` 배열 추가 → ① green
-- [ ] 실패 테스트 ②: `planChanges` 병합 — 기존 프로젝트 settings(ask 없음/사용자 ask 있음)에 템플릿 ask가 합집합으로 들어가고 사용자 항목이 보존된다
+- [x] 실패 테스트 ①: 템플릿 `permissions.ask`가 3개 항목을 갖고, `git push --force*`는 `deny`에 그대로 있다
+- [x] 구현 ①: `templates/.claude/settings.json`에 `ask` 배열 추가 → ① green
+- [x] 실패 테스트 ②: `planChanges` 병합 — 기존 프로젝트 settings(ask 없음/사용자 ask 있음)에 템플릿 ask가 합집합으로 들어가고 사용자 항목이 보존된다
 - [ ] 실패 테스트 ③: `AGENTS.md.hbs`의 `principles` 마커 안에 신뢰 경계 줄이 있고, `mergeMarkdown` 재적용 시 기존 프로젝트의 principles 절이 교체된다
 - [ ] 구현 ②: `templates/AGENTS.md.hbs` 핵심 원칙에 한 줄 추가 + 저장소 루트 `AGENTS.md` 동기화 → ③ 및 `tests/agent-files.test.mjs` 드리프트 테스트 green
 - [ ] `CHANGELOG.md` `[Unreleased]`에 Added 기록 — ask 계층 도입과 **합집합 병합으로 제거 불가**라는 한계를 함께 적는다
