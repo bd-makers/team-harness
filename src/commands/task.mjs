@@ -4,7 +4,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { detectMember } from '../member.mjs';
 import { exists, writeText } from '../fsx.mjs';
-import { buildEnvelope, emitObservation } from '../observation.mjs';
+import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 import { readTaskMeta, writeTaskMeta, taskMetaTemplate } from './summary.mjs';
 
 const pexec = promisify(execFile);
@@ -208,22 +208,23 @@ export async function runTask(ctx) {
     const rootCause = name
       ? `task 이름 "${name}"에 허용되지 않는 문자가 있음 (허용: 영숫자·_·.·-)`
       : 'task 이름 인자가 없음';
+    const packet = buildErrorPacket({
+      cause: rootCause,
+      retry: '`harness-team task <name>` 형식으로 영숫자·_·.·- 만 사용한 이름을 주고 재실행',
+      alternatives: ['기존 task를 이어서 하려면 `harness-team task <기존 이름>` 으로 활성화한다 — 새로 만들지 않는다'],
+      safeDefault: 'task 디렉터리도 .harness/active.json 도 만들어지지 않는다',
+      stop: '이름 규칙(^[\\w.-]+$)을 만족하지 못하면 생성하지 말 것',
+    });
     if (json) {
       emitObservation(buildEnvelope({
         command: 'task',
         status: 'error',
         summary: 'task 생성/활성화 실패: 잘못된 task 이름',
-        error: {
-          root_cause: rootCause,
-          safe_retry: '`harness-team task <name>` 형식으로 영숫자·_·.·- 만 사용한 이름을 주고 재실행',
-          stop_condition: '이름 규칙(^[\\w.-]+$)을 만족하지 못하면 생성하지 말 것',
-        },
+        error: packet,
       }));
     } else {
       console.log(`✗ task: 잘못된 task 이름`);
-      console.log(`cause: ${rootCause}`);
-      console.log(`retry: \`harness-team task <name>\` 형식으로 유효한 이름을 주고 재실행`);
-      console.log(`stop: 이름 규칙(^[\\w.-]+$) 위반 시 생성 금지`);
+      for (const line of renderErrorPacket(packet)) console.log(line);
     }
     return;
   }
@@ -618,9 +619,16 @@ export async function runDone(ctx) {
   if (issues.length && !force) {
     process.exitCode = 1;
     console.log(`✗ done: 종결 가드에 걸림 (${issues.length}개)`);
-    for (const i of issues) console.log(`cause: ${i}`);
-    console.log(`retry: 위 항목을 해소한 뒤 다시 \`harness-team done\` 실행`);
-    console.log(`stop: 의도적으로 무시하려면 \`harness-team done --force\``);
+    // 배열 cause로 issue별 줄을 보존한다(text 전용). --force는 우회 경로이므로
+    // stop_condition이 아니라 alternatives에 둔다.
+    const packet = buildErrorPacket({
+      cause: issues,
+      retry: '위 항목을 해소한 뒤 다시 `harness-team done` 실행',
+      alternatives: ['`harness-team done --force` 로 가드를 무시하고 종결한다 — 무시한 사유를 artifact.md 에 남길 것'],
+      safeDefault: 'task는 활성으로 남고 handoff·artifact 어느 파일도 바뀌지 않는다',
+      stop: '가드가 지적한 증거가 실제로 없으면 종결하지 말 것',
+    });
+    for (const line of renderErrorPacket(packet)) console.log(line);
     return;
   }
   if (issues.length && force) {
@@ -659,22 +667,23 @@ export async function runRetro(ctx) {
   const active = await readActive(ctx.targetDir);
   if (!active || !active.task) {
     process.exitCode = 1;
+    const packet = buildErrorPacket({
+      cause: '.harness/active.json 에 활성 task가 없어 append 대상 artifact.md를 찾을 수 없음',
+      retry: '`harness-team task <name>` 로 task를 활성화한 뒤 다시 실행',
+      alternatives: ['학습을 잃고 싶지 않으면 대상 task의 artifact.md 를 직접 열어 `## Learnings` 에 손으로 추가한다'],
+      safeDefault: 'artifact.md 는 어느 것도 바뀌지 않고 학습은 기록되지 않는다',
+      stop: 'task가 하나도 없으면 먼저 task를 생성하라',
+    });
     if (json) {
       emitObservation(buildEnvelope({
         command: 'retro',
         status: 'error',
         summary: 'retro 실패: 활성 task 없음',
-        error: {
-          root_cause: '.harness/active.json 에 활성 task가 없어 append 대상 artifact.md를 찾을 수 없음',
-          safe_retry: '`harness-team task <name>` 로 task를 활성화한 뒤 다시 실행',
-          stop_condition: 'task가 하나도 없으면 먼저 task를 생성하라',
-        },
+        error: packet,
       }));
     } else {
       console.log(`✗ retro: 활성 task 없음`);
-      console.log(`cause: .harness/active.json 에 활성 task가 없어 append 대상 artifact.md를 찾을 수 없음`);
-      console.log(`retry: \`harness-team task <name>\` 로 task를 활성화한 뒤 다시 실행`);
-      console.log(`stop: task가 하나도 없으면 먼저 task를 생성하라`);
+      for (const line of renderErrorPacket(packet)) console.log(line);
     }
     return;
   }

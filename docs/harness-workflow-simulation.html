@@ -658,7 +658,10 @@ cause: 소스는 바뀌었는데 테스트 파일 변경이 없음
        (테스트 미작성 — 불필요하면 spec에
         `"tests": "skip"` 선언)
 retry: 위 항목을 해소한 뒤 다시 `harness-team done` 실행
-stop:  의도적으로 무시하려면 `harness-team done --force`
+alternatives: `harness-team done --force` 로 가드를 무시하고 종결한다
+              — 무시한 사유를 artifact.md 에 남길 것
+default: task는 활성으로 남고 handoff·artifact 어느 파일도 바뀌지 않는다
+stop: 가드가 지적한 증거가 실제로 없으면 종결하지 말 것
             </div>
             <div class="step-detail">"결과를 증명하지 않은 done"을 코드가 거부 — dogfooding이 입증한 강제 갭을 메움 (P0). <strong>0.9.5</strong>: 커밋 직후 post-commit 훅이 handoff를 더럽혀 <code>done</code>이 항상 <code>--force</code>를 요구하던 마찰을 가드 측에서 해소(<code>parsePorcelainPaths</code> 헬퍼) — handoff 외 실제 미커밋 작업이 있을 때만 차단.</div>
             <div class="tree" style="margin-top:0.6rem">

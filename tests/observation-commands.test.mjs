@@ -52,6 +52,9 @@ test('retro --json: 활성 task 없음 → status error + 에러 계약 + exitCo
     const env = cap.soleEnvelope();
     assert.equal(env.status, 'error');
     assert.ok(env.error.root_cause && env.error.safe_retry && env.error.stop_condition);
+    assert.ok(Array.isArray(env.error.alternatives), 'alternatives는 배열');
+    assert.ok(env.error.safe_default, 'safe_default는 비어 있지 않다');
+    assert.equal(typeof env.error.root_cause, 'string', 'JSON 엔벨로프의 root_cause 는 string (배열은 text 전용)');
     assert.equal(process.exitCode, 1);
   } finally { cap.restore(); process.exitCode = prev; await rm(dir, { recursive: true, force: true }); }
 });
@@ -66,6 +69,10 @@ test('release --json: 에러(빈 dir → manifest 부재) → status error + err
     assert.equal(env.command, 'release');
     assert.equal(env.status, 'error');
     assert.ok(env.error && env.error.root_cause && env.error.safe_retry && env.error.stop_condition);
+    // escalation packet (권고 ③)
+    assert.ok(Array.isArray(env.error.alternatives), 'alternatives는 배열');
+    assert.ok(env.error.safe_default, 'safe_default는 비어 있지 않다');
+    assert.equal(typeof env.error.root_cause, 'string', 'JSON 엔벨로프의 root_cause 는 string (배열은 text 전용)');
     assert.equal(process.exitCode, 1);
   } finally {
     cap.restore(); process.exitCode = prev;
@@ -97,6 +104,9 @@ test('task --json: 잘못된 이름 → status error + 에러 계약 + exitCode 
     const env = cap.soleEnvelope();
     assert.equal(env.status, 'error');
     assert.ok(env.error.root_cause && env.error.safe_retry && env.error.stop_condition);
+    assert.ok(Array.isArray(env.error.alternatives), 'alternatives는 배열');
+    assert.ok(env.error.safe_default, 'safe_default는 비어 있지 않다');
+    assert.equal(typeof env.error.root_cause, 'string', 'JSON 엔벨로프의 root_cause 는 string (배열은 text 전용)');
     assert.equal(process.exitCode, 1);
   } finally { cap.restore(); process.exitCode = prev; await rm(dir, { recursive: true, force: true }); }
 });
@@ -130,6 +140,9 @@ test('doctor --json: 단일 envelope + checks 배열 + status error(빈 dir)', a
     // invariant: status==='error' ⟺ error!=null (uniform with release/retro/task)
     assert.ok(env.error && env.error.root_cause && env.error.safe_retry && env.error.stop_condition,
       'status:error envelope must carry a non-null error contract');
+    assert.ok(Array.isArray(env.error.alternatives), 'alternatives는 배열');
+    assert.ok(env.error.safe_default, 'safe_default는 비어 있지 않다');
+    assert.equal(typeof env.error.root_cause, 'string', 'JSON 엔벨로프의 root_cause 는 string (배열은 text 전용)');
     assert.equal(process.exitCode, 1);
   } finally { cap.restore(); process.exitCode = prev; await rm(dir, { recursive: true, force: true }); }
 });

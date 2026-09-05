@@ -299,3 +299,36 @@ test('--write: git 저장소가 아니면 그대로 쓴다 (충돌할 브랜치�
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+// escalation packet (권고 ③) — 상호 배타 플래그 거부에도 대안·안전 기본값을 함께 준다.
+test('summary --json: --write와 --check 동시 지정 → error 패킷에 alternatives·safe_default', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-summary-both-'));
+  const logs = [];
+  const orig = console.log;
+  console.log = (...a) => logs.push(a.join(' '));
+  const prev = process.exitCode;
+  try {
+    await runSummary({ targetDir: dir, flags: { json: true, write: true, check: true } });
+    assert.equal(logs.length, 1, '정확히 한 객체');
+    const env = JSON.parse(logs[0]);
+    assert.equal(env.status, 'error');
+    assert.ok(env.error.alternatives.length > 0, '대안이 최소 하나');
+    assert.ok(env.error.safe_default, '무응답 시 남는 상태');
+    assert.equal(typeof env.error.root_cause, 'string', 'JSON 엔벨로프의 root_cause 는 string (배열은 text 전용)');
+  } finally { console.log = orig; process.exitCode = prev; await rm(dir, { recursive: true, force: true }); }
+});
+
+test('summary(text): --write와 --check 동시 지정 → alternatives·default 줄을 낸다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-summary-both-text-'));
+  const logs = [];
+  const orig = console.log;
+  console.log = (...a) => logs.push(a.join(' '));
+  const prev = process.exitCode;
+  try {
+    await runSummary({ targetDir: dir, flags: { write: true, check: true } });
+    assert.ok(logs.some(l => l.startsWith('cause: ')), 'cause 줄');
+    assert.ok(logs.some(l => l.startsWith('alternatives: ')), 'alternatives 줄');
+    assert.ok(logs.some(l => l.startsWith('default: ')), 'default 줄');
+    assert.ok(logs.some(l => l.startsWith('stop: ')), 'stop 줄');
+  } finally { console.log = orig; process.exitCode = prev; await rm(dir, { recursive: true, force: true }); }
+});

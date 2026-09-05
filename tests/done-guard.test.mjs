@@ -811,3 +811,26 @@ test('Done evidence 선언이 깨져 있으면 그 자체가 차단 사유', asy
     assert.ok(logs.some(l => l.includes('선언이 올바르지 않음')), 'invalid declaration reported');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+// escalation packet (권고 ③) — 가드는 issue별 cause 줄을 유지하면서 대안과 무응답 시
+// 남는 상태를 함께 준다. --force 안내는 stop_condition이 아니라 alternatives에 있다:
+// stop은 "언제 멈춰야 하는가"이지 "어떻게 우회하는가"가 아니다.
+test('done 가드: issue별 cause 줄을 보존하고 alternatives·default 줄을 낸다', async () => {
+  // artifact 없음 + 미완 plan → 최소 2개 issue
+  const { dir } = await makeFixture({ plan: '# demo — Plan\n\n## 단계\n- [ ] 미완\n' });
+  const prevExit = process.exitCode;
+  const { logs, restore } = captureLogs();
+  try {
+    await runDone({ targetDir: dir, flags: {} });
+    const causes = logs.filter(l => l.startsWith('cause: '));
+    assert.ok(causes.length >= 2, `issue마다 cause 줄 (got ${causes.length})`);
+    const alternatives = logs.filter(l => l.startsWith('alternatives: '));
+    assert.equal(alternatives.length, 1, 'alternatives 줄 1개');
+    assert.match(alternatives[0], /--force/, '우회 경로는 alternatives에 있다');
+    const defaults = logs.filter(l => l.startsWith('default: '));
+    assert.equal(defaults.length, 1, 'default 줄 1개');
+    const stops = logs.filter(l => l.startsWith('stop: '));
+    assert.equal(stops.length, 1, 'stop 줄 1개');
+    assert.doesNotMatch(stops[0], /--force/, 'stop은 우회 방법을 담지 않는다');
+  } finally { restore(); process.exitCode = prevExit; await rm(dir, { recursive: true, force: true }); }
+});

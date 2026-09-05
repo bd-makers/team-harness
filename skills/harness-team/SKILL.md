@@ -48,7 +48,7 @@ Prefer `--json` for commands that support it when Codex will parse the result. T
 - `summary`: one-line result
 - `next_actions`: follow-up commands or edits
 - `artifacts`: generated or modified files
-- `error.root_cause`, `error.safe_retry`, `error.stop_condition` on failure
+- `error.root_cause`, `error.safe_retry`, `error.alternatives`, `error.safe_default`, `error.stop_condition` on failure
 
 ## Platform Boundaries
 

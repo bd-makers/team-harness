@@ -275,17 +275,22 @@ test('runRules promote: 대상 규칙 파일이 이미 있음 → rule-exists, e
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('runRules promote: 활성 task 없음 → no-active-task, exit 1, cause/retry/stop 계약 (--json 도)', async () => {
+test('runRules promote: 활성 task 없음 → no-active-task, exit 1, escalation packet 계약 (--json 도)', async () => {
   const dir = await makeProject({ active: false });
   try {
     const text = await run(dir, ['promote']);
     assert.equal(text.exitCode, 1);
     assert.equal(text.result.code, 'no-active-task');
-    assert.deepEqual(text.logs.map(l => l.split(':')[0]), ['✗ rules promote', 'cause', 'retry', 'stop']);
+    assert.deepEqual(text.logs.map(l => l.split(':')[0]),
+      ['✗ rules promote', 'cause', 'retry', 'alternatives', 'default', 'stop']);
     const json = await run(dir, ['promote'], { json: true });
     const env = JSON.parse(json.logs[0]);
     assert.equal(env.status, 'error');
     assert.ok(env.error.root_cause && env.error.safe_retry && env.error.stop_condition);
+    // escalation packet (권고 ③) — 대안과 무응답 시 남는 상태를 함께 준다.
+    assert.ok(Array.isArray(env.error.alternatives) && env.error.alternatives.length > 0, 'alternatives');
+    assert.ok(env.error.safe_default, 'safe_default');
+    assert.equal(typeof env.error.root_cause, 'string', 'JSON 엔벨로프의 root_cause 는 string (배열은 text 전용)');
     assert.equal(env.code, 'no-active-task');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
@@ -447,6 +452,10 @@ test('runRules --json: 첫 토큰이 promote 가 아니면 error envelope (code 
     assert.equal(env.status, 'error');
     assert.equal(env.code, 'invalid-action');
     assert.ok(env.error.root_cause && env.error.safe_retry && env.error.stop_condition);
+    // escalation packet (권고 ③) — 대안과 무응답 시 남는 상태를 함께 준다.
+    assert.ok(Array.isArray(env.error.alternatives) && env.error.alternatives.length > 0, 'alternatives');
+    assert.ok(env.error.safe_default, 'safe_default');
+    assert.equal(typeof env.error.root_cause, 'string', 'JSON 엔벨로프의 root_cause 는 string (배열은 text 전용)');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

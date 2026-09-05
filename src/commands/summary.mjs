@@ -3,7 +3,7 @@ import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { exists, writeText } from '../fsx.mjs';
-import { buildEnvelope, emitObservation } from '../observation.mjs';
+import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 
 const pexec = promisify(execFile);
 
@@ -232,9 +232,12 @@ export async function runSummary(ctx) {
 
   if (write && check) {
     process.exitCode = 1;
-    return fail(json, 'summary', '--write와 --check는 함께 쓸 수 없음',
-      '--check는 mutation 없이 검사만 하고 --write는 파일을 고치므로 동시에 성립하지 않음',
-      '검사만 하려면 `--check`, 갱신하려면 `--write` 중 하나만 지정');
+    return fail(json, 'summary', '--write와 --check는 함께 쓸 수 없음', {
+      cause: '--check는 mutation 없이 검사만 하고 --write는 파일을 고치므로 동시에 성립하지 않음',
+      retry: '검사만 하려면 `--check`, 갱신하려면 `--write` 중 하나만 지정',
+      alternatives: ['플래그 없이 실행하면 렌더 결과를 stdout으로만 내보낸다 — 파일은 건드리지 않는다'],
+      safeDefault: '원장 파일은 하나도 바뀌지 않는다',
+    });
   }
 
   const tasks = await collectTasks(ctx.targetDir);
@@ -262,9 +265,12 @@ export async function runSummary(ctx) {
     }
     if (stale.length) {
       process.exitCode = 1;
-      return fail(json, 'summary', `원장이 task 디렉터리와 어긋남 (${stale.length}개)`,
-        `${stale.join(', ')} 의 내용이 렌더 결과와 다름`,
-        '기본 브랜치에서 `harness-team summary --write` 실행 후 커밋');
+      return fail(json, 'summary', `원장이 task 디렉터리와 어긋남 (${stale.length}개)`, {
+        cause: `${stale.join(', ')} 의 내용이 렌더 결과와 다름`,
+        retry: '기본 브랜치에서 `harness-team summary --write` 실행 후 커밋',
+        alternatives: ['어긋난 내용을 먼저 보려면 플래그 없이 실행해 렌더 결과를 stdout으로 받아 비교한다'],
+        safeDefault: '원장은 어긋난 상태 그대로 남는다 — 검사만 했고 아무것도 쓰지 않았다',
+      });
     }
     if (json) {
       emitObservation(buildEnvelope({ command: 'summary', status: 'success', summary: '원장이 최신 상태' }));
@@ -279,16 +285,24 @@ export async function runSummary(ctx) {
   const state = await branchState(ctx.targetDir);
   if (state.kind === 'error' && !force) {
     process.exitCode = 1;
-    return fail(json, 'summary', '현재 브랜치를 확인할 수 없어 원장을 쓰지 않음',
-      'git 저장소로 보이지만 브랜치 조회가 실패함 — feature 브랜치일 수 있고, 그렇다면 병렬 브랜치끼리 충돌이 되살아남',
-      'git 상태를 복구한 뒤 재실행. 의도적으로 무시하려면 --force');
+    return fail(json, 'summary', '현재 브랜치를 확인할 수 없어 원장을 쓰지 않음', {
+      cause: 'git 저장소로 보이지만 브랜치 조회가 실패함 — feature 브랜치일 수 있고, 그렇다면 병렬 브랜치끼리 충돌이 되살아남',
+      retry: 'git 상태를 복구한 뒤 재실행',
+      alternatives: ['기본 브랜치임을 확신하면 `--force`로 가드를 무시한다 — 병렬 브랜치 충돌은 사용자 책임이 된다'],
+      safeDefault: '원장 파일은 하나도 바뀌지 않는다',
+    });
   }
   const bases = await defaultBranchCandidates(ctx.targetDir);
   if (state.kind === 'branch' && !bases.includes(state.name) && !force) {
     process.exitCode = 1;
-    return fail(json, 'summary', `기본 브랜치가 아니라 원장을 쓰지 않음 (현재: ${state.name})`,
-      `공유 원장을 feature 브랜치에서 갱신하면 병렬 브랜치끼리 다시 충돌함 (기본 브랜치: ${bases.join(' 또는 ')})`,
-      `\`${bases[0]}\` 로 전환한 뒤 \`harness-team summary --write\` 실행. 의도적으로 무시하려면 --force`);
+    return fail(json, 'summary', `기본 브랜치가 아니라 원장을 쓰지 않음 (현재: ${state.name})`, {
+      cause: `공유 원장을 feature 브랜치에서 갱신하면 병렬 브랜치끼리 다시 충돌함 (기본 브랜치: ${bases.join(' 또는 ')})`,
+      retry: `\`${bases[0]}\` 로 전환한 뒤 \`harness-team summary --write\` 실행`,
+      // 우회 경로는 이 명령의 escape hatch(--force)까지만 안내한다 — 어떻게 반영할지(직접 push냐
+      // PR이냐)는 프로젝트 정책이라 범용 CLI가 처방하지 않는다.
+      alternatives: ['기본 브랜치로 옮기기 어려운 상황이면 `--force`로 가드를 무시한다 — 반영 경로는 프로젝트의 브랜치 정책을 따를 것'],
+      safeDefault: '원장 파일은 하나도 바뀌지 않는다',
+    });
   }
 
   const written = [];
@@ -312,19 +326,21 @@ export async function runSummary(ctx) {
   }
 }
 
-function fail(json, command, summary, rootCause, safeRetry) {
+function fail(json, command, summary, { cause, retry, alternatives = [], safeDefault }) {
+  const packet = buildErrorPacket({
+    cause, retry, alternatives, safeDefault,
+    stop: '원인을 해소하기 전에는 재시도하지 말 것',
+  });
   if (json) {
     emitObservation(buildEnvelope({
       command,
       status: 'error',
       summary: `summary 실패: ${summary}`,
-      error: { root_cause: rootCause, safe_retry: safeRetry, stop_condition: '원인을 해소하기 전에는 재시도하지 말 것' },
+      error: packet,
     }));
   } else {
     console.log(`✗ ${command}: ${summary}`);
-    console.log(`cause: ${rootCause}`);
-    console.log(`retry: ${safeRetry}`);
-    console.log(`stop: 원인을 해소하기 전에는 재시도하지 말 것`);
+    for (const line of renderErrorPacket(packet)) console.log(line);
   }
 }
 

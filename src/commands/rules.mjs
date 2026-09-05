@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { lstat, unlink } from 'node:fs/promises';
 import { exists, readTextSafe, writeText } from '../fsx.mjs';
-import { buildEnvelope, emitObservation } from '../observation.mjs';
+import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 import { collectRuleFiles, mirrorCursorRules, splitRulePaths } from '../harness.mjs';
 import { readActive } from './task.mjs';
 
@@ -141,22 +141,21 @@ function today() {
 
 const USAGE = 'harness-team rules promote [<n>] [--name <slug>] [--paths <a,b>]';
 
-// retro·task와 같은 cause/retry/stop 계약. exitCode 기본 2(인수·상태 거부), 활성 task 없음만 1(retro와 동일).
-function fail(ctx, { code, cause, retry, stop, exitCode = 2 }) {
+// retro·task와 같은 escalation packet 계약. exitCode 기본 2(인수·상태 거부), 활성 task 없음만 1(retro와 동일).
+function fail(ctx, { code, cause, retry, alternatives = [], safeDefault, stop, exitCode = 2 }) {
   process.exitCode = exitCode;
+  const packet = buildErrorPacket({ cause, retry, alternatives, safeDefault, stop });
   if (ctx.flags?.json) {
     emitObservation(buildEnvelope({
       command: 'rules',
       status: 'error',
       summary: `rules promote 실패: ${code}`,
-      error: { root_cause: cause, safe_retry: retry, stop_condition: stop },
+      error: packet,
       extra: { action: 'promote', code },
     }));
   } else {
     console.log(`✗ rules promote: ${code}`);
-    console.log(`cause: ${cause}`);
-    console.log(`retry: ${retry}`);
-    console.log(`stop: ${stop}`);
+    for (const line of renderErrorPacket(packet)) console.log(line);
   }
   return { status: 'error', code };
 }
@@ -194,6 +193,8 @@ export async function runRulesPromote(ctx) {
       code: 'no-active-task', exitCode: 1,
       cause: '.harness/active.json 에 활성 task가 없어 승격 원천 artifact.md를 찾을 수 없음',
       retry: '`harness-team task <name>` 로 task를 활성화한 뒤 다시 실행',
+      alternatives: ['다른 task의 artifact에서 승격하려면 그 task를 먼저 활성화한다 — 활성 task 없이 승격하는 경로는 없다'],
+      safeDefault: '규칙 파일도 artifact 표기도 만들어지지 않는다',
       stop: 'task가 하나도 없으면 먼저 task를 생성하라',
     });
   }
@@ -206,6 +207,8 @@ export async function runRulesPromote(ctx) {
       code: 'no-artifact',
       cause: `${relArtifact} 이(가) 없음`,
       retry: '`harness-team retro "<학습>"` 으로 Learnings를 먼저 기록한 뒤 다시 실행',
+      alternatives: ['artifact.md 없이 규칙을 바로 쓰려면 `.claude/rules/<slug>.md` 를 직접 만들고 `harness-team sync` 로 미러한다 — 유래 마커는 수동으로 붙여야 한다'],
+      safeDefault: '규칙 파일도 artifact 표기도 만들어지지 않는다',
       stop: 'artifact.md가 없으면 승격할 항목이 없다',
     });
   }
@@ -218,6 +221,8 @@ export async function runRulesPromote(ctx) {
       code: 'invalid-index',
       cause: `"${selector}" 은(는) 1..${entries.length} 범위의 정수가 아님`,
       retry: '`harness-team rules promote` 로 번호 목록을 확인한 뒤 다시 실행',
+      alternatives: ['번호 대신 목록을 먼저 보려면 `harness-team rules promote` 를 인자 없이 실행한다'],
+      safeDefault: '규칙 파일도 artifact 표기도 만들어지지 않는다',
       stop: '항목이 0개면 승격할 것이 없다',
     });
   }
@@ -227,6 +232,8 @@ export async function runRulesPromote(ctx) {
       code: 'already-promoted',
       cause: `#${entry.index} 은(는) 이미 rules/${entry.promoted.rule}.md 로 승격됨 (${entry.promoted.at})`,
       retry: '다른 항목 번호를 고르거나, 되돌리려면 규칙 파일 삭제 + artifact 표기 제거를 수동으로',
+      alternatives: ['같은 학습을 다른 각도로 승격하려면 artifact에 새 Learnings 항목을 추가한 뒤 그 번호를 고른다'],
+      safeDefault: '기존 규칙 파일과 artifact 표기가 그대로 남는다',
       stop: '같은 항목을 두 번 승격하지 않는다',
     });
   }
@@ -236,6 +243,8 @@ export async function runRulesPromote(ctx) {
       code: 'invalid-name',
       cause: `--name 이 없거나 이름 규칙(^[\\w.-]+$)을 만족하지 않음: ${JSON.stringify(name ?? null)}`,
       retry: '`--name <slug>` 를 영문·숫자·`_`·`.`·`-` 만으로 지정',
+      alternatives: ['이름을 정하기 어려우면 artifact의 학습 제목을 kebab-case로 옮겨 쓴다'],
+      safeDefault: '규칙 파일도 artifact 표기도 만들어지지 않는다',
       stop: '경로 구분자가 들어간 이름으로는 만들지 않는다',
     });
   }
@@ -249,6 +258,8 @@ export async function runRulesPromote(ctx) {
       code: 'rule-exists',
       cause: `${relRule} 이(가) 이미 있음 — 덮어쓰지 않는다`,
       retry: '다른 `--name` 을 쓰거나 기존 규칙을 직접 편집',
+      alternatives: ['기존 규칙을 대체할 의도면 그 파일을 직접 편집하고 유래 마커에 이번 항목을 덧붙인다'],
+      safeDefault: '기존 규칙 파일이 그대로 보존된다 — 덮어쓰지 않았다',
       stop: '기존 규칙 파일은 보존한다',
     });
   }
@@ -265,8 +276,11 @@ export async function runRulesPromote(ctx) {
     await unlink(rulePath).catch(() => {});
     return fail(ctx, {
       code: 'artifact-write-failed',
-      cause: `${relArtifact} 쓰기 실패(${error?.code ?? error?.message}) — 방금 쓴 ${relRule} 은 되돌렸다`,
+      cause: `${relArtifact} 쓰기 실패(${error?.code ?? error?.message}) — 방금 쓴 ${relRule} 은 되돌리려 시도했다`,
       retry: 'artifact.md 의 권한·잠금을 확인한 뒤 같은 명령을 다시 실행',
+      alternatives: ['artifact 쓰기가 계속 실패하면 규칙 파일만 수동으로 만들고 표기를 손으로 추가한다 — 표기 없는 규칙은 재승격을 막지 못한다'],
+      // unlink 실패는 삼켜지고 writeText는 원자적이지 않다 — 보장하지 못하는 상태를 주장하지 않는다.
+      safeDefault: `승격은 완료되지 않았다 — ${relArtifact} 의 표기는 없거나 일부만 쓰였을 수 있고, ${relRule} 은 되돌리기까지 실패했으면 남아 있을 수 있다. 재실행 전에 두 파일을 눈으로 확인하라`,
       stop: 'artifact 표기 없이 규칙만 남기지 않는다',
     });
   }
@@ -307,11 +321,14 @@ export async function runRules(ctx) {
       command: 'rules',
       status: 'error',
       summary: 'rules 실패: invalid-action',
-      error: {
-        root_cause: `알 수 없는 하위동작 ${JSON.stringify(action ?? null)} — 지원: promote`,
-        safe_retry: `\`${USAGE}\` 로 다시 실행`,
-        stop_condition: '하위동작이 promote 가 아니면 아무것도 쓰지 않는다',
-      },
+      // text 분기는 usage 안내를 유지한다 — 사용법 오류는 escalation이 아니다(tests/rules.test.mjs).
+      error: buildErrorPacket({
+        cause: `알 수 없는 하위동작 ${JSON.stringify(action ?? null)} — 지원: promote`,
+        retry: `\`${USAGE}\` 로 다시 실행`,
+        alternatives: ['하위동작 목록만 보려면 인자 없이 `harness-team rules promote` 를 실행한다'],
+        safeDefault: '아무 파일도 읽거나 쓰지 않고 종료한다',
+        stop: '하위동작이 promote 가 아니면 아무것도 쓰지 않는다',
+      }),
       extra: { action: action ?? null, code: 'invalid-action' },
     }));
   } else {

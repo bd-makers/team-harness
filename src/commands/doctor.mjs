@@ -5,7 +5,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { exists } from '../fsx.mjs';
 import { loadBackupDir, settingsHasBoundaryCheckpoint, codexHooksHaveSessionContext } from '../harness.mjs';
-import { buildEnvelope, emitObservation } from '../observation.mjs';
+import { buildEnvelope, buildErrorPacket, emitObservation } from '../observation.mjs';
 import { settingsHasSessionGate } from './session-context.mjs';
 import { checkRuleProvenance } from './rules.mjs';
 
@@ -683,11 +683,13 @@ export async function runDoctor(ctx) {
       nextActions: fail ? ['harness-team sync'] : [...new Set(warnActions)],
       // Keep the invariant status==='error' ⟺ error!=null uniform across commands.
       // Per-check detail still lives in checks[]; error is the top-level summary of it.
-      error: fail ? {
-        root_cause: `${fail}개 필수 점검 항목 실패 (checks[]의 status:"fail" 참조)`,
-        safe_retry: 'checks[]의 fail 항목을 해소한 뒤 harness-team sync 실행 후 재점검',
-        stop_condition: '필수 파일/스크립트 누락이면 harness-team init 또는 migrate로 복구',
-      } : null,
+      error: fail ? buildErrorPacket({
+        cause: `${fail}개 필수 점검 항목 실패 (checks[]의 status:"fail" 참조)`,
+        retry: 'checks[]의 fail 항목을 해소한 뒤 harness-team sync 실행 후 재점검',
+        alternatives: ['구조가 구버전이면 `harness-team migrate`, 파일이 아예 없으면 `harness-team init` 으로 복구한다'],
+        safeDefault: 'doctor는 읽기 전용이다 — 아무것도 고치지 않고 실패 목록만 남긴다',
+        stop: '필수 파일/스크립트 누락이면 harness-team init 또는 migrate로 복구',
+      }) : null,
       extra: { checks, mode: pluginDev ? 'plugin-dev' : 'project' },
     }));
   } else {
