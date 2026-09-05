@@ -6,6 +6,7 @@
 - ✅ ci-docs-check-gitignore
 - ✅ doctor-decision-headings
 - ✅ observability-consumer
+- ✅ retro-rules-promotion
 - ✅ scaffold-pm-permissions
 - ✅ audit-cleanup
 - ✅ claude5-context-apply
