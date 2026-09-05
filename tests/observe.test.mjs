@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { mkdtemp, mkdir, writeFile, symlink, readFile, rm } from 'node:fs/promises';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { observeToolEvent } from '../templates/.claude/hooks/observe-tools.mjs';
 import {
   percentile, windowDays, summarizeObservability, TRIP_WIRE_MIN_FINISHED, TRIP_WIRE_MIN_FAILURES,
+  readObservabilityRecords, resolveTaskRefs, hmacRef, OBSERVABILITY_BASE,
 } from '../src/commands/observe.mjs';
 
 const NOW = new Date('2026-09-05T12:00:00.000Z');
@@ -110,4 +115,73 @@ test('trip wire repeat-failure-3x: 3 failed of the same session+tool fires; 2, o
   assert.equal(summarizeObservability(three.slice(0, 2), { now: NOW, days: 1 }).trip_wires[1].fired, false);
   const spread = three.map((r, i) => ({ ...r, session_ref: String(i).repeat(32) }));
   assert.equal(summarizeObservability(spread, { now: NOW, days: 1 }).trip_wires[1].fired, false);
+});
+
+// ---- 읽기 · 역매핑: fixture는 실제 훅으로 쓴다 (작성자와 같은 바이트를 보는지가 요점)
+function hookPayload(event, over = {}) {
+  seq += 1;
+  return {
+    hook_event_name: event, session_id: 'sess-1', tool_use_id: `call-${seq}`, tool_name: 'Bash',
+    tool_input: { command: 'ls' }, tool_response: { stdout: 'x' }, duration_ms: 12, ...over,
+  };
+}
+async function project() {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-observe-'));
+  return { dir, cleanup: () => rm(dir, { recursive: true, force: true }) };
+}
+
+test('read: no observability dir → not-installed with zero records', async () => {
+  const { dir, cleanup } = await project();
+  try {
+    const out = await readObservabilityRecords(dir, { now: NOW, days: 7 });
+    assert.equal(out.status, 'not-installed'); assert.deepEqual(out.records, []); assert.equal(out.skippedLines, 0);
+  } finally { await cleanup(); }
+});
+
+test('read: hook-written records are read back; malformed lines, symlinks, non-jsonl and out-of-window days are skipped', async () => {
+  const { dir, cleanup } = await project();
+  try {
+    const now = new Date('2026-09-05T10:00:00.000Z');
+    await observeToolEvent(hookPayload('PreToolUse'), { projectDir: dir, now });
+    await observeToolEvent(hookPayload('PostToolUse'), { projectDir: dir, now });
+    await observeToolEvent(hookPayload('PostToolUseFailure', { error: 'boom' }), { projectDir: dir, now: new Date('2026-09-04T10:00:00.000Z') });
+    await observeToolEvent(hookPayload('PostToolUse'), { projectDir: dir, now: new Date('2026-08-20T10:00:00.000Z') }); // 창 밖
+    const today = join(dir, OBSERVABILITY_BASE, '2026-09-05');
+    await writeFile(join(today, 'zz-000.jsonl'), 'not json\n{"v":2,"phase":"succeeded"}\n{"v":1,"phase":"succeeded"}\n');
+    await writeFile(join(today, 'notes.txt'), '{"v":1}\n');
+    await symlink(join(today, 'zz-000.jsonl'), join(today, 'link-000.jsonl'));
+    const out = await readObservabilityRecords(dir, { now, days: 7 });
+    assert.equal(out.status, 'ok');
+    assert.deepEqual(out.records.map(r => r.phase).sort(), ['failed', 'started', 'succeeded']);
+    assert.equal(out.skippedLines, 3, 'bad json + v2 + missing fields');
+  } finally { await cleanup(); }
+});
+
+test('read: dir exists but window is empty → no-data', async () => {
+  const { dir, cleanup } = await project();
+  try {
+    await observeToolEvent(hookPayload('PostToolUse'), { projectDir: dir, now: new Date('2026-08-01T00:00:00.000Z') });
+    const out = await readObservabilityRecords(dir, { now: NOW, days: 7 });
+    assert.equal(out.status, 'no-data'); assert.equal(out.records.length, 0);
+  } finally { await cleanup(); }
+});
+
+test('resolveTaskRefs: hmac over docs/<user>/<task> meta matches the task_ref the hook wrote', async () => {
+  const { dir, cleanup } = await project();
+  try {
+    await mkdir(join(dir, '.harness'), { recursive: true });
+    await writeFile(join(dir, '.harness/active.json'), JSON.stringify({ user: 'hslee', task: 'demo' }));
+    await mkdir(join(dir, 'docs/hslee/demo'), { recursive: true });
+    await writeFile(join(dir, 'docs/hslee/demo/demo-meta.json'), JSON.stringify({ user: 'hslee', task: 'demo', status: 'active' }));
+    const written = await observeToolEvent(hookPayload('PostToolUse'), { projectDir: dir, now: NOW });
+    const refs = await resolveTaskRefs(dir);
+    assert.equal(refs.get(written.record.task_ref), 'hslee/demo');
+    const key = await readFile(join(dir, OBSERVABILITY_BASE, '.key'));
+    assert.equal(hmacRef(key, 'task', 'hslee\u0000demo'), written.record.task_ref);
+  } finally { await cleanup(); }
+});
+
+test('resolveTaskRefs: no key or no docs → empty map, never throws', async () => {
+  const { dir, cleanup } = await project();
+  try { assert.equal((await resolveTaskRefs(dir)).size, 0); } finally { await cleanup(); }
 });

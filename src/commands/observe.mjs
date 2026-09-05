@@ -121,6 +121,75 @@ function repeatFailureTripWire(records) {
   return { id: 'repeat-failure-3x', fired: hits.length > 0, status, detail: { hits } };
 }
 
+const REQUIRED_FIELDS = ['phase', 'session_ref', 'tool_category', 'recorded_at'];
+
+// Same derivation as the hook's hmacRef (namespace NUL value → sha256 → 32 hex).
+export function hmacRef(key, namespace, value) {
+  return createHmac('sha256', key).update(`${namespace}\u0000${value}`).digest('hex').slice(0, 32);
+}
+
+async function regularEntry(path, { dir = false } = {}) {
+  try {
+    const info = await lstat(path);
+    if (info.isSymbolicLink()) return false;
+    return dir ? info.isDirectory() : info.isFile();
+  } catch { return false; }
+}
+
+function validRecord(value) {
+  return value !== null && typeof value === 'object' && value.v === 1
+    && REQUIRED_FIELDS.every(field => typeof value[field] === 'string');
+}
+
+export async function readObservabilityRecords(targetDir, { now = new Date(), days = OBSERVE_DEFAULT_DAYS } = {}) {
+  const baseDir = resolve(targetDir, OBSERVABILITY_BASE);
+  if (!(await regularEntry(baseDir, { dir: true }))) return { status: 'not-installed', baseDir, records: [], skippedLines: 0 };
+  const records = [];
+  let skippedLines = 0;
+  for (const day of windowDays(now, days)) {
+    const dayDir = join(baseDir, day);
+    if (!(await regularEntry(dayDir, { dir: true }))) continue;
+    for (const name of (await readdir(dayDir)).sort()) {
+      const file = join(dayDir, name);
+      if (!name.endsWith('.jsonl') || !(await regularEntry(file))) continue;
+      for (const line of (await readFile(file, 'utf8')).split('\n')) {
+        if (line.trim() === '') continue;
+        let parsed;
+        try { parsed = JSON.parse(line); } catch { skippedLines += 1; continue; }
+        if (validRecord(parsed)) records.push(parsed); else skippedLines += 1;
+      }
+    }
+  }
+  return { status: records.length ? 'ok' : 'no-data', baseDir, records, skippedLines };
+}
+
+// docs/<user>/<task>/<task>-meta.json → the same HMAC the hook computed from active.json.
+// Built only from local files; refs never leave the machine.
+export async function resolveTaskRefs(targetDir) {
+  const refs = new Map();
+  let key;
+  try {
+    key = await readFile(join(targetDir, OBSERVABILITY_BASE, '.key'));
+    if (key.length !== 32) return refs;
+  } catch { return refs; }
+  const docs = join(targetDir, 'docs');
+  let users = [];
+  try { users = (await readdir(docs, { withFileTypes: true })).filter(e => e.isDirectory()).map(e => e.name); } catch { return refs; }
+  for (const user of users) {
+    let tasks = [];
+    try { tasks = (await readdir(join(docs, user), { withFileTypes: true })).filter(e => e.isDirectory()).map(e => e.name); } catch { continue; }
+    for (const task of tasks) {
+      try {
+        const meta = JSON.parse(await readFile(join(docs, user, task, `${task}-meta.json`), 'utf8'));
+        const u = typeof meta.user === 'string' ? meta.user : user;
+        const t = typeof meta.task === 'string' ? meta.task : task;
+        refs.set(hmacRef(key, 'task', `${u}\u0000${t}`), `${u}/${t}`);
+      } catch { /* not a task dir */ }
+    }
+  }
+  return refs;
+}
+
 export function summarizeObservability(records, { now, days, taskNames = new Map() }) {
   const window = windowDays(now, days);
   const inWindow = records.filter(r => window.includes(String(r.recorded_at).slice(0, 10)));
