@@ -9,6 +9,7 @@
 - ✅ observability-consumer
 - ✅ retro-rules-promotion
 - ✅ settings-ask-tier
+- ✅ summary-branch-guard
 - ✅ scaffold-pm-permissions
 - ✅ audit-cleanup
 - ✅ claude5-context-apply
