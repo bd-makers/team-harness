@@ -63,3 +63,9 @@ docs/hslee/hslee-handoff.md                        |  2 +-
  .../settings-ask-tier-artifact.md                  | 43 ++++++++++++++++++++--
  .../settings-ask-tier/settings-ask-tier-handoff.md |  7 ++++
  3 files changed, 47 insertions(+), 5 deletions(-)
+
+## 2026-09-05T13:50:28.307Z — 56233f1 docs(task): shipcheck #3 S5 BLOCKER 반영 — RED을 재현 가능한 절차로 교체
+docs/hslee/hslee-handoff.md                        |  2 +-
+ .../settings-ask-tier-artifact.md                  | 37 ++++++++++++++++++----
+ .../settings-ask-tier/settings-ask-tier-handoff.md |  6 ++++
+ 3 files changed, 38 insertions(+), 7 deletions(-)

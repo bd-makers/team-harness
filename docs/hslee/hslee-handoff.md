@@ -4,7 +4,7 @@
 settings-ask-tier
 
 ## Last Commit (2026-09-05)
-7b62e40 docs(task): shipcheck #2 S5 BLOCKER 반영 — green도 출력 인용, perf 합산 누락 수정
+56233f1 docs(task): shipcheck #3 S5 BLOCKER 반영 — RED을 재현 가능한 절차로 교체
 
 ## Full Context
 → docs/hslee/settings-ask-tier/settings-ask-tier-handoff.md

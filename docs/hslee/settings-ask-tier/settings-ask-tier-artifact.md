@@ -143,6 +143,22 @@ rubric 외 지적: plan 목표에 무공백형 `Bash(git push*)`가 남아 spec�
 
 <!-- harness:review kind=codex-shipcheck scope=diff tip=7b62e40ee2a74239ef8b48b1295de2c63fff267b at=2026-09-05T13:47:17Z -->
 
+
+### 2026-09-05 · codex-shipcheck #4 (`codex exec --sandbox read-only -m gpt-5.6-sol`) · scope=diff (base `origin/main`, tip `56233f1`)
+
+#3의 S5 수정을 독립 재검증. 판정: **SHIP FAIL — BLOCKER 1 · MAJOR 0.** S1~S4 pass 유지.
+
+| id | 판정 | 발견 | 판별 | 조치 |
+|---|---|---|---|---|
+| S5 | **FAIL (BLOCKER)** | Learnings가 "shipcheck가 같은 S5를 **두 번** 잡았다"고 적었으나 실제 기록은 세 번이다(headings=3 · S5 FAIL rows=3 · markers=3을 검증자가 직접 셈) | **진짜 결함** — #2 직후에 쓰고 #3 뒤에 갱신하지 않은 잔재다. 다만 이 결함은 **게이트의 자기참조 구조**가 만든다: artifact가 shipcheck 기록을 담는 문서라, 자기 이력을 세는 서술은 다음 라운드가 반드시 낡게 만든다 | 숫자를 `3`으로 올리지 **않고** 세는 서술을 제거해 `## Reviews`를 정본으로 가리켰다 — `3`으로 고치면 #5가 그것을 틀리게 만든다. 같은 함정을 Learnings에 기록했다 |
+
+검증자가 독립 재산출한 수치는 **전부 일치**했다: 제품 표면 `6 files, +129`, `c9ce0f8` `+442/-5`,
+`5600e4d` `+482/-5`, `7b62e40` `+524/-5`, 신규 테스트 `6+2`, `docs:check` exit 0.
+RED도 old blob을 read-time에 주입하는 비변경 방식으로 재현했다(settings 3/3 RED, agent-files 2/2 RED).
+전체 `npm test`와 `planChanges` 3건은 read-only 샌드박스의 `mkdtemp` EPERM으로 실행 불가.
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=56233f1 at=2026-09-05T13:54:00Z -->
+
 ## Learnings
 
 ### 2026-09-05 — 권한 규칙의 와일드카드는 "공백 뒤 `*`"가 기본형이다
@@ -170,9 +186,11 @@ auto 모드에서도 프롬프트하며, PreToolUse 훅의 `"allow"`로도 꺼�
 
 ### 2026-09-05 — 검증 증거는 "요약해 적기"가 아니라 "출력을 옮기기"다
 
-shipcheck가 같은 S5를 두 번 잡았다. 1차는 낡은 diff stat(자기 자신을 커밋하면 바뀌는 수치를
-고정값처럼 인용), 2차는 green 결과를 다시 산문으로 쓰고 `npm test`가 두 스위트를 도는 것을
-합계에서 빠뜨린 것. 두 번 다 "실제로 돌렸다"는 사실은 맞았고 틀린 것은 **기록 방식**이었다.
+shipcheck가 같은 S5를 연속으로 잡았다(라운드별 발견·조치는 위 `## Reviews`가 정본이다 —
+여기서 횟수를 세지 않는 이유는 아래 세 번째 문단에 있다). 매번 다른 자리에서 같은 결함이
+나왔다: 낡은 diff stat, 산문으로 쓴 RED, 산문으로 쓴 green, `npm test`의 perf 스위트 합산 누락,
+그 누락이 이전 리뷰 기록에 남은 잔재, 재현 절차 없는 RED 수치. 매번 "실제로 돌렸다"는 사실은
+맞았고 틀린 것은 **기록 방식**이었다.
 
 **Why:** 산문 요약은 명령이 실제로 무엇을 냈는지 검증자가 대조할 수 없고, 손으로 옮기는
 순간 반올림·누락·시점 어긋남이 들어간다. 자기 문서를 세는 수치는 특히 그렇다.
@@ -181,4 +199,10 @@ shipcheck가 같은 S5를 두 번 잡았다. 1차는 낡은 diff stat(자기 자
 읽거나 자기 문서를 제외한 범위로 한정한다. 재현 절차가 없는 수치(테스트와 구현을 한 커밋에
 넣어 사라진 RED 상태 등)는 **재현 명령을 함께 적는다** — 되돌릴 파일과 기준 sha를 명시하면
 주장이 증거가 된다. 고친 수치가 문서의 다른 곳(리뷰 기록 산문 등)에 남지 않았는지도 함께
-훑는다 — shipcheck #3이 잡은 것이 정확히 그 잔재였다. 관련: [[docs-refresh-scope-generated-files]]
+훑는다 — shipcheck가 잡은 것이 정확히 그 잔재였다.
+
+**자기참조 함정:** artifact는 shipcheck 기록을 담는 문서인데 S5는 그 문서의 모든 수치가
+최신일 것을 요구한다. 그래서 "라운드를 N번 돌았다"처럼 **자기 이력을 세는 서술은 다음 라운드가
+반드시 낡게 만든다** — 숫자를 올리는 대신 세는 서술을 없애고 `## Reviews`를 정본으로 가리킨다.
+같은 이유로 전체 diff stat도 세지 않고 sha에 고정하거나 제품 표면으로 한정한다.
+관련: [[docs-refresh-scope-generated-files]]
