@@ -21,14 +21,22 @@ export function manual(label, note) { return { label, status: 'MANUAL', note: sa
 // 범위 밖은 조용히 빼지 않는다 — 사유와 함께 N/A로 리포트에 남긴다.
 export function na(label, note) { return { label, status: 'N/A', note: sanitizeNote(note) }; }
 
-// heading부터 다음 heading 직전까지를 잘라낸다. `$`는 /m에서 줄 끝마다 맞아 절을 한 줄로
-// 잘라먹으므로 쓰지 않는다. 신호를 "문서 어딘가에 문자열이 있다"가 아니라 "그 절 안에 있다"로
-// 좁히는 데 쓴다 — 전자는 너무 쉽게 PASS한다.
+// heading부터 **같거나 더 높은 레벨의** 다음 heading 직전까지를 잘라낸다. `$`는 /m에서 줄 끝마다
+// 맞아 절을 한 줄로 잘라먹으므로 쓰지 않는다. 신호를 "문서 어딘가에 문자열이 있다"가 아니라
+// "그 절 안에 있다"로 좁히는 데 쓴다 — 전자는 너무 쉽게 PASS한다.
+//
+// 절단 레벨을 `#{2,3}`으로 고정하면 하위 제목을 둔 절에서 본문이 제목 직후까지로 잘린다.
+// 실측(agentloop 2026-09-07T0401 SC7): `## 목적 / 요구사항` 아래에 `### 문제`·`### 요구사항`을
+// 둔 spec에서 절 본문이 118 B(안내 문구)로 잘려 목록 항목 0개 → 출처 태그 위양성 FAIL.
+// 같은 spec의 `### 요구사항` 안에는 태그가 정상이었고, 어느 커맨드도 평면 구조를 요구하지
+// 않는다(commands/harness-spec.md의 계약은 "항목별 출처 표기" 하나뿐) — 스코어러 결함이었다.
 function sectionBody(md, headingRe) {
   const start = md.search(headingRe);
   if (start < 0) return '';
   const rest = md.slice(start);
-  const next = rest.search(/\n#{2,3} /);
+  // 두 호출부 모두 `^#{2,3}` 앵커 정규식이라 매치는 항상 `#`로 시작한다. 폴백 2는 도달 불가.
+  const level = rest.match(/^#+/)?.[0].length ?? 2;
+  const next = rest.search(new RegExp(`\\n#{1,${level}} `));
   return next > 0 ? rest.slice(0, next) : rest;
 }
 
