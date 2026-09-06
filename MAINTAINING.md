@@ -64,12 +64,18 @@ modified: 2026-08-28
 
 ## 필수 검증
 
-릴리스 전에 아래 두 명령이 반드시 통과해야 합니다:
+릴리스 전에 아래 세 명령이 반드시 통과해야 합니다:
 
 ```bash
 npm test
+node bin/harness-team.mjs doctor
 harness-team release --dry-run
 ```
+
+> **`doctor`가 목록에 있는 이유는 eager 계층 예산 때문입니다.** 그 예산(24 KiB, 위 "작업 규칙" 참조)은
+> `npm test`가 재지 않습니다 — 0.32.2는 `AGENTS.md`에 1,397 B를 더해 합계를 64 B 초과시킨 채
+> **태그까지 나갔고**, 발행 뒤에 `doctor`를 돌려서야 드러났습니다. `AGENTS.md`·`CLAUDE.md`·
+> `templates/**`를 건드린 릴리스에서 특히 중요하지만, 1초도 걸리지 않으므로 항상 돌립니다.
 
 > `node --test tests/`로 디렉터리를 직접 글롭하지 마세요 — perf 스위트(`tests/perf/`)는
 > `npm test`가 별도 단계에서 `--test-concurrency=1`로 격리 실행합니다. 함께 병렬로 돌리면
@@ -153,7 +159,7 @@ Codex manifest/skill을 수정했다면 Codex validator도 실행하세요. 로�
 >
 > 결과를 미리 보려면 `--dry-run`을 붙입니다. `harness-team release --help`는 사용법만 출력하고 릴리스를 수행하지 않으며, 오탈자 플래그(`--dryrun` 등)는 실행되지 않고 exit 2로 거부됩니다 (`src/cli-args.mjs`).
 
-1. 변경 작성 + `npm test` 통과 확인
+1. 변경 작성 + `npm test`·`doctor` 통과 확인 (위 "필수 검증" 절의 세 명령)
 2. `CHANGELOG.md`의 `## [Unreleased]` 항목 채우기
 3. `harness-team release <minor|patch|major> --dry-run` 으로 결과 미리 확인
 4. `harness-team release <minor|patch|major>` 실행
