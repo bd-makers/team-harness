@@ -4,7 +4,7 @@
 eager-tier-slimming
 
 ## Last Commit (2026-09-06)
-d32b051 docs(agents): TCC 절 산문 압축 — 목표 소계 달성 (GREEN)
+932a3e5 fix(agents): T3이 지운 다이어그램 계약 문장 복원 + 5-A Why 압축
 
 ## Full Context
 → docs/chad/eager-tier-slimming/eager-tier-slimming-handoff.md

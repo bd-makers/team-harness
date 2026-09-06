@@ -220,12 +220,12 @@ npm test && node bin/harness-team.mjs doctor && npm run docs:check
 ```
 Expected: 소계 테스트 PASS · doctor 무경고 · docs:check 최신
 
-- [ ] **Step 2: 정보 소실 0 대조표를 artifact에 쓴다**
+- [x] **Step 2: 정보 소실 0 대조표를 artifact에 쓴다**
 
 옮긴 항목마다 한 행: `옮긴 내용 | 출발(절) | 도착(파일:절) | 확인 방법(grep 명령)`.
 도착지를 grep으로 실제 확인한 결과만 적는다 — 옮겼다고 기억하는 것은 증거가 아니다.
 
-- [ ] **Step 3: 전후 바이트 표를 artifact에 쓴다**
+- [x] **Step 3: 전후 바이트 표를 artifact에 쓴다**
 
 절별 before/after와 소계. 측정은 spec의 표와 같은 방법으로 한다.
 

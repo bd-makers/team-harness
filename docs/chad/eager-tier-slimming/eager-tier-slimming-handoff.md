@@ -67,3 +67,14 @@ AGENTS.md                                                    | 12 +++++-------
  docs/chad/eager-tier-slimming/eager-tier-slimming-plan.md    |  8 ++++----
  templates/AGENTS.md.hbs                                      | 12 +++++-------
  5 files changed, 23 insertions(+), 19 deletions(-)
+
+## 2026-09-06T17:24:11.106Z — 932a3e5 fix(agents): T3이 지운 다이어그램 계약 문장 복원 + 5-A Why 압축
+AGENTS.md                                                    | 10 ++++++----
+ CLAUDE.md                                                    |  8 +++-----
+ docs/chad/chad-handoff.md                                    |  2 +-
+ docs/chad/eager-tier-slimming/eager-tier-slimming-handoff.md |  8 ++++++++
+ docs/chad/eager-tier-slimming/eager-tier-slimming-plan.md    |  4 ++--
+ src/observation.mjs                                          |  4 ++++
+ templates/AGENTS.md.hbs                                      | 10 ++++++----
+ templates/CLAUDE.md.hbs                                      |  8 +++-----
+ 8 files changed, 33 insertions(+), 21 deletions(-)
