@@ -81,3 +81,8 @@ Cursor 도달성 제약을 만족한다.
 
 실행 메모: 첫 시도는 `gpt-6-astra`가 CLI 0.147.0에서 거부돼(`requires a newer version`) 실패했고,
 `-m gpt-5.6-sol` 폴백으로 재실행했다 — 이 머신의 알려진 함정이다.
+
+리뷰 대상이던 브랜치 커밋들은 PR #82 squash 머지로 사라졌다 — 아래 마커의 `tip`은 그 내용을
+담은 머지 커밋 `a5ea0d1`을 가리킨다.
+
+<!-- harness:review kind=codex scope=diff tip=a5ea0d1 at=2026-09-06T17:37:32Z -->
