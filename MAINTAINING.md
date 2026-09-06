@@ -69,8 +69,12 @@ modified: 2026-08-28
 ```bash
 npm test
 node bin/harness-team.mjs doctor
-harness-team release --dry-run
+node bin/harness-team.mjs release --dry-run
 ```
+
+> **세 명령 모두 `node bin/harness-team.mjs`로 부릅니다** — PATH의 전역 `harness-team`은 마켓플레이스
+> clone이라 낡을 수 있고, 그 clone으로 릴리스를 돌리면 아래 "⚠️ 옛 clone으로 release를 돌리지 마세요"가
+> 설명하는 사고가 납니다. 검증은 지금 체크아웃의 코드로 해야 의미가 있습니다.
 
 > **`doctor`가 목록에 있는 이유는 eager 계층 예산 때문입니다.** 그 예산(24 KiB, 위 "작업 규칙" 참조)은
 > `npm test`가 재지 않습니다 — 0.32.2는 `AGENTS.md`에 1,397 B를 더해 합계를 64 B 초과시킨 채
