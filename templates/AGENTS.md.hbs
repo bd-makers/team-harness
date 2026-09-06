@@ -47,14 +47,11 @@
 > - **D2**: drive = Claude, 리뷰어 = Codex — 작성자와 리뷰어의 분리를 우선한다.
 > - **D4**: 같은 워킹트리·브랜치 안에서 쓰기는 단일 스레드다 — 어떤 세션·에이전트도 **동시에 병렬로 쓰지 않는다.**
 > - **D5**: 격리된 브랜치·git worktree에서 작업하고 PR/MR로 병합하는 병렬 경로는 허용·권장이다.
->   이때도 task SSOT 4파일은 각 task 디렉터리에 격리되고, 집계 파일(`docs/task_summary.md`,
->   `docs/<user>/<user>-task.md`)은 생성물이라 기본 브랜치에서 `harness-team summary --write`로만 갱신한다.
-> - **D6**: 작업 산출물에는 별도 컨텍스트의 **read-only 검증자**(적대적 검증)를 붙일 수 있다 —
->   D2의 작업 단위 적용이다. 검증자는 루브릭(id·항목·심각도·판정·근거)으로 반박만 하고 고치지
->   않으며, 반영은 작성 세션이 발견을 재현·판별한 뒤 단일 스레드로 수행한다. 절차·마커는
->   harness-review 명령 문서가 정본이다.
-> - **D7**: OpenCode·Gemini는 하네스 멤버에서 제외했다 — 스캐폴드·역할표·doctor 검사·리뷰 엔진
->   체인에 없다. 재도입은 별도 결정으로 한다.
+>   집계 파일(`docs/task_summary.md`, `docs/<user>/<user>-task.md`)은 생성물이라 기본 브랜치에서
+>   `harness-team summary --write`로만 갱신한다.
+> - **D6**: 작업 산출물에는 별도 컨텍스트의 **read-only 검증자**를 붙일 수 있다 — 검증자는 반박만 하고
+>   고치지 않으며, 반영은 작성 세션이 재현·판별한 뒤 단일 스레드로 한다(절차는 harness-review 명령 문서).
+> - **D7**: OpenCode·Gemini는 하네스 멤버에서 제외했다.
 
 ### 리뷰 프로토콜
 중요한 변경(새 기능, 아키텍처, 복잡한 리팩토링, 보안, 스키마/API) 완료 후
@@ -83,17 +80,10 @@
 
 활성 task는 `.harness/active.json`에 저장.
 
-`<name>-meta.json`은 harness가 소유하는 기계 상태(created·firstActivatedAt·status·closedAt·reopenedAt)
-이며 SSOT 4파일에 포함되지 않는다. 손으로 고치지 않는다 — `done` 가드가 증거를 찾는
-**판정 창의 시작점**이 여기서 정해지기 때문이다(창 = `reopenedAt || firstActivatedAt`).
-`firstActivatedAt`은 생성 시 1회만 기록되고 재활성화가 밀지 않는다.
-
-**완료 상태는 만료된다** — 시간 경과가 아니라 전이다. `done`된 task를 `harness-team task <name>`으로
-다시 활성화하면 그 완료가 무효가 되어 `status`는 `open`으로 돌아가고 `closedAt`이 풀리며, 그 시각이
-`reopenedAt`에 남아 **새 판정 창의 시작**이 된다(출력도 `activated:`가 아니라 `reopened:`).
-새 라운드의 완료는 새 증거로 판정해야 하기 때문이다. 열린 task 사이의 평범한 재활성화는 meta를
-건드리지 않는다. `status`가 `done`인 task는 SessionStart 재개 후보에서도 빠진다 —
-후보 판정의 정본은 plan의 체크박스가 아니라 이 값이다.
+`<name>-meta.json`은 harness가 소유하는 기계 상태이며 SSOT 4파일이 아니다. **손으로 고치지 않는다** —
+`done` 가드의 판정 창이 여기서 정해진다. **완료 상태는 재활성화로 만료되고**(`status` → `open`,
+출력 `reopened:`), SessionStart 재개 후보 판정의 정본도 plan 체크박스가 아니라 이 값이다.
+필드·판정 창 계산·만료 전이의 상세는 harness-task 명령 문서가 정본이다.
 
 집계 파일 `docs/task_summary.md`와 `docs/<user>/<user>-task.md`는 **생성물**이다.
 `task`/`done`은 이 파일들을 건드리지 않으므로 브랜치를 병렬로 둬도 충돌하지 않는다.
@@ -101,15 +91,13 @@
 
 ### Task Context Card (TCC)
 `docs/<user>/<name>/<name>-context.md`는 현재 작업을 위한 작은 **비-SSOT cache/workpad**다.
-기존 spec·plan·handoff·artifact 네 파일만 계속 SSOT이며, 영속 요구사항·결정은 spec/plan에,
-결과·학습은 artifact에 기록한다. TCC는 이 파일들에서 파생된 현재 working set만 담는다.
+SSOT는 여전히 네 파일이며, TCC는 거기서 파생된 현재 working set만 담는다.
 
 - 한도: UTF-8 6 KiB 이하 · 비공백 100행 이하 · 미해결 failure capsule(`### F-*`) 최대 3개.
-- 갱신 시점: task 생성 직후 · 세션을 넘기기 전 · plan의 atomic step이 바뀔 때 · 재현 가능한
-  실패가 생기거나 해소될 때. 반복 상세 이력은 제거하고 가치 있는 학습은 artifact로 옮긴다.
-- raw stderr, 토큰, 비밀값, 전체 HTTP payload를 복사하지 않는다. 안전한 요약과 원문 source 위치만 남긴다.
-- 검사는 `harness-team context check`가 결정론적으로 수행한다(자동 요약·삭제·LLM 편집 없음).
-  한도 계산의 세부(capsule 경계 규칙 등)는 외울 필요 없다 — 위반 시 check의 failure 메시지가 알려준다.
+- 갱신 시점: task 생성 직후 · 세션을 넘기기 전 · plan의 atomic step이 바뀔 때 · 실패가 생기거나 해소될 때.
+- raw stderr, 토큰, 비밀값, 전체 HTTP payload를 복사하지 않는다 — 안전한 요약과 source 위치만.
+- 검사는 `harness-team context check`가 결정론적으로 한다. 한도 계산의 세부는 외울 필요 없다 —
+  위반 시 check의 failure 메시지가 알려준다.
 
 ### 세션 시작 시 (반드시 수행)
 1. `docs/<user>/<user>-handoff.md` 읽기 — 현재 active task 확인
@@ -131,16 +119,13 @@
 
 ### task 워크플로우
 - **시작**: `harness-team task <name>` — 생성 또는 활성화
-- **다이어그램(옵트인)**: 신규 task 생성(`created:`) 직후 spec/plan 다이어그램을 함께 만들지 **1회만**
-  묻는다. "예"면 `<name>-plan.md`의 단계에 다이어그램 체크박스를 추가하고, "아니오"면 아무것도
-  추가하지 않는다 — 전용 설정 키·상태 파일은 없다. **plan.md에 그 단계가 있는지가 곧 상태다.**
-  기존 task를 다시 활성화할 때는 묻지 않는다. 도구가 없는 환경이면 실패시키지 말고 건너뛰되,
-  plan의 그 단계는 **지우지 말고** `- [x] … — 미실행(도구 없음)`처럼 사유를 붙여 닫고
-  `<name>-artifact.md`에 한 줄 남긴다 — 지우면 옵트인 사실이 사라지고, 열어 두면 `done` 가드가
-  완료를 막는다. 산출물 `<name>-diagram.html`은 SSOT 4파일에 포함되지 않는다 —
-  옵트인이라 없는 task가 정상이다. 만들 때는 **자립형 inline SVG** HTML로 쓴다(`docs/`는 Obsidian 볼트에서 열리고
-  Obsidian은 script를 제거하므로 런타임 JS 다이어그램은 렌더되지 않는다). 질문·분기·기록의 상세
-  절차는 `harness-task` 명령 문서가 정본이다.
+- **다이어그램(옵트인)**: 신규 task 생성(`created:`) 직후 **1회만** 묻는다 — 기존 task를 다시
+  활성화할 때는 묻지 않는다. **plan.md에 그 단계가 있는지가 곧 상태다** — 전용 설정 키는 없다.
+  도구가 없으면 task를 실패시키지 말고 그 단계를 **지우지 말고** `- [x] … — 미실행(도구 없음)`처럼
+  사유를 붙여 닫고 `<name>-artifact.md`에 한 줄 남긴다(지우면 옵트인 사실이 사라지고, 열어 두면
+  `done` 가드가 막는다 — 기록이 없으면 "묻지 않은 것"과 "묻고 건너뛴 것"을 구분할 수 없다).
+  산출물 `<name>-diagram.html`은 **자립형 inline SVG**로 쓴다(Obsidian이 script를 제거한다).
+  SSOT 4파일이 아니며 옵트인이라 없는 task가 정상이다. 상세는 harness-task 명령 문서가 정본이다.
 - **진행**: `<name>-plan.md` 체크리스트 항목 완료 시 `- [x]`로 갱신
 - **경계 계약**: spec의 `## Boundary contracts` JSON 선언이 있으면 plan checkbox 완료 직전에
   `harness-team boundary check`가 생산자·소비자 JSON Schema의 필수 필드와 기본 type을 대조한다.

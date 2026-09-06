@@ -191,8 +191,9 @@ test('AGENTS.md(core)는 옵트인 상태를 plan.md로 규정하고 별도 저�
 });
 
 // 지시 구조 슬림화 (2026-08-21) — 다이어그램 옵트인의 정본은 commands/harness-task.md 하나다.
-// AGENTS.md는 도구 중립 요약 1블록만 유지하고(Codex·Cursor는 플러그인 commands/를
-// 못 읽으므로 요약 자체는 남긴다), CLAUDE.md는 재서술하지 않는다 — 표면이 늘면 드리프트가 돌아온다.
+// AGENTS.md는 도구 중립 요약 1블록만 유지하고, CLAUDE.md는 재서술하지 않는다 — 표면이 늘면
+// 드리프트가 돌아온다. 요약을 남기는 이유는 **Cursor**다: Codex는 skill mirror 가 지시하는
+// ../../commands/<name>.md 로 도달하지만, Cursor 는 commands/ 를 읽지 못하면서 plan.md 는 편집한다.
 test('CLAUDE.md(thin)는 다이어그램 옵트인을 재서술하지 않는다 (정본: commands/harness-task.md)', async () => {
   const out = render(await tpl('CLAUDE.md.hbs'), VARS);
   assert.doesNotMatch(out, /다이어그램 옵트인/, '§1-B 재서술 회귀 금지');
@@ -378,4 +379,36 @@ test('신뢰 경계 줄은 재-init 시 기존 프로젝트의 핵심 원칙에�
   assert.match(merged, /\*\*신뢰 경계\*\*/, '기존 프로젝트가 신뢰 경계 줄을 받지 못했다');
   assert.doesNotMatch(merged, /옛 문구/, '관리 절은 교체되어야 한다');
   assert.match(merged, /이 문단은 마커 밖이라 보존되어야 한다/, '마커 밖 사용자 텍스트가 사라졌다');
+});
+
+// 프로젝트 eager 소계 상한. doctor 는 전역 CLAUDE.md 까지 더한 합계(24 KiB)를 재지만,
+// 전역 파일은 사용자 소유·머신 의존이라 레포 목표로 삼을 수 없다 — 다른 머신에서 무의미해진다.
+// 이 가드는 레포에 고정된 부분만 재고, 판정 대상은 감축량이 아니라 **여유**다:
+// 규칙을 한두 개 더 써도 예산이 남는가. v0.32.2 는 이 여유가 275 B 였을 때
+// AGENTS.md 에 1,397 B 를 더해 예산을 넘긴 채 태그까지 나갔다.
+const PROJECT_EAGER_MAX_BYTES = 17_500;
+
+// 루트 복사본만 재면 템플릿의 **마커 밖** 문구가 커질 때 소비자 payload 만 늘고 가드는 통과한다
+// (drift 검사는 마커 안만 비교한다). 소비자가 실제로 받는 것은 렌더된 템플릿이므로 둘 다 잰다.
+test('소비자에게 배포되는 렌더 결과도 eager 상한을 넘지 않는다', async () => {
+  const stack = await repoStack;
+  const sizes = await Promise.all(AGENT_FILE_TEMPLATES.map(async ([file, tplName]) =>
+    [file, Buffer.byteLength(render(await tpl(tplName), { projectName: 'consumer-project', ...stack }))]));
+  const total = sizes.reduce((n, [, b]) => n + b, 0);
+  assert.ok(total <= PROJECT_EAGER_MAX_BYTES,
+    `렌더된 템플릿 eager 소계 ${total} B > ${PROJECT_EAGER_MAX_BYTES} B — 내역: ` +
+    sizes.map(([f, b]) => `${f} ${b} B`).join(' + '));
+});
+
+test('프로젝트 eager 소계가 상한을 넘지 않는다', async () => {
+  const files = ['AGENTS.md', 'CLAUDE.md', '.claude/CLAUDE.md'];
+  const sizes = [];
+  for (const f of files) {
+    try { sizes.push([f, Buffer.byteLength(await readFile(join(ROOT, f), 'utf8'))]); }
+    catch { /* 없는 파일은 세지 않는다 — 이 저장소에는 .claude/CLAUDE.md 가 없다 */ }
+  }
+  const total = sizes.reduce((n, [, b]) => n + b, 0);
+  assert.ok(total <= PROJECT_EAGER_MAX_BYTES,
+    `프로젝트 eager 소계 ${total} B > ${PROJECT_EAGER_MAX_BYTES} B — 내역: ` +
+    sizes.map(([f, b]) => `${f} ${b} B`).join(' + '));
 });

@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+eager-tier-slimming
 
-## Last Completed Task (2026-09-03)
-`root-docs-0200-rubric` — done
+## Last Commit (2026-09-06)
+c5e6a84 fix(agents): Codex 리뷰 P2 2건·P3 1건 반영
 
 ## Full Context
-→ docs/chad/root-docs-0200-rubric/root-docs-0200-rubric-handoff.md
+→ docs/chad/eager-tier-slimming/eager-tier-slimming-handoff.md
