@@ -18,6 +18,8 @@ modified: 2026-09-06
 
 ## [Unreleased]
 
+## [0.32.2] - 2026-09-07
+
 ### Changed
 - **plan 초안의 writer와 plan.md 형식 계약을 문서에 고정했습니다.** `AGENTS.md`에 `### plan.md 계약`
   절을 새로 두어 흩어져 있던 네 가지를 한곳에 모았습니다 — `## 단계`의 체크박스가 `harness-team done`

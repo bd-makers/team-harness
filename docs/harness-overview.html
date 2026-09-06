@@ -203,7 +203,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.32.1</span>
+      <span class="tag tag-purple">v0.32.2</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -211,6 +211,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.32.2 — plan writer 명시와 plan.md 계약 색인:</strong>
+    <br>
+    <code>0.32.2</code> <strong>plan 단계에는 검증자만 둘 있고 저자가 없었다</strong> — spec에는 writer(<code>/harness-spec</code>)와 validator(<code>/harness-interview</code>)가 다 있는데 plan은 <code>/harness-contrarian</code>·<code>/harness-simplifier</code>가 다듬을 뿐, 게이트 통과 뒤 초안을 누가·어떤 형식으로 쓰는지가 어디에도 없었다. 실무에서 이미 쓰던 <code>superpowers:writing-plans</code>를 writer로 명시하고 미설치 시 직접 작성하는 폴백을 계약으로 적었다. 흩어져 있던 plan.md 형식 계약 넷은 <code>AGENTS.md</code>의 <code>### plan.md 계약</code> 한 절로 모았다 — 체크박스가 <code>done</code> 가드와 SessionStart 재개 후보 판정의 <strong>입력</strong>이라는 것, 다이어그램 옵트인 체크박스는 그 자체가 상태라 지우지 않고 사유를 붙여 닫는다는 것, Ontology 변경 로그, spec의 <code>Boundary contracts</code>·<code>Done evidence</code> 연결. <strong>새 명령은 만들지 않았다</strong> — 이 저장소가 형식 계약에 쓰는 관용구는 페르소나 명령이 아니라 결정론적 검사(<code>context check</code>·<code>boundary check</code>)이고, 외부 스킬을 감싸면 <code>/harness-diagram</code>의 preflight 부담을 물려받으면서 고유 내용은 형식 규칙 몇 줄뿐이다. <code>/harness-spec</code>에 합치는 갈래도 기각했다: "plan.md 선작성 금지"는 Ambiguity 게이트를 지탱하는 장치라, 합치면 검증되지 않은 spec에 대한 실행 계획이 나온다. Codex 미러에는 <code>superpowers:</code> 이름을 해석할 수 없어 번역 규칙을, 소비자 스캐폴드 <code>new-feature</code> Phase 2에는 계약으로 가는 링크를 더했다. <code>harness-team task</code> 안내 라인도 <code>/harness-interview → plan.md 작성 → 구현</code>으로 바뀐다. <strong>동작·파일 형식 변경은 없다.</strong> 결정론적 <code>plan check</code>와 <code>/harness-plan</code>은 각각 형식 깨짐이 관측될 때·초안 작성 자체가 실패 지점일 때로 조건을 적어 두고 만들지 않았다.
+    <br><br>
     <strong>🆕 0.32.1 — handoff 완료 마커 타입화: 손복사 리터럴 제거:</strong>
     <br>
     <code>0.32.1</code> <strong>완료 마커의 생성·판독이 단일 선언에서 나온다</strong> — <code>runDone</code>이 쓰고 <code>inferLegacyMeta</code>가 읽는 <code>## &lt;시각&gt; — 완료</code> 마커는 지금까지 두 모듈에 <strong>손으로 복사한 리터럴 하나로만</strong> 묶여 있었고 그 계약을 지키는 테스트가 없었다. 실측: 생산자의 em-dash를 하이픈으로 바꾸면 <code>meta.json</code>도 원장 행도 없는 레거시 task가 <code>done</code> 대신 <code>open</code>으로 분류되는데 <strong>609개 테스트가 전부 통과했다</strong>. 신규 <code>src/handoff-marker.mjs</code>가 <code>renderDoneMarker</code>·<code>hasDoneMarker</code>를 소유한다. <strong>드리프트를 막는 것은 모듈이 아니라 네 방향의 테스트다</strong> — 왕복·바이트 모양이 생산자 형식 변경을, 렌더러에서 생성하지 않은 <strong>동결 fixture</strong>가 파서를 좁혀 이미 쓰인 파일(<code>## 2026-01-01 — 완료</code>처럼 날짜만 있는 형태)을 못 읽게 하는 변경을, 생산자·소비자 <strong>통합 테스트</strong>가 호출부의 helper 우회를 잡는다(codex P2 2건). 파서의 느슨함은 버그가 아니라 하위 호환 계약이고, 동시에 넓혀서도 안 된다 — 커밋 항목도 같은 모양이라 <code>/완료/</code> 포함 검사로 단순화하면 "…리팩터링 완료" 커밋 메시지가 종결로 읽힌다. <strong>append 바이트도 정규식도 그대로라 동작·파일 형식 변경은 없다.</strong> 권고의 선행 조건이던 TCC 중복 검토로 handoff에 재개 구조를 주는 갈래는 기각했고(TCC가 이미 소유), post-commit 커밋 항목은 파싱하는 코드가 하나도 없어 스키마를 주지 않았다.
@@ -2440,7 +2444,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.32.1 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.32.2 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
