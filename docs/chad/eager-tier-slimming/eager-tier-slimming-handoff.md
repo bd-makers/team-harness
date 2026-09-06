@@ -90,3 +90,13 @@ docs/chad/chad-handoff.md                          |  2 +-
 docs/chad/chad-handoff.md                                    | 2 +-
  docs/chad/eager-tier-slimming/eager-tier-slimming-handoff.md | 7 +++++++
  2 files changed, 8 insertions(+), 1 deletion(-)
+
+## 2026-09-06T17:39:33.028Z — c5e6a84 fix(agents): Codex 리뷰 P2 2건·P3 1건 반영
+AGENTS.md                                           |  3 ++-
+ docs/chad/chad-handoff.md                           |  2 +-
+ .../eager-tier-slimming-artifact.md                 | 21 +++++++++++++++++++++
+ .../eager-tier-slimming-handoff.md                  |  5 +++++
+ .../eager-tier-slimming/eager-tier-slimming-plan.md |  4 ++--
+ templates/AGENTS.md.hbs                             |  3 ++-
+ tests/agent-files.test.mjs                          | 17 +++++++++++++++--
+ 7 files changed, 48 insertions(+), 7 deletions(-)
