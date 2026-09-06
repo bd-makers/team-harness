@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ done-status-expiry
 - ✅ intent-md-alignment
 - ✅ ci-docs-check-gitignore
 - ✅ doctor-decision-headings
