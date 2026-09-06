@@ -42,3 +42,10 @@ docs/hslee/done-status-expiry/done-status-expiry-handoff.md | 9 +++++++++
  tests/done-guard.test.mjs                          | 33 +++++++++++++---
  tests/summary.test.mjs                             | 32 ++++++++++++++++
  6 files changed, 96 insertions(+), 21 deletions(-)
+
+## 2026-09-06T10:16:53.846Z — 6339740 docs(task): Codex 리뷰 결과·판별·학습을 artifact에 기록
+.../done-status-expiry-artifact.md                 | 60 ++++++++++++++++++++++
+ .../done-status-expiry-handoff.md                  |  9 ++++
+ .../done-status-expiry/done-status-expiry-plan.md  |  2 +-
+ docs/hslee/hslee-handoff.md                        |  2 +-
+ 4 files changed, 71 insertions(+), 2 deletions(-)
