@@ -18,24 +18,37 @@ modified: 2026-09-06
 
 ## [Unreleased]
 
+## [0.32.0] - 2026-09-06
+
 ### Added
 - **완료 task 상태 만료 (reopen 전이).** `done`된 task를 `harness-team task <name>`으로 다시
   활성화하면 그 완료가 만료됩니다 — `meta.json`의 `status`가 `open`으로 돌아가고 `closedAt`이
   풀리며, 만료 시각이 새 키 `reopenedAt`에 기록됩니다. 출력은 `activated:`가 아니라 `reopened:`
   입니다(`--json`의 summary도 동일). 지금까지는 재활성화가 `active.json.switchedAt`만 갱신해
   **작업 중인 활성 task가 원장에서 "✅ done"으로 보였습니다.** 열린 task 사이의 평범한
-  재활성화는 종전대로 meta를 건드리지 않습니다.
+  재활성화는 종전대로 meta를 건드리지 않습니다 — 그쪽까지 쓰면 0.18.1이 고친 판정 창 오탐이
+  되살아납니다. 만료는 시간 경과가 아니라 전이입니다: TTL·아카이브는 도입하지 않았습니다.
+- **`meta.json`이 없는 구 task도 만료됩니다.** 구 task는 완료 상태가 원장·handoff에서 추론될
+  뿐이라 재활성화해도 원장이 계속 `done`이었습니다. `inferLegacyMeta`의 추론값을 굳혀
+  만료시킵니다 — `created`는 원장에서 복원한 값을 보존하고, 알 수 없는 `firstActivatedAt`은
+  지어내지 않습니다(구 task는 종전대로 시각 가드를 건너뜁니다).
 
 ### Changed
-- **`done` 가드의 판정 창이 `reopenedAt || firstActivatedAt`에서 시작합니다.** 만료된 완료를
-  다시 닫을 때 새 라운드의 증거만 세기 위해서입니다 — 옛 `firstActivatedAt`을 그대로 쓰면
-  `git log --since`가 지난 라운드까지 훑어 "커밋 0개" 가드가 통과 전용이 됩니다.
-  `reopenedAt`은 만료가 일어날 때만 생기므로 기존 task의 meta 형태와 판정은 그대로입니다.
+- **`done` 가드의 판정 창이 현재 라운드에서 시작합니다.** 후보(`reopenedAt` → `firstActivatedAt`)
+  중 **처음 유효한 값**이 창의 시작점입니다. 만료된 완료를 다시 닫을 때 새 라운드의 증거만 세기
+  위해서입니다 — 옛 `firstActivatedAt`을 그대로 쓰면 `git log --since`가 지난 라운드까지 훑어
+  "커밋 0개" 가드가 통과 전용이 됩니다. 값이 깨졌을 때는 창을 버리지 않고 **더 넓지만 유효한
+  후보로 내려갑니다**: 창이 없으면 리뷰 마커 신선도·커밋 수·테스트 변경 가드가 전부 꺼지는
+  fail-open이 되기 때문입니다. 유효한 후보가 하나도 없을 때만 시각 비교를 포기합니다(구 task 경로).
+  `reopenedAt`은 만료가 일어날 때만 생기므로 기존 task의 meta 형태와 판정은 그대로이고,
   `firstActivatedAt`의 "생성 시 1회만 기록" 불변식도 유지됩니다.
 - **SessionStart 재개 후보 판정의 정본이 `meta.status`가 됐습니다.** 지금까지는 plan의 열린
   체크박스만 봤기 때문에 `done --force`로 닫았거나 다이어그램 옵트인 규약대로 미실행 단계를
   열어 둔 채 닫은 task가 **영구히 재개 후보로 떴습니다.** meta가 없는 구 task는 종전대로
   체크박스만으로 판정합니다(하위 호환).
+- **`commands/harness-task.md`의 다이어그램 옵트인 분기가 `reopened:`를 포함합니다.**
+  `created:`일 때만 묻고, `activated:`와 `reopened:`에서는 묻지 않습니다 — 옵트인 상태는
+  plan.md에 이미 있고, 재개는 그 계획을 이어받는 것이지 새로 세우는 것이 아닙니다.
 
 ## [0.31.0] - 2026-09-06
 
