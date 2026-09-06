@@ -43,3 +43,11 @@ AGENTS.md                                                  | 14 ++++----------
  .../eager-tier-slimming/eager-tier-slimming-handoff.md     | 10 ++++++++++
  templates/AGENTS.md.hbs                                    | 14 ++++----------
  4 files changed, 19 insertions(+), 21 deletions(-)
+
+## 2026-09-06T17:19:19.106Z — 0320271 docs(agents): 다이어그램 옵트인 서술을 트리거 네 문장으로 축약
+AGENTS.md                                               | 14 ++++----------
+ docs/chad/chad-handoff.md                               |  2 +-
+ .../eager-tier-slimming/eager-tier-slimming-handoff.md  | 17 +++++++++++++++++
+ .../eager-tier-slimming/eager-tier-slimming-plan.md     |  8 ++++----
+ templates/AGENTS.md.hbs                                 | 14 ++++----------
+ 5 files changed, 30 insertions(+), 25 deletions(-)

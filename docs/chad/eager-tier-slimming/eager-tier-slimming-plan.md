@@ -153,24 +153,24 @@ git commit -m "docs(agents): 다이어그램 옵트인 서술을 트리거 세 �
 
 **목표 감축:** 약 450 B
 
-- [ ] **Step 1: 정본 도달성을 확인한다**
+- [x] **Step 1: 정본 도달성을 확인한다**
 
 Run: `ls templates/docs/decisions.md && grep -n "^## D" docs/decisions.md`
 `templates/docs/decisions.md`가 스캐폴드되므로 소비자 프로젝트도 전문을 갖는다 — 에이전트 중립 제약을 만족한다.
 
-- [ ] **Step 2: D2·D4~D7 요약을 각 1줄로 줄인다**
+- [x] **Step 2: D2·D4~D7 요약을 각 1줄로 줄인다**
 
 역할표(3행)와 리뷰 프로토콜은 그대로 둔다. D 요약은 "무엇을 정했는가"만 남기고 근거·이력·예시는
 `docs/decisions.md`에 맡긴다. 포인터 문장("전문·근거·이력은 `docs/decisions.md`가 정본이다")은 유지한다.
 
-- [ ] **Step 3: 루트 동기화 후 확인**
+- [x] **Step 3: 루트 동기화 후 확인**
 
 ```bash
 node --test tests/agent-files.test.mjs
 ```
 Expected: 드리프트 PASS, 소계 약 17,500 B (경계선)
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add templates/AGENTS.md.hbs AGENTS.md
