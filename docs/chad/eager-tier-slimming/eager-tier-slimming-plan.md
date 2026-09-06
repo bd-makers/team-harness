@@ -37,7 +37,7 @@
 - Produces: 상수 `PROJECT_EAGER_MAX_BYTES = 17_500`과 실패 메시지의 파일별 내역 —
   T2~T5는 이 테스트의 출력으로 진척을 잰다.
 
-- [ ] **Step 1: 실패하는 테스트를 쓴다**
+- [x] **Step 1: 실패하는 테스트를 쓴다**
 
 ```js
 // 프로젝트 eager 소계 상한. doctor는 전역 CLAUDE.md까지 더한 합계(24 KiB)를 재지만,
@@ -59,12 +59,12 @@ test('프로젝트 eager 소계가 상한을 넘지 않는다', async () => {
 });
 ```
 
-- [ ] **Step 2: 실패를 확인한다**
+- [x] **Step 2: 실패를 확인한다**
 
 Run: `node --test tests/agent-files.test.mjs`
 Expected: FAIL — `프로젝트 eager 소계 19327 B > 17500 B — 내역: AGENTS.md 13215 B + CLAUDE.md 6112 B`
 
-- [ ] **Step 3: 커밋**
+- [x] **Step 3: 커밋**
 
 ```bash
 git add tests/agent-files.test.mjs

@@ -379,3 +379,23 @@ test('신뢰 경계 줄은 재-init 시 기존 프로젝트의 핵심 원칙에�
   assert.doesNotMatch(merged, /옛 문구/, '관리 절은 교체되어야 한다');
   assert.match(merged, /이 문단은 마커 밖이라 보존되어야 한다/, '마커 밖 사용자 텍스트가 사라졌다');
 });
+
+// 프로젝트 eager 소계 상한. doctor 는 전역 CLAUDE.md 까지 더한 합계(24 KiB)를 재지만,
+// 전역 파일은 사용자 소유·머신 의존이라 레포 목표로 삼을 수 없다 — 다른 머신에서 무의미해진다.
+// 이 가드는 레포에 고정된 부분만 재고, 판정 대상은 감축량이 아니라 **여유**다:
+// 규칙을 한두 개 더 써도 예산이 남는가. v0.32.2 는 이 여유가 275 B 였을 때
+// AGENTS.md 에 1,397 B 를 더해 예산을 넘긴 채 태그까지 나갔다.
+const PROJECT_EAGER_MAX_BYTES = 17_500;
+
+test('프로젝트 eager 소계가 상한을 넘지 않는다', async () => {
+  const files = ['AGENTS.md', 'CLAUDE.md', '.claude/CLAUDE.md'];
+  const sizes = [];
+  for (const f of files) {
+    try { sizes.push([f, Buffer.byteLength(await readFile(join(ROOT, f), 'utf8'))]); }
+    catch { /* 없는 파일은 세지 않는다 — 이 저장소에는 .claude/CLAUDE.md 가 없다 */ }
+  }
+  const total = sizes.reduce((n, [, b]) => n + b, 0);
+  assert.ok(total <= PROJECT_EAGER_MAX_BYTES,
+    `프로젝트 eager 소계 ${total} B > ${PROJECT_EAGER_MAX_BYTES} B — 내역: ` +
+    sizes.map(([f, b]) => `${f} ${b} B`).join(' + '));
+});
