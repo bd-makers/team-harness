@@ -91,15 +91,13 @@
 
 ### Task Context Card (TCC)
 `docs/<user>/<name>/<name>-context.md`는 현재 작업을 위한 작은 **비-SSOT cache/workpad**다.
-기존 spec·plan·handoff·artifact 네 파일만 계속 SSOT이며, 영속 요구사항·결정은 spec/plan에,
-결과·학습은 artifact에 기록한다. TCC는 이 파일들에서 파생된 현재 working set만 담는다.
+SSOT는 여전히 네 파일이며, TCC는 거기서 파생된 현재 working set만 담는다.
 
 - 한도: UTF-8 6 KiB 이하 · 비공백 100행 이하 · 미해결 failure capsule(`### F-*`) 최대 3개.
-- 갱신 시점: task 생성 직후 · 세션을 넘기기 전 · plan의 atomic step이 바뀔 때 · 재현 가능한
-  실패가 생기거나 해소될 때. 반복 상세 이력은 제거하고 가치 있는 학습은 artifact로 옮긴다.
-- raw stderr, 토큰, 비밀값, 전체 HTTP payload를 복사하지 않는다. 안전한 요약과 원문 source 위치만 남긴다.
-- 검사는 `harness-team context check`가 결정론적으로 수행한다(자동 요약·삭제·LLM 편집 없음).
-  한도 계산의 세부(capsule 경계 규칙 등)는 외울 필요 없다 — 위반 시 check의 failure 메시지가 알려준다.
+- 갱신 시점: task 생성 직후 · 세션을 넘기기 전 · plan의 atomic step이 바뀔 때 · 실패가 생기거나 해소될 때.
+- raw stderr, 토큰, 비밀값, 전체 HTTP payload를 복사하지 않는다 — 안전한 요약과 source 위치만.
+- 검사는 `harness-team context check`가 결정론적으로 한다. 한도 계산의 세부는 외울 필요 없다 —
+  위반 시 check의 failure 메시지가 알려준다.
 
 ### 세션 시작 시 (반드시 수행)
 1. `docs/<user>/<user>-handoff.md` 읽기 — 현재 active task 확인

@@ -183,7 +183,7 @@ git commit -m "docs(agents): D 규범 요약을 1줄씩으로 압축 — 전문�
 - Modify: `templates/AGENTS.md.hbs` · `AGENTS.md` (`### Task Context Card (TCC)`, 1,105 B)
 - Modify (선택): `templates/CLAUDE.md.hbs` · `CLAUDE.md` (`### 5-A` escalation 패킷 5항목, 1,909 B)
 
-- [ ] **Step 1: T4 이후 소계를 잰다**
+- [x] **Step 1: T4 이후 소계를 잰다**
 
 ```bash
 node --test tests/agent-files.test.mjs
@@ -191,18 +191,18 @@ node --test tests/agent-files.test.mjs
 17,500 B 이하면 이 태스크는 **수행하지 않고** 사유를 붙여 닫는다:
 `- [x] Task 5 — 미실행(T4에서 목표 달성)`. 지우지 않는다 — 판단 이력이 사라진다.
 
-- [ ] **Step 2: 미달이면 TCC 절의 잔여 산문을 줄인다**
+- [x] **Step 2: 미달이면 TCC 절의 잔여 산문을 줄인다**
 
 한도 수치(6 KiB·100행·capsule 3개)는 남긴다 — `context check`의 실패 메시지가 알려주지만,
 쓰기 전에 알아야 하는 값이다. 줄일 것은 갱신 시점 나열과 금지 항목의 예시다.
 
-- [ ] **Step 3: 그래도 미달이면 CLAUDE.md `### 5-A`의 패킷 5항목 설명을 줄인다**
+- [x] **Step 3: CLAUDE.md `### 5-A` 압축 — 미실행(Step 2에서 목표 달성)**
 
 **항목 이름 다섯(결정 요청·권장안·시도한 대안·기다림의 비용·안전 기본값)은 남긴다.**
 줄일 것은 `**Why:**`/`**How to apply:**` 문단이다 — 그 근거는 `docs/decisions.md`와
 `--json` 엔벨로프 계약이 이미 갖고 있다. 5-A 자체는 상황 인식형이라 이전하지 않는다.
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add -u && git commit -m "docs(agents): 잔여 산문 압축 — 목표 소계 달성"

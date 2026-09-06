@@ -51,3 +51,11 @@ AGENTS.md                                               | 14 ++++----------
  .../eager-tier-slimming/eager-tier-slimming-plan.md     |  8 ++++----
  templates/AGENTS.md.hbs                                 | 14 ++++----------
  5 files changed, 30 insertions(+), 25 deletions(-)
+
+## 2026-09-06T17:19:54.323Z — 830981f docs(agents): D 규범 요약을 압축 — 전문은 decisions.md
+AGENTS.md                                                   | 13 +++++--------
+ docs/chad/chad-handoff.md                                   |  2 +-
+ .../chad/eager-tier-slimming/eager-tier-slimming-handoff.md |  8 ++++++++
+ docs/chad/eager-tier-slimming/eager-tier-slimming-plan.md   |  8 ++++----
+ templates/AGENTS.md.hbs                                     | 13 +++++--------
+ 5 files changed, 23 insertions(+), 21 deletions(-)
