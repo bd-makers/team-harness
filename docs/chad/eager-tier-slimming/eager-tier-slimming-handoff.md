@@ -100,3 +100,11 @@ AGENTS.md                                           |  3 ++-
  templates/AGENTS.md.hbs                             |  3 ++-
  tests/agent-files.test.mjs                          | 17 +++++++++++++++--
  7 files changed, 48 insertions(+), 7 deletions(-)
+
+## 2026-09-06T17:47:35.365Z — b670390 docs(task): 리뷰 마커 추가 — done 가드가 요구하는 기계 판독 형식
+docs/chad/eager-tier-slimming/eager-tier-slimming-artifact.md | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+## 2026-09-06T17:47:35.468Z — 완료
+
+태스크 종료.

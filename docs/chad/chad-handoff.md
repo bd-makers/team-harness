@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-eager-tier-slimming
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-06)
-c5e6a84 fix(agents): Codex 리뷰 P2 2건·P3 1건 반영
+## Last Completed Task (2026-09-06)
+`eager-tier-slimming` — done
 
 ## Full Context
 → docs/chad/eager-tier-slimming/eager-tier-slimming-handoff.md

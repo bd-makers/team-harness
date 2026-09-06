@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ eager-tier-slimming
 - ✅ doctor-eager-global
 - ✅ docs-refresh-0210
 - ✅ deprecated-review-carryover
