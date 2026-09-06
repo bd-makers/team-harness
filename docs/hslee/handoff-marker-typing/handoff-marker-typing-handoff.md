@@ -25,3 +25,13 @@ CHANGELOG.md                                       |  15 +++
  docs/hslee/hslee-handoff.md                        |   9 +-
  tests/handoff-marker.test.mjs                      |  83 ++++++++++++++++
  8 files changed, 254 insertions(+), 25 deletions(-)
+
+## 2026-09-06T11:51:45.814Z — 47a143e docs(task): spec을 리뷰 반영 후 설계와 맞춤 (SSOT 정합)
+.../handoff-marker-typing-handoff.md                  | 11 +++++++++++
+ .../handoff-marker-typing-spec.md                     | 19 ++++++++++++++++---
+ docs/hslee/hslee-handoff.md                           |  2 +-
+ 3 files changed, 28 insertions(+), 4 deletions(-)
+
+## 2026-09-06T11:51:45.925Z — 완료
+
+태스크 종료.

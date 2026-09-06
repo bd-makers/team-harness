@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-handoff-marker-typing
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-06)
-49a8093 fix(handoff): Codex 리뷰 P2 2건 반영 — 호출부 계약을 통합 테스트로 고정
+## Last Completed Task (2026-09-06)
+`handoff-marker-typing` — done
 
 ## Full Context
 → docs/hslee/handoff-marker-typing/handoff-marker-typing-handoff.md
