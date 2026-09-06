@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.30.0</span>
+      <span class="tag tag-purple">v0.31.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.31.0 — intent.md 요소 흡수: Problem 축 · <code>(open)</code> 규약 · observe 루프백 nudge:</strong>
+    <br>
+    <code>0.31.0</code> <strong>AI-native SDLC 플레이북의 <code>intent.md</code>를 대조해 6번째 파일 대신 두 요소를 기존 spec 표면에 넣는다</strong> — <code>/harness-spec</code> 인터뷰 차원에 Problem(오늘 무엇이 안 되는가·누가 영향받는가)이 앞에 붙고, <code>/harness-interview</code> 선행 채점은 Goal을 pass로 주려면 <strong>기대 결과 문장과 문제 문장 둘</strong>을 인용해야 한다(문제 문장이 없으면 na). 인터뷰어는 채점표의 fail/na 차원에만 질문을 만들므로 Problem을 별도 각도로 두면 발사되지 않고 5번째 가중 축으로 만들면 기존 task와 갈린다 — 그래서 Goal 차원 안에 넣었다. 답 없는 질문은 요구가 아니다: spec <code>## 참고</code> 절에 <code>- (open) …</code>으로 남기고 게이트 통과 전에 답이 반영되거나 <code>(open → &lt;대상&gt;)</code>으로 이월 대상이 적혀야 한다(소스 충돌의 <code>(unresolved)</code>와 구분). spec 템플릿 목적 절에 안내문 1줄(문제 → 영향 → 기대 결과 → 제약, 산문이라 sim 출처 태그 규칙에 안 잡힘). <code>harness-team observe</code>는 트립와이어 발화 시 <code>next_actions</code> 둘째 줄·텍스트 <code>next:</code> 줄에 <code>harness-team task observe-&lt;id&gt;-&lt;day&gt;</code> 제안을 낸다 — <strong>자동 생성은 없다</strong>(임계값 미보정), <code>&lt;day&gt;</code>는 실행일이 아니라 사건일(codex P2: <code>repeat-failure-3x</code>는 창 전체를 보므로 실행일로 키를 잡으면 같은 사건이 매일 다른 이름을 받는다). 6번째 파일을 만들지 않은 이유는 AGENTS.md의 "spec 포인터 껍데기 금지"와 doctor <code>checkActiveSpecGate</code>가 막아 둔 실패 모드를 되살리기 때문이다. PO 게이트·요청자 필드·churn 지표·5축 승격은 기각·보류로 기록했다.
+    <br><br>
     <strong>🆕 0.30.0 — <code>summary --write</code> 가드가 브랜치 이름 대신 커밋을 본다:</strong>
     <br>
     <code>0.30.0</code> <strong>이름이 기본 브랜치가 아니어도 HEAD가 <code>origin/HEAD</code>가 가리키는 브랜치와 정확히 같은 커밋이면 원장을 쓴다</strong> — <code>src/commands/summary.mjs</code>에 <code>isSyncedWithDefault()</code>가 생기고 가드 조건이 <code>offDefault</code> 하나에서 <code>offDefault &amp;&amp; !synced</code>로 좁아졌다. 원장(<code>docs/task_summary.md</code>·<code>docs/&lt;user&gt;/&lt;user&gt;-task.md</code>)은 D5가 기본 브랜치에만 유보한 생성물이라 가드가 필요하지만, 판정 기준이던 브랜치 <strong>이름</strong>은 잘못된 대리 지표였다 — git worktree 세션은 원본 체크아웃이 기본 브랜치를 점유해 애초에 체크아웃할 수 없고, 내용이 <code>origin/main</code>과 한 커밋도 다르지 않은 브랜치에서도 거부당해 매번 <code>--force</code>를 눌렀다. 우회가 습관이 되면 진짜 feature 브랜치에서도 그대로 눌린다. synced 브랜치에는 로컬 커밋이 하나도 없어 원장 커밋이 기본 브랜치 tip 바로 위에 얹히므로 결과가 같다. 판정은 <strong>정확한 동일성</strong>뿐이다 — ahead는 진짜 feature 브랜치라 거부하고, behind는 낡은 base 위에 렌더한 뒤 push가 non-fast-forward로 실패해 더 헷갈리므로 역시 거부한다. 근거 ref는 <strong><code>origin/HEAD</code> 하나뿐</strong>이다: codex 적대적 리뷰의 P2(BRG-01)가 초안의 <code>defaultBranchCandidates</code> 폴백 재사용을 재현해 냈다 — 실제 기본이 <code>main</code>이고 <code>origin/HEAD</code>는 없으며 <code>origin/master</code>만 남은 저장소에서 0.29.0이 거부하던 브랜치가 통과해 원장을 실제로 썼고, 그 커밋은 진짜 기본으로 fast-forward 되지 않아 behind를 거부한 근거와 모순됐다. 같은 폴백이라도 이름 판정에서는 아무것도 열지 않지만 커밋 판정에서는 쓰기를 연다. <code>origin/HEAD</code> 없음·<code>rev-parse</code> 실패·unborn HEAD·git 오류는 전부 <strong>fail-closed</strong>다. 거부 메시지와 escalation 패킷·<code>--check</code>·origin 없는 로컬 전용 저장소·<code>defaultBranchCandidates</code>는 불변이고, <code>--force</code>는 이제 진짜로 갈라진 상태에서만 쓰이는 escape hatch로 남는다. shipcheck REJECT 2건(문서↔diff 정합)을 반영한 뒤 발행했다.
@@ -810,7 +814,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.30.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.31.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

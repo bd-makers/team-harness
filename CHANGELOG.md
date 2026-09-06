@@ -18,6 +18,8 @@ modified: 2026-09-06
 
 ## [Unreleased]
 
+## [0.31.0] - 2026-09-06
+
 ### Added
 - **observe 루프백 nudge** — 트립와이어가 발화하면 텍스트 출력의 `next:` 줄과 `--json`의 `next_actions`
   둘째 줄에 `harness-team task observe-<id>-<day>` 제안이 붙습니다(`<day>`는 실행일이 아니라 발화 사건의 UTC
