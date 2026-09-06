@@ -49,7 +49,7 @@ function printTaskNextActions(user, name, { activated = false } = {}) {
   const base = `docs/${user}/${name}/${name}`;
   if (activated) console.log(`next: 현재 단계는 ${base}-plan.md 에서 확인`);
   else console.log(`next: /harness-spec으로 ${base}-spec.md 초안 생성 (또는 직접 작성, Ambiguity 자가진단 포함)`);
-  console.log('next: /harness-interview → 구현 → 테스트 (/harness-unittest 계열) → 리뷰 → /harness-retro → done');
+  console.log('next: /harness-interview → plan.md 작성 → 구현 → 테스트 (/harness-unittest 계열) → 리뷰 → /harness-retro → done');
 }
 
 export function taskSpecTemplate(name) {

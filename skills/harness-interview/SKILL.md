@@ -15,4 +15,6 @@ Use this skill as the Codex equivalent of Claude Code `/harness-interview`.
 - Translate Claude-only references for Codex:
   - `${CLAUDE_PLUGIN_ROOT}` means this installed plugin root or this repository root.
   - `AskUserQuestion` means ask a concise user question only when required; otherwise proceed with safe defaults.
+  - `superpowers:writing-plans` is a Claude Code plugin skill. If no equivalent plan-drafting workflow is
+    available here, draft the plan directly; either way follow the plan.md contract in `AGENTS.md`.
 - Do not create commits unless the user explicitly asks.
