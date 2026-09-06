@@ -76,3 +76,28 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name>
 7. **실행은 `/harness-diagram`이 담당한다** — 위 4~6번(probe·degrade·산출물·기록)을 실제로 수행하는
    어댑터가 `commands/harness-diagram.md`다. task 생성 시점 이후 아무 때나 다시 실행해 산출물을
    갱신할 수 있다. 이 문서는 **옵트인 계약**의 정본이고, 그 계약을 실행하는 절차는 그쪽에 있다.
+
+## `<name>-meta.json`과 판정 창
+
+`<name>-meta.json`은 harness가 소유하는 **기계 상태**다(`created`·`firstActivatedAt`·`status`·
+`closedAt`·`reopenedAt`). SSOT 4파일에 포함되지 않으며 **손으로 고치지 않는다** — `done` 가드가
+증거를 찾는 판정 창의 시작점이 여기서 정해지기 때문이다.
+
+- **판정 창 = `reopenedAt || firstActivatedAt`** (처음 유효한 값). 창을 통째로 버리면 마커 신선도·
+  커밋·테스트 시각 가드가 전부 꺼지는 fail-open이 된다.
+- **`firstActivatedAt`은 생성 시 1회만** 기록되고 재활성화가 밀지 않는다. 이 값과 `switchedAt`이
+  갈라지는 순간이 done 가드 오탐의 원인이었다.
+
+### 완료 상태의 만료
+
+완료는 시간이 아니라 **전이**로 만료된다. `done`된 task를 `harness-team task <name>`으로 다시
+활성화하면 그 완료가 무효가 되어 `status`가 `open`으로 돌아가고 `closedAt`이 풀리며, 그 시각이
+`reopenedAt`에 남아 **새 판정 창의 시작**이 된다. 출력도 `activated:`가 아니라 `reopened:`다.
+새 라운드의 완료는 새 증거로 판정해야 하기 때문이다.
+
+- **열린 task 사이의 평범한 재활성화는 meta를 건드리지 않는다** — 거기까지 쓰면 판정 창이 흔들린다.
+- **`status`가 `done`인 task는 SessionStart 재개 후보에서 빠진다.** 후보 판정의 정본은 plan의
+  체크박스가 아니라 이 값이다 — 열린 체크박스만 보던 탓에 `done --force`로 닫은 task가 영구히
+  후보로 떴다.
+- `meta.json`이 없는 구 task는 원장·handoff에서 추론한 값을 굳혀 만료시키되, 알 수 없는
+  `firstActivatedAt`은 지어내지 않는다(구 task는 시각 가드를 건너뛴다).

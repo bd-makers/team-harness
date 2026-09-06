@@ -79,7 +79,7 @@ git commit -m "test(agents): 프로젝트 eager 소계 상한 가드 추가 (RED
 
 **목표 감축:** 약 800 B
 
-- [ ] **Step 1: 이전 대상을 고른다**
+- [x] **Step 1: 이전 대상을 고른다**
 
 eager에 남길 것(도구 중립 필요): SSOT 4파일 목록 · `.harness/active.json` · `meta.json`은 harness 소유라
 손대지 않는다는 금지 · 완료 상태가 재활성화로 만료된다는 **사실 한 줄** · 집계 파일은 생성물이라는 규칙.
@@ -88,23 +88,23 @@ lazy로 옮길 것(트리거 = `harness-team task`/`done` 실행): 판정 창 �
 `firstActivatedAt`의 "생성 시 1회" 불변식 · 열린 task 사이 재활성화가 meta를 건드리지 않는다는 상세 ·
 `activated:`/`reopened:` 출력 구분의 이유.
 
-- [ ] **Step 2: `commands/harness-task.md`에 도착지 절이 있는지 확인하고, 없으면 만든다**
+- [x] **Step 2: `commands/harness-task.md`에 도착지 절이 있는지 확인하고, 없으면 만든다**
 
 Run: `grep -n "reopened\|판정 창\|firstActivatedAt" commands/harness-task.md`
 없는 항목만 추가한다. 이미 있으면 중복 서술을 만들지 않는다.
 
-- [ ] **Step 3: `templates/AGENTS.md.hbs`의 해당 절을 줄인다**
+- [x] **Step 3: `templates/AGENTS.md.hbs`의 해당 절을 줄인다**
 
-- [ ] **Step 4: 루트 `AGENTS.md`의 같은 절을 동일 내용으로 갱신한다**
+- [x] **Step 4: 루트 `AGENTS.md`의 같은 절을 동일 내용으로 갱신한다**
 
-- [ ] **Step 5: 드리프트·소계 확인**
+- [x] **Step 5: 드리프트·소계 확인**
 
 ```bash
 node --test tests/agent-files.test.mjs
 ```
 Expected: 드리프트 테스트 PASS, 소계 테스트는 여전히 FAIL(수치가 줄어야 함 — 약 18,500 B)
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add templates/AGENTS.md.hbs AGENTS.md commands/harness-task.md
@@ -244,9 +244,10 @@ git add -u && git commit -m "docs(task): eager-tier-slimming 검증 결과·대�
 
 ## Ontology 변경 로그
 
-- (2026-09-07) **에이전트 중립 표면** — 선행 task의 "표면(surface)"을 좁힌 개념. Codex·Cursor가 실제로
-  읽는 표면(`AGENTS.md`·`skills/*/SKILL.md`·`templates/**`)만을 가리킨다. `commands/*.md`는 여기 없다 —
-  이 구분이 이번 이전의 상한을 정한다.
+- (2026-09-07, T2에서 정정) **에이전트 중립 표면** — 해당 에이전트가 규칙을 **필요로 하는 시점에**
+  도달할 수 있는 표면. 처음에는 `commands/*.md`를 Claude 전용으로 봤으나, Codex 미러가
+  `../../commands/<name>.md`를 읽으라고 지시하므로 Codex에도 도달한다. 상한을 정하는 것은
+  **Cursor**의 도달 범위(`AGENTS.md`·`.cursor/rules`)이며, Cursor는 명령을 실행하지 않는다.
 - (2026-09-07) **예산 여유(headroom)** — 상한 − 현재 소계. 이 task의 판정 대상은 감축량이 아니라 여유다.
 
 ## 참고
