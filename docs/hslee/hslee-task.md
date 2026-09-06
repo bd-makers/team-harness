@@ -4,6 +4,7 @@
 
 ## Completed
 - ✅ done-status-expiry
+- ✅ handoff-marker-typing
 - ✅ intent-md-alignment
 - ✅ ci-docs-check-gitignore
 - ✅ doctor-decision-headings

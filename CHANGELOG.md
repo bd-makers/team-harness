@@ -18,6 +18,8 @@ modified: 2026-09-06
 
 ## [Unreleased]
 
+## [0.32.1] - 2026-09-06
+
 ### Changed
 - **task handoff의 완료 마커가 단일 선언에서 나옵니다.** `runDone`이 쓰고 `inferLegacyMeta`가
   읽는 `## <시각> — 완료` 마커는 지금까지 두 모듈(`src/commands/task.mjs`·`src/commands/summary.mjs`)에

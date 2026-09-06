@@ -83,4 +83,5 @@
 | hslee | settings-ask-tier | ✅ done | 2026-09-05 |
 | hslee | summary-branch-guard | ✅ done | 2026-09-05 |
 | hslee | done-status-expiry | ✅ done | 2026-09-06 |
+| hslee | handoff-marker-typing | ✅ done | 2026-09-06 |
 | hslee | intent-md-alignment | ✅ done | 2026-09-06 |
