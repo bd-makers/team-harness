@@ -14,3 +14,14 @@
  src/handoff-marker.mjs                             |  31 ++++++
  tests/handoff-marker.test.mjs                      |  65 +++++++++++++
  10 files changed, 292 insertions(+), 2 deletions(-)
+
+## 2026-09-06T11:49:04.799Z — 49a8093 fix(handoff): Codex 리뷰 P2 2건 반영 — 호출부 계약을 통합 테스트로 고정
+CHANGELOG.md                                       |  15 +++
+ docs/harness-overview.html                         |  10 ++
+ .../handoff-marker-typing-artifact.md              | 106 ++++++++++++++++++++-
+ .../handoff-marker-typing-context.md               |  37 ++++---
+ .../handoff-marker-typing-handoff.md               |  13 +++
+ .../handoff-marker-typing-plan.md                  |   6 +-
+ docs/hslee/hslee-handoff.md                        |   9 +-
+ tests/handoff-marker.test.mjs                      |  83 ++++++++++++++++
+ 8 files changed, 254 insertions(+), 25 deletions(-)
