@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { observeToolEvent } from '../templates/.claude/hooks/observe-tools.mjs';
 import {
   percentile, windowDays, summarizeObservability, TRIP_WIRE_MIN_FINISHED, TRIP_WIRE_MIN_FAILURES,
-  readObservabilityRecords, resolveTaskRefs, hmacRef, OBSERVABILITY_BASE, runObserve,
+  readObservabilityRecords, resolveTaskRefs, hmacRef, OBSERVABILITY_BASE, runObserve, observeLoopbackNudge,
 } from '../src/commands/observe.mjs';
 
 const NOW = new Date('2026-09-05T12:00:00.000Z');
@@ -218,6 +218,24 @@ function captureStdout(fn) {
   return Promise.resolve().then(fn).finally(() => { console.log = original; }).then(() => chunks.join('\n'));
 }
 
+test('observeLoopbackNudge: task name keys on the event day, not the run day (codex P2)', () => {
+  const hit = { session_ref: 'abcd1234', tool_ref: 'ef567890', tool_category: 'shell', count: 3, last_at: '2026-09-03T23:59:59.000Z' };
+  const repeat = { id: 'repeat-failure-3x', fired: true, status: 'fired', detail: { hits: [hit] } };
+  const nudge = observeLoopbackNudge([repeat], '2026-09-06');
+  assert.match(nudge, /harness-team task observe-repeat-failure-3x-2026-09-03 /);
+  // 다음 날 다시 실행해도 같은 이름 — 재실행이 새 task가 아니라 `activated:`로 수렴한다.
+  assert.equal(observeLoopbackNudge([repeat], '2026-09-07'), nudge);
+  // by_day와 같이 UTC 인스턴트로 버킷한다 — 앞 10글자가 아니다.
+  const offset = { ...repeat, detail: { hits: [{ ...hit, last_at: '2026-09-04T00:30:00.000+02:00' }] } };
+  assert.match(observeLoopbackNudge([offset], '2026-09-06'), /observe-repeat-failure-3x-2026-09-03 /);
+  // failure-rate-2x는 오늘의 지표라 detail.day가 곧 사건일. 둘 다 발화하면 첫 와이어가 이름을 정하고 둘 다 나열한다.
+  const rate = { id: 'failure-rate-2x', fired: true, status: 'fired', detail: { day: '2026-09-06', finished: 20, failures: 5, failure_rate: 0.25, baseline_rate: 0.1, baseline_days: 2 } };
+  const both = observeLoopbackNudge([rate, repeat], '2026-09-06');
+  assert.match(both, /observe-failure-rate-2x-2026-09-06 /); assert.match(both, /failure-rate-2x, repeat-failure-3x/);
+  // hit이 없거나 시각이 깨진 와이어는 실행일로 떨어진다 — 이름 없는 제안은 내지 않는다.
+  assert.match(observeLoopbackNudge([{ ...repeat, detail: { hits: [] } }], '2026-09-06'), /observe-repeat-failure-3x-2026-09-06 /);
+});
+
 test('runObserve --json: not-installed envelope, exit 0, next action points at init', async () => {
   const { dir, cleanup } = await project();
   try {
@@ -237,6 +255,8 @@ test('runObserve --json: ok envelope carries window, scorecard and trip wires; t
     assert.equal(out.scorecard.by_category[0].tool_category, 'shell'); assert.equal(out.trip_wires.length, 2); assert.equal(out.skipped_lines, 0);
     const text = await captureStdout(() => runObserve({ targetDir: dir, flags: { days: '3' } }));
     assert.match(text, /observe: 3일 창/); assert.match(text, /✓ failure-rate-2x/); assert.match(text, /shell/);
+    // 발화가 없으면 루프백 nudge도 없다.
+    assert.equal(out.next_actions.length, 0); assert.doesNotMatch(text, /harness-team task observe-/);
   } finally { await cleanup(); }
 });
 
@@ -249,9 +269,14 @@ test('runObserve: three hook failures of one tool in one session → tripped, ex
     process.exitCode = 0;
     const out = JSON.parse(await captureStdout(() => runObserve({ targetDir: dir, flags: { json: true } })));
     assert.equal(out.status, 'tripped'); assert.equal(out.trip_wires[1].fired, true); assert.equal(process.exitCode, 1);
+    // 루프백 nudge — 둘째 next_action이 task 생성을 제안하되, 제안일 뿐 task를 만들지는 않는다.
+    assert.equal(out.next_actions.length, 2);
+    assert.match(out.next_actions[1], /harness-team task observe-repeat-failure-3x-\d{4}-\d{2}-\d{2} /);
+    assert.match(out.next_actions[1], /자동 생성은 하지 않는다/);
     process.exitCode = 0;
     const text = await captureStdout(() => runObserve({ targetDir: dir, flags: {} }));
     assert.match(text, /✗ repeat-failure-3x/);
+    assert.match(text, /^next: .*harness-team task observe-repeat-failure-3x-/m);
     process.exitCode = 0;
   } finally { await cleanup(); }
 });
