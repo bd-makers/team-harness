@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+done-status-expiry
 
-## Last Completed Task (2026-09-06)
-`intent-md-alignment` — done
+## Last Commit (2026-09-06)
+5b126ac feat(task): 완료 task 상태 만료 — reopen 전이로 meta.status를 정본화
 
 ## Full Context
-→ docs/hslee/intent-md-alignment/intent-md-alignment-handoff.md
+→ docs/hslee/done-status-expiry/done-status-expiry-handoff.md

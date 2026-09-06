@@ -32,6 +32,9 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name>
 
 `task` 출력이 `created:`(신규 생성)일 때만 아래를 **1회** 수행한다. `activated:`(기존 task
 재활성화)면 **묻지 않는다** — 계획에 없는 단계를 다시 묻는 것은 계획을 무시하는 것이다.
+`reopened:`(완료가 만료된 재개 — meta의 `status`가 `done`→`open`으로 돌아간 경우)도 같다:
+옵트인 상태는 plan.md에 그 단계가 있는지로 이미 남아 있고, 재개는 그 계획을 이어받는 것이지
+새로 세우는 것이 아니다.
 
 1. **질문** — `AskUserQuestion`으로 한 번만 묻는다: 이 task의 spec/plan 단계에서 다이어그램을
    함께 만들까? 사용자가 건너뛰면 그대로 진행한다. 다시 묻지 않는다.

@@ -224,6 +224,13 @@ test('commands/harness-task.md는 created/activated를 구분하고 건너뛴 �
   assert.match(doc, /"다이어그램 미실행 — 도구 없음"을 날짜와 함께 한 줄 남긴다/, '도구 없을 때 artifact 기록 계약');
 });
 
+// 완료 만료(reopen)가 세 번째 출력 동사를 만들었다. 문서가 created/activated 둘로만 갈리면
+// `reopened:`를 본 에이전트에게 규칙이 없다 — plan.md가 곧 옵트인 상태이므로 재개도 묻지 않는다.
+test('commands/harness-task.md는 reopened(완료 만료 후 재개)도 재질문 금지 쪽으로 분류한다', async () => {
+  const doc = await readFile(join(ROOT, 'commands', 'harness-task.md'), 'utf8');
+  assert.match(doc, /`reopened:`/, '완료가 만료된 재개 분기를 명시');
+});
+
 // 두 표면이 같은 종결 규칙을 말해야 한다 — 요약(AGENTS)이 절차(command)와 어긋나면
 // 코어만 읽는 에이전트가 done-guard에 걸린다.
 test('AGENTS.md와 commands/harness-task.md는 건너뛴 다이어그램 단계를 지우지 않고 닫으라고 말한다', async () => {

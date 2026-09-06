@@ -753,6 +753,28 @@ test('firstActivatedAt이 ISO8601이 아니면 창으로 쓰지 않고 degrade�
   }
 });
 
+// 창 해석이 reopenedAt을 우선하므로, 그 값이 깨졌을 때의 규칙도 firstActivatedAt과 같아야 한다:
+// 다른 시각으로 대체하지 않고 시각 비교를 포기한다. firstActivatedAt으로 조용히 되돌리면
+// 창이 지난 라운드까지 넓어져 만료의 의미가 사라진다.
+test('reopenedAt이 ISO8601이 아니면 창으로 쓰지 않고 degrade한다 (firstActivatedAt으로 되돌리지 않는다)', async () => {
+  const { dir } = await makeEvidenceFixture({
+    spec: REVIEW_ONLY_SPEC,
+    firstActivatedAt: ago(4 * 3_600_000),
+    reopenedAt: 'not-a-date',
+    switchedAt: ago(30 * 60_000),
+    commitDate: ago(2 * 3_600_000),
+    files: {
+      'docs/tester/demo/demo-artifact.md':
+        taskArtifactTemplate('demo') + `\n- 실제 결과\n\n<!-- harness:review kind=codex at=${ago(30 * 86_400_000)} -->\n`,
+    },
+  });
+  try {
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), `proceeds — 창을 모르면 시각 가드를 건너뛴다: ${JSON.stringify(logs)}`);
+    assert.ok(!logs.some(l => l.includes('커밋이 0개')), '깨진 값을 창으로 해석하지 않는다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 // ─── Done evidence: verify (검증 프레이밍 kind allowlist) — D6 4단계 ─────────
 
 const VERIFY_SPEC =
