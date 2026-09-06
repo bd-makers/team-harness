@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ intent-md-alignment
 - ✅ ci-docs-check-gitignore
 - ✅ doctor-decision-headings
 - ✅ escalation-packet-fields
