@@ -3,6 +3,6 @@
   "task": "done-status-expiry",
   "created": "2026-09-06",
   "firstActivatedAt": "2026-09-06T09:51:02.977Z",
-  "status": "open",
-  "closedAt": null
+  "status": "done",
+  "closedAt": "2026-09-06T10:18:16.250Z"
 }
