@@ -545,7 +545,8 @@ schema instance의 object root를 가리키는 pointer와 표준 document pointe
 
 ### Done evidence — `done` 가드의 증거 선언
 
-`harness-team done`은 task 판정 창(meta의 `firstActivatedAt` 이후) 안의 증거를 결정론적으로
+`harness-team done`은 task 판정 창(meta의 `reopenedAt || firstActivatedAt` 이후 — 완료가 만료된
+task는 그 만료 시각부터) 안의 증거를 결정론적으로
 검사합니다. 요구 수준은 spec의 `## Done evidence` 아래 JSON으로 선언합니다:
 
 ```json

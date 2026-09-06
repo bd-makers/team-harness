@@ -26,6 +26,11 @@ async function writeCard(dir, user, name, content = taskContextTemplate(name)) {
   await mkdir(td, { recursive: true });
   await writeFile(join(td, `${name}-context.md`), content);
 }
+async function writeMeta(dir, user, name, meta) {
+  const td = join(dir, 'docs', user, name);
+  await mkdir(td, { recursive: true });
+  await writeFile(join(td, `${name}-meta.json`), JSON.stringify(meta, null, 2) + '\n');
+}
 async function setPlanMtime(dir, user, name, date) {
   const planPath = join(dir, 'docs', user, name, `${name}-plan.md`);
   await utimes(planPath, date, date);
@@ -105,6 +110,48 @@ test('활성 task 없음 + 미완 task → nudge에 재개 후보로 나열', as
     assert.ok(out.includes('재개: chad/wip'), 'lists incomplete task');
     assert.ok(out.includes('새 task 생성'), 'offers new task');
     assert.ok(out.includes('task 없이 진행'), 'offers escape hatch');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 후보 판정의 정본은 meta.status다. 열린 체크박스만 보면 `done --force`로 닫았거나
+// 다이어그램 옵트인 규약대로 미실행 단계를 열어 둔 채 닫은 task가 영구히 재개 후보로 뜬다.
+test('완료된 task는 열린 체크박스가 남아 있어도 재개 후보에서 제외', async () => {
+  const dir = await baseDir();
+  try {
+    await writeActive(dir, null);
+    await writeTask(dir, 'chad', 'forced', '# forced — Plan\n- [ ] 미실행(도구 없음)\n');
+    await writeMeta(dir, 'chad', 'forced', {
+      user: 'chad', task: 'forced', created: '2026-09-01',
+      status: 'done', closedAt: '2026-09-02T00:00:00.000Z',
+    });
+    const out = await buildSessionContext(dir);
+    assert.ok(!out.includes('재개: chad/forced'), '완료 상태가 후보 판정의 정본이어야 한다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 하위 호환: meta.json이 없는 구 task는 완료 여부를 알 수 없다 → 제외하지 않는다(현행 유지).
+test('meta.json이 없는 구 task는 열린 체크박스만으로 재개 후보가 된다', async () => {
+  const dir = await baseDir();
+  try {
+    await writeActive(dir, null);
+    await writeTask(dir, 'chad', 'legacy', '# legacy — Plan\n- [ ] 미완\n');
+    const out = await buildSessionContext(dir);
+    assert.ok(out.includes('재개: chad/legacy'), 'meta 없는 task를 잘라내면 안 된다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 만료된 완료(reopen)는 다시 후보가 된다 — status가 open으로 돌아갔기 때문이다.
+test('만료된 완료(status open + reopenedAt)는 다시 재개 후보가 된다', async () => {
+  const dir = await baseDir();
+  try {
+    await writeActive(dir, null);
+    await writeTask(dir, 'chad', 'revived', '# revived — Plan\n- [ ] 남은 일\n');
+    await writeMeta(dir, 'chad', 'revived', {
+      user: 'chad', task: 'revived', created: '2026-09-01',
+      status: 'open', closedAt: null, reopenedAt: '2026-09-05T00:00:00.000Z',
+    });
+    const out = await buildSessionContext(dir);
+    assert.ok(out.includes('재개: chad/revived'), '만료된 완료는 다시 열린 task다');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

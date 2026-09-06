@@ -446,7 +446,7 @@ const ago = (ms) => new Date(Date.now() - ms).toISOString();
 //   firstActivatedAt: null  → 필드 없는 구 task 재현(시각 비교 포기 경로)
 //   switchedAt              → 재활성화 시각(가드가 더 이상 보지 않아야 하는 값)
 //   commitDate              → 커밋을 백데이트해 "작업은 재활성화 이전에 끝났다"를 재현
-async function makeEvidenceFixture({ spec, files = {}, firstActivatedAt, switchedAt, commitDate } = {}) {
+async function makeEvidenceFixture({ spec, files = {}, firstActivatedAt, reopenedAt, switchedAt, commitDate } = {}) {
   const { dir, taskDir } = await makeFixture({
     plan: '# demo — Plan\n\n## 단계\n- [x] done\n',
     artifact: taskArtifactTemplate('demo') + '\n- 실제 결과\n',
@@ -456,6 +456,7 @@ async function makeEvidenceFixture({ spec, files = {}, firstActivatedAt, switche
   await writeFile(join(taskDir, 'demo-meta.json'), JSON.stringify({
     user: 'tester', task: 'demo', created: '2026-08-25',
     ...(first === null ? {} : { firstActivatedAt: first }),
+    ...(reopenedAt === undefined ? {} : { reopenedAt }),
     status: 'open', closedAt: null,
   }, null, 2) + '\n');
   for (const [rel, content] of Object.entries(files)) {
@@ -659,6 +660,44 @@ test('창이 넓어져도 창 안에 테스트 변경이 없으면 여전히 차
     const { logs, exitCode } = await runDoneCapture(dir);
     assert.equal(exitCode, 1, 'blocks');
     assert.ok(logs.some(l => l.includes('테스트 파일 변경이 없음')), '테스트 누락은 계속 잡는다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 완료가 만료되고(reopen) 다시 작업이 시작되면, 새 라운드의 완료는 **새 증거**로 판정해야 한다.
+// 옛 firstActivatedAt을 그대로 창으로 쓰면 `git log --since`가 지난 라운드까지 훑어
+// "커밋 0개" 가드가 사실상 통과 전용이 된다.
+test('reopen된 task의 창은 reopenedAt에서 시작한다 — 만료 이전 커밋은 증거가 아니다', async () => {
+  const { dir } = await makeEvidenceFixture({
+    spec: REVIEW_ONLY_SPEC,
+    firstActivatedAt: ago(4 * 3_600_000), // 첫 라운드 시작: 4시간 전
+    reopenedAt: ago(30 * 60_000),         // 완료 만료(재개): 30분 전
+    switchedAt: ago(30 * 60_000),
+    commitDate: ago(2 * 3_600_000),       // 커밋은 지난 라운드의 것
+  });
+  try {
+    const { logs, exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1, 'blocks');
+    assert.ok(logs.some(l => l.includes('커밋이 0개')),
+      `만료 이전 커밋을 새 라운드의 증거로 세면 안 된다: ${JSON.stringify(logs)}`);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('reopen 이후의 커밋은 새 라운드의 증거로 인정된다', async () => {
+  const { dir } = await makeEvidenceFixture({
+    spec: REVIEW_ONLY_SPEC,
+    firstActivatedAt: ago(4 * 3_600_000),
+    reopenedAt: ago(60 * 60_000),   // 만료: 1시간 전
+    switchedAt: ago(60 * 60_000),
+    commitDate: ago(30 * 60_000),   // 커밋: 만료 이후
+    files: {
+      'docs/tester/demo/demo-artifact.md':
+        taskArtifactTemplate('demo') + `\n- 실제 결과\n\n<!-- harness:review kind=codex at=${ago(20 * 60_000)} -->\n`,
+    },
+  });
+  try {
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), `proceeds: ${JSON.stringify(logs)}`);
+    assert.ok(!logs.some(l => l.includes('커밋이 0개')), '만료 이후 커밋은 증거다');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

@@ -236,21 +236,38 @@ export async function runTask(ctx) {
   const date = today();
 
   if (await exists(dir)) {
+    const switchedAt = new Date().toISOString();
     await writeActive(ctx.targetDir, {
       user, task: name,
       path: `docs/${user}/${name}`,
-      switchedAt: new Date().toISOString(),
+      switchedAt,
     });
+
+    // 완료 상태의 만료. 시간 경과가 아니라 **전이**다 — done된 task를 다시 활성화하는 행위가
+    // 그 완료를 무효로 만든다. 만료시키지 않으면 지금 작업 중인 활성 task가 원장에서
+    // "✅ done"으로 보인다(status를 읽는 유일한 소비처가 summary 렌더링이다).
+    // 열린 task 사이를 오가는 평범한 재활성화는 meta를 건드리지 않는다 — 그쪽까지 쓰면
+    // done 가드의 판정 창이 흔들린다(done-guard-window가 고친 바로 그 오탐).
+    // `reopenedAt`은 이 전이에서만 생긴다: 템플릿은 그대로고, 키 없는 meta는 종전대로 읽힌다.
+    const meta = await readTaskMeta(ctx.targetDir, user, name);
+    const reopened = Boolean(meta && meta.status === 'done');
+    if (reopened) {
+      await writeTaskMeta(ctx.targetDir, user, name, {
+        ...meta, status: 'open', closedAt: null, reopenedAt: switchedAt,
+      });
+    }
+    const verb = reopened ? 'reopened' : 'activated';
+
     if (json) {
       emitObservation(buildEnvelope({
         command: 'task',
         status: 'success',
-        summary: `activated: ${user}/${name}`,
+        summary: `${verb}: ${user}/${name}`,
         nextActions: [`docs/${user}/${name}/${name}-plan.md 의 현재 단계 확인`],
         artifacts: [`docs/${user}/${name}`],
       }));
     } else {
-      console.log(`activated: ${user}/${name}`);
+      console.log(`${verb}: ${user}/${name}`);
       printTaskNextActions(user, name, { activated: true });
     }
     return;
@@ -499,11 +516,15 @@ async function collectDoneIssues(targetDir, active) {
   // active.json의 `switchedAt`은 *마지막 활성화* 시각이라 재활성화·task 전환이 창을 초기화하고,
   // 이미 만족된 증거를 창 밖으로 밀어냈다. `meta.firstActivatedAt`은 생성 시 1회만 기록되므로
   // 몇 번을 오가도 창이 움직이지 않는다.
+  // 완료가 만료(reopen)되면 창은 그 만료 시각에서 다시 시작한다 — 새 라운드의 완료는 새 증거로
+  // 재야 하고, 옛 firstActivatedAt을 그대로 쓰면 `--since`가 지난 라운드까지 훑어 가드가 통과 전용이 된다.
+  // `reopenedAt`이 없으면(한 번도 만료되지 않은 task) 종전대로 firstActivatedAt이 창의 시작이다.
   const meta = await readTaskMeta(targetDir, user, task);
-  const parsedStart = parseIsoInstant(meta && meta.firstActivatedAt);
+  const windowStartRaw = (meta && meta.reopenedAt) || (meta && meta.firstActivatedAt);
+  const parsedStart = parseIsoInstant(windowStartRaw);
   // 필드가 없거나(구 task) 값이 깨졌으면 창을 모른다 → 다른 시각으로 대체하지 않고 시각 비교를 포기한다.
   const windowStart = Number.isNaN(parsedStart) ? null : parsedStart;
-  const windowStartIso = windowStart === null ? null : meta.firstActivatedAt;
+  const windowStartIso = windowStart === null ? null : windowStartRaw;
 
   // spec 선언 — 없으면 기본값(tests 검사 / review 미검사), 깨져 있으면 그 자체가 차단 사유.
   let evidence = { status: 'not-configured', ...DONE_EVIDENCE_DEFAULT };

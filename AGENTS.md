@@ -83,9 +83,17 @@
 
 활성 task는 `.harness/active.json`에 저장.
 
-`<name>-meta.json`은 harness가 소유하는 기계 상태(created·firstActivatedAt·status)이며
-SSOT 4파일에 포함되지 않는다. 손으로 고치지 않는다 — 특히 `firstActivatedAt`은 `done` 가드가
-증거를 찾는 **판정 창의 시작점**이라 이 값을 밀면 가드가 오탐을 낸다.
+`<name>-meta.json`은 harness가 소유하는 기계 상태(created·firstActivatedAt·status·closedAt·reopenedAt)
+이며 SSOT 4파일에 포함되지 않는다. 손으로 고치지 않는다 — `done` 가드가 증거를 찾는
+**판정 창의 시작점**이 여기서 정해지기 때문이다(창 = `reopenedAt || firstActivatedAt`).
+`firstActivatedAt`은 생성 시 1회만 기록되고 재활성화가 밀지 않는다.
+
+**완료 상태는 만료된다** — 시간 경과가 아니라 전이다. `done`된 task를 `harness-team task <name>`으로
+다시 활성화하면 그 완료가 무효가 되어 `status`는 `open`으로 돌아가고 `closedAt`이 풀리며, 그 시각이
+`reopenedAt`에 남아 **새 판정 창의 시작**이 된다(출력도 `activated:`가 아니라 `reopened:`).
+새 라운드의 완료는 새 증거로 판정해야 하기 때문이다. 열린 task 사이의 평범한 재활성화는 meta를
+건드리지 않는다. `status`가 `done`인 task는 SessionStart 재개 후보에서도 빠진다 —
+후보 판정의 정본은 plan의 체크박스가 아니라 이 값이다.
 
 집계 파일 `docs/task_summary.md`와 `docs/<user>/<user>-task.md`는 **생성물**이다.
 `task`/`done`은 이 파일들을 건드리지 않으므로 브랜치를 병렬로 둬도 충돌하지 않는다.

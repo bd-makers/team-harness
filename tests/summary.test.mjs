@@ -122,6 +122,79 @@ test('done은 meta의 status를 done으로 바꾸고 closedAt을 남긴다', asy
   }
 });
 
+function captureLogs() {
+  const logs = [];
+  const orig = console.log;
+  console.log = (...a) => logs.push(a.join(' '));
+  return { logs, restore: () => { console.log = orig; } };
+}
+
+// 완료 상태의 "만료"는 시간이 아니라 전이다 — done된 task를 다시 활성화하는 행위가 그 완료를
+// 무효로 만든다. 만료되지 않으면 지금 작업 중인 활성 task가 원장에서 "✅ done"으로 보인다.
+test('done된 task를 재활성화하면 완료가 만료된다 (status open · closedAt 해제 · reopenedAt 기록)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-summary-'));
+  try {
+    const flags = { member: 'chad', force: true };
+    await runTask({ targetDir: dir, flags, taskArgs: ['demo'] });
+    const created = await readTaskMeta(dir, 'chad', 'demo');
+    await runDone({ targetDir: dir, flags });
+    const closed = await readTaskMeta(dir, 'chad', 'demo');
+    assert.equal(closed.status, 'done', '전제: done이 상태를 닫아야 한다');
+
+    await runTask({ targetDir: dir, flags, taskArgs: ['demo'] }); // 재활성화 = 만료
+
+    const after = await readTaskMeta(dir, 'chad', 'demo');
+    assert.equal(after.status, 'open', '완료가 만료되어 open으로 돌아가야 한다');
+    assert.equal(after.closedAt, null, 'closedAt은 해제되어야 한다');
+    assert.ok(after.reopenedAt, 'reopenedAt에 만료 시각이 기록되어야 한다');
+    assert.equal(after.firstActivatedAt, created.firstActivatedAt,
+      'reopen은 firstActivatedAt의 "생성 시 1회" 불변식을 깨지 않는다');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('done된 task의 재활성화는 activated가 아니라 reopened로 보고한다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-summary-'));
+  try {
+    const flags = { member: 'chad', force: true };
+    await runTask({ targetDir: dir, flags, taskArgs: ['demo'] });
+    await runDone({ targetDir: dir, flags });
+
+    const { logs, restore } = captureLogs();
+    try {
+      await runTask({ targetDir: dir, flags, taskArgs: ['demo'] });
+    } finally { restore(); }
+
+    assert.ok(logs.some(l => l.startsWith('reopened: chad/demo')), `reopened 줄이 있어야 한다: ${JSON.stringify(logs)}`);
+    assert.ok(!logs.some(l => l.startsWith('activated:')), '만료된 완료를 단순 활성화로 보고하면 전이가 관측되지 않는다');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+// 만료는 done→open 전이에서만 일어난다. 열린 task 사이를 오가는 평범한 재활성화가 meta를
+// 건드리면 판정 창이 흔들린다(done-guard-window가 고친 바로 그 오탐).
+test('열려 있는 task의 재활성화는 meta를 건드리지 않는다 (activated 유지)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-summary-'));
+  try {
+    const flags = { member: 'chad' };
+    await runTask({ targetDir: dir, flags, taskArgs: ['demo'] });
+    const before = await readTaskMeta(dir, 'chad', 'demo');
+
+    const { logs, restore } = captureLogs();
+    try {
+      await runTask({ targetDir: dir, flags, taskArgs: ['demo'] });
+    } finally { restore(); }
+
+    const after = await readTaskMeta(dir, 'chad', 'demo');
+    assert.deepEqual(after, before, '열린 task의 재활성화는 meta를 그대로 둔다');
+    assert.ok(logs.some(l => l.startsWith('activated: chad/demo')), 'activated로 보고해야 한다');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('렌더는 결정론적이다 — 같은 입력이면 같은 바이트', () => {
   const tasks = [
     { user: 'chad', task: 'zeta', created: '2026-08-05', status: 'done' },
