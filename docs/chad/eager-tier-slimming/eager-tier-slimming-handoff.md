@@ -26,3 +26,20 @@ AGENTS.md                                          | 15 ++++---------
  .../eager-tier-slimming-spec.md                    |  8 ++++---
  templates/AGENTS.md.hbs                            | 15 ++++---------
  6 files changed, 49 insertions(+), 30 deletions(-)
+
+## 2026-09-06T17:18:27.334Z — 68a583d docs(agents): task 단위 관리의 meta 판정 창 상세를 명령 문서로 이전
+AGENTS.md                                          | 15 ++++---------
+ commands/harness-task.md                           | 25 ++++++++++++++++++++++
+ docs/chad/chad-handoff.md                          |  9 ++++----
+ .../eager-tier-slimming-handoff.md                 | 16 ++++++++++++++
+ .../eager-tier-slimming-plan.md                    | 19 ++++++++--------
+ .../eager-tier-slimming-spec.md                    | 13 ++++++-----
+ templates/AGENTS.md.hbs                            | 15 ++++---------
+ 7 files changed, 71 insertions(+), 41 deletions(-)
+
+## 2026-09-06T17:19:09.634Z — fef0d14 docs(agents): 다이어그램 옵트인 서술을 트리거 네 문장으로 축약
+AGENTS.md                                                  | 14 ++++----------
+ docs/chad/chad-handoff.md                                  |  2 +-
+ .../eager-tier-slimming/eager-tier-slimming-handoff.md     | 10 ++++++++++
+ templates/AGENTS.md.hbs                                    | 14 ++++----------
+ 4 files changed, 19 insertions(+), 21 deletions(-)

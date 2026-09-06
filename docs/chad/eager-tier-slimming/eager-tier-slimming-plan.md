@@ -121,25 +121,25 @@ git commit -m "docs(agents): task 단위 관리의 meta 판정 창 상세를 명
 
 **목표 감축:** 약 550 B
 
-- [ ] **Step 1: 현재 다이어그램 문단이 "요약"인지 확인한다**
+- [x] **Step 1: 현재 다이어그램 문단이 "요약"인지 확인한다**
 
 Run: `sed -n '/다이어그램(옵트인)/,/^- \*\*진행\*\*/p' AGENTS.md | wc -c`
 선행 task가 "도구 중립 요약 1블록"으로 정리했으나 그 블록이 여전히 길다는 것이 이 단계의 전제다.
 
-- [ ] **Step 2: eager에 남길 세 문장만 남긴다**
+- [x] **Step 2: eager에 남길 세 문장만 남긴다**
 
 남길 것: ① 신규 생성 직후 1회만 묻는다 ② **plan.md에 그 단계가 있는지가 곧 상태다**
 ③ 도구가 없으면 실패시키지 말고 사유를 붙여 닫는다. 나머지(산출물 경로·inline SVG 이유·Obsidian
 script 제거·SSOT 4파일 아님)는 `commands/harness-task.md`가 이미 전부 서술하므로 삭제한다.
 
-- [ ] **Step 3: 루트 `AGENTS.md` 동기화 후 확인**
+- [x] **Step 3: 루트 `AGENTS.md` 동기화 후 확인**
 
 ```bash
 node --test tests/agent-files.test.mjs
 ```
 Expected: 드리프트 PASS, 소계 약 17,950 B
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add templates/AGENTS.md.hbs AGENTS.md
