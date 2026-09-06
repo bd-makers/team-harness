@@ -203,7 +203,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.32.2</span>
+      <span class="tag tag-purple">v0.32.3</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -211,6 +211,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.32.3 — eager 계층 슬림화: 절차를 lazy 정본으로:</strong>
+    <br>
+    <code>0.32.3</code> <strong>매 세션 로드되는 지시에서 1,955 B를 덜어낸다</strong> — 0.32.2가 <code>AGENTS.md</code>에 1,397 B를 더해 eager 예산(24 KiB)을 64 B 넘긴 채 태그까지 나갔고, 남은 여유는 275 B였다. 규칙을 한 문단 더 쓸 때마다 예산과 협상해야 하는 상태였다. 선행 작업의 판별 기준(<em>트리거를 컨텍스트 없이 인지할 수 있는가</em>)을 재적용해 <code>meta.json</code> 판정 창 상세·다이어그램 산출물 절차는 <code>commands/harness-task.md</code>로, D5~D7 부연은 <code>docs/decisions.md</code>로, escalation/error 패킷의 항목 차이는 <code>src/observation.mjs</code> 주석으로 옮겼다. <strong>규칙은 한 줄도 사라지지 않는다</strong> — 항목 8건마다 도착지를 grep으로 대조했다. 상황 인식형 규칙(<code>§5-A</code> 복잡도 게이트·JIT retrieval)은 트리거가 상황 자체라 이전 대상이 아니다. 여유는 다시 사라지므로 가드를 둘 세웠다: 루트 복사본과 <strong>소비자가 받는 렌더된 템플릿</strong> 양쪽에 17,500 B 상한(<code>doctor</code>의 24 KiB 경고는 머신마다 다른 전역 파일을 포함해 레포가 스스로 지킬 수 없다). <code>MAINTAINING.md</code>의 필수 검증도 두 명령에서 <strong>세 명령</strong>이 됐다 — eager 예산은 <code>npm test</code>가 재지 않아 0.32.2가 초과한 채 나갈 수 있었다. Codex 리뷰 P2 2건은 재현 후 반영했고, 그중 R2가 <strong>가드를 재는 자리가 틀렸다</strong>는 것을 잡았다 — 예산의 목적은 소비자 세션의 비용인데 재던 것은 이 저장소의 복사본이었다. 도달성 정정도 있다: Codex는 skill mirror 지시로 <code>commands/</code>에 도달하며, 도달하지 못하는 것은 Cursor뿐이다. <strong>동작·파일 형식 변경은 없다.</strong>
+    <br><br>
     <strong>🆕 0.32.2 — plan writer 명시와 plan.md 계약 색인:</strong>
     <br>
     <code>0.32.2</code> <strong>plan 단계에는 검증자만 둘 있고 저자가 없었다</strong> — spec에는 writer(<code>/harness-spec</code>)와 validator(<code>/harness-interview</code>)가 다 있는데 plan은 <code>/harness-contrarian</code>·<code>/harness-simplifier</code>가 다듬을 뿐, 게이트 통과 뒤 초안을 누가·어떤 형식으로 쓰는지가 어디에도 없었다. 실무에서 이미 쓰던 <code>superpowers:writing-plans</code>를 writer로 명시하고 미설치 시 직접 작성하는 폴백을 계약으로 적었다. 흩어져 있던 plan.md 형식 계약 넷은 <code>AGENTS.md</code>의 <code>### plan.md 계약</code> 한 절로 모았다 — 체크박스가 <code>done</code> 가드와 SessionStart 재개 후보 판정의 <strong>입력</strong>이라는 것, 다이어그램 옵트인 체크박스는 그 자체가 상태라 지우지 않고 사유를 붙여 닫는다는 것, Ontology 변경 로그, spec의 <code>Boundary contracts</code>·<code>Done evidence</code> 연결. <strong>새 명령은 만들지 않았다</strong> — 이 저장소가 형식 계약에 쓰는 관용구는 페르소나 명령이 아니라 결정론적 검사(<code>context check</code>·<code>boundary check</code>)이고, 외부 스킬을 감싸면 <code>/harness-diagram</code>의 preflight 부담을 물려받으면서 고유 내용은 형식 규칙 몇 줄뿐이다. <code>/harness-spec</code>에 합치는 갈래도 기각했다: "plan.md 선작성 금지"는 Ambiguity 게이트를 지탱하는 장치라, 합치면 검증되지 않은 spec에 대한 실행 계획이 나온다. Codex 미러에는 <code>superpowers:</code> 이름을 해석할 수 없어 번역 규칙을, 소비자 스캐폴드 <code>new-feature</code> Phase 2에는 계약으로 가는 링크를 더했다. <code>harness-team task</code> 안내 라인도 <code>/harness-interview → plan.md 작성 → 구현</code>으로 바뀐다. <strong>동작·파일 형식 변경은 없다.</strong> 결정론적 <code>plan check</code>와 <code>/harness-plan</code>은 각각 형식 깨짐이 관측될 때·초안 작성 자체가 실패 지점일 때로 조건을 적어 두고 만들지 않았다.
@@ -2444,7 +2448,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.32.2 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.32.3 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

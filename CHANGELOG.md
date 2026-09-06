@@ -18,6 +18,27 @@ modified: 2026-09-06
 
 ## [Unreleased]
 
+## [0.32.3] - 2026-09-07
+
+### Changed
+- **매 세션 로드되는 eager 계층에서 1,955 B를 덜어냈습니다.** `AGENTS.md` 13,215 → 11,588 B,
+  `CLAUDE.md` 6,112 → 5,784 B. 24 KiB 예산 여유가 275 B → 2,230 B로 늘었습니다. 삭제가 아니라
+  **이전**입니다 — `meta.json` 판정 창 상세와 다이어그램 산출물 절차는 `commands/harness-task.md`로,
+  D5~D7 부연은 `docs/decisions.md`로, escalation/`--json` error 패킷의 항목 차이는
+  `src/observation.mjs` 주석으로 옮겼고, 항목 8건마다 도착지를 grep으로 대조했습니다.
+  상황 인식형 규칙(`§5-A` 복잡도 게이트·JIT retrieval)은 트리거가 상황 자체라 남겼습니다.
+  Cursor는 `commands/`를 못 읽으면서 `plan.md`는 편집하므로, plan을 닫는 규칙은 eager에 유지합니다.
+- **릴리스 필수 검증이 두 명령에서 세 명령이 됐습니다.** `MAINTAINING.md`에 `doctor`가 들어갑니다 —
+  eager 예산은 `npm test`가 재지 않아 0.32.2가 64 B 초과한 채 태그까지 나갔습니다. 세 명령 모두
+  `node bin/harness-team.mjs`로 부릅니다(전역 CLI는 마켓플레이스 clone이라 낡을 수 있습니다).
+
+### Added
+- **eager 상한 가드 2종** (`tests/agent-files.test.mjs`). 루트 복사본과 **소비자가 `init`으로 받는
+  렌더된 템플릿** 양쪽에 17,500 B 상한을 겁니다. 렌더 쪽 가드는 외부 리뷰(Codex P2)가 잡은
+  결함입니다 — 루트만 재면 템플릿의 마커 **밖** 문구가 커질 때 소비자 payload만 늘고 테스트는
+  통과합니다(drift 검사는 마커 안만 비교). `doctor`의 24 KiB 경고는 머신마다 다른 전역
+  `CLAUDE.md`를 포함하므로 레포가 스스로 지킬 수 있는 목표가 아니고, 이 가드가 그 자리를 메웁니다.
+
 ## [0.32.2] - 2026-09-07
 
 ### Changed
