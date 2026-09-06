@@ -2,6 +2,7 @@ import { join } from 'node:path';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { exists } from '../fsx.mjs';
 import { readActive, planHasOpenBoxes } from './task.mjs';
+import { readTaskMeta } from './summary.mjs';
 import { contextCardPath, validateContextCard } from './context.mjs';
 
 // "task-gate가 있다"의 단일 정의 — migrate(보강)와 doctor(감지)가 공유.
@@ -15,7 +16,8 @@ export function settingsHasSessionGate(settings) {
 // lean하게 유지하기 위해 상한을 두고, 전체 목록은 `harness-team list`로 안내한다.
 export const SESSION_CONTEXT_MAX_TASKS = 8;
 
-// plan.md에 열린 체크박스가 남은 task = 재개 가능. (marker: <name>-spec.md, `list`와 동일 규약)
+// 재개 가능 = 완료되지 않았고(meta.status) plan.md에 열린 체크박스가 남은 task.
+// (marker: <name>-spec.md, `list`와 동일 규약)
 // 최신 활동(plan.md mtime) 내림차순, 동률이면 user/name 오름차순으로 정렬해 반환한다.
 export async function listIncompleteTasks(targetDir) {
   const docs = join(targetDir, 'docs');
@@ -29,6 +31,11 @@ export async function listIncompleteTasks(targetDir) {
       if (!te.isDirectory()) continue;
       const name = te.name;
       if (!(await exists(join(userPath, name, `${name}-spec.md`)))) continue;
+      // 후보 판정의 정본은 meta.status다. 열린 체크박스만 보면 `done --force`로 닫았거나
+      // 다이어그램 옵트인 규약대로 미실행 단계를 열어 둔 채 닫은 task가 영구히 후보로 뜬다.
+      // meta가 없거나 읽히지 않으면(구 task) 완료 여부를 알 수 없으므로 잘라내지 않는다.
+      const meta = await readTaskMeta(targetDir, user, name);
+      if (meta && meta.status === 'done') continue;
       const planPath = join(userPath, name, `${name}-plan.md`);
       // 스캔 중 task가 이동·삭제될 수 있다 — readFile·stat 어느 쪽이 실패해도 그 task만 건너뛴다.
       let plan, mtimeMs;

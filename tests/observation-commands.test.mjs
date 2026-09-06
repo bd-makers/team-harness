@@ -5,7 +5,7 @@ import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { runRelease } from '../src/commands/release.mjs';
-import { runRetro, runTask } from '../src/commands/task.mjs';
+import { runDone, runRetro, runTask } from '../src/commands/task.mjs';
 import { runDoctor } from '../src/commands/doctor.mjs';
 import { OBSERVATION_SCHEMA } from '../src/observation.mjs';
 
@@ -177,6 +177,20 @@ test('release --json: dry-run 성공 → status success + error null + artifacts
     assert.match(env.summary, /1\.2\.3 → 1\.2\.4/);
     assert.deepEqual(env.artifacts, []); // dry-run writes nothing
   } finally { cap.restore(); await rm(root, { recursive: true, force: true }); }
+});
+
+test('task --json: 완료가 만료된 재개 → summary reopened: (기계 소비자도 전이를 본다)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-task-json-reopen-'));
+  const flags = { member: 'tester', force: true };
+  await runTask({ targetDir: dir, flags, taskArgs: ['demo'] });
+  await runDone({ targetDir: dir, flags });
+  const cap = captureJson();
+  try {
+    await runTask({ targetDir: dir, flags: { ...flags, json: true }, taskArgs: ['demo'] });
+    const env = cap.soleEnvelope();
+    assert.equal(env.status, 'success');
+    assert.match(env.summary, /^reopened:/);
+  } finally { cap.restore(); await rm(dir, { recursive: true, force: true }); }
 });
 
 test('task --json: 기존 task 재활성화 → status success + summary activated:', async () => {

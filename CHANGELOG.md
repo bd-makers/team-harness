@@ -18,6 +18,25 @@ modified: 2026-09-06
 
 ## [Unreleased]
 
+### Added
+- **완료 task 상태 만료 (reopen 전이).** `done`된 task를 `harness-team task <name>`으로 다시
+  활성화하면 그 완료가 만료됩니다 — `meta.json`의 `status`가 `open`으로 돌아가고 `closedAt`이
+  풀리며, 만료 시각이 새 키 `reopenedAt`에 기록됩니다. 출력은 `activated:`가 아니라 `reopened:`
+  입니다(`--json`의 summary도 동일). 지금까지는 재활성화가 `active.json.switchedAt`만 갱신해
+  **작업 중인 활성 task가 원장에서 "✅ done"으로 보였습니다.** 열린 task 사이의 평범한
+  재활성화는 종전대로 meta를 건드리지 않습니다.
+
+### Changed
+- **`done` 가드의 판정 창이 `reopenedAt || firstActivatedAt`에서 시작합니다.** 만료된 완료를
+  다시 닫을 때 새 라운드의 증거만 세기 위해서입니다 — 옛 `firstActivatedAt`을 그대로 쓰면
+  `git log --since`가 지난 라운드까지 훑어 "커밋 0개" 가드가 통과 전용이 됩니다.
+  `reopenedAt`은 만료가 일어날 때만 생기므로 기존 task의 meta 형태와 판정은 그대로입니다.
+  `firstActivatedAt`의 "생성 시 1회만 기록" 불변식도 유지됩니다.
+- **SessionStart 재개 후보 판정의 정본이 `meta.status`가 됐습니다.** 지금까지는 plan의 열린
+  체크박스만 봤기 때문에 `done --force`로 닫았거나 다이어그램 옵트인 규약대로 미실행 단계를
+  열어 둔 채 닫은 task가 **영구히 재개 후보로 떴습니다.** meta가 없는 구 task는 종전대로
+  체크박스만으로 판정합니다(하위 호환).
+
 ## [0.31.0] - 2026-09-06
 
 ### Added
