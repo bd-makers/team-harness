@@ -4,7 +4,7 @@
 done-status-expiry
 
 ## Last Commit (2026-09-06)
-5b126ac feat(task): 완료 task 상태 만료 — reopen 전이로 meta.status를 정본화
+d8b3fef test(task): reopen 전이의 미검증 표면 3곳 보강 + 명령 문서에 reopened 분기 추가
 
 ## Full Context
 → docs/hslee/done-status-expiry/done-status-expiry-handoff.md

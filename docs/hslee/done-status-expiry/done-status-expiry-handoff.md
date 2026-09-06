@@ -19,3 +19,12 @@ AGENTS.md                                          | 14 +++-
  tests/session-context.test.mjs                     | 47 +++++++++++
  tests/summary.test.mjs                             | 73 ++++++++++++++++
  15 files changed, 421 insertions(+), 14 deletions(-)
+
+## 2026-09-06T10:03:15.539Z — d8b3fef test(task): reopen 전이의 미검증 표면 3곳 보강 + 명령 문서에 reopened 분기 추가
+commands/harness-task.md                           |  3 +++
+ .../done-status-expiry-handoff.md                  | 18 ++++++++++++++++++
+ docs/hslee/hslee-handoff.md                        |  9 ++++-----
+ tests/agent-files.test.mjs                         |  7 +++++++
+ tests/done-guard.test.mjs                          | 22 ++++++++++++++++++++++
+ tests/observation-commands.test.mjs                | 16 +++++++++++++++-
+ 6 files changed, 69 insertions(+), 6 deletions(-)
