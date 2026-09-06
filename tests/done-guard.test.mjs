@@ -753,13 +753,35 @@ test('firstActivatedAt이 ISO8601이 아니면 창으로 쓰지 않고 degrade�
   }
 });
 
-// 창 해석이 reopenedAt을 우선하므로, 그 값이 깨졌을 때의 규칙도 firstActivatedAt과 같아야 한다:
-// 다른 시각으로 대체하지 않고 시각 비교를 포기한다. firstActivatedAt으로 조용히 되돌리면
-// 창이 지난 라운드까지 넓어져 만료의 의미가 사라진다.
-test('reopenedAt이 ISO8601이 아니면 창으로 쓰지 않고 degrade한다 (firstActivatedAt으로 되돌리지 않는다)', async () => {
+// 창 시작점이 깨졌을 때의 규칙: **더 넓지만 유효한 창으로 내려가고, 창을 아예 버리지 않는다.**
+// 창이 null이면 리뷰 마커의 신선도 검사도 커밋·테스트 시각 가드도 전부 건너뛴다(fail-open) —
+// 손상된 기계 상태가 가드를 무력화하면 안 된다. 유효한 firstActivatedAt이 남아 있으면 그것이
+// 가장 약하지만 여전히 진짜인 창이다. (2026-09-06 Codex 리뷰 P2)
+test('reopenedAt이 깨졌으면 firstActivatedAt 창으로 내려간다 (fail-open 금지)', async () => {
   const { dir } = await makeEvidenceFixture({
     spec: REVIEW_ONLY_SPEC,
     firstActivatedAt: ago(4 * 3_600_000),
+    reopenedAt: 'not-a-date',
+    switchedAt: ago(30 * 60_000),
+    commitDate: ago(2 * 3_600_000),
+    files: {
+      // 리뷰 마커는 30일 전 — firstActivatedAt 창(4시간) 밖이다.
+      'docs/tester/demo/demo-artifact.md':
+        taskArtifactTemplate('demo') + `\n- 실제 결과\n\n<!-- harness:review kind=codex at=${ago(30 * 86_400_000)} -->\n`,
+    },
+  });
+  try {
+    const { logs, exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1, 'blocks — 창을 버리면 이 낡은 마커가 통과한다');
+    assert.ok(logs.some(l => l.includes('리뷰 마커')), `창 밖 마커를 계속 잡아야 한다: ${JSON.stringify(logs)}`);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 내려갈 창조차 없을 때만 시각 비교를 포기한다 — 그 경우는 구 task와 구분되지 않는다.
+test('reopenedAt·firstActivatedAt 둘 다 깨졌으면 그때 비로소 degrade한다', async () => {
+  const { dir } = await makeEvidenceFixture({
+    spec: REVIEW_ONLY_SPEC,
+    firstActivatedAt: 'also-not-a-date',
     reopenedAt: 'not-a-date',
     switchedAt: ago(30 * 60_000),
     commitDate: ago(2 * 3_600_000),
@@ -770,8 +792,7 @@ test('reopenedAt이 ISO8601이 아니면 창으로 쓰지 않고 degrade한다 (
   });
   try {
     const { logs } = await runDoneCapture(dir);
-    assert.ok(logs.some(l => l.startsWith('done:')), `proceeds — 창을 모르면 시각 가드를 건너뛴다: ${JSON.stringify(logs)}`);
-    assert.ok(!logs.some(l => l.includes('커밋이 0개')), '깨진 값을 창으로 해석하지 않는다');
+    assert.ok(logs.some(l => l.startsWith('done:')), `proceeds — 유효한 창이 하나도 없으면 시각 비교를 포기한다: ${JSON.stringify(logs)}`);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

@@ -195,6 +195,38 @@ test('열려 있는 task의 재활성화는 meta를 건드리지 않는다 (acti
   }
 });
 
+// meta.json이 없는 구 task도 완료 상태를 가진다 — 원장·handoff에서 추론될 뿐이다.
+// 그쪽을 만료시키지 못하면 레거시 설치에서 이 기능이 통째로 없는 것과 같다:
+// 재활성화해도 원장은 계속 "✅ done"이다. (2026-09-06 Codex 리뷰 P2)
+test('meta.json이 없는 완료 task도 재활성화하면 만료된다 (추론값을 굳혀 open으로)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-summary-'));
+  try {
+    const td = join(dir, 'docs', 'tester', 'old');
+    await mkdir(td, { recursive: true });
+    await writeFile(join(td, 'old-spec.md'), '# old — Spec\n');
+    await writeFile(join(td, 'old-plan.md'), '# old — Plan\n- [x] 끝\n');
+    await writeFile(join(td, 'old-handoff.md'), '## 2026-01-01 — 완료\n');
+    await writeFile(join(dir, 'docs', 'task_summary.md'),
+      '| User | Task | Status | Created |\n|--|--|--|--|\n| tester | old | ✅ done | 2026-01-01 |\n');
+
+    await runTask({ targetDir: dir, flags: { member: 'tester' }, taskArgs: ['old'] });
+
+    const meta = await readTaskMeta(dir, 'tester', 'old');
+    assert.ok(meta, 'meta가 만들어져야 한다 — 추론에 계속 기대면 원장이 done으로 남는다');
+    assert.equal(meta.status, 'open', '완료가 만료되어야 한다');
+    assert.equal(meta.closedAt, null);
+    assert.ok(meta.reopenedAt, '만료 시각이 남아야 한다');
+    assert.equal(meta.created, '2026-01-01', 'created는 원장에서 복원한 값을 보존한다 (지어내지 않는다)');
+    assert.equal(meta.firstActivatedAt, undefined,
+      '알 수 없는 창 시작점을 지어내지 않는다 — 구 task는 시각 가드를 건너뛴다');
+
+    const tasks = await collectTasks(dir);
+    assert.equal(tasks.find(t => t.task === 'old').status, 'open', '원장도 open으로 렌더되어야 한다');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('렌더는 결정론적이다 — 같은 입력이면 같은 바이트', () => {
   const tasks = [
     { user: 'chad', task: 'zeta', created: '2026-08-05', status: 'done' },

@@ -28,3 +28,8 @@ commands/harness-task.md                           |  3 +++
  tests/done-guard.test.mjs                          | 22 ++++++++++++++++++++++
  tests/observation-commands.test.mjs                | 16 +++++++++++++++-
  6 files changed, 69 insertions(+), 6 deletions(-)
+
+## 2026-09-06T10:03:40.050Z — 9f50b11 chore(task): post-commit 훅이 갱신한 handoff 반영
+docs/hslee/done-status-expiry/done-status-expiry-handoff.md | 9 +++++++++
+ docs/hslee/hslee-handoff.md                                 | 2 +-
+ 2 files changed, 10 insertions(+), 1 deletion(-)
