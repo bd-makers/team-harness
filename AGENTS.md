@@ -150,6 +150,23 @@
   갱신은 옵트인이며, 절차·산출물 계약은 ship 명령 문서가 정본이다(PR/MR 생성은 별도 지시).
 - **완료**: plan 전체 완료 감지 또는 사용자 신호 → AskUserQuestion → `harness-team done`
 
+### plan.md 계약
+
+plan 초안의 writer는 하네스 밖에 있다 — `superpowers:writing-plans`가 설치돼 있으면 그것으로 쓰고,
+없으면 직접 쓴다. 도구가 없다고 멈추지 않는다(다이어그램 옵트인과 같은 preflight 계약).
+어느 경로로 쓰든 `<name>-plan.md`는 아래 계약을 지킨다 — 산문이 아니라 다른 명령의 입력이기 때문이다.
+
+- **`## 단계`의 줄머리 체크박스는 기계 입력이다** — 미완 `- [ ]`가 하나라도 남으면 `harness-team done`이
+  완료를 막고, SessionStart의 재개 후보 판정도 이 값을 본다. 아직 하지 않은 단계를 미리 `- [x]`로 켜지 않는다.
+- **다이어그램 옵트인 체크박스는 그 자체가 상태다** — 지우지 말고 사유를 붙여 닫는다(위 task 워크플로우).
+- **`## Ontology 변경 로그`** — 개념이 새로 정의되거나 의미가 바뀌면 한 줄 남긴다. spec.md의 Ontology 절을
+  갱신할 트리거다.
+- **spec의 선언이 plan 단계와 물린다** — `## Boundary contracts`는 checkbox 완료 직전 `boundary check`가,
+  `## Done evidence`는 종결 시 `done` 가드가 읽는다.
+
+각 항목의 정본은 원 위치다(다이어그램은 harness-task 명령 문서, 나머지는 spec 템플릿과 `done` 가드).
+이 절은 plan.md 관점에서 흩어진 계약을 모아 두는 색인이다.
+
 ### 코드 리뷰 기준
 중요한 변경 완료 시 아래 항목을 순서대로 확인하고 결과를 사용자에게 보고합니다:
 

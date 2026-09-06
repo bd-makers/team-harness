@@ -25,7 +25,9 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash
 
 ### Phase 2: 계획 수립
 1. 코드베이스 탐색으로 영향 범위 파악
-2. `<name>-plan.md`에 단계별 체크리스트 작성
+2. `<name>-plan.md`에 단계별 체크리스트 작성 — 초안은 `superpowers:writing-plans`가 설치돼 있으면
+   그것으로 쓰고, 없으면 직접 쓴다. 형식은 `AGENTS.md`의 **plan.md 계약**을 따른다
+   (체크박스가 `done` 가드의 입력이다 — 하지 않은 단계를 미리 `- [x]`로 켜지 않는다).
 
 ### Phase 3: 구현
 1. 단계별로 구현 + `<name>-plan.md` 체크리스트 갱신

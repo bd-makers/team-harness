@@ -18,6 +18,16 @@ modified: 2026-09-06
 
 ## [Unreleased]
 
+### Changed
+- **plan 초안의 writer와 plan.md 형식 계약을 문서에 고정했습니다.** `AGENTS.md`에 `### plan.md 계약`
+  절을 새로 두어 흩어져 있던 네 가지를 한곳에 모았습니다 — `## 단계`의 체크박스가 `harness-team done`
+  가드와 SessionStart 재개 후보 판정의 입력이라는 것, 다이어그램 옵트인 체크박스는 그 자체가 상태라
+  지우면 안 된다는 것, `## Ontology 변경 로그`, spec의 `## Boundary contracts`·`## Done evidence`
+  선언이 plan 단계와 물리는 지점. `/harness-interview`의 게이트 통과 인계 문구는 plan writer로
+  `superpowers:writing-plans`를 명시하고 미설치 시 직접 작성하는 폴백을 계약으로 적었습니다.
+  `harness-team task`의 안내 라인도 `/harness-interview → plan.md 작성 → 구현`으로 plan 단계를
+  드러냅니다. 새 명령·새 CLI 하위명령은 없습니다.
+
 ## [0.32.1] - 2026-09-06
 
 ### Changed
