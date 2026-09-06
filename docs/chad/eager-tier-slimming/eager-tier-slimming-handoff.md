@@ -78,3 +78,10 @@ AGENTS.md                                                    | 10 ++++++----
  templates/AGENTS.md.hbs                                      | 10 ++++++----
  templates/CLAUDE.md.hbs                                      |  8 +++-----
  8 files changed, 33 insertions(+), 21 deletions(-)
+
+## 2026-09-06T17:25:17.352Z — d70a204 docs(task): eager-tier-slimming 전후 바이트·정보 소실 대조표·학습 기록
+docs/chad/chad-handoff.md                          |  2 +-
+ .../eager-tier-slimming-artifact.md                | 48 ++++++++++++++++++++++
+ .../eager-tier-slimming-handoff.md                 | 11 +++++
+ .../eager-tier-slimming-plan.md                    |  4 +-
+ 4 files changed, 62 insertions(+), 3 deletions(-)

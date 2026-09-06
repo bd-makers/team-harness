@@ -4,7 +4,7 @@
 eager-tier-slimming
 
 ## Last Commit (2026-09-06)
-932a3e5 fix(agents): T3이 지운 다이어그램 계약 문장 복원 + 5-A Why 압축
+d70a204 docs(task): eager-tier-slimming 전후 바이트·정보 소실 대조표·학습 기록
 
 ## Full Context
 → docs/chad/eager-tier-slimming/eager-tier-slimming-handoff.md
