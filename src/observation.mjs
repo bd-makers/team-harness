@@ -30,6 +30,10 @@ export function emitObservation(env) {
 // escalation packet (PDF §V.A "Escalation Is Not Failure") — 결정을 넘길 때 함께 보내는 5항목.
 // 값을 손으로 만들던 생산자마다 필드를 빠뜨릴 수 있어 강제 지점을 이 함수 하나로 모은다.
 // buildEnvelope는 error를 그대로 통과시킨다(pass-through) — 강제는 여기서만 한다.
+//
+// 이 기계용 패킷은 CLAUDE.md §5-A 의 **사람용 escalation 패킷과 같은 목적이되 항목이 하나씩 다르다.**
+// 여기는 "기다림의 비용" 대신 `stop_condition` 을 담고, 여기의 `alternatives` 는 "지금 취할 수 있는
+// 다른 행동"을 뜻한다 — CLI 거부 시점에는 시도 이력이 없어 사람용의 "시도한 대안"과 의미가 갈린다.
 export function buildErrorPacket({ cause, retry, alternatives = [], safeDefault, stop }) {
   const causeOk = Array.isArray(cause)
     ? cause.length > 0 && cause.every(c => typeof c === 'string' && c.length > 0)

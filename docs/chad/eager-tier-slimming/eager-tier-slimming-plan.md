@@ -196,7 +196,7 @@ node --test tests/agent-files.test.mjs
 한도 수치(6 KiB·100행·capsule 3개)는 남긴다 — `context check`의 실패 메시지가 알려주지만,
 쓰기 전에 알아야 하는 값이다. 줄일 것은 갱신 시점 나열과 금지 항목의 예시다.
 
-- [x] **Step 3: CLAUDE.md `### 5-A` 압축 — 미실행(Step 2에서 목표 달성)**
+- [x] **Step 3: CLAUDE.md `### 5-A`의 Why 문단 압축** — T3 복원으로 다시 미달이 되어 실제 수행했다
 
 **항목 이름 다섯(결정 요청·권장안·시도한 대안·기다림의 비용·안전 기본값)은 남긴다.**
 줄일 것은 `**Why:**`/`**How to apply:**` 문단이다 — 그 근거는 `docs/decisions.md`와
@@ -213,7 +213,7 @@ git add -u && git commit -m "docs(agents): 잔여 산문 압축 — 목표 소�
 **Files:**
 - Create/Modify: `docs/chad/eager-tier-slimming/eager-tier-slimming-artifact.md`
 
-- [ ] **Step 1: 검증 3종을 돌린다**
+- [x] **Step 1: 검증 3종을 돌린다**
 
 ```bash
 npm test && node bin/harness-team.mjs doctor && npm run docs:check

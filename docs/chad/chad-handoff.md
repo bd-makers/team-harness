@@ -4,7 +4,7 @@
 eager-tier-slimming
 
 ## Last Commit (2026-09-06)
-830981f docs(agents): D 규범 요약을 압축 — 전문은 decisions.md
+d32b051 docs(agents): TCC 절 산문 압축 — 목표 소계 달성 (GREEN)
 
 ## Full Context
 → docs/chad/eager-tier-slimming/eager-tier-slimming-handoff.md

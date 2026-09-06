@@ -119,10 +119,12 @@ SSOT는 여전히 네 파일이며, TCC는 거기서 파생된 현재 working se
 
 ### task 워크플로우
 - **시작**: `harness-team task <name>` — 생성 또는 활성화
-- **다이어그램(옵트인)**: 신규 task 생성(`created:`) 직후 **1회만** 묻는다. **plan.md에 그 단계가
-  있는지가 곧 상태다** — 전용 설정 키·상태 파일은 없다. 도구가 없으면 task를 실패시키지 말고,
-  plan의 그 단계를 **지우지 말고** 사유를 붙여 닫는다(지우면 옵트인 사실이 사라지고, 열어 두면
-  `done` 가드가 막는다). 질문·분기·산출물·기록의 상세는 harness-task 명령 문서가 정본이다.
+- **다이어그램(옵트인)**: 신규 task 생성(`created:`) 직후 **1회만** 묻는다 — 기존 task를 다시
+  활성화할 때는 묻지 않는다. **plan.md에 그 단계가 있는지가 곧 상태다** — 전용 설정 키는 없다.
+  도구가 없으면 task를 실패시키지 말고 그 단계를 **지우지 말고** `- [x] … — 미실행(도구 없음)`처럼
+  사유를 붙여 닫는다(지우면 옵트인 사실이 사라지고, 열어 두면 `done` 가드가 막는다).
+  산출물 `<name>-diagram.html`은 **자립형 inline SVG**로 쓴다(Obsidian이 script를 제거한다).
+  SSOT 4파일이 아니며 옵트인이라 없는 task가 정상이다. 상세는 harness-task 명령 문서가 정본이다.
 - **진행**: `<name>-plan.md` 체크리스트 항목 완료 시 `- [x]`로 갱신
 - **경계 계약**: spec의 `## Boundary contracts` JSON 선언이 있으면 plan checkbox 완료 직전에
   `harness-team boundary check`가 생산자·소비자 JSON Schema의 필수 필드와 기본 type을 대조한다.

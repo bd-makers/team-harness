@@ -59,3 +59,11 @@ AGENTS.md                                                   | 13 +++++--------
  docs/chad/eager-tier-slimming/eager-tier-slimming-plan.md   |  8 ++++----
  templates/AGENTS.md.hbs                                     | 13 +++++--------
  5 files changed, 23 insertions(+), 21 deletions(-)
+
+## 2026-09-06T17:20:47.582Z — d32b051 docs(agents): TCC 절 산문 압축 — 목표 소계 달성 (GREEN)
+AGENTS.md                                                    | 12 +++++-------
+ docs/chad/chad-handoff.md                                    |  2 +-
+ docs/chad/eager-tier-slimming/eager-tier-slimming-handoff.md |  8 ++++++++
+ docs/chad/eager-tier-slimming/eager-tier-slimming-plan.md    |  8 ++++----
+ templates/AGENTS.md.hbs                                      | 12 +++++-------
+ 5 files changed, 23 insertions(+), 19 deletions(-)
