@@ -4,6 +4,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { exists, writeText } from '../fsx.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
+import { hasDoneMarker } from '../handoff-marker.mjs';
 
 const pexec = promisify(execFile);
 
@@ -51,7 +52,7 @@ export async function inferLegacyMeta(targetDir, user, task, ledger) {
   const handoff = await readTextOrNull(join(targetDir, 'docs', user, task, `${task}-handoff.md`));
 
   const done = Boolean(
-    (handoff && /^##\s.*—\s*완료\s*$/m.test(handoff)) ||
+    (handoff && hasDoneMarker(handoff)) ||
     (summaryRow && summaryRow.done) ||
     ledger.completedNames.has(key(user, task))
   );

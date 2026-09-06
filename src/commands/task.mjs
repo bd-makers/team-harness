@@ -6,6 +6,7 @@ import { detectMember } from '../member.mjs';
 import { exists, writeText } from '../fsx.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 import { readTaskMeta, writeTaskMeta, taskMetaTemplate, inferLegacyMeta, readLedger } from './summary.mjs';
+import { renderDoneMarker } from '../handoff-marker.mjs';
 
 const pexec = promisify(execFile);
 
@@ -681,7 +682,7 @@ export async function runDone(ctx) {
   const handoffPath = join(ctx.targetDir, 'docs', user, task, `${task}-handoff.md`);
   const ts = new Date().toISOString();
 
-  await appendFile(handoffPath, `\n## ${ts} — 완료\n\n태스크 종료.\n`);
+  await appendFile(handoffPath, renderDoneMarker(ts));
 
   const meta = (await readTaskMeta(ctx.targetDir, user, task)) || { user, task, created: today() };
   await writeTaskMeta(ctx.targetDir, user, task, { ...meta, user, task, status: 'done', closedAt: ts });
