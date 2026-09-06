@@ -19,7 +19,7 @@
 - [x] 7. `listIncompleteTasks`에 status 필터 구현 → 6 통과
 - [x] 8. 전체 검증 — `npm run test` 무회귀 + `doctor` 통과
 - [x] 9. 문서 갱신 — AGENTS.md의 meta 설명에 `reopenedAt`·만료 규약 반영, CHANGELOG `[Unreleased]`
-- [ ] 10. Codex read-only 리뷰(`review: required` 선언) → 발견 반영 → artifact `## Reviews` 기록
+- [x] 10. Codex read-only 리뷰(`review: required` 선언) → 발견 반영 → artifact `## Reviews` 기록
 - [ ] 11. artifact 결과·학습 기록 → `harness-team done`
 
 ## Ontology 변경 로그

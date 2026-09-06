@@ -33,3 +33,12 @@ commands/harness-task.md                           |  3 +++
 docs/hslee/done-status-expiry/done-status-expiry-handoff.md | 9 +++++++++
  docs/hslee/hslee-handoff.md                                 | 2 +-
  2 files changed, 10 insertions(+), 1 deletion(-)
+
+## 2026-09-06T10:15:47.441Z — ef91475 fix(task): Codex 리뷰 P2 3건 반영 — fail-open 제거·레거시 만료·쓰기 순서
+.../done-status-expiry-artifact.md                 |  1 -
+ .../done-status-expiry-handoff.md                  |  5 +++
+ docs/hslee/hslee-handoff.md                        |  2 +-
+ src/commands/task.mjs                              | 44 +++++++++++++++-------
+ tests/done-guard.test.mjs                          | 33 +++++++++++++---
+ tests/summary.test.mjs                             | 32 ++++++++++++++++
+ 6 files changed, 96 insertions(+), 21 deletions(-)
