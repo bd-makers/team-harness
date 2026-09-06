@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+handoff-marker-typing
 
-## Last Completed Task (2026-09-06)
-`done-status-expiry` — done
+## Last Commit (2026-09-06)
+a539e99 feat(handoff): 완료 마커를 단일 선언으로 타입화
 
 ## Full Context
-→ docs/hslee/done-status-expiry/done-status-expiry-handoff.md
+→ docs/hslee/handoff-marker-typing/handoff-marker-typing-handoff.md

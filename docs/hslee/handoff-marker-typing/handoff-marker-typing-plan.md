@@ -17,9 +17,9 @@
 - [x] 뮤테이션 검증: `renderDoneMarker` 의 `—` 를 `-` 로 바꾸면 테스트가 **실패**하는지 확인 후 복원
       (착수 전 probe 에서 609개 전부 통과했던 바로 그 변경)
 - [x] 전체 스위트 `npm run test` 통과 + `node bin/harness-team.mjs doctor` 통과
-- [ ] `/harness-review codex` 실행 → 결과를 artifact.md `## Reviews` 에 마커와 함께 기록
-- [ ] 리뷰 발견 반영 (있으면) 후 재검증
-- [ ] artifact.md `## 결과`·`## Learnings` 작성 → `harness-team done`
+- [x] `/harness-review codex` 실행 → 결과를 artifact.md `## Reviews` 에 마커와 함께 기록
+- [x] 리뷰 발견 반영 (있으면) 후 재검증
+- [x] artifact.md `## 결과`·`## Learnings` 작성 → `harness-team done`
 
 ## Ontology 변경 로그
 
