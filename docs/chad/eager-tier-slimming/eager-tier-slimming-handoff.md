@@ -85,3 +85,8 @@ docs/chad/chad-handoff.md                          |  2 +-
  .../eager-tier-slimming-handoff.md                 | 11 +++++
  .../eager-tier-slimming-plan.md                    |  4 +-
  4 files changed, 62 insertions(+), 3 deletions(-)
+
+## 2026-09-06T17:30:42.006Z — d4914b4 chore(task): post-commit 훅이 갱신한 handoff 반영
+docs/chad/chad-handoff.md                                    | 2 +-
+ docs/chad/eager-tier-slimming/eager-tier-slimming-handoff.md | 7 +++++++
+ 2 files changed, 8 insertions(+), 1 deletion(-)

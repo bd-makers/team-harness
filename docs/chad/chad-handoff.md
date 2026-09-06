@@ -4,7 +4,7 @@
 eager-tier-slimming
 
 ## Last Commit (2026-09-06)
-d70a204 docs(task): eager-tier-slimming 전후 바이트·정보 소실 대조표·학습 기록
+d4914b4 chore(task): post-commit 훅이 갱신한 handoff 반영
 
 ## Full Context
 → docs/chad/eager-tier-slimming/eager-tier-slimming-handoff.md

@@ -229,14 +229,14 @@ Expected: 소계 테스트 PASS · doctor 무경고 · docs:check 최신
 
 절별 before/after와 소계. 측정은 spec의 표와 같은 방법으로 한다.
 
-- [ ] **Step 4: 외부 리뷰를 받는다** (Done evidence `review: required`)
+- [x] **Step 4: 외부 리뷰를 받는다** (Done evidence `review: required`)
 
 ```bash
 /harness-review codex
 ```
 발견은 재현·판별 후 반영하고, 결과를 artifact의 `## Reviews`에 날짜와 함께 남긴다.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add -u && git commit -m "docs(task): eager-tier-slimming 검증 결과·대조표 기록"
