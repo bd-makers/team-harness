@@ -259,6 +259,32 @@ function statsCells(s) {
   return [num(s.started), num(s.finished), num(s.failed), num(s.denied), pct(s.failure_rate), num(s.duration_p95_ms), num(s.interrupted)];
 }
 
+// Stage-6 loopback as a nudge, not an emitter: a fired wire is a problem statement waiting for a
+// task, so both output paths (text, --json next_actions) say how to open one. It only suggests —
+// the thresholds are still uncalibrated against real usage, and auto-creating a task would mint
+// false-positive tasks that the done guard then has to be talked out of.
+//
+// The task name keys on the day of the *event* the wire reports, not the day observe ran —
+// repeat-failure-3x scans the whole window, so keying on the run day would suggest a fresh
+// name every day for the same old incident and defeat the "re-run converges on `activated:`"
+// contract (codex P2). failure-rate-2x is today's metric, so its detail.day is that day already;
+// repeat-failure-3x takes the top-ranked hit's last failure, bucketed by UTC instant like by_day.
+function wireDay(wire, fallback) {
+  if (wire.id === 'failure-rate-2x' && wire.detail && wire.detail.day) return wire.detail.day;
+  if (wire.id === 'repeat-failure-3x') {
+    const top = wire.detail && wire.detail.hits && wire.detail.hits[0];
+    const at = top ? Date.parse(top.last_at) : NaN;
+    if (Number.isFinite(at)) return utcDay(new Date(at));
+  }
+  return fallback;
+}
+
+export function observeLoopbackNudge(fired, fallbackDay) {
+  const ids = fired.map(wire => wire.id);
+  const day = wireDay(fired[0], fallbackDay);
+  return `트립와이어를 task로 이어가려면: harness-team task observe-${ids[0]}-${day} 후 spec 목적 절에 발화 id·수치(${ids.join(', ')})를 "오늘 무엇이 안 되는가" 문제 진술로 옮긴다 — 자동 생성은 하지 않는다`;
+}
+
 export function renderObserveText(result, { records, skippedLines }) {
   const lines = [`observe: ${result.window.days}일 창 (${result.window.from} → ${result.window.to}) · 레코드 ${records} · 건너뜀 ${skippedLines}`];
   for (const wire of result.trip_wires) {
@@ -271,6 +297,8 @@ export function renderObserveText(result, { records, skippedLines }) {
       lines.push(`${mark} ${wire.id}: ${wire.status}${hits ? ` — ${hits}` : ''}`);
     }
   }
+  const firedWires = result.trip_wires.filter(wire => wire.fired);
+  if (firedWires.length) lines.push(`next: ${observeLoopbackNudge(firedWires, result.window.to)}`);
   const section = (title, rows) => {
     lines.push('', title, HEADER);
     for (const [label, stats] of rows) lines.push(statsRow(label, statsCells(stats)));
@@ -317,7 +345,12 @@ export async function runObserve(ctx) {
       command: 'observe',
       status,
       summary: fired.length ? `트립와이어 발화: ${fired.map(wire => wire.id).join(', ')}` : `${read.records.length}개 레코드, 트립와이어 없음`,
-      nextActions: fired.length ? [`해당 세션 로그(${OBSERVABILITY_BASE}/<day>/<session_ref>-NNN.jsonl)를 열어 실패한 도구 호출을 추적`] : [],
+      nextActions: fired.length
+        ? [
+          `해당 세션 로그(${OBSERVABILITY_BASE}/<day>/<session_ref>-NNN.jsonl)를 열어 실패한 도구 호출을 추적`,
+          observeLoopbackNudge(fired, result.window.to),
+        ]
+        : [],
       extra: {
         window: result.window,
         scorecard: { by_day: result.by_day, by_task: result.by_task, by_category: result.by_category },

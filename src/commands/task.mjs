@@ -55,6 +55,8 @@ export function taskSpecTemplate(name) {
   return `# ${name} — Spec
 
 ## 목적 / 요구사항
+*문제(오늘 무엇이 안 되는가) → 영향받는 사용자·시스템 → 기대 결과 → 제약 순으로 쓴다.
+답 없는 질문은 요구가 아니다 — \`## 참고\` 절에 \`- (open) …\`으로 남긴다.*
 
 
 ## 설계 / 접근

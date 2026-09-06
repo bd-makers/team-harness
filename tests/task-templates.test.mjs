@@ -22,6 +22,17 @@ test('spec 템플릿은 Ontology 섹션을 포함한다', () => {
   assert.match(out, /## Ontology/);
 });
 
+test('spec 템플릿 목적 절은 문제→기대 결과 안내문을 담고, 안내문은 목록 항목이 아니다', () => {
+  const out = taskSpecTemplate('demo');
+  const section = out.slice(out.indexOf('## 목적 / 요구사항'), out.indexOf('## 설계 / 접근'));
+  assert.match(section, /\*문제\(오늘 무엇이 안 되는가\)/);
+  assert.match(section, /기대 결과/);
+  assert.match(section, /`## 참고` 절에 `- \(open\) …`/);
+  // sim 출처 태그 규칙(tests/sim/rules.mjs)은 요구사항 절의 **목록 항목**만 센다 —
+  // 안내문이 목록이면 "태그 없는 요구"로 오탐된다.
+  assert.doesNotMatch(section, /^\s*(?:[-*]|\d+\.)\s/m);
+});
+
 test('artifact 템플릿은 Learnings 섹션을 포함한다', () => {
   const out = taskArtifactTemplate('demo');
   assert.match(out, /## Learnings/);

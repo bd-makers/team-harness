@@ -336,6 +336,10 @@ All checks passed.
 observe-tools 훅이 쓴 `.harness/observability/` JSONL을 읽어 일별·task별·도구 분류별 호출·실패·거부·p95를 보고하고,
 트립와이어 2종(실패·거부율이 직전 날들 평균의 2배 / 한 세션에서 같은 도구 3회 실패)을 판정합니다. read-only이며 발화 시 exit 1입니다.
 도구 이름·세션 id는 HMAC 참조라 복원하지 않고, task 참조만 로컬 `docs/<member>/<name>/`로 되돌립니다.
+발화하면 텍스트 출력의 `next:` 줄과 `--json`의 `next_actions` 둘째 줄에 **루프백 nudge**가 붙습니다 —
+`harness-team task observe-<id>-<day>`로 task를 열고 spec 목적 절에 발화 id·수치를 문제 진술로 옮기라는
+제안이며, task를 자동 생성하지는 않습니다(임계값이 실사용 보정 전). `<day>`는 실행일이 아니라 발화 사건의
+UTC 날짜라 같은 사건은 재실행해도 같은 이름을 받습니다.
 
 ```bash
 /harness-observe                        # 기본 7일 창

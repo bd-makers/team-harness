@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-04-14
-modified: 2026-06-10
+modified: 2026-09-06
 ---
 
 # docs/ — 팀원·task별 작업 문서
@@ -62,6 +62,8 @@ harness-team context check    # 활성 task의 Context Card 검사 (수정하지
 
 - **`<name>-spec.md`**: 왜/무엇을. 사람이 먼저 작성 후 AI가 참고.
   Ambiguity 자가진단(4항목)과 Ontology 섹션을 포함 — 진입 게이트의 입력이 된다.
+  목적 절은 문제(오늘 무엇이 안 되는가) → 영향받는 사용자·시스템 → 기대 결과 → 제약 순으로 쓴다.
+  답 없는 질문은 `## 참고` 절에 `- (open) …`으로 남기고, 게이트 통과 전에 답하거나 `(open → <대상>)`으로 이월한다.
 - **`<name>-plan.md`**: 어떻게. 세션 시작/종료마다 체크리스트(`- [ ]` → `- [x]`)를 갱신.
 - **`<name>-handoff.md`**: 세션 간 인수인계 메모. commit 시 post-commit hook이 자동 갱신.
 - **`<name>-artifact.md`**: 완료 후 남는 증거. `task done` 시 git diff/log/test 결과가,
