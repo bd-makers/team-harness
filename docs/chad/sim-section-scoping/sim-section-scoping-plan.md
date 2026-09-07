@@ -20,8 +20,13 @@ L5 sim 스코어러(`tests/sim/rules.mjs`)의 절 범위 절단을 레벨 인식
 - [x] 필수 검증 3종 — `npm test`(fail 0, 이 파일 27→29) · `doctor` green · `docs:check` 최신
 - [x] sim 리포트에 Phase 3 격리 판별 + 적용 결과 기록
       (`../harness-playground/sim-reports/agentloop-2026-09-07T0401.md`)
-- [ ] 외부 read-only 리뷰(codex, D6) 실행 후 `artifact.md` `## Reviews`에 마커와 함께 기록
-      — spec `## Done evidence`가 `review: required`라 이 단계 없이는 `done`이 막힌다
+- [x] 외부 read-only 리뷰(codex `gpt-5.6-sol`, D6) 실행 후 `artifact.md` `## Reviews`에 마커와
+      함께 기록 — 판정 CHANGES REQUESTED(P2 1건·P3 1건·오탐 0), 가드가 마커를 인식함
+- [x] **P2 조치** — 절 경계 계산을 `sectionRange`(index 반환) 한 곳으로 통합해
+      `sectionBody`·`forceAllChecked`가 공유. 인라인 사본 0개. 회귀 테스트 1건
+      (codex fixture로 `0/2 → 2/2`, 같은 레벨 다음 절은 안 건드림)
+- [x] **P3 조치** — H3 깊이 커버리지 1건 추가 (H3 절이 H4 하위를 포함 · H3 동레벨로는 안 샘)
+- [x] 조치 후 필수 검증 3종 재실행 + 커밋 (훅이 만든 handoff dirt도 이때 함께 접힌다)
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

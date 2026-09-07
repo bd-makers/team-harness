@@ -406,6 +406,52 @@ test('절 범위 — 자가진단 절도 하위 제목 너머의 체크박스를
   assert.match(byLabel(signals, '인계').note, /자가진단 1\/2 체크/);
 });
 
+test('절 범위 — forceAllChecked는 ambiguityCounts와 같은 경계를 쓴다 (codex P2 회귀)', () => {
+  // 1581e2f는 sectionBody만 레벨 인식으로 바꿔 forceAllChecked의 인라인 사본과 경계가 갈렸다.
+  // 그 결과 H3 하위절의 체크박스는 켜지지 않는데 카운트에는 잡혀 total/total 에 도달하지 못했고,
+  // "전 항목 체크에서도 인계하는가"(P1 회귀) 시나리오가 조용히 안 태워졌다.
+  const spec = [
+    '# t — Spec', '',
+    '## 목적 / 요구사항', '- 뭔가 (interview)', '',
+    '## Ambiguity 자가진단',
+    '- [ ] **Goal 명확도**', '',
+    '### 근거',
+    '- [ ] **Success 기준**', '',
+    '## 참고', '- [ ] 다른 절이라 켜지면 안 된다', '',
+  ].join('\n');
+
+  assert.match(byLabel(score({ specBody: spec }), '인계').note, /자가진단 0\/2 체크/);
+
+  const forced = forceAllChecked(spec);
+  assert.match(byLabel(score({ specBody: forced }), '인계').note, /자가진단 2\/2 체크/);
+  // 경계는 여전히 지켜진다 — 같은 레벨의 다음 절 체크박스는 건드리지 않는다.
+  assert.ok(forced.includes('- [ ] 다른 절이라 켜지면 안 된다'));
+});
+
+test('절 범위 — H3 절도 H4 하위를 포함하고 H3 동레벨로는 새지 않는다 (codex P3)', () => {
+  const withSub = score({
+    specBody: [
+      '# t — Spec', '',
+      '### 목적 / 요구사항',
+      '#### 세부', '- **R1** 재시도 3회 (interview)', '',
+      '## Ambiguity 자가진단', '- [x] a', '',
+    ].join('\n'),
+    configRaw: CONFIG_FULL,
+  });
+  assert.equal(byLabel(withSub, '(interview) 출처 태그').status, 'PASS');
+
+  const bleed = score({
+    specBody: [
+      '# t — Spec', '',
+      '### 목적 / 요구사항', '- 태그 없는 요구', '',
+      '### 다른 절', '- 뭔가 (interview)', '',
+      '## Ambiguity 자가진단', '- [x] a', '',
+    ].join('\n'),
+    configRaw: CONFIG_FULL,
+  });
+  assert.equal(byLabel(bleed, '(interview) 출처 태그').status, 'FAIL');
+});
+
 test('출처 태그 FAIL은 note로 스스로 진단한다 (절 미검출 vs 항목은 있는데 태그 없음)', () => {
   const noSection = score({ specBody: '# t\n\n## 설계\n- 뭔가\n', configRaw: CONFIG_FULL });
   assert.match(byLabel(noSection, '(interview) 출처 태그').note, /요구사항 절 미검출/);

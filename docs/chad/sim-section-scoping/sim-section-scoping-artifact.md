@@ -33,7 +33,37 @@ w1 PASS 불변(10), 자가진단 note 양쪽 `3/5`로 리포트 원값과 동일
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
 
-미실행. spec `## Done evidence`가 `review: required`라 이 절이 비어 있으면 `done`이 막힌다.
+### 2026-09-07 — Codex read-only review (`gpt-5.6-sol`, CLI 0.147.0)
+
+**엔진.** probe 폴백 체인(codex → claude)에서 codex 채택 — 폴백 없음. 메모리
+`codex-exec-model-fallback-home-machine`대로 `-m gpt-5.6-sol` 지정(`gpt-6-astra`는 이 CLI가 거부).
+
+**Scope.** `git diff origin/main` — 커밋 `1581e2f`와 미커밋 working tree 변경(post-commit 훅이
+갱신한 handoff 2파일)을 **둘 다** 포함한다. 9파일 +300/−9. `git status`가 dirty였으므로 절차상
+worktree가 대상이지만, origin/main 대비 diff가 그 상위집합이라 이 범위로 실행했다.
+
+**판정: CHANGES REQUESTED** — P1 0건 · P2 1건 · P3 1건. **오탐 0** (둘 다 재현으로 확인).
+
+| # | 심각도 | 위치 | 지적 | 판별 |
+|---|---|---|---|---|
+| 1 | P2 | `tests/sim/rules.mjs:59` | `forceAllChecked`가 옛 고정 경계 `#{2,3}`를 그대로 쓴다 — H3 하위절을 둔 H2 자가진단 절이 부분만 체크돼(`0/2 → 1/2`) SC7 merge 시나리오의 "전 항목 체크" 선행조건이 무효화된다 | **진짜 결함.** codex fixture로 `0/2 → 1/2` 정확히 재현. 다른 fixture(항목 4개)에서는 `0/4 → 2/4`. 이 세션이 리뷰 대기 중 독립적으로도 같은 지점을 찾았다 |
+| 2 | P3 | `tests/agentloop-spec-signals.test.mjs:355` | 새 테스트가 H2→H3 포함과 H2 동레벨 경계는 고정하지만 H3→H4·H3 동레벨 경계는 고정하지 않는다 | **진짜(커버리지 갭).** 동작 자체는 옳다 — 실측: H3 절+H4 하위 → PASS, H3 절 동레벨 경계 → FAIL. 결함이 아니라 회귀 취약점 |
+
+**원인.** `forceAllChecked`는 `sectionBody`를 호출하지 않고 같은 로직의 **인라인 사본**을 갖고
+있었다(수정 전에는 둘이 같은 경계라 일관됐다). 레포 전수 검색 결과 남은 사본은 이 한 곳뿐이다.
+
+**조치 (2026-09-07, 리뷰 후 별도 커밋).** 둘 다 반영했다 — `harness-review`는 review-only라
+리뷰 명령 안에서는 고치지 않고, 보고 후 사용자 지시로 진행했다.
+
+- **P2** — 절 경계 계산을 `sectionRange`(index 반환) 한 곳으로 통합하고 `sectionBody`와
+  `forceAllChecked`가 그것을 공유하게 했다. 인라인 사본 0개(레포 전수 검색으로 확인).
+  검증: codex fixture `0/2 → 2/2`(수정 전 1/2), 항목 4개 fixture `0/4 → 4/4`(수정 전 2/4),
+  같은 레벨의 다음 절 체크박스는 그대로.
+- **P3** — H3 깊이 커버리지 1건 추가: H3 절이 H4 하위를 포함하고 H3 동레벨로는 새지 않는다.
+- 회귀 없음: 저장된 실제 시행 원문 재채점이 w1·w2 모두 PASS, 자가진단 3/5로 불변.
+- 테스트 29 → 31. `npm test` fail 0 · `doctor` green · `docs:check` 최신.
+
+<!-- harness:review kind=codex scope=diff tip=1581e2f32637fcbb04473dadfe46bd1dde6031c5 at=2026-09-06T23:45:49Z -->
 
 ## Learnings
 

@@ -30,14 +30,23 @@ export function na(label, note) { return { label, status: 'N/A', note: sanitizeN
 // 둔 spec에서 절 본문이 118 B(안내 문구)로 잘려 목록 항목 0개 → 출처 태그 위양성 FAIL.
 // 같은 spec의 `### 요구사항` 안에는 태그가 정상이었고, 어느 커맨드도 평면 구조를 요구하지
 // 않는다(commands/harness-spec.md의 계약은 "항목별 출처 표기" 하나뿐) — 스코어러 결함이었다.
-function sectionBody(md, headingRe) {
+// 절 경계는 **한 곳에서만** 계산한다. 본문만 필요한 곳은 sectionBody, 원문을 잘라 붙여야 하는
+// 곳(forceAllChecked)은 인덱스를 쓴다 — 사본을 두면 한쪽만 고쳐져 조용히 어긋난다
+// (실측: 이 레벨 인식 수정의 1차 커밋 1581e2f가 sectionBody만 바꿔 forceAllChecked와
+//  경계가 갈렸고, codex 리뷰가 P2로 집었다).
+function sectionRange(md, headingRe) {
   const start = md.search(headingRe);
-  if (start < 0) return '';
+  if (start < 0) return null;
   const rest = md.slice(start);
-  // 두 호출부 모두 `^#{2,3}` 앵커 정규식이라 매치는 항상 `#`로 시작한다. 폴백 2는 도달 불가.
+  // 호출부는 모두 `^#{2,3}` 앵커 정규식이라 매치는 항상 `#`로 시작한다. 폴백 2는 도달 불가.
   const level = rest.match(/^#+/)?.[0].length ?? 2;
   const next = rest.search(new RegExp(`\\n#{1,${level}} `));
-  return next > 0 ? rest.slice(0, next) : rest;
+  return { start, end: next > 0 ? start + next : md.length };
+}
+
+function sectionBody(md, headingRe) {
+  const range = sectionRange(md, headingRe);
+  return range ? md.slice(range.start, range.end) : '';
 }
 
 // 자가진단 절 안의 체크 상태만 센다. 인계 문구 신호의 note에 붙여, "전 항목 체크에서도
@@ -53,13 +62,12 @@ export function ambiguityCounts(specBody) {
 // 않으므로(그건 validator 몫) 실사용 초안은 5/5에 도달하지 못한다. P1 회귀("전 항목 체크여도
 // 인계하는가")를 실제로 태우려면 merge 재실행 전에 이 상태를 인위적으로 만들어야 한다.
 export function forceAllChecked(specBody) {
-  const start = specBody.search(/^#{2,3} Ambiguity 자가진단/m);
-  if (start < 0) return specBody;
-  const rest = specBody.slice(start);
-  const next = rest.search(/\n#{2,3} /);
-  const end = next > 0 ? start + next : specBody.length;
-  const section = specBody.slice(start, end).replace(/^(\s*)- \[ \]/gm, '$1- [x]');
-  return specBody.slice(0, start) + section + specBody.slice(end);
+  // ambiguityCounts와 **같은 경계**를 써야 한다 — 여기서 못 켠 체크박스를 저쪽이 세면
+  // total/total 에 도달하지 못해 P1 회귀 시나리오가 조용히 안 태워진다.
+  const range = sectionRange(specBody, /^#{2,3} Ambiguity 자가진단/m);
+  if (!range) return specBody;
+  const section = specBody.slice(range.start, range.end).replace(/^(\s*)- \[ \]/gm, '$1- [x]');
+  return specBody.slice(0, range.start) + section + specBody.slice(range.end);
 }
 
 // 순수 채점 — I/O 없음. sim 실행에는 토큰이 필요하지만 이 로직은 토큰 없이 `npm run test`가

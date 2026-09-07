@@ -3,8 +3,9 @@
 
 ## Now
 - Goal: sim 스코어러의 절 범위를 레벨 인식으로 바꿔 출처 태그 위양성 FAIL 제거. 수정·검증 완료.
-- Current atomic step: 외부 read-only 리뷰(codex) 실행 후 artifact `## Reviews`에 마커와 함께 기록.
-- Stop / human-decision condition: sim 재실행 여부(과금)는 사용자 결정. 재실행 없이도 리뷰는 가능.
+- Current atomic step: 없음 — plan 12단계 전부 완료(리뷰 CHANGES REQUESTED의 P2·P3까지 반영).
+  남은 것은 `harness-team done` 실행뿐이다.
+- Stop / human-decision condition: sim 재실행 여부(과금)와 push/PR은 사용자 결정.
 
 ## Constraints and settled decisions
 - 스코어러만 고친다 — 하네스는 무결함이 실측으로 확인됐다(writer-2 문서 항목 41개, 태그 정상).
@@ -18,7 +19,8 @@
 - Verification command: `node --test tests/agentloop-spec-signals.test.mjs`
 
 ## Failure capsules (max 3 unresolved)
-- (none) — SC7 위양성 FAIL은 원인 확정·수정·검증으로 해소됐다.
+- (none) — SC7 위양성 FAIL, 그리고 그 수정이 만든 forceAllChecked 경계 불일치(codex P2)까지
+  모두 재현·수정·검증으로 해소됐다.
 
 ## Resume checklist
 - `git log --oneline -1` 로 이 변경이 커밋됐는지 확인.
