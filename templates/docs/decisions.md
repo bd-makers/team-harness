@@ -104,3 +104,10 @@ AGENTS.md의 task-gate·rules 서술은 **소비자 프로젝트**에 대한 규
 
 **대가**: sha 테이블은 손으로 유지한다. 픽스처(`tests/fixtures/stock-templates`)와 개수를 대조하는
 드리프트 가드 테스트가 안전망이고, 표면이 13개라 감당 가능한 규모다. 표면이 크게 늘면 재검토한다.
+
+**열어 둔 예외**: 훅 refresh의 `legacyStock` 휴리스틱(`pre-commit-check.sh`에 `pnpm tsc --noEmit`이
+있고 `detect_pm`이 없으면 stock으로 간주)은 sha 테이블 이전부터 있던 net이라, 그 옛 훅에 사용자가
+줄을 덧붙인 경우에도 stock으로 판정해 덮어쓴다 — "커스터마이즈는 덮지 않는다"는 위 계약의 유일한
+구멍이다(2026-09-08 codex 리뷰 MAJOR). 좁히면 아주 오래된 바이트 드리프트본을 잡던 net이 사라지므로
+의도적으로 남겼다. `doctor`가 이제 모든 소비자를 `migrate`로 유도하니 이 경로는 전보다 자주 실행된다 —
+훅 표면을 손볼 때 함께 재평가할 것.

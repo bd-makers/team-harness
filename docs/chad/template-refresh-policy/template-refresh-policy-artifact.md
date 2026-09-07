@@ -85,7 +85,7 @@ Phase 3 배달 확인 → doctor `success`.
 
 ## Reviews
 
-### 2026-09-08 — Codex review (`8dd52c3`, read-only)
+### 2026-09-08 KST (2026-09-07T15:12:05Z) — Codex review (`8dd52c3`, read-only)
 
 `codex exec --sandbox read-only -m gpt-5.6-sol`. 결과: **승인 불가 — BLOCKER 0 · MAJOR 3 · MINOR 3.**
 D6에 따라 각 발견을 **재현·판별한 뒤** 반영했다(검증자는 반박만, 수정은 작성 세션이 단일 스레드로).
@@ -107,8 +107,12 @@ D6에 따라 각 발견을 **재현·판별한 뒤** 반영했다(검증자는 �
 
 검증: `npm test` **655개 중 654 pass · fail 0 · skip 1** · `docs:check` PASS · `doctor` PASS.
 
+`writeRefreshed`의 두 가드 중 **leaf symlink 거부는 테스트로 고정**했고, **내용 재검증(TOCTOU)
+분기는 테스트가 없다** — 판정과 쓰기 사이에 끼어드는 경합은 공개 API 밖이라 코드를 테스트용으로
+비틀지 않고 남겨 뒀다. 방어 심층화이지 단독 계약이 아니다.
+
 #2를 남긴 이유: 훅 refresh의 기존 안전 계약을 바꾸는 일이라 이 task(스킬·규칙 확장)의 범위 밖이고,
 휴리스틱이 "아주 오래된 바이트 드리프트본을 잡는 net"으로 **의도적으로** 들어가 있다. 좁히면 그
 net이 사라진다 — 트레이드오프라 사용자 결정 사항으로 넘긴다.
 
-<!-- harness:review kind=codex scope=diff tip=209577e0220649075b171d76161ce61beabc8d56 at=2026-09-08T00:12:05Z -->
+<!-- harness:review kind=codex scope=diff tip=8dd52c3a5d751ff50f6de42b1596cfffb9b0138d at=2026-09-07T15:12:05Z -->
