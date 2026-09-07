@@ -5,7 +5,7 @@
 새 작업은 `harness-team task <name>` 으로 시작한다.
 
 ## Last Completed Task (2026-09-07)
-`sim-section-scoping` — done
+`pocock-tdd-slicing` — done
 
 ## Full Context
-→ docs/chad/sim-section-scoping/sim-section-scoping-handoff.md
+→ docs/chad/pocock-tdd-slicing/pocock-tdd-slicing-handoff.md

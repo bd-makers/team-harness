@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ pocock-tdd-slicing
 - ✅ eager-tier-slimming
 - ✅ sim-section-scoping
 - ✅ doctor-eager-global
