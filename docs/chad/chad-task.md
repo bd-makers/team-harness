@@ -4,6 +4,7 @@
 
 ## Completed
 - ✅ eager-tier-slimming
+- ✅ sim-section-scoping
 - ✅ doctor-eager-global
 - ✅ docs-refresh-0210
 - ✅ deprecated-review-carryover
