@@ -4,8 +4,8 @@
 없음 — `.harness/active.json` 은 `null` 이다.
 새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Completed Task (2026-09-06)
-`eager-tier-slimming` — done
+## Last Completed Task (2026-09-07)
+`sim-section-scoping` — done
 
 ## Full Context
-→ docs/chad/eager-tier-slimming/eager-tier-slimming-handoff.md
+→ docs/chad/sim-section-scoping/sim-section-scoping-handoff.md
