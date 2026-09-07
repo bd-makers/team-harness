@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+done-force-audit-trail
 
-## Last Completed Task (2026-09-06)
-`eager-tier-slimming` — done
+## Last Commit (2026-09-07)
+603fe9b docs(task): done-force-audit-trail task 준비 — --force 종결의 감사 흔적 부재
 
 ## Full Context
-→ docs/chad/eager-tier-slimming/eager-tier-slimming-handoff.md
+→ docs/chad/done-force-audit-trail/done-force-audit-trail-handoff.md
