@@ -330,14 +330,20 @@ async function refreshProjectScripts(ctx) {
   return true;
 }
 
-// --- Refresh installed .claude hooks (known stock versions → current template) ---
+// --- Refresh installed .claude assets (known stock versions → current template) ---
 //
 // Template fixes never reach an existing install on their own: copyStaticAssets copies
-// hooks with skipExisting, so init leaves installed copies untouched. This is the
-// explicit opt-in delivery path — PR #29's jq-fallback fail-open fix ships through here.
-// An installed hook is refreshed ONLY when its bytes match a version we actually
-// shipped (sha256 table below). Anything else is treated as user-customized and never
+// hooks, skills and rules with skipExisting, so init leaves installed copies untouched.
+// copyTree's skipExisting is per FILE, so a *new* template file does arrive on re-init
+// while a *modified* one never does — that asymmetry is why this path exists. It is the
+// explicit opt-in delivery path: PR #29's jq-fallback fail-open fix and the new-feature
+// Phase 3 slicing discipline both ship through here.
+// An installed file is refreshed ONLY when its bytes match a version we actually
+// shipped (sha256 tables below). Anything else is treated as user-customized and never
 // overwritten; we print a notice and leave it for manual review.
+//
+// docs/ seed (README.md, decisions.md, .gitkeep) is deliberately NOT refreshable — it is
+// team-authored after install; see copyStaticAssets' "preserve team work" comment.
 
 export const CLAUDE_HOOK_FILES = [
   'block-dangerous-git.sh',
@@ -385,46 +391,154 @@ export const KNOWN_STOCK_HOOK_SHA256 = {
   ],
 };
 
-export async function refreshClaudeHooks(ctx) {
+// skills·rules: 같은 provenance 규칙을 쓰되 **templates/ 기준 상대경로**로 키를 잡는다 —
+// 스킬 3종이 모두 basename `SKILL.md`라 훅처럼 파일명으로는 구분되지 않는다.
+//
+// 목록은 **고정**이다. 디렉터리를 readdir로 훑지 않는다 — `.claude/rules/`는 소유권이 섞인
+// 표면이라(harness-promote가 사용자 규칙을 여기에 쓴다) 훑으면 승격된 규칙마다 매번
+// "looks customized" 경고가 찍힌다.
+export const REFRESHABLE_TEMPLATE_FILES = [
+  '.claude/skills/fix-bug/SKILL.md',
+  '.claude/skills/new-feature/SKILL.md',
+  '.claude/skills/verify/SKILL.md',
+  '.claude/rules/navigation.md',
+  '.claude/rules/state-management.md',
+  '.claude/rules/styling.md',
+  '.claude/rules/testing.md',
+];
+
+// sha256 of every template version ever shipped per file, EXCLUDING the current template
+// (compared directly). Provenance: git history of templates/<rel> — the git blob sha and
+// the commit that introduced it are noted per entry, and tests/fixtures/stock-templates
+// holds the same bodies so tests/migrate-templates.test.mjs can assert this table never
+// drifts from them.
+export const KNOWN_STOCK_TEMPLATE_SHA256 = {
+  '.claude/skills/fix-bug/SKILL.md': [
+    'aa65e25d9525b0f78070037a1d2adc97df76dd2b72ca23a70c178eb084aa9b62', // aecdc528 2026-04-16-6948aa73
+    '334ca95ff9016900f48a29444aea37556c8120cf0fd4422d5dc8ad50d7472de5', // 5487fba3 2026-04-28-15a492fd
+    'e2439cba511b60756831fa4d6ad7b30a6c4062d5b15027065585602359da8e26', // 6f3b1705 2026-04-28-bd4ec0e8
+    '8e5c62c98163bf8fd5650cc3a0724c7a3789d814a5b06da245b5f9379f11f7b6', // c8a3adf2 2026-05-15-75bd1b61
+    '88a84ff52d76b106898d9378e95b07683b8d8b88fd6cf58c67d88565c451917c', // a75cebfe 2026-07-02-c12adc5a
+    '98b408d2e907b3b2da55378d1c64c1b01477c76f21be9fe260363f3a7985bd5d', // 2a1a52b8 2026-07-30-2bf26aa1
+  ],
+  '.claude/skills/new-feature/SKILL.md': [
+    '9edac00609860630dccce14062824793d3777035f9a91fa7072e16eba776fd39', // 613d0f35 2026-04-16-6948aa73
+    '66c3ab0f42c87066e544ce8deee7fff7c9a52b56cf2052fb6989887bc2cc6744', // 0c68d16e 2026-04-28-15a492fd
+    'cd65dbb0619bfd273ddba2c003d03c8c9ac94f90fa2f065eb8b23bff5f9f987c', // 8db9c0cc 2026-04-28-bd4ec0e8
+    '2a8ab2d1c7cd6823f810a57c9589dcc4f642645aa50ab99902bce97e0414864b', // 633a21c3 2026-05-15-75bd1b61
+    '0a8d640f7f2fedce74cbe83b41344cd36568e1efae1606fc4ec2b9b69d7ee05d', // 6dda58cc 2026-07-30-2bf26aa1
+    'cf2c4b8187c5a7fa6da2d5dbc87dfbe51697456872753ea9bc0c43525b25e655', // 88aab5f3 2026-09-03-58b22848
+    '1b770225bf8d4144da23a19fa60cc148c6f810e9d4db26e1a99ce98fa6cda4ba', // 77493ecd 2026-09-07-286ef8e9 (Pocock Phase 3 이전)
+  ],
+  '.claude/skills/verify/SKILL.md': [
+    '2628e8fe0d0073992d8059df5bf7e5572db4314526ec220f732d88437bb4ab51', // 7a7c188d 2026-04-16-6948aa73
+  ],
+  '.claude/rules/navigation.md': [
+    'c87512d28d6fc4a26c39ab1d2ba581ff8b9c56972db18d88d2b54617e2df684f', // c15783ca 2026-04-16-6948aa73
+  ],
+  '.claude/rules/state-management.md': [
+    '0f0721c85a5064bf4c384ac5b56c707ae18c684fbd318bf7212217027fd4e961', // f1300e00 2026-04-16-6948aa73
+  ],
+  '.claude/rules/styling.md': [
+    'c90144756daf0e10db73d9fabf7ffb91f3b63e68629d5bcd4a37e6b1d8377d0e', // 666e2601 2026-04-16-6948aa73
+    '0199f2e4a583e8013194e2fcf5b4bad55a5d3a3418d4347fb259f6a324f22ed6', // f5b85c3c 2026-09-03-58b22848
+  ],
+  '.claude/rules/testing.md': [
+    '6226fadc53d4555105e6508586c111580dea9fd91fa3b3eb6ff436cbbbdb99ca', // 824acfe3 2026-04-16-6948aa73
+    '461af3ae66816f0ddd299a520e6f5fce5dcf01fb5c0b72da026eb9bfc7cf231c', // 7ff58e8b 2026-09-03-58b22848
+  ],
+};
+
+// 설치본을 훑어 "stock이라 갱신해도 되는 것"만 골라낸다. 표면(훅/스킬/규칙)에 무관하다.
+// 두 불변식이 여기 있다:
+//   1. installed === null → continue. refresh는 갱신이지 설치가 아니다 — 비-RN 프로젝트에
+//      일부러 깔지 않은 RN 전용 규칙 4종이 이 줄 때문에 새로 깔리지 않는다.
+//   2. stock이 아니면 절대 쓰지 않는다. 경고만 남기고 수동 검토로 넘긴다.
+async function collectStale(ctx, entries, { quiet = false } = {}) {
   const { root, targetDir } = ctx;
   const stale = [];
-  for (const name of REFRESHABLE_HOOK_FILES) {
-    const rel = `.claude/hooks/${name}`;
+  for (const { rel, label, knownShas, legacyStock } of entries) {
     const installed = await readTextSafe(join(targetDir, rel));
     if (installed === null) continue; // not installed — nothing to refresh
 
     const tpl = await readTextSafe(join(root, 'templates', rel));
     if (!tpl || installed === tpl) continue; // no template / already current
 
-    // The pnpm signature predates the sha table: it also catches byte-drifted copies
-    // of the very old pre-commit hook (the original refresh logic, kept as a net).
     const sha256 = createHash('sha256').update(installed).digest('hex');
-    const knownStock = (KNOWN_STOCK_HOOK_SHA256[name] || []).includes(sha256)
-      || (name === 'pre-commit-check.sh'
-        && installed.includes('pnpm tsc --noEmit') && !installed.includes('detect_pm'));
+    const knownStock = knownShas.includes(sha256) || !!legacyStock?.(installed);
     if (knownStock) {
-      stale.push({ name, rel, tpl });
-    } else {
-      console.log(`  ${name}: differs from every known shipped version — looks customized, skipping (manual review; 최신 템플릿: templates/${rel})`);
+      stale.push({ label, rel, tpl });
+    } else if (!quiet) {
+      console.log(`  ${label}: differs from every known shipped version — looks customized, skipping (manual review; 최신 템플릿: templates/${rel})`);
     }
   }
+  return stale;
+}
+
+export async function refreshClaudeHooks(ctx) {
+  const stale = await collectStale(ctx, REFRESHABLE_HOOK_FILES.map(name => ({
+    rel: `.claude/hooks/${name}`,
+    label: name,
+    knownShas: KNOWN_STOCK_HOOK_SHA256[name] || [],
+    // The pnpm signature predates the sha table: it also catches byte-drifted copies
+    // of the very old pre-commit hook (the original refresh logic, kept as a net).
+    legacyStock: name === 'pre-commit-check.sh'
+      ? (body) => body.includes('pnpm tsc --noEmit') && !body.includes('detect_pm')
+      : undefined,
+  })));
 
   if (stale.length === 0) return false;
 
   console.log(`\nFound ${stale.length} stale Claude hook(s) — known shipped version, superseded:`);
-  for (const { name } of stale) console.log(`  ${name}`);
+  for (const { label } of stale) console.log(`  ${label}`);
   console.log('  → 최신 템플릿으로 갱신 (jq 부재 시 훅이 조용히 무력화되던 fail-open 수정 포함)');
 
   const ok = ctx.flags.yes || await confirm('\nRefresh Claude hooks to current templates?', { defaultYes: true });
   if (!ok) { console.log('Skipped hook refresh.'); return false; }
 
   for (const { rel, tpl } of stale) {
-    await writeText(join(targetDir, rel), tpl, { mode: 0o755 });
+    await writeText(join(ctx.targetDir, rel), tpl, { mode: 0o755 });
     console.log(`  ✓ refreshed: ${rel}`);
   }
   return true;
 }
 
+// 훅과 같은 규칙으로 스킬·규칙 템플릿을 갱신한다. 훅과 달리 실행 파일이 아니라 mode를 주지 않는다.
+const templateEntries = () => REFRESHABLE_TEMPLATE_FILES.map(rel => ({
+  rel,
+  label: rel,
+  knownShas: KNOWN_STOCK_TEMPLATE_SHA256[rel] || [],
+}));
+
+// 설치본의 바이트가 우리가 배포한 적 있는 버전인가. doctor가 규칙 유래 경고를 억제할 때 쓴다 —
+// stock 규칙은 "사용자가 스탬프를 빠뜨린 것"이 아니라 "낡은 것"이고 처방이 다르다(migrate).
+export function isKnownStockTemplate(rel, body) {
+  return (KNOWN_STOCK_TEMPLATE_SHA256[rel] || []).includes(createHash('sha256').update(body).digest('hex'));
+}
+
+// read-only 조회 — doctor가 쓴다. 아무것도 쓰지 않고 출력도 하지 않는다.
+export async function findStaleTemplates(ctx) {
+  return (await collectStale(ctx, templateEntries(), { quiet: true })).map(s => s.rel);
+}
+
+export async function refreshClaudeTemplates(ctx) {
+  const stale = await collectStale(ctx, templateEntries());
+
+  if (stale.length === 0) return false;
+
+  console.log(`\nFound ${stale.length} stale skill/rule template(s) — known shipped version, superseded:`);
+  for (const { label } of stale) console.log(`  ${label}`);
+  console.log('  → 최신 템플릿으로 갱신 (init은 skipExisting이라 수정된 템플릿을 배달하지 못한다)');
+
+  const ok = ctx.flags.yes || await confirm('\nRefresh skill/rule templates to current versions?', { defaultYes: true });
+  if (!ok) { console.log('Skipped template refresh.'); return false; }
+
+  for (const { rel, tpl } of stale) {
+    await writeText(join(ctx.targetDir, rel), tpl);
+    console.log(`  ✓ refreshed: ${rel}`);
+  }
+  return true;
+}
 // --- Task index label rename (active → open) ---
 //
 // The open-tasks index used "active" (## Active / 🔄 active), colliding with
@@ -729,6 +843,7 @@ export async function runMigrate(ctx) {
   const scriptMoved = await migrateBackupScripts(ctx);
   const scriptRefreshed = await refreshProjectScripts(ctx);
   const claudeHooksRefreshed = await refreshClaudeHooks(ctx);
+  const claudeTemplatesRefreshed = await refreshClaudeTemplates(ctx);
   const taskLabelsRenamed = await migrateTaskIndexLabels(ctx);
   const hookMigrated = await migrateSessionStartHook(ctx);
   const boundaryHookMigrated = await migrateBoundaryCheckpointHook(ctx);
@@ -739,7 +854,7 @@ export async function runMigrate(ctx) {
     return;
   }
 
-  if (!agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !claudeHooksRefreshed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated && !metaBackfilled) {
+  if (!agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !claudeHooksRefreshed && !claudeTemplatesRefreshed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated && !metaBackfilled) {
     console.log('\nNothing to migrate — project is already up to date.');
     return;
   }

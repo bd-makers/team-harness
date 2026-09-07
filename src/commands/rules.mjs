@@ -106,7 +106,10 @@ export function parsePathsFlag(value) {
 
 // doctor용. 마커가 없거나 origin·since 중 하나라도 빠진 규칙을 나열한다. `.claude/rules`가 없으면 검사할 것이 없다(null).
 // 읽기 실패도 경고로 돌려준다 — warn 수준 검사가 doctor를 crash 시키면 envelope 자체가 안 나온다.
-export async function checkRuleProvenance(targetDir) {
+// `isKnownStock(rel, content)` — 하네스가 배포한 stock 규칙은 유래 검사에서 제외한다.
+// 이 파일들은 사용자가 스탬프를 빠뜨린 게 아니라 마커 도입 이전 판이라 낡은 것이고,
+// 처방이 "스탬프를 찍어라"가 아니라 "migrate로 갱신하라"다. doctor가 stale 경고로 따로 보고한다.
+export async function checkRuleProvenance(targetDir, { isKnownStock } = {}) {
   const dir = join(targetDir, '.claude/rules');
   if (!(await exists(dir))) return null;
   let files;
@@ -121,6 +124,7 @@ export async function checkRuleProvenance(targetDir) {
     const content = await readTextSafe(join(dir, rel));
     // 읽기 실패(권한·dangling symlink)는 "유래 없음"과 처방이 다르다 — 스탬프를 권하면 잘못된 안내다(codex 리뷰 P3).
     if (content === null) unreadable.push(rel);
+    else if (isKnownStock?.(rel, content)) continue;
     else if (!parseRuleMarker(content)) missing.push(rel);
   }
   if (!missing.length && !unreadable.length) return null;

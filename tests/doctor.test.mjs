@@ -209,7 +209,7 @@ test('checkDecisionLog: 일부 절 누락 → 누락 절만 나열 + 템플릿 �
   try {
     const w = await checkDecisionLog(dir);
     assert.ok(typeof w === 'string', 'returns a warning string');
-    assert.match(w, /## D4, ## D5, ## D6, ## D7 절 없음/, '누락된 절만 정확히 나열');
+    assert.match(w, /## D4, ## D5, ## D6, ## D7, ## D8 절 없음/, '누락된 절만 정확히 나열');
     assert.doesNotMatch(w, /## D2/, '존재하는 D2는 누락 목록에 없어야 한다');
     assert.doesNotMatch(w, /init/, 'skipExisting이라 init로는 해결 불가 — 수동 병합 안내만');
     assert.match(w, /templates\/docs\/decisions\.md/, '가져올 원본 위치를 안내');
@@ -217,16 +217,16 @@ test('checkDecisionLog: 일부 절 누락 → 누락 절만 나열 + 템플릿 �
 });
 
 // D6(2026-08-26)·D7(2026-09-03)이 D-log에 추가된 뒤에도 검사 목록은 D2/D4/D5에 머물러 있었다 —
-// D6/D7 이전에 스캐폴드된 소비자는 AGENTS.md 코어가 가리키는 절이 없어도 doctor가 침묵했다.
+// D6 이후에 스캐폴드된 소비자는 AGENTS.md 코어가 가리키는 절이 없어도 doctor가 침묵했다.
 // 검사 목록이 템플릿 D-log와 함께 움직이는지 고정한다.
-test('checkDecisionLog: D6·D7 이전 스캐폴드(D2/D4/D5만) → D6, D7 누락 경고', async () => {
+test('checkDecisionLog: 옛 스캐폴드(D2/D4/D5만) → 이후 절 전부 누락 경고', async () => {
   const dir = await makeDecisionLogFixture(
     '# Team Decision Log\n\n## D2 (2026-06-11) — a\n\n## D4 (2026-07-28) — b\n\n## D5 (2026-08-20) — c\n',
   );
   try {
     const w = await checkDecisionLog(dir);
     assert.ok(typeof w === 'string', 'returns a warning string');
-    assert.match(w, /## D6, ## D7 절 없음/, 'D6·D7만 누락으로 나열');
+    assert.match(w, /## D6, ## D7, ## D8 절 없음/, '옛 스캐폴드 이후 절만 누락으로 나열');
     assert.doesNotMatch(w, /## D[245]\b/, '존재하는 D2/D4/D5는 누락 목록에 없어야 한다');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
