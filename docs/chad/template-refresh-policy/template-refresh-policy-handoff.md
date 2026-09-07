@@ -58,3 +58,11 @@ commands/harness-migrate.md                        |  17 ++-
 docs/chad/chad-handoff.md                                        | 2 +-
  .../template-refresh-policy/template-refresh-policy-handoff.md   | 9 +++++++++
  2 files changed, 10 insertions(+), 1 deletion(-)
+
+## 2026-09-07T15:18:39.618Z — d26d96c fix(migrate): codex 리뷰 MAJOR 2건 반영 — cursor 미러 재생성 + 쓰기 직전 재검증
+docs/chad/chad-handoff.md                          |   2 +-
+ .../template-refresh-policy-artifact.md            |  30 +++++++
+ .../template-refresh-policy-handoff.md             |   5 ++
+ src/commands/migrate.mjs                           |  47 ++++++++--
+ tests/migrate-templates.test.mjs                   | 100 +++++++++++++++++++++
+ 5 files changed, 174 insertions(+), 10 deletions(-)
