@@ -542,7 +542,7 @@
           <tr data-command-source="commands/harness-migrate.md">
             <td><span class="cmd">/harness-migrate</span></td>
             <td><code>commands/harness-migrate.md</code></td>
-            <td>구버전 구조를 최신으로 마이그레이션 — backup dir 스크립트 → project root, task 구조(pre-0.6→0.6, 0.6→0.7 artifact.md 분리)</td>
+            <td>구버전 구조를 최신으로 마이그레이션 + 설치된 훅·스킬·규칙을 최신 템플릿으로 refresh — init은 기존 파일을 건너뛰므로 템플릿 수정이 도달하는 유일한 경로</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Migration</span></td>
           </tr>
           <tr data-command-source="commands/harness-upgrade.md">
@@ -1399,7 +1399,7 @@
           <tr>
             <td><code>commands/harness-migrate.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
-            <td>구버전 구조를 최신으로 마이그레이션 — backup dir 스크립트 → project root, task 구조(pre-0.6→0.6, 0.6→0.7 artifact.md 분리)</td>
+            <td>구버전 구조를 최신으로 마이그레이션 + 설치된 훅·스킬·규칙을 최신 템플릿으로 refresh — init은 기존 파일을 건너뛰므로 템플릿 수정이 도달하는 유일한 경로</td>
           </tr>
           <tr>
             <td><code>commands/harness-observe.md</code></td>
@@ -2272,6 +2272,111 @@
             <td>자동 회귀 검증</td>
           </tr>
           <tr>
+            <td><code>tests/fixtures/stock-templates/2026-04-16-6948aa73/.claude/rules/navigation.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-04-16-6948aa73/.claude/rules/state-management.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-04-16-6948aa73/.claude/rules/styling.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-04-16-6948aa73/.claude/rules/testing.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-04-16-6948aa73/.claude/skills/fix-bug/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-04-16-6948aa73/.claude/skills/new-feature/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-04-16-6948aa73/.claude/skills/verify/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-04-28-15a492fd/.claude/skills/fix-bug/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-04-28-15a492fd/.claude/skills/new-feature/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-04-28-bd4ec0e8/.claude/skills/fix-bug/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-04-28-bd4ec0e8/.claude/skills/new-feature/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-05-15-75bd1b61/.claude/skills/fix-bug/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-05-15-75bd1b61/.claude/skills/new-feature/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-07-02-c12adc5a/.claude/skills/fix-bug/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-07-30-2bf26aa1/.claude/skills/fix-bug/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-07-30-2bf26aa1/.claude/skills/new-feature/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-09-03-58b22848/.claude/rules/styling.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-09-03-58b22848/.claude/rules/testing.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-09-03-58b22848/.claude/skills/new-feature/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-09-07-286ef8e9/.claude/skills/new-feature/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/README.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
             <td><code>tests/git-hooks.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
@@ -2318,6 +2423,11 @@
           </tr>
           <tr>
             <td><code>tests/migrate-session-hook.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/migrate-templates.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>

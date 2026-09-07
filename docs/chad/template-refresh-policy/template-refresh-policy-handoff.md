@@ -39,3 +39,8 @@ commands/harness-init.md                           |  13 +-
  tests/fixtures/stock-templates/README.md           |  26 ++++
  tests/migrate-templates.test.mjs                   | 170 +++++++++++++++++++++
  35 files changed, 1606 insertions(+), 29 deletions(-)
+
+## 2026-09-07T14:55:51.896Z — 209577e chore(docs): post-commit handoff 갱신
+docs/chad/chad-handoff.md                          |  9 +++--
+ .../template-refresh-policy-handoff.md             | 38 ++++++++++++++++++++++
+ 2 files changed, 42 insertions(+), 5 deletions(-)

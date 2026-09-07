@@ -766,3 +766,52 @@ test('runDoctor: 프로젝트는 예산 안이지만 전역을 더하면 초과 
     await rm(emptyHome, { recursive: true, force: true });
   }
 });
+
+// --- stale skill/rule templates (D8) ---
+//
+// init은 skipExisting이라 *수정된* 템플릿을 배달하지 못한다. 갱신 경로(migrate)가 있어도
+// 발견성이 없으면 아무도 부르지 않는다 — 이 경고가 그 발견성이다.
+// jq 경고와 같은 이유로 healthyConsumerFixture를 쓴다: fail이 있으면 next_actions가
+// ['harness-team sync']로 대체돼 라우팅을 검증할 수 없다.
+test('runDoctor: 낡은 스킬 설치본 → stale 경고 + migrate 라우팅', async () => {
+  const dir = await healthyConsumerFixture();
+  try {
+    const stale = await readFile(join(ROOT,
+      'tests/fixtures/stock-templates/2026-09-07-286ef8e9/.claude/skills/new-feature/SKILL.md'), 'utf8');
+    await mkdir(join(dir, '.claude/skills/new-feature'), { recursive: true });
+    await writeFile(join(dir, '.claude/skills/new-feature/SKILL.md'), stale);
+
+    const envelope = await doctorJson(dir);
+    assert.equal((envelope.checks || []).filter(c => c.status === 'fail').length, 0,
+      'fixture는 fail 0이어야 경고 next_actions가 노출된다');
+    const check = checkOf(envelope, 'stale skill/rule templates');
+    assert.equal(check?.status, 'warning');
+    assert.match(check.detail, /new-feature\/SKILL\.md/, '낡은 파일을 지목해야 한다');
+    assert.match(check.detail, /migrate/, '처방을 함께 안내해야 한다');
+    assert.ok(envelope.next_actions.includes('harness-team migrate'),
+      `next_actions에 migrate가 있어야 한다: ${JSON.stringify(envelope.next_actions)}`);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('runDoctor: 최신 스킬 설치본 → stale 경고 없음 (멱등)', async () => {
+  const dir = await healthyConsumerFixture();
+  try {
+    await mkdir(join(dir, '.claude/skills/new-feature'), { recursive: true });
+    await writeFile(join(dir, '.claude/skills/new-feature/SKILL.md'),
+      await readFile(join(ROOT, 'templates/.claude/skills/new-feature/SKILL.md'), 'utf8'));
+    assert.equal(checkOf(await doctorJson(dir), 'stale skill/rule templates'), undefined);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 사용자가 편집한 파일은 stock이 아니라 refresh 대상이 아니다 — 경고도 내지 않는다.
+// 경고를 내면 "migrate 하라"는 뜻인데 migrate는 그 파일을 건드리지 않으므로 거짓 안내가 된다.
+test('runDoctor: 커스터마이즈된 스킬 → stale 경고 없음 (migrate가 안 고치는 것을 시키지 않는다)', async () => {
+  const dir = await healthyConsumerFixture();
+  try {
+    const stale = await readFile(join(ROOT,
+      'tests/fixtures/stock-templates/2026-09-07-286ef8e9/.claude/skills/new-feature/SKILL.md'), 'utf8');
+    await mkdir(join(dir, '.claude/skills/new-feature'), { recursive: true });
+    await writeFile(join(dir, '.claude/skills/new-feature/SKILL.md'), stale + '\n<!-- 팀 커스텀 -->\n');
+    assert.equal(checkOf(await doctorJson(dir), 'stale skill/rule templates'), undefined);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
