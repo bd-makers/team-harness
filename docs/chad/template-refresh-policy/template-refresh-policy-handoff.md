@@ -53,3 +53,8 @@ commands/harness-migrate.md                        |  17 ++-
  tests/doctor.test.mjs                              |  49 +++++++++
  tests/rules.test.mjs                               |  43 ++++++++
  6 files changed, 225 insertions(+), 5 deletions(-)
+
+## 2026-09-07T15:08:58.037Z — 49da9d8 chore(docs): post-commit handoff 갱신
+docs/chad/chad-handoff.md                                        | 2 +-
+ .../template-refresh-policy/template-refresh-policy-handoff.md   | 9 +++++++++
+ 2 files changed, 10 insertions(+), 1 deletion(-)

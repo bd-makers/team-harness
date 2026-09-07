@@ -82,3 +82,33 @@ Phase 3 배달 확인 → doctor `success`.
 - **이미 벌어진 드리프트의 규모는 미측정.** 이 레포는 plugin-dev라 대상이 아니고, 실제 소비자
   프로젝트에서 `doctor`를 돌려 봐야 안다. 이제 경고가 있으니 다음 소비자 세션이 자연히 알게 된다.
 - Pocock 백로그 #3(CONTEXT.md glossary + `docs/adr/`)은 *새* 파일 배포라 이 문제에 덜 걸린다.
+
+## Reviews
+
+### 2026-09-08 — Codex review (`8dd52c3`, read-only)
+
+`codex exec --sandbox read-only -m gpt-5.6-sol`. 결과: **승인 불가 — BLOCKER 0 · MAJOR 3 · MINOR 3.**
+D6에 따라 각 발견을 **재현·판별한 뒤** 반영했다(검증자는 반박만, 수정은 작성 세션이 단일 스레드로).
+
+| # | 심각도 | 발견 | 판별 | 조치 |
+|---|---|---|---|---|
+| 1 | MAJOR | 규칙 refresh가 `.cursor/rules/*.mdc` 미러를 갱신하지 않음 | **재현됨** — migrate 후 `.claude`는 최신, `.cursor`는 옛 내용. doctor는 `.claude`만 보므로 정상으로 돌아와 드리프트가 숨는다 | **수정** — `mirrorCursorRules()` 호출(`rules promote`와 같은 규약) + 회귀 테스트 |
+| 2 | MAJOR | `legacyStock`(pnpm 휴리스틱)이 사용자 커스텀 훅을 stock으로 오분류 | **타당하나 이 변경의 산물이 아님** — 부모 커밋의 휴리스틱을 그대로 보존한 것이고(리뷰어도 인정), 훅 표면의 기존 계약이다 | **미수정, 사용자 판단으로 이관**(아래) |
+| 3 | MAJOR | 판정↔쓰기 사이 TOCTOU + leaf symlink 타깃 덮어쓰기 | **재현됨** — leaf symlink에 쓰면 링크 바깥 파일이 덮인다 | **수정** — `writeRefreshed` 가드: 쓰기 직전 내용 재검증 + leaf symlink 거부. **디렉터리 symlink(공식 구조)는 통과** — 양쪽 다 테스트로 고정 |
+| 4 | MINOR | unreadable 파일을 "미설치"로 오인(`readTextSafe` → null) | 타당. 기존 `refreshClaudeHooks`도 동일하고, `checkRuleProvenance`는 이미 구분한다 | 미수정 — 표면 일관성 문제로 별건 |
+| 5 | MINOR | `isKnownStock`은 provenance가 아니라 내용 동일성 | 타당하나 범위가 좁다 — 테이블 키가 경로라 사용자 규칙이 `testing.md` 등 **정확히 같은 이름**이고 바이트까지 같아야 발생 | 미수정 — 한계로 문서화. 억제 경계는 테스트로 고정돼 있다 |
+| 6 | MINOR | sha 테이블 테스트가 fixture→table 단방향 | **타당** — 근거 없는 sha를 테이블에 넣어도 통과했다 | **수정** — 역방향(table→fixture) + **git 이력 완전성** 테스트 추가 |
+
+**리뷰어가 정상 확인한 것**: 미설치 파일을 새로 만들지 않음 · 일반 파일 권한 보존과 훅 `0755` ·
+`refreshClaudeHooks`의 순서·판정·출력·`legacyStock`이 부모와 동일 · **sha 테이블 20개는 git 이력
+전수 대조 결과 누락·초과·오류 없음**(내 `origin/main` 재확인과 독립적으로 일치).
+
+**리뷰어가 못 한 것**: read-only 샌드박스라 테스트 미실행. 2차 Codex 리뷰어는 소켓 권한 오류로 미기동.
+
+검증: `npm test` **655개 중 654 pass · fail 0 · skip 1** · `docs:check` PASS · `doctor` PASS.
+
+#2를 남긴 이유: 훅 refresh의 기존 안전 계약을 바꾸는 일이라 이 task(스킬·규칙 확장)의 범위 밖이고,
+휴리스틱이 "아주 오래된 바이트 드리프트본을 잡는 net"으로 **의도적으로** 들어가 있다. 좁히면 그
+net이 사라진다 — 트레이드오프라 사용자 결정 사항으로 넘긴다.
+
+<!-- harness:review kind=codex scope=diff tip=209577e0220649075b171d76161ce61beabc8d56 at=2026-09-08T00:12:05Z -->

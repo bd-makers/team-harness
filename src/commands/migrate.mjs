@@ -3,7 +3,7 @@ import { constants } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { unlink, rmdir, readdir, mkdir, lstat, stat, access } from 'node:fs/promises';
 import { readTextSafe, writeText, exists } from '../fsx.mjs';
-import { loadBackupDir, mergeClaudeSettings, settingsHasBoundaryCheckpoint } from '../harness.mjs';
+import { loadBackupDir, mergeClaudeSettings, settingsHasBoundaryCheckpoint, mirrorCursorRules } from '../harness.mjs';
 import { extractSections, deepMergeJson } from '../merge.mjs';
 import { render } from '../render.mjs';
 import { confirm } from '../prompt.mjs';
@@ -467,12 +467,32 @@ async function collectStale(ctx, entries, { quiet = false } = {}) {
     const sha256 = createHash('sha256').update(installed).digest('hex');
     const knownStock = knownShas.includes(sha256) || !!legacyStock?.(installed);
     if (knownStock) {
-      stale.push({ label, rel, tpl });
+      stale.push({ label, rel, tpl, installed });
     } else if (!quiet) {
       console.log(`  ${label}: differs from every known shipped version — looks customized, skipping (manual review; 최신 템플릿: templates/${rel})`);
     }
   }
   return stale;
+}
+
+// 판정과 쓰기 사이에는 사용자 확인 프롬프트가 있다. 그 틈에 파일이 편집되거나 leaf가 symlink로
+// 바뀌면 "stock만 덮는다"는 계약이 깨진다 — 쓰기 직전에 다시 확인한다.
+// `.claude`·`.claude/skills` 같은 **디렉터리** symlink는 공식 구조라 그대로 통과한다(링크를 통해
+// 실제 파일에 쓴다). 여기서 막는 것은 **leaf 파일 자체가 symlink인** 경우로, 그때 쓰면 링크가
+// 가리키는 바깥 파일을 덮게 된다(rules promote의 codex P1과 같은 계약).
+async function writeRefreshed(path, { tpl, installed, label }, opts) {
+  const st = await lstat(path).catch(() => null);
+  if (st?.isSymbolicLink()) {
+    console.log(`  ${label}: leaf가 symlink다 — 링크 바깥으로 쓰지 않는다 (수동 검토)`);
+    return false;
+  }
+  if (await readTextSafe(path) !== installed) {
+    console.log(`  ${label}: 판정 이후 내용이 바뀌었다 — 건너뜀 (다시 실행하면 재판정한다)`);
+    return false;
+  }
+  await writeText(path, tpl, opts);
+  console.log(`  ✓ refreshed: ${label}`);
+  return true;
 }
 
 export async function refreshClaudeHooks(ctx) {
@@ -496,11 +516,11 @@ export async function refreshClaudeHooks(ctx) {
   const ok = ctx.flags.yes || await confirm('\nRefresh Claude hooks to current templates?', { defaultYes: true });
   if (!ok) { console.log('Skipped hook refresh.'); return false; }
 
-  for (const { rel, tpl } of stale) {
-    await writeText(join(ctx.targetDir, rel), tpl, { mode: 0o755 });
-    console.log(`  ✓ refreshed: ${rel}`);
+  let wrote = 0;
+  for (const entry of stale) {
+    if (await writeRefreshed(join(ctx.targetDir, entry.rel), { ...entry, label: entry.rel }, { mode: 0o755 })) wrote++;
   }
-  return true;
+  return wrote > 0;
 }
 
 // 훅과 같은 규칙으로 스킬·규칙 템플릿을 갱신한다. 훅과 달리 실행 파일이 아니라 mode를 주지 않는다.
@@ -533,9 +553,18 @@ export async function refreshClaudeTemplates(ctx) {
   const ok = ctx.flags.yes || await confirm('\nRefresh skill/rule templates to current versions?', { defaultYes: true });
   if (!ok) { console.log('Skipped template refresh.'); return false; }
 
-  for (const { rel, tpl } of stale) {
-    await writeText(join(ctx.targetDir, rel), tpl);
-    console.log(`  ✓ refreshed: ${rel}`);
+  const written = [];
+  for (const entry of stale) {
+    if (await writeRefreshed(join(ctx.targetDir, entry.rel), { ...entry, label: entry.rel })) written.push(entry);
+  }
+  if (!written.length) return false;
+
+  // `.cursor/rules/*.mdc`는 `.claude/rules/*.md`에서 생성되는 별도 산출물이다. 미러를 다시 만들지
+  // 않으면 Claude만 새 규칙을 보고 Cursor는 계속 옛 규칙을 읽는다 — doctor는 `.claude` 쪽만 보므로
+  // 정상으로 돌아와 드리프트가 숨는다. `.claude/rules`를 쓰는 다른 경로(`rules promote`)와 같은 규약이다.
+  if (written.some(({ rel }) => rel.startsWith('.claude/rules/'))) {
+    const mirrored = (await mirrorCursorRules(ctx)).filter(r => r.action === 'mirror').length;
+    if (mirrored) console.log(`  ✓ cursor mirror regenerated: ${mirrored} rule(s)`);
   }
   return true;
 }

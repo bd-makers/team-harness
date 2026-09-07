@@ -9,6 +9,8 @@ import {
   refreshClaudeTemplates, REFRESHABLE_TEMPLATE_FILES, KNOWN_STOCK_TEMPLATE_SHA256,
 } from '../src/commands/migrate.mjs';
 import { copyStaticAssets } from '../src/harness.mjs';
+import { execFileSync } from 'node:child_process';
+import { symlink, lstat } from 'node:fs/promises';
 
 // templates/의 스킬·규칙 수정이 기존 설치에 도달하는지 검증한다.
 // copyStaticAssets는 skipExisting으로 복사하므로 migrate의 refreshClaudeTemplates가
@@ -167,4 +169,102 @@ test('전제: init 재실행(copyStaticAssets)은 수정된 템플릿을 배달�
       await tplBody('.claude/skills/verify/SKILL.md'),
       '신규 파일은 skipExisting을 통과해 도달해야 한다');
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// --- codex 리뷰(2026-09-08) 발견 재현 ---
+
+// MAJOR: `.cursor/rules/*.mdc`는 `.claude/rules/*.md`에서 생성되는 별도 산출물이다.
+// 미러를 다시 만들지 않으면 Claude만 새 규칙을 보고 Cursor는 옛 규칙을 계속 읽는데,
+// doctor는 `.claude` 쪽만 보므로 정상으로 돌아와 드리프트가 숨는다.
+test('codex MAJOR: 규칙 refresh는 .cursor 미러를 함께 재생성한다', async () => {
+  const rel = '.claude/rules/testing.md';
+  const dir = await plant(join(FIXTURES, '2026-04-16-6948aa73'), [rel]);
+  try {
+    // 미러를 옛 규칙 상태로 만들어 둔다
+    await mkdir(join(dir, '.cursor/rules'), { recursive: true });
+    await writeFile(join(dir, '.cursor/rules/testing.mdc'),
+      await readFile(join(FIXTURES, '2026-04-16-6948aa73', rel), 'utf8'));
+
+    assert.equal(await refreshClaudeTemplates(ctxFor(dir)), true);
+
+    const mirror = await readFile(join(dir, '.cursor/rules/testing.mdc'), 'utf8');
+    assert.match(mirror, /harness:rule origin=/, '미러도 최신 규칙을 반영해야 한다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// MAJOR: 판정과 쓰기 사이에 확인 프롬프트가 있다. leaf가 symlink면 링크 바깥 파일을 덮게 된다.
+// 디렉터리 symlink(공식 구조)는 통과해야 하므로 둘을 함께 고정한다.
+test('codex MAJOR: leaf 파일이 symlink면 쓰지 않는다 — 링크 바깥 파일 보존', async () => {
+  const rel = '.claude/skills/new-feature/SKILL.md';
+  const dir = await mkdtemp(join(tmpdir(), 'harness-tplrefresh-'));
+  try {
+    const outside = join(dir, 'outside.md');
+    await writeFile(outside, await readFile(join(FIXTURES, '2026-09-07-286ef8e9', rel), 'utf8'));
+    await mkdir(dirname(join(dir, rel)), { recursive: true });
+    await symlink(outside, join(dir, rel));
+
+    assert.equal(await refreshClaudeTemplates(ctxFor(dir)), false, '쓸 것이 없으면 false');
+    assert.equal(await readFile(outside, 'utf8').then(b => b.includes('수직 슬라이스')), false,
+      '링크 바깥 파일은 그대로여야 한다');
+    assert.equal((await lstat(join(dir, rel))).isSymbolicLink(), true, 'symlink가 실제 파일로 바뀌면 안 된다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('codex MAJOR: 디렉터리 symlink(공식 구조)는 링크를 통해 정상 갱신된다', async () => {
+  const rel = '.claude/skills/new-feature/SKILL.md';
+  const dir = await mkdtemp(join(tmpdir(), 'harness-tplrefresh-'));
+  try {
+    const store = join(dir, 'store/new-feature');
+    await mkdir(store, { recursive: true });
+    await writeFile(join(store, 'SKILL.md'), await readFile(join(FIXTURES, '2026-09-07-286ef8e9', rel), 'utf8'));
+    await mkdir(join(dir, '.claude/skills'), { recursive: true });
+    await symlink(join(dir, 'store/new-feature'), join(dir, '.claude/skills/new-feature'));
+
+    assert.equal(await refreshClaudeTemplates(ctxFor(dir)), true);
+    assert.equal(await readFile(join(store, 'SKILL.md'), 'utf8'), await tplBody(rel),
+      '링크를 통해 실제 파일이 갱신돼야 한다');
+    assert.equal((await lstat(join(dir, '.claude/skills/new-feature'))).isSymbolicLink(), true, '링크 보존');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// MINOR: 테이블 → fixture 방향. 기존 가드는 fixture → 테이블만 봐서, 테이블에 근거 없는 sha를
+// 추가해도 통과했다. 양방향을 다 걸어야 "배포한 적 있는 버전"이라는 주장이 유지된다.
+test('codex MINOR: KNOWN_STOCK_TEMPLATE_SHA256의 모든 항목은 fixture와 git 이력에 근거가 있다', async () => {
+  const fixtureShas = new Set();
+  for (const era of (await readdir(FIXTURES, { withFileTypes: true })).filter(e => e.isDirectory()).map(e => e.name)) {
+    for (const rel of await walk(join(FIXTURES, era))) {
+      fixtureShas.add(`${rel}:${sha256(await readFile(join(FIXTURES, era, rel), 'utf8'))}`);
+    }
+  }
+  for (const [rel, shas] of Object.entries(KNOWN_STOCK_TEMPLATE_SHA256)) {
+    for (const sha of shas) {
+      assert.ok(fixtureShas.has(`${rel}:${sha}`),
+        `${rel}의 ${sha.slice(0, 12)}…에 대응하는 fixture가 없다 — 근거 없는 항목이거나 fixture를 빠뜨렸다`);
+    }
+  }
+});
+
+// 위 두 가드는 "테이블 ≡ fixture"만 증명한다. 둘이 함께 낡으면(과거 버전을 양쪽에서 누락) 통과한다.
+// 실제 git 이력과 대조해 완전성까지 고정한다 — 이 저장소 안에서만 성립하는 검사다.
+test('codex MINOR: 테이블이 templates/의 실제 git 이력을 빠짐없이 담는다 (완전성)', (t) => {
+  let head;
+  try { head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT }).toString().trim(); }
+  catch { return t.skip('git 이력 없음 — 소비자 설치본에서는 건너뛴다'); }
+  assert.ok(head);
+
+  for (const rel of REFRESHABLE_TEMPLATE_FILES) {
+    const p = `templates/${rel}`;
+    const cur = sha256(execFileSync('git', ['show', `HEAD:${p}`], { cwd: ROOT, maxBuffer: 1 << 26 }));
+    const commits = execFileSync('git', ['log', '--format=%H', '--', p], { cwd: ROOT }).toString().trim().split('\n').filter(Boolean);
+    const historical = new Set();
+    for (const c of commits) {
+      let blob;
+      try { blob = execFileSync('git', ['rev-parse', `${c}:${p}`], { cwd: ROOT, stdio: ['pipe', 'pipe', 'ignore'] }).toString().trim(); }
+      catch { continue; }
+      const s = sha256(execFileSync('git', ['cat-file', 'blob', blob], { cwd: ROOT, maxBuffer: 1 << 26 }));
+      if (s !== cur) historical.add(s);
+    }
+    assert.deepEqual(new Set(KNOWN_STOCK_TEMPLATE_SHA256[rel] || []), historical,
+      `${rel}: 테이블과 git 이력이 어긋난다 — 템플릿을 고쳤으면 이전 판 sha와 fixture를 함께 추가하라`);
+  }
 });
