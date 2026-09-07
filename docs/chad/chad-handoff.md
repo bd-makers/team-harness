@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+template-refresh-policy
 
-## Last Completed Task (2026-09-07)
-`pocock-tdd-slicing` — done
+## Last Commit (2026-09-07)
+8dd52c3 feat(migrate): 템플릿 refresh를 스킬·규칙까지 확장 + doctor stale 경고 (D8)
 
 ## Full Context
-→ docs/chad/pocock-tdd-slicing/pocock-tdd-slicing-handoff.md
+→ docs/chad/template-refresh-policy/template-refresh-policy-handoff.md
