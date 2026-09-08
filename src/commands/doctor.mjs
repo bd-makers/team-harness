@@ -297,6 +297,38 @@ export const DECISION_HEADINGS = ['## D2', '## D4', '## D5', '## D6', '## D7', '
 // Derived so the absence message cannot drift from the list it describes.
 const DECISION_IDS = DECISION_HEADINGS.map(h => h.replace(/^## /, '')).join('/');
 
+// Fenced code blocks are dropped before heading detection: a `## D6` line inside a
+// ```md example *quotes* a heading, it is not the section — without this the check
+// stays silent when the real section is missing (codex P2, 2026-09-05, deferred then).
+// Fence semantics follow CommonMark §4.5: opens with ``` or ~~~ (≥3, ≤3 leading spaces),
+// closes only with the same char at ≥ the opening length (trailing whitespace only), and an
+// unclosed fence runs to the end of the document. A backtick fence's info string may not
+// contain a backtick — such a line is prose, not an opener (else it would swallow the rest
+// of the log and *invent* missing sections; codex P2 2026-09-09). Line ends are LF, CRLF or
+// a bare CR, the same line model the `m`-flag heading regex below already uses. Kept local —
+// context.mjs has a near-identical state machine (minus the info-string rule) but does not
+// export it, and pulling task.mjs into doctor for two regexes is not worth the import.
+const CODE_FENCE_OPEN = /^ {0,3}(`{3,}|~{3,})(.*)$/;
+const CODE_FENCE_CLOSE = /^ {0,3}(`+|~+)[ \t]*$/;
+function stripFencedCode(text) {
+  const kept = [];
+  let fence = null;
+  for (const line of text.split(/\r\n?|\n/)) {
+    if (fence) {
+      const close = CODE_FENCE_CLOSE.exec(line);
+      if (close && close[1][0] === fence.char && close[1].length >= fence.length) fence = null;
+      continue;
+    }
+    const open = CODE_FENCE_OPEN.exec(line);
+    if (open && !(open[1][0] === '`' && open[2].includes('`'))) {
+      fence = { char: open[1][0], length: open[1].length };
+      continue;
+    }
+    kept.push(line);
+  }
+  return kept.join('\n');
+}
+
 // `root`(플러그인 루트)를 주면 복사해 올 원본의 **실제 경로**를 안내한다. 없으면 상대 경로로 적는다.
 // 누락 절은 init·migrate 어느 쪽도 고치지 못한다 — D8에서 `docs/` seed를 refresh 비목표로
 // 두었기 때문이고(팀이 설치 후 저작하는 파일), 그 사실을 문구가 직접 말해 주지 않으면
@@ -315,7 +347,8 @@ export async function checkDecisionLog(targetDir, root) {
   }
   // Line-anchored with \b so `## D20` or a mid-line mention cannot satisfy `## D2`,
   // while the template's dated form (`## D2 (2026-06-11) — …`) still matches.
-  const missing = DECISION_HEADINGS.filter(h => !new RegExp(`^${h}\\b`, 'm').test(body));
+  const prose = stripFencedCode(body);
+  const missing = DECISION_HEADINGS.filter(h => !new RegExp(`^${h}\\b`, 'm').test(prose));
   if (missing.length === 0) return null;
   const source = root ? join(root, 'templates/docs/decisions.md') : '플러그인 templates/docs/decisions.md';
   return `${DECISION_LOG_PATH}에 ${missing.join(', ')} 절 없음 — 팀 결정 로그는 설치 후 팀이 저작하는 파일이라 init·migrate 어느 쪽도 덮어쓰지 않는다(D8: docs/ seed는 refresh 비목표). \`${source}\` 에서 해당 절을 복사해 ${DECISION_LOG_PATH} 끝에 덧붙여라 — 이미 있는 절은 건드리지 말 것`;

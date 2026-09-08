@@ -39,6 +39,28 @@
 
 <!-- harness:review kind=codex scope=worktree tip=2e9f82016227e920ea7895a132077baa08affaaf at=2026-09-05T04:52:45Z -->
 
+### 2026-09-09 codex — scope: worktree (dirty working tree) — 후속: fenced code block P2 반영
+
+- 대상: 2026-09-05 리뷰에서 기각·후속으로 남긴 P2(fenced code block 안 `## D<n>` 오인)의 수정분 —
+  `doctor.mjs` `stripFencedCode` + 테스트 + CHANGELOG. 활성 task 없이 진행한 소규모 후속이라 이 artifact에 이어 기록한다.
+- 실행: `codex exec --sandbox read-only -m gpt-5.6-sol "<focus 프롬프트>" < /dev/null` 백그라운드, 135,541 tokens.
+- 결과: P1 없음 · P2 1건 · P3 2건 · verdict "수정 요청".
+- 판별·조치:
+  - P2 `doctor.mjs` — 백틱 펜스 info string에 백틱이 있으면 CommonMark §4.5상 펜스가 아닌데 opener로 인정 →
+    뒤 문서를 전부 삼켜 **거짓 누락 경고**(원래 결함보다 나쁜 방향). **진짜 결함** → **반영**: opener 판정에
+    info-string 제약 추가 + 회귀 테스트.
+  - P3 `doctor.mjs` — 단독 CR 줄 끝을 `split(/\r?\n/)`이 못 나눔; 헤딩 정규식의 `m` 플래그는 CR을 줄 끝으로
+    보므로 두 줄 모델이 어긋남. **사실**, 빈도 낮음 → **반영**(`/\r\n?|\n/`).
+  - P3 `doctor.test.mjs` — fixture가 전부 무들여쓰기·길이 3·같은 문자·LF라 mutation 5종(`>=`→`===`, 같은 문자
+    검사 제거, 들여쓰기 제거, LF 전용, info-string 누락)이 살아남음. **사실** → **반영**: 표 기반 케이스 8 +
+    줄 끝 2 추가. 뮤테이션 6종(위 5 + stripping 전체 제거)을 실제로 넣어 전부 검출됨을 확인한 뒤 원본 복원.
+- 리뷰어가 못 돌린 것: `mkdtemp EPERM`(read-only 샌드박스) → 작성 세션의 `npm test`로 대체: 676 pass / 0 fail / 1 skipped.
+- 검증 중 배운 것: fixture 끝에 감시자 헤딩을 두는 표 설계는 "닫히지 않은 펜스" 케이스에서 감시자까지 삼켜진다 —
+  그 케이스는 진짜 closer를 뒤에 둬야 한다(처음 기대값이 틀렸고 구현이 옳았다).
+- 남긴 것: `context.mjs`의 동일 상태 머신에는 info-string 제약이 없다(같은 잠재 결함, TCC 검사 대상이라 영향은 작음). 범위 밖.
+
+<!-- harness:review kind=codex scope=worktree tip=9a5c0f1488b2537506e3e54785cfd762d17463fe at=2026-09-08T16:14:24Z -->
+
 ## Learnings
 
 - "검사 목록 ⊆ 정본" 형태의 계약 테스트는 정본이 자라는 드리프트를 못 잡는다 — 집합 동등으로 고정한다.

@@ -220,6 +220,79 @@ test('checkDecisionLog: 일부 절 누락 → 누락 절만 나열 + 템플릿 �
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+// codex 리뷰 P2(2026-09-05, doctor-decision-headings)에서 기각·후속으로 남긴 건: 라인 앵커는 fenced code block
+// 안의 `## D<n>` 줄(복사용 예시·인용)도 절로 인정한다 — 절이 실제로 없어도 doctor가 침묵하는 false negative.
+// 펜스 안은 산문이 헤딩을 *인용*한 것이지 절이 아니다. ``` 와 ~~~ 두 종류 모두, 그리고 펜스가 닫힌 뒤의
+// 진짜 헤딩은 계속 절로 세야 한다(제거가 뒤 본문까지 먹으면 안 된다).
+test("checkDecisionLog: fenced code block 안의 ## D<n>은 절이 아니다 (펜스 뒤 진짜 헤딩은 유지)", async () => {
+  const dir = await makeDecisionLogFixture([
+    "# Team Decision Log", "",
+    "## D2 (2026-06-11) — a", "",
+    "복사용 예시:", "",
+    "```md", "## D4 (2026-07-28) — 예시일 뿐", "```", "",
+    "~~~", "## D5 (2026-08-20) — 이것도 예시", "~~~", "",
+    "## D6 (2026-08-26) — 진짜 절", "",
+  ].join("\n"));
+  try {
+    const w = await checkDecisionLog(dir);
+    assert.ok(typeof w === "string", "returns a warning string");
+    assert.match(w, /## D4, ## D5, ## D7, ## D8 절 없음/, "펜스 안 D4·D5는 누락으로, 펜스 뒤 D6은 존재로");
+    assert.doesNotMatch(w, /## D[26]\b/, "존재하는 D2/D6은 누락 목록에 없어야 한다");
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 닫히지 않은 펜스는 문서 끝까지 코드다(CommonMark) — 그 안의 헤딩도 절이 아니다.
+test("checkDecisionLog: 닫히지 않은 fenced code block은 문서 끝까지 코드로 본다", async () => {
+  const dir = await makeDecisionLogFixture(
+    "# Team Decision Log\n\n## D2 (2026-06-11) — a\n\n```\n## D4 (2026-07-28) — 닫히지 않은 펜스 안\n## D5 (2026-08-20) — 역시 안\n",
+  );
+  try {
+    const w = await checkDecisionLog(dir);
+    assert.ok(typeof w === "string", "returns a warning string");
+    assert.match(w, /## D4, ## D5, ## D6, ## D7, ## D8 절 없음/, "D2 외 전부 누락");
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 펜스 계약을 mutation이 못 뚫게 표로 고정한다(2026-09-09 codex P2·P3). 각 행: D2는 항상 진짜 절,
+// 가운데 줄들이 케이스, 끝의 D8은 "제거가 문서 끝까지 먹지 않았다"의 감시자. expect = D4~D7 중 누락으로
+// 보고돼야 하는 것. 근거는 CommonMark §4.5: 여는 펜스는 백틱·물결 3개 이상(들여쓰기 0~3), 닫는 펜스는
+// 같은 문자로 여는 것 이상 길이(뒤에 공백만 허용), 백틱 펜스의 info string에는 백틱이 올 수 없고,
+// 줄 끝은 LF·CRLF·단독 CR 모두다.
+const FENCE_CASES = [
+  ['4자 opener는 3자 closer로 안 닫힌다', ['````', '## D4', '```', '## D5', '````', '## D6'], ['D4', 'D5', 'D7']],
+  ['다른 문자 closer로는 안 닫힌다', ['```', '## D4', '~~~', '## D5', '```', '## D6'], ['D4', 'D5', 'D7']],
+  ['더 긴 closer로는 닫힌다', ['```', '## D4', '`````', '## D5'], ['D4', 'D6', 'D7']],
+  // `\`\`\` x`는 닫지 못하므로 D7까지 펜스 안이고, 감시자 D8을 살리려면 그 뒤에 진짜 closer가 필요하다.
+  ['closer 뒤 공백은 허용, 다른 글자는 불허', ['```', '## D4', '```  ', '## D5', '```', '## D6', '``` x', '## D7', '```'], ['D4', 'D6', 'D7']],
+  ['들여쓰기 3칸까지는 펜스다', ['   ```', '## D4', '   ```', '## D5'], ['D4', 'D6', 'D7']],
+  ['들여쓰기 4칸은 펜스가 아니다(코드 블록 줄일 뿐)', ['    ```', '## D4', '    ```', '## D5'], ['D6', 'D7']],
+  ['백틱 펜스 info string에 백틱이 있으면 펜스가 아니다', ['```md `x', '## D4', '## D5'], ['D6', 'D7']],
+  ['물결 펜스 info string에는 백틱이 와도 된다', ['~~~md `x', '## D4', '~~~', '## D5'], ['D4', 'D6', 'D7']],
+];
+for (const [name, mid, expect] of FENCE_CASES) {
+  test(`checkDecisionLog fence 계약: ${name}`, async () => {
+    const dir = await makeDecisionLogFixture(['# Team Decision Log', '', '## D2 — a', ...mid, '## D8 — tail', ''].join('\n'));
+    try {
+      const w = await checkDecisionLog(dir);
+      const want = expect.map(d => '## ' + d).join(', ');
+      assert.ok(typeof w === 'string', 'returns a warning string');
+      assert.equal(/에 (.+?) 절 없음/.exec(w)?.[1], want, name);
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  });
+}
+
+// 줄 끝 종류는 stripping의 줄 나누기와 헤딩 정규식(m 플래그는 CR도 줄 끝으로 본다)이 같은 줄 모델을
+// 써야 한다 — 어긋나면 CRLF·CR 문서에서만 펜스 안 헤딩이 절로 새어 나온다.
+for (const [name, eol] of [['CRLF', '\r\n'], ['단독 CR', '\r']]) {
+  test(`checkDecisionLog fence 계약: ${name} 줄 끝에서도 펜스를 걷어낸다`, async () => {
+    const dir = await makeDecisionLogFixture(['# Team Decision Log', '', '## D2 — a', '```', '## D4', '```', '## D5', '## D8 — tail', ''].join(eol));
+    try {
+      const w = await checkDecisionLog(dir);
+      assert.equal(/에 (.+?) 절 없음/.exec(w ?? '')?.[1], '## D4, ## D6, ## D7', name);
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  });
+}
+
 // D6(2026-08-26)·D7(2026-09-03)이 D-log에 추가된 뒤에도 검사 목록은 D2/D4/D5에 머물러 있었다 —
 // D6 이후에 스캐폴드된 소비자는 AGENTS.md 코어가 가리키는 절이 없어도 doctor가 침묵했다.
 // 검사 목록이 템플릿 D-log와 함께 움직이는지 고정한다.
