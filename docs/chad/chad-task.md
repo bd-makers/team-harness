@@ -4,6 +4,7 @@
 
 ## Completed
 - ✅ pocock-tdd-slicing
+- ✅ template-refresh-policy
 - ✅ eager-tier-slimming
 - ✅ sim-section-scoping
 - ✅ doctor-eager-global
