@@ -40,3 +40,16 @@ docs/chad/chad-handoff.md                          |  2 +-
  .../done-force-audit-trail-artifact.md             | 31 ++++++++++++++++++++++
  .../done-force-audit-trail-handoff.md              | 10 +++++++
  3 files changed, 42 insertions(+), 1 deletion(-)
+
+## 2026-09-08T15:08:21.190Z — 94f205e fix(summary): reopen 이 복구한 우회 흔적을 지우던 것 수정 (codex 재검토 P2)
+docs/chad/chad-handoff.md                          |  2 +-
+ .../done-force-audit-trail-artifact.md             | 43 ++++++++++++++++++++
+ .../done-force-audit-trail-handoff.md              |  6 +++
+ .../done-force-audit-trail-plan.md                 |  2 +-
+ src/commands/summary.mjs                           | 23 +++++++----
+ tests/summary.test.mjs                             | 47 ++++++++++++++++++++--
+ 6 files changed, 109 insertions(+), 14 deletions(-)
+
+## 2026-09-08T15:09:21.082Z — 완료
+
+태스크 종료.

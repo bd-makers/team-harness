@@ -43,6 +43,11 @@
   `readLedger` 재읽기에서 두 행 모두 `done: true`·`created` 보존, `completedNames`에 둘 다 존재.
 - 이 저장소 자신의 원장 회귀 없음 (`summary --check` = 최신, 88 task) · `docs:check` 최신.
 
+**자기 자신으로 검증됐다.** 이 task의 종결은 새로 추가한 코드가 도는 첫 실사례였다.
+가드를 **`--force` 없이** 통과했고, 그래서 meta에 `forcedAt`·`forcedIssues`가 **기록되지 않았다**
+(완료 기준 2가 규정한 동작 그대로). 원장도 `| chad | done-force-audit-trail | ✅ done | 2026-09-07 |`로
+표시 없이 찍혔다 — 감사 흔적의 첫 항목이 "우회 아님"인 것이 맞는 결과다.
+
 **TDD 순서 (plan 단계 번호와 다름).** plan은 테스트를 5단계에 두지만 구현은 test-first로 했다.
 plan의 체크박스는 다른 명령의 기계 입력이라 순서를 손대지 않았고, 각 단계 안에서 RED→GREEN을 돌렸다.
 실패를 실제로 관찰한 기록:

@@ -1,9 +1,9 @@
 # chad — Tasks
 
 ## Open
-- done-force-audit-trail (created 2026-09-07)
 
 ## Completed
+- ✅ done-force-audit-trail
 - ✅ pocock-tdd-slicing
 - ✅ template-refresh-policy
 - ✅ eager-tier-slimming

@@ -87,6 +87,6 @@
 | hslee | done-status-expiry | ✅ done | 2026-09-06 |
 | hslee | handoff-marker-typing | ✅ done | 2026-09-06 |
 | hslee | intent-md-alignment | ✅ done | 2026-09-06 |
-| chad | done-force-audit-trail | 🔄 open | 2026-09-07 |
+| chad | done-force-audit-trail | ✅ done | 2026-09-07 |
 | chad | pocock-tdd-slicing | ✅ done | 2026-09-07 |
 | chad | template-refresh-policy | ✅ done | 2026-09-07 |
