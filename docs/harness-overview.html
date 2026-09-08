@@ -203,7 +203,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.33.0</span>
+      <span class="tag tag-purple">v0.34.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -211,6 +211,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.34.0 — <code>--force</code> 종결에 감사 흔적이 남는다:</strong>
+    <br>
+    <code>0.34.0</code> <strong><code>done --force</code>로 가드를 무시하고 닫은 task가 종결 이후 정상 종결과 구분되지 않던 것을 고친다.</strong> 무시한 issue는 stdout에 한 번 찍히고 휘발해서, <code>meta.json</code>·원장·<code>doctor</code>·SessionStart 재개 후보 <strong>어디에도 남지 않았다</strong> — 종결 후에는 "이 task는 증거를 갖추고 닫혔는가"를 물을 기계 판독 경로가 없었다. 가설이 아니라 <strong>이미 사람이 산문으로 대신하던 일</strong>이다(<code>done-guard-window-plan.md</code>가 우회 이력을 손으로 적어 유지하고 있었다). meta에 <code>forcedAt</code>·<code>forcedIssues</code> 두 필드를 더하고, 원장은 우회 종결을 <code>✅ done ⚠️</code>로 그린다. <strong>기록 조건은 플래그가 아니라 실제로 무시된 issue다</strong> — <code>--force</code>만 붙고 무시한 것이 없으면 우회가 아니므로 남기지 않는다. 역파싱 정규식은 렌더와 <strong>같은 상수에서 조립</strong>한다(<code>⚠️</code>는 두 코드포인트라 한쪽에 손으로 다시 적으면 변이 선택자가 빠져도 에러 없이 그 행만 사라진다). <strong>가드의 차단 판정(<code>collectDoneIssues</code>)과 <code>--force</code> 경로는 한 줄도 바뀌지 않는다</strong> — 막지 않고 기록만 하므로, "가드의 위협 모델은 망각이지 고의가 아니다"라는 <code>done-guard-window</code>의 확립된 결정과 충돌하지 않는다. Codex 리뷰 <strong>2회</strong>가 P2 5건·P3 1건을 냈고 5건을 반영했다 — 그중 2차가 잡은 것이 핵심이다: 첫 수정은 <strong>task가 닫혀 있는 동안에만</strong> 성립했다(열린 행 <code>🔄 open</code>은 표시를 담을 자리가 없어, 열린 구간에 원장을 한 번만 재생성해도 유일한 출처가 사라졌다). 반복 우회가 이전 기록을 덮어쓴다는 지적은 <strong>범위 밖으로 판별</strong>했다(스키마가 답하는 질문은 "있었는가"이지 "몇 번인가"가 아니다). <strong>소비자가 할 일은 없다</strong> — 필드 없는 구 task는 바이트 동일하게 렌더링되고, 새 필드는 다음 우회 종결 때 생긴다.
+    <br><br>
     <strong>🆕 0.33.0 — 템플릿 refresh가 스킬·규칙까지 도달한다:</strong>
     <br>
     <code>0.33.0</code> <strong><code>templates/</code>를 고쳐도 기존 설치에는 영영 도달하지 않던 문제를 고친다.</strong> <code>copyStaticAssets</code>가 정적 표면을 <code>skipExisting</code>으로 복사하고 그 판정이 <em>파일 단위</em>라, <strong>새로 추가된</strong> 파일은 도달하는데 <strong>수정된</strong> 파일만 막히는 비대칭이 있었다 — 그래서 0.32.3까지 나간 <code>new-feature</code> Phase 3 규율이 기존 팀에 배달되지 않은 채였다. 소비자 샌드박스에서 재현해 그 비대칭 자체를 테스트로 고정했다. <strong>정책은 새로 만들지 않았다</strong> — <code>refreshClaudeHooks</code>가 이미 쓰던 provenance 규칙(하네스가 배포한 적 있는 sha256과 일치할 때만 갱신, 나머지는 커스터마이즈로 보아 보존)을 그대로 넓혀 적용 범위를 정적 템플릿 <strong>6개에서 13개</strong>로 늘렸다(<code>.claude/skills</code> 3 + <code>.claude/rules</code> 4). <code>docs/</code> seed는 설치 후 팀이 저작하는 파일이라 <strong>비목표</strong>로 명시했다(D8). 경로가 있어도 부르지 않으면 없는 것과 같으므로 <code>doctor</code>에 <strong>stale 경고</strong>를 세우고 <code>next_actions</code>에 <code>migrate</code>를 실었다 — 단, <strong>사용자가 편집한 파일에는 경고하지 않는다</strong>(<code>migrate</code>가 고치지 않을 것을 시키면 거짓 안내다). Codex 리뷰가 MAJOR 3건을 냈고 2건을 반영했다: 규칙 refresh가 <code>.cursor</code> 미러를 갱신하지 않아 <strong>드리프트가 스스로를 숨기던</strong> 문제(<code>doctor</code>는 <code>.claude</code>만 본다), 그리고 판정↔쓰기 사이 TOCTOU·leaf symlink 덮어쓰기(<strong>디렉터리 symlink=공식 backup 구조는 그대로 통과</strong>). <strong>소비자가 할 일:</strong> <code>migrate</code> 한 번, 그리고 <code>## D8</code> 절 누락 경고는 <code>init</code>·<code>migrate</code>로 안 고쳐지므로 경고가 알려 주는 경로에서 복사해 붙인다.
@@ -2562,7 +2566,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.33.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.34.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
