@@ -98,6 +98,44 @@ spec의 완료 기준은 단일 종결 1건을 규정하고 필드도 둘로 못
 
 <!-- harness:review kind=codex scope=diff tip=830816faa24c7287852634858b186c324b499cbd at=2026-09-08T14:28:06Z -->
 
+### 2026-09-08 — Codex 재검토 (수정분, scope=`origin/main...0a31bc7` 3커밋)
+
+1차 리뷰어가 "P2 수정 후 재검토"를 권해 같은 엔진으로 다시 돌렸다. **Verdict: Request changes.**
+P1 0건 / P2 2건 / P3 1건 — 셋 다 재현해 **전부 수정**했다.
+
+**리뷰어가 확인해 준 것(반증 실패).** `forcedInLedger`가 meta.json으로 직렬화되는 경로 없음 ·
+`summary --check` 진동 없음(`--write` 후 고정점 도달) · 사용자 인덱스 표시 제거 뮤테이션이
+새 테스트에서 실패함 · P2-2("가장 최근 우회 1건") 기각 판단은 **뒤집지 않음**.
+
+**R2-1 — reopen이 복구한 흔적을 지운다 (`task.mjs:252`).** ✅ **진짜 결함 · 수정함.**
+P2-1 수정이 절반만 된 상태였다. 원장은 **열린** task의 우회를 표현할 자리가 없다(`🔄 open`).
+그래서 meta가 유실된 우회 task를 reopen하면, 열린 구간에 `summary --write`를 **한 번만** 돌려도
+유일한 출처가 사라지고 이후 clean close가 정상 종결로 잘못 표시된다.
+조치: `inferLegacyMeta`가 "우회가 있었다(시각 불명)"를 `forcedRecovered`로 복구하고,
+reopen의 `writeTaskMeta`가 그 값을 meta에 굳힌다 — 시각을 모르는 채 `forcedAt`을 지어내지
+않으려고 별도 키를 쓴다(복구 산물이라 새 task 템플릿에는 없다). `collectTasks`는 meta에 굳은
+값을 원장보다 우선한다. E2E: meta 삭제 → reopen(`forcedRecovered: true` 기록) →
+열린 구간 재생성(`🔄 open`) → clean close → `✅ done ⚠️` 복귀.
+
+**R2-2 — meta-missing 테스트가 또 이름만 본다 (`tests/summary.test.mjs`).** ✅ **진짜 공백 · 수정함.**
+P2-3과 **같은 종류의 결함이 같은 라운드에 다시** 났다 — `renderUserIndex` 판정을
+`isForced(t)` → `Boolean(t.forcedAt)`으로 좁히는 뮤테이션이 통과했다.
+조치: 복구 경로의 사용자 인덱스 줄을 meta 있을 때의 줄과 대조하도록 바꾸고, 그 뮤테이션으로
+실패를 확인했다.
+
+**R2-3 (P3) — 주석이 코드와 반대 (`summary.mjs`).** ✅ **수정함.**
+`inferLegacyMeta`의 "원장에는 우회 여부가 남아 있지 않다"가 `forcedNames` 도입으로 거짓이 됐다.
+자기 수정이 만든 거짓 주석이라 그대로 두면 다음 사람을 정확히 반대로 오도한다.
+
+**리뷰어 한계(그대로 옮김).** 이번에도 read-only 샌드박스가 `mkdtemp`를 EPERM으로 막아
+`npm run test` 전체는 독립 실행하지 못했다. 또한 검토 중 추가된 `b1c438f`(retro 문서)는
+지정 범위에서 제외했다고 밝혔다.
+
+재검증: `npm run test` 665개 / 실패 0 / skip 1 · `summary --check` 최신 · `docs:check` 최신 ·
+E2E 3단계(reopen → 열린 구간 재생성 → clean close) 통과.
+
+<!-- harness:review kind=codex scope=diff tip=0a31bc7ee652cd02750bc6b807258f501ebb756d at=2026-09-08T15:03:27Z -->
+
 
 ## Learnings
 
@@ -132,3 +170,8 @@ P2-1·P2-3은 재현되어 고쳤고, P2-2는 사실이지만 spec이 필드를 
 **리뷰어가 못 한 것도 옮겨 적는다.** codex는 read-only 샌드박스가 `mkdtemp`를 EPERM으로 막아
 `npm run test` 전체를 독립 실행하지 못했다. 이걸 적지 않으면 "리뷰어도 전체 테스트를 봤다"는
 잘못된 인상이 남는다.
+
+**같은 종류의 테스트 공백이 한 라운드에 두 번 났다.** P2-3(사용자 인덱스 표시 미검사)을 고치면서
+새로 쓴 회귀 테스트가 **또** 이름만 봤고, 2차 리뷰에서 R2-2로 다시 걸렸다. 교훈은 "표시를
+검사하라"가 아니라 **"렌더 결과를 비교할 때는 이름이 아니라 줄 전체를, 기준선과 대조하라"** 다.
+`includes(name)` 류의 단언은 통과 근거가 표시와 무관해서, 고치는 과정에서도 같은 형태로 재생산된다.

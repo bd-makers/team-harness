@@ -8,7 +8,7 @@ import { promisify } from 'node:util';
 import { runTask, runDone } from '../src/commands/task.mjs';
 import {
   collectTasks, renderTaskSummary, renderUserIndex, runSummary, readTaskMeta, defaultBranchCandidates,
-  readLedger, taskMetaTemplate,
+  readLedger, taskMetaTemplate, writeTaskMeta as writeTaskMetaForTest,
 } from '../src/commands/summary.mjs';
 
 const pexec = promisify(execFile);
@@ -684,9 +684,12 @@ test('meta 가 없어도 원장에 남은 우회 표시가 재생성에서 살�
       statusCell(row), statusCell(renderTaskSummary([forcedTask]).split('\n').find(l => l.startsWith('| chad |'))),
       '재생성 후에도 우회 표시가 남는다',
     );
-    assert.ok(
-      renderUserIndex('chad', tasks).includes('bypassed'),
-      '사용자 인덱스에서도 사라지지 않는다',
+    // 이름만 보면 renderUserIndex 의 판정을 isForced → Boolean(forcedAt) 로 좁히는 변이를
+    // 놓친다(2026-09-08 codex 재검토 P2). 줄 자체를 비교한다.
+    const recoveredLine = renderUserIndex('chad', tasks).split('\n').find(l => l.includes('bypassed'));
+    assert.equal(
+      recoveredLine, renderUserIndex('chad', [forcedTask]).split('\n').find(l => l.includes('bypassed')),
+      '사용자 인덱스도 meta 있을 때와 같은 줄을 그린다',
     );
   } finally {
     await rm(dir, { recursive: true, force: true });
@@ -708,4 +711,40 @@ test('taskMetaTemplate 이 우회 필드를 null 로 선언한다 (없음 ≠ �
   assert.ok('forcedIssues' in meta, 'forcedIssues 키 존재');
   assert.equal(meta.forcedAt, null);
   assert.equal(meta.forcedIssues, null);
+});
+
+// P2(2026-09-08 codex 재검토): 원장은 **열린** task 의 우회를 표현할 자리가 없다.
+// meta 가 유실된 우회 task 를 reopen 하면 그 사이 `summary --write` 한 번으로 유일한 흔적이
+// 사라지고, 이후 clean close 가 정상 종결로 잘못 표시된다. 복구한 사실은 meta 에 굳혀야 한다.
+test('meta 유실 + reopen 이후에도 우회 사실이 살아남는다 (열린 구간의 원장 재생성)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-forced-reopen-'));
+  try {
+    await initRepo(dir);
+    await mkdir(join(dir, 'docs', 'chad', 'bypassed'), { recursive: true });
+    await writeFile(join(dir, 'docs', 'chad', 'bypassed', 'bypassed-spec.md'), '# bypassed — Spec\n');
+    await writeFile(join(dir, 'docs', 'chad', 'bypassed', 'bypassed-handoff.md'), '# bypassed — Handoff\n');
+    await writeFile(join(dir, 'docs', 'task_summary.md'), renderTaskSummary([forcedTask]));
+    await writeFile(join(dir, 'docs', 'chad', 'chad-task.md'), renderUserIndex('chad', [forcedTask]));
+
+    // reopen — meta 가 없으므로 inferLegacyMeta 가 원장에서 사실을 복구해 meta 를 새로 쓴다.
+    await runTask({ targetDir: dir, flags: { member: 'chad' }, taskArgs: ['bypassed'] });
+    const meta = await readTaskMeta(dir, 'chad', 'bypassed');
+    assert.equal(meta.status, 'open', '재활성화로 완료가 만료된다');
+
+    // 열린 구간에서 원장을 재생성하면 행은 `🔄 open` 이 되어 표시를 담을 자리가 없다.
+    await writeFile(join(dir, 'docs', 'task_summary.md'), renderTaskSummary(await collectTasks(dir)));
+    await writeFile(join(dir, 'docs', 'chad', 'chad-task.md'), renderUserIndex('chad', await collectTasks(dir)));
+    assert.ok(
+      !(await readFile(join(dir, 'docs', 'task_summary.md'), 'utf8')).includes('⚠️'),
+      '전제 확인: 열린 행은 우회를 표현하지 못한다 — 원장은 더 이상 출처가 아니다',
+    );
+
+    // 이후 깨끗하게 다시 닫아도(우회 없음) 이 task 의 이력에 우회가 있었다는 사실은 남아야 한다.
+    await writeTaskMetaForTest(dir, 'chad', 'bypassed', { ...meta, status: 'done', closedAt: '2026-09-08T12:00:00.000Z' });
+    const after = await collectTasks(dir);
+    const row = renderTaskSummary(after).split('\n').find(l => l.startsWith('| chad |'));
+    assert.equal(statusCell(row), '✅ done ⚠️', 'reopen 을 거쳐도 우회 흔적이 지워지지 않는다');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });

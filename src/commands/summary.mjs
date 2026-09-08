@@ -25,9 +25,10 @@ export const FORCED_MARK = '⚠️';
 const doneCell = (forced) => (forced ? `${DONE_CELL} ${FORCED_MARK}` : DONE_CELL);
 
 // meta 의 `forcedAt` 이 정본이지만, meta 가 사라진 task 는 원장이 마지막 출처다(`created` 와 같은 이유).
-// `forcedInLedger` 는 그 복구값이며 **메모리에만 있다** — 시각을 모르는 채 `forcedAt` 을 지어내지 않고,
-// meta 스키마도 두 필드로 유지한다. 두 렌더러가 같은 판정을 쓰게 해 한쪽만 표시가 빠지는 것을 막는다.
-const isForced = (t) => Boolean(t.forcedAt || t.forcedInLedger);
+// `forcedRecovered` 는 거기서 복구한 "우회가 있었다(시각 불명)" 로, 시각을 모르는 채 `forcedAt` 을
+// 지어내지 않기 위한 별도 키다. 복구 산물이라 새 task 의 템플릿에는 없다.
+// 두 렌더러가 같은 판정을 쓰게 해 한쪽만 표시가 빠지는 것을 막는다.
+const isForced = (t) => Boolean(t.forcedAt || t.forcedRecovered);
 
 // Machine-owned per-task state. Lives beside the four SSOT files but is not one of
 // them: agents rewrite spec.md wholesale and the post-commit hook rewrites handoff.md,
@@ -76,8 +77,11 @@ export async function inferLegacyMeta(targetDir, user, task, ledger) {
     ledger.completedNames.has(key(user, task))
   );
 
-  // 원장에는 우회 여부가 남아 있지 않다. null 은 "우회 아님"이라는 주장이 아니라
-  // 기록이 없다는 뜻이고, 원장은 그 둘을 구분해 그릴 세 번째 표기를 갖지 않는다.
+  // 우회 **시각과 issue 원문**은 meta 와 함께 사라졌으므로 두 필드는 null 로 둔다 — 없는 정보를
+  // 지어내지 않는다. 그러나 우회가 **있었다는 사실**은 원장이 아직 들고 있으므로 복구한다.
+  // 이 복구값을 여기서 굳히지 않으면 reopen 이 흔적을 지운다: 열린 행(`🔄 open`)은 표시를 담을
+  // 자리가 없어서, 열린 구간에 원장을 한 번만 재생성해도 유일한 출처가 사라지고 이후 clean close
+  // 가 정상 종결로 잘못 표시된다 (2026-09-08 codex 재검토 P2).
   return {
     user,
     task,
@@ -86,6 +90,7 @@ export async function inferLegacyMeta(targetDir, user, task, ledger) {
     closedAt: null,
     forcedAt: null,
     forcedIssues: null,
+    forcedRecovered: ledger.forcedNames.has(key(user, task)),
   };
 }
 
@@ -162,9 +167,11 @@ export async function collectTasks(targetDir) {
       const meta = (await readTaskMeta(targetDir, user, task))
         || await inferLegacyMeta(targetDir, user, task, ledger);
       // meta 가 정본이다. 원장 복구값은 meta 에 기록이 없을 때만 얹는다 —
-      // 그러지 않으면 원장의 낡은 표시가 meta 를 이긴다.
-      const forcedInLedger = !meta.forcedAt && ledger.forcedNames.has(key(user, task));
-      tasks.push({ ...meta, user, task, forcedInLedger });
+      // 그러지 않으면 원장의 낡은 표시가 meta 를 이긴다. meta 에 이미 굳어 있는 복구값
+      // (reopen 이 써 둔 것)은 원장이 그 사실을 잊은 뒤에도 그대로 살아남는다.
+      const forcedRecovered = Boolean(meta.forcedRecovered)
+        || (!meta.forcedAt && ledger.forcedNames.has(key(user, task)));
+      tasks.push({ ...meta, user, task, forcedRecovered });
     }
   }
 

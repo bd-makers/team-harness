@@ -24,7 +24,7 @@
 - [x] **검증** — `npm run test` 전체 통과. 우회 표시가 실제로 원장에 뜨는 것을 E2E로 확인.
 - [x] **리뷰** — spec이 `review: required`를 선언했다. `/harness-review`(Codex, read-only) 실행 후
       결과를 artifact `## Reviews`에 마커와 함께 기록. 반영은 이 세션이 재현·판별한 뒤 단일 스레드로.
-- [ ] **retro** — `/harness-retro`로 학습 기록 후 `harness-team done`.
+- [x] **retro** — `/harness-retro`로 학습 기록 후 `harness-team done`.
 
 ## Ontology 변경 로그
 
