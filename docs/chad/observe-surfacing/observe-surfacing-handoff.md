@@ -10,3 +10,10 @@
  .../observe-surfacing/observe-surfacing-plan.md    |  23 ++++
  .../observe-surfacing/observe-surfacing-spec.md    | 116 +++++++++++++++++++++
  6 files changed, 195 insertions(+)
+
+## 2026-09-08T23:05:21.211Z — 0798e02 refactor(observe): 판정을 evaluateObserveVerdict로 추출 (observe-surfacing plan 1)
+.../observe-surfacing/observe-surfacing-context.md |  4 +--
+ .../observe-surfacing/observe-surfacing-plan.md    |  2 +-
+ src/commands/observe.mjs                           | 32 ++++++++++++++++------
+ tests/observe.test.mjs                             | 28 +++++++++++++++++++
+ 4 files changed, 55 insertions(+), 11 deletions(-)

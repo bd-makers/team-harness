@@ -9,6 +9,7 @@ import { buildEnvelope, buildErrorPacket, emitObservation } from '../observation
 import { settingsHasSessionGate } from './session-context.mjs';
 import { checkRuleProvenance } from './rules.mjs';
 import { findStaleTemplates, isKnownStockTemplate } from './migrate.mjs';
+import { evaluateObserveVerdict, observeLoopbackNudge, tripWireDetail } from './observe.mjs';
 
 const pexec = promisify(execFile);
 
@@ -354,6 +355,21 @@ export async function checkDecisionLog(targetDir, root) {
   return `${DECISION_LOG_PATH}에 ${missing.join(', ')} 절 없음 — 팀 결정 로그는 설치 후 팀이 저작하는 파일이라 init·migrate 어느 쪽도 덮어쓰지 않는다(D8: docs/ seed는 refresh 비목표). \`${source}\` 에서 해당 절을 복사해 ${DECISION_LOG_PATH} 끝에 덧붙여라 — 이미 있는 절은 건드리지 말 것`;
 }
 
+// observe-surfacing: the trip-wire verdict reaches doctor as ONE warn-level line built from the
+// same evaluateObserveVerdict the observe CLI uses, so the two cannot disagree. Silent unless
+// tripped — not-installed (no hook log; this plugin-dev repo, by D7) / no-data / ok all return
+// null, so no pluginDev gate is needed. Any exception is null too: a warn check that throws
+// kills doctor before it can emit its envelope (same contract as checkDecisionLog). Warn, never
+// fail: the thresholds are uncalibrated (observe.mjs), so a false positive must not break CI.
+// The loopback nudge is quoted, not executed — surfacing never creates a task.
+export async function checkObserveTripWires(targetDir, { now = new Date() } = {}) {
+  let verdict;
+  try { verdict = await evaluateObserveVerdict(targetDir, { now }); } catch { return null; }
+  if (verdict.status !== 'tripped') return null;
+  const wires = verdict.fired.map(wire => `${wire.id}(${tripWireDetail(wire)})`).join(', ');
+  return `observe 트립와이어 발화: ${wires} — harness-team observe로 상세 확인; ${observeLoopbackNudge(verdict.fired, verdict.window.to)}`;
+}
+
 export async function checkBoundaryCheckpointHook(targetDir) {
   let settings;
   try { settings = JSON.parse(await readFile(join(targetDir, '.claude/settings.json'), 'utf8')); }
@@ -649,6 +665,11 @@ export async function runDoctor(ctx) {
   // in the source repo too, so its absence is real drift on either side.
   const decisionLogWarning = await checkDecisionLog(ctx.targetDir, ctx.root);
   if (decisionLogWarning) add('decision log', 'warning', decisionLogWarning, `\n⚠️ ${decisionLogWarning}`);
+
+  // Not gated on pluginDev: a repo without the hook's log is `not-installed`, which is
+  // silent on its own (observe-surfacing spec, 설계 절).
+  const observeWarning = await checkObserveTripWires(ctx.targetDir);
+  if (observeWarning) add('observe trip wires', 'warning', observeWarning, `\n⚠️ ${observeWarning}`);
 
   // Deliberately NOT gated on pluginDev either — this repo's own eager tier is the
   // reason the 24 KiB budget was picked, so it must be measured here too.

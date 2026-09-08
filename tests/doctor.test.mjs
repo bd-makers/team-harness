@@ -6,10 +6,12 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from 'node:fs
 import { tmpdir, homedir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, DECISION_HEADINGS, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
+import { checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, DECISION_HEADINGS, checkObserveTripWires, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
 import { POST_COMMIT_HOOK } from '../src/git-hooks.mjs';
 import { cloudSyncPathWarning } from '../src/harness.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
+import { observeToolEvent } from '../templates/.claude/hooks/observe-tools.mjs';
+import { OBSERVABILITY_BASE } from '../src/commands/observe.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const pexec = promisify(execFile);
@@ -917,4 +919,81 @@ test('checkDecisionLog: root 없이 호출하면 상대 경로로 안내한다 (
   try {
     assert.match(await checkDecisionLog(dir), /templates\/docs\/decisions\.md/);
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// observe-surfacing plan 2: 판정(트립와이어)을 doctor 경고 1건으로 표면화한다 — warn 수준(fail 아님),
+// 발화가 없으면(not-installed·no-data·ok) 침묵. fixture는 실제 훅(observeToolEvent)이 쓴 레코드다.
+let observeSeq = 0;
+function observePayload(event, over = {}) {
+  observeSeq += 1;
+  return {
+    hook_event_name: event, session_id: 'sess-doc', tool_use_id: `call-${observeSeq}`, tool_name: 'Bash',
+    tool_input: { command: 'ls' }, tool_response: { stdout: 'x' }, duration_ms: 12, ...over,
+  };
+}
+async function makeObserveFixture(failures) {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-observe-'));
+  for (let i = 0; i < failures; i += 1) {
+    await observeToolEvent(observePayload('PostToolUseFailure', { error: 'boom' }), { projectDir: dir, now: new Date() });
+  }
+  return dir;
+}
+
+test('checkObserveTripWires: 로그 디렉터리 없음(not-installed) → null', async () => {
+  const dir = await makeObserveFixture(0);
+  try { assert.equal(await checkObserveTripWires(dir), null); } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkObserveTripWires: 창에 레코드 없음(no-data)·성공만(ok) → null', async () => {
+  const dir = await makeObserveFixture(0);
+  try {
+    await mkdir(join(dir, OBSERVABILITY_BASE), { recursive: true });
+    assert.equal(await checkObserveTripWires(dir), null, 'no-data');
+    await observeToolEvent(observePayload('PostToolUse'), { projectDir: dir, now: new Date() });
+    assert.equal(await checkObserveTripWires(dir), null, 'ok');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkObserveTripWires: 같은 도구 3회 실패(tripped) → wire id·수치·observe 안내·루프백 nudge를 담은 한 줄 경고', async () => {
+  const dir = await makeObserveFixture(3);
+  try {
+    const w = await checkObserveTripWires(dir);
+    assert.ok(typeof w === 'string', 'returns a warning string');
+    assert.match(w, /^observe 트립와이어 발화: repeat-failure-3x\(/, 'wire id로 시작');
+    assert.match(w, /×3/, '핵심 수치(반복 횟수)');
+    assert.match(w, /harness-team observe/, '상세는 observe 명령으로 안내');
+    assert.match(w, /harness-team task observe-repeat-failure-3x-\d{4}-\d{2}-\d{2} /, '루프백 nudge 인용');
+    assert.match(w, /자동 생성은 하지 않는다/, 'nudge는 제안일 뿐');
+    assert.doesNotMatch(w, /\n/, '경고는 한 줄');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// warn 검사가 doctor를 crash 시키면 envelope 자체가 안 나온다(checkDecisionLog와 같은 계약).
+// 잘못된 `now`는 판정 안쪽(windowDays)에서 TypeError를 내는 가장 짧은 예외 경로다.
+test('checkObserveTripWires: 판정 중 예외 → null, throw 금지', async () => {
+  const dir = await makeObserveFixture(3);
+  try {
+    assert.equal(await checkObserveTripWires(dir, { now: 'not-a-date' }), null);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// runDoctor 배선(e2e, 실제 CLI): 발화 fixture에서 doctor --json의 checks[]에 warn 1건이 실리고(fail 아님),
+// 로그가 없는 fixture에서는 그 항목 자체가 없다 — 침묵 계약. 필수 파일이 없는 bare 디렉터리라 exit는 0이
+// 아니므로 stdout만 취한다.
+test('doctor --json: tripped 로그 → checks에 observe trip wires warning 1건, 로그 없음 → 항목 없음', async () => {
+  const tripped = await makeObserveFixture(3);
+  const bare = await makeObserveFixture(0);
+  const run = dir => pexec('node', [join(ROOT, 'bin/harness-team.mjs'), 'doctor', '--json', '--target', dir], { timeout: 30000 })
+    .then(r => r.stdout).catch(error => error.stdout || '');
+  try {
+    const hot = JSON.parse(await run(tripped)).checks.filter(c => c.label === 'observe trip wires');
+    assert.equal(hot.length, 1, 'exactly one entry');
+    assert.equal(hot[0].status, 'warning', 'warn, never fail');
+    assert.match(hot[0].detail, /repeat-failure-3x/);
+    const cold = JSON.parse(await run(bare)).checks.filter(c => c.label === 'observe trip wires');
+    assert.equal(cold.length, 0, 'not-installed is silent');
+  } finally {
+    await rm(tripped, { recursive: true, force: true });
+    await rm(bare, { recursive: true, force: true });
+  }
 });

@@ -303,17 +303,23 @@ export function observeLoopbackNudge(fired, fallbackDay) {
   return `트립와이어를 task로 이어가려면: harness-team task observe-${ids[0]}-${day} 후 spec 목적 절에 발화 id·수치(${ids.join(', ')})를 "오늘 무엇이 안 되는가" 문제 진술로 옮긴다 — 자동 생성은 하지 않는다`;
 }
 
+// One-line detail of a wire, shared by the observe text renderer and doctor's surfacing so
+// the two never describe the same verdict differently (observe-surfacing plan 2).
+export function tripWireDetail(wire) {
+  if (wire.id === 'failure-rate-2x') {
+    const d = wire.detail;
+    return `오늘 ${pct(d.failure_rate)} vs 기준 ${pct(d.baseline_rate)} · finished ${d.finished} · failures ${d.failures} · 기준일 ${d.baseline_days}`;
+  }
+  return wire.detail.hits.map(h => `session ${h.session_ref} ${h.tool_category} ×${h.count} (마지막 ${h.last_at})`).join('; ');
+}
+
 export function renderObserveText(result, { records, skippedLines }) {
   const lines = [`observe: ${result.window.days}일 창 (${result.window.from} → ${result.window.to}) · 레코드 ${records} · 건너뜀 ${skippedLines}`];
   for (const wire of result.trip_wires) {
     const mark = wire.fired ? '✗' : '✓';
-    if (wire.id === 'failure-rate-2x') {
-      const d = wire.detail;
-      lines.push(`${mark} ${wire.id}: ${wire.status} (오늘 ${pct(d.failure_rate)} vs 기준 ${pct(d.baseline_rate)} · finished ${d.finished} · failures ${d.failures} · 기준일 ${d.baseline_days})`);
-    } else {
-      const hits = wire.detail.hits.map(h => `session ${h.session_ref} ${h.tool_category} ×${h.count} (마지막 ${h.last_at})`).join('; ');
-      lines.push(`${mark} ${wire.id}: ${wire.status}${hits ? ` — ${hits}` : ''}`);
-    }
+    const detail = tripWireDetail(wire);
+    if (wire.id === 'failure-rate-2x') lines.push(`${mark} ${wire.id}: ${wire.status} (${detail})`);
+    else lines.push(`${mark} ${wire.id}: ${wire.status}${detail ? ` — ${detail}` : ''}`);
   }
   const firedWires = result.trip_wires.filter(wire => wire.fired);
   if (firedWires.length) lines.push(`next: ${observeLoopbackNudge(firedWires, result.window.to)}`);
