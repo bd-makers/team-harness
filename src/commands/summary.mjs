@@ -24,6 +24,11 @@ export const DONE_CELL = '✅ done';
 export const FORCED_MARK = '⚠️';
 const doneCell = (forced) => (forced ? `${DONE_CELL} ${FORCED_MARK}` : DONE_CELL);
 
+// meta 의 `forcedAt` 이 정본이지만, meta 가 사라진 task 는 원장이 마지막 출처다(`created` 와 같은 이유).
+// `forcedInLedger` 는 그 복구값이며 **메모리에만 있다** — 시각을 모르는 채 `forcedAt` 을 지어내지 않고,
+// meta 스키마도 두 필드로 유지한다. 두 렌더러가 같은 판정을 쓰게 해 한쪽만 표시가 빠지는 것을 막는다.
+const isForced = (t) => Boolean(t.forcedAt || t.forcedInLedger);
+
 // Machine-owned per-task state. Lives beside the four SSOT files but is not one of
 // them: agents rewrite spec.md wholesale and the post-commit hook rewrites handoff.md,
 // so neither can hold data the harness must be able to read back.
@@ -100,6 +105,7 @@ export async function readLedger(targetDir) {
   const summaryRows = new Map();
   const completedNames = new Set();
   const openCreated = new Map();
+  const forcedNames = new Set();
 
   const summary = await readTextOrNull(join(targetDir, SUMMARY_REL));
   if (summary) {
@@ -107,7 +113,9 @@ export async function readLedger(targetDir) {
       const m = line.match(SUMMARY_ROW_RE);
       if (!m) continue;
       if (m[1] === 'User') continue;
-      summaryRows.set(key(m[1], m[2]), { done: m[3].startsWith(DONE_CELL), created: m[4] });
+      const done = m[3].startsWith(DONE_CELL);
+      summaryRows.set(key(m[1], m[2]), { done, created: m[4] });
+      if (done && m[3].includes(FORCED_MARK)) forcedNames.add(key(m[1], m[2]));
     }
   }
 
@@ -120,14 +128,18 @@ export async function readLedger(targetDir) {
       if (!index) continue;
       for (const line of index.split('\n')) {
         const doneMatch = line.match(/^-\s*✅\s*(\S+)/);
-        if (doneMatch) { completedNames.add(key(user, doneMatch[1])); continue; }
+        if (doneMatch) {
+          completedNames.add(key(user, doneMatch[1]));
+          if (line.includes(FORCED_MARK)) forcedNames.add(key(user, doneMatch[1]));
+          continue;
+        }
         const openMatch = line.match(/^-\s*(\S+)\s*\(created\s+([^)]+)\)/);
         if (openMatch) openCreated.set(key(user, openMatch[1]), openMatch[2]);
       }
     }
   }
 
-  return { summaryRows, completedNames, openCreated };
+  return { summaryRows, completedNames, openCreated, forcedNames };
 }
 
 // A directory is a task when it carries the `<name>-spec.md` marker — the same rule
@@ -149,7 +161,10 @@ export async function collectTasks(targetDir) {
       if (!(await exists(join(userPath, task, `${task}-spec.md`)))) continue;
       const meta = (await readTaskMeta(targetDir, user, task))
         || await inferLegacyMeta(targetDir, user, task, ledger);
-      tasks.push({ ...meta, user, task });
+      // meta 가 정본이다. 원장 복구값은 meta 에 기록이 없을 때만 얹는다 —
+      // 그러지 않으면 원장의 낡은 표시가 meta 를 이긴다.
+      const forcedInLedger = !meta.forcedAt && ledger.forcedNames.has(key(user, task));
+      tasks.push({ ...meta, user, task, forcedInLedger });
     }
   }
 
@@ -169,7 +184,7 @@ function byCreatedDescThenName(a, b) {
 
 export function renderTaskSummary(tasks) {
   const rows = [...tasks].sort(byCreatedAscThenName)
-    .map(t => `| ${t.user} | ${t.task} | ${t.status === 'done' ? doneCell(t.forcedAt) : '🔄 open'} | ${t.created || ''} |`);
+    .map(t => `| ${t.user} | ${t.task} | ${t.status === 'done' ? doneCell(isForced(t)) : '🔄 open'} | ${t.created || ''} |`);
   return `# Task Summary
 
 | User | Task | Status | Created |
@@ -182,7 +197,7 @@ export function renderUserIndex(user, tasks) {
   const open = mine.filter(t => t.status !== 'done').sort(byCreatedDescThenName)
     .map(t => `- ${t.task}${t.created ? ` (created ${t.created})` : ''}`);
   const done = mine.filter(t => t.status === 'done').sort(byCreatedDescThenName)
-    .map(t => `- ✅ ${t.task}${t.forcedAt ? ` ${FORCED_MARK}` : ''}`);
+    .map(t => `- ✅ ${t.task}${isForced(t) ? ` ${FORCED_MARK}` : ''}`);
   return `# ${user} — Tasks
 
 ## Open

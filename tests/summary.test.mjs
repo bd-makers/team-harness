@@ -650,6 +650,49 @@ test('우회 표시가 붙은 원장을 다시 읽어도 행이 유실되지 않
   assert.equal(ledger.summaryRows.get('chad/clean').done, true, '정상 종결 행 회귀 없음');
 });
 
+test('사용자 인덱스의 완료 목록도 우회 종결을 구분한다', async () => {
+  // completedNames 는 이름만 담아서 표시가 사라져도 왕복 테스트가 통과한다(2026-09-08 codex P2).
+  // 렌더된 줄 자체를 본다.
+  const lines = renderUserIndex('chad', [forcedTask, cleanTask]).split('\n');
+  const forcedLine = lines.find(l => l.includes('bypassed'));
+  const cleanLine = lines.find(l => l.includes('clean'));
+  assert.equal(cleanLine, '- ✅ clean', '정상 종결은 종전 표기를 유지한다');
+  assert.notEqual(
+    forcedLine.replace('bypassed', 'X'), cleanLine.replace('clean', 'X'),
+    'task 이름을 지우고 비교해도 두 줄이 달라야 한다 — 같으면 표시가 없는 것이다',
+  );
+});
+
+// P2(2026-09-08 codex): 원장은 meta 가 사라진 구 task 의 마지막 출처다. done·created 는
+// 거기서 복구하면서 우회 표시만 버리면, 재생성 한 번으로 감사 흔적이 조용히 사라진다 —
+// 이 task 가 없애려던 "흔적 없는 우회"가 재생성 경로로 되살아난다.
+test('meta 가 없어도 원장에 남은 우회 표시가 재생성에서 살아남는다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-forced-legacy-'));
+  try {
+    // 원장에는 우회 종결로 남아 있지만 meta.json 은 없는 상태(구 task·migrate 복원분·파일 유실).
+    await mkdir(join(dir, 'docs', 'chad', 'bypassed'), { recursive: true });
+    await writeFile(join(dir, 'docs', 'chad', 'bypassed', 'bypassed-spec.md'), '# bypassed — Spec\n');
+    await writeFile(join(dir, 'docs', 'chad', 'bypassed', 'bypassed-handoff.md'), '# bypassed — Handoff\n');
+    await writeFile(join(dir, 'docs', 'task_summary.md'), renderTaskSummary([forcedTask]));
+    await writeFile(join(dir, 'docs', 'chad', 'chad-task.md'), renderUserIndex('chad', [forcedTask]));
+
+    const tasks = await collectTasks(dir);
+    const regenerated = renderTaskSummary(tasks);
+    const row = regenerated.split('\n').find(l => l.startsWith('| chad |'));
+
+    assert.equal(
+      statusCell(row), statusCell(renderTaskSummary([forcedTask]).split('\n').find(l => l.startsWith('| chad |'))),
+      '재생성 후에도 우회 표시가 남는다',
+    );
+    assert.ok(
+      renderUserIndex('chad', tasks).includes('bypassed'),
+      '사용자 인덱스에서도 사라지지 않는다',
+    );
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('우회 필드가 없는 구 meta 는 종전과 동일하게 렌더링된다', async () => {
   const legacy = { user: 'chad', task: 'legacy', created: '2026-08-01', status: 'done', closedAt: null };
   const row = renderTaskSummary([legacy]).split('\n').find(l => l.startsWith('| chad |'));

@@ -688,6 +688,11 @@ export async function runDone(ctx) {
   // 종결에 `--force` 만 붙은 경우는 우회한 것이 없으므로 흔적을 남기지 않는다.
   // 우회가 아닐 때 `...meta` 를 그대로 두는 것도 의도다: 한 번 우회한 task 를 reopen 해서
   // 깨끗하게 다시 닫는 것으로 흔적을 지울 수 있으면 감사 흔적이 아니게 된다.
+  //
+  // 두 필드의 의미는 **가장 최근 우회 1건**이다(이력이 아니다). reopen 후 다시 우회하면
+  // 이전 값을 덮어쓴다 — 이 스키마가 답하는 질문은 "이 task 에 우회가 있었는가"이지
+  // "몇 번 있었는가"가 아니다. 전체 이력이 필요해지면 배열 필드를 새로 도입할 일이며,
+  // 두 필드의 의미를 조용히 바꾸지 말 것 (2026-09-08 codex P2 — 범위 밖으로 판별).
   const forcedFields = force && issues.length ? { forcedAt: ts, forcedIssues: issues } : {};
   const meta = (await readTaskMeta(ctx.targetDir, user, task)) || { user, task, created: today() };
   await writeTaskMeta(ctx.targetDir, user, task, {

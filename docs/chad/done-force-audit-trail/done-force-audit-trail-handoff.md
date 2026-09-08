@@ -19,3 +19,8 @@
  tests/done-guard.test.mjs                          | 60 +++++++++++++++++
  tests/summary.test.mjs                             | 77 ++++++++++++++++++++++
  6 files changed, 233 insertions(+), 12 deletions(-)
+
+## 2026-09-08T14:15:51.333Z — 830816f chore(task): post-commit 훅이 갱신한 handoff 반영
+docs/chad/chad-handoff.md                                        | 9 ++++-----
+ .../done-force-audit-trail/done-force-audit-trail-handoff.md     | 9 +++++++++
+ 2 files changed, 13 insertions(+), 5 deletions(-)
