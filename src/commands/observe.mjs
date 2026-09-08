@@ -225,6 +225,24 @@ export function summarizeObservability(records, { now, days, taskNames = new Map
   };
 }
 
+// One verdict for every surface: the observe CLI, doctor and session-context all call this,
+// so the three can never disagree on whether a wire fired (observe-surfacing spec, 설계 절).
+// `resolveTaskNames` is opt-in — surfacing only needs the fired wires, and the reverse map
+// walks docs/ for every task, which doctor and SessionStart must not pay for.
+export async function evaluateObserveVerdict(targetDir, { now = new Date(), days = OBSERVE_DEFAULT_DAYS, resolveTaskNames = false } = {}) {
+  const read = await readObservabilityRecords(targetDir, { now, days });
+  if (read.status === 'not-installed') {
+    return { status: 'not-installed', fired: [], result: null, window: null, records: 0, skippedLines: 0 };
+  }
+  const taskNames = resolveTaskNames ? await resolveTaskRefs(targetDir) : undefined;
+  const result = summarizeObservability(read.records, { now, days, taskNames });
+  const fired = result.trip_wires.filter(wire => wire.fired);
+  return {
+    status: fired.length ? 'tripped' : read.status, // 'ok' | 'no-data'
+    fired, result, window: result.window, records: read.records.length, skippedLines: read.skippedLines,
+  };
+}
+
 function fail(json, summary, { cause, retry, alternatives = [], safeDefault }) {
   const packet = buildErrorPacket({
     cause, retry, alternatives, safeDefault,
@@ -323,8 +341,8 @@ export async function runObserve(ctx) {
     });
   }
   const now = new Date();
-  const read = await readObservabilityRecords(ctx.targetDir, { now, days });
-  if (read.status === 'not-installed') {
+  const verdict = await evaluateObserveVerdict(ctx.targetDir, { now, days, resolveTaskNames: true });
+  if (verdict.status === 'not-installed') {
     const summary = `관측 로그 없음 — ${OBSERVABILITY_BASE} 미존재 (observe-tools 훅이 아직 기록하지 않음)`;
     if (json) {
       emitObservation(buildEnvelope({
@@ -336,15 +354,13 @@ export async function runObserve(ctx) {
     }
     return;
   }
-  const result = summarizeObservability(read.records, { now, days, taskNames: await resolveTaskRefs(ctx.targetDir) });
-  const fired = result.trip_wires.filter(wire => wire.fired);
-  const status = fired.length ? 'tripped' : read.status; // 'ok' | 'no-data'
+  const { result, fired, status } = verdict;
   if (fired.length) process.exitCode = 1;
   if (json) {
     emitObservation(buildEnvelope({
       command: 'observe',
       status,
-      summary: fired.length ? `트립와이어 발화: ${fired.map(wire => wire.id).join(', ')}` : `${read.records.length}개 레코드, 트립와이어 없음`,
+      summary: fired.length ? `트립와이어 발화: ${fired.map(wire => wire.id).join(', ')}` : `${verdict.records}개 레코드, 트립와이어 없음`,
       nextActions: fired.length
         ? [
           `해당 세션 로그(${OBSERVABILITY_BASE}/<day>/<session_ref>-NNN.jsonl)를 열어 실패한 도구 호출을 추적`,
@@ -355,10 +371,10 @@ export async function runObserve(ctx) {
         window: result.window,
         scorecard: { by_day: result.by_day, by_task: result.by_task, by_category: result.by_category },
         trip_wires: result.trip_wires,
-        skipped_lines: read.skippedLines,
+        skipped_lines: verdict.skippedLines,
       },
     }));
   } else {
-    console.log(renderObserveText(result, { records: read.records.length, skippedLines: read.skippedLines }));
+    console.log(renderObserveText(result, { records: verdict.records, skippedLines: verdict.skippedLines }));
   }
 }

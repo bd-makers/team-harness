@@ -7,6 +7,7 @@ import { observeToolEvent } from '../templates/.claude/hooks/observe-tools.mjs';
 import {
   percentile, windowDays, summarizeObservability, TRIP_WIRE_MIN_FINISHED, TRIP_WIRE_MIN_FAILURES,
   readObservabilityRecords, resolveTaskRefs, hmacRef, OBSERVABILITY_BASE, runObserve, observeLoopbackNudge,
+  evaluateObserveVerdict, OBSERVE_DEFAULT_DAYS,
 } from '../src/commands/observe.mjs';
 
 const NOW = new Date('2026-09-05T12:00:00.000Z');
@@ -294,6 +295,33 @@ test('runObserve: --days outside 1..14 or non-integer is a usage error (exit 2, 
       assert.ok(out.error.safe_default, `safe_default는 비어 있지 않다 (${days})`);
       assert.equal(typeof out.error.root_cause, 'string', `root_cause 는 string (${days})`);
     }
+    process.exitCode = 0;
+  } finally { await cleanup(); }
+});
+
+// observe-surfacing plan 1: 판정 함수 하나를 observe CLI·doctor·session-context가 공유한다.
+// 이 테스트는 그 함수의 status 4종과 "runObserve --json의 status == verdict.status"(공유 계약의
+// 첫 절반)를 고정한다. 나머지 절반(doctor·session-context)은 각 배선 테스트가 잇는다.
+test('evaluateObserveVerdict: not-installed / no-data / ok / tripped, runObserve와 같은 status', async () => {
+  const { dir, cleanup } = await project();
+  try {
+    let v = await evaluateObserveVerdict(dir, { now: NOW });
+    assert.equal(v.status, 'not-installed'); assert.deepEqual(v.fired, []); assert.equal(v.records, 0);
+    await mkdir(join(dir, OBSERVABILITY_BASE), { recursive: true });
+    v = await evaluateObserveVerdict(dir, { now: NOW });
+    assert.equal(v.status, 'no-data'); assert.deepEqual(v.fired, []); assert.equal(v.window.days, OBSERVE_DEFAULT_DAYS);
+    await observeToolEvent(hookPayload('PostToolUse'), { projectDir: dir, now: new Date() });
+    v = await evaluateObserveVerdict(dir);
+    assert.equal(v.status, 'ok'); assert.deepEqual(v.fired, []); assert.equal(v.skippedLines, 0);
+    for (let i = 0; i < 3; i += 1) {
+      await observeToolEvent(hookPayload('PostToolUseFailure', { error: 'boom' }), { projectDir: dir, now: new Date() });
+    }
+    v = await evaluateObserveVerdict(dir);
+    assert.equal(v.status, 'tripped'); assert.equal(v.fired.length, 1); assert.equal(v.fired[0].id, 'repeat-failure-3x');
+    assert.ok(v.records >= 4, 'hook-written records are counted');
+    process.exitCode = 0;
+    const out = JSON.parse(await captureStdout(() => runObserve({ targetDir: dir, flags: { json: true } })));
+    assert.equal(out.status, v.status, 'observe CLI는 같은 판정 함수를 쓴다');
     process.exitCode = 0;
   } finally { await cleanup(); }
 });

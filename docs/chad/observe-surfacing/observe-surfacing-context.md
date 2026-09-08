@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: observe 트립와이어 판정을 doctor 경고 1건 + SessionStart 1줄로 표면화 (판정 함수 1개 공유, 임계값·훅·템플릿 불변)
-- Current atomic step: plan 1 — `evaluateObserveVerdict` 추출, `runObserve` 전환, 기존 observe 테스트 무변경 통과
+- Current atomic step: plan 2 — doctor `checkObserveTripWires` TDD (RED: tripped fixture → 경고에 wire id·nudge) → `runDoctor`에 warn add. plan 1 완료(2026-09-09, 미커밋): `evaluateObserveVerdict(targetDir, { now, days, resolveTaskNames })` → `{ status, fired, result, window, records, skippedLines }`
 - Stop / human-decision condition: 임계값·창·nudge 문구를 바꿔야 할 것 같으면 멈춘다(범위 밖, 보정은 실사용 로그 필요). doctor를 fail로 올리자는 판단도 멈춤.
 
 ## Constraints and settled decisions
@@ -14,7 +14,7 @@
 ## JIT retrieval map
 - Identifiers / symbols: summarizeObservability · readObservabilityRecords · observeLoopbackNudge · runObserve · runDoctor · buildSessionContext · checkDecisionLog(warn 패턴)
 - Narrow globs: src/commands/{observe,doctor,session-context}.mjs · tests/{observe,doctor,session-context}.test.mjs · commands/harness-{observe,doctor}.md
-- Read next: tests/observe.test.mjs fixture 작성부(레코드 형식·.key) → tests/doctor.test.mjs makeDecisionLogFixture 스타일
+- Read next: tests/doctor.test.mjs makeDecisionLogFixture 스타일 · tripped fixture는 tests/observe.test.mjs의 observeToolEvent(hookPayload('PostToolUseFailure')) ×3 · doctor.mjs runDoctor add(label,'warning',…) 패턴(:648-651)
 - Verification command: node --test tests/observe.test.mjs tests/doctor.test.mjs → npm test → npm run docs:check
 
 ## Failure capsules (max 3 unresolved)
