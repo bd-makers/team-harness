@@ -66,3 +66,7 @@ docs/chad/chad-handoff.md                          |   2 +-
  src/commands/migrate.mjs                           |  47 ++++++++--
  tests/migrate-templates.test.mjs                   | 100 +++++++++++++++++++++
  5 files changed, 174 insertions(+), 10 deletions(-)
+
+## 2026-09-08T06:11:59.506Z — 완료
+
+태스크 종료.
