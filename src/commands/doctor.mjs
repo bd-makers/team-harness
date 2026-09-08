@@ -297,7 +297,11 @@ export const DECISION_HEADINGS = ['## D2', '## D4', '## D5', '## D6', '## D7', '
 // Derived so the absence message cannot drift from the list it describes.
 const DECISION_IDS = DECISION_HEADINGS.map(h => h.replace(/^## /, '')).join('/');
 
-export async function checkDecisionLog(targetDir) {
+// `root`(플러그인 루트)를 주면 복사해 올 원본의 **실제 경로**를 안내한다. 없으면 상대 경로로 적는다.
+// 누락 절은 init·migrate 어느 쪽도 고치지 못한다 — D8에서 `docs/` seed를 refresh 비목표로
+// 두었기 때문이고(팀이 설치 후 저작하는 파일), 그 사실을 문구가 직접 말해 주지 않으면
+// 사용자는 방금 stale 템플릿 때문에 돌린 migrate가 이것도 처리했으리라 기대하게 된다.
+export async function checkDecisionLog(targetDir, root) {
   let body;
   try {
     body = await readFile(join(targetDir, DECISION_LOG_PATH), 'utf8');
@@ -313,7 +317,8 @@ export async function checkDecisionLog(targetDir) {
   // while the template's dated form (`## D2 (2026-06-11) — …`) still matches.
   const missing = DECISION_HEADINGS.filter(h => !new RegExp(`^${h}\\b`, 'm').test(body));
   if (missing.length === 0) return null;
-  return `${DECISION_LOG_PATH}에 ${missing.join(', ')} 절 없음 — 스캐폴드는 기존 파일을 덮어쓰지 않으므로 플러그인 templates/docs/decisions.md에서 해당 절을 가져와 추가하라`;
+  const source = root ? join(root, 'templates/docs/decisions.md') : '플러그인 templates/docs/decisions.md';
+  return `${DECISION_LOG_PATH}에 ${missing.join(', ')} 절 없음 — 팀 결정 로그는 설치 후 팀이 저작하는 파일이라 init·migrate 어느 쪽도 덮어쓰지 않는다(D8: docs/ seed는 refresh 비목표). \`${source}\` 에서 해당 절을 복사해 ${DECISION_LOG_PATH} 끝에 덧붙여라 — 이미 있는 절은 건드리지 말 것`;
 }
 
 export async function checkBoundaryCheckpointHook(targetDir) {
@@ -609,7 +614,7 @@ export async function runDoctor(ctx) {
 
   // Deliberately NOT gated on pluginDev: the D-log migration puts docs/decisions.md
   // in the source repo too, so its absence is real drift on either side.
-  const decisionLogWarning = await checkDecisionLog(ctx.targetDir);
+  const decisionLogWarning = await checkDecisionLog(ctx.targetDir, ctx.root);
   if (decisionLogWarning) add('decision log', 'warning', decisionLogWarning, `\n⚠️ ${decisionLogWarning}`);
 
   // Deliberately NOT gated on pluginDev either — this repo's own eager tier is the

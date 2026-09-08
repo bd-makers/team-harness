@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { resolve, dirname, join } from 'node:path';
+import { resolve, dirname, join, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from 'node:fs/promises';
 import { tmpdir, homedir } from 'node:os';
@@ -211,7 +211,11 @@ test('checkDecisionLog: 일부 절 누락 → 누락 절만 나열 + 템플릿 �
     assert.ok(typeof w === 'string', 'returns a warning string');
     assert.match(w, /## D4, ## D5, ## D6, ## D7, ## D8 절 없음/, '누락된 절만 정확히 나열');
     assert.doesNotMatch(w, /## D2/, '존재하는 D2는 누락 목록에 없어야 한다');
-    assert.doesNotMatch(w, /init/, 'skipExisting이라 init로는 해결 불가 — 수동 병합 안내만');
+    // 원래 이 단언은 /init/ 부분일치였다. "init로 유도하지 말 것"이 의도인데, 문구가
+    // "init·migrate 어느 쪽도 덮어쓰지 않는다"고 *설명*하는 것까지 막고 있었다 —
+    // 유도 여부는 실행 명령형(harness-team init)으로 판정한다(부재 분기의 단언과 같은 형태).
+    assert.doesNotMatch(w, /harness-team init/, 'skipExisting이라 init로는 해결 불가 — 실행 유도 금지');
+    assert.match(w, /init·migrate 어느 쪽도 덮어쓰지 않는다/, '왜 명령으로 안 고쳐지는지 설명해야 한다');
     assert.match(w, /templates\/docs\/decisions\.md/, '가져올 원본 위치를 안내');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
@@ -813,5 +817,31 @@ test('runDoctor: 커스터마이즈된 스킬 → stale 경고 없음 (migrate�
     await mkdir(join(dir, '.claude/skills/new-feature'), { recursive: true });
     await writeFile(join(dir, '.claude/skills/new-feature/SKILL.md'), stale + '\n<!-- 팀 커스텀 -->\n');
     assert.equal(checkOf(await doctorJson(dir), 'stale skill/rule templates'), undefined);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 안내 문구가 가리키는 원본이 실제로 존재하고 누락 절을 담고 있는지 — 경로가 옮겨지면 안내가
+// 허공을 가리키는데, 문구는 사람이 읽는 산문이라 아무 테스트도 안 깨진다.
+// 경로에 공백이 있을 수 있으므로(플러그인이 iCloud 경로에 설치되는 실제 사례) 백틱으로 구분한다.
+test('checkDecisionLog: 안내가 가리키는 templates 원본이 실제로 존재하고 누락 절을 담는다', async () => {
+  const dir = await makeDecisionLogFixture('# Team Decision Log\n\n## D2 (2026-06-11) — a\n');
+  try {
+    const w = await checkDecisionLog(dir, ROOT);
+    const quoted = /`([^`]+)`/.exec(w);
+    assert.ok(quoted, '원본 경로는 백틱으로 구분해야 한다 — 공백 있는 경로에서 끝을 알 수 없다');
+    const source = quoted[1];
+    assert.equal(isAbsolute(source), true, `root를 주면 절대 경로로 안내한다: ${source}`);
+
+    const body = await readFile(source, 'utf8');
+    for (const h of DECISION_HEADINGS) {
+      assert.match(body, new RegExp(`^${h}\\b`, 'm'), `안내 원본에 ${h} 절이 있어야 복사가 성립한다`);
+    }
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkDecisionLog: root 없이 호출하면 상대 경로로 안내한다 (하위호환)', async () => {
+  const dir = await makeDecisionLogFixture('# Team Decision Log\n\n## D2 (2026-06-11) — a\n');
+  try {
+    assert.match(await checkDecisionLog(dir), /templates\/docs\/decisions\.md/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
