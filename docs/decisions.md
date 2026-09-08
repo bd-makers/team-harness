@@ -74,3 +74,40 @@ AGENTS.md의 task-gate·rules 서술은 **소비자 프로젝트**에 대한 규
 전역 `harness-team`을 호출하는데 소스 저장소는 `node bin/harness-team.mjs`로 개발 중 버전을 돌려야
 하고, 두 경로가 갈리면 훅이 낡은 전역 CLI를 타는 사고가 난다(`doctor`의 CLI drift 검사가 그 사고의
 산물이다). 소스 저장소가 자기 훅을 쓰려면 이 두 경로를 먼저 통일해야 하며, 그 결정은 열어 둔다.
+
+## D8 (2026-09-07) — 템플릿 갱신 정책: provenance 기반 refresh, 전면 덮어쓰기 금지
+
+`templates/` 아래 정적 표면(`.claude/hooks`·`.claude/rules`·`.claude/skills`·`docs/` seed)은
+`copyStaticAssets`가 `skipExisting: true`로 복사하므로, **템플릿을 수정해도 기존 설치에는 도달하지
+않는다.** `copyTree`의 판정이 파일 단위라 *신규* 파일은 도달하지만 *수정된* 파일은 영영 도달하지
+않는다 — 이 비대칭이 문제의 본체다(샌드박스 소비자 프로젝트에서 실측).
+
+**결정**: 기존 설치에 대한 갱신 경로는 **`migrate`의 provenance 기반 refresh 하나로 통일한다.**
+설치본의 바이트가 하네스가 실제로 배포한 적 있는 버전(sha256 테이블)과 일치할 때만 최신 템플릿으로
+갱신하고, 그 외에는 "커스터마이즈"로 보아 절대 덮지 않고 경고만 남긴다. `init`은 갱신 동사가 아니다.
+
+이 정책은 새로 만든 것이 아니라 `refreshClaudeHooks`(2026-08, PR #29 배달 경로)가 이미 쓰던 것이다.
+이번 결정은 **적용 범위를 훅 6개에서 스킬 3 + 규칙 4까지 넓히고**(16개 정적 파일 중 6 → 13),
+`doctor`에 stale 경고를 추가해 그 경로를 발견 가능하게 만든 것이다. 발견성이 없으면 정책이 있어도
+아무도 부르지 않는다 — 이 드리프트가 오래 눈에 띄지 않은 이유가 그것이다.
+
+**비목표**: `docs/` seed(`README.md`·`decisions.md`·`.gitkeep`)는 refresh 대상이 **아니다**.
+설치 이후 팀이 저작하는 산출물이고(이 파일 자체가 그 예다), `copyStaticAssets`의
+`skip existing to preserve team work` 주석이 그 보존을 의도된 설계로 명시한다.
+
+**기각한 대안**
+- **`skipExisting: false`로 전환** — 사용자가 편집한 훅·규칙을 말없이 덮는다.
+- **마커 병합으로 승격**(`AGENTS.md` 방식) — `SKILL.md`는 에이전트가 읽는 산문이라 마커가
+  에이전트 가시 텍스트를 오염시킨다. 실비용이 있다.
+- **설치 시점 매니페스트**(`.harness/installed.json`) — 확장성은 낫지만 **이미 드리프트한 기존
+  설치에는 baseline이 없어 아무 도움이 안 된다.** sha 테이블이 소급 동작하는 것이 정확히 그 이유다.
+
+**대가**: sha 테이블은 손으로 유지한다. 픽스처(`tests/fixtures/stock-templates`)와 개수를 대조하는
+드리프트 가드 테스트가 안전망이고, 표면이 13개라 감당 가능한 규모다. 표면이 크게 늘면 재검토한다.
+
+**열어 둔 예외**: 훅 refresh의 `legacyStock` 휴리스틱(`pre-commit-check.sh`에 `pnpm tsc --noEmit`이
+있고 `detect_pm`이 없으면 stock으로 간주)은 sha 테이블 이전부터 있던 net이라, 그 옛 훅에 사용자가
+줄을 덧붙인 경우에도 stock으로 판정해 덮어쓴다 — "커스터마이즈는 덮지 않는다"는 위 계약의 유일한
+구멍이다(2026-09-08 codex 리뷰 MAJOR). 좁히면 아주 오래된 바이트 드리프트본을 잡던 net이 사라지므로
+의도적으로 남겼다. `doctor`가 이제 모든 소비자를 `migrate`로 유도하니 이 경로는 전보다 자주 실행된다 —
+훅 표면을 손볼 때 함께 재평가할 것.

@@ -7,13 +7,20 @@ tags:
   - project
   - ai
 created: 2026-04-28
-modified: 2026-04-28
+modified: 2026-09-07
 ---
 
 현재 작업 디렉토리에 팀용 하네스를 설치합니다. **기존 프로젝트에 다시 실행해도 됩니다** —
 에이전트 파일은 `<!-- harness:section -->` 마커 블록만 갱신하고, `.claude/settings.json`·`.codex/hooks.json`은
-deep-merge하며, hooks·rules·skills는 이미 있으면 건너뜁니다. 마커가 한쪽만 남은 파일은 병합하지 않고
-경고합니다. (예전의 `apply` 명령은 이 명령의 별칭이었고 삭제됐습니다.)
+deep-merge하며, hooks·rules·skills·`docs/` seed는 이미 있으면 건너뜁니다. 마커가 한쪽만 남은 파일은
+병합하지 않고 경고합니다. (예전의 `apply` 명령은 이 명령의 별칭이었고 삭제됐습니다.)
+
+건너뛰기는 **파일 단위**라 비대칭이 생깁니다 — 템플릿에 *새로 추가된* 파일은 재실행으로 도달하지만,
+*수정된* 파일은 **영영 도달하지 않습니다**. 그래서 하네스가 스킬·규칙·훅에 실은 개선을 기존 설치에
+배달하는 경로는 `init`이 아니라 **`harness-team migrate`** 입니다. migrate는 설치본의 바이트가
+하네스가 실제로 배포한 적 있는 버전일 때만 갱신하고, 사용자가 편집한 파일은 건드리지 않습니다.
+낡은 설치본이 있으면 `harness-team doctor`가 경고로 알려 줍니다. `docs/` seed(`README.md`·
+`decisions.md`)는 설치 후 팀이 저작하는 파일이라 **refresh 대상이 아닙니다**.
 
 Claude의 Bash는 TTY가 아니라 CLI의 readline 프롬프트(사용자명·백업 폴더·gitignore·적용 확인)에 답할 수
 없습니다. 그래서 아래 Step 0~2에서 답을 먼저 받아 **플래그로 넘깁니다** — 플래그 없이 `init`만 실행하지 마세요.

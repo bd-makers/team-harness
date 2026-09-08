@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { resolve, dirname, join } from 'node:path';
+import { resolve, dirname, join, isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from 'node:fs/promises';
 import { tmpdir, homedir } from 'node:os';
@@ -209,24 +209,28 @@ test('checkDecisionLog: 일부 절 누락 → 누락 절만 나열 + 템플릿 �
   try {
     const w = await checkDecisionLog(dir);
     assert.ok(typeof w === 'string', 'returns a warning string');
-    assert.match(w, /## D4, ## D5, ## D6, ## D7 절 없음/, '누락된 절만 정확히 나열');
+    assert.match(w, /## D4, ## D5, ## D6, ## D7, ## D8 절 없음/, '누락된 절만 정확히 나열');
     assert.doesNotMatch(w, /## D2/, '존재하는 D2는 누락 목록에 없어야 한다');
-    assert.doesNotMatch(w, /init/, 'skipExisting이라 init로는 해결 불가 — 수동 병합 안내만');
+    // 원래 이 단언은 /init/ 부분일치였다. "init로 유도하지 말 것"이 의도인데, 문구가
+    // "init·migrate 어느 쪽도 덮어쓰지 않는다"고 *설명*하는 것까지 막고 있었다 —
+    // 유도 여부는 실행 명령형(harness-team init)으로 판정한다(부재 분기의 단언과 같은 형태).
+    assert.doesNotMatch(w, /harness-team init/, 'skipExisting이라 init로는 해결 불가 — 실행 유도 금지');
+    assert.match(w, /init·migrate 어느 쪽도 덮어쓰지 않는다/, '왜 명령으로 안 고쳐지는지 설명해야 한다');
     assert.match(w, /templates\/docs\/decisions\.md/, '가져올 원본 위치를 안내');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
 // D6(2026-08-26)·D7(2026-09-03)이 D-log에 추가된 뒤에도 검사 목록은 D2/D4/D5에 머물러 있었다 —
-// D6/D7 이전에 스캐폴드된 소비자는 AGENTS.md 코어가 가리키는 절이 없어도 doctor가 침묵했다.
+// D6 이후에 스캐폴드된 소비자는 AGENTS.md 코어가 가리키는 절이 없어도 doctor가 침묵했다.
 // 검사 목록이 템플릿 D-log와 함께 움직이는지 고정한다.
-test('checkDecisionLog: D6·D7 이전 스캐폴드(D2/D4/D5만) → D6, D7 누락 경고', async () => {
+test('checkDecisionLog: 옛 스캐폴드(D2/D4/D5만) → 이후 절 전부 누락 경고', async () => {
   const dir = await makeDecisionLogFixture(
     '# Team Decision Log\n\n## D2 (2026-06-11) — a\n\n## D4 (2026-07-28) — b\n\n## D5 (2026-08-20) — c\n',
   );
   try {
     const w = await checkDecisionLog(dir);
     assert.ok(typeof w === 'string', 'returns a warning string');
-    assert.match(w, /## D6, ## D7 절 없음/, 'D6·D7만 누락으로 나열');
+    assert.match(w, /## D6, ## D7, ## D8 절 없음/, '옛 스캐폴드 이후 절만 누락으로 나열');
     assert.doesNotMatch(w, /## D[245]\b/, '존재하는 D2/D4/D5는 누락 목록에 없어야 한다');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
@@ -765,4 +769,79 @@ test('runDoctor: 프로젝트는 예산 안이지만 전역을 더하면 초과 
     await rm(home, { recursive: true, force: true });
     await rm(emptyHome, { recursive: true, force: true });
   }
+});
+
+// --- stale skill/rule templates (D8) ---
+//
+// init은 skipExisting이라 *수정된* 템플릿을 배달하지 못한다. 갱신 경로(migrate)가 있어도
+// 발견성이 없으면 아무도 부르지 않는다 — 이 경고가 그 발견성이다.
+// jq 경고와 같은 이유로 healthyConsumerFixture를 쓴다: fail이 있으면 next_actions가
+// ['harness-team sync']로 대체돼 라우팅을 검증할 수 없다.
+test('runDoctor: 낡은 스킬 설치본 → stale 경고 + migrate 라우팅', async () => {
+  const dir = await healthyConsumerFixture();
+  try {
+    const stale = await readFile(join(ROOT,
+      'tests/fixtures/stock-templates/2026-09-07-286ef8e9/.claude/skills/new-feature/SKILL.md'), 'utf8');
+    await mkdir(join(dir, '.claude/skills/new-feature'), { recursive: true });
+    await writeFile(join(dir, '.claude/skills/new-feature/SKILL.md'), stale);
+
+    const envelope = await doctorJson(dir);
+    assert.equal((envelope.checks || []).filter(c => c.status === 'fail').length, 0,
+      'fixture는 fail 0이어야 경고 next_actions가 노출된다');
+    const check = checkOf(envelope, 'stale skill/rule templates');
+    assert.equal(check?.status, 'warning');
+    assert.match(check.detail, /new-feature\/SKILL\.md/, '낡은 파일을 지목해야 한다');
+    assert.match(check.detail, /migrate/, '처방을 함께 안내해야 한다');
+    assert.ok(envelope.next_actions.includes('harness-team migrate'),
+      `next_actions에 migrate가 있어야 한다: ${JSON.stringify(envelope.next_actions)}`);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('runDoctor: 최신 스킬 설치본 → stale 경고 없음 (멱등)', async () => {
+  const dir = await healthyConsumerFixture();
+  try {
+    await mkdir(join(dir, '.claude/skills/new-feature'), { recursive: true });
+    await writeFile(join(dir, '.claude/skills/new-feature/SKILL.md'),
+      await readFile(join(ROOT, 'templates/.claude/skills/new-feature/SKILL.md'), 'utf8'));
+    assert.equal(checkOf(await doctorJson(dir), 'stale skill/rule templates'), undefined);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 사용자가 편집한 파일은 stock이 아니라 refresh 대상이 아니다 — 경고도 내지 않는다.
+// 경고를 내면 "migrate 하라"는 뜻인데 migrate는 그 파일을 건드리지 않으므로 거짓 안내가 된다.
+test('runDoctor: 커스터마이즈된 스킬 → stale 경고 없음 (migrate가 안 고치는 것을 시키지 않는다)', async () => {
+  const dir = await healthyConsumerFixture();
+  try {
+    const stale = await readFile(join(ROOT,
+      'tests/fixtures/stock-templates/2026-09-07-286ef8e9/.claude/skills/new-feature/SKILL.md'), 'utf8');
+    await mkdir(join(dir, '.claude/skills/new-feature'), { recursive: true });
+    await writeFile(join(dir, '.claude/skills/new-feature/SKILL.md'), stale + '\n<!-- 팀 커스텀 -->\n');
+    assert.equal(checkOf(await doctorJson(dir), 'stale skill/rule templates'), undefined);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 안내 문구가 가리키는 원본이 실제로 존재하고 누락 절을 담고 있는지 — 경로가 옮겨지면 안내가
+// 허공을 가리키는데, 문구는 사람이 읽는 산문이라 아무 테스트도 안 깨진다.
+// 경로에 공백이 있을 수 있으므로(플러그인이 iCloud 경로에 설치되는 실제 사례) 백틱으로 구분한다.
+test('checkDecisionLog: 안내가 가리키는 templates 원본이 실제로 존재하고 누락 절을 담는다', async () => {
+  const dir = await makeDecisionLogFixture('# Team Decision Log\n\n## D2 (2026-06-11) — a\n');
+  try {
+    const w = await checkDecisionLog(dir, ROOT);
+    const quoted = /`([^`]+)`/.exec(w);
+    assert.ok(quoted, '원본 경로는 백틱으로 구분해야 한다 — 공백 있는 경로에서 끝을 알 수 없다');
+    const source = quoted[1];
+    assert.equal(isAbsolute(source), true, `root를 주면 절대 경로로 안내한다: ${source}`);
+
+    const body = await readFile(source, 'utf8');
+    for (const h of DECISION_HEADINGS) {
+      assert.match(body, new RegExp(`^${h}\\b`, 'm'), `안내 원본에 ${h} 절이 있어야 복사가 성립한다`);
+    }
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkDecisionLog: root 없이 호출하면 상대 경로로 안내한다 (하위호환)', async () => {
+  const dir = await makeDecisionLogFixture('# Team Decision Log\n\n## D2 (2026-06-11) — a\n');
+  try {
+    assert.match(await checkDecisionLog(dir), /templates\/docs\/decisions\.md/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });

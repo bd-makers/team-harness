@@ -8,6 +8,7 @@ import { loadBackupDir, settingsHasBoundaryCheckpoint, codexHooksHaveSessionCont
 import { buildEnvelope, buildErrorPacket, emitObservation } from '../observation.mjs';
 import { settingsHasSessionGate } from './session-context.mjs';
 import { checkRuleProvenance } from './rules.mjs';
+import { findStaleTemplates, isKnownStockTemplate } from './migrate.mjs';
 
 const pexec = promisify(execFile);
 
@@ -292,11 +293,15 @@ export async function checkCodexSessionHook(targetDir) {
 // copies it); missing sections need a manual merge from the plugin's
 // templates/docs/decisions.md.
 export const DECISION_LOG_PATH = 'docs/decisions.md';
-export const DECISION_HEADINGS = ['## D2', '## D4', '## D5', '## D6', '## D7'];
+export const DECISION_HEADINGS = ['## D2', '## D4', '## D5', '## D6', '## D7', '## D8'];
 // Derived so the absence message cannot drift from the list it describes.
 const DECISION_IDS = DECISION_HEADINGS.map(h => h.replace(/^## /, '')).join('/');
 
-export async function checkDecisionLog(targetDir) {
+// `root`(플러그인 루트)를 주면 복사해 올 원본의 **실제 경로**를 안내한다. 없으면 상대 경로로 적는다.
+// 누락 절은 init·migrate 어느 쪽도 고치지 못한다 — D8에서 `docs/` seed를 refresh 비목표로
+// 두었기 때문이고(팀이 설치 후 저작하는 파일), 그 사실을 문구가 직접 말해 주지 않으면
+// 사용자는 방금 stale 템플릿 때문에 돌린 migrate가 이것도 처리했으리라 기대하게 된다.
+export async function checkDecisionLog(targetDir, root) {
   let body;
   try {
     body = await readFile(join(targetDir, DECISION_LOG_PATH), 'utf8');
@@ -312,7 +317,8 @@ export async function checkDecisionLog(targetDir) {
   // while the template's dated form (`## D2 (2026-06-11) — …`) still matches.
   const missing = DECISION_HEADINGS.filter(h => !new RegExp(`^${h}\\b`, 'm').test(body));
   if (missing.length === 0) return null;
-  return `${DECISION_LOG_PATH}에 ${missing.join(', ')} 절 없음 — 스캐폴드는 기존 파일을 덮어쓰지 않으므로 플러그인 templates/docs/decisions.md에서 해당 절을 가져와 추가하라`;
+  const source = root ? join(root, 'templates/docs/decisions.md') : '플러그인 templates/docs/decisions.md';
+  return `${DECISION_LOG_PATH}에 ${missing.join(', ')} 절 없음 — 팀 결정 로그는 설치 후 팀이 저작하는 파일이라 init·migrate 어느 쪽도 덮어쓰지 않는다(D8: docs/ seed는 refresh 비목표). \`${source}\` 에서 해당 절을 복사해 ${DECISION_LOG_PATH} 끝에 덧붙여라 — 이미 있는 절은 건드리지 말 것`;
 }
 
 export async function checkBoundaryCheckpointHook(targetDir) {
@@ -608,7 +614,7 @@ export async function runDoctor(ctx) {
 
   // Deliberately NOT gated on pluginDev: the D-log migration puts docs/decisions.md
   // in the source repo too, so its absence is real drift on either side.
-  const decisionLogWarning = await checkDecisionLog(ctx.targetDir);
+  const decisionLogWarning = await checkDecisionLog(ctx.targetDir, ctx.root);
   if (decisionLogWarning) add('decision log', 'warning', decisionLogWarning, `\n⚠️ ${decisionLogWarning}`);
 
   // Deliberately NOT gated on pluginDev either — this repo's own eager tier is the
@@ -616,9 +622,23 @@ export async function runDoctor(ctx) {
   const eagerTierWarning = await checkEagerTierSize(ctx.targetDir);
   if (eagerTierWarning) add('eager tier size', 'warning', eagerTierWarning, `\n⚠️ ${eagerTierWarning}`);
 
+  // init copies skills/rules with skipExisting, so a *modified* template never reaches an
+  // existing install — only migrate's refresh delivers it. Without this warning that path
+  // stays undiscoverable, which is why the drift went unnoticed for months. plugin-dev is
+  // the source of the templates, not an install of them, so it is skipped there.
+  const staleTemplates = pluginDev ? [] : await findStaleTemplates(ctx);
+  if (staleTemplates.length) {
+    const detail = `설치된 스킬·규칙 ${staleTemplates.length}개가 최신 템플릿보다 낡음: ${staleTemplates.sort().join(', ')} — \`harness-team migrate\`로 갱신 (사용자가 편집한 파일은 건드리지 않는다)`;
+    add('stale skill/rule templates', 'warning', detail, `\n⚠️ ${detail}`);
+  }
+
   // Not gated on pluginDev: a rule without provenance is drift wherever it lives —
   // and this repo ships no .claude/rules of its own, so the source tree stays silent.
-  const provenanceWarning = await checkRuleProvenance(ctx.targetDir);
+  // stock 규칙은 제외한다 — 위 stale 경고가 올바른 처방(migrate)과 함께 이미 보고했고,
+  // 여기서 "스탬프를 찍어라"까지 내면 같은 파일에 상충하는 지시가 두 개 나간다.
+  const provenanceWarning = await checkRuleProvenance(ctx.targetDir, {
+    isKnownStock: (rel, content) => isKnownStockTemplate(`.claude/rules/${rel}`, content),
+  });
   if (provenanceWarning) add('rule provenance', 'warning', provenanceWarning, `\n⚠️ ${provenanceWarning}`);
 
   // Like the hook-presence checks above, this is consumer-only. plugin-dev uses
@@ -672,6 +692,7 @@ export async function runDoctor(ctx) {
     // jq warning always carries its remedy; the fail-open branch additionally needs
     // migrate — installing jq alone leaves the stale hooks' precision degraded forever.
     if (jqGaps.length) warnActions.push('harness-team migrate');
+    if (staleTemplates.length) warnActions.push('harness-team migrate');
     if (jqMissing) warnActions.push(jqInstallAction());
     if (!pluginDev && !hookCliOk) warnActions.push(hookCliInstall);
     if (driftWarning) warnActions.push(cliDriftAction());

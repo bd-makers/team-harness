@@ -13,6 +13,7 @@ import { exists } from '../src/fsx.mjs';
 import { OBSERVATION_SCHEMA } from '../src/observation.mjs';
 import { checkRuleProvenance, TEMPLATE_RULE_ORIGIN } from '../src/commands/rules.mjs';
 import { runDoctor } from '../src/commands/doctor.mjs';
+import { isKnownStockTemplate } from '../src/commands/migrate.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -471,3 +472,45 @@ test('checkRuleProvenance: 읽을 수 없는 규칙(dangling symlink)은 "유래
     assert.doesNotMatch(w, /유래 없는 규칙/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+// --- stock 규칙 억제 (doctor의 stale 경고와의 이중 보고 방지, D8) ---
+//
+// 마커 도입 이전에 배포된 stock 규칙은 "사용자가 스탬프를 빠뜨린 것"이 아니라 "낡은 것"이고
+// 처방이 다르다(migrate). 억제가 없으면 같은 파일에 상충하는 지시 두 개가 나간다.
+// 이 필터는 경고를 *숨기므로* 과잉 적용돼도 아무것도 실패하지 않는다 — 그래서 양쪽을 다 고정한다.
+test('checkRuleProvenance: stock 규칙(마커 이전 판)은 isKnownStock으로 억제된다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-prov-stock-'));
+  try {
+    await mkdir(join(dir, '.claude/rules'), { recursive: true });
+    const stock = await readFile(
+      join(ROOT, 'tests/fixtures/stock-templates/2026-04-16-6948aa73/.claude/rules/testing.md'), 'utf8');
+    assert.equal(parseRuleMarker(stock), null, '재현 전제: 이 판에는 유래 마커가 없다');
+    await writeFile(join(dir, '.claude/rules/testing.md'), stock);
+
+    assert.match(await checkRuleProvenance(dir), /유래 없는 규칙 1개: testing\.md/,
+      '억제 없이는 유래 없음으로 보고된다');
+    assert.equal(await checkRuleProvenance(dir, { isKnownStock: isKnownStockTemplate2 }), null,
+      'stock이면 억제된다 — stale 경고가 올바른 처방과 함께 이미 보고한다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 억제가 넓어지면 진짜 유래 없는 사용자 규칙까지 조용히 사라진다 — 이 테스트가 그 경계다.
+test('checkRuleProvenance: 유래 없는 *사용자* 규칙은 isKnownStock을 줘도 계속 보고된다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-prov-user-'));
+  try {
+    await mkdir(join(dir, '.claude/rules/sub'), { recursive: true });
+    await writeFile(join(dir, '.claude/rules/my-rule.md'), '# 팀이 손으로 쓴 규칙, 마커 없음\n');
+    await writeFile(join(dir, '.claude/rules/sub/nested.md'), '# 하위 디렉터리, 마커 없음\n');
+    const stock = await readFile(
+      join(ROOT, 'tests/fixtures/stock-templates/2026-04-16-6948aa73/.claude/rules/styling.md'), 'utf8');
+    await writeFile(join(dir, '.claude/rules/styling.md'), stock);
+
+    const w = await checkRuleProvenance(dir, { isKnownStock: isKnownStockTemplate2 });
+    assert.match(w, /유래 없는 규칙 2개: my-rule\.md, sub\/nested\.md/, '사용자 규칙은 억제되면 안 된다');
+    assert.doesNotMatch(w, /styling\.md/, 'stock 규칙만 억제된다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// doctor가 실제로 넘기는 키 모양(`.claude/rules/${rel}`)을 그대로 쓴다 — 이 규약이 어긋나면
+// 억제가 조용히 넓어지거나(전부 숨김) 좁아진다(이중 보고 복귀).
+const isKnownStockTemplate2 = (rel, content) => isKnownStockTemplate(`.claude/rules/${rel}`, content);
