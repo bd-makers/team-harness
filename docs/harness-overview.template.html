@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.32.3</span>
+      <span class="tag tag-purple">v0.33.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.33.0 — 템플릿 refresh가 스킬·규칙까지 도달한다:</strong>
+    <br>
+    <code>0.33.0</code> <strong><code>templates/</code>를 고쳐도 기존 설치에는 영영 도달하지 않던 문제를 고친다.</strong> <code>copyStaticAssets</code>가 정적 표면을 <code>skipExisting</code>으로 복사하고 그 판정이 <em>파일 단위</em>라, <strong>새로 추가된</strong> 파일은 도달하는데 <strong>수정된</strong> 파일만 막히는 비대칭이 있었다 — 그래서 0.32.3까지 나간 <code>new-feature</code> Phase 3 규율이 기존 팀에 배달되지 않은 채였다. 소비자 샌드박스에서 재현해 그 비대칭 자체를 테스트로 고정했다. <strong>정책은 새로 만들지 않았다</strong> — <code>refreshClaudeHooks</code>가 이미 쓰던 provenance 규칙(하네스가 배포한 적 있는 sha256과 일치할 때만 갱신, 나머지는 커스터마이즈로 보아 보존)을 그대로 넓혀 적용 범위를 정적 템플릿 <strong>6개에서 13개</strong>로 늘렸다(<code>.claude/skills</code> 3 + <code>.claude/rules</code> 4). <code>docs/</code> seed는 설치 후 팀이 저작하는 파일이라 <strong>비목표</strong>로 명시했다(D8). 경로가 있어도 부르지 않으면 없는 것과 같으므로 <code>doctor</code>에 <strong>stale 경고</strong>를 세우고 <code>next_actions</code>에 <code>migrate</code>를 실었다 — 단, <strong>사용자가 편집한 파일에는 경고하지 않는다</strong>(<code>migrate</code>가 고치지 않을 것을 시키면 거짓 안내다). Codex 리뷰가 MAJOR 3건을 냈고 2건을 반영했다: 규칙 refresh가 <code>.cursor</code> 미러를 갱신하지 않아 <strong>드리프트가 스스로를 숨기던</strong> 문제(<code>doctor</code>는 <code>.claude</code>만 본다), 그리고 판정↔쓰기 사이 TOCTOU·leaf symlink 덮어쓰기(<strong>디렉터리 symlink=공식 backup 구조는 그대로 통과</strong>). <strong>소비자가 할 일:</strong> <code>migrate</code> 한 번, 그리고 <code>## D8</code> 절 누락 경고는 <code>init</code>·<code>migrate</code>로 안 고쳐지므로 경고가 알려 주는 경로에서 복사해 붙인다.
+    <br><br>
     <strong>🆕 0.32.3 — eager 계층 슬림화: 절차를 lazy 정본으로:</strong>
     <br>
     <code>0.32.3</code> <strong>매 세션 로드되는 지시에서 1,955 B를 덜어낸다</strong> — 0.32.2가 <code>AGENTS.md</code>에 1,397 B를 더해 eager 예산(24 KiB)을 64 B 넘긴 채 태그까지 나갔고, 남은 여유는 275 B였다. 규칙을 한 문단 더 쓸 때마다 예산과 협상해야 하는 상태였다. 선행 작업의 판별 기준(<em>트리거를 컨텍스트 없이 인지할 수 있는가</em>)을 재적용해 <code>meta.json</code> 판정 창 상세·다이어그램 산출물 절차는 <code>commands/harness-task.md</code>로, D5~D7 부연은 <code>docs/decisions.md</code>로, escalation/error 패킷의 항목 차이는 <code>src/observation.mjs</code> 주석으로 옮겼다. <strong>규칙은 한 줄도 사라지지 않는다</strong> — 항목 8건마다 도착지를 grep으로 대조했다. 상황 인식형 규칙(<code>§5-A</code> 복잡도 게이트·JIT retrieval)은 트리거가 상황 자체라 이전 대상이 아니다. 여유는 다시 사라지므로 가드를 둘 세웠다: 루트 복사본과 <strong>소비자가 받는 렌더된 템플릿</strong> 양쪽에 17,500 B 상한(<code>doctor</code>의 24 KiB 경고는 머신마다 다른 전역 파일을 포함해 레포가 스스로 지킬 수 없다). <code>MAINTAINING.md</code>의 필수 검증도 두 명령에서 <strong>세 명령</strong>이 됐다 — eager 예산은 <code>npm test</code>가 재지 않아 0.32.2가 초과한 채 나갈 수 있었다. Codex 리뷰 P2 2건은 재현 후 반영했고, 그중 R2가 <strong>가드를 재는 자리가 틀렸다</strong>는 것을 잡았다 — 예산의 목적은 소비자 세션의 비용인데 재던 것은 이 저장소의 복사본이었다. 도달성 정정도 있다: Codex는 skill mirror 지시로 <code>commands/</code>에 도달하며, 도달하지 못하는 것은 Cursor뿐이다. <strong>동작·파일 형식 변경은 없다.</strong>
@@ -830,7 +834,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.32.3 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.33.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
