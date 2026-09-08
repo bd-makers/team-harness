@@ -24,3 +24,13 @@
 docs/chad/chad-handoff.md                                        | 9 ++++-----
  .../done-force-audit-trail/done-force-audit-trail-handoff.md     | 9 +++++++++
  2 files changed, 13 insertions(+), 5 deletions(-)
+
+## 2026-09-08T14:47:30.387Z — 0a31bc7 fix(summary): 원장 재생성이 우회 표시를 지우던 것 수정 (codex P2)
+docs/chad/chad-handoff.md                          |  2 +-
+ .../done-force-audit-trail-artifact.md             | 39 +++++++++++++++++++-
+ .../done-force-audit-trail-handoff.md              |  5 +++
+ .../done-force-audit-trail-plan.md                 |  2 +-
+ src/commands/summary.mjs                           | 27 +++++++++++---
+ src/commands/task.mjs                              |  5 +++
+ tests/summary.test.mjs                             | 43 ++++++++++++++++++++++
+ 7 files changed, 114 insertions(+), 9 deletions(-)
