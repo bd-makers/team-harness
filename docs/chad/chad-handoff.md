@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+observe-surfacing
 
-## Last Completed Task (2026-09-08)
-`done-force-audit-trail` — done
+## Last Commit (2026-09-08)
+9b23ebd docs(task): observe-surfacing task 생성 — spec·plan·TCC 초안
 
 ## Full Context
-→ docs/chad/done-force-audit-trail/done-force-audit-trail-handoff.md
+→ docs/chad/observe-surfacing/observe-surfacing-handoff.md
