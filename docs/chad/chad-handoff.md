@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+done-force-audit-trail
 
-## Last Completed Task (2026-09-08)
-`template-refresh-policy` — done
+## Last Commit (2026-09-08)
+c9f8d9d feat(done): --force 우회에 감사 흔적을 남긴다 — meta 2필드 + 원장 표시
 
 ## Full Context
-→ docs/chad/template-refresh-policy/template-refresh-policy-handoff.md
+→ docs/chad/done-force-audit-trail/done-force-audit-trail-handoff.md

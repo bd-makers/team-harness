@@ -10,3 +10,12 @@
  .../done-force-audit-trail-plan.md                 |  47 ++++++++
  .../done-force-audit-trail-spec.md                 | 134 +++++++++++++++++++++
  6 files changed, 245 insertions(+)
+
+## 2026-09-08T14:15:44.739Z — c9f8d9d feat(done): --force 우회에 감사 흔적을 남긴다 — meta 2필드 + 원장 표시
+.../done-force-audit-trail-artifact.md             | 52 +++++++++++++++
+ .../done-force-audit-trail-plan.md                 | 12 ++--
+ src/commands/summary.mjs                           | 35 ++++++++--
+ src/commands/task.mjs                              |  9 ++-
+ tests/done-guard.test.mjs                          | 60 +++++++++++++++++
+ tests/summary.test.mjs                             | 77 ++++++++++++++++++++++
+ 6 files changed, 233 insertions(+), 12 deletions(-)
