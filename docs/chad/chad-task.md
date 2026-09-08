@@ -1,6 +1,7 @@
 # chad — Tasks
 
 ## Open
+- done-force-audit-trail (created 2026-09-07)
 
 ## Completed
 - ✅ pocock-tdd-slicing
