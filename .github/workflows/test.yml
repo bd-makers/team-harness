@@ -41,6 +41,12 @@ jobs:
         node: [24]
     steps:
       - uses: actions/checkout@v5
+        with:
+          # 기본값(depth 1)이면 `git log -- templates/...`가 커밋 하나만 보므로
+          # KNOWN_STOCK_TEMPLATE_SHA256의 이력 완전성 테스트가 검사할 이력을 잃는다.
+          # 그 가드는 "템플릿을 고치고 이전 판 sha를 빠뜨렸다"를 잡는 것이고, 그런 실수는
+          # 로컬이 아니라 **CI에서** 잡혀야 의미가 있다 — 그래서 얕게 받지 않는다.
+          fetch-depth: 0
 
       - uses: actions/setup-node@v5
         with:

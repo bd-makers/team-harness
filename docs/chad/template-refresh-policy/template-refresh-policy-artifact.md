@@ -142,3 +142,28 @@ net이 사라진다 — 트레이드오프라 사용자 결정 사항으로 넘�
 
 검증: `npm test` **657개 중 656 pass · fail 0 · skip 1** · `docs:check` PASS · `doctor` PASS.
 소비자 샌드박스에서 D8 절을 지우고 실측 — 경로가 공백 포함으로도 정확히 추출되고 실재한다.
+
+## 후속 (2026-09-08) — CI red: 내가 넣은 이력 완전성 테스트가 얕은 클론에서 깨졌다
+
+머지 직전 `gh pr checks`가 `test (24)` fail. **flake가 아니라 내 테스트의 버그**였다.
+
+- 원인: `actions/checkout@v5`는 기본이 `fetch-depth: 1`(얕은 클론)이다. CI에서
+  `git log -- templates/<rel>`이 커밋 1개만 보므로 이력에서 관측되는 sha 집합이 거의 비고,
+  테이블 20개와 `deepEqual`이 어긋난다. 로컬은 전체 이력이라 통과했다 — **환경 의존 테스트**였다.
+- 로그는 403(기존 함정)이라 check-run **annotation**으로 실패 지점을 얻었다.
+
+### 고친 방향 — 건너뛰지 않고 이력을 준다
+
+이 가드가 잡는 실수는 "템플릿을 고치고 이전 판 sha를 빠뜨렸다"이고, 그런 실수는 로컬이 아니라
+**CI에서** 잡혀야 의미가 있다. CI에서 skip하면 가장 필요한 자리에서 가드가 사라진다
+(silence is not success). 그래서:
+
+- `.github/workflows/test.yml`에 `fetch-depth: 0` — CI에 실제 이력을 준다.
+- 테스트에는 `git rev-parse --is-shallow-repository` 확인 후 **skip**(실패 아님) 분기 추가.
+  얕은 클론은 "틀렸다"가 아니라 "판정 불가"다. tarball·얕은 체크아웃에서 헛failure를 막는다.
+
+검증: `--depth 1` 로컬 클론에서 재현(fail 1) → 수정본 적용 시 **skip 1 · fail 0** 확인.
+전체 `npm test` 657개 중 656 pass · fail 0 · skip 1.
+
+**교훈**: git 이력을 읽는 테스트는 체크아웃 깊이에 의존한다. 로컬 통과가 CI 통과를 뜻하지 않는
+부류이므로, 이력 의존 테스트를 새로 넣을 때는 얕은 클론에서 먼저 돌려 볼 것.

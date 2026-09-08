@@ -252,6 +252,11 @@ test('codex MINOR: 테이블이 templates/의 실제 git 이력을 빠짐없이 
   catch { return t.skip('git 이력 없음 — 소비자 설치본에서는 건너뛴다'); }
   assert.ok(head);
 
+  // 얕은 클론은 이력이 잘려 있어 "빠짐없이 담는다"를 판정할 수 없다 — 실패가 아니라 미판정이다.
+  // CI는 fetch-depth: 0으로 받으므로 여기서 걸리지 않는다(.github/workflows/test.yml).
+  const shallow = execFileSync('git', ['rev-parse', '--is-shallow-repository'], { cwd: ROOT }).toString().trim();
+  if (shallow === 'true') return t.skip('얕은 클론 — 이력 완전성은 판정 불가');
+
   for (const rel of REFRESHABLE_TEMPLATE_FILES) {
     const p = `templates/${rel}`;
     const cur = sha256(execFileSync('git', ['show', `HEAD:${p}`], { cwd: ROOT, maxBuffer: 1 << 26 }));
