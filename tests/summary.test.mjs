@@ -8,6 +8,7 @@ import { promisify } from 'node:util';
 import { runTask, runDone } from '../src/commands/task.mjs';
 import {
   collectTasks, renderTaskSummary, renderUserIndex, runSummary, readTaskMeta, defaultBranchCandidates,
+  readLedger, taskMetaTemplate,
 } from '../src/commands/summary.mjs';
 
 const pexec = promisify(execFile);
@@ -588,4 +589,80 @@ test('--write: origin/HEAD가 없으면 origin/master tip에 서 있어도 거�
     process.exitCode = exitCode;
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 우회 종결의 원장 표현 (done-force-audit-trail)
+//
+// 렌더링과 역파싱은 짝이다. 표시만 추가하고 `readLedger` 의 정규식을 그대로 두면
+// 우회 행이 원장 재읽기에서 통째로 유실되고, `inferLegacyMeta` 가 그 task 의
+// created·done 을 복구하지 못한다. 왕복 테스트가 그 회귀를 고정한다.
+// ─────────────────────────────────────────────────────────────────────────────
+
+async function ledgerRoundTrip(tasks) {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-ledger-rt-'));
+  await mkdir(join(dir, 'docs'), { recursive: true });
+  await writeFile(join(dir, 'docs', 'task_summary.md'), renderTaskSummary(tasks));
+  for (const user of [...new Set(tasks.map(t => t.user))]) {
+    await mkdir(join(dir, 'docs', user), { recursive: true });
+    await writeFile(join(dir, 'docs', user, `${user}-task.md`), renderUserIndex(user, tasks));
+  }
+  try {
+    return await readLedger(dir);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+const forcedTask = {
+  user: 'chad', task: 'bypassed', created: '2026-09-07', status: 'done',
+  closedAt: '2026-09-07T10:00:00.000Z',
+  forcedAt: '2026-09-07T10:00:00.000Z',
+  forcedIssues: ['plan.md 에 미완 단계가 남아 있음'],
+};
+const cleanTask = {
+  user: 'chad', task: 'clean', created: '2026-09-07', status: 'done',
+  closedAt: '2026-09-07T10:00:00.000Z', forcedAt: null, forcedIssues: null,
+};
+
+// 행 전체를 비교하면 task 이름이 달라서 통과한다 — 판정 대상은 status 칸 하나뿐이다.
+const statusCell = (row) => row.split('|')[3].trim();
+
+test('우회 종결과 정상 종결이 원장의 status 칸에서 구분된다', async () => {
+  const [forcedRow, cleanRow] = renderTaskSummary([forcedTask, cleanTask])
+    .split('\n').filter(l => l.startsWith('| chad |'));
+  assert.notEqual(
+    statusCell(forcedRow), statusCell(cleanRow),
+    'status 칸이 같으면 흔적 없는 우회 그대로다',
+  );
+  assert.equal(statusCell(cleanRow), '✅ done', '정상 종결은 종전 표기를 유지한다');
+});
+
+test('우회 표시가 붙은 원장을 다시 읽어도 행이 유실되지 않는다 (렌더 ↔ 역파싱 왕복)', async () => {
+  const ledger = await ledgerRoundTrip([forcedTask, cleanTask]);
+
+  const row = ledger.summaryRows.get('chad/bypassed');
+  assert.ok(row, '우회 행이 역파싱에서 살아남는다');
+  assert.equal(row.done, true, '우회 종결도 done 으로 읽힌다');
+  assert.equal(row.created, '2026-09-07', 'created 가 보존된다');
+
+  assert.ok(ledger.completedNames.has('chad/bypassed'), '<user>-task.md 의 완료 목록에도 남는다');
+  assert.equal(ledger.summaryRows.get('chad/clean').done, true, '정상 종결 행 회귀 없음');
+});
+
+test('우회 필드가 없는 구 meta 는 종전과 동일하게 렌더링된다', async () => {
+  const legacy = { user: 'chad', task: 'legacy', created: '2026-08-01', status: 'done', closedAt: null };
+  const row = renderTaskSummary([legacy]).split('\n').find(l => l.startsWith('| chad |'));
+  assert.equal(row, '| chad | legacy | ✅ done | 2026-08-01 |', '구 task 렌더링 회귀 없음');
+
+  const index = renderUserIndex('chad', [legacy]);
+  assert.ok(index.includes('- ✅ legacy\n'), '사용자 인덱스도 종전 그대로');
+});
+
+test('taskMetaTemplate 이 우회 필드를 null 로 선언한다 (없음 ≠ 우회 아님)', () => {
+  const meta = JSON.parse(taskMetaTemplate('chad', 'demo', '2026-09-07', '2026-09-07T00:00:00.000Z'));
+  assert.ok('forcedAt' in meta, 'forcedAt 키 존재');
+  assert.ok('forcedIssues' in meta, 'forcedIssues 키 존재');
+  assert.equal(meta.forcedAt, null);
+  assert.equal(meta.forcedIssues, null);
 });

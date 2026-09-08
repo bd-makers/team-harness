@@ -684,8 +684,15 @@ export async function runDone(ctx) {
 
   await appendFile(handoffPath, renderDoneMarker(ts));
 
+  // 우회 감사 흔적. 판정 기준은 플래그가 아니라 **실제로 무시된 issue**다 — issue 가 없는
+  // 종결에 `--force` 만 붙은 경우는 우회한 것이 없으므로 흔적을 남기지 않는다.
+  // 우회가 아닐 때 `...meta` 를 그대로 두는 것도 의도다: 한 번 우회한 task 를 reopen 해서
+  // 깨끗하게 다시 닫는 것으로 흔적을 지울 수 있으면 감사 흔적이 아니게 된다.
+  const forcedFields = force && issues.length ? { forcedAt: ts, forcedIssues: issues } : {};
   const meta = (await readTaskMeta(ctx.targetDir, user, task)) || { user, task, created: today() };
-  await writeTaskMeta(ctx.targetDir, user, task, { ...meta, user, task, status: 'done', closedAt: ts });
+  await writeTaskMeta(ctx.targetDir, user, task, {
+    ...meta, user, task, status: 'done', closedAt: ts, ...forcedFields,
+  });
 
   // 사용자 handoff 는 AGENTS.md 가 규정한 **세션 진입점**이다. 갱신하지 않고 활성만 비우면
   // 이 파일이 종결된 task 를 계속 "Active Task" 로 가리킨 채 얼어붙는다 — 이후 커밋에서

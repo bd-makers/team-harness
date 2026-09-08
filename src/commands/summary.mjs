@@ -17,14 +17,28 @@ export const userIndexRel = (user) => join('docs', user, `${user}-task.md`);
 
 export const metaRel = (user, task) => join('docs', user, task, `${task}-meta.json`);
 
+// 우회 종결 표시. 렌더와 역파싱이 **같은 상수**를 쓰게 해 두 곳이 갈라지는 것을 막는다.
+// ⚠️ 는 U+26A0 + U+FE0F 두 코드포인트라 한쪽에서 손으로 다시 타이핑하면 변이 선택자가
+// 빠지기 쉽고, 그러면 정규식이 그 칸을 놓쳐 원장 재읽기에서 행이 통째로 사라진다.
+export const DONE_CELL = '✅ done';
+export const FORCED_MARK = '⚠️';
+const doneCell = (forced) => (forced ? `${DONE_CELL} ${FORCED_MARK}` : DONE_CELL);
+
 // Machine-owned per-task state. Lives beside the four SSOT files but is not one of
 // them: agents rewrite spec.md wholesale and the post-commit hook rewrites handoff.md,
 // so neither can hold data the harness must be able to read back.
 // `firstActivatedAt`은 done 가드의 판정 창 시작점이다. 생성 시 1회만 기록하고 이후 누구도
 // 덮어쓰지 않는다 — active.json의 `switchedAt`은 재활성화마다 갱신되므로 창 기준이 될 수 없다.
 // 없이 쓰인 meta(구 task·migrate 복원분)는 키가 빠지고, 가드는 시각 비교를 포기한다.
+// `forcedAt`/`forcedIssues`는 `done --force`로 **무시된 issue가 1개 이상**일 때만 채워지는
+// 감사 흔적이다. 차단하지 않으며 가드의 판정과 무관하다 — 우회는 계속 합법이고, 바뀌는 것은
+// 그 사실이 종결 후에도 기계 판독 가능하게 남는가 하나다. 플래그만 붙고 무시한 것이 없으면
+// 우회가 아니므로 null 로 남는다. 키가 아예 없는 구 task 는 "우회 아님"이 아니라 "알 수 없음"이다.
 export function taskMetaTemplate(user, task, created, firstActivatedAt) {
-  return JSON.stringify({ user, task, created, firstActivatedAt, status: 'open', closedAt: null }, null, 2) + '\n';
+  return JSON.stringify(
+    { user, task, created, firstActivatedAt, status: 'open', closedAt: null, forcedAt: null, forcedIssues: null },
+    null, 2,
+  ) + '\n';
 }
 
 export async function readTaskMeta(targetDir, user, task) {
@@ -57,18 +71,29 @@ export async function inferLegacyMeta(targetDir, user, task, ledger) {
     ledger.completedNames.has(key(user, task))
   );
 
+  // 원장에는 우회 여부가 남아 있지 않다. null 은 "우회 아님"이라는 주장이 아니라
+  // 기록이 없다는 뜻이고, 원장은 그 둘을 구분해 그릴 세 번째 표기를 갖지 않는다.
   return {
     user,
     task,
     created: summaryRow ? summaryRow.created : (ledger.openCreated.get(key(user, task)) || ''),
     status: done ? 'done' : 'open',
     closedAt: null,
+    forcedAt: null,
+    forcedIssues: null,
   };
 }
 
 async function readTextOrNull(p) {
   try { return await readFile(p, 'utf8'); } catch { return null; }
 }
+
+// 상태 칸 패턴을 렌더가 쓰는 상수에서 조립한다. 리터럴로 다시 적으면 표시를 바꿀 때
+// 한쪽만 고치게 되고, 그러면 그 행은 매치에 실패해 조용히 사라진다 —
+// `inferLegacyMeta` 가 그 task 의 created·done 을 복구할 마지막 출처가 원장이라 손실이 영구적이다.
+const SUMMARY_ROW_RE = new RegExp(
+  `^\\|\\s*([^|]+?)\\s*\\|\\s*([^|]+?)\\s*\\|\\s*(${DONE_CELL}(?: ${FORCED_MARK})?|🔄 (?:open|active))\\s*\\|\\s*([^|]*?)\\s*\\|`,
+);
 
 // Parse the committed ledger so legacy facts survive the switch to meta.json.
 export async function readLedger(targetDir) {
@@ -79,10 +104,10 @@ export async function readLedger(targetDir) {
   const summary = await readTextOrNull(join(targetDir, SUMMARY_REL));
   if (summary) {
     for (const line of summary.split('\n')) {
-      const m = line.match(/^\|\s*([^|]+?)\s*\|\s*([^|]+?)\s*\|\s*(✅ done|🔄 (?:open|active))\s*\|\s*([^|]*?)\s*\|/);
+      const m = line.match(SUMMARY_ROW_RE);
       if (!m) continue;
       if (m[1] === 'User') continue;
-      summaryRows.set(key(m[1], m[2]), { done: m[3] === '✅ done', created: m[4] });
+      summaryRows.set(key(m[1], m[2]), { done: m[3].startsWith(DONE_CELL), created: m[4] });
     }
   }
 
@@ -144,7 +169,7 @@ function byCreatedDescThenName(a, b) {
 
 export function renderTaskSummary(tasks) {
   const rows = [...tasks].sort(byCreatedAscThenName)
-    .map(t => `| ${t.user} | ${t.task} | ${t.status === 'done' ? '✅ done' : '🔄 open'} | ${t.created || ''} |`);
+    .map(t => `| ${t.user} | ${t.task} | ${t.status === 'done' ? doneCell(t.forcedAt) : '🔄 open'} | ${t.created || ''} |`);
   return `# Task Summary
 
 | User | Task | Status | Created |
@@ -157,7 +182,7 @@ export function renderUserIndex(user, tasks) {
   const open = mine.filter(t => t.status !== 'done').sort(byCreatedDescThenName)
     .map(t => `- ${t.task}${t.created ? ` (created ${t.created})` : ''}`);
   const done = mine.filter(t => t.status === 'done').sort(byCreatedDescThenName)
-    .map(t => `- ✅ ${t.task}`);
+    .map(t => `- ✅ ${t.task}${t.forcedAt ? ` ${FORCED_MARK}` : ''}`);
   return `# ${user} — Tasks
 
 ## Open

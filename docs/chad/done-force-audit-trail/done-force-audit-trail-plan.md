@@ -7,21 +7,21 @@
 
 ## 단계
 
-- [ ] **meta 스키마 확장** — `taskMetaTemplate`(`src/commands/summary.mjs:26-27`)에
+- [x] **meta 스키마 확장** — `taskMetaTemplate`(`src/commands/summary.mjs:26-27`)에
       `forcedAt: null`, `forcedIssues: null` 추가. 필드 의미를 주석으로 고정 —
       `firstActivatedAt` 주석과 같은 자리에, 손으로 고치지 않는 harness 소유 상태임을 명시.
-- [ ] **`runDone`에서 기록** — force 분기(`src/commands/task.mjs:676-679`)가 이미 쥔 `issues`를
+- [x] **`runDone`에서 기록** — force 분기(`src/commands/task.mjs:676-679`)가 이미 쥔 `issues`를
       meta 쓰기(`:688`)에 전달. 기록 조건은 `force && issues.length > 0` —
       플래그만 붙고 무시한 것이 없으면 기록하지 않는다(spec 완료 기준 2).
-- [ ] **원장 렌더링 + 역파싱 동시 갱신** — `src/commands/summary.mjs:147`(task_summary)과
+- [x] **원장 렌더링 + 역파싱 동시 갱신** — `src/commands/summary.mjs:147`(task_summary)과
       `:157-160`(`<user>-task.md`)에 우회 표시 추가. **같은 커밋에서** `:82`의
       `(✅ done|🔄 (?:open|active))` 정규식을 갱신한다 — 렌더링만 바꾸면 원장 재읽기 시 행이 유실된다.
-- [ ] **구 task degrade 확인** — `inferLegacyMeta`(`:49-65`)는 우회 여부를 알 수 없다.
+- [x] **구 task degrade 확인** — `inferLegacyMeta`(`:49-65`)는 우회 여부를 알 수 없다.
       두 필드를 `null`로 두고 "우회 아님"으로 단정하지 않는지 확인.
-- [ ] **테스트** — (a) issue 있는 `--force` → 두 필드 기록, (b) issue 없는 `--force` → 미기록,
+- [x] **테스트** — (a) issue 있는 `--force` → 두 필드 기록, (b) issue 없는 `--force` → 미기록,
       (c) 원장 렌더 → 역파싱 왕복에서 우회 행 보존, (d) 필드 없는 구 meta 렌더링 회귀 없음.
       `tests/done-guard.test.mjs`·`tests/summary.test.mjs`에 각각 배치.
-- [ ] **검증** — `npm run test` 전체 통과. 우회 표시가 실제로 원장에 뜨는 것을 E2E로 확인.
+- [x] **검증** — `npm run test` 전체 통과. 우회 표시가 실제로 원장에 뜨는 것을 E2E로 확인.
 - [ ] **리뷰** — spec이 `review: required`를 선언했다. `/harness-review`(Codex, read-only) 실행 후
       결과를 artifact `## Reviews`에 마커와 함께 기록. 반영은 이 세션이 재현·판별한 뒤 단일 스레드로.
 - [ ] **retro** — `/harness-retro`로 학습 기록 후 `harness-team done`.

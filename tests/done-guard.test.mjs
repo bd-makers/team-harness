@@ -916,3 +916,63 @@ test('done 가드: issue별 cause 줄을 보존하고 alternatives·default 줄�
     assert.doesNotMatch(stops[0], /--force/, 'stop은 우회 방법을 담지 않는다');
   } finally { restore(); process.exitCode = prevExit; await rm(dir, { recursive: true, force: true }); }
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 우회 감사 흔적 (done-force-audit-trail)
+//
+// `--force` 종결은 계속 허용된다. 바뀌는 것은 그 사실이 meta 에 남는가 하나뿐이다.
+// 기록 조건은 "--force 플래그"가 아니라 "무시된 issue ≥ 1" 이다 — 플래그만 붙고
+// 실제로 무시한 것이 없으면 우회가 아니므로 흔적을 남기지 않는다.
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('--force 로 issue 를 무시하고 종결하면 meta 에 forcedAt·forcedIssues 가 남는다', async () => {
+  const { dir, taskDir } = await makeFixture({
+    plan: '# demo — Plan\n\n## 단계\n- [ ] 미완\n',
+    artifact: taskArtifactTemplate('demo'),
+  });
+  const prevExit = process.exitCode;
+  const { logs, restore } = captureLogs();
+  try {
+    await runDone({ targetDir: dir, flags: { force: true } });
+
+    const meta = JSON.parse(await readFile(join(taskDir, 'demo-meta.json'), 'utf8'));
+    assert.equal(meta.status, 'done', '종결 자체는 그대로 일어난다');
+    assert.ok(meta.forcedAt, 'forcedAt 기록됨');
+    assert.equal(
+      meta.forcedAt, new Date(meta.forcedAt).toISOString(),
+      'forcedAt 은 ISO8601 왕복이 성립해야 한다',
+    );
+    assert.ok(Array.isArray(meta.forcedIssues), 'forcedIssues 는 배열');
+    assert.ok(meta.forcedIssues.length > 0, '무시한 issue 원문이 비어 있지 않다');
+
+    // stdout 으로만 흘리던 값과 같은 것이 남아야 한다 — 흔적이 경고와 어긋나면 의미가 없다.
+    const warned = logs.filter(l => l.startsWith('⚠️ ')).map(l => l.slice('⚠️ '.length));
+    assert.deepEqual(meta.forcedIssues, warned, 'meta 의 issue 가 경고 출력과 일치한다');
+  } finally {
+    restore();
+    process.exitCode = prevExit;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('무시한 issue 가 없는 --force 는 우회가 아니다 — 두 필드가 기록되지 않는다', async () => {
+  const { dir, taskDir } = await makeFixture({
+    plan: '# demo — Plan\n\n## 단계\n- [x] 완료\n',
+    artifact: taskArtifactTemplate('demo') + '\n- 실제 결과 기록\n',
+  });
+  const prevExit = process.exitCode;
+  const { logs, restore } = captureLogs();
+  try {
+    await runDone({ targetDir: dir, flags: { force: true } });
+    assert.ok(!logs.some(l => l.startsWith('⚠️')), '무시할 issue 자체가 없다');
+
+    const meta = JSON.parse(await readFile(join(taskDir, 'demo-meta.json'), 'utf8'));
+    assert.equal(meta.status, 'done');
+    assert.ok(meta.forcedAt == null, 'forcedAt 미기록');
+    assert.ok(meta.forcedIssues == null, 'forcedIssues 미기록');
+  } finally {
+    restore();
+    process.exitCode = prevExit;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
