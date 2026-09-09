@@ -6,6 +6,7 @@ import {
   loadBackupDir, saveBackupConfig, DEFAULT_BACKUP_PARENT, AI_GITIGNORE_PREVIEW,
   cloudSyncPathWarning,
 } from '../harness.mjs';
+import { saveRenderState } from '../render-state.mjs';
 import { confirm, ask } from '../prompt.mjs';
 import { ensureUsername } from '../user-config.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
@@ -73,7 +74,7 @@ export async function runInit(ctx) {
     ctx.addAiGitignore = false;
   }
 
-  const { changes, legacyAgentFiles, brokenMarkerFiles } = await planChanges(ctx, { stack });
+  const { changes, legacyAgentFiles, brokenMarkerFiles, skippedSections, renderState } = await planChanges(ctx, { stack });
 
   if (legacyAgentFiles && legacyAgentFiles.length) {
     console.log(`\n⚠️ 레거시 alias symlink 감지: ${legacyAgentFiles.join(', ')} → CLAUDE.md`);
@@ -90,11 +91,25 @@ export async function runInit(ctx) {
     console.log(formatDiff(changes));
   }
 
+  // 관리 절의 사용자 편집은 지우지 않는다 — 그 절만 건너뛰고 무엇이 반영되지 않았는지 보여준다.
+  // `--yes`에서도 이 경고와 건너뛰기는 그대로다(프롬프트만 생략). 종료 코드는 바꾸지 않는다.
+  if (skippedSections && skippedSections.length) {
+    console.log('\n⚠️  관리 절에 사용자 편집이 있어 건너뜁니다 (사용자 텍스트를 지우지 않습니다):');
+    for (const { file, section, diff } of skippedSections) {
+      console.log(`  - ${file} → harness:section="${section}"`);
+      console.log(diff.split('\n').map(l => `      ${l}`).join('\n'));
+    }
+    console.log('  → 템플릿 변경을 반영하려면 위 diff를 보고 직접 옮긴 뒤 다시 실행하세요.');
+  }
+
   const ok = ctx.flags.yes || await confirm('\nApply these changes + scaffold the rest?', { defaultYes: true });
+  // 거절하면 아무것도 쓰지 않았으므로 렌더 상태도 저장하지 않는다 — 저장하면 다음 실행이
+  // 쓰지도 않은 내용을 "우리 렌더"로 믿는다.
   if (!ok) { console.log('Aborted.'); return; }
 
   if (ctx.backupDir) await mkdir(ctx.backupDir, { recursive: true });
   await applyChanges(changes);
+  await saveRenderState(ctx.targetDir, renderState);
   if (saveConfig) await saveBackupConfig(ctx.targetDir, saveConfig);
   const copied = await copyStaticAssets(ctx);
   await installPostCommitHook(ctx.targetDir);

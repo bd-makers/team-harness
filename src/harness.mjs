@@ -5,6 +5,7 @@ import { writeText, readTextSafe, copyTree, exists } from './fsx.mjs';
 import { render } from './render.mjs';
 import { mergeMarkdown, deepMergeJson, simpleDiff } from './merge.mjs';
 import { stackPermissions, RN_STACK_IDS } from './settings-permissions.mjs';
+import { loadRenderState, sectionHashes } from './render-state.mjs';
 
 export const DEFAULT_BACKUP_PARENT = 'harness-backup';
 
@@ -138,6 +139,12 @@ export async function planChanges(ctx, { stack }) {
   const changes = [];
   const legacyAgentFiles = [];
   const brokenMarkerFiles = [];
+  const skippedSections = [];
+  const priorState = await loadRenderState(targetDir);
+  // 이전 상태를 기본값으로 깔고 시작한다. 루프가 어떤 이유로든 파일을 건너뛰어도
+  // (symlink 레거시 · 마커 깨짐 · 템플릿 없음 → continue) 그 파일의 해시가 통째로
+  // 지워지지 않는다 — 지우면 다음 실행이 부트스트랩으로 판정해 덮는다.
+  const renderState = { version: 1, sections: { ...priorState.sections } };
 
   // Each agent file is marker-merged independently: managed sections updated,
   // user text preserved.
@@ -154,7 +161,12 @@ export async function planChanges(ctx, { stack }) {
     const existing = await readTextSafe(filePath);
     let merged;
     try {
-      merged = mergeMarkdown(existing, rendered);
+      merged = mergeMarkdown(existing, rendered, {
+        lastRender: priorState.sections[file] ?? null,
+        onSkip: (section, current, incoming) => {
+          skippedSections.push({ file, section, diff: simpleDiff(current, incoming) });
+        },
+      });
     } catch (err) {
       if (err?.code !== 'HARNESS_MARKER_MISMATCH') throw err;
       brokenMarkerFiles.push({ file, section: err.section, message: err.message });
@@ -163,6 +175,22 @@ export async function planChanges(ctx, { stack }) {
     if (existing !== merged) {
       changes.push({ kind: 'markdown', path: filePath, before: existing, after: merged });
     }
+
+    // 최종 내용이 방금 렌더한 블록과 같은 절만 "우리 것"으로 새로 기록한다.
+    // 건너뛴 절은 owned에 들어가지 않는다 — 사용자 편집을 "우리 렌더"로 각인시키면
+    // 다음 실행이 그것을 stock으로 보고 덮기 때문이다.
+    //
+    // 그러나 **이전 해시를 지워서도 안 된다**: saveRenderState는 파일 전체를 교체하므로,
+    // 건너뛴 절을 빼고 저장하면 다음 실행에서 그 절이 lastRender에 없어 부트스트랩으로 판정되고
+    // 결국 덮인다 — 보호가 딱 한 번만 걸린다. prior를 먼저 깔고 owned를 덮어씌운다.
+    const finalHashes = sectionHashes(merged);
+    const renderedHashes = sectionHashes(rendered);
+    const owned = {};
+    for (const [name, sha] of Object.entries(finalHashes)) {
+      if (renderedHashes[name] === sha) owned[name] = sha;
+    }
+    const carried = { ...(priorState.sections[file] ?? {}), ...owned };
+    if (Object.keys(carried).length) renderState.sections[file] = carried;
   }
 
   // Scripts live in the project root with the backup dir path embedded at generation time.
@@ -218,7 +246,7 @@ export async function planChanges(ctx, { stack }) {
     });
   }
 
-  return { changes, vars, legacyAgentFiles, brokenMarkerFiles };
+  return { changes, vars, legacyAgentFiles, brokenMarkerFiles, skippedSections, renderState };
 }
 
 export async function applyChanges(changes) {
