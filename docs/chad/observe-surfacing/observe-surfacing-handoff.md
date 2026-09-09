@@ -17,3 +17,13 @@
  src/commands/observe.mjs                           | 32 ++++++++++++++++------
  tests/observe.test.mjs                             | 28 +++++++++++++++++++
  4 files changed, 55 insertions(+), 11 deletions(-)
+
+## 2026-09-08T23:14:52.243Z — 68ac808 feat(doctor): observe 트립와이어 판정을 warn 1건으로 표면화 (observe-surfacing plan 2)
+docs/chad/chad-handoff.md                          |  2 +-
+ .../observe-surfacing/observe-surfacing-context.md |  4 +-
+ .../observe-surfacing/observe-surfacing-handoff.md |  7 ++
+ .../observe-surfacing/observe-surfacing-plan.md    |  2 +-
+ src/commands/doctor.mjs                            | 21 ++++++
+ src/commands/observe.mjs                           | 20 ++++--
+ tests/doctor.test.mjs                              | 81 +++++++++++++++++++++-
+ 7 files changed, 125 insertions(+), 12 deletions(-)

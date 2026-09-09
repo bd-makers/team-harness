@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { buildSessionContext, SESSION_CONTEXT_MAX_TASKS } from '../src/commands/session-context.mjs';
 import { CONTEXT_MAX_BYTES } from '../src/commands/context.mjs';
 import { taskContextTemplate } from '../src/commands/task.mjs';
+import { observeToolEvent } from '../templates/.claude/hooks/observe-tools.mjs';
 
 async function baseDir() {
   const dir = await mkdtemp(join(tmpdir(), 'harness-sctx-'));
@@ -257,5 +258,65 @@ test('plan mtime·task명 동률 → user 오름차순으로 tie-break (열거 �
     const out = await buildSessionContext(dir);
     const order = out.split('\n').filter(l => l.includes('재개:')).map(l => l.match(/재개: (\w+)\/same-name/)[1]);
     assert.deepEqual(order, ['amy', 'zoe'], 'mtime·task명 동률이면 user 오름차순');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// observe-surfacing plan 3: 판정(트립와이어)이 발화했을 때만 SessionStart 출력 끝에 **정확히 한 줄**을
+// 덧붙인다 — 활성 task 유무 어느 분기에서든. 발화가 없으면 출력은 바이트 단위로 같고, 판정 중 예외도
+// 출력을 깨뜨리지 않는다(lean 정책: 표·상세·nudge 본문은 `harness-team observe`에 남긴다).
+let observeSeq = 0;
+async function tripObserve(dir, failures = 3) {
+  for (let i = 0; i < failures; i += 1) {
+    observeSeq += 1;
+    await observeToolEvent({
+      hook_event_name: 'PostToolUseFailure', session_id: 'sess-sctx', tool_use_id: `call-${observeSeq}`, tool_name: 'Bash',
+      tool_input: { command: 'ls' }, tool_response: { stdout: 'x' }, duration_ms: 12, error: 'boom',
+    }, { projectDir: dir, now: new Date() });
+  }
+}
+const OBSERVE_LINE = /^\[harness\] ⚠ observe 트립와이어 발화: repeat-failure-3x \(창 \d{4}-\d{2}-\d{2}→\d{4}-\d{2}-\d{2}\) — harness-team observe/;
+function appendedLines(before, after) {
+  assert.ok(after.startsWith(before), '기존 출력은 접두로 그대로 남는다');
+  return after.slice(before.length).split('\n').filter(l => l !== '');
+}
+
+test('observe 표면화: 활성 task 분기 — tripped면 한 줄 추가, 아니면 바이트 동일', async () => {
+  const dir = await baseDir();
+  try {
+    await writeActive(dir, { user: 'u', task: 't' });
+    await writeTask(dir, 'u', 't', '# t — Plan\n\n- [ ] a\n');
+    await writeCard(dir, 'u', 't');
+    const before = await buildSessionContext(dir);
+    assert.doesNotMatch(before, /observe 트립와이어/, '발화 없음 → 언급 없음');
+    assert.equal(await buildSessionContext(dir), before, '재실행도 바이트 동일');
+    await tripObserve(dir);
+    const added = appendedLines(before, await buildSessionContext(dir));
+    assert.equal(added.length, 1, '정확히 한 줄');
+    assert.match(added[0], OBSERVE_LINE);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('observe 표면화: 활성 task 없음 분기 — 같은 계약', async () => {
+  const dir = await baseDir();
+  try {
+    await writeTask(dir, 'u', 't', '# t — Plan\n\n- [ ] a\n');
+    const before = await buildSessionContext(dir);
+    assert.match(before, /활성 task가 없습니다/);
+    assert.doesNotMatch(before, /observe 트립와이어/);
+    await tripObserve(dir);
+    const added = appendedLines(before, await buildSessionContext(dir));
+    assert.equal(added.length, 1, '정확히 한 줄');
+    assert.match(added[0], OBSERVE_LINE);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 잘못된 `now`는 판정 안쪽(windowDays)에서 TypeError를 내는 가장 짧은 예외 경로다(doctor 테스트와 같은 시임).
+test('observe 표면화: 판정 중 예외 → SessionStart 출력은 발화 없을 때와 바이트 동일', async () => {
+  const dir = await baseDir();
+  try {
+    await writeTask(dir, 'u', 't', '# t — Plan\n\n- [ ] a\n');
+    const before = await buildSessionContext(dir);
+    await tripObserve(dir);
+    assert.equal(await buildSessionContext(dir, { now: 'not-a-date' }), before);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

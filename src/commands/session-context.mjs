@@ -4,6 +4,7 @@ import { exists } from '../fsx.mjs';
 import { readActive, planHasOpenBoxes } from './task.mjs';
 import { readTaskMeta } from './summary.mjs';
 import { contextCardPath, validateContextCard } from './context.mjs';
+import { evaluateObserveVerdict } from './observe.mjs';
 
 // "task-gate가 있다"의 단일 정의 — migrate(보강)와 doctor(감지)가 공유.
 // .claude/settings.json의 SessionStart hook 중 `session-context`를 호출하는 항목이 있으면 true.
@@ -53,7 +54,9 @@ export async function listIncompleteTasks(targetDir) {
   return out;
 }
 
-export async function buildSessionContext(targetDir) {
+// The task-gate half of the SessionStart injection (active-task breadcrumb + card, or the
+// "no active task" nudge). Untouched by observe surfacing — see buildSessionContext below.
+async function buildTaskGateContext(targetDir) {
   const active = await readActive(targetDir);
   if (active && active.task) {
     const breadcrumb = `[harness] 활성 task: ${active.user}/${active.task} — 세션 시작 프로토콜대로 ${active.task}-plan.md 확인.`;
@@ -108,6 +111,28 @@ export async function buildSessionContext(targetDir) {
   lines.push('  · task 없이 진행');
   lines.push('(단순 질문·조회·잡일이면 무시.)');
   return lines.join('\n');
+}
+
+// observe-surfacing: when a trip wire fired, ONE line is appended to whichever branch above
+// produced the context. Built from the same evaluateObserveVerdict the observe CLI and doctor
+// use, so the three cannot disagree. Silent otherwise — not-installed / no-data / ok, and any
+// exception: SessionStart output must never break because the verdict could not be computed.
+// Lean by design (SESSION_CONTEXT_MAX_TASKS above): ids and window only; the numbers and the
+// loopback nudge stay in `harness-team observe`, which the line points at. `now` is injectable
+// for tests, like everywhere in observe.mjs.
+async function observeSurfacingLine(targetDir, now) {
+  let verdict;
+  try { verdict = await evaluateObserveVerdict(targetDir, { now }); } catch { return null; }
+  if (verdict.status !== 'tripped') return null;
+  const ids = verdict.fired.map(wire => wire.id).join(', ');
+  return `[harness] ⚠ observe 트립와이어 발화: ${ids} (창 ${verdict.window.from}→${verdict.window.to}) — harness-team observe로 확인하고 그 출력의 next: 줄로 task를 잇는다.`;
+}
+
+export async function buildSessionContext(targetDir, { now = new Date() } = {}) {
+  const gate = await buildTaskGateContext(targetDir);
+  const observe = await observeSurfacingLine(targetDir, now);
+  if (!observe) return gate;
+  return gate.endsWith('\n') ? `${gate}${observe}` : `${gate}\n${observe}`;
 }
 
 export async function runSessionContext(ctx) {
