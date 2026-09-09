@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: observe 트립와이어 판정을 doctor 경고 1건 + SessionStart 1줄로 표면화 (판정 함수 1개 공유, 임계값·훅·템플릿 불변)
-- Current atomic step: plan 6 — /harness-review(codex read-only) → artifact Reviews 절 기록 → P1/P2 재현·판별 → 반영/기각. plan 1~5 완료(2026-09-09), plan 5는 artifact 결과 절에 실측 기록. plan 5 미커밋.
+- Current atomic step: plan 7 — /harness-retro(artifact Learnings append) → AskUserQuestion → `harness-team done`(가드: tests required·review required — 마커 있음). plan 1~6 완료·리뷰 반영 커밋됨.
 - Stop / human-decision condition: 임계값·창·nudge 문구를 바꿔야 할 것 같으면 멈춘다(범위 밖, 보정은 실사용 로그 필요). doctor를 fail로 올리자는 판단도 멈춤.
 
 ## Constraints and settled decisions

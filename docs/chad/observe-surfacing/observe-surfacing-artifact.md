@@ -17,5 +17,39 @@
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
 
 
+### 2026-09-09 codex — scope: diff (origin/main..48b672a, 6커밋)
+
+- 실행: `codex exec --sandbox read-only -m gpt-5.6-sol "<공용 프롬프트 + focus 5항목>" < /dev/null` 백그라운드, 182,349 tokens.
+  트리는 깨끗한 상태(자기참조 handoff 잔여만 버림)라 scope=diff.
+- 결과: P1 없음 · P2 2건 · P3 2건 · verdict "Request changes". 리뷰어가 확인한 것: 세 호출자가 `evaluateObserveVerdict`를
+  실제로 공유, `runObserve` text/JSON·exit 처리 리팩터 전과 동등, doctor null/warn 계약·pluginDev 미게이트, 예외 시
+  SessionStart 출력 보존, 임계값·창·nudge·훅·템플릿 불변, 문서 정합. `node --check`·`git diff --check`·`docs:check` exit 0.
+  집중 테스트는 `mkdtemp EPERM`(read-only 샌드박스)으로 인프라 실패 → 작성 세션의 `npm test`(685 pass / 0 fail)로 대체.
+- 판별(작성 세션이 재현·측정):
+  - P2 `session-context.mjs` — 매 SessionStart가 7일 JSONL을 상한 없이 읽어 10초 훅 timeout 시 observe 줄뿐 아니라
+    task-gate 출력까지 유실. **실패 모드는 사실이나 규모는 과장** — 실측: 35,000 레코드(17.9 MB) 0.11 s, 140,000 레코드
+    (71.5 MB, 하루 2만 호출) 0.34 s, 빈 소비자 0.03 s → timeout의 1/30. 그러나 `runSessionContext`가 gate와 observe를
+    합쳐 마지막에 한 번 출력하는 구조라 어떤 이유로든 판정이 늦으면 gate까지 함께 죽는다. **반영 권장(무비용)**:
+    gate를 먼저 `console.log`하고 observe 줄은 그 뒤에 계산·출력 — 늦어도 잃는 것은 observe 줄뿐. 상한·시간 예산은 넣지 않는다(측정상 불필요, 기계 추가).
+  - P2 `tests/doctor.test.mjs` e2e — bare fixture는 원래 필수 검사 실패로 exit 1이고 helper가 exit를 버려 "warn이 fail로
+    새는" 변이를 못 잡는다. **부분 타당** — `add(label,'warning',…)`의 status 문자열 변이는 `status === 'warning'` 단언이
+    잡지만, "fail 수가 늘지 않는다"는 직접 증거가 없다. **반영 권장(저비용)**: 같은 bare fixture의 tripped/빈 두 실행에서
+    `checks[].status === 'fail'` 개수가 같음을 단언(healthy 프로젝트 scaffold는 비용 대비 과함).
+  - P3 `tests/observe.test.mjs` 동일 호출자 계약 — 오늘 발생한 repeat-failure만 비교해 doctor/session-context가 `days: 1`로
+    갈라져도 통과. **사실** → **반영 권장**: 3일 전 날짜로 심은 실패(`observeToolEvent(..., { now: 3일 전 })`)가 doctor·
+    session-context에도 표면화되는지 단언 — 창 공유의 증거.
+  - P3 TCC `observe-surfacing-context.md:6` "plan 5 미커밋"이 커밋 뒤에도 남음 · `chad-handoff.md` Last Commit이 HEAD보다 뒤. **사실**.
+    TCC는 이 기록과 함께 갱신. handoff 지연은 post-commit 훅 자기참조 잔여를 버리는 관례의 부산물(항상 한 커밋 뒤) — 설계상 허용.
+- 조치(2026-09-09, 사용자 승인 후 TDD): ① `runSessionContext`가 gate를 먼저 `console.log`하고 observe 줄을 별도 호출로 뒤에 낸다
+  (RED: 합쳐서 1회 출력 → GREEN: 2회) ② doctor e2e가 tripped/빈 두 실행의 `checks[]` fail 항목 수·envelope `status`·
+  `error.root_cause`(fail 카운터) 동일을 단언 ③ doctor·session-context 각각 3일 전 실패가 표면화되는지 단언(창 공유).
+  뮤테이션 검출: doctor `days:1` · session-context `days:1` · observe 경로 `fail++` 모두 KILLED. `npm test` 688 pass / 0 fail.
+  테스트 결함 2건을 도중에 잡음 — `^` 앵커 정규식을 여러 줄 출력에 대조(마지막 줄로 수정), `checks[]`만 세어 fail 카운터 변이를
+  못 잡던 단언(envelope status·root_cause 추가).
+- 함정: plan 5 커밋 `99f2a4f`가 plan 4 문서 4파일을 되돌린 채 실렸다(iCloud `.git/index` 롤백, 가산 커밋 `48b672a`로 복원).
+  리뷰 scope를 잡기 전 `git diff --stat origin/main..HEAD`로 net diff에 기대 파일이 다 있는지 대조한 것이 발견 경로였다.
+
+<!-- harness:review kind=codex scope=diff tip=48b672afb9e8c4e6a8f5898f4caa468a1f8b240a at=2026-09-09T04:31:28Z -->
+
 ## Learnings
 

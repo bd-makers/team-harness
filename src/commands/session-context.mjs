@@ -128,14 +128,21 @@ async function observeSurfacingLine(targetDir, now) {
   return `[harness] ⚠ observe 트립와이어 발화: ${ids} (창 ${verdict.window.from}→${verdict.window.to}) — harness-team observe로 확인하고 그 출력의 next: 줄로 task를 잇는다.`;
 }
 
+// Combined form (tests, and anyone who wants the whole injection as one string). Joined the
+// way runSessionContext prints it: gate, newline, observe line.
 export async function buildSessionContext(targetDir, { now = new Date() } = {}) {
   const gate = await buildTaskGateContext(targetDir);
   const observe = await observeSurfacingLine(targetDir, now);
-  if (!observe) return gate;
-  return gate.endsWith('\n') ? `${gate}${observe}` : `${gate}\n${observe}`;
+  return observe ? `${gate}\n${observe}` : gate;
 }
 
 export async function runSessionContext(ctx) {
-  const text = await buildSessionContext(ctx.targetDir);
-  if (text) console.log(text);
+  // The task-gate half goes out BEFORE the observe verdict is computed: if the SessionStart
+  // hook timeout (10 s) ever hits during the log scan, only the observe line is lost, never
+  // the task context (codex P2 2026-09-09). Measured 0.34 s at 140k records / 71 MB, so this
+  // is a safety ordering, not a budget — no cap or deadline is added.
+  const gate = await buildTaskGateContext(ctx.targetDir);
+  if (gate) console.log(gate);
+  const observe = await observeSurfacingLine(ctx.targetDir, new Date());
+  if (observe) console.log(observe);
 }

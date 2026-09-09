@@ -986,14 +986,37 @@ test('doctor --json: tripped 로그 → checks에 observe trip wires warning 1�
   const run = dir => pexec('node', [join(ROOT, 'bin/harness-team.mjs'), 'doctor', '--json', '--target', dir], { timeout: 30000 })
     .then(r => r.stdout).catch(error => error.stdout || '');
   try {
-    const hot = JSON.parse(await run(tripped)).checks.filter(c => c.label === 'observe trip wires');
+    const hotEnvelope = JSON.parse(await run(tripped));
+    const coldEnvelope = JSON.parse(await run(bare));
+    const hotChecks = hotEnvelope.checks;
+    const coldChecks = coldEnvelope.checks;
+    const hot = hotChecks.filter(c => c.label === 'observe trip wires');
     assert.equal(hot.length, 1, 'exactly one entry');
     assert.equal(hot[0].status, 'warning', 'warn, never fail');
     assert.match(hot[0].detail, /repeat-failure-3x/);
-    const cold = JSON.parse(await run(bare)).checks.filter(c => c.label === 'observe trip wires');
-    assert.equal(cold.length, 0, 'not-installed is silent');
+    assert.equal(coldChecks.filter(c => c.label === 'observe trip wires').length, 0, 'not-installed is silent');
+    // codex P2(2026-09-09): bare fixture는 어차피 필수 검사로 exit 1이라 exit code로는 "warn이 fail로 새지 않는다"를
+    // 증명할 수 없다 — 두 실행의 fail 수가 같음으로 대신 고정한다(observe 경고가 fail 수를 늘리면 여기서 걸린다).
+    const fails = checks => checks.filter(c => c.status === 'fail').length;
+    assert.equal(fails(hotChecks), fails(coldChecks), 'observe 경고는 checks[]의 fail 항목을 늘리지 않는다');
+    // checks[]는 fail *항목*만 보여 준다 — exit code를 정하는 것은 runDoctor의 fail 카운터이고, 그 값은 envelope의
+    // status와 error.root_cause("N개 필수 점검 항목 실패")에만 드러난다. 둘이 같아야 카운터도 같다(fail++ 변이 검출).
+    assert.equal(hotEnvelope.status, coldEnvelope.status, 'envelope status 동일');
+    assert.equal(hotEnvelope.error?.root_cause, coldEnvelope.error?.root_cause, 'fail 카운터(root_cause의 N)가 동일');
   } finally {
     await rm(tripped, { recursive: true, force: true });
     await rm(bare, { recursive: true, force: true });
   }
+});
+
+// codex P3: 오늘 실패만 심으면 창을 days:1로 좁혀도 통과한다 — 3일 전 실패가 뜨는지로 observe CLI와 같은 창임을 고정.
+test('checkObserveTripWires: 3일 전 실패도 창(7일) 안이면 경고 — observe CLI와 같은 창', async () => {
+  const dir = await makeObserveFixture(0);
+  try {
+    const threeDaysAgo = new Date(Date.now() - 3 * 86_400_000);
+    for (let i = 0; i < 3; i += 1) {
+      await observeToolEvent(observePayload('PostToolUseFailure', { error: 'boom' }), { projectDir: dir, now: threeDaysAgo });
+    }
+    assert.match((await checkObserveTripWires(dir)) ?? '', /repeat-failure-3x/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });

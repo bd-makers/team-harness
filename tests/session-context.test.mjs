@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, rm, utimes } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { buildSessionContext, SESSION_CONTEXT_MAX_TASKS } from '../src/commands/session-context.mjs';
+import { buildSessionContext, runSessionContext, SESSION_CONTEXT_MAX_TASKS } from '../src/commands/session-context.mjs';
 import { CONTEXT_MAX_BYTES } from '../src/commands/context.mjs';
 import { taskContextTemplate } from '../src/commands/task.mjs';
 import { observeToolEvent } from '../templates/.claude/hooks/observe-tools.mjs';
@@ -318,5 +318,46 @@ test('observe 표면화: 판정 중 예외 → SessionStart 출력은 발화 없
     const before = await buildSessionContext(dir);
     await tripObserve(dir);
     assert.equal(await buildSessionContext(dir, { now: 'not-a-date' }), before);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+function captureLogs(fn) {
+  const calls = [];
+  const original = console.log;
+  console.log = (...args) => calls.push(args.join(' '));
+  return Promise.resolve().then(fn).finally(() => { console.log = original; }).then(() => calls);
+}
+
+// codex P2(2026-09-09): gate와 observe 줄을 합쳐 마지막에 한 번 출력하면, 판정이 늦어 훅 timeout에 걸릴 때
+// task-gate 출력까지 함께 죽는다. gate를 먼저 내보내고 observe 줄은 별도 호출로 뒤에 낸다 — 늦어도 잃는 것은 그 줄뿐.
+test('observe 표면화: runSessionContext는 task-gate를 먼저 출력하고 observe 줄은 별도 호출로 뒤에 낸다', async () => {
+  const dir = await baseDir();
+  try {
+    await writeTask(dir, 'u', 't', '# t — Plan\n\n- [ ] a\n');
+    const quiet = await captureLogs(() => runSessionContext({ targetDir: dir }));
+    assert.equal(quiet.length, 1, '미발화: 기존처럼 한 번 출력');
+    await tripObserve(dir);
+    const calls = await captureLogs(() => runSessionContext({ targetDir: dir }));
+    assert.equal(calls.length, 2, 'gate 출력 후 observe 줄을 따로 낸다');
+    assert.equal(calls[0], quiet[0], '첫 출력은 미발화 출력과 바이트 동일');
+    assert.match(calls[1], OBSERVE_LINE);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// codex P3: 오늘 실패만 심으면 창을 days:1로 좁혀도 통과한다 — 3일 전 실패가 뜨는지로 observe CLI와 같은 창임을 고정.
+test('observe 표면화: 3일 전 실패도 창(7일) 안이면 표면화된다 — observe CLI와 같은 창', async () => {
+  const dir = await baseDir();
+  try {
+    await writeTask(dir, 'u', 't', '# t — Plan\n\n- [ ] a\n');
+    const threeDaysAgo = new Date(Date.now() - 3 * 86_400_000);
+    for (let i = 0; i < 3; i += 1) {
+      observeSeq += 1;
+      await observeToolEvent({
+        hook_event_name: 'PostToolUseFailure', session_id: 'sess-old', tool_use_id: `old-${observeSeq}`, tool_name: 'Bash',
+        tool_input: { command: 'ls' }, tool_response: { stdout: 'x' }, duration_ms: 12, error: 'boom',
+      }, { projectDir: dir, now: threeDaysAgo });
+    }
+    const lines = (await buildSessionContext(dir)).split('\n');
+    assert.match(lines[lines.length - 1], OBSERVE_LINE, '마지막 줄이 observe 표면화 줄');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
