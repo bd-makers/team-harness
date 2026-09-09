@@ -354,12 +354,16 @@ test('planChanges: 해시 있고 사용자가 고친 절 → skippedSections에 
   assert.ok(hit.diff.length > 0, 'diff가 함께 온다');
 });
 
-test('planChanges: renderState는 건너뛴 절을 담지 않는다', async () => {
+test('planChanges: 건너뛴 절은 이전 렌더 해시를 그대로 이어받는다', async () => {
   const dir = await projectWithAgents('# P\n\n<!-- harness:section="stack" begin -->\n- 사용자가 고침\n<!-- harness:section="stack" end -->\n');
   await saveRenderState(dir, { version: 1, sections: { 'AGENTS.md': { stack: 'deadbeef' } } });
   const { renderState } = await planChanges(ctxFor(dir), { stack: {} });
-  assert.equal(renderState.sections['AGENTS.md']?.stack, undefined,
-    '사용자 편집을 우리 렌더로 각인시키면 다음 실행이 덮는다');
+  // 두 가지를 동시에 지켜야 한다:
+  //  (1) 사용자 편집의 해시를 기록하지 않는다 — 기록하면 다음 실행이 "우리 렌더"로 보고 덮는다.
+  //  (2) 이전 렌더 해시를 지우지도 않는다 — 지우면 다음 실행이 부트스트랩으로 판정해 역시 덮는다.
+  // 즉 보호가 딱 한 번만 걸리는 버그를 (2)가 막는다.
+  assert.equal(renderState.sections['AGENTS.md'].stack, 'deadbeef',
+    '건너뛴 절의 이전 해시는 보존된다 (지우면 다음 실행이 부트스트랩으로 덮는다)');
 });
 ```
 
@@ -380,8 +384,11 @@ import { loadRenderState, sectionHashes } from './render-state.mjs';
 
 ```js
   const skippedSections = [];
-  const renderState = { version: 1, sections: {} };
   const priorState = await loadRenderState(targetDir);
+  // 이전 상태를 기본값으로 깔고 시작한다. 루프가 어떤 이유로든 파일을 건너뛰어도
+  // (symlink 레거시 · 마커 깨짐 · 템플릿 없음 → continue) 그 파일의 해시가 통째로
+  // 지워지지 않는다 — 지우면 다음 실행이 부트스트랩으로 판정해 덮는다.
+  const renderState = { version: 1, sections: { ...priorState.sections } };
 ```
 
 agent 파일 루프의 `merged = mergeMarkdown(existing, rendered);` 를 다음으로 교체:
@@ -398,14 +405,21 @@ agent 파일 루프의 `merged = mergeMarkdown(existing, rendered);` 를 다음�
 루프 끝(`if (existing !== merged) { … }` 다음)에 해시 기록 추가:
 
 ```js
-    // 최종 내용이 방금 렌더한 블록과 같은 절만 "우리 것"으로 기록한다. 건너뛴 절은 자동으로 빠진다.
+    // 최종 내용이 방금 렌더한 블록과 같은 절만 "우리 것"으로 새로 기록한다.
+    // 건너뛴 절은 owned에 들어가지 않는다 — 사용자 편집을 "우리 렌더"로 각인시키면
+    // 다음 실행이 그것을 stock으로 보고 덮기 때문이다.
+    //
+    // 그러나 **이전 해시를 지워서도 안 된다**: saveRenderState는 파일 전체를 교체하므로,
+    // 건너뛴 절을 빼고 저장하면 다음 실행에서 그 절이 lastRender에 없어 부트스트랩으로 판정되고
+    // 결국 덮인다 — 보호가 딱 한 번만 걸린다. prior를 먼저 깔고 owned를 덮어씌운다.
     const finalHashes = sectionHashes(merged);
     const renderedHashes = sectionHashes(rendered);
     const owned = {};
     for (const [name, sha] of Object.entries(finalHashes)) {
       if (renderedHashes[name] === sha) owned[name] = sha;
     }
-    if (Object.keys(owned).length) renderState.sections[file] = owned;
+    const carried = { ...(priorState.sections[file] ?? {}), ...owned };
+    if (Object.keys(carried).length) renderState.sections[file] = carried;
 ```
 
 반환문 교체:
@@ -440,6 +454,15 @@ import 추가: `import { saveRenderState } from '../render-state.mjs';`
 
 > `--yes`에서도 이 경고는 출력되고 건너뛰기도 그대로 일어난다 — 프롬프트만 생략된다.
 > 종료 코드는 바꾸지 않는다(Global Constraints).
+
+**배선 위치를 손으로 확인한다** — 이 단계는 e2e가 잡지 못한다(e2e는 `planChanges`/`saveRenderState`를
+직접 부르므로 `init.mjs`가 어디서 저장하든 통과한다). 셋 다 확인할 것:
+1. `saveRenderState`가 `applyChanges` **성공 뒤**에 있는가 (앞에 있으면 쓰기 실패 시 거짓 기록이 남는다)
+2. 사용자가 확인 프롬프트를 **거절한 경로에서는 저장하지 않는가** (아무것도 안 썼는데 기록하면
+   다음 실행이 부트스트랩을 놓친다)
+3. `--yes` 경로에서도 저장되는가
+
+Run: `node bin/harness-team.mjs init --yes < /dev/null` (임시 디렉터리에서) → `.harness/render-state.json` 생성 확인
 
 - [ ] **Step 5: 통과 확인**
 
@@ -815,6 +838,11 @@ export async function migrateManagedSectionBackup(ctx) {
   const reports = [];
   let backed = false;
   for (const [file, tplName] of AGENT_FILE_TEMPLATES) {
+    // 레거시(0.7.x) 설치는 AGENTS.md가 CLAUDE.md를 가리키는 symlink다 — readTextSafe는 링크를
+    // 따라가므로 엉뚱한 파일을 원본으로 삼게 된다. migrateToAgentsMd가 곧 실파일로 바꿀 것이니
+    // 여기서는 건드리지 않는다(백업할 고유 내용이 링크 대상 쪽에 이미 있다).
+    const st = await lstat(join(targetDir, file)).catch(() => null);
+    if (st?.isSymbolicLink()) continue;
     const existing = await readTextSafe(join(targetDir, file));
     if (existing === null) continue;
     const tpl = await readTextSafe(join(root, 'templates', tplName));
@@ -847,7 +875,7 @@ export async function migrateManagedSectionBackup(ctx) {
 ```
 
 import 조정 — `migrate.mjs:1-13`은 이미 `join`·`basename`·`mkdir`·`readTextSafe`·`writeText`·
-`exists`·`extractSections`·`render`를 가지고 있다. **추가·수정할 것은 넷뿐이다:**
+`exists`·`extractSections`·`render`·`lstat`을 가지고 있다. **추가·수정할 것은 넷뿐이다:**
 
 ```js
 // 기존 줄 수정 (simpleDiff 추가)
@@ -968,6 +996,15 @@ test('init 재실행: 해시 기록 뒤 사용자가 고친 절은 보존된다'
     assert.ok(second.skippedSections.some(s => s.section === 'stack'), 'stack이 건너뛰기로 보고된다');
     assert.match(await readFile(join(dir, 'AGENTS.md'), 'utf8'), /uv sync \(사용자\)/,
       '사용자 편집이 살아남는다');
+    await saveRenderState(dir, second.renderState);
+
+    // 3회차 — 보호가 "딱 한 번"이 아니어야 한다. 2회차가 건너뛴 절의 이전 해시를 지워 버리면
+    // 여기서 부트스트랩으로 판정되어 덮인다. 이 단언이 그 회귀를 잡는 유일한 지점이다.
+    const third = await planChanges(ctx(dir), { stack: {} });
+    await applyChanges(third.changes);
+    assert.ok(third.skippedSections.some(s => s.section === 'stack'), '3회차에도 건너뛴다');
+    assert.match(await readFile(join(dir, 'AGENTS.md'), 'utf8'), /uv sync \(사용자\)/,
+      '반복 실행해도 사용자 편집이 살아남는다');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 ```
@@ -1094,4 +1131,7 @@ Expected: PASS
     별도 조치가 필요하다(이 저장소의 `appendGitignore`는 이미 `.harness/` 통째 무시를 하지 않는다 —
     `src/harness.mjs:317-325`의 `harnessNeeded` 목록이 정본).
 - 다이어그램: 이 task는 옵트인을 거절했으므로 단계가 없다 — 없는 것이 곧 상태다.
-- 순서상 위험: Task 4는 `tests/observe-tools-entry.test.mjs`의 기존 단언과 부딪힐 수 있다(Task 4 Step 4 참고).
+- Task 4의 테스트 충돌 위험은 **실측으로 해소됐다** — `observe-tools`를 언급하는 테스트 중
+  `migrateSessionStartHook`/`runMigrate`를 부르는 것은 없다(2026-09-10 확인). Step 4의 회귀 실행은 그대로 둔다.
+- Task 5는 doctor의 종료 코드를 바꾸지 않는다 — `doctor.mjs:778`은 `if (fail) process.exitCode = 1`이고
+  warning은 세기만 한다(2026-09-10 확인).
