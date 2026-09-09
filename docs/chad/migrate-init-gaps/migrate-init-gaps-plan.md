@@ -1106,7 +1106,7 @@ Expected: PASS
 
 `/harness-retro` — 학습을 `<name>-artifact.md`에 append.
 
-- [ ] **Step 5: `harness-team done`**
+- [x] **Step 5: `harness-team done`**
 
 `AskUserQuestion`으로 확인받은 뒤 실행한다. `## 단계`에 미완 `- [ ]`가 남아 있으면 가드가 막는다.
 
