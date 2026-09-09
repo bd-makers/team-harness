@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: observe 트립와이어 판정을 doctor 경고 1건 + SessionStart 1줄로 표면화 (판정 함수 1개 공유, 임계값·훅·템플릿 불변)
-- Current atomic step: plan 4 — 문서 표면: commands/harness-observe.md(표면화 단락) · commands/harness-doctor.md·README doctor 절(경고 항목) · CHANGELOG [Unreleased] Added · npm run docs:generate → docs:check. plan 1~3 완료(2026-09-09), plan 3 미커밋.
+- Current atomic step: plan 5 — 실제 CLI 검증: scratch 소비자 디렉터리에 tripped fixture(observeToolEvent ×3)를 심고 `node bin/harness-team.mjs doctor --target <dir>`·`session-context`(cwd=<dir>) 텍스트 출력을 육안 확인. 이 저장소 자체는 not-installed → 침묵이 정상. plan 1~4 완료, plan 4 미커밋.
 - Stop / human-decision condition: 임계값·창·nudge 문구를 바꿔야 할 것 같으면 멈춘다(범위 밖, 보정은 실사용 로그 필요). doctor를 fail로 올리자는 판단도 멈춤.
 
 ## Constraints and settled decisions
@@ -14,7 +14,7 @@
 ## JIT retrieval map
 - Identifiers / symbols: summarizeObservability · readObservabilityRecords · observeLoopbackNudge · runObserve · runDoctor · buildSessionContext · checkDecisionLog(warn 패턴)
 - Narrow globs: src/commands/{observe,doctor,session-context}.mjs · tests/{observe,doctor,session-context}.test.mjs · commands/harness-{observe,doctor}.md
-- Read next: commands/harness-doctor.md(경고 목록 절) · README의 doctor·observe 절(grep 'harness-team doctor' / 'observe') · tests/manifest-sync·documentation-inventory-pointers가 고정하는 문서 표면 · CHANGELOG [Unreleased] 형식
+- Read next: bin/harness-team.mjs 라우터의 session-context targetDir 결정(cwd vs --target) · scratch 디렉터리는 scratchpad 아래에 만든다(프로젝트 밖)
 - Verification command: node --test tests/observe.test.mjs tests/doctor.test.mjs → npm test → npm run docs:check
 
 ## Failure capsules (max 3 unresolved)

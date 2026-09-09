@@ -27,3 +27,12 @@ docs/chad/chad-handoff.md                          |  2 +-
  src/commands/observe.mjs                           | 20 ++++--
  tests/doctor.test.mjs                              | 81 +++++++++++++++++++++-
  7 files changed, 125 insertions(+), 12 deletions(-)
+
+## 2026-09-09T00:11:47.093Z — f052f43 feat(session-context): observe 트립와이어 발화를 SessionStart 한 줄로 표면화 (observe-surfacing plan 3)
+docs/chad/chad-handoff.md                          |  2 +-
+ .../observe-surfacing/observe-surfacing-context.md |  4 +-
+ .../observe-surfacing/observe-surfacing-handoff.md | 10 ++++
+ .../observe-surfacing/observe-surfacing-plan.md    |  2 +-
+ src/commands/session-context.mjs                   | 27 +++++++++-
+ tests/session-context.test.mjs                     | 61 ++++++++++++++++++++++
+ 6 files changed, 101 insertions(+), 5 deletions(-)
