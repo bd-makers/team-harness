@@ -24,8 +24,3 @@ UTC 날짜**다(`failure-rate-2x`는 오늘, `repeat-failure-3x`는 최다 실�
 임계값이 실사용 보정 전이라 오탐 task를 만들지 않기 위해서다. 텍스트 출력에서는 같은 문장이 `next:` 줄로 나온다.
 로그가 없으면(`not-installed`) `harness-team init`으로 훅을 설치하라고 안내한다. `--json`은 `harness/observation/v1` envelope다.
 창은 기본 7일, `--days 1..14`(훅 보존 기간).
-
-판정은 명령을 치지 않아도 두 곳에 **표면화**된다 — `harness-team doctor`는 발화 시 `observe trip wires` 경고 1건
-(wire id·수치·이 명령 안내·루프백 nudge, warn 수준이라 exit code 불변)을, SessionStart의 `session-context`는 발화 시
-`[harness] ⚠ observe 트립와이어 발화: …` 한 줄(id·창만)을 덧붙인다. 셋은 같은 판정 함수(`evaluateObserveVerdict`)를
-쓰므로 서로 다른 답을 내지 않고, 로그가 없거나 발화가 없으면 두 표면 모두 침묵한다. 수치·표·nudge 본문은 이 명령이 정본이다.

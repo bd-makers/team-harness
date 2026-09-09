@@ -330,7 +330,6 @@ All checks passed.
 
 심볼: `✓` 정상, `✗` 실패(exit 1), `-` 선택 항목 없음(정상).
 소비자 프로젝트에서는 PATH의 `harness-team`이 `session-context`·`handoff`·`boundary`를 지원하는지도 경고로 점검합니다. 플러그인 소스 저장소는 소비자 훅을 설치하지 않으므로 이 항목이 n/a로 건너뛰어집니다.
-관측 로그의 트립와이어가 발화한 상태면 `observe trip wires` 경고 1건(wire id·수치·`harness-team observe` 안내·루프백 nudge)을 냅니다 — warn 수준이라 exit code는 그대로이고, 로그가 없거나 발화가 없으면 항목 자체가 없습니다.
 
 ### `/harness-observe` — 관측 로그 스코어카드 · 트립와이어
 
@@ -341,8 +340,6 @@ observe-tools 훅이 쓴 `.harness/observability/` JSONL을 읽어 일별·task�
 `harness-team task observe-<id>-<day>`로 task를 열고 spec 목적 절에 발화 id·수치를 문제 진술로 옮기라는
 제안이며, task를 자동 생성하지는 않습니다(임계값이 실사용 보정 전). `<day>`는 실행일이 아니라 발화 사건의
 UTC 날짜라 같은 사건은 재실행해도 같은 이름을 받습니다.
-판정은 `harness-team doctor`(경고 1건)와 SessionStart `session-context`(한 줄) 두 곳에도 표면화됩니다 — 셋이 같은 판정 함수를
-쓰므로 답이 갈리지 않고, 발화가 없으면 둘 다 침묵합니다. 수치·표·nudge 본문은 이 명령이 정본입니다.
 
 ```bash
 /harness-observe                        # 기본 7일 창

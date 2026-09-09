@@ -36,3 +36,14 @@ docs/chad/chad-handoff.md                          |  2 +-
  src/commands/session-context.mjs                   | 27 +++++++++-
  tests/session-context.test.mjs                     | 61 ++++++++++++++++++++++
  6 files changed, 101 insertions(+), 5 deletions(-)
+
+## 2026-09-09T00:34:00.795Z — 0a893ae docs(observe): 판정 표면화를 명령 문서·README·CHANGELOG에 반영 (observe-surfacing plan 4)
+CHANGELOG.md                                             | 9 +++++++++
+ README.md                                                | 3 +++
+ commands/harness-doctor.md                               | 8 +++++++-
+ commands/harness-observe.md                              | 5 +++++
+ docs/chad/chad-handoff.md                                | 4 ++--
+ docs/chad/observe-surfacing/observe-surfacing-context.md | 4 ++--
+ docs/chad/observe-surfacing/observe-surfacing-handoff.md | 9 +++++++++
+ docs/chad/observe-surfacing/observe-surfacing-plan.md    | 2 +-
+ 8 files changed, 38 insertions(+), 6 deletions(-)
