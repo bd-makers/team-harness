@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-migrate-init-gaps
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-09)
-b00c3f1 chore(handoff): post-commit 훅 산출물 반영 (migrate-init-gaps)
+## Last Completed Task (2026-09-09)
+`migrate-init-gaps` — done
 
 ## Full Context
 → docs/chad/migrate-init-gaps/migrate-init-gaps-handoff.md

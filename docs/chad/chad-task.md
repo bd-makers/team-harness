@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ migrate-init-gaps
 - ✅ observe-surfacing
 - ✅ done-force-audit-trail
 - ✅ pocock-tdd-slicing

@@ -91,3 +91,4 @@
 | chad | pocock-tdd-slicing | ✅ done | 2026-09-07 |
 | chad | template-refresh-policy | ✅ done | 2026-09-07 |
 | chad | observe-surfacing | ✅ done | 2026-09-08 |
+| chad | migrate-init-gaps | ✅ done | 2026-09-09 |
