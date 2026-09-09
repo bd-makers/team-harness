@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-observe-surfacing
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-09)
-91b5eb4 fix(session-context): task-gate를 먼저 출력하고 observe 줄은 뒤에 — codex 리뷰 반영 (observe-surfacing plan 6)
+## Last Completed Task (2026-09-09)
+`observe-surfacing` — done
 
 ## Full Context
 → docs/chad/observe-surfacing/observe-surfacing-handoff.md

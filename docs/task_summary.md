@@ -90,3 +90,4 @@
 | chad | done-force-audit-trail | ✅ done | 2026-09-07 |
 | chad | pocock-tdd-slicing | ✅ done | 2026-09-07 |
 | chad | template-refresh-policy | ✅ done | 2026-09-07 |
+| chad | observe-surfacing | ✅ done | 2026-09-08 |

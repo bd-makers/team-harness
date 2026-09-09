@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ observe-surfacing
 - ✅ done-force-audit-trail
 - ✅ pocock-tdd-slicing
 - ✅ template-refresh-policy
