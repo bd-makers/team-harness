@@ -65,7 +65,7 @@
   - `RENDER_STATE_REL = '.harness/render-state.json'`
 - Consumes: `extractSections`(`src/merge.mjs`), `readTextSafe`·`writeText`(`src/fsx.mjs`)
 
-- [ ] **Step 1: 실패하는 테스트 작성** — `tests/render-state.test.mjs`
+- [x] **Step 1: 실패하는 테스트 작성** — `tests/render-state.test.mjs`
 
 ```js
 import { test } from 'node:test';
@@ -111,12 +111,12 @@ test('saveRenderState → loadRenderState 왕복', async () => {
 });
 ```
 
-- [ ] **Step 2: 실패 확인**
+- [x] **Step 2: 실패 확인**
 
 Run: `node --test tests/render-state.test.mjs`
 Expected: FAIL — `Cannot find module '../src/render-state.mjs'`
 
-- [ ] **Step 3: 최소 구현** — `src/render-state.mjs`
+- [x] **Step 3: 최소 구현** — `src/render-state.mjs`
 
 ```js
 // 관리 절의 "마지막 렌더 결과" 해시 저장소.
@@ -160,12 +160,12 @@ export async function saveRenderState(targetDir, state) {
 }
 ```
 
-- [ ] **Step 4: 통과 확인**
+- [x] **Step 4: 통과 확인**
 
 Run: `node --test tests/render-state.test.mjs`
 Expected: PASS (5 tests)
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add src/render-state.mjs tests/render-state.test.mjs
@@ -189,7 +189,7 @@ git show --stat HEAD
   - `opts.onSkip?: (name: string, currentBlock: string, renderedBlock: string) => void`
   - 반환값은 종전대로 **문자열**이다.
 
-- [ ] **Step 1: 실패하는 테스트 작성** — `tests/managed-section-provenance.test.mjs`
+- [x] **Step 1: 실패하는 테스트 작성** — `tests/managed-section-provenance.test.mjs`
 
 ```js
 import { test } from 'node:test';
@@ -236,12 +236,12 @@ test('마커가 아예 없는 파일 → 종전대로 append (가드와 무관)'
 });
 ```
 
-- [ ] **Step 2: 실패 확인**
+- [x] **Step 2: 실패 확인**
 
 Run: `node --test tests/managed-section-provenance.test.mjs`
 Expected: FAIL — 3번째 테스트에서 `merged`가 `RENDERED`가 되어 `assert.equal(merged, EDITED)` 실패
 
-- [ ] **Step 3: 구현** — `src/merge.mjs`의 `mergeMarkdown` 교체
+- [x] **Step 3: 구현** — `src/merge.mjs`의 `mergeMarkdown` 교체
 
 ```js
 // 관리 절의 provenance 가드(opts.lastRender)는 D8의 설치 측 대응물이다.
@@ -295,12 +295,12 @@ import { createHash } from 'node:crypto';
 > `render-state.mjs`가 `merge.mjs`를 import하므로 역방향 import는 순환이 된다 —
 > 해시 계산은 `createHash`를 직접 쓴다.
 
-- [ ] **Step 4: 통과 확인**
+- [x] **Step 4: 통과 확인**
 
 Run: `node --test tests/managed-section-provenance.test.mjs tests/agent-files.test.mjs`
 Expected: PASS — 신규 5개 + 기존 agent-files 테스트 전부(3번째 인자 없는 호출은 동작 불변)
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add src/merge.mjs tests/managed-section-provenance.test.mjs
@@ -325,7 +325,7 @@ git show --stat HEAD
     — **하네스가 방금 렌더한 블록과 최종 내용이 일치하는 절만** 담는다. 건너뛴 절은 담지 않는다
     (사용자 편집을 "우리 렌더"로 각인시키면 다음 실행이 그것을 덮는다).
 
-- [ ] **Step 1: 실패하는 테스트 추가** — `tests/managed-section-provenance.test.mjs` 끝에
+- [x] **Step 1: 실패하는 테스트 추가** — `tests/managed-section-provenance.test.mjs` 끝에
 
 ```js
 import { mkdtemp, mkdir, writeFile, readFile } from 'node:fs/promises';
@@ -367,12 +367,12 @@ test('planChanges: 건너뛴 절은 이전 렌더 해시를 그대로 이어받�
 });
 ```
 
-- [ ] **Step 2: 실패 확인**
+- [x] **Step 2: 실패 확인**
 
 Run: `node --test tests/managed-section-provenance.test.mjs`
 Expected: FAIL — `skippedSections` / `renderState`가 `undefined`
 
-- [ ] **Step 3: `planChanges` 수정** — `src/harness.mjs`
+- [x] **Step 3: `planChanges` 수정** — `src/harness.mjs`
 
 import 추가:
 
@@ -428,7 +428,7 @@ agent 파일 루프의 `merged = mergeMarkdown(existing, rendered);` 를 다음�
   return { changes, vars, legacyAgentFiles, brokenMarkerFiles, skippedSections, renderState };
 ```
 
-- [ ] **Step 4: `init` 출력·저장 배선** — `src/commands/init.mjs`
+- [x] **Step 4: `init` 출력·저장 배선** — `src/commands/init.mjs`
 
 `planChanges` 결과를 구조분해하는 지점에 `skippedSections`, `renderState`를 추가하고,
 변경 목록을 보여주는 부분 **뒤**, 확인 프롬프트 **앞**에 경고를 넣는다:
@@ -464,13 +464,13 @@ import 추가: `import { saveRenderState } from '../render-state.mjs';`
 
 Run: `node bin/harness-team.mjs init --yes < /dev/null` (임시 디렉터리에서) → `.harness/render-state.json` 생성 확인
 
-- [ ] **Step 5: 통과 확인**
+- [x] **Step 5: 통과 확인**
 
 Run: `npm test`
 Expected: PASS — 기존 전부 + 신규. 실패하면 `planChanges` 반환값을 구조분해하는 다른 호출자
 (`grep -rn "planChanges(" src/ tests/`)를 먼저 확인한다.
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add src/harness.mjs src/commands/init.mjs tests/managed-section-provenance.test.mjs
@@ -495,7 +495,7 @@ git show --stat HEAD
 - Produces: `narrowToSessionContext(sessionStartGroups): Array` — 각 그룹의 `hooks`를
   `command`에 `harness-team session-context`가 들어간 항목만 남기고, 빈 그룹은 제거. `migrate.mjs`에서 export.
 
-- [ ] **Step 1: 실패하는 테스트 추가** — `tests/migrate-session-hook.test.mjs`
+- [x] **Step 1: 실패하는 테스트 추가** — `tests/migrate-session-hook.test.mjs`
 
 ```js
 test('SessionStart 병합은 session-context만 — observe-tools를 배선하지 않는다', async () => {
@@ -525,12 +525,12 @@ test('migrate가 배선한 훅이 파일을 요구하면 그 파일이 존재한
 });
 ```
 
-- [ ] **Step 2: 실패 확인**
+- [x] **Step 2: 실패 확인**
 
 Run: `node --test tests/migrate-session-hook.test.mjs`
 Expected: FAIL — 첫 테스트가 `observe-tools`를 발견
 
-- [ ] **Step 3: 구현** — `src/commands/migrate.mjs`
+- [x] **Step 3: 구현** — `src/commands/migrate.mjs`
 
 `migrateSessionStartHook` 위에 헬퍼 추가:
 
@@ -564,13 +564,13 @@ export function narrowToSessionContext(groups) {
   }
 ```
 
-- [ ] **Step 4: 통과 확인**
+- [x] **Step 4: 통과 확인**
 
 Run: `node --test tests/migrate-session-hook.test.mjs tests/migrate.test.mjs tests/observe-tools-entry.test.mjs`
 Expected: PASS. `observe-tools-entry` 계열이 "migrate가 observe를 배선한다"를 단언한다면
 그 단언이 이번 결정으로 무효가 된 것이다 — 테스트를 `init` 경로로 옮기고 이유를 주석에 남긴다.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add src/commands/migrate.mjs tests/migrate-session-hook.test.mjs
@@ -599,7 +599,7 @@ git show --stat HEAD
   - `classifyHookCommand(command: string): { kind: 'project-path', rel: string } | { kind: 'global-cli' } | { kind: 'unknown' }`
   - `collectHookCommands(settings): string[]` — `settings.hooks`의 모든 이벤트·그룹을 훑어 `command` 문자열 수집
 
-- [ ] **Step 1: 실패하는 테스트 추가** — `tests/doctor.test.mjs`
+- [x] **Step 1: 실패하는 테스트 추가** — `tests/doctor.test.mjs`
 
 ```js
 import { classifyHookCommand, collectHookCommands } from '../src/commands/doctor.mjs';
@@ -645,12 +645,12 @@ test('doctor: settings가 없는 프로젝트 내부 훅을 가리키면 경고�
 });
 ```
 
-- [ ] **Step 2: 실패 확인**
+- [x] **Step 2: 실패 확인**
 
 Run: `node --test tests/doctor.test.mjs`
 Expected: FAIL — `classifyHookCommand is not a function`
 
-- [ ] **Step 3: 구현** — `src/commands/doctor.mjs`
+- [x] **Step 3: 구현** — `src/commands/doctor.mjs`
 
 ```js
 // settings.json의 hook `command`는 세 모양이다(templates/.claude/settings.json):
@@ -719,13 +719,13 @@ async function checkWiredHooks(ctx, add) {
   await checkWiredHooks(ctx, add);
 ```
 
-- [ ] **Step 4: 통과 확인**
+- [x] **Step 4: 통과 확인**
 
 Run: `node --test tests/doctor.test.mjs`
 Expected: PASS. `observe-tools.mjs`가 실제로 없는 fixture에서 기존 `not present, optional` 줄과
 새 dangling 경고가 **둘 다** 나오는 것이 정상이다 — 전자는 "파일 유무", 후자는 "배선 정합성"이다.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add src/commands/doctor.mjs tests/doctor.test.mjs
@@ -753,7 +753,7 @@ git show --stat HEAD
   - **누적**이다(타임스탬프 디렉터리). 덮어쓰지 않는다 — 복구 대상이 유실되면 안전망의 의미가 없다.
   - 이미 `render-state.json`이 있으면(= 부트스트랩이 아니면) 아무것도 하지 않고 `false`
 
-- [ ] **Step 1: 실패하는 테스트 작성** — `tests/migrate-managed-backup.test.mjs`
+- [x] **Step 1: 실패하는 테스트 작성** — `tests/migrate-managed-backup.test.mjs`
 
 ```js
 import { test } from 'node:test';
@@ -807,12 +807,12 @@ test('render-state 있음 → 부트스트랩이 아니므로 아무것도 하�
 });
 ```
 
-- [ ] **Step 2: 실패 확인**
+- [x] **Step 2: 실패 확인**
 
 Run: `node --test tests/migrate-managed-backup.test.mjs`
 Expected: FAIL — `migrateManagedSectionBackup is not a function`
 
-- [ ] **Step 3: 구현** — `src/commands/migrate.mjs`
+- [x] **Step 3: 구현** — `src/commands/migrate.mjs`
 
 ```js
 // 부트스트랩 1회 손실의 안전망.
@@ -899,12 +899,12 @@ import { loadRenderState } from '../render-state.mjs';
 
 그리고 "Nothing to migrate" 판정식에 `!managedBackedUp`를 추가한다.
 
-- [ ] **Step 4: 통과 확인**
+- [x] **Step 4: 통과 확인**
 
 Run: `node --test tests/migrate-managed-backup.test.mjs tests/migrate.test.mjs tests/migrate-agents.test.mjs`
 Expected: PASS
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add src/commands/migrate.mjs tests/migrate-managed-backup.test.mjs
@@ -922,7 +922,7 @@ git show --stat HEAD
 **목적:** spec의 Success 기준 4개를 한 경로에서 증명한다. 단위 테스트가 각 결함을 잡고,
 이 테스트가 **실측 시나리오 자체**(레거시 설치 → migrate → init)를 재현한다.
 
-- [ ] **Step 1: 테스트 작성**
+- [x] **Step 1: 테스트 작성**
 
 ```js
 import { test } from 'node:test';
@@ -1009,18 +1009,18 @@ test('init 재실행: 해시 기록 뒤 사용자가 고친 절은 보존된다'
 });
 ```
 
-- [ ] **Step 2: 실행**
+- [x] **Step 2: 실행**
 
 Run: `node --test tests/e2e/legacy-migrate-init.test.mjs`
 Expected: PASS. 실패하면 Task 3~6 중 어느 배선이 빠졌는지 실패 메시지가 지목한다 —
 **여기서 프로덕션 코드를 고친다. 테스트를 완화하지 않는다.**
 
-- [ ] **Step 3: 전체 테스트**
+- [x] **Step 3: 전체 테스트**
 
 Run: `npm test`
 Expected: PASS (직전 릴리스 기준 665 pass + 신규)
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add tests/e2e/legacy-migrate-init.test.mjs
@@ -1039,7 +1039,7 @@ git show --stat HEAD
 - Modify: `README.md` — `.harness/render-state.json`이 **커밋 대상**임을 팀 상태 목록에 추가
 - Modify: `CHANGELOG.md` — `[Unreleased]`
 
-- [ ] **Step 1: 명령 문서 3종 갱신**
+- [x] **Step 1: 명령 문서 3종 갱신**
 
 각 문서에 넣을 사실(문장은 문서 톤에 맞춰 쓴다):
 - `harness-init.md` — "관리 절은 **마지막으로 하네스가 렌더한 내용과 같을 때만** 교체한다.
@@ -1053,7 +1053,7 @@ git show --stat HEAD
   가리키는 것은 파일 존재를 검사해 없으면 ⚠️. 전역 CLI는 검사하지 않는다. 해석하지 못한 command는
   `판정 불가`로 보고한다 — 침묵하지 않는다."
 
-- [ ] **Step 2: `CHANGELOG.md`의 `[Unreleased]`에 추가**
+- [x] **Step 2: `CHANGELOG.md`의 `[Unreleased]`에 추가**
 
 ```markdown
 ### Fixed
@@ -1069,13 +1069,13 @@ git show --stat HEAD
 - `migrate`가 부트스트랩 설치본의 관리 절 원본을 `.harness/backup/managed-sections-<stamp>/`에 백업한다.
 ```
 
-- [ ] **Step 3: 문서 검사**
+- [x] **Step 3: 문서 검사**
 
 Run: `npm run docs:check`
 Expected: PASS. 실패하면 `npm run docs:generate`로 생성 문서를 갱신한다.
 생성 문서가 green이어도 **overview 산문은 따로 낡는다** — 관리 절·`.harness/` 설명이 있으면 함께 고친다.
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add commands/ README.md CHANGELOG.md docs/
