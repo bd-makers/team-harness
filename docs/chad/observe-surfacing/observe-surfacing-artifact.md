@@ -53,3 +53,22 @@
 
 ## Learnings
 
+
+## Learnings (2026-09-09)
+
+- 리뷰 지적은 측정으로 등급을 다시 매기고, 단언은 투영(checks[])이 아니라 판정의 원천(fail 카운터·창)을 겨눈다
+
+- **측정이 등급을 정한다.** codex P2 "SessionStart가 7일 JSONL을 무상한으로 읽어 10초 timeout 위험"은 실측(하루 2만 호출 ×
+  7일 = 140k 레코드/71 MB → 0.34 s)으로 1/30임이 드러났다. 그래서 상한·시간 예산 같은 기계를 넣지 않고, 실패 모드
+  (판정이 늦으면 task-gate 출력까지 잃는다)만 **출력 순서 변경**으로 무비용 제거했다 — 지적의 *실패 모드*와 *규모*를 분리해 판별한다.
+- **단언은 투영이 아니라 원천을 겨눈다.** `checks[]`의 status만 세던 e2e 단언은 `fail++` 변이를 못 잡았다 — exit code를 정하는
+  카운터는 envelope의 `status`·`error.root_cause`에만 드러난다. "무엇이 결과를 결정하는가"를 찾아 그 값을 단언한다.
+- **"같은 판정 함수를 쓴다"는 계약에는 창 공유 테스트가 따로 필요하다.** 오늘 실패만 심은 fixture는 호출자가 `days:1`로 갈라져도
+  통과한다 — 3일 전 실패가 표면화되는지로 고정했다(뮤테이션 `days:1` 검출).
+- **`^` 앵커 정규식은 한 줄에만 대조한다.** 같은 상수를 여러 줄 출력 전체에 재사용해 거짓 실패가 났다 — 마지막 줄을 뽑아 대조하거나
+  `m` 플래그를 쓴다. 문구 grep도 마찬가지: plan 5에서 "observe 트립와이어"를 세다 TCC 본문에 걸려 오탐 — 표면화 줄은 **정확한 접두**로 센다.
+- **iCloud `.git/index` 롤백.** plan 4 커밋의 문서 4파일이 다음 커밋에서 조용히 되돌아갔다(`git add`는 task 문서뿐이었다).
+  발견 경로는 리뷰 scope를 잡기 전 `git diff --stat origin/main..HEAD`를 기대 파일 목록과 대조한 것. 이후 커밋마다
+  `git show --stat HEAD`를 대조하고, 복구는 reset·amend 없이 워킹트리 내용을 가산 커밋한다(개인 메모리 `icloud-git-index-rollback`).
+- **작동 증명은 소비자 모양의 scratch에서.** 플러그인 저장소는 훅을 dogfood하지 않아(D7) 여기서는 not-installed 침묵이 정상이다 —
+  실제 훅(`observeToolEvent`)으로 심은 scratch 디렉터리에서 observe·doctor·session-context 세 표면이 같은 id를 보고하는 것을 확인했다.

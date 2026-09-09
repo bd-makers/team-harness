@@ -10,7 +10,7 @@ observe 판정(트립와이어)을 doctor 경고 1건과 SessionStart 한 줄로
 - [x] 4. 문서 표면 — `commands/harness-observe.md`(표면화 단락) · doctor 명령 문서/README doctor 절(경고 항목) · CHANGELOG `[Unreleased]` Added · `npm run docs:generate` → `docs:check` 최신.
 - [x] 5. 검증 — `npm test` 전체, 실제 CLI: scratch 소비자 디렉터리에 tripped fixture 심고 `harness-team doctor`·`session-context` 출력 확인(플러그인 저장소 자체는 not-installed라 침묵이 정상).
 - [x] 6. 리뷰 — `/harness-review`(codex, read-only) → artifact Reviews 절 기록 → 반영/기각 판별.
-- [ ] 7. `/harness-retro` → `harness-team done`.
+- [x] 7. `/harness-retro` → `harness-team done`.
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

@@ -47,3 +47,12 @@ CHANGELOG.md                                             | 9 +++++++++
  docs/chad/observe-surfacing/observe-surfacing-handoff.md | 9 +++++++++
  docs/chad/observe-surfacing/observe-surfacing-plan.md    | 2 +-
  8 files changed, 38 insertions(+), 6 deletions(-)
+
+## 2026-09-09T05:51:14.176Z — 91b5eb4 fix(session-context): task-gate를 먼저 출력하고 observe 줄은 뒤에 — codex 리뷰 반영 (observe-surfacing plan 6)
+.../observe-surfacing-artifact.md                  | 34 +++++++++++++++++
+ .../observe-surfacing/observe-surfacing-context.md |  2 +-
+ .../observe-surfacing/observe-surfacing-plan.md    |  2 +-
+ src/commands/session-context.mjs                   | 15 ++++++--
+ tests/doctor.test.mjs                              | 29 +++++++++++++--
+ tests/session-context.test.mjs                     | 43 +++++++++++++++++++++-
+ 6 files changed, 115 insertions(+), 10 deletions(-)
