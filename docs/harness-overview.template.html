@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.34.0</span>
+      <span class="tag tag-purple">v0.35.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.35.0 — observe 판정이 doctor·SessionStart에 표면화된다:</strong>
+    <br>
+    <code>0.35.0</code> <strong>트립와이어 판정을 <code>harness-team observe</code>를 직접 친 사람만 보던 것을 고친다.</strong> 로거는 0.26.0부터 매 도구 호출을 기록하고 판정(트립와이어 2종·exit 1·루프백 nudge)도 구현돼 있었지만, 그 판정을 읽는 곳은 CLI 하나였다 — 선행 task가 "doctor 배선·SessionStart nudge"를 <strong>명시적으로 범위 제외</strong>한 채 미뤄 둔 결정이다. 판정 함수 <code>evaluateObserveVerdict</code> 하나를 뽑아 observe CLI·<code>doctor</code>·<code>session-context</code> 셋이 공유하므로 <strong>셋이 다른 답을 낼 수 없다.</strong> 발화 시 <code>doctor</code>는 <code>observe trip wires</code> 경고 1건(wire id·수치·observe 안내·nudge, <strong>warn 수준이라 exit code 불변</strong>)을, SessionStart는 <code>[harness] ⚠ observe 트립와이어 발화: …</code> 한 줄(id·창만)을 덧붙인다 — task-gate를 <strong>먼저</strong> 출력하고 그 뒤에 붙이므로 판정이 늦어도 잃는 것은 그 줄뿐이다(실측 0.34 s @ 140k 레코드). <strong>임계값·창·nudge·훅·템플릿은 불변</strong>이고 task를 자동 생성하지 않는다; 로그가 없거나 발화가 없으면 두 표면 모두 <strong>바이트 동일</strong>하게 침묵한다. 함께 실린 수정: <code>doctor</code>의 D-log 절 검사가 fenced code block 안의 <code>## D&lt;n&gt;</code>을 절로 세던 것 — CommonMark §4.5대로 펜스를 걷어내되, 백틱 info string에 백틱이 있는 줄은 펜스가 아니다(첫 구현이 그 줄을 펜스로 봐 뒤 문서를 삼키던 <strong>거짓 누락 경고</strong>를 codex 리뷰가 잡았다). Codex 리뷰 2회 · P2 3 · P3 4 · 전부 판별해 7건 반영. <strong>소비자가 할 일은 플러그인 갱신뿐</strong> — <code>src/commands/</code>만 바뀌어 <code>init</code>·<code>migrate</code>가 필요 없다.
+    <br><br>
     <strong>🆕 0.34.0 — <code>--force</code> 종결에 감사 흔적이 남는다:</strong>
     <br>
     <code>0.34.0</code> <strong><code>done --force</code>로 가드를 무시하고 닫은 task가 종결 이후 정상 종결과 구분되지 않던 것을 고친다.</strong> 무시한 issue는 stdout에 한 번 찍히고 휘발해서, <code>meta.json</code>·원장·<code>doctor</code>·SessionStart 재개 후보 <strong>어디에도 남지 않았다</strong> — 종결 후에는 "이 task는 증거를 갖추고 닫혔는가"를 물을 기계 판독 경로가 없었다. 가설이 아니라 <strong>이미 사람이 산문으로 대신하던 일</strong>이다(<code>done-guard-window-plan.md</code>가 우회 이력을 손으로 적어 유지하고 있었다). meta에 <code>forcedAt</code>·<code>forcedIssues</code> 두 필드를 더하고, 원장은 우회 종결을 <code>✅ done ⚠️</code>로 그린다. <strong>기록 조건은 플래그가 아니라 실제로 무시된 issue다</strong> — <code>--force</code>만 붙고 무시한 것이 없으면 우회가 아니므로 남기지 않는다. 역파싱 정규식은 렌더와 <strong>같은 상수에서 조립</strong>한다(<code>⚠️</code>는 두 코드포인트라 한쪽에 손으로 다시 적으면 변이 선택자가 빠져도 에러 없이 그 행만 사라진다). <strong>가드의 차단 판정(<code>collectDoneIssues</code>)과 <code>--force</code> 경로는 한 줄도 바뀌지 않는다</strong> — 막지 않고 기록만 하므로, "가드의 위협 모델은 망각이지 고의가 아니다"라는 <code>done-guard-window</code>의 확립된 결정과 충돌하지 않는다. Codex 리뷰 <strong>2회</strong>가 P2 5건·P3 1건을 냈고 5건을 반영했다 — 그중 2차가 잡은 것이 핵심이다: 첫 수정은 <strong>task가 닫혀 있는 동안에만</strong> 성립했다(열린 행 <code>🔄 open</code>은 표시를 담을 자리가 없어, 열린 구간에 원장을 한 번만 재생성해도 유일한 출처가 사라졌다). 반복 우회가 이전 기록을 덮어쓴다는 지적은 <strong>범위 밖으로 판별</strong>했다(스키마가 답하는 질문은 "있었는가"이지 "몇 번인가"가 아니다). <strong>소비자가 할 일은 없다</strong> — 필드 없는 구 task는 바이트 동일하게 렌더링되고, 새 필드는 다음 우회 종결 때 생긴다.
@@ -838,7 +842,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.34.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.35.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

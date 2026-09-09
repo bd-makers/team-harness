@@ -18,6 +18,8 @@ modified: 2026-09-08
 
 ## [Unreleased]
 
+## [0.35.0] - 2026-09-09
+
 ### Added
 - **observe 트립와이어 판정이 `doctor`와 SessionStart에 표면화됩니다** — 지금까지 판정은 `harness-team observe`를
   직접 실행한 사람만 봤습니다(선행 task가 범위 제외로 미뤄 둔 결정). 발화 시 `doctor`는 `observe trip wires`
