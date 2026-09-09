@@ -1074,3 +1074,18 @@ test('doctor: 해석하지 못한 command는 판정 불가로 보고한다 (침�
     assert.ok(hit, '해석 못 한 command가 보고된다');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+test('classifyHookCommand: 따옴표로 감싼 상대경로도 project-path', () => {
+  assert.deepEqual(classifyHookCommand('"./.claude/hooks/x.sh"'),
+    { kind: 'project-path', rel: '.claude/hooks/x.sh' });
+});
+
+test('classifyHookCommand: cd 인자 같은 확장자 없는 경로는 훅 스크립트가 아니다 (dangling 오탐 방지)', () => {
+  // `./subdir`을 훅 파일로 보면 존재하지 않을 때 거짓 dangling 경고가 난다.
+  assert.equal(classifyHookCommand('cd ./subdir && harness-team session-context').kind, 'global-cli');
+});
+
+test('classifyHookCommand: 인터프리터 뒤 상대경로 스크립트를 고른다', () => {
+  assert.deepEqual(classifyHookCommand('bash ./scripts/a.sh --conf ./etc/b.conf'),
+    { kind: 'project-path', rel: 'scripts/a.sh' });
+});

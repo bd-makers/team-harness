@@ -473,7 +473,11 @@ export async function checkEagerTierSize(targetDir, env = process.env) {
 // 어디에도 안 맞는 command는 침묵하지 않고 unknown으로 보고한다: "경고 0"이 "문제 없음"이 아니라
 // "검사한 범위 안에서는 문제 없음"을 뜻하게 되는 것이 결함 3의 본질이었다.
 const PROJECT_DIR_RE = /\$\{CLAUDE_PROJECT_DIR\}\/([^"'\s]+)/;
-const RELATIVE_RE = /(?:^|\s)\.\/([^"'\s]+)/;
+const RELATIVE_RE = /(?:^|\s|["'])\.\/([^"'\s]+)/;
+// 훅 스크립트로 볼 수 있는 상대경로인가. `cd ./subdir && harness-team …`의 `./subdir`처럼
+// 실행 대상이 아닌 경로 인자를 dangling으로 오인하면 거짓 경고가 된다 — 마지막 세그먼트에
+// 확장자가 있어야 실행 대상으로 본다. 확장자 없는 것은 침묵하지 않고 unknown으로 넘어간다.
+const looksLikeScript = (rel) => /\.[A-Za-z0-9]+$/.test(rel);
 const GLOBAL_CLI_RE = /(?:^|\s|\|\||&&|;)\s*harness-team(?:\s|$)/;
 
 export function classifyHookCommand(command) {
@@ -481,7 +485,7 @@ export function classifyHookCommand(command) {
   const varMatch = command.match(PROJECT_DIR_RE);
   if (varMatch) return { kind: 'project-path', rel: varMatch[1] };
   const relMatch = command.match(RELATIVE_RE);
-  if (relMatch) return { kind: 'project-path', rel: relMatch[1] };
+  if (relMatch && looksLikeScript(relMatch[1])) return { kind: 'project-path', rel: relMatch[1] };
   if (GLOBAL_CLI_RE.test(command)) return { kind: 'global-cli' };
   return { kind: 'unknown' };
 }

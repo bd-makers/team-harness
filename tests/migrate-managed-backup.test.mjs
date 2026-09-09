@@ -47,3 +47,22 @@ test('render-state 있음 → 부트스트랩이 아니므로 아무것도 하�
     await assert.rejects(() => readdir(join(dir, '.harness/backup')));
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+test('같은 초에 두 번 실행해도 이전 백업을 덮지 않는다 (누적)', async () => {
+  const dir = await project(EDITED);
+  const cap = captureLogs();
+  try {
+    await migrateManagedSectionBackup(ctxYes(dir));
+    await writeFile(join(dir, 'AGENTS.md'),
+      '# P\n\n<!-- harness:section="stack" begin -->\n- 두 번째 원본\n<!-- harness:section="stack" end -->\n');
+    await migrateManagedSectionBackup(ctxYes(dir));
+    cap.restore();
+    const dirs = (await readdir(join(dir, '.harness/backup'))).sort();
+    assert.equal(dirs.length, 2, '두 백업이 모두 남는다 — 덮으면 복구 대상이 사라진다');
+    const bodies = await Promise.all(dirs.map(d =>
+      readFile(join(dir, '.harness/backup', d, 'AGENTS.md'), 'utf8')));
+    assert.ok(bodies.some(b => /uv sync/.test(b)), '첫 원본이 보존된다');
+    assert.ok(bodies.some(b => /두 번째 원본/.test(b)), '두 번째 원본도 보존된다');
+    for (const d of dirs) assert.doesNotMatch(d, /\.$/, '이름이 점으로 끝나지 않는다');
+  } finally { cap.restore(); await rm(dir, { recursive: true, force: true }); }
+});

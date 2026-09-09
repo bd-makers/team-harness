@@ -707,8 +707,15 @@ export async function migrateManagedSectionBackup(ctx) {
 
   const stack = await detectStack(targetDir);
   const vars = { projectName: basename(targetDir), ...stack };
-  const stamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 15).replace(/(\d{8})(\d{6})/, '$1-$2');
-  const backupDir = join(targetDir, '.harness/backup', `managed-sections-${stamp}`);
+  // 백업은 **누적**이다 — 덮으면 복구 대상이 사라져 안전망의 의미가 없다. 같은 초에 두 번
+  // 실행되면(init 사이에 migrate를 두 번) 같은 이름이 나오므로 비어 있는 이름을 찾을 때까지 센다.
+  const iso = new Date().toISOString().replace(/[-:T]/g, '').replace(/\..*$/, ''); // YYYYMMDDHHMMSS
+  const stamp = `${iso.slice(0, 8)}-${iso.slice(8, 14)}`;
+  const backupRoot = join(targetDir, '.harness/backup');
+  let backupDir = join(backupRoot, `managed-sections-${stamp}`);
+  for (let n = 2; await exists(backupDir); n++) {
+    backupDir = join(backupRoot, `managed-sections-${stamp}-${n}`);
+  }
 
   const reports = [];
   let backed = false;
