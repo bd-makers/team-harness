@@ -27,10 +27,16 @@ modified: 2026-09-10
 - `doctor`가 dangling 훅 참조를 `not present, optional`로만 보고하던 문제 — 프로젝트 내부 경로를 가리키는
   배선은 파일 존재를 검사해 경고하고, 해석 못 한 `command`는 `판정 불가`로 보고한다.
 
+- 같은 이름의 관리 절 블록이 둘 이상인 파일을 병합하던 문제 — 마지막 블록만 해시하면서 전체를 교체해
+  앞 블록의 사용자 편집이 조용히 지워졌다. 이제 marker mismatch로 거부하고 사람에게 넘긴다.
+- `doctor`가 판정 불가 `command`의 원문을 출력해 환경변수·헤더의 비밀값이 로그에 실릴 수 있던 문제 —
+  실행 대상만 보고한다.
+
 ### Added
 - `.harness/render-state.json` — 관리 절의 마지막 렌더 해시. **커밋 대상**이다.
 - `migrate`가 부트스트랩 설치본의 관리 절 원본을 `.harness/backup/managed-sections-<stamp>/`에 백업하고
   템플릿 렌더와의 diff를 경고로 보여준다.
+- `.gitignore`에 `.harness/backup/` 추가 — 로컬 복구용 사본이라 커밋 대상이 아니다.
 
 ## [0.35.0] - 2026-09-09
 

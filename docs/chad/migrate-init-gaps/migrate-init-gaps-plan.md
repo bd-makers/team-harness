@@ -1087,22 +1087,22 @@ git show --stat HEAD
 
 ### Task 9: 외부 리뷰 · retro · 종결
 
-- [ ] **Step 1: codex read-only 리뷰**
+- [x] **Step 1: codex read-only 리뷰**
 
 `/harness-review` (엔진 `codex`). 백그라운드 10~25분, 모델 폴백은 `-m gpt-5.6-sol`
 (메모리 `codex-exec-model-fallback-home-machine`). 결과는 `<name>-artifact.md`의 `## Reviews` 절에
 날짜와 함께 남긴다 — 남기지 않은 리뷰는 "안 한 것"이다.
 
-- [ ] **Step 2: 리뷰 반영**
+- [x] **Step 2: 리뷰 반영**
 
 지적을 재현·판별한 뒤 단일 스레드로 반영한다(D6). 반영하지 않기로 한 항목은 이유를 artifact에 남긴다.
 
-- [ ] **Step 3: `npm test` 최종 확인**
+- [x] **Step 3: `npm test` 최종 확인**
 
 Run: `npm test`
 Expected: PASS
 
-- [ ] **Step 4: retro**
+- [x] **Step 4: retro**
 
 `/harness-retro` — 학습을 `<name>-artifact.md`에 append.
 

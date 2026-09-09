@@ -107,3 +107,19 @@ docs/chad/chad-handoff.md                             |  2 +-
  tests/doctor.test.mjs                                 | 15 +++++++++++++++
  tests/migrate-managed-backup.test.mjs                 | 19 +++++++++++++++++++
  6 files changed, 56 insertions(+), 5 deletions(-)
+
+## 2026-09-09T15:46:04.553Z — e0e9f2f fix: codex 적대적 리뷰 7건 반영 — P1 1 · P2 5 · P3 1 (migrate-init-gaps plan 9)
+README.md                                          |  6 +-
+ docs/chad/chad-handoff.md                          |  2 +-
+ .../migrate-init-gaps-artifact.md                  | 23 +++++++
+ .../migrate-init-gaps/migrate-init-gaps-handoff.md | 15 +++++
+ src/commands/doctor.mjs                            | 73 +++++++++++++++++-----
+ src/commands/migrate.mjs                           |  6 +-
+ src/harness.mjs                                    | 10 ++-
+ src/merge.mjs                                      |  5 ++
+ src/render-state.mjs                               | 14 ++++-
+ tests/doctor.test.mjs                              | 26 +++++++-
+ tests/managed-section-provenance.test.mjs          |  8 +++
+ tests/migrate-managed-backup.test.mjs              | 16 +++++
+ tests/render-state.test.mjs                        | 12 ++++
+ 13 files changed, 193 insertions(+), 23 deletions(-)
