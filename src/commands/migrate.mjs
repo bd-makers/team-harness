@@ -3,8 +3,10 @@ import { constants } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { unlink, rmdir, readdir, mkdir, lstat, stat, access } from 'node:fs/promises';
 import { readTextSafe, writeText, exists } from '../fsx.mjs';
-import { loadBackupDir, mergeClaudeSettings, settingsHasBoundaryCheckpoint, mirrorCursorRules } from '../harness.mjs';
-import { extractSections, deepMergeJson } from '../merge.mjs';
+import { loadBackupDir, mergeClaudeSettings, settingsHasBoundaryCheckpoint, mirrorCursorRules, AGENT_FILE_TEMPLATES } from '../harness.mjs';
+import { detectStack } from '../detect-stack.mjs';
+import { loadRenderState } from '../render-state.mjs';
+import { extractSections, deepMergeJson, simpleDiff } from '../merge.mjs';
 import { render } from '../render.mjs';
 import { confirm } from '../prompt.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
@@ -687,6 +689,67 @@ export async function migrateToAgentsMd(ctx) {
   return true;
 }
 
+
+// --- 부트스트랩 안전망: 관리 절 원본 백업 + diff 경고 ---
+//
+// render-state.json이 없는 설치본에서 다음 init은 관리 절을 stock으로 간주해 한 번 덮어쓴다
+// (spec 설계 절: "사용자 편집으로 간주"를 고르면 그 설치본은 영영 갱신되지 않는다).
+// migrate는 원본과 템플릿 렌더 결과를 동시에 볼 수 있는 유일한 지점이므로, 그 1회를
+// 복구 가능(백업)·가시(diff)로 만든다. 백업은 타임스탬프 디렉터리에 **누적**한다.
+//
+// 렌더에 쓰는 vars는 init이 --stack 없이 쓰는 것과 같다(detectStack + projectName).
+// 사용자가 나중에 `init --stack X`를 주면 diff가 조금 달라질 수 있다 — 경고는 참고용이고
+// 실제 보존 판정은 init의 provenance 가드가 한다.
+export async function migrateManagedSectionBackup(ctx) {
+  const { root, targetDir } = ctx;
+  const prior = await loadRenderState(targetDir);
+  if (Object.keys(prior.sections).length > 0) return false; // 부트스트랩이 아니다
+
+  const stack = await detectStack(targetDir);
+  const vars = { projectName: basename(targetDir), ...stack };
+  const stamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 15).replace(/(\d{8})(\d{6})/, '$1-$2');
+  const backupDir = join(targetDir, '.harness/backup', `managed-sections-${stamp}`);
+
+  const reports = [];
+  let backed = false;
+  for (const [file, tplName] of AGENT_FILE_TEMPLATES) {
+    // 레거시(0.7.x) 설치는 AGENTS.md가 CLAUDE.md를 가리키는 symlink다 — readTextSafe는 링크를
+    // 따라가므로 엉뚱한 파일을 원본으로 삼게 된다. migrateToAgentsMd가 곧 실파일로 바꿀 것이니
+    // 여기서는 건드리지 않는다(백업할 고유 내용이 링크 대상 쪽에 이미 있다).
+    const st = await lstat(join(targetDir, file)).catch(() => null);
+    if (st?.isSymbolicLink()) continue;
+    const existing = await readTextSafe(join(targetDir, file));
+    if (existing === null) continue;
+    const tpl = await readTextSafe(join(root, 'templates', tplName));
+    if (!tpl) continue;
+    const rendered = render(tpl, vars);
+    const current = extractSections(existing);
+    const incoming = extractSections(rendered);
+    let fileHasDrift = false;
+    for (const [name, block] of Object.entries(incoming)) {
+      if (current[name] === undefined || current[name] === block) continue;
+      reports.push({ file, name, diff: simpleDiff(current[name], block) });
+      fileHasDrift = true;
+    }
+    if (fileHasDrift) {
+      await mkdir(backupDir, { recursive: true });
+      await writeText(join(backupDir, file), existing);
+      backed = true;
+    }
+  }
+
+  if (!backed) return false;
+
+  console.log('\n⚠️  관리 절이 템플릿 렌더 결과와 다릅니다 — 다음 `init`이 이 절들을 한 번 교체합니다.');
+  console.log(`  원본 백업: ${backupDir}`);
+  for (const { file, name, diff } of reports) {
+    console.log(`\n  ${file} → harness:section="${name}"`);
+    console.log(diff.split('\n').map(l => `      ${l}`).join('\n'));
+  }
+  console.log('\n  → 남기고 싶은 내용은 init 뒤에 백업에서 옮기세요. 이후 실행부터는 자동으로 보존됩니다.');
+  return true;
+}
+
 // --- SessionStart task-gate hook (pre-0.9 settings.json → + SessionStart) ---
 //
 // `migrate` is structure-only and never touched .claude/settings.json, so projects
@@ -882,6 +945,7 @@ async function backfillTaskMeta(ctx) {
 export async function runMigrate(ctx) {
   console.log(`harness-team migrate → ${ctx.targetDir}`);
 
+  const managedBackedUp = await migrateManagedSectionBackup(ctx);
   const agentsMigrated = await migrateToAgentsMd(ctx);
 
   const taskMigrated = await migrateTaskStructure(ctx);
@@ -900,7 +964,7 @@ export async function runMigrate(ctx) {
     return;
   }
 
-  if (!agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !claudeHooksRefreshed && !claudeTemplatesRefreshed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated && !metaBackfilled) {
+  if (!managedBackedUp && !agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !claudeHooksRefreshed && !claudeTemplatesRefreshed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated && !metaBackfilled) {
     console.log('\nNothing to migrate — project is already up to date.');
     return;
   }
