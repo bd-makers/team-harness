@@ -18,6 +18,15 @@ modified: 2026-09-08
 
 ## [Unreleased]
 
+### Added
+- **observe 트립와이어 판정이 `doctor`와 SessionStart에 표면화됩니다** — 지금까지 판정은 `harness-team observe`를
+  직접 실행한 사람만 봤습니다(선행 task가 범위 제외로 미뤄 둔 결정). 발화 시 `doctor`는 `observe trip wires`
+  경고 1건(wire id·수치·observe 안내·루프백 nudge)을, SessionStart의 `session-context`는
+  `[harness] ⚠ observe 트립와이어 발화: …` 한 줄(id·창만)을 덧붙입니다. 세 호출자가 같은 판정 함수
+  (`evaluateObserveVerdict`)를 쓰므로 답이 갈리지 않습니다. **임계값·창·nudge·훅·템플릿은 바꾸지 않았고**
+  task 자동 생성도 없습니다 — doctor 경고는 warn 수준이라 exit code에 영향이 없고, 로그가 없거나(not-installed)
+  발화가 없으면 두 표면 모두 침묵합니다. 판정 중 예외도 SessionStart 출력을 깨뜨리지 않습니다.
+
 ### Fixed
 - **`doctor`의 결정 로그(D-log) 절 검사가 fenced code block 안의 `## D<n>` 줄을 절로 세지 않습니다** —
   복사용 예시나 인용으로 코드 펜스 안에 적힌 헤딩이 있으면 실제 절이 없어도 doctor가 침묵했습니다
