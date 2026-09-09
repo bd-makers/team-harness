@@ -6,7 +6,7 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from 'node:fs
 import { tmpdir, homedir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, DECISION_HEADINGS, checkObserveTripWires, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
+import { classifyHookCommand, collectHookCommands, checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, DECISION_HEADINGS, checkObserveTripWires, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
 import { POST_COMMIT_HOOK } from '../src/git-hooks.mjs';
 import { cloudSyncPathWarning } from '../src/harness.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
@@ -1018,5 +1018,59 @@ test('checkObserveTripWires: 3일 전 실패도 창(7일) 안이면 경고 — o
       await observeToolEvent(observePayload('PostToolUseFailure', { error: 'boom' }), { projectDir: dir, now: threeDaysAgo });
     }
     assert.match((await checkObserveTripWires(dir)) ?? '', /repeat-failure-3x/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// --- 결함 3: dangling 훅 참조 / 판정 불가 (migrate-init-gaps plan 5) ---
+
+test('classifyHookCommand: 상대경로 → project-path', () => {
+  assert.deepEqual(classifyHookCommand('./.claude/hooks/protect-files.sh'),
+    { kind: 'project-path', rel: '.claude/hooks/protect-files.sh' });
+});
+
+test('classifyHookCommand: ${CLAUDE_PROJECT_DIR} 접두 → project-path', () => {
+  assert.deepEqual(classifyHookCommand('node "${CLAUDE_PROJECT_DIR}/.claude/hooks/observe-tools.mjs"'),
+    { kind: 'project-path', rel: '.claude/hooks/observe-tools.mjs' });
+});
+
+test('classifyHookCommand: 전역 CLI → global-cli (검사 대상 아님)', () => {
+  assert.equal(classifyHookCommand('harness-team session-context 2>/dev/null || true').kind, 'global-cli');
+});
+
+test('classifyHookCommand: 해석 불가 → unknown (침묵하지 않는다)', () => {
+  assert.equal(classifyHookCommand('cat foo | awk "{print}" > /tmp/x').kind, 'unknown');
+});
+
+test('collectHookCommands: 모든 이벤트·그룹에서 command를 모은다', () => {
+  const settings = { hooks: {
+    SessionStart: [{ hooks: [{ type: 'command', command: 'a' }, { type: 'command', command: 'b' }] }],
+    PreToolUse: [{ matcher: 'Edit', hooks: [{ type: 'command', command: 'c' }] }],
+  } };
+  assert.deepEqual(collectHookCommands(settings).sort(), ['a', 'b', 'c']);
+});
+
+test('doctor: settings가 없는 프로젝트 내부 훅을 가리키면 경고한다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-dangling-'));
+  try {
+    await mkdir(join(dir, '.claude'), { recursive: true });
+    await writeFile(join(dir, '.claude/settings.json'), JSON.stringify({
+      hooks: { SessionStart: [{ hooks: [{ type: 'command', command: 'node "${CLAUDE_PROJECT_DIR}/.claude/hooks/ghost.mjs"' }] }] },
+    }, null, 2));
+    const env = await doctorJson(dir);
+    const hit = (env.checks || []).find(c => c.status === 'warning' && /ghost\.mjs/.test(c.detail ?? ''));
+    assert.ok(hit, 'dangling 참조가 warning으로 보고된다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('doctor: 해석하지 못한 command는 판정 불가로 보고한다 (침묵 금지)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-unknown-'));
+  try {
+    await mkdir(join(dir, '.claude'), { recursive: true });
+    await writeFile(join(dir, '.claude/settings.json'), JSON.stringify({
+      hooks: { SessionStart: [{ hooks: [{ type: 'command', command: 'cat foo | awk "{print}"' }] }] },
+    }, null, 2));
+    const env = await doctorJson(dir);
+    const hit = (env.checks || []).find(c => c.status === 'warning' && /판정 불가/.test(c.detail ?? ''));
+    assert.ok(hit, '해석 못 한 command가 보고된다');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

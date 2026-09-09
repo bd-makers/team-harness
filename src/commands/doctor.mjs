@@ -465,6 +465,65 @@ export async function checkEagerTierSize(targetDir, env = process.env) {
   return `eager 계층 ${fmt(total)} B > ${fmt(EAGER_TIER_MAX_BYTES)} B(24 KiB) — 매 세션 무조건 로드되는 지시가 큽니다. 내역: ${breakdown}. ${advice.join(' ')}`;
 }
 
+// settings.json의 hook `command`는 세 모양이다(templates/.claude/settings.json):
+//   1. ./.claude/hooks/x.sh                                  — 프로젝트 상대경로
+//   2. node "${CLAUDE_PROJECT_DIR}/.claude/hooks/x.mjs"      — 변수 접두 경로
+//   3. harness-team session-context 2>/dev/null || true      — 전역 CLI + 셸 연산자
+// 3번은 하네스가 `|| true`로 스스로 부재를 허용하므로 dangling이 아니다 — 검사하면 오탐이다.
+// 어디에도 안 맞는 command는 침묵하지 않고 unknown으로 보고한다: "경고 0"이 "문제 없음"이 아니라
+// "검사한 범위 안에서는 문제 없음"을 뜻하게 되는 것이 결함 3의 본질이었다.
+const PROJECT_DIR_RE = /\$\{CLAUDE_PROJECT_DIR\}\/([^"'\s]+)/;
+const RELATIVE_RE = /(?:^|\s)\.\/([^"'\s]+)/;
+const GLOBAL_CLI_RE = /(?:^|\s|\|\||&&|;)\s*harness-team(?:\s|$)/;
+
+export function classifyHookCommand(command) {
+  if (typeof command !== 'string' || command.trim() === '') return { kind: 'unknown' };
+  const varMatch = command.match(PROJECT_DIR_RE);
+  if (varMatch) return { kind: 'project-path', rel: varMatch[1] };
+  const relMatch = command.match(RELATIVE_RE);
+  if (relMatch) return { kind: 'project-path', rel: relMatch[1] };
+  if (GLOBAL_CLI_RE.test(command)) return { kind: 'global-cli' };
+  return { kind: 'unknown' };
+}
+
+export function collectHookCommands(settings) {
+  const events = settings?.hooks;
+  if (!events || typeof events !== 'object') return [];
+  const out = [];
+  for (const groups of Object.values(events)) {
+    if (!Array.isArray(groups)) continue;
+    for (const group of groups) {
+      for (const hook of group?.hooks ?? []) {
+        if (hook?.type === 'command' && typeof hook.command === 'string') out.push(hook.command);
+      }
+    }
+  }
+  return out;
+}
+
+// settings가 배선한 훅 중 프로젝트 내부 파일을 가리키는 것의 존재를 검사한다.
+// CHECKS의 정적 목록과는 다른 축이다: 저쪽은 "파일이 있는가", 이쪽은 "배선이 정합한가".
+// 결함 1(migrate가 설치 안 한 훅을 배선) 같은 상태가 여기서 잡힌다.
+async function checkWiredHooks(ctx, add) {
+  const raw = await readFile(join(ctx.targetDir, '.claude/settings.json'), 'utf8').catch(() => null);
+  if (raw === null) return;
+  let settings;
+  try { settings = JSON.parse(raw); } catch { return; } // 파싱 실패는 기존 json 체크가 이미 보고한다
+  for (const command of collectHookCommands(settings)) {
+    const c = classifyHookCommand(command);
+    if (c.kind === 'global-cli') continue;
+    if (c.kind === 'unknown') {
+      add('hook command', 'warning', `판정 불가 — 이 command가 가리키는 대상을 검사하지 못했습니다: ${command}`,
+        `⚠️  hook command  (판정 불가: ${command})`);
+      continue;
+    }
+    if (await exists(join(ctx.targetDir, c.rel))) continue;
+    add(`hook → ${c.rel}`, 'warning',
+      `${c.rel}: settings.json이 배선했지만 파일이 없습니다 (dangling) — run: harness-team init`,
+      `⚠️  hook → ${c.rel}  (settings.json이 배선했지만 파일 없음 — run: harness-team init)`);
+  }
+}
+
 const CHECKS = [
   { path: 'AGENTS.md', required: true, realFile: true, contains: 'harness:section="protocol"' },
   { path: 'CLAUDE.md', required: true, realFile: true, contains: '@AGENTS.md' },
@@ -571,6 +630,8 @@ export async function runDoctor(ctx) {
     }
     add(c.path, 'pass', undefined, `✓ ${c.path}`);
   }
+
+  await checkWiredHooks(ctx, add);
 
   // Harness scripts live in the project root since v0.3+ (consumer projects only).
   line('');
