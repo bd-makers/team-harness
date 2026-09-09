@@ -12,6 +12,8 @@
 // JSON merge strategy (settings.json / .codex/hooks.json):
 //   Deep-merge objects; arrays become the union (de-duped by stringified value).
 
+import { createHash } from 'node:crypto';
+
 const SECTION_RE = (name) =>
   new RegExp(
     `<!--\\s*harness:section="${name}"\\s*begin\\s*-->[\\s\\S]*?<!--\\s*harness:section="${name}"\\s*end\\s*-->`,
@@ -63,9 +65,17 @@ export function extractSections(markdown) {
   return out;
 }
 
-export function mergeMarkdown(existing, incoming) {
+// 관리 절의 provenance 가드(opts.lastRender)는 D8의 설치 측 대응물이다.
+//   - lastRender 생략/null → 종전 동작(전부 교체). 기존 호출자 계약을 유지한다.
+//   - 절 이름이 lastRender에 없다 → 부트스트랩. stock으로 간주해 교체한다. "사용자 편집으로 간주"를
+//     기각한 이유: 그 설치본은 관리 절을 영영 건너뛰고, 해시를 남길 렌더가 일어나지 않아
+//     스스로 빠져나오지 못한다(spec 설계 절).
+//   - 해시가 있는데 현재 바이트와 다르다 → 사용자가 고친 것. 그 절만 건너뛰고 onSkip으로 보고한다.
+export function mergeMarkdown(existing, incoming, opts = {}) {
   if (!existing) return incoming;
+  const { lastRender = null, onSkip = null } = opts;
   const incomingSections = extractSections(incoming);
+  const existingBlocks = lastRender ? extractSections(existing) : null;
   let result = existing;
   const appended = [];
 
@@ -76,6 +86,14 @@ export function mergeMarkdown(existing, incoming) {
     // region included. Refuse instead.
     assertMarkerPairs(result, name);
     if (SECTION_RE(name).test(result)) {
+      if (lastRender && Object.hasOwn(lastRender, name)) {
+        const current = existingBlocks[name];
+        const currentSha = createHash('sha256').update(current ?? '').digest('hex');
+        if (currentSha !== lastRender[name]) {
+          onSkip?.(name, current, block);
+          continue;
+        }
+      }
       result = result.replace(SECTION_RE(name), block);
     } else {
       appended.push(block);
