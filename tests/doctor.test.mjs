@@ -6,7 +6,7 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from 'node:fs
 import { tmpdir, homedir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { classifyHookCommand, collectHookCommands, checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, DECISION_HEADINGS, checkObserveTripWires, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
+import { classifyHookCommand, collectHookCommands, redactCommand, checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, DECISION_HEADINGS, checkObserveTripWires, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
 import { POST_COMMIT_HOOK } from '../src/git-hooks.mjs';
 import { cloudSyncPathWarning } from '../src/harness.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
@@ -1088,4 +1088,28 @@ test('classifyHookCommand: cd 인자 같은 확장자 없는 경로는 훅 스�
 test('classifyHookCommand: 인터프리터 뒤 상대경로 스크립트를 고른다', () => {
   assert.deepEqual(classifyHookCommand('bash ./scripts/a.sh --conf ./etc/b.conf'),
     { kind: 'project-path', rel: 'scripts/a.sh' });
+});
+
+// codex 리뷰 P2: 정규식이 인자를 실행 대상으로 오인했다. 실행 대상 파싱으로 바꾼 뒤의 계약.
+test('classifyHookCommand: 인자로 온 상대경로를 훅으로 오인하지 않는다', () => {
+  assert.equal(classifyHookCommand('harness-team session-context --config ./missing.json').kind, 'global-cli');
+  assert.equal(classifyHookCommand('node runner.mjs --config ./missing.json').kind, 'unknown');
+});
+
+test('classifyHookCommand: 확장자 없는 훅과 연산자가 붙은 경로도 잡는다', () => {
+  assert.deepEqual(classifyHookCommand('./.claude/hooks/pre-commit'),
+    { kind: 'project-path', rel: '.claude/hooks/pre-commit' });
+  assert.deepEqual(classifyHookCommand('./hook.sh&&true'), { kind: 'project-path', rel: 'hook.sh' });
+});
+
+test('classifyHookCommand: 전역 CLI는 따옴표·절대경로 형태도 인식한다', () => {
+  assert.equal(classifyHookCommand('"harness-team" session-context').kind, 'global-cli');
+  assert.equal(classifyHookCommand('/usr/local/bin/harness-team session-context').kind, 'global-cli');
+});
+
+// codex 리뷰 P2: unknown command 원문을 찍으면 비밀값이 doctor 출력·수집 로그로 나간다.
+test('redactCommand: 실행 대상만 남기고 인자는 생략한다 (secret 노출 방지)', () => {
+  const out = redactCommand('API_TOKEN=s3cr3t custom-hook --auth "Bearer abc123"');
+  assert.doesNotMatch(out, /s3cr3t|abc123/, '비밀값이 나가지 않는다');
+  assert.match(out, /custom-hook/, '어느 훅인지는 알 수 있다');
 });

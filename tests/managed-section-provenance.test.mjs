@@ -81,3 +81,11 @@ test('planChanges: 건너뛴 절은 이전 렌더 해시를 그대로 이어받�
   assert.equal(renderState.sections['AGENTS.md'].stack, 'deadbeef',
     '건너뛴 절의 이전 해시는 보존된다 (지우면 다음 실행이 부트스트랩으로 덮는다)');
 });
+
+// codex 리뷰 P2: 같은 이름의 블록이 둘이면 extractSections는 마지막 것만 해싱하는데 replace는
+// 둘 다 바꾼다 — 앞 블록만 편집하면 해시가 일치해 사용자 편집이 조용히 지워졌다.
+test('같은 이름의 관리 절이 둘 이상이면 병합을 거부한다 (앞 블록 편집 유실 방지)', () => {
+  const dup = `# P\n\n${block('- 사용자 편집')}\n\n${block('- npm')}\n`;
+  assert.throws(() => mergeMarkdown(dup, RENDERED, { lastRender: { stack: 'x' } }),
+    (err) => err.code === 'HARNESS_MARKER_MISMATCH');
+});

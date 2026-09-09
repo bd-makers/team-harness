@@ -702,8 +702,11 @@ export async function migrateToAgentsMd(ctx) {
 // 실제 보존 판정은 init의 provenance 가드가 한다.
 export async function migrateManagedSectionBackup(ctx) {
   const { root, targetDir } = ctx;
+  // 부트스트랩 판정은 **파일 단위**다. 전역으로 "해시가 하나라도 있으면 건너뜀"으로 하면,
+  // AGENTS.md만 skip돼(symlink·마커 깨짐·템플릿 없음) CLAUDE.md 해시만 저장된 부분 상태에서
+  // AGENTS.md를 복구했을 때 백업 없이 부트스트랩 교체가 일어난다 — 안전망이 비는 경로다
+  // (codex 리뷰 P1). 해시가 없는 파일이 하나라도 있으면 그 파일을 백업 대상으로 본다.
   const prior = await loadRenderState(targetDir);
-  if (Object.keys(prior.sections).length > 0) return false; // 부트스트랩이 아니다
 
   const stack = await detectStack(targetDir);
   const vars = { projectName: basename(targetDir), ...stack };
@@ -723,6 +726,7 @@ export async function migrateManagedSectionBackup(ctx) {
     // 레거시(0.7.x) 설치는 AGENTS.md가 CLAUDE.md를 가리키는 symlink다 — readTextSafe는 링크를
     // 따라가므로 엉뚱한 파일을 원본으로 삼게 된다. migrateToAgentsMd가 곧 실파일로 바꿀 것이니
     // 여기서는 건드리지 않는다(백업할 고유 내용이 링크 대상 쪽에 이미 있다).
+    if (prior.sections[file]) continue; // 이 파일은 이미 provenance가 있다 — 부트스트랩이 아니다
     const st = await lstat(join(targetDir, file)).catch(() => null);
     if (st?.isSymbolicLink()) continue;
     const existing = await readTextSafe(join(targetDir, file));

@@ -755,8 +755,10 @@ Claude Code 도구 관측은 원문을 보존하지 않는 로컬 JSONL만 `.har
 - `AGENTS.md` (공유 코어): `principles`, `stack`, `roles`, `protocol`
 - `CLAUDE.md` (얇음): 최상단 `@AGENTS.md` import + `workflow`
 
-이 섹션들을 직접 수정해도 `/harness-init` 재실행 시 템플릿으로 덮어쓰여집니다.
-영구 커스터마이즈는 `<!-- harness:user -->` 블록 또는 마커 밖에 작성하세요. begin/end 마커 중 하나만 지우면
+이 섹션들을 직접 수정하면 `/harness-init` 재실행이 **그 절을 건너뛰고 diff를 경고로 보여줍니다** —
+사용자 편집을 지우지 않습니다(판정 근거: `.harness/render-state.json`). 다만 그만큼 **템플릿 개선도
+그 절에는 도달하지 않으므로**, 경고에 실린 diff를 보고 직접 옮겨야 합니다. 하네스 갱신을 계속 받고
+싶은 내용이라면 `<!-- harness:user -->` 블록이나 마커 밖에 두는 편이 낫습니다. begin/end 마커 중 하나만 지우면
 그 파일은 병합하지 않고 경고합니다 — 예전에는 두 번째 실행에서 마커 사이의 사용자 텍스트가 지워졌습니다.
 
 ---

@@ -7,6 +7,7 @@
 // 이 파일은 **커밋 대상**이다. .gitignore가 `.harness/`를 통째로 무시하면 팀원이 clone한 뒤
 // 첫 init마다 부트스트랩 판정(= stock 간주 = 1회 덮어쓰기)이 다시 일어난다.
 import { join } from 'node:path';
+import { rename, rm } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { readTextSafe, writeText } from './fsx.mjs';
 import { extractSections } from './merge.mjs';
@@ -34,6 +35,17 @@ export async function loadRenderState(targetDir) {
   } catch { return EMPTY(); }
 }
 
+// 원자적으로 쓴다. 중간에 끊기면 깨진 JSON이 남고, loadRenderState는 그것을 빈 부트스트랩
+// 상태로 읽어 다음 init이 관리 절을 덮는다 — 실패 모드가 "보호 해제"라 조용하고 위험하다
+// (codex 리뷰 P2). 임시 파일에 쓴 뒤 rename으로 갈아끼운다(같은 디렉터리라 원자적이다).
 export async function saveRenderState(targetDir, state) {
-  await writeText(join(targetDir, RENDER_STATE_REL), JSON.stringify(state, null, 2) + '\n');
+  const path = join(targetDir, RENDER_STATE_REL);
+  const tmp = `${path}.${process.pid}.tmp`;
+  await writeText(tmp, JSON.stringify(state, null, 2) + '\n');
+  try {
+    await rename(tmp, path);
+  } catch (err) {
+    await rm(tmp, { force: true }).catch(() => {});
+    throw err;
+  }
 }

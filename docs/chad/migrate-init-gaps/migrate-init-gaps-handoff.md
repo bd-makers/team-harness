@@ -92,3 +92,18 @@ CHANGELOG.md                                       | 16 ++++-
  docs/diagrams/harness-overview/workflow.mmd        |  4 +-
  docs/harness-overview.html                         | 30 +++++++++-
  11 files changed, 181 insertions(+), 47 deletions(-)
+
+## 2026-09-09T15:22:11.401Z — cde80e8 docs(plan): Task 1~8 완료 체크 (migrate-init-gaps)
+docs/chad/chad-handoff.md                          |  2 +-
+ .../migrate-init-gaps/migrate-init-gaps-handoff.md | 75 +++++++++++++++++++++
+ .../migrate-init-gaps/migrate-init-gaps-plan.md    | 78 +++++++++++-----------
+ 3 files changed, 115 insertions(+), 40 deletions(-)
+
+## 2026-09-09T15:28:01.858Z — c73a800 fix: doctor 경로 판정 오탐 2건 + migrate 백업 타임스탬프 충돌 (migrate-init-gaps)
+docs/chad/chad-handoff.md                             |  2 +-
+ .../migrate-init-gaps/migrate-init-gaps-handoff.md    |  6 ++++++
+ src/commands/doctor.mjs                               |  8 ++++++--
+ src/commands/migrate.mjs                              | 11 +++++++++--
+ tests/doctor.test.mjs                                 | 15 +++++++++++++++
+ tests/migrate-managed-backup.test.mjs                 | 19 +++++++++++++++++++
+ 6 files changed, 56 insertions(+), 5 deletions(-)

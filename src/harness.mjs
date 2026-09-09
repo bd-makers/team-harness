@@ -345,14 +345,18 @@ async function appendGitignore(targetDir, { addAiEntries = false } = {}) {
   const lines = existing.split('\n');
   const has = (line) => lines.some(l => l.trim() === line);
 
-  // Not `.harness/` wholesale: backup.json (the shared backup path) and the cursor
-  // mirror manifest are team state the README asks teams to commit. Only the per-user
-  // pointer/config and the observability logs are personal.
+  // Not `.harness/` wholesale: backup.json (the shared backup path), the cursor mirror
+  // manifest and render-state.json are team state the README asks teams to commit. Only the
+  // per-user pointer/config, the observability logs and the local managed-section backups
+  // are personal. `.harness/backup/` holds verbatim copies of the team's own AGENTS.md /
+  // CLAUDE.md taken before a bootstrap overwrite — a local recovery aid, not a artifact to
+  // commit (codex review P2).
   const harnessNeeded = [
     '.claude/settings.local.json',
     '.harness/active.json',
     '.harness/config.json',
     '.harness/observability/',
+    '.harness/backup/',
   ];
   const harnessMissing = harnessNeeded.filter(line => !has(line));
 

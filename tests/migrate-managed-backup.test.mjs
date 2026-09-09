@@ -66,3 +66,19 @@ test('같은 초에 두 번 실행해도 이전 백업을 덮지 않는다 (누�
     for (const d of dirs) assert.doesNotMatch(d, /\.$/, '이름이 점으로 끝나지 않는다');
   } finally { cap.restore(); await rm(dir, { recursive: true, force: true }); }
 });
+
+// codex 리뷰 P1: 부트스트랩 판정이 전역이면 CLAUDE.md 해시만 있는 부분 상태에서 AGENTS.md가
+// 백업 없이 부트스트랩 교체된다. 판정은 파일 단위여야 한다.
+test('부분 render-state — 해시가 없는 파일은 여전히 백업한다', async () => {
+  const dir = await project(EDITED);
+  const cap = captureLogs();
+  try {
+    await saveRenderState(dir, { version: 1, sections: { 'CLAUDE.md': { workflow: 'abc' } } });
+    const ret = await migrateManagedSectionBackup(ctxYes(dir));
+    cap.restore();
+    assert.equal(ret, true, 'AGENTS.md는 해시가 없으므로 부트스트랩 — 백업해야 한다');
+    const dirs = await readdir(join(dir, '.harness/backup'));
+    const saved = await readFile(join(dir, '.harness/backup', dirs[0], 'AGENTS.md'), 'utf8');
+    assert.equal(saved, EDITED);
+  } finally { cap.restore(); await rm(dir, { recursive: true, force: true }); }
+});
