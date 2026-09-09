@@ -7,7 +7,7 @@ tags:
   - project
   - ai
 created: 2026-04-28
-modified: 2026-09-07
+modified: 2026-09-10
 ---
 
 현재 작업 디렉토리에 팀용 하네스를 설치합니다. **기존 프로젝트에 다시 실행해도 됩니다** —
@@ -21,6 +21,17 @@ deep-merge하며, hooks·rules·skills·`docs/` seed는 이미 있으면 건너�
 하네스가 실제로 배포한 적 있는 버전일 때만 갱신하고, 사용자가 편집한 파일은 건드리지 않습니다.
 낡은 설치본이 있으면 `harness-team doctor`가 경고로 알려 줍니다. `docs/` seed(`README.md`·
 `decisions.md`)는 설치 후 팀이 저작하는 파일이라 **refresh 대상이 아닙니다**.
+
+**관리 절의 사용자 편집은 지우지 않습니다.** 관리 절(`protocol`·`roles`·`workflow`·`stack`·`principles`)은
+**마지막으로 하네스가 렌더한 내용과 바이트가 같을 때만** 템플릿 렌더로 교체합니다. 다르면 — 즉 사용자가
+그 절을 고쳤으면 — **그 절만 건너뛰고 무엇이 반영되지 않았는지 diff로 보여줍니다**. `--yes`에서도 같습니다
+(프롬프트만 생략되고 경고·건너뛰기는 그대로이며, 종료 코드도 바뀌지 않습니다). 템플릿 변경을 반영하려면
+그 diff를 보고 직접 옮긴 뒤 다시 실행하세요.
+
+판정 근거는 `.harness/render-state.json`이며 **커밋 대상**입니다 — `.gitignore`가 `.harness/`를 통째로
+무시하면 팀원이 clone한 뒤 첫 `init`마다 판정 근거가 없어 관리 절을 한 번 덮어씁니다. 근거가 아직 없는
+기존 설치본에서는 첫 실행이 stock으로 간주해 한 번 교체하며, 그 1회는 `migrate`가 원본을 백업하고
+diff로 미리 알려 줍니다(아래 `harness-team migrate` 참고).
 
 Claude의 Bash는 TTY가 아니라 CLI의 readline 프롬프트(사용자명·백업 폴더·gitignore·적용 확인)에 답할 수
 없습니다. 그래서 아래 Step 0~2에서 답을 먼저 받아 **플래그로 넘깁니다** — 플래그 없이 `init`만 실행하지 마세요.

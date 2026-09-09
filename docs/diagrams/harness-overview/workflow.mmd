@@ -35,8 +35,8 @@ sequenceDiagram
         CLI->>Cmd: init.run(cwd, flags)
         Cmd->>FS: readFile(CLAUDE.md)
         FS-->>Cmd: existingContent
-        Cmd->>H: mergeMarkdown(existing, template)
-        Note over H: 마커 외부 사용자 콘텐츠 보존 · 마커 짝이 안 맞으면 건너뛰고 경고
+        Cmd->>H: mergeMarkdown(existing, template, lastRender)
+        Note over H: 마커 외부 사용자 콘텐츠 보존 · 관리 절도 마지막 렌더와 다르면 건너뛰고 diff 경고 · 마커 짝이 안 맞으면 건너뛰고 경고
         H-->>Cmd: mergedContent
         Cmd->>H: deepMergeJson(settings.json)
         Cmd->>H: deepMergeJson(.codex/hooks.json)

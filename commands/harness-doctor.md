@@ -6,12 +6,20 @@ tags:
   - ai
   - obsidian
 created: 2026-04-28
-modified: 2026-09-09
+modified: 2026-09-10
 ---
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" doctor
 ```
+
+**dangling 훅 참조 / 판정 불가**
+
+`.claude/settings.json`이 배선한 훅 중 **프로젝트 내부 경로**를 가리키는 것 — 상대경로(`./.claude/hooks/x.sh`)와
+`${CLAUDE_PROJECT_DIR}` 접두 경로 — 는 파일 존재를 검사해 없으면 ⚠️로 보고한다. 전역 CLI 호출
+(`harness-team session-context 2>/dev/null || true`)은 하네스가 `|| true`로 스스로 부재를 허용하므로 검사하지 않는다.
+어느 모양에도 해당하지 않는 `command`는 **침묵하지 않고 `판정 불가`로 보고한다** — "경고 0"이 "문제 없음"이 아니라
+"검사한 범위 안에서는 문제 없음"을 뜻하게 되는 것을 막기 위해서다. 이 검사도 warn 수준이라 exit code는 바뀌지 않는다.
 
 **observe 트립와이어 경고**
 

@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-08-28
+modified: 2026-09-10
 ---
 
 # harness-aijient-team
@@ -723,9 +723,9 @@ cd ~/work/project-a
 
 ## 설치 결과물
 
-설치되는 파일과 task 계약은 scaffold 되는 `AGENTS.md`의 **작업 프로토콜** 및 `templates/`를 확인합니다. 개인 상태 파일은 `.harness/active.json`에 보관됩니다. 반면 백업 클론 폴더 경로를 기억하는 `.harness/backup.json`은 팀이 공유하는 설정이므로 commit을 권장합니다.
+설치되는 파일과 task 계약은 scaffold 되는 `AGENTS.md`의 **작업 프로토콜** 및 `templates/`를 확인합니다. 개인 상태 파일은 `.harness/active.json`에 보관됩니다. 반면 백업 클론 폴더 경로를 기억하는 `.harness/backup.json`은 팀이 공유하는 설정이므로 commit을 권장합니다. 관리 절의 마지막 렌더 해시를 담는 `.harness/render-state.json`도 **팀 상태이므로 반드시 commit 합니다** — 커밋하지 않으면 팀원이 clone한 뒤 첫 `init`에서 판정 근거가 없어 관리 절의 사용자 편집을 한 번 덮어씁니다.
 
-자동으로 `.gitignore`에 추가되는 항목(`.harness/`를 통째로 무시하지 않습니다 — `backup.json`·`cursor-mirror.json`은 팀 상태):
+자동으로 `.gitignore`에 추가되는 항목(`.harness/`를 통째로 무시하지 않습니다 — `backup.json`·`cursor-mirror.json`·`render-state.json`은 팀 상태):
 - `.claude/settings.local.json` (개인 권한 오버라이드)
 - `.harness/active.json` (개인 활성 task 상태)
 - `.harness/config.json` (개인 docs 사용자명)

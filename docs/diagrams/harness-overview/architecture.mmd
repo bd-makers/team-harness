@@ -18,6 +18,7 @@ graph TB
     subgraph UTIL["Utilities"]
         direction LR
         MERGE["merge.mjs\nmergeMarkdown · extractSections\ndeepMergeJson"]
+        RSTATE["render-state.mjs\n관리 절 렌더 해시\n.harness/render-state.json"]
         RENDER["render.mjs\n{{var}} 치환"]
         DETECT["detect-stack.mjs\nAuto stack detection"]
         MEMBER["member.mjs\ndetectMember"]

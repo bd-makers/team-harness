@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-09-08
+modified: 2026-09-10
 ---
 
 # Changelog
@@ -17,6 +17,20 @@ modified: 2026-09-08
 -->
 
 ## [Unreleased]
+
+### Fixed
+- `migrate`가 설치하지 않는 훅(`observe-tools`)을 `settings.json`에 배선해 SessionStart가 없는 파일을
+  가리키던 문제 — 병합 대상을 `session-context` 항목으로 좁혔다. `migrate` 단독 실행이 끝난 상태도
+  그 자체로 유효해야 한다는 계약을 명시했다.
+- `init` 재실행이 관리 절(`stack`·`principles` 등)의 사용자 편집을 말없이 지우던 문제 — 렌더 provenance를
+  도입해 마지막 렌더 결과와 다른 절은 건너뛰고 diff를 경고한다(`--yes` 포함, 종료 코드 불변).
+- `doctor`가 dangling 훅 참조를 `not present, optional`로만 보고하던 문제 — 프로젝트 내부 경로를 가리키는
+  배선은 파일 존재를 검사해 경고하고, 해석 못 한 `command`는 `판정 불가`로 보고한다.
+
+### Added
+- `.harness/render-state.json` — 관리 절의 마지막 렌더 해시. **커밋 대상**이다.
+- `migrate`가 부트스트랩 설치본의 관리 절 원본을 `.harness/backup/managed-sections-<stamp>/`에 백업하고
+  템플릿 렌더와의 diff를 경고로 보여준다.
 
 ## [0.35.0] - 2026-09-09
 
