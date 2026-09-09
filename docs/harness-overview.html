@@ -370,6 +370,7 @@
     subgraph UTIL["Utilities"]
         direction LR
         MERGE["merge.mjs\nmergeMarkdown · extractSections\ndeepMergeJson"]
+        RSTATE["render-state.mjs\n관리 절 렌더 해시\n.harness/render-state.json"]
         RENDER["render.mjs\n{{var}} 치환"]
         DETECT["detect-stack.mjs\nAuto stack detection"]
         MEMBER["member.mjs\ndetectMember"]
@@ -1059,8 +1060,8 @@
         CLI->>Cmd: init.run(cwd, flags)
         Cmd->>FS: readFile(CLAUDE.md)
         FS-->>Cmd: existingContent
-        Cmd->>H: mergeMarkdown(existing, template)
-        Note over H: 마커 외부 사용자 콘텐츠 보존 · 마커 짝이 안 맞으면 건너뛰고 경고
+        Cmd->>H: mergeMarkdown(existing, template, lastRender)
+        Note over H: 마커 외부 사용자 콘텐츠 보존 · 관리 절도 마지막 렌더와 다르면 건너뛰고 diff 경고 · 마커 짝이 안 맞으면 건너뛰고 경고
         H-->>Cmd: mergedContent
         Cmd->>H: deepMergeJson(settings.json)
         Cmd->>H: deepMergeJson(.codex/hooks.json)
@@ -1969,6 +1970,11 @@
             <td>CLI가 공유하는 핵심 모듈</td>
           </tr>
           <tr>
+            <td><code>src/render-state.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>CLI가 공유하는 핵심 모듈</td>
+          </tr>
+          <tr>
             <td><code>src/render.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
             <td>CLI가 공유하는 핵심 모듈</td>
@@ -2190,6 +2196,11 @@
           </tr>
           <tr>
             <td><code>tests/e2e/init-smoke.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/e2e/legacy-migrate-init.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>
@@ -2419,6 +2430,11 @@
             <td>자동 회귀 검증</td>
           </tr>
           <tr>
+            <td><code>tests/managed-section-provenance.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
             <td><code>tests/manifest-sync.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
@@ -2430,6 +2446,11 @@
           </tr>
           <tr>
             <td><code>tests/migrate-hooks.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/migrate-managed-backup.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>
@@ -2485,6 +2506,11 @@
           </tr>
           <tr>
             <td><code>tests/release.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/render-state.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>

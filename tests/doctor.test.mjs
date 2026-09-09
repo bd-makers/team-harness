@@ -6,7 +6,7 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from 'node:fs
 import { tmpdir, homedir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, DECISION_HEADINGS, checkObserveTripWires, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
+import { classifyHookCommand, collectHookCommands, redactCommand, checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, DECISION_HEADINGS, checkObserveTripWires, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
 import { POST_COMMIT_HOOK } from '../src/git-hooks.mjs';
 import { cloudSyncPathWarning } from '../src/harness.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
@@ -1019,4 +1019,97 @@ test('checkObserveTripWires: 3일 전 실패도 창(7일) 안이면 경고 — o
     }
     assert.match((await checkObserveTripWires(dir)) ?? '', /repeat-failure-3x/);
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// --- 결함 3: dangling 훅 참조 / 판정 불가 (migrate-init-gaps plan 5) ---
+
+test('classifyHookCommand: 상대경로 → project-path', () => {
+  assert.deepEqual(classifyHookCommand('./.claude/hooks/protect-files.sh'),
+    { kind: 'project-path', rel: '.claude/hooks/protect-files.sh' });
+});
+
+test('classifyHookCommand: ${CLAUDE_PROJECT_DIR} 접두 → project-path', () => {
+  assert.deepEqual(classifyHookCommand('node "${CLAUDE_PROJECT_DIR}/.claude/hooks/observe-tools.mjs"'),
+    { kind: 'project-path', rel: '.claude/hooks/observe-tools.mjs' });
+});
+
+test('classifyHookCommand: 전역 CLI → global-cli (검사 대상 아님)', () => {
+  assert.equal(classifyHookCommand('harness-team session-context 2>/dev/null || true').kind, 'global-cli');
+});
+
+test('classifyHookCommand: 해석 불가 → unknown (침묵하지 않는다)', () => {
+  assert.equal(classifyHookCommand('cat foo | awk "{print}" > /tmp/x').kind, 'unknown');
+});
+
+test('collectHookCommands: 모든 이벤트·그룹에서 command를 모은다', () => {
+  const settings = { hooks: {
+    SessionStart: [{ hooks: [{ type: 'command', command: 'a' }, { type: 'command', command: 'b' }] }],
+    PreToolUse: [{ matcher: 'Edit', hooks: [{ type: 'command', command: 'c' }] }],
+  } };
+  assert.deepEqual(collectHookCommands(settings).sort(), ['a', 'b', 'c']);
+});
+
+test('doctor: settings가 없는 프로젝트 내부 훅을 가리키면 경고한다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-dangling-'));
+  try {
+    await mkdir(join(dir, '.claude'), { recursive: true });
+    await writeFile(join(dir, '.claude/settings.json'), JSON.stringify({
+      hooks: { SessionStart: [{ hooks: [{ type: 'command', command: 'node "${CLAUDE_PROJECT_DIR}/.claude/hooks/ghost.mjs"' }] }] },
+    }, null, 2));
+    const env = await doctorJson(dir);
+    const hit = (env.checks || []).find(c => c.status === 'warning' && /ghost\.mjs/.test(c.detail ?? ''));
+    assert.ok(hit, 'dangling 참조가 warning으로 보고된다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('doctor: 해석하지 못한 command는 판정 불가로 보고한다 (침묵 금지)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-unknown-'));
+  try {
+    await mkdir(join(dir, '.claude'), { recursive: true });
+    await writeFile(join(dir, '.claude/settings.json'), JSON.stringify({
+      hooks: { SessionStart: [{ hooks: [{ type: 'command', command: 'cat foo | awk "{print}"' }] }] },
+    }, null, 2));
+    const env = await doctorJson(dir);
+    const hit = (env.checks || []).find(c => c.status === 'warning' && /판정 불가/.test(c.detail ?? ''));
+    assert.ok(hit, '해석 못 한 command가 보고된다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('classifyHookCommand: 따옴표로 감싼 상대경로도 project-path', () => {
+  assert.deepEqual(classifyHookCommand('"./.claude/hooks/x.sh"'),
+    { kind: 'project-path', rel: '.claude/hooks/x.sh' });
+});
+
+test('classifyHookCommand: cd 인자 같은 확장자 없는 경로는 훅 스크립트가 아니다 (dangling 오탐 방지)', () => {
+  // `./subdir`을 훅 파일로 보면 존재하지 않을 때 거짓 dangling 경고가 난다.
+  assert.equal(classifyHookCommand('cd ./subdir && harness-team session-context').kind, 'global-cli');
+});
+
+test('classifyHookCommand: 인터프리터 뒤 상대경로 스크립트를 고른다', () => {
+  assert.deepEqual(classifyHookCommand('bash ./scripts/a.sh --conf ./etc/b.conf'),
+    { kind: 'project-path', rel: 'scripts/a.sh' });
+});
+
+// codex 리뷰 P2: 정규식이 인자를 실행 대상으로 오인했다. 실행 대상 파싱으로 바꾼 뒤의 계약.
+test('classifyHookCommand: 인자로 온 상대경로를 훅으로 오인하지 않는다', () => {
+  assert.equal(classifyHookCommand('harness-team session-context --config ./missing.json').kind, 'global-cli');
+  assert.equal(classifyHookCommand('node runner.mjs --config ./missing.json').kind, 'unknown');
+});
+
+test('classifyHookCommand: 확장자 없는 훅과 연산자가 붙은 경로도 잡는다', () => {
+  assert.deepEqual(classifyHookCommand('./.claude/hooks/pre-commit'),
+    { kind: 'project-path', rel: '.claude/hooks/pre-commit' });
+  assert.deepEqual(classifyHookCommand('./hook.sh&&true'), { kind: 'project-path', rel: 'hook.sh' });
+});
+
+test('classifyHookCommand: 전역 CLI는 따옴표·절대경로 형태도 인식한다', () => {
+  assert.equal(classifyHookCommand('"harness-team" session-context').kind, 'global-cli');
+  assert.equal(classifyHookCommand('/usr/local/bin/harness-team session-context').kind, 'global-cli');
+});
+
+// codex 리뷰 P2: unknown command 원문을 찍으면 비밀값이 doctor 출력·수집 로그로 나간다.
+test('redactCommand: 실행 대상만 남기고 인자는 생략한다 (secret 노출 방지)', () => {
+  const out = redactCommand('API_TOKEN=s3cr3t custom-hook --auth "Bearer abc123"');
+  assert.doesNotMatch(out, /s3cr3t|abc123/, '비밀값이 나가지 않는다');
+  assert.match(out, /custom-hook/, '어느 훅인지는 알 수 있다');
 });

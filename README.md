@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-08-28
+modified: 2026-09-10
 ---
 
 # harness-aijient-team
@@ -723,9 +723,9 @@ cd ~/work/project-a
 
 ## 설치 결과물
 
-설치되는 파일과 task 계약은 scaffold 되는 `AGENTS.md`의 **작업 프로토콜** 및 `templates/`를 확인합니다. 개인 상태 파일은 `.harness/active.json`에 보관됩니다. 반면 백업 클론 폴더 경로를 기억하는 `.harness/backup.json`은 팀이 공유하는 설정이므로 commit을 권장합니다.
+설치되는 파일과 task 계약은 scaffold 되는 `AGENTS.md`의 **작업 프로토콜** 및 `templates/`를 확인합니다. 개인 상태 파일은 `.harness/active.json`에 보관됩니다. 반면 백업 클론 폴더 경로를 기억하는 `.harness/backup.json`은 팀이 공유하는 설정이므로 commit을 권장합니다. 관리 절의 마지막 렌더 해시를 담는 `.harness/render-state.json`도 **팀 상태이므로 반드시 commit 합니다** — 커밋하지 않으면 팀원이 clone한 뒤 첫 `init`에서 판정 근거가 없어 관리 절의 사용자 편집을 한 번 덮어씁니다.
 
-자동으로 `.gitignore`에 추가되는 항목(`.harness/`를 통째로 무시하지 않습니다 — `backup.json`·`cursor-mirror.json`은 팀 상태):
+자동으로 `.gitignore`에 추가되는 항목(`.harness/`를 통째로 무시하지 않습니다 — `backup.json`·`cursor-mirror.json`·`render-state.json`은 팀 상태):
 - `.claude/settings.local.json` (개인 권한 오버라이드)
 - `.harness/active.json` (개인 활성 task 상태)
 - `.harness/config.json` (개인 docs 사용자명)
@@ -755,8 +755,10 @@ Claude Code 도구 관측은 원문을 보존하지 않는 로컬 JSONL만 `.har
 - `AGENTS.md` (공유 코어): `principles`, `stack`, `roles`, `protocol`
 - `CLAUDE.md` (얇음): 최상단 `@AGENTS.md` import + `workflow`
 
-이 섹션들을 직접 수정해도 `/harness-init` 재실행 시 템플릿으로 덮어쓰여집니다.
-영구 커스터마이즈는 `<!-- harness:user -->` 블록 또는 마커 밖에 작성하세요. begin/end 마커 중 하나만 지우면
+이 섹션들을 직접 수정하면 `/harness-init` 재실행이 **그 절을 건너뛰고 diff를 경고로 보여줍니다** —
+사용자 편집을 지우지 않습니다(판정 근거: `.harness/render-state.json`). 다만 그만큼 **템플릿 개선도
+그 절에는 도달하지 않으므로**, 경고에 실린 diff를 보고 직접 옮겨야 합니다. 하네스 갱신을 계속 받고
+싶은 내용이라면 `<!-- harness:user -->` 블록이나 마커 밖에 두는 편이 낫습니다. begin/end 마커 중 하나만 지우면
 그 파일은 병합하지 않고 경고합니다 — 예전에는 두 번째 실행에서 마커 사이의 사용자 텍스트가 지워졌습니다.
 
 ---

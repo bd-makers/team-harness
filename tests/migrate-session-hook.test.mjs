@@ -196,3 +196,31 @@ test('실행 불가 boundary script는 migrate 완료로 보고하지 않는다'
     assert.ok(!cap.lines.some(line => line.includes('Nothing to migrate')));
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+// --- 결함 1: 설치하지 않는 훅을 배선하지 않는다 (migrate-init-gaps plan 4) ---
+
+test('SessionStart 병합은 session-context만 — observe-tools를 배선하지 않는다', async () => {
+  const dir = await fixture(PRE_GATE);
+  try {
+    await migrateSessionStartHook(ctxYes(dir));
+    const wired = JSON.stringify((await readSettings(dir)).hooks.SessionStart);
+    assert.ok(wired.includes('harness-team session-context'), 'task-gate는 배선된다');
+    assert.ok(!wired.includes('observe-tools'),
+      'migrate는 설치하지 않는 훅을 배선하지 않는다 — init이 설치한다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('migrate가 배선한 훅이 파일을 요구하면 그 파일이 존재한다', async () => {
+  const dir = await fixture(PRE_GATE);
+  try {
+    await migrateSessionStartHook(ctxYes(dir));
+    const groups = (await readSettings(dir)).hooks.SessionStart;
+    const cmds = groups.flatMap(g => g.hooks.map(h => h.command));
+    for (const cmd of cmds) {
+      const m = cmd.match(/\$\{CLAUDE_PROJECT_DIR\}\/([^"'\s]+)|(?:^|\s)(\.\/[^"'\s]+)/);
+      if (!m) continue; // 전역 CLI — 검사 대상 아님
+      const rel = m[1] ?? m[2].replace(/^\.\//, '');
+      await stat(join(dir, rel)); // 없으면 throw → 테스트 실패
+    }
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

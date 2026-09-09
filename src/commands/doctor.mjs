@@ -465,6 +465,114 @@ export async function checkEagerTierSize(targetDir, env = process.env) {
   return `eager 계층 ${fmt(total)} B > ${fmt(EAGER_TIER_MAX_BYTES)} B(24 KiB) — 매 세션 무조건 로드되는 지시가 큽니다. 내역: ${breakdown}. ${advice.join(' ')}`;
 }
 
+// settings.json의 hook `command`는 세 모양이다(templates/.claude/settings.json):
+//   1. ./.claude/hooks/x.sh                                  — 프로젝트 상대경로
+//   2. node "${CLAUDE_PROJECT_DIR}/.claude/hooks/x.mjs"      — 변수 접두 경로
+//   3. harness-team session-context 2>/dev/null || true      — 전역 CLI + 셸 연산자
+// 3번은 하네스가 `|| true`로 스스로 부재를 허용하므로 dangling이 아니다 — 검사하면 오탐이다.
+// 어디에도 안 맞는 command는 침묵하지 않고 unknown으로 보고한다: "경고 0"이 "문제 없음"이 아니라
+// "검사한 범위 안에서는 문제 없음"을 뜻하게 되는 것이 결함 3의 본질이었다.
+// hook `command`에서 **실행 대상**을 뽑아 분류한다.
+//
+// 처음에는 문자열 어디서든 경로 모양을 찾았는데, 그러면 인자를 실행 대상으로 오인한다 —
+// `harness-team session-context --config ./missing.json`이 `missing.json`을 dangling으로
+// 신고했다(codex 리뷰 P2). 확장자 휴리스틱도 `.json` 인자를 잡고 확장자 없는 훅은 놓쳤다.
+// 그래서 셸 연산자로 자른 뒤 각 세그먼트의 **첫 토큰**(env 대입과 인터프리터는 건너뛴다)만 본다.
+const INTERPRETERS = new Set(['node', 'bash', 'sh', 'zsh', 'python', 'python3', 'ruby', 'perl', 'deno', 'bun']);
+const ENV_ASSIGN_RE = /^[A-Za-z_][A-Za-z0-9_]*=/;
+
+const stripQuotes = (t) => t.replace(/^["']|["']$/g, '');
+
+// 셸 연산자(&&, ||, ;, |)로 자른다. 붙여 쓴 `./hook.sh&&true`도 갈라진다.
+function commandSegments(command) {
+  return command.split(/\s*(?:&&|\|\||[;|])\s*/).map(x => x.trim()).filter(Boolean);
+}
+
+// 한 세그먼트의 실행 대상 토큰. env 대입을 건너뛰고, 인터프리터면 그 다음 비-플래그 인자를 쓴다.
+function executableToken(segment) {
+  const tokens = segment.split(/\s+/).map(stripQuotes).filter(Boolean);
+  let i = 0;
+  while (i < tokens.length && ENV_ASSIGN_RE.test(tokens[i])) i++;
+  if (i >= tokens.length) return null;
+  const head = tokens[i];
+  const base = head.split('/').pop();
+  if (INTERPRETERS.has(base)) {
+    for (let j = i + 1; j < tokens.length; j++) {
+      if (!tokens[j].startsWith('-')) return tokens[j];
+    }
+    return null;
+  }
+  return head;
+}
+
+// 리다이렉션 잔여물(2>/dev/null 등)은 실행 대상이 아니다.
+const isRedirect = (t) => /^\d*[<>]/.test(t);
+
+export function classifyHookCommand(command) {
+  if (typeof command !== 'string' || command.trim() === '') return { kind: 'unknown' };
+  for (const segment of commandSegments(command)) {
+    const target = executableToken(segment);
+    if (!target || isRedirect(target)) continue;
+    const varMatch = target.match(/^\$\{CLAUDE_PROJECT_DIR\}\/(.+)$/);
+    if (varMatch) return { kind: 'project-path', rel: varMatch[1] };
+    if (target.startsWith('./')) return { kind: 'project-path', rel: target.slice(2) };
+    // 전역 CLI는 경로·따옴표 형태가 무엇이든 basename으로 판정한다
+    // (`/usr/local/bin/harness-team`, `"harness-team"` 모두 포함).
+    if (target.split('/').pop() === 'harness-team') return { kind: 'global-cli' };
+  }
+  return { kind: 'unknown' };
+}
+
+// unknown command를 원문 그대로 찍으면 `API_TOKEN=… custom-hook`이나 Authorization 헤더가
+// doctor 출력(사람·--json)과 수집 로그에 실린다(codex 리뷰 P2). 첫 세그먼트의 실행 대상만
+// 보여주고 나머지는 생략한다 — 사람이 어느 훅인지 알기에는 충분하고 비밀값은 나가지 않는다.
+export function redactCommand(command) {
+  if (typeof command !== 'string') return '(비어 있음)';
+  const target = executableToken(commandSegments(command)[0] ?? '');
+  if (!target) return '(해석 불가)';
+  const shown = target.length > 60 ? `${target.slice(0, 57)}...` : target;
+  return `${shown} …(인자 생략)`;
+}
+
+export function collectHookCommands(settings) {
+  const events = settings?.hooks;
+  if (!events || typeof events !== 'object') return [];
+  const out = [];
+  for (const groups of Object.values(events)) {
+    if (!Array.isArray(groups)) continue;
+    for (const group of groups) {
+      for (const hook of group?.hooks ?? []) {
+        if (hook?.type === 'command' && typeof hook.command === 'string') out.push(hook.command);
+      }
+    }
+  }
+  return out;
+}
+
+// settings가 배선한 훅 중 프로젝트 내부 파일을 가리키는 것의 존재를 검사한다.
+// CHECKS의 정적 목록과는 다른 축이다: 저쪽은 "파일이 있는가", 이쪽은 "배선이 정합한가".
+// 결함 1(migrate가 설치 안 한 훅을 배선) 같은 상태가 여기서 잡힌다.
+async function checkWiredHooks(ctx, add) {
+  const raw = await readFile(join(ctx.targetDir, '.claude/settings.json'), 'utf8').catch(() => null);
+  if (raw === null) return;
+  let settings;
+  try { settings = JSON.parse(raw); } catch { return; } // 파싱 실패는 기존 json 체크가 이미 보고한다
+  for (const command of collectHookCommands(settings)) {
+    const c = classifyHookCommand(command);
+    if (c.kind === 'global-cli') continue;
+    if (c.kind === 'unknown') {
+      const safe = redactCommand(command);
+      add('hook command', 'warning', `판정 불가 — 이 command가 가리키는 대상을 검사하지 못했습니다: ${safe}`,
+        `⚠️  hook command  (판정 불가: ${safe})`);
+      continue;
+    }
+    if (await exists(join(ctx.targetDir, c.rel))) continue;
+    add(`hook → ${c.rel}`, 'warning',
+      `${c.rel}: settings.json이 배선했지만 파일이 없습니다 (dangling) — run: harness-team init`,
+      `⚠️  hook → ${c.rel}  (settings.json이 배선했지만 파일 없음 — run: harness-team init)`);
+  }
+}
+
 const CHECKS = [
   { path: 'AGENTS.md', required: true, realFile: true, contains: 'harness:section="protocol"' },
   { path: 'CLAUDE.md', required: true, realFile: true, contains: '@AGENTS.md' },
@@ -571,6 +679,8 @@ export async function runDoctor(ctx) {
     }
     add(c.path, 'pass', undefined, `✓ ${c.path}`);
   }
+
+  await checkWiredHooks(ctx, add);
 
   // Harness scripts live in the project root since v0.3+ (consumer projects only).
   line('');
