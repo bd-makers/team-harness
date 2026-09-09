@@ -694,6 +694,23 @@ export async function migrateToAgentsMd(ctx) {
 // (init's deep-merge is the other path). This adds just the SessionStart hook,
 // pulled from the template as the single source so the command never drifts.
 
+// migrate는 "구조를 최신으로 옮기는" 명령이지 "설치를 템플릿과 동일하게 만드는" 명령이 아니다.
+// 템플릿의 SessionStart 그룹에는 task-gate(전역 CLI)와 observe-tools(프로젝트 내부 파일)가 함께 있다.
+// 그룹 통째로 병합하면 후자까지 배선되는데, refreshClaudeHooks는 없는 파일을 설치하지 않으므로
+// (installed === null → continue — 사용자가 일부러 지운 훅을 되살리지 않기 위한 불변식)
+// settings가 없는 파일을 가리키는 상태로 남았다. 배선을 task-gate로 좁혀 그 상태를 없앤다.
+// 사용자가 observe-tools를 원하면 init이 설치하며 배선한다.
+export function narrowToSessionContext(groups) {
+  if (!Array.isArray(groups)) return groups;
+  return groups
+    .map(group => ({
+      ...group,
+      hooks: (group?.hooks ?? []).filter(hook =>
+        typeof hook?.command === 'string' && hook.command.includes('harness-team session-context')),
+    }))
+    .filter(group => group.hooks.length > 0);
+}
+
 export async function migrateSessionStartHook(ctx) {
   const { root, targetDir } = ctx;
   const settingsPath = join(targetDir, '.claude/settings.json');
@@ -714,9 +731,9 @@ export async function migrateSessionStartHook(ctx) {
   }
 
   const tplRaw = await readTextSafe(join(root, 'templates/.claude/settings.json'));
-  const tplSessionStart = tplRaw ? JSON.parse(tplRaw).hooks?.SessionStart : null;
-  if (!tplSessionStart) {
-    console.log('  SessionStart task-gate: 템플릿에 SessionStart 없음 — 건너뜀');
+  const tplSessionStart = narrowToSessionContext(tplRaw ? JSON.parse(tplRaw).hooks?.SessionStart : null);
+  if (!tplSessionStart || tplSessionStart.length === 0) {
+    console.log('  SessionStart task-gate: 템플릿에 session-context 훅 없음 — 건너뜀');
     return false;
   }
 
