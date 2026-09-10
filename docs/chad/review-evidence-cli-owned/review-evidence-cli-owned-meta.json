@@ -6,5 +6,16 @@
   "status": "open",
   "closedAt": null,
   "forcedAt": null,
-  "forcedIssues": null
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "claude-adversarial",
+      "engine": "claude",
+      "scope": "worktree",
+      "tip": "826826bb98a9647b1fea1733c1a9c5123e9ffd71",
+      "at": "2026-09-10T16:16:37.115Z",
+      "exitCode": 0,
+      "outputBytes": 10555
+    }
+  ]
 }

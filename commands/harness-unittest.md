@@ -149,7 +149,9 @@ Principles, Practices, and Patterns* 전략을 실행 규칙으로 적용해 단
 
 중요한 변경(AGENTS.md 리뷰 프로토콜 기준)이면 완료 선언 전에 작성자가 아닌 **별도 컨텍스트의
 read-only 검증자**에게 새 테스트를 비평시킨다. 절차·엔진 표는 `/harness-review`를 그대로 쓰되
-리뷰 프롬프트를 아래 루브릭으로 교체하고, 마커는 `kind=<engine>-testcritic`으로 남긴다.
+리뷰 프롬프트를 아래 루브릭으로 교체한다 — 루브릭을 파일에 쓰고
+`harness-team review <engine> --framing testcritic --prompt-file <path>`로 실행하면 CLI가
+`kind=<engine>-testcritic`으로 meta.reviews와 artifact 마커를 남긴다(마커를 손으로 쓰지 않는다).
 검증자의 발견은 주장이다 — 재현·판별 후 반영한다. 사소한 변경에는 실행하지 않는다.
 
 | id | 항목 | 심각도 |

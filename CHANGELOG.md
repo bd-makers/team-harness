@@ -18,6 +18,24 @@ modified: 2026-09-10
 
 ## [Unreleased]
 
+### Added
+- **`harness-team review` — 리뷰 엔진의 실행과 증거 기록을 harness가 소유합니다.** 지금까지 `done` 가드의
+  리뷰·검증 증거는 에이전트가 artifact에 손으로 append한 마커 한 줄이었고, "리뷰를 돌리지 않고 마커만
+  쓰기"가 절차 안의 지름길이었습니다. 새 명령은 `harness-review.md`의 엔진 runner 표(codex·claude·custom)를
+  그대로 실행하고, **성공(exit 0)한 실행만** `<name>-meta.json`의 `reviews[]`와 artifact `## Reviews`
+  블록(출력 + 종전 형식 마커)에 기록합니다. 실패는 아무것도 쓰지 않습니다. `--framing <접미사>`로
+  검증 프레이밍 kind를 조립하고(열거 밖은 거부), `--prompt-file`·`--scope task-docs`로 페르소나 외부 엔진
+  모드를 지원합니다.
+
+### Changed
+- **`verify: required` 가드가 `meta.reviews[]`를 읽습니다.** meta에 `reviews` 키가 있으면(새 task 템플릿,
+  또는 CLI가 한 번이라도 기록한 task) 손으로 쓴 artifact 마커는 검증 증거로 세지 않습니다. `review: required`는
+  meta 항목·artifact 마커 어느 쪽이든 종전대로 인정합니다. `reviews` 키가 없는 구 task는 종전 판정 그대로입니다
+  — 소급하지 않습니다. 위협 모델(망각·실수)은 그대로이며, 바뀌는 것은 증거를 만드는 코드 경로가 에이전트의
+  절차에서 harness로 옮겨진 것뿐입니다. 리뷰 **품질**은 여전히 기계가 판정하지 않습니다.
+- `harness-review.md` 3·5단계와 프레이밍 커맨드 7종(adversarial·unittest/inttest/comptest testcritic·
+  ship shipcheck·contrarian·simplifier)이 마커를 손으로 쓰는 대신 CLI를 호출하도록 갱신됐습니다.
+
 ## [0.36.0] - 2026-09-10
 
 ### Fixed

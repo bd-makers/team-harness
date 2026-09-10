@@ -44,10 +44,15 @@ Raw slash-command 인수:
    그 값, 없으면 `origin/main`, 그것도 없으면(`git rev-parse --verify origin/main` 실패)
    `main`. diff가 비어 있으면 리뷰할 것이 없다고 보고하고 종료한다.
 
-3. **실행** — 아래 "엔진 runner 표"의 해당 행으로 공용 리뷰 프롬프트를 실행한다.
-   규모가 작으면(대략 파일 1~2개) 포그라운드, 그 외에는 Bash 백그라운드로 실행한다.
+3. **실행** — `harness-team review [엔진] [--base <ref>] [focus ...]`를 실행한다. CLI가 1·2단계를
+   같은 규칙으로 다시 판정하고(엔진 인자·`--base`·focus를 그대로 넘긴다), 아래 "엔진 runner 표"의
+   해당 행으로 공용 리뷰 프롬프트를 돌린 뒤, **성공(exit 0)한 실행만** 5단계의 기록을 남긴다.
+   실패(exit ≠ 0·엔진 미가용)는 아무것도 기록하지 않고 error 패킷을 낸다 — 실패한 실행은 증거가
+   아니다. 규모가 작으면(대략 파일 1~2개) 포그라운드, 그 외에는 Bash 백그라운드로 실행한다.
+   엔진 CLI를 손으로 직접 돌리는 것은 금지가 아니지만 **가드에 보이지 않는다**.
 
-   공용 리뷰 프롬프트 (엔진 무관 — `<...>`만 채운다):
+   공용 리뷰 프롬프트 (엔진 무관 — `<...>`만 채운다. 정본은 이 블록이고 `src/commands/review.mjs`의
+   상수는 pin 테스트가 동기화한다):
 
    ```text
    You are performing an independent read-only code review of this repository.
@@ -61,17 +66,22 @@ Raw slash-command 인수:
    재현·대조해 **진짜 결함 / 오탐**을 판별한 뒤 보고한다. 검증 없이 지적을 그대로
    반영하거나 기각하지 않는다.
 
-5. **기록** — 활성 task가 있으면 artifact `## Reviews`에 날짜·**실행 엔진**과 함께
-   요약·발견·판별 결과·조치를 append 한다. 폴백 체인으로 엔진이 내려갔다면(예: codex
-   미설치로 claude 실행) 건너뛴 엔진과 사유도 명기한다. 활성 task가 없으면 기록할
-   곳이 없다는 사실을 사용자에게 보고한다.
+5. **기록** — 기록의 기계 판독 부분은 3단계의 CLI가 이미 남겼다. 성공한 실행마다 두 곳에 쓴다:
 
-   기록 끝에 기계 판독용 마커를 **한 줄로** append 한다 — `harness-team done`의
-   리뷰 가드(`review: required`)가 이 마커를 스캔한다:
+   - **`<name>-meta.json`의 `reviews[]`** — `{ kind, engine, scope, tip, at, exitCode, outputBytes }`.
+     harness 소유 기계 상태이며 `verify: required` 가드의 **정본**이다. 손으로 고치지 않는다.
+   - **artifact `## Reviews`** — `### <at> — <kind> (harness-team review)` 헤딩, 엔진·scope·tip·크기 한 줄,
+     엔진 출력(상한 초과분은 잘라내고 잘랐다고 표기), 그리고 종전 형식의 마커 한 줄:
 
    ```text
    <!-- harness:review kind=<engine> scope=<worktree|diff> tip=<HEAD sha|none> at=<ISO8601 UTC> -->
    ```
+
+   에이전트가 쓰는 것은 그 블록 **아래의 산문**이다 — 4단계 판별 결과(진짜 결함/오탐)와 조치,
+   폴백 체인으로 엔진이 내려갔다면(예: codex 미설치로 claude 실행) 건너뛴 엔진과 사유.
+   **마커를 손으로 쓰지 않는다.** 손으로 쓴 마커는 `review: required`에는 종전대로 보이지만,
+   `reviews` 키가 있는 meta에서 `verify: required`는 `meta.reviews`만 세므로 검증 증거가 되지 않는다.
+   활성 task가 없으면 CLI가 실행 전에 거부한다 — 기록할 곳이 없는 리뷰를 돌리지 않는다.
 
    `kind`는 실행 엔진과 검증 프레이밍을 식별한다 — 이 문서의 기본 리뷰 프레이밍에서는
    엔진 이름 그대로(`codex`·`claude`·`custom`), 다른 프레이밍에서는 아래 접미사
@@ -87,15 +97,26 @@ Raw slash-command 인수:
    정합 검증), `<engine>-contrarian`·`<engine>-simplifier`(페르소나 외부 엔진 모드 —
    대상이 diff가 아니라 활성 task의 spec/plan 문서라 `scope=task-docs`로 남긴다).
    가드의 대조 규칙은 증거 키에 따라 다르다 — `review: required`는 kind를 목록 대조하지
-   않아 어떤 kind든 마커로 인정하지만, `verify: required`는 kind가 **위 접미사 열거로
-   끝나는 마커만** 검증 증거로 센다(이 열거가 verify kind allowlist의 정본이고,
-   `src/commands/task.mjs`의 상수는 pin 테스트로 동기화된다). 검증 마커는 review 증거를
-   겸하지만 역은 성립하지 않는다.
+   않아 어떤 kind든(meta 항목이든 artifact 마커든) 인정하지만, `verify: required`는 kind가
+   **위 접미사 열거로 끝나는 항목만** 검증 증거로 센다(이 열거가 verify kind allowlist의
+   정본이고, `src/commands/task.mjs`의 상수는 pin 테스트로 동기화된다). `--framing`도 이 열거
+   밖의 접미사를 거부한다. 검증 증거는 review 증거를 겸하지만 역은 성립하지 않는다.
+   프레이밍 커맨드는 자기 프롬프트를 파일에 두고
+   `harness-team review <engine> --framing <접미사> --prompt-file <path> [--scope task-docs]`로
+   호출한다 — kind 조립은 CLI가 한다.
+
+   **구 task 호환.** `reviews` 키가 없는 meta(이 변경 이전에 만든 task)는 종전대로 artifact 마커로
+   판정하고, CLI도 그 task에는 **키를 만들지 않는다** — artifact 마커만 남긴다(그 마커가 종전 증거다).
+   소급하지 않는다 — 이미 있던 증거를 무효로 만들면 가드가 `--force` 훈련기가 된다.
+   같은 task에 리뷰를 **동시에** 두 번 돌리지 않는다 — meta 쓰기는 다른 meta 쓰기(`done`·`task`)와
+   같이 잠금 없는 read-modify-write라 D4(단일 스레드)가 전제다.
 
 6. **보고** — 사용자에게 실행 엔진, 심각도순 발견 목록과 판별 결과를 전달한다.
    수정 제안이 있으면 제안까지만 하고 멈춘다.
 
 ## 엔진 runner 표
+
+이 표가 정본이고 `harness-team review`가 그대로 구현한다(`src/commands/review.mjs`). 행을 바꾸면 코드도 바꾼다.
 
 ### codex
 
@@ -136,7 +157,10 @@ gitignore 대상이 아니다)에서 커맨드 템플릿을 읽어 `{prompt}`를
 ```
 
 **치환 계약**: `{prompt}`는 **POSIX 단일 인용 리터럴 하나**로 치환한다 — 프롬프트 전체를
-`'...'`로 감싸고 내부의 `'`는 `'\''`로 이스케이프한다. focus 문구에 셸 문법이 섞여 있어도
+`'...'`로 감싸고 내부의 `'`는 `'\''`로 이스케이프한다. 따라서 템플릿의 `{prompt}`는 **공백으로
+둘러싸인 독립 토큰**이어야 한다 — `echo '{prompt}'`처럼 자기 따옴표 안에 넣으면 그 따옴표가 치환
+결과의 첫 `'`와 짝을 이뤄 프롬프트 내용이 인용 밖으로 나온다(셸 명령이 된다). CLI는 이 자리를
+검사해 실행 전에 거부한다. focus 문구에 셸 문법이 섞여 있어도
 명령이 아닌 **데이터**로 전달되어야 한다(다른 엔진들이 프롬프트를 단일 인용 인자로 받는
 것과 같은 계약). 치환 결과 외의 문자열을 템플릿에 추가·해석하지 않는다.
 

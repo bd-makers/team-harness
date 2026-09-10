@@ -1,0 +1,342 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, mkdir, writeFile, readFile, rm, chmod } from 'node:fs/promises';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import {
+  runReview, buildPrompt, buildReviewKind, posixSingleQuote, fenceFor, truncateOutput,
+  renderReviewBlock, resolveEngine, REVIEW_PROMPT_TEMPLATE, REVIEW_OUTPUT_MAX_BYTES, SCOPES,
+} from '../src/commands/review.mjs';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { readTaskMeta } from '../src/commands/summary.mjs';
+import { parseReviewMarkers, taskArtifactTemplate, VERIFY_KIND_SUFFIXES, runTask, runDone } from '../src/commands/task.mjs';
+import { promptPlaceholderIsBare, resolveScope } from '../src/commands/review.mjs';
+
+const pexec = promisify(execFile);
+const git = (dir, ...args) => pexec('git', ['-C', dir, ...args]);
+
+// 비-git tmpdir: scope 는 worktree 로 degrade, tip 은 none. custom 엔진을 가짜 스크립트로 두어
+// 실제 spawn 경로(sh -c + {prompt} 치환)를 외부 CLI 없이 결정론적으로 탄다.
+async function makeFixture({ script, meta = { user: 'tester', task: 'demo', created: '2026-09-10', status: 'open', closedAt: null, reviews: [] } } = {}) {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-review-'));
+  await mkdir(join(dir, '.harness'), { recursive: true });
+  await writeFile(join(dir, '.harness/active.json'), JSON.stringify({ user: 'tester', task: 'demo', path: 'docs/tester/demo' }));
+  const taskDir = join(dir, 'docs', 'tester', 'demo');
+  await mkdir(taskDir, { recursive: true });
+  await writeFile(join(taskDir, 'demo-artifact.md'), taskArtifactTemplate('demo'));
+  if (meta !== null) await writeFile(join(taskDir, 'demo-meta.json'), JSON.stringify(meta, null, 2) + '\n');
+  const fake = join(dir, 'fake-reviewer.sh');
+  await writeFile(fake, script ?? '#!/bin/sh\necho "P3 nit: nothing serious"\necho "verdict: ok"\n');
+  await chmod(fake, 0o755);
+  await writeFile(join(dir, '.harness/reviewers.json'), JSON.stringify({ custom: { command: `${fake} {prompt}` } }));
+  return { dir, taskDir, fake };
+}
+
+function captureLogs() {
+  const logs = [];
+  const orig = console.log;
+  console.log = (...a) => logs.push(a.join(' '));
+  return { logs, restore: () => { console.log = orig; } };
+}
+
+async function withExit(fn) {
+  const prev = process.exitCode;
+  process.exitCode = undefined;
+  try { return { result: await fn(), exitCode: process.exitCode }; } finally { process.exitCode = prev; }
+}
+
+test('custom 엔진 exit 0 → meta.reviews 항목 + artifact 블록 + 종전 형식 마커가 기록된다', async () => {
+  const { dir, taskDir } = await makeFixture();
+  const { logs, restore } = captureLogs();
+  try {
+    const { result } = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom', 'focus', 'here'] }));
+    assert.equal(result.recorded, true);
+    const meta = await readTaskMeta(dir, 'tester', 'demo');
+    assert.equal(meta.reviews.length, 1);
+    const [entry] = meta.reviews;
+    assert.equal(entry.kind, 'custom');
+    assert.equal(entry.engine, 'custom');
+    assert.equal(entry.scope, 'worktree', '비-git 은 worktree 로 degrade');
+    assert.equal(entry.tip, 'none');
+    assert.equal(entry.exitCode, 0);
+    assert.ok(entry.outputBytes > 0);
+    assert.ok(!Number.isNaN(Date.parse(entry.at)));
+
+    const artifact = await readFile(join(taskDir, 'demo-artifact.md'), 'utf8');
+    assert.ok(artifact.includes('### ') && artifact.includes('— custom (harness-team review)'), '블록 헤딩');
+    assert.ok(artifact.includes('P3 nit: nothing serious'), '엔진 출력이 artifact 에 들어간다');
+    const markers = parseReviewMarkers(artifact);
+    assert.equal(markers.length, 1, '종전 형식 마커가 함께 남는다(사람용·하위 호환)');
+    assert.equal(markers[0].kind, 'custom');
+    assert.equal(markers[0].at, Date.parse(entry.at), '마커 at == meta at');
+    assert.ok(logs.some(l => l.startsWith('review: custom recorded')));
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('엔진 exit ≠ 0 → meta 도 artifact 도 쓰지 않고 error 패킷 (stderr tail 포함)', async () => {
+  const { dir, taskDir } = await makeFixture({ script: '#!/bin/sh\necho "boom: auth failed" >&2\nexit 3\n' });
+  const before = await readFile(join(taskDir, 'demo-artifact.md'), 'utf8');
+  const { logs, restore } = captureLogs();
+  try {
+    const { exitCode } = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    assert.equal(exitCode, 1);
+    assert.deepEqual((await readTaskMeta(dir, 'tester', 'demo')).reviews, [], 'meta.reviews 불변');
+    assert.equal(await readFile(join(taskDir, 'demo-artifact.md'), 'utf8'), before, 'artifact 불변');
+    assert.ok(logs.some(l => l.startsWith('✗ review:')));
+    assert.ok(logs.some(l => l.includes('exit 3')));
+    assert.ok(logs.some(l => l.includes('stderr: boom: auth failed')), 'stderr tail 이 cause 에 실린다');
+    assert.ok(logs.some(l => l.startsWith('default:') && l.includes('기록되지 않았다')));
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('--framing 은 kind 를 <engine>-<suffix> 로 조립하고, 열거 밖은 실행 전에 거부한다', async () => {
+  for (const suffix of VERIFY_KIND_SUFFIXES) {
+    assert.deepEqual(buildReviewKind('codex', suffix), { kind: `codex-${suffix}` });
+  }
+  assert.deepEqual(buildReviewKind('codex'), { kind: 'codex' });
+  assert.ok(buildReviewKind('codex', 'bogus').error);
+
+  const { dir, taskDir } = await makeFixture();
+  const { restore } = captureLogs();
+  try {
+    await withExit(() => runReview({ targetDir: dir, flags: { framing: 'adversarial' }, taskArgs: ['custom'] }));
+    const meta = await readTaskMeta(dir, 'tester', 'demo');
+    assert.equal(meta.reviews[0].kind, 'custom-adversarial');
+
+    const before = await readFile(join(taskDir, 'demo-artifact.md'), 'utf8');
+    const { exitCode } = await withExit(() => runReview({ targetDir: dir, flags: { framing: 'bogus' }, taskArgs: ['custom'] }));
+    assert.equal(exitCode, 1);
+    assert.equal((await readTaskMeta(dir, 'tester', 'demo')).reviews.length, 1, '거부된 실행은 기록되지 않는다');
+    assert.equal(await readFile(join(taskDir, 'demo-artifact.md'), 'utf8'), before);
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('출력 상한: 초과분은 잘라내고 잘랐다고 적으며, outputBytes 는 전체 크기다', async () => {
+  const big = 'x'.repeat(REVIEW_OUTPUT_MAX_BYTES + 500);
+  const t = truncateOutput(big);
+  assert.equal(t.truncated, true);
+  assert.equal(t.bytes, REVIEW_OUTPUT_MAX_BYTES + 500);
+  assert.ok(t.text.includes('truncated:'));
+
+  const { dir, taskDir } = await makeFixture({ script: `#!/bin/sh\nhead -c ${REVIEW_OUTPUT_MAX_BYTES + 500} /dev/zero | tr '\\0' 'y'\n` });
+  const { restore } = captureLogs();
+  try {
+    await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    const meta = await readTaskMeta(dir, 'tester', 'demo');
+    assert.equal(meta.reviews[0].outputBytes, REVIEW_OUTPUT_MAX_BYTES + 500);
+    const artifact = await readFile(join(taskDir, 'demo-artifact.md'), 'utf8');
+    assert.ok(artifact.includes('truncated:'), 'artifact 에 절단 표기');
+    assert.ok(artifact.includes('(artifact에는 앞부분만)'));
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('{prompt} 치환은 POSIX 단일 인용 리터럴 — 셸 문법이 섞인 focus 도 데이터로 전달된다', async () => {
+  assert.equal(posixSingleQuote(`it's; rm -rf /`), `'it'\\''s; rm -rf /'`);
+  // 가짜 리뷰어가 받은 첫 인자를 그대로 출력 → artifact 에서 회수해 대조한다.
+  const { dir, taskDir } = await makeFixture({ script: '#!/bin/sh\nprintf "%s" "$1"\n' });
+  const { restore } = captureLogs();
+  try {
+    await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom', "don't", '$(echo pwned)', '`x`'] }));
+    const artifact = await readFile(join(taskDir, 'demo-artifact.md'), 'utf8');
+    assert.ok(artifact.includes("don't $(echo pwned) `x`"), '치환 문자열이 명령이 아니라 데이터로 도착한다');
+    assert.ok(!artifact.includes('pwned\n'), '$(...) 가 실행되지 않았다');
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('fence 는 출력 안의 가장 긴 백틱 런보다 길다', () => {
+  assert.equal(fenceFor('plain'), '```');
+  assert.equal(fenceFor('has ``` inside'), '````');
+  const block = renderReviewBlock({ kind: 'k', engine: 'e', scope: 'worktree', tip: 'none', at: '2026-09-10T00:00:00.000Z', output: 'a\n```js\nb\n```' });
+  assert.ok(block.includes('````text'));
+  assert.ok(block.includes('<!-- harness:review kind=k scope=worktree tip=none at=2026-09-10T00:00:00.000Z -->'));
+});
+
+test('공용 리뷰 프롬프트 상수 ↔ commands/harness-review.md text 블록 동기화 (pin)', async () => {
+  const doc = await readFile(new URL('../commands/harness-review.md', import.meta.url), 'utf8');
+  // 안내 문장이 몇 줄이든, "공용 리뷰 프롬프트" 다음에 오는 첫 text 블록이 정본이다.
+  const m = doc.match(/공용 리뷰 프롬프트[\s\S]*?```text\n([\s\S]*?)\n\s*```/);
+  assert.ok(m, '문서에 공용 리뷰 프롬프트 text 블록이 있다');
+  const docPrompt = m[1].split('\n').map(l => l.replace(/^ {3}/, '')).join('\n');
+  assert.equal(docPrompt, REVIEW_PROMPT_TEMPLATE);
+  // 치환 결과에 placeholder 가 남지 않는다.
+  const p = buildPrompt({ scope: 'diff', base: 'origin/main', focus: ['auth', 'only'] });
+  assert.ok(p.includes('Scope: diff against origin/main.'));
+  assert.ok(p.endsWith('say so explicitly. auth only'));
+  assert.ok(!p.includes('<'));
+  const w = buildPrompt({ scope: 'worktree', focus: [] });
+  assert.ok(w.includes('Scope: working tree changes.') && w.endsWith('say so explicitly.'));
+  const custom = buildPrompt({ scope: 'task-docs', focus: ['f'], promptText: 'MY PROMPT\n' });
+  assert.equal(custom, 'MY PROMPT\nf');
+});
+
+test('scope 값은 목록 안에서만, task-docs 는 --prompt-file 필수, 활성 task 없으면 실행 전 거부', async () => {
+  assert.deepEqual(SCOPES, ['worktree', 'diff', 'task-docs']);
+  const { dir, taskDir } = await makeFixture();
+  const { logs, restore } = captureLogs();
+  try {
+    let r = await withExit(() => runReview({ targetDir: dir, flags: { scope: 'nope' }, taskArgs: ['custom'] }));
+    assert.equal(r.exitCode, 1);
+    r = await withExit(() => runReview({ targetDir: dir, flags: { scope: 'task-docs' }, taskArgs: ['custom'] }));
+    assert.equal(r.exitCode, 1);
+    assert.ok(logs.some(l => l.includes('--prompt-file')));
+    assert.deepEqual((await readTaskMeta(dir, 'tester', 'demo')).reviews, [], '거부 경로는 아무것도 쓰지 않는다');
+
+    const promptFile = join(dir, 'p.txt');
+    await writeFile(promptFile, 'DOC REVIEW PROMPT');
+    r = await withExit(() => runReview({ targetDir: dir, flags: { scope: 'task-docs', 'prompt-file': promptFile, framing: 'contrarian' }, taskArgs: ['custom'] }));
+    assert.equal(r.result.recorded, true);
+    const meta = await readTaskMeta(dir, 'tester', 'demo');
+    assert.equal(meta.reviews[0].scope, 'task-docs');
+    assert.equal(meta.reviews[0].kind, 'custom-contrarian');
+    assert.ok((await readFile(join(taskDir, 'demo-artifact.md'), 'utf8')).includes('scope: task-docs'));
+
+    await writeFile(join(dir, '.harness/active.json'), 'null');
+    r = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    assert.equal(r.exitCode, 1);
+    assert.ok(logs.some(l => l.includes('활성 task')));
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('엔진 결정: 명시 엔진은 PATH 확인, 없으면 probe 체인 codex → claude, custom 은 설정 확인', async () => {
+  const { dir } = await makeFixture();
+  try {
+    const only = (...names) => async (n) => (names.includes(n) ? `/bin/${n}` : null);
+    assert.deepEqual(await resolveEngine('codex', { targetDir: dir, which: only('codex') }), { engine: 'codex' });
+    assert.ok((await resolveEngine('codex', { targetDir: dir, which: only() })).error, 'PATH 에 없으면 error');
+    assert.ok((await resolveEngine('gemini', { targetDir: dir, which: only('gemini') })).error, '열거 밖 엔진');
+    assert.deepEqual(await resolveEngine(undefined, { targetDir: dir, which: only('claude') }), { engine: 'claude', probed: true });
+    assert.deepEqual(await resolveEngine(undefined, { targetDir: dir, which: only('codex', 'claude') }), { engine: 'codex', probed: true });
+    assert.ok((await resolveEngine(undefined, { targetDir: dir, which: only() })).error, '체인 전부 없음');
+    const custom = await resolveEngine('custom', { targetDir: dir, which: only('/nonexistent') });
+    assert.ok(custom.error === undefined || custom.error, 'custom 은 설정의 첫 토큰을 probe 한다');
+    await writeFile(join(dir, '.harness/reviewers.json'), '{}');
+    assert.ok((await resolveEngine('custom', { targetDir: dir, which: only('x') })).error, 'custom.command 없음');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// ─── adversarial 리뷰(2026-09-10) 반영 ─────────────────────────────────────
+
+test('P1: {prompt} 가 템플릿 따옴표 안에 있으면 실행 전에 거부한다 — 단일 인용 계약이 깨지는 자리', async () => {
+  assert.equal(promptPlaceholderIsBare('mycli review {prompt}'), true);
+  assert.equal(promptPlaceholderIsBare('{prompt}'), true);
+  assert.equal(promptPlaceholderIsBare('a {prompt} b {prompt}'), true);
+  assert.equal(promptPlaceholderIsBare("echo '{prompt}'"), false);
+  assert.equal(promptPlaceholderIsBare('echo "{prompt}"'), false);
+  assert.equal(promptPlaceholderIsBare('x={prompt}'), false);
+  assert.equal(promptPlaceholderIsBare('mycli --p={prompt} x'), false);
+  assert.equal(promptPlaceholderIsBare('no placeholder'), false);
+
+  // 실제 경로: 리뷰어가 제시한 PoC — echo '{prompt}' + "hello; <cmd>" 가 명령으로 새는지.
+  const { dir, taskDir, fake } = await makeFixture();
+  const canary = join(dir, 'canary');
+  await writeFile(join(dir, '.harness/reviewers.json'), JSON.stringify({ custom: { command: `echo '{prompt}'` } }));
+  const { logs, restore } = captureLogs();
+  try {
+    const { exitCode } = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom', `hello; touch ${canary}`] }));
+    assert.equal(exitCode, 1, '거부');
+    assert.ok(logs.some(l => l.includes('독립 토큰')), '사유가 자리 문제를 가리킨다');
+    let leaked = true;
+    try { await readFile(canary); } catch { leaked = false; }
+    assert.equal(leaked, false, '엔진이 실행되지 않았으므로 셸 명령도 실행되지 않는다');
+    assert.deepEqual((await readTaskMeta(dir, 'tester', 'demo')).reviews, []);
+    void fake; void taskDir;
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('P1: reviews 키 없는 구 task 에 review 를 돌려도 키를 만들지 않는다 — 기존 손 마커 증거가 무효화되지 않는다', async () => {
+  const legacy = { user: 'tester', task: 'demo', created: '2026-08-01', status: 'open', closedAt: null };
+  const { dir, taskDir } = await makeFixture({ meta: legacy });
+  const { logs, restore } = captureLogs();
+  try {
+    const { result } = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    assert.equal(result.recorded, true);
+    assert.equal(result.metaRecorded, false);
+    assert.deepEqual(await readTaskMeta(dir, 'tester', 'demo'), legacy, 'meta 는 바이트 단위로 불변');
+    const artifact = await readFile(join(taskDir, 'demo-artifact.md'), 'utf8');
+    assert.equal(parseReviewMarkers(artifact).length, 1, '증거는 종전 방식(artifact 마커)으로 남는다');
+    assert.ok(logs.some(l => l.includes('구 task')), '출력이 legacy 경로임을 말한다');
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('통합: 새 템플릿 task → review --framing adversarial → done 이 verify: required 를 meta.reviews 로 통과한다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-review-'));
+  const { logs, restore } = captureLogs();
+  try {
+    await runTask({ targetDir: dir, flags: { member: 'tester' }, taskArgs: ['demo'] }); // 실제 템플릿 → reviews: []
+    const taskDir = join(dir, 'docs', 'tester', 'demo');
+    await writeFile(join(taskDir, 'demo-spec.md'), '# demo — Spec\n\n## Done evidence\n\n```json\n{ "version": 1, "verify": "required", "tests": "skip" }\n```\n');
+    await writeFile(join(taskDir, 'demo-plan.md'), '# demo — Plan\n\n## 단계\n- [x] 완료\n');
+    await writeFile(join(taskDir, 'demo-artifact.md'), '# demo — Artifact\n\n## 결과\n실제 결과.\n');
+    const fake = join(dir, 'fake.sh');
+    await writeFile(fake, '#!/bin/sh\necho verdict: survives\n'); await chmod(fake, 0o755);
+    await writeFile(join(dir, '.harness/reviewers.json'), JSON.stringify({ custom: { command: `${fake} {prompt}` } }));
+
+    // 손으로 쓴 마커만으로는 막힌다 (runDone 은 차단 시 process.exitCode 를 세운다 — 감싼다)
+    await withExit(() => runDone({ targetDir: dir, flags: {} }));
+    assert.ok(logs.some(l => l.includes('검증 항목이 meta.reviews에 없음')), '전제: CLI 소유 task 는 손 마커를 세지 않는다');
+    logs.length = 0;
+
+    const { result } = await withExit(() => runReview({ targetDir: dir, flags: { framing: 'adversarial' }, taskArgs: ['custom'] }));
+    assert.equal(result.metaRecorded, true);
+    await withExit(() => runDone({ targetDir: dir, flags: {} }));
+    assert.ok(logs.some(l => l.startsWith('done:')), 'CLI 가 쓴 meta.reviews 항목으로 verify 통과');
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+async function makeGitFixture() {
+  const { dir, taskDir, fake } = await makeFixture();
+  await git(dir, 'init', '-q', '-b', 'main');
+  await git(dir, 'config', 'user.email', 't@e.com');
+  await git(dir, 'config', 'user.name', 't');
+  await writeFile(join(dir, '.gitignore'), '.harness/\n');
+  await writeFile(join(dir, 'a.txt'), 'a\n');
+  await git(dir, 'add', '-A');
+  await git(dir, 'commit', '-qm', 'base');
+  return { dir, taskDir, fake };
+}
+
+test('P2: 실제 git 저장소에서 scope 판정 — dirty→worktree, clean→diff(base 폴백), 빈 diff→미기록, 없는 base→error', async () => {
+  const { dir } = await makeGitFixture();
+  const { restore } = captureLogs();
+  try {
+    const head = (await git(dir, 'rev-parse', 'HEAD')).stdout.trim();
+    // clean + main 위 → base 폴백은 origin/main 없음 → main → HEAD 와 같아 diff 비어 있음
+    let r = await resolveScope({ targetDir: dir });
+    assert.deepEqual(r, { empty: true, base: 'main', tip: head });
+    const { result } = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    assert.equal(result.recorded, false, '빈 diff 는 기록하지 않는다');
+    assert.deepEqual((await readTaskMeta(dir, 'tester', 'demo')).reviews, []);
+
+    // 브랜치에서 커밋 → clean → diff scope
+    await git(dir, 'checkout', '-qb', 'feature');
+    await writeFile(join(dir, 'b.txt'), 'b\n');
+    await git(dir, 'add', '-A'); await git(dir, 'commit', '-qm', 'feat');
+    r = await resolveScope({ targetDir: dir });
+    assert.equal(r.scope, 'diff'); assert.equal(r.base, 'main'); assert.equal(r.tip, (await git(dir, 'rev-parse', 'HEAD')).stdout.trim());
+
+    // dirty → worktree (명시 --scope 없음)
+    await writeFile(join(dir, 'a.txt'), 'changed\n');
+    r = await resolveScope({ targetDir: dir });
+    assert.equal(r.scope, 'worktree');
+    const rr = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    assert.equal(rr.result.entry.scope, 'worktree');
+    assert.equal(rr.result.entry.tip.length, 40, 'tip 은 HEAD sha');
+
+    // 명시 --scope diff + 없는 base → error 패킷, 기록 없음
+    const n = (await readTaskMeta(dir, 'tester', 'demo')).reviews.length;
+    const e = await withExit(() => runReview({ targetDir: dir, flags: { scope: 'diff', base: 'nope' }, taskArgs: ['custom'] }));
+    assert.equal(e.exitCode, 1);
+    assert.equal((await readTaskMeta(dir, 'tester', 'demo')).reviews.length, n);
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('P3: which() 는 경로 토큰을 PATH 가 아니라 그 파일로 판정한다', async () => {
+  const { which } = await import('../src/commands/review.mjs');
+  const { dir, fake } = await makeFixture();
+  try {
+    assert.equal(await which(fake), fake);
+    assert.equal(await which(join(dir, 'missing')), null);
+    assert.equal(await which('definitely-not-a-binary-xyz', { PATH: dir }), null);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

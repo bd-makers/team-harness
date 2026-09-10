@@ -31,9 +31,10 @@ scenario breaks. Separate real blockers from theoretical concerns in your verdic
 If the approach survives your objections, say so explicitly. <focus arguments, if any>
 ```
 
-기록 시 artifact에는 실행 엔진과 함께 **적대적 리뷰**였음을 명기하고,
-기계 판독용 마커의 `kind`는 `<engine>-adversarial`(예: `kind=codex-adversarial`)로 남긴다.
-마커 형식·나머지 필드는 `harness-review.md` 5단계와 동일하다.
+실행은 위 프롬프트를 파일에 쓰고 `harness-team review <engine> --framing adversarial --prompt-file <path>
+[focus ...]`로 한다 — CLI가 `kind=<engine>-adversarial`(예: `codex-adversarial`)로 meta.reviews와
+artifact 마커를 남긴다. 에이전트는 그 블록 아래에 **적대적 리뷰**였음과 판별 결과를 산문으로 쓴다.
+마커를 손으로 쓰지 않는다 — 기록 계약은 `harness-review.md` 5단계와 동일하다.
 
 ## 언제 이걸 쓰나
 

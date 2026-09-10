@@ -78,7 +78,9 @@ Raw slash-command 인수:
    정합을 ship을 도는 세션이 자기 채점하면 낙관적 통과가 샌다. 중요한 변경(AGENTS.md 리뷰
    프로토콜 기준)이면 **별도 컨텍스트의 read-only 검증자**에게 반박시킨다. 절차·엔진 표는
    `/harness-review`를 그대로 쓰되(scope는 2번에서 파악한 diff) 리뷰 프롬프트를 아래 루브릭으로
-   교체하고, 마커는 `kind=<engine>-shipcheck`로 artifact `## Reviews`에 남긴다. 건너뛰면
+   교체한다 — 루브릭을 파일에 쓰고 `harness-team review <engine> --framing shipcheck --prompt-file <path>
+   --scope diff --base <ref>`로 실행하면 CLI가 `kind=<engine>-shipcheck`로 meta.reviews와 artifact
+   `## Reviews` 마커를 남긴다(마커를 손으로 쓰지 않는다). 건너뛰면
    보고(8번)에 "정합 검증: 미실행"을 명시한다.
 
    | id | 항목 | 심각도 |

@@ -58,9 +58,9 @@ harness-team review [codex|claude|custom] [--framing <suffix>] [--prompt-file <p
 | 엔진 결정 | 인자가 있으면 그 엔진(`command -v`로 가용성 확인, 없으면 error 패킷). 없으면 probe 폴백 체인 codex → claude (문서 1단계와 동일). custom은 `.harness/reviewers.json`의 `custom.command` |
 | scope | `--scope` 명시 없으면 문서 2단계 규칙(작업 트리 변경 있으면 `worktree`, 없으면 `--base`/`origin/main`/`main` 대비 `diff`). diff가 비면 "리뷰할 것 없음"으로 종료(기록 없음) |
 | 프롬프트 | 기본은 문서의 공용 리뷰 프롬프트를 src 상수로. `--prompt-file`이 있으면 그 파일 내용(검증 프레이밍 커맨드가 자기 프롬프트를 넘기는 경로). focus 토큰은 프롬프트 끝에 붙인다 |
-| 실행 | runner 표 그대로. codex: `stdio: ['ignore', ...]`(`< /dev/null` 계약). claude: `claude -p --permission-mode plan`. custom: `{prompt}`를 POSIX 단일 인용 리터럴로 치환해 `sh -c` |
+| 실행 | runner 표 그대로. codex: `stdio: ['ignore', ...]`(`< /dev/null` 계약). claude: `claude -p --permission-mode plan`. custom: `{prompt}`를 POSIX 단일 인용 리터럴로 치환해 `sh -c` — `{prompt}`가 독립 토큰이 아니면(템플릿 따옴표 안 등) 실행 전에 거부(adversarial 리뷰 P1) |
 | kind | `--framing`이 없으면 `<engine>`, 있으면 `<engine>-<suffix>`. suffix는 `VERIFY_KIND_SUFFIXES` 안에 있어야 한다(밖이면 error 패킷 — 열거 밖 프레이밍을 조용히 만들지 않는다) |
-| 성공 시 기록 | (1) `meta.reviews[]`에 `{ kind, engine, scope, tip, at, exitCode: 0, outputBytes }` append. (2) artifact `## Reviews`에 `### <at> — <kind> (harness-team review)` 헤딩 + 출력을 fenced block으로(상한 초과 시 잘라내고 잘랐다고 명시) + **종전 형식 그대로의 마커 한 줄** |
+| 성공 시 기록 | (1) meta에 `reviews` 키가 **있으면** `{ kind, engine, scope, tip, at, exitCode: 0, outputBytes }` append — 키가 없는 구 task에는 키를 만들지 않는다(만들면 그 순간 가드가 CLI 소유로 전환돼 기존 손 마커가 무효화된다 — adversarial 리뷰 P1). (2) artifact `## Reviews`에 `### <at> — <kind> (harness-team review)` 헤딩 + 출력을 fenced block으로(상한 초과 시 잘라내고 잘랐다고 명시) + **종전 형식 그대로의 마커 한 줄** — 구 task는 이 마커가 종전 증거다 |
 | 실패 시 | exit ≠ 0 또는 엔진 미가용 → **meta·artifact 어느 것도 쓰지 않는다.** error 패킷(stderr 마지막 20줄을 cause에). 실패한 실행은 증거가 아니다 |
 | 출력 | 텍스트: `review: <kind> recorded (exit 0, <bytes> B)` + 다음 행동(4단계 판별). `--json`: observation envelope |
 

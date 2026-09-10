@@ -3,12 +3,14 @@
 
 ## Now
 - Goal: 리뷰 엔진 실행·증거 기록을 `harness-team review`가 소유, `verify: required`는 `meta.reviews[]`를 읽는다.
-- Current atomic step: plan 1단계 — meta 템플릿 `reviews: []` (미착수). spec 작성 완료 상태.
+- Current atomic step: plan 11단계 — retro 후 `done` (가드가 meta.reviews의 adversarial 항목으로 verify를 통과하는지가 최종 E2E).
 - Stop / human-decision condition: 위협 모델(망각·실수)을 넓혀 "위조 방지"로 가고 싶어지면 멈춘다 —
   HMAC은 기각했고 근거는 spec에 있다. runner 표의 호출 형태를 바꾸고 싶어져도 멈춘다.
 
 ## Constraints and settled decisions
 - 성공(exit 0)한 실행만 증거. 실패는 meta·artifact 어느 것도 쓰지 않는다.
+- CLI는 meta에 `reviews` 키가 **이미 있을 때만** 쓴다 — 구 task에 키를 만들면 손 마커가 무효화된다(리뷰 P1).
+- custom `{prompt}`는 독립 토큰만 허용 — 따옴표 안이면 실행 전 거부(리뷰 P1).
 - `reviews` 키 없는 구 meta → 종전 판정(artifact 마커). 소급 금지 — `--force` 훈련기가 된다.
 - `verify: required`(신규 meta) = meta.reviews만. `review: required` = meta ∪ artifact 마커.
 - `--framing` suffix는 `VERIFY_KIND_SUFFIXES` 안에서만. 열거 밖은 error 패킷.

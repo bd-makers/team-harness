@@ -8,7 +8,7 @@ import { promisify } from 'node:util';
 import {
   runDone, taskArtifactTemplate, taskPlanTemplate, taskSpecTemplate, parsePorcelainPaths,
   parseDoneEvidenceDeclaration, classifyChangedPaths, parseReviewMarkers, DONE_EVIDENCE_DEFAULT,
-  VERIFY_KIND_SUFFIXES,
+  VERIFY_KIND_SUFFIXES, parseMetaReviews,
 } from '../src/commands/task.mjs';
 
 const pexec = promisify(execFile);
@@ -446,7 +446,7 @@ const ago = (ms) => new Date(Date.now() - ms).toISOString();
 //   firstActivatedAt: null  → 필드 없는 구 task 재현(시각 비교 포기 경로)
 //   switchedAt              → 재활성화 시각(가드가 더 이상 보지 않아야 하는 값)
 //   commitDate              → 커밋을 백데이트해 "작업은 재활성화 이전에 끝났다"를 재현
-async function makeEvidenceFixture({ spec, files = {}, firstActivatedAt, reopenedAt, switchedAt, commitDate } = {}) {
+async function makeEvidenceFixture({ spec, files = {}, firstActivatedAt, reopenedAt, switchedAt, commitDate, metaExtra = {} } = {}) {
   const { dir, taskDir } = await makeFixture({
     plan: '# demo — Plan\n\n## 단계\n- [x] done\n',
     artifact: taskArtifactTemplate('demo') + '\n- 실제 결과\n',
@@ -458,6 +458,7 @@ async function makeEvidenceFixture({ spec, files = {}, firstActivatedAt, reopene
     ...(first === null ? {} : { firstActivatedAt: first }),
     ...(reopenedAt === undefined ? {} : { reopenedAt }),
     status: 'open', closedAt: null,
+    ...metaExtra,
   }, null, 2) + '\n');
   for (const [rel, content] of Object.entries(files)) {
     const abs = join(dir, rel);
@@ -872,6 +873,86 @@ test('verify 미선언(기본 optional) → 검증 마커 없어도 미검사', 
 
 // allowlist의 정본은 commands/harness-review.md 5단계 열거다(마커 계약 문서). src 상수가
 // 문서와 어긋나면 가드가 문서에 없는 계약을 강제하거나 문서의 계약을 놓친다 — 양방향 대조.
+// ─── CLI 소유 리뷰 증거 (meta.reviews) ─────────────────────────────────────
+// meta 에 `reviews` 키가 있으면 verify 는 그 배열만 센다 — 손으로 쓴 artifact 마커는 증거가 아니다.
+// 키가 없는 구 task 는 종전대로 마커로 판정한다(위 verify 테스트들이 그 경로를 고정한다).
+
+const CLI_VERIFY_SPEC = '# demo — Spec\n\n## Done evidence\n\n```json\n{ "version": 1, "verify": "required", "tests": "skip" }\n```\n';
+const CLI_REVIEW_SPEC = '# demo — Spec\n\n## Done evidence\n\n```json\n{ "version": 1, "review": "required", "tests": "skip" }\n```\n';
+
+test('CLI 소유 meta(reviews: []) + 손으로 쓴 verify 마커만 → 차단', async () => {
+  const marker = `<!-- harness:review kind=codex-adversarial scope=worktree tip=none at=${new Date().toISOString()} -->`;
+  const { dir } = await makeEvidenceFixture({ spec: CLI_VERIFY_SPEC, metaExtra: { reviews: [] }, files: {
+    'docs/tester/demo/demo-artifact.md': taskArtifactTemplate('demo') + `\n- 실제 결과\n\n${marker}\n`,
+  } });
+  try {
+    const { logs, exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1, 'blocks — 마커는 CLI 소유 task 의 verify 증거가 아니다');
+    assert.ok(logs.some(l => l.includes('검증 항목이 meta.reviews에 없음')), '안내가 CLI 경로를 가리킨다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('CLI 소유 meta + 창 내 verify 항목 → 통과', async () => {
+  const entry = { kind: 'custom-adversarial', engine: 'custom', scope: 'worktree', tip: 'none', at: new Date().toISOString(), exitCode: 0, outputBytes: 10 };
+  const { dir } = await makeEvidenceFixture({ spec: CLI_VERIFY_SPEC, metaExtra: { reviews: [entry] } });
+  try {
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds');
+    assert.ok(!logs.some(l => l.includes('검증 항목')) && !logs.some(l => l.includes('검증 마커')));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('CLI 소유 meta: 창 밖 verify 항목·일반 review 항목·깨진 항목은 verify 증거가 아니다', async () => {
+  const old = new Date(Date.now() - 3_600_000).toISOString(); // firstActivatedAt(60s 전)보다 앞
+  const reviews = [
+    { kind: 'codex-adversarial', at: old },                  // 창 밖
+    { kind: 'codex', at: new Date().toISOString() },          // 프레이밍 아님
+    { kind: 'codex-adversarial', at: 'yesterday' },           // 비ISO → 무시
+    { at: new Date().toISOString() },                         // kind 없음 → 무시
+    { kind: 'codex-adversarial', at: new Date().toISOString(), exitCode: 1 }, // 실패 실행 → 무시 (리뷰 P3)
+  ];
+  const { dir } = await makeEvidenceFixture({ spec: CLI_VERIFY_SPEC, metaExtra: { reviews } });
+  try {
+    const { exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1, 'blocks');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('reviews 키 없는 구 meta 는 종전대로 artifact 의 verify 마커로 통과한다 (회귀 없음)', async () => {
+  const marker = `<!-- harness:review kind=codex-adversarial scope=worktree tip=none at=${new Date().toISOString()} -->`;
+  const { dir } = await makeEvidenceFixture({ spec: CLI_VERIFY_SPEC, files: {
+    'docs/tester/demo/demo-artifact.md': taskArtifactTemplate('demo') + `\n- 실제 결과\n\n${marker}\n`,
+  } });
+  try {
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), 'legacy path still passes');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('review: required 는 meta.reviews 항목만으로도, artifact 마커만으로도 통과한다', async () => {
+  const entry = { kind: 'claude', engine: 'claude', scope: 'worktree', tip: 'none', at: new Date().toISOString(), exitCode: 0, outputBytes: 10 };
+  const a = await makeEvidenceFixture({ spec: CLI_REVIEW_SPEC, metaExtra: { reviews: [entry] } });
+  const marker = `<!-- harness:review kind=claude scope=worktree tip=none at=${new Date().toISOString()} -->`;
+  const b = await makeEvidenceFixture({ spec: CLI_REVIEW_SPEC, metaExtra: { reviews: [] }, files: {
+    'docs/tester/demo/demo-artifact.md': taskArtifactTemplate('demo') + `\n- 실제 결과\n\n${marker}\n`,
+  } });
+  try {
+    assert.ok((await runDoneCapture(a.dir)).logs.some(l => l.startsWith('done:')), 'meta 항목으로 통과');
+    assert.ok((await runDoneCapture(b.dir)).logs.some(l => l.startsWith('done:')), 'CLI 소유 task 라도 review 는 마커를 인정');
+  } finally {
+    await rm(a.dir, { recursive: true, force: true });
+    await rm(b.dir, { recursive: true, force: true });
+  }
+});
+
+test('parseMetaReviews: 정규화와 깨진 항목 무시', () => {
+  const at = '2026-09-10T00:00:00.000Z';
+  assert.deepEqual(parseMetaReviews([{ kind: 'codex', at, scope: 'diff', tip: 'abc' }, { kind: '', at }, { kind: 'x', at: '9999' }, null, 'str']),
+    [{ kind: 'codex', at: Date.parse(at), scope: 'diff', tip: 'abc' }]);
+  assert.deepEqual(parseMetaReviews(undefined), []);
+  assert.deepEqual(parseMetaReviews([{ kind: 'codex-adversarial', at, exitCode: 2 }]), [], 'exitCode ≠ 0 은 증거가 아니다');
+});
+
 test('VERIFY_KIND_SUFFIXES ↔ harness-review.md 접미사 열거 양방향 동기화', async () => {
   const doc = await readFile(new URL('../commands/harness-review.md', import.meta.url), 'utf8');
   for (const s of VERIFY_KIND_SUFFIXES) {
