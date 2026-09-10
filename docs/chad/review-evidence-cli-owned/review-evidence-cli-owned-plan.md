@@ -33,7 +33,7 @@ harness 소유 `meta.reviews[]`를 읽게 한다. 위협 모델·runner 계약·
       1회 실행해 meta·artifact에 기록되는 것을 확인(E2E).
 - [x] **리뷰 (dogfood)** — `harness-team review claude --framing adversarial --prompt-file <adversarial 프롬프트>`.
       codex 가용하면 codex 우선. 4단계 판별은 세션이, 산문은 블록 아래에.
-- [ ] **retro** — `/harness-retro` 후 `harness-team done`.
+- [x] **retro** — `/harness-retro` 후 `harness-team done`.
 
 ## Ontology 변경 로그
 

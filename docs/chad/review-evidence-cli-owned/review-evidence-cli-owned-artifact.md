@@ -128,3 +128,7 @@ Everything else (git-repo `resolveScope` behavior, failed-run evidence handling,
 - **(3) 실패 실행이 증거로 새는 경로** — 리뷰어도 없음 확인. 유지.
 
 **조치 후:** `tests/review-command.test.mjs` +5, `tests/done-guard.test.mjs` +1 케이스. 전체 스위트 통과.
+
+## Learnings (2026-09-10)
+
+- 위임하지 않은 검증의 값: 리뷰어가 낸 P1 두 건은 둘 다 spec이 이미 금지한 것을 구현이 side-effect로 어긴 경우였다(소급 무효화·인용 계약) — spec의 제약을 "코드가 지키는가"가 아니라 "어떤 경로로 새는가"로 다시 읽어야 잡힌다. 증거를 harness 소유로 옮길 때 "언제 키를 만드는가"가 곧 "언제 규칙이 바뀌는가"다 — 키 생성을 부수효과로 두면 마이그레이션이 조용히 일어난다. working-tree 리뷰가 도는 동안 stop hook이 커밋을 요구해도 미룬다 — 지난 task의 학습을 이번에 실제로 적용했다.
