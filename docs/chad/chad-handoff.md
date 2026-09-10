@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+review-evidence-cli-owned
 
-## Last Completed Task (2026-09-09)
-`migrate-init-gaps` — done
+## Last Commit (2026-09-10)
+dce1008 docs(task): review-evidence-cli-owned 개설 — 리뷰 증거 기록을 CLI 소유로 옮기는 spec
 
 ## Full Context
-→ docs/chad/migrate-init-gaps/migrate-init-gaps-handoff.md
+→ docs/chad/review-evidence-cli-owned/review-evidence-cli-owned-handoff.md
