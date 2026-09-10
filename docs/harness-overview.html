@@ -203,7 +203,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.35.0</span>
+      <span class="tag tag-purple">v0.36.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -211,6 +211,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.36.0 — init이 관리 절의 사용자 편집을 더 이상 지우지 않는다:</strong>
+    <br>
+    <code>0.36.0</code> <strong>소비자 3곳을 0.35.0으로 현행화하다 드러난 결함 3건을 고친다.</strong> 가장 나쁜 것은 <code>init</code> 재실행이 <strong>관리 절 안의 사용자 편집을 경고 없이 지우던 것</strong>이다 — 한 프로젝트는 Expo 명령 24행이 13행으로 줄었고, 다른 프로젝트는 <code>uv</code>가 <code>pip</code>으로 바뀌었으며 추가해 둔 원칙 2개가 사라졌다. <strong>스냅샷을 <code>cmp</code>로 뜨기 전까지 아무도 몰랐다.</strong> 해법은 <strong>렌더 provenance</strong> — 기존 D8이 출하 sha 테이블로 판정하는 것과 달리, 관리 절은 렌더 결과가 프로젝트마다 달라 그 테이블을 만들 수 없으므로 <strong>판정 근거를 설치 측</strong>(<code>.harness/render-state.json</code>, 커밋 대상)에 둔다. 절의 바이트가 마지막 렌더 해시와 같을 때만 교체하고, 다르면 <strong>그 절만 건너뛰고 diff를 경고</strong>한다(<code>--yes</code> 포함, exit code 불변). 함께 고친 둘: <code>migrate</code>가 설치하지 않는 훅(<code>observe-tools</code>)을 배선해 settings가 없는 파일을 가리키던 것 → 병합을 <code>session-context</code>로 좁혔다; <code>doctor</code>가 그 dangling 상태에 <strong>경고 0건</strong>이던 것 → 실행 대상이 프로젝트 내부 경로면 존재를 검사하고, 해석 못 한 <code>command</code>는 <code>판정 불가</code>로 보고한다(<strong>침묵 금지</strong> — "경고 0"이 "검사한 범위 안에서는 문제 없음"을 뜻하게 두지 않는다). 해시가 없는 기존 설치본의 1회 교체는 <code>migrate</code>가 원본을 <code>.harness/backup/</code>에 누적 백업하고 diff로 미리 보여준다. <strong>검증 3층에서 겹치는 발견이 하나도 없었다</strong> — 설계 리뷰 1건(보호가 딱 한 번만 걸리는 구조) · 자체 실행 검증 3건(같은 초 백업 덮어쓰기 포함) · codex 적대적 리뷰 7건(P1 1·P2 5·P3 1), <strong>11건 전부 재현해 반영</strong>. <code>templates/</code>는 불변이지만 보호는 <code>init</code>이 해시를 기록한 뒤부터라 <strong>갱신 후 migrate → init을 한 번</strong> 돌려야 하고, <code>.gitignore</code>가 <code>.harness/</code>를 통째로 무시한다면 그 줄을 먼저 고쳐야 한다.
+    <br><br>
     <strong>🆕 0.35.0 — observe 판정이 doctor·SessionStart에 표면화된다:</strong>
     <br>
     <code>0.35.0</code> <strong>트립와이어 판정을 <code>harness-team observe</code>를 직접 친 사람만 보던 것을 고친다.</strong> 로거는 0.26.0부터 매 도구 호출을 기록하고 판정(트립와이어 2종·exit 1·루프백 nudge)도 구현돼 있었지만, 그 판정을 읽는 곳은 CLI 하나였다 — 선행 task가 "doctor 배선·SessionStart nudge"를 <strong>명시적으로 범위 제외</strong>한 채 미뤄 둔 결정이다. 판정 함수 <code>evaluateObserveVerdict</code> 하나를 뽑아 observe CLI·<code>doctor</code>·<code>session-context</code> 셋이 공유하므로 <strong>셋이 다른 답을 낼 수 없다.</strong> 발화 시 <code>doctor</code>는 <code>observe trip wires</code> 경고 1건(wire id·수치·observe 안내·nudge, <strong>warn 수준이라 exit code 불변</strong>)을, SessionStart는 <code>[harness] ⚠ observe 트립와이어 발화: …</code> 한 줄(id·창만)을 덧붙인다 — task-gate를 <strong>먼저</strong> 출력하고 그 뒤에 붙이므로 판정이 늦어도 잃는 것은 그 줄뿐이다(실측 0.34 s @ 140k 레코드). <strong>임계값·창·nudge·훅·템플릿은 불변</strong>이고 task를 자동 생성하지 않는다; 로그가 없거나 발화가 없으면 두 표면 모두 <strong>바이트 동일</strong>하게 침묵한다. 함께 실린 수정: <code>doctor</code>의 D-log 절 검사가 fenced code block 안의 <code>## D&lt;n&gt;</code>을 절로 세던 것 — CommonMark §4.5대로 펜스를 걷어내되, 백틱 info string에 백틱이 있는 줄은 펜스가 아니다(첫 구현이 그 줄을 펜스로 봐 뒤 문서를 삼키던 <strong>거짓 누락 경고</strong>를 codex 리뷰가 잡았다). Codex 리뷰 2회 · P2 3 · P3 4 · 전부 판별해 7건 반영. <strong>소비자가 할 일은 플러그인 갱신뿐</strong> — <code>src/commands/</code>만 바뀌어 <code>init</code>·<code>migrate</code>가 필요 없다.
@@ -2596,7 +2600,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.35.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.36.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

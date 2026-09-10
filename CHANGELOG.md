@@ -18,6 +18,8 @@ modified: 2026-09-10
 
 ## [Unreleased]
 
+## [0.36.0] - 2026-09-10
+
 ### Fixed
 - `migrate`가 설치하지 않는 훅(`observe-tools`)을 `settings.json`에 배선해 SessionStart가 없는 파일을
   가리키던 문제 — 병합 대상을 `session-context` 항목으로 좁혔다. `migrate` 단독 실행이 끝난 상태도
