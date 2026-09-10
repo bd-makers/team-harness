@@ -203,7 +203,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.36.0</span>
+      <span class="tag tag-purple">v0.37.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -211,6 +211,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.37.0 — <code>harness-team review</code>가 리뷰 실행·증거 기록을 소유한다:</strong>
+    <br>
+    <code>0.37.0</code> <strong>리뷰를 돌리지 않고도 리뷰 증거를 쓸 수 있던 것을 고친다.</strong> <code>done</code> 가드의 리뷰·검증 증거는 에이전트가 artifact에 손으로 append한 마커 한 줄이었고, 가드는 그 줄만 읽었다 — 리뷰를 건너뛰고 마커만 쓰는 것이 절차 안의 지름길이었다. 새 명령 <code>harness-team review</code>가 엔진 runner 표(codex·claude·custom)를 그대로 실행하고 <strong>성공(exit 0)한 실행만</strong> <code>meta.reviews[]</code>와 artifact 블록에 기록한다. <code>verify: required</code>는 <code>reviews</code> 키가 있는 meta에서 그 배열만 센다 — 손으로 쓴 마커는 검증 증거가 아니다. 구 task(키 없음)는 종전 판정이고 CLI도 키를 만들지 않는다(소급 금지). 위협 모델(망각·실수)은 그대로다 — 바뀐 것은 증거를 만드는 코드 경로뿐이며 리뷰 품질은 여전히 기계가 판정하지 않는다. 새 CLI로 자기 리뷰를 dogfood해 P1 2건(<code>{prompt}</code> 템플릿 따옴표 안 · 구 task 소급 무효화)을 잡아 반영했다. codex 엔진 실행은 미검증.
+    <br><br>
     <strong>🆕 0.36.0 — init이 관리 절의 사용자 편집을 더 이상 지우지 않는다:</strong>
     <br>
     <code>0.36.0</code> <strong>소비자 3곳을 0.35.0으로 현행화하다 드러난 결함 3건을 고친다.</strong> 가장 나쁜 것은 <code>init</code> 재실행이 <strong>관리 절 안의 사용자 편집을 경고 없이 지우던 것</strong>이다 — 한 프로젝트는 Expo 명령 24행이 13행으로 줄었고, 다른 프로젝트는 <code>uv</code>가 <code>pip</code>으로 바뀌었으며 추가해 둔 원칙 2개가 사라졌다. <strong>스냅샷을 <code>cmp</code>로 뜨기 전까지 아무도 몰랐다.</strong> 해법은 <strong>렌더 provenance</strong> — 기존 D8이 출하 sha 테이블로 판정하는 것과 달리, 관리 절은 렌더 결과가 프로젝트마다 달라 그 테이블을 만들 수 없으므로 <strong>판정 근거를 설치 측</strong>(<code>.harness/render-state.json</code>, 커밋 대상)에 둔다. 절의 바이트가 마지막 렌더 해시와 같을 때만 교체하고, 다르면 <strong>그 절만 건너뛰고 diff를 경고</strong>한다(<code>--yes</code> 포함, exit code 불변). 함께 고친 둘: <code>migrate</code>가 설치하지 않는 훅(<code>observe-tools</code>)을 배선해 settings가 없는 파일을 가리키던 것 → 병합을 <code>session-context</code>로 좁혔다; <code>doctor</code>가 그 dangling 상태에 <strong>경고 0건</strong>이던 것 → 실행 대상이 프로젝트 내부 경로면 존재를 검사하고, 해석 못 한 <code>command</code>는 <code>판정 불가</code>로 보고한다(<strong>침묵 금지</strong> — "경고 0"이 "검사한 범위 안에서는 문제 없음"을 뜻하게 두지 않는다). 해시가 없는 기존 설치본의 1회 교체는 <code>migrate</code>가 원본을 <code>.harness/backup/</code>에 누적 백업하고 diff로 미리 보여준다. <strong>검증 3층에서 겹치는 발견이 하나도 없었다</strong> — 설계 리뷰 1건(보호가 딱 한 번만 걸리는 구조) · 자체 실행 검증 3건(같은 초 백업 덮어쓰기 포함) · codex 적대적 리뷰 7건(P1 1·P2 5·P3 1), <strong>11건 전부 재현해 반영</strong>. <code>templates/</code>는 불변이지만 보호는 <code>init</code>이 해시를 기록한 뒤부터라 <strong>갱신 후 migrate → init을 한 번</strong> 돌려야 하고, <code>.gitignore</code>가 <code>.harness/</code>를 통째로 무시한다면 그 줄을 먼저 고쳐야 한다.
@@ -2610,7 +2614,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.36.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.37.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

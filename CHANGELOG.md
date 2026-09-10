@@ -18,6 +18,8 @@ modified: 2026-09-10
 
 ## [Unreleased]
 
+## [0.37.0] - 2026-09-10
+
 ### Added
 - **`harness-team review` — 리뷰 엔진의 실행과 증거 기록을 harness가 소유합니다.** 지금까지 `done` 가드의
   리뷰·검증 증거는 에이전트가 artifact에 손으로 append한 마커 한 줄이었고, "리뷰를 돌리지 않고 마커만
