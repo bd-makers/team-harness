@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ review-evidence-cli-owned
 - ✅ migrate-init-gaps
 - ✅ observe-surfacing
 - ✅ done-force-audit-trail
