@@ -3,8 +3,8 @@
   "task": "review-evidence-cli-owned",
   "created": "2026-09-10",
   "firstActivatedAt": "2026-09-10T15:47:41.994Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-09-10T16:21:18.177Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [
