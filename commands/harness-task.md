@@ -80,8 +80,10 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name>
 ## `<name>-meta.json`과 판정 창
 
 `<name>-meta.json`은 harness가 소유하는 **기계 상태**다(`created`·`firstActivatedAt`·`status`·
-`closedAt`·`reopenedAt`). SSOT 4파일에 포함되지 않으며 **손으로 고치지 않는다** — `done` 가드가
-증거를 찾는 판정 창의 시작점이 여기서 정해지기 때문이다.
+`closedAt`·`reopenedAt`·`forcedAt`·`forcedIssues`·`reviews`). SSOT 4파일에 포함되지 않으며 **손으로
+고치지 않는다** — `done` 가드가 증거를 찾는 판정 창의 시작점과, `verify: required`가 세는 리뷰 증거
+(`reviews[]`, `harness-team review`가 성공한 실행마다 append)가 여기 있기 때문이다. `reviews` 키가
+없는 구 task는 종전대로 artifact 마커로 판정한다 — 상세는 harness-review 명령 문서 5단계.
 
 - **판정 창 = `reopenedAt || firstActivatedAt`** (처음 유효한 값). 창을 통째로 버리면 마커 신선도·
   커밋·테스트 시각 가드가 전부 꺼지는 fail-open이 된다.

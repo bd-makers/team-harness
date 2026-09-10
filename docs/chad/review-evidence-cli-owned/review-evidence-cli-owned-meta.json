@@ -1,0 +1,21 @@
+{
+  "user": "chad",
+  "task": "review-evidence-cli-owned",
+  "created": "2026-09-10",
+  "firstActivatedAt": "2026-09-10T15:47:41.994Z",
+  "status": "done",
+  "closedAt": "2026-09-10T16:21:18.177Z",
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "claude-adversarial",
+      "engine": "claude",
+      "scope": "worktree",
+      "tip": "826826bb98a9647b1fea1733c1a9c5123e9ffd71",
+      "at": "2026-09-10T16:16:37.115Z",
+      "exitCode": 0,
+      "outputBytes": 10555
+    }
+  ]
+}

@@ -20,6 +20,7 @@ import { runBoundary } from '../src/commands/boundary.mjs';
 import { runSummary } from '../src/commands/summary.mjs';
 import { runObserve } from '../src/commands/observe.mjs';
 import { runRules } from '../src/commands/rules.mjs';
+import { runReview } from '../src/commands/review.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -49,13 +50,13 @@ async function main() {
 
   const { cmd, positional, flags } = invocation;
 
-  const taskCmds = new Set(['task', 'list', 'summary', 'done', 'handoff', 'retro', 'release', 'context', 'boundary', 'session-context', 'observe', 'rules']);
+  const taskCmds = new Set(['task', 'list', 'summary', 'done', 'handoff', 'retro', 'release', 'context', 'boundary', 'session-context', 'observe', 'rules', 'review']);
   const target = flags.target || (taskCmds.has(cmd) ? process.cwd() : positional[0]) || process.cwd();
   const ctx = {
     root: ROOT,
     targetDir: resolve(process.cwd(), target),
     flags,
-    taskArgs: (cmd === 'task' || cmd === 'retro' || cmd === 'release' || cmd === 'context' || cmd === 'boundary' || cmd === 'rules') ? positional : [],
+    taskArgs: (cmd === 'task' || cmd === 'retro' || cmd === 'release' || cmd === 'context' || cmd === 'boundary' || cmd === 'rules' || cmd === 'review') ? positional : [],
   };
 
   switch (cmd) {
@@ -79,6 +80,7 @@ async function main() {
     case 'session-context': return runSessionContext(ctx);
     case 'retro': return runRetro(ctx);
     case 'rules': return runRules(ctx);
+    case 'review': return runReview(ctx);
     case 'release': return runRelease(ctx);
     // Unreachable: resolveInvocation answers help/version, rejects unknown
     // commands, and only returns `run` for a name listed in COMMANDS. A miss

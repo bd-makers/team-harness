@@ -505,6 +505,22 @@ const REVIEW_MARKER_RE = /<!--\s*harness:review\s+([^>]*?)-->/g;
 export const VERIFY_KIND_SUFFIXES = ['adversarial', 'testcritic', 'shipcheck', 'contrarian', 'simplifier'];
 const VERIFY_KIND_RE = new RegExp(`-(?:${VERIFY_KIND_SUFFIXES.join('|')})$`);
 
+// `meta.reviews[]` 항목을 마커와 같은 형태 `{ kind, at, scope, tip }`로 정규화한다. 손으로 고쳐
+// 깨진 항목(kind 없음·at 비ISO)은 마커 파서와 같은 규약으로 없는 것 취급 — fail-open 이 아니라
+// "그 항목은 증거가 아니다"이므로 verify 가드는 더 엄격해진다.
+export function parseMetaReviews(reviews) {
+  const out = [];
+  for (const r of Array.isArray(reviews) ? reviews : []) {
+    if (!r || typeof r !== 'object' || typeof r.kind !== 'string' || !r.kind) continue;
+    // 실패한 실행은 증거가 아니다 — 쓰는 쪽(runReview)이 이미 거르지만 읽는 쪽도 같은 규약을 지킨다.
+    if (r.exitCode !== undefined && r.exitCode !== 0) continue;
+    const at = parseIsoInstant(r.at);
+    if (Number.isNaN(at)) continue;
+    out.push({ kind: r.kind, at, scope: r.scope ?? null, tip: r.tip ?? null });
+  }
+  return out;
+}
+
 export function parseReviewMarkers(artifact) {
   const markers = [];
   for (const match of artifact.matchAll(REVIEW_MARKER_RE)) {
@@ -578,19 +594,32 @@ async function collectDoneIssues(targetDir, active) {
     }
   }
 
-  // 리뷰·검증 마커 — spec이 명시적으로 required를 선언한 task만 검사한다.
-  // "리뷰가 진짜 돌았는가"는 검증할 수 없다. 이 체크가 막는 것은 망각이다.
+  // 리뷰·검증 증거 — spec이 명시적으로 required를 선언한 task만 검사한다.
+  // 증거 출처는 둘이다. (1) `meta.reviews[]` — `harness-team review`가 성공한 실행마다 쓰는
+  // harness 소유 기록. (2) artifact 마커 — 에이전트가 손으로 남기던 종전 방식.
+  // meta에 `reviews` 키가 있으면(CLI가 한 번이라도 썼거나 새 템플릿) verify는 (1)만 센다 —
+  // "리뷰를 안 돌리고 마커만 쓰기"를 절차 안의 지름길에서 harness 상태를 손대는 고의로 옮긴다.
+  // 키가 없는 구 task는 종전대로 (2)로 판정한다. review는 어느 쪽이든 인정한다(손으로 돌린
+  // 리뷰의 산문 기록을 계속 받는다). 리뷰 "품질"은 여전히 검증하지 않는다 — 실행됐다는 사실뿐이다.
   if (evidence.review === 'required' || evidence.verify === 'required') {
     const markers = artifactContent ? parseReviewMarkers(artifactContent) : [];
-    // 창을 모르면(구 task) 시각 비교를 포기하고 마커 존재만 본다.
-    const fresh = markers.filter(m => windowStart === null || m.at >= windowStart);
-    if (evidence.review === 'required' && !fresh.length) {
-      issues.push('spec이 `review: required`인데 이 task 기간의 리뷰 마커가 artifact에 없음 (`/harness-review` 실행 후 기록)');
+    const cliOwned = Boolean(meta && Array.isArray(meta.reviews));
+    const cliReviews = cliOwned ? parseMetaReviews(meta.reviews) : [];
+    // 창을 모르면(구 task) 시각 비교를 포기하고 존재만 본다.
+    const inWindow = m => windowStart === null || m.at >= windowStart;
+    const freshMarkers = markers.filter(inWindow);
+    const freshCli = cliReviews.filter(inWindow);
+    if (evidence.review === 'required' && !freshMarkers.length && !freshCli.length) {
+      issues.push('spec이 `review: required`인데 이 task 기간의 리뷰 마커가 artifact에 없음 (meta.reviews에도 없음 — `harness-team review` 실행)');
     }
     // verify는 검증 프레이밍 kind만 센다 — 검증 마커는 review도 겸하지만 역은 성립하지 않는다.
-    // 가드는 마커 존재·kind·시각만 읽는다(D6: finding 내용 판정은 결정론 게이트 밖).
-    if (evidence.verify === 'required' && !fresh.some(m => VERIFY_KIND_RE.test(m.kind))) {
-      issues.push(`spec이 \`verify: required\`인데 이 task 기간의 검증 마커가 artifact에 없음 (kind 접미사 ${VERIFY_KIND_SUFFIXES.map(s => `-${s}`).join('·')} — 검증 프레이밍 리뷰 실행 후 기록)`);
+    // 가드는 존재·kind·시각만 읽는다(D6: finding 내용 판정은 결정론 게이트 밖).
+    const verifySource = cliOwned ? freshCli : freshMarkers;
+    if (evidence.verify === 'required' && !verifySource.some(m => VERIFY_KIND_RE.test(m.kind))) {
+      const where = cliOwned
+        ? '검증 항목이 meta.reviews에 없음 (`harness-team review <engine> --framing <접미사> --prompt-file <프롬프트>` 실행 — 손으로 쓴 artifact 마커는 세지 않는다)'
+        : '검증 마커가 artifact에 없음 (검증 프레이밍 리뷰 실행 후 기록)';
+      issues.push(`spec이 \`verify: required\`인데 이 task 기간의 ${where} (kind 접미사 ${VERIFY_KIND_SUFFIXES.map(s => `-${s}`).join('·')})`);
     }
   }
 

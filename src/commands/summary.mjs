@@ -40,9 +40,13 @@ const isForced = (t) => Boolean(t.forcedAt || t.forcedRecovered);
 // 감사 흔적이다. 차단하지 않으며 가드의 판정과 무관하다 — 우회는 계속 합법이고, 바뀌는 것은
 // 그 사실이 종결 후에도 기계 판독 가능하게 남는가 하나다. 플래그만 붙고 무시한 것이 없으면
 // 우회가 아니므로 null 로 남는다. 키가 아예 없는 구 task 는 "우회 아님"이 아니라 "알 수 없음"이다.
+// `reviews[]`는 `harness-team review`가 성공(exit 0)한 실행마다 append하는 리뷰 증거다 —
+// `{ kind, engine, scope, tip, at, exitCode, outputBytes }`. 키가 있으면 done 가드의
+// `verify: required`는 이 배열만 읽고 artifact 마커를 세지 않는다. 키가 없는 구 meta는
+// 종전대로 마커로 판정한다(소급하면 이미 닫힌 증거가 무효가 돼 가드가 `--force` 훈련기가 된다).
 export function taskMetaTemplate(user, task, created, firstActivatedAt) {
   return JSON.stringify(
-    { user, task, created, firstActivatedAt, status: 'open', closedAt: null, forcedAt: null, forcedIssues: null },
+    { user, task, created, firstActivatedAt, status: 'open', closedAt: null, forcedAt: null, forcedIssues: null, reviews: [] },
     null, 2,
   ) + '\n';
 }

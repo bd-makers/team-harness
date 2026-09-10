@@ -50,8 +50,10 @@ plan.md(와 spec.md, 변경 예정 파일 목록)이기 때문이다. 리뷰 프
 
 검증자의 발견은 주장이다 — driver(현재 세션)가 각 제거안을 재현·판별해 위 절차 3번대로
 사용자 승인 후 **driver가** plan.md를 수정한다. 검증자는 어떤 파일도 고치지 않는다
-(자동 수정 루프 금지 — 제거"안"까지가 검증자의 몫이다). 결과는 활성 task artifact
-`## Reviews`에 날짜·엔진과 함께 남기고, 마커는 한 줄로 append 한다:
+(자동 수정 루프 금지 — 제거"안"까지가 검증자의 몫이다). 실행은 위 프롬프트를 파일에 쓰고
+`harness-team review <engine> --framing simplifier --prompt-file <path> --scope task-docs`로 한다 —
+CLI가 meta.reviews와 artifact `## Reviews`에 아래 형태의 마커를 남기고, 에이전트는 그 블록 아래에
+판별 결과를 산문으로 쓴다(마커를 손으로 쓰지 않는다):
 
 ```text
 <!-- harness:review kind=<engine>-simplifier scope=task-docs tip=<HEAD sha|none> at=<ISO8601 UTC> -->
