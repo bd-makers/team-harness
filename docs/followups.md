@@ -7,9 +7,9 @@
 
 ## 우선순위
 
-**5 → 3.** 5는 같은 사고를 두 번 겪었으므로 값이 가장 크며, 3은 5와 같은 영역(`session-context`·`migrate`)이라
-붙여서 하기 좋다. 2는 결정이 먼저. 4·6·7은 급하지 않다.
-(1번 `review codex` 실측은 2026-09-11 task `review-codex-live-check`로 올려 여기서 지웠다 — 번호는 참조 안정을 위해 유지.)
+**3 → 8.** 3은 `migrate`·`session-context` 영역이라 5번 구현 위에 붙이기 좋고, 8은 P3 세 건을 다음 minor에 묶는다.
+2는 결정이 먼저. 4·6·7은 급하지 않다.
+(1번·5번은 2026-09-11 task `review-codex-live-check`·`done-on-main-nudge`로 올려 여기서 지웠다 — 번호는 참조 안정을 위해 유지.)
 
 ---
 
@@ -46,19 +46,6 @@
 - **비용**: 공용 프롬프트처럼 문서 ↔ src pin 테스트 5개가 더 생긴다(`tests/review-command.test.mjs`의
   `REVIEW_PROMPT_TEMPLATE` pin 참조). 문서가 정본이라는 현 구조를 유지할지, src가 정본이 되고 문서가
   포인터가 될지 결정 필요.
-
-## 5. "main에서 이미 종결된 task" 감지 — 하네스가 구조적으로 못 잡던 실패
-
-- **사고**: 2026-09-10, 09-07 클론에서 `done-force-audit-trail`을 구현했는데 main에는 09-08에 같은 task가
-  이미 구현·종결·릴리스(0.34.0)돼 있었다. 6커밋을 폐기했다. 두 구현은 설계까지 갈렸다(sticky vs per-close).
-- **왜 하네스가 못 잡았나**: `.harness/active.json`이 gitignore라 클론은 "이 task가 main에서 `done`"인지
-  알 수 없고, SessionStart의 task-gate(`src/commands/session-context.mjs`)는 로컬 meta만 본다. D5 격리 병렬
-  모델이 전제하는 "task는 브랜치당 하나"가 **같은 task를 두 클론이 각자 활성으로 가진 경우**를 다루지 않는다.
-- **어떻게**: `session-context`가 활성 task의 meta를 `origin/<default>`에서 한 번 읽어(`git show
-  origin/main:docs/<user>/<task>/<task>-meta.json`) `status === 'done'`이면 breadcrumb 대신
-  "이 task는 main에서 <closedAt>에 종결됨 — 재개할 것인지 확인" nudge. fetch는 하지 않는다(네트워크·시간);
-  로컬 `origin/main` ref 기준이고, 없으면 조용히 건너뛴다. 같은 검사를 `doctor`에도.
-- **정본**: `src/commands/session-context.mjs` `buildSessionContext`, `AGENTS.md` task-gate 절, `docs/decisions.md` D5.
 
 ## 6. `tests/sim/agentloop.mjs` 헤더 주석 정정 — 한 줄
 

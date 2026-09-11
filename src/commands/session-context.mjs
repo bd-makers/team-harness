@@ -5,6 +5,7 @@ import { readActive, planHasOpenBoxes } from './task.mjs';
 import { readTaskMeta } from './summary.mjs';
 import { contextCardPath, validateContextCard } from './context.mjs';
 import { evaluateObserveVerdict } from './observe.mjs';
+import { checkDoneOnMain, renderDoneOnMainNudge } from './remote-task.mjs';
 
 // "task-gate가 있다"의 단일 정의 — migrate(보강)와 doctor(감지)가 공유.
 // .claude/settings.json의 SessionStart hook 중 `session-context`를 호출하는 항목이 있으면 true.
@@ -56,9 +57,20 @@ export async function listIncompleteTasks(targetDir) {
 
 // The task-gate half of the SessionStart injection (active-task breadcrumb + card, or the
 // "no active task" nudge). Untouched by observe surfacing — see buildSessionContext below.
-async function buildTaskGateContext(targetDir) {
+async function buildTaskGateContext(targetDir, { doneOnMain = checkDoneOnMain } = {}) {
   const active = await readActive(targetDir);
   if (active && active.task) {
+    // 원격 done 감지(done-on-main-nudge): 이 task가 origin/<default>에서 이미 종결됐으면 breadcrumb·TCC 대신
+    // nudge만 낸다 — 재개 여부가 먼저다. 판정은 fetch 없이 로컬 ref 기준이고, 어떤 실패도 기존 경로로 떨어진다
+    // (SessionStart 출력은 판정 때문에 깨지지 않는다 — observe 표면화와 같은 계약).
+    let verdict = null;
+    try { verdict = await doneOnMain(targetDir, active.user, active.task); } catch { verdict = null; }
+    if (verdict) {
+      return [
+        renderDoneOnMainNudge({ user: active.user, task: active.task, ...verdict }),
+        `next-action: AskUserQuestion — 재개(main을 가져온 뒤 harness-team task ${active.task}) / 폐기(harness-team list 로 다른 task 선택)`,
+      ].join('\n');
+    }
     const breadcrumb = `[harness] 활성 task: ${active.user}/${active.task} — 세션 시작 프로토콜대로 ${active.task}-plan.md 확인.`;
     const path = contextCardPath(targetDir, active);
     if (!(await exists(path))) {
@@ -130,8 +142,8 @@ async function observeSurfacingLine(targetDir, now) {
 
 // Combined form (tests, and anyone who wants the whole injection as one string). Joined the
 // way runSessionContext prints it: gate, newline, observe line.
-export async function buildSessionContext(targetDir, { now = new Date() } = {}) {
-  const gate = await buildTaskGateContext(targetDir);
+export async function buildSessionContext(targetDir, { now = new Date(), doneOnMain } = {}) {
+  const gate = await buildTaskGateContext(targetDir, doneOnMain ? { doneOnMain } : {});
   const observe = await observeSurfacingLine(targetDir, now);
   return observe ? `${gate}\n${observe}` : gate;
 }

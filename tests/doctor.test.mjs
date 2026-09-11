@@ -6,7 +6,7 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from 'node:fs
 import { tmpdir, homedir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { classifyHookCommand, collectHookCommands, redactCommand, checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, DECISION_HEADINGS, checkObserveTripWires, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
+import { classifyHookCommand, collectHookCommands, redactCommand, checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, checkActiveDoneOnMain, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, DECISION_HEADINGS, checkObserveTripWires, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
 import { POST_COMMIT_HOOK } from '../src/git-hooks.mjs';
 import { cloudSyncPathWarning } from '../src/harness.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
@@ -1112,4 +1112,31 @@ test('redactCommand: 실행 대상만 남기고 인자는 생략한다 (secret �
   const out = redactCommand('API_TOKEN=s3cr3t custom-hook --auth "Bearer abc123"');
   assert.doesNotMatch(out, /s3cr3t|abc123/, '비밀값이 나가지 않는다');
   assert.match(out, /custom-hook/, '어느 훅인지는 알 수 있다');
+});
+
+// ---- 활성 task 가 origin/<default> 에서 이미 done (done-on-main-nudge) ----
+
+test('checkActiveDoneOnMain: 활성 task 없으면 null (조용히 skip)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-dom-'));
+  try {
+    assert.equal(await checkActiveDoneOnMain(dir, { doneOnMain: async () => ({ ref: 'origin/main', closedAt: 'x' }) }), null);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkActiveDoneOnMain: 원격 done → 경고 문자열 (user/task·ref·closedAt)', async () => {
+  const dir = await makeActiveFixture(taskSpecTemplate('demo'));
+  try {
+    const w = await checkActiveDoneOnMain(dir, { doneOnMain: async () => ({ ref: 'origin/main', closedAt: '2026-09-08T10:00:00.000Z' }) });
+    assert.match(w, /task tester\/demo/);
+    assert.match(w, /origin\/main/);
+    assert.match(w, /2026-09-08T10:00:00\.000Z/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkActiveDoneOnMain: 판정 null(비-git 디렉터리 기본 경로 포함) → null', async () => {
+  const dir = await makeActiveFixture(taskSpecTemplate('demo'));
+  try {
+    assert.equal(await checkActiveDoneOnMain(dir, { doneOnMain: async () => null }), null);
+    assert.equal(await checkActiveDoneOnMain(dir), null); // tmpdir 은 git 저장소가 아니다
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });

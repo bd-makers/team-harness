@@ -77,6 +77,27 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name>
    어댑터가 `commands/harness-diagram.md`다. task 생성 시점 이후 아무 때나 다시 실행해 산출물을
    갱신할 수 있다. 이 문서는 **옵트인 계약**의 정본이고, 그 계약을 실행하는 절차는 그쪽에 있다.
 
+## 원격 done nudge (`task`·`session-context`·`doctor` 공통)
+
+`task <name>`은 생성·활성화 직전에 그 task의 meta를 `origin/<default>`(`origin/HEAD` → 없으면 `origin/main`)에서
+한 번 읽는다 — **fetch하지 않는다**(로컬 ref 기준, 마지막 fetch 시점의 main). 원격 `status`가 `done`이고 로컬이
+미종결이면 출력 **첫 줄**에 nudge를 낸다. **막지 않는다** — 다른 클론이 같은 task를 먼저 끝냈는데 이 클론이
+모르고 이어가는 사고(2026-09-10, 6커밋 폐기)를 가장 이른 지점에서 알리는 것이 목적이다.
+
+```
+[harness] ⚠ task <user>/<name> 는 origin/main 에서 <closedAt> 에 이미 종결됨 — 재개할 것인지 확인. …
+created: docs/<user>/<name>/
+```
+
+- 판정은 `src/commands/remote-task.mjs` 한 곳이고 `session-context`(SessionStart, breadcrumb·TCC 대신 nudge만)와
+  `doctor`(`done on main` warning)가 같은 함수를 쓴다.
+- **침묵 조건**: 로컬 meta가 이미 `done`(재개 후보 판정이 처리) · 로컬 `reopenedAt`이 원격 `closedAt`보다 나중(고의 재개).
+  따라서 정상 복구 경로는 **main을 가져온 뒤 `task <name>`** — 로컬 meta가 done이 되고, 다시 열면 `reopenedAt`이 생겨
+  다음 세션부터 조용하다.
+- git이 없거나, 저장소가 아니거나, origin이 없거나, 그 경로에 meta가 없으면 조용히 건너뛴다. partial clone(`--filter=blob:none`)도
+  마찬가지다 — `GIT_NO_LAZY_FETCH=1`로 암묵 fetch를 막으므로 blob이 없으면 "모른다"(2 s timeout). `--json`이면 envelope 최상위에
+  `doneOnMain: { ref, closedAt }` 필드가 붙는다.
+
 ## `<name>-meta.json`과 판정 창
 
 `<name>-meta.json`은 harness가 소유하는 **기계 상태**다(`created`·`firstActivatedAt`·`status`·

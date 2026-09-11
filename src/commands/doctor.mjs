@@ -7,6 +7,7 @@ import { exists } from '../fsx.mjs';
 import { loadBackupDir, settingsHasBoundaryCheckpoint, codexHooksHaveSessionContext } from '../harness.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation } from '../observation.mjs';
 import { settingsHasSessionGate } from './session-context.mjs';
+import { checkDoneOnMain } from './remote-task.mjs';
 import { checkRuleProvenance } from './rules.mjs';
 import { findStaleTemplates, isKnownStockTemplate } from './migrate.mjs';
 import { evaluateObserveVerdict, observeLoopbackNudge, tripWireDetail } from './observe.mjs';
@@ -243,6 +244,20 @@ export async function checkActiveSpecGate(targetDir) {
     return `active task ${user}/${task}: spec.md에 Ambiguity 자가진단 섹션 없음 (게이트 우회 — 포인터 껍데기 spec 의심)`;
   }
   return null;
+}
+
+// Detect an active task that origin/<default> already closed (done-on-main-nudge): the clone kept
+// working on a task main had finished. Same verdict as session-context/task; warning string or null.
+// `doneOnMain` is injectable for tests (a tmpdir is not a git repo → the default resolves to null).
+export async function checkActiveDoneOnMain(targetDir, { doneOnMain = checkDoneOnMain } = {}) {
+  let active;
+  try { active = JSON.parse(await readFile(join(targetDir, '.harness/active.json'), 'utf8')); }
+  catch { return null; }
+  if (!active || !active.task) return null;
+  let verdict = null;
+  try { verdict = await doneOnMain(targetDir, active.user, active.task); } catch { return null; }
+  if (!verdict) return null;
+  return `active task ${active.user}/${active.task}: ${verdict.ref} 에서 ${verdict.closedAt ?? '(시각 미기록)'} 에 이미 종결됨 — 클론이 main의 종결을 모른 채 이어가는 중일 수 있음`;
 }
 
 // Detect the legacy structure (0.7.x): CLAUDE.md was the master and AGENTS.md/
@@ -757,6 +772,13 @@ export async function runDoctor(ctx) {
   if (specGateWarning) {
     add('spec gate', 'warning', specGateWarning, `\n⚠️ ${specGateWarning}`);
     line(`hint: spec은 \`harness-team task <name>\`로 생성해 자가진단 게이트를 포함시켜라`);
+  }
+
+  // Active task already closed on origin/<default> (⚠️, advisory — does not count toward fail).
+  const doneOnMainWarning = await checkActiveDoneOnMain(ctx.targetDir);
+  if (doneOnMainWarning) {
+    add('done on main', 'warning', doneOnMainWarning, `\n⚠️ ${doneOnMainWarning}`);
+    line(`hint: 재개하려면 main을 가져온 뒤 \`harness-team task <name>\`으로 다시 연다(reopened) — 아니면 harness-team list 로 다른 task를 고른다`);
   }
 
   // SessionStart task-gate hook presence (⚠️, advisory — does not count toward fail).
