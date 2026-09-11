@@ -25,3 +25,7 @@
  src/commands/task.mjs                              |  49 ++-
  tests/handoff-hook-churn.test.mjs                  | 148 +++++++++
  21 files changed, 936 insertions(+), 102 deletions(-)
+
+## 2026-09-11T16:21:00.440Z — 3ed4d72 chore(task): handoff-amend-dedup plan 종결
+docs/chad/handoff-amend-dedup/handoff-amend-dedup-plan.md | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
