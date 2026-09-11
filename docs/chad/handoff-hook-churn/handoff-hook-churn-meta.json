@@ -3,8 +3,8 @@
   "task": "handoff-hook-churn",
   "created": "2026-09-11",
   "firstActivatedAt": "2026-09-11T11:47:45.437Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-09-11T12:33:02.497Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [

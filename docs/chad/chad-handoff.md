@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-handoff-hook-churn
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-11)
-4904f83 fix(handoff): post-commit churn 루프를 끊는다 — 0.38.1
+## Last Completed Task (2026-09-11)
+`handoff-hook-churn` — done
 
 ## Full Context
 → docs/chad/handoff-hook-churn/handoff-hook-churn-handoff.md

@@ -25,3 +25,14 @@
  tests/done-guard.test.mjs                          |  21 +-
  tests/handoff-hook-churn.test.mjs                  | 193 +++++++++++
  21 files changed, 1107 insertions(+), 130 deletions(-)
+
+## 2026-09-11T12:33:02.389Z — e9eea97 chore(task): handoff-hook-churn plan 종결 + 실측 증거, 집계 원장 갱신
+docs/chad/chad-task.md                                      | 1 +
+ docs/chad/handoff-hook-churn/handoff-hook-churn-artifact.md | 2 ++
+ docs/chad/handoff-hook-churn/handoff-hook-churn-plan.md     | 4 ++--
+ docs/task_summary.md                                        | 1 +
+ 4 files changed, 6 insertions(+), 2 deletions(-)
+
+## 2026-09-11T12:33:02.497Z — 완료
+
+태스크 종료.
