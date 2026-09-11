@@ -1,6 +1,7 @@
 # chad — Tasks
 
 ## Open
+- handoff-hook-churn (created 2026-09-11)
 
 ## Completed
 - ✅ done-on-main-nudge

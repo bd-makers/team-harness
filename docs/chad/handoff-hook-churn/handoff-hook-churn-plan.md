@@ -10,8 +10,8 @@
 - [x] 테스트: 핸드오프만 바뀐 커밋 → 파일 불변 / 소스+핸드오프 → 기록 / 병합 커밋 → 기록 / 빈 커밋 → 기록
 - [x] `npm run test` 전체 통과
 - [x] codex 리뷰 3회 → P2 4건·P3 4건 판별·수정 → 3차 APPROVE, artifact 기록
-- [ ] 릴리스 문서(what-changes-0.38.1 · overview 템플릿 3곳 · index · CHANGELOG) → `release 0.38.1` → 단일 커밋
-- [ ] push · 태그 v0.38.1 · clone 갱신 (사용자 승인 후)
+- [x] 릴리스 문서(what-changes-0.38.1 · overview 템플릿 3곳 · index · CHANGELOG) → `release 0.38.1` → 단일 커밋(4904f83)
+- [x] push · 태그 v0.38.1 · clone 갱신 (사용자 승인 후) — Release 발행, 전역 CLI 0.38.1
 
 ## Ontology 변경 로그
 - 2026-09-11 **sweep 커밋**: 직전 커밋의 churn만 담는 커밋 — 이 수정 뒤 훅이 침묵하는 지점으로 정의됨.
