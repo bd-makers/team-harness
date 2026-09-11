@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-handoff-amend-dedup
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-11)
-9835a60 chore(task): handoff-amend-dedup plan 종결
+## Last Completed Task (2026-09-11)
+`handoff-amend-dedup` — done
 
 ## Full Context
 → docs/chad/handoff-amend-dedup/handoff-amend-dedup-handoff.md

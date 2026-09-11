@@ -4,6 +4,7 @@
 
 ## Completed
 - ✅ done-on-main-nudge
+- ✅ handoff-amend-dedup
 - ✅ handoff-hook-churn
 - ✅ review-adopt-record-quality
 - ✅ review-codex-live-check
