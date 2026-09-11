@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+handoff-amend-dedup
 
-## Last Completed Task (2026-09-11)
-`handoff-hook-churn` — done
+## Last Commit (2026-09-11)
+22f03cb fix(handoff): amend 가 남기던 고아 항목을 없앤다 — 0.38.2
 
 ## Full Context
-→ docs/chad/handoff-hook-churn/handoff-hook-churn-handoff.md
+→ docs/chad/handoff-amend-dedup/handoff-amend-dedup-handoff.md
