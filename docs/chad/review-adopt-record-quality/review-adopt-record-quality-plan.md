@@ -23,10 +23,10 @@ followup 3(구 task → CLI 소유 채택 경로)과 8(review 기록 품질 3건
 - [x] `commands/harness-review.md` 5단계 "구 task 호환"에 채택 경로 포인터 추가 (review 부수효과 금지는 유지)
 - [x] `commands/harness-task.md` "손으로 고치지 않는다"에 확인 거친 예외 명시
 - [x] `commands/harness-migrate.md`(있으면)·README 해당 절 갱신 + `docs/followups.md`에서 3·8번 삭제(번호 유지)
-- [ ] `what-changes-0.38.0.html` 작성 (0.37.0 소비자 절의 "손으로 넣지 말 것" 계약과의 관계를 명시)
+- [x] `what-changes-0.38.0.html` 작성 (0.37.0 소비자 절의 "손으로 넣지 말 것" 계약과의 관계를 명시)
 - [x] `npm run test` 전체 통과 확인
 - [x] codex 리뷰 3회 실행 (`node bin/harness-team.mjs review codex --scope worktree`) → 발견 판별·조치 → artifact 기록 (3차 APPROVE)
-- [ ] `harness-team release 0.38.0` (사용자 승인 후)
+- [x] `harness-team release 0.38.0` (사용자 승인 후) — bump·단일 커밋(c1d1382)·push·태그 v0.38.0 완료
 
 ## Ontology 변경 로그
 - 2026-09-11 **채택(adopt)**: 구 task의 meta에 빈 `reviews: []`를 넣어 CLI 소유로 넘기는 명시적 1회 조작 — 신설.
