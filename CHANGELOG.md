@@ -18,6 +18,22 @@ modified: 2026-09-10
 
 ## [Unreleased]
 
+## [0.38.4] - 2026-09-12
+
+### Fixed
+- **`commands/harness-review.md`의 인증 주장이 무조건이라 틀렸던 것.** *"부모 세션의 인증을 상속한다
+  (2026-08-21 실측 검증)"* 는 **환경에 따라 다르다**: 원격 컨테이너에서는 상속했지만(0.37.0 dogfood 리뷰가
+  그 경로), 데스크톱 앱 세션에서는 상속하지 않는다 — 2026-09-12 실측에서 자식이
+  `Failed to authenticate: OAuth session expired and could not be refreshed`를 stdout에 내고 **exit 1**로 끝났다.
+  에이전트가 그 문장을 믿고 claude 엔진을 고르면 리뷰가 실패한다(① 에이전트 행동 표면, 0.16.1 선례와 같은 모양).
+  두 환경의 실측을 병기하고 대안(codex 엔진 · `CLAUDE_CODE_OAUTH_TOKEN`)을 명시했다.
+- **`tests/sim/agentloop.mjs`·`skilltest.mjs` 헤더의 사유가 틀렸던 것.** "credential isolation"은 결론은 맞지만
+  원인이 아니다 — 자격이 아예 없는 게 아니라 **갱신하지 못하는 store**에 닿는다. 환경 의존도 함께 적었다.
+  **토큰 경로는 유지한다** — 코드가 이미 `if (token) … else ambient login`으로 조건부이고, 상속되지 않는
+  환경에서는 그것이 유일한 길이다(followups가 열어 둔 "토큰 경로 제거" 선택지는 실측이 기각했다).
+
+**코드 변경 없음** — 인증 실패는 exit 1이라 "실패한 실행은 증거로 기록하지 않는다"(0.37.0)가 이미 덮는다.
+
 ## [0.38.3] - 2026-09-12
 
 ### Fixed
