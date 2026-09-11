@@ -2,7 +2,7 @@
 
 (세션 종료 시 post-commit hook이 자동 갱신합니다)
 
-## 2026-09-11T09:10:56.936Z — f528422 feat(review): 구 task 채택 경로와 기록 품질 3건 — 0.38.0
+## 2026-09-11T09:11:02.459Z — c1d1382 feat(review): 구 task 채택 경로와 기록 품질 3건 — 0.38.0
 .claude-plugin/marketplace.json                    |   2 +-
  .claude-plugin/plugin.json                         |   2 +-
  .codex-plugin/plugin.json                          |   2 +-
@@ -11,9 +11,10 @@
  commands/harness-migrate.md                        |  10 +-
  commands/harness-review.md                         |   6 +
  commands/harness-task.md                           |   2 +
+ docs/chad/chad-handoff.md                          |   9 +-
  .../review-adopt-record-quality-artifact.md        | 151 ++++++++
  .../review-adopt-record-quality-context.md         |  27 ++
- .../review-adopt-record-quality-handoff.md         |   3 +
+ .../review-adopt-record-quality-handoff.md         |  33 ++
  .../review-adopt-record-quality-meta.json          |  39 ++
  .../review-adopt-record-quality-plan.md            |  36 ++
  .../review-adopt-record-quality-spec.md            |  95 +++++
@@ -30,4 +31,4 @@
  src/commands/task.mjs                              |  52 +--
  tests/review-adoption.test.mjs                     | 138 ++++++++
  tests/review-command.test.mjs                      | 103 ++++++
- 27 files changed, 1325 insertions(+), 155 deletions(-)
+ 28 files changed, 1359 insertions(+), 160 deletions(-)
