@@ -93,3 +93,4 @@
 | chad | observe-surfacing | ✅ done | 2026-09-08 |
 | chad | migrate-init-gaps | ✅ done | 2026-09-09 |
 | chad | review-evidence-cli-owned | ✅ done | 2026-09-10 |
+| chad | review-codex-live-check | ✅ done | 2026-09-11 |

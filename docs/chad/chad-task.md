@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ review-codex-live-check
 - ✅ review-evidence-cli-owned
 - ✅ migrate-init-gaps
 - ✅ observe-surfacing
