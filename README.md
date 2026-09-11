@@ -108,7 +108,7 @@ cd cloned-project
 harness-team doctor
 ```
 
-에이전트별 강제력은 의도적으로 대칭이 아닙니다.
+에이전트별 강제력은 의도적으로 대칭이 아닙니다 — Codex를 SessionStart 하나로 고정한 근거는 `docs/decisions.md` **D9**입니다(리뷰어 역할 D2와의 정합; 기술적 제약은 아닙니다).
 
 | 에이전트 | hooks | 커맨드/적용 표면 | 경로 스코프 규칙 |
 |---|---|---|---|

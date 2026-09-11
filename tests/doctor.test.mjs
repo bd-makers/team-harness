@@ -198,7 +198,7 @@ test('checkDecisionLog: docs/decisions.md 부재 → 경고 (init 스캐폴드 �
     assert.ok(typeof w === 'string', 'returns a warning string');
     assert.match(w, /없음/);
     assert.match(w, /harness-team init/, '부재는 init 스캐폴드가 해결하므로 init로 유도');
-    assert.match(w, /D2\/D4\/D5\/D6\/D7/, '검사 대상 절 ID를 DECISION_HEADINGS에서 파생해 나열');
+    assert.match(w, /D2\/D4\/D5\/D6\/D7\/D8\/D9/, '검사 대상 절 ID를 DECISION_HEADINGS에서 파생해 나열');
     assert.match(w, /templates\/docs\/decisions\.md/, '가져올 원본 위치를 안내');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
@@ -211,7 +211,7 @@ test('checkDecisionLog: 일부 절 누락 → 누락 절만 나열 + 템플릿 �
   try {
     const w = await checkDecisionLog(dir);
     assert.ok(typeof w === 'string', 'returns a warning string');
-    assert.match(w, /## D4, ## D5, ## D6, ## D7, ## D8 절 없음/, '누락된 절만 정확히 나열');
+    assert.match(w, /## D4, ## D5, ## D6, ## D7, ## D8, ## D9 절 없음/, '누락된 절만 정확히 나열');
     assert.doesNotMatch(w, /## D2/, '존재하는 D2는 누락 목록에 없어야 한다');
     // 원래 이 단언은 /init/ 부분일치였다. "init로 유도하지 말 것"이 의도인데, 문구가
     // "init·migrate 어느 쪽도 덮어쓰지 않는다"고 *설명*하는 것까지 막고 있었다 —
@@ -238,7 +238,7 @@ test("checkDecisionLog: fenced code block 안의 ## D<n>은 절이 아니다 (�
   try {
     const w = await checkDecisionLog(dir);
     assert.ok(typeof w === "string", "returns a warning string");
-    assert.match(w, /## D4, ## D5, ## D7, ## D8 절 없음/, "펜스 안 D4·D5는 누락으로, 펜스 뒤 D6은 존재로");
+    assert.match(w, /## D4, ## D5, ## D7, ## D8, ## D9 절 없음/, "펜스 안 D4·D5는 누락으로, 펜스 뒤 D6은 존재로");
     assert.doesNotMatch(w, /## D[26]\b/, "존재하는 D2/D6은 누락 목록에 없어야 한다");
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
@@ -251,7 +251,7 @@ test("checkDecisionLog: 닫히지 않은 fenced code block은 문서 끝까지 �
   try {
     const w = await checkDecisionLog(dir);
     assert.ok(typeof w === "string", "returns a warning string");
-    assert.match(w, /## D4, ## D5, ## D6, ## D7, ## D8 절 없음/, "D2 외 전부 누락");
+    assert.match(w, /## D4, ## D5, ## D6, ## D7, ## D8, ## D9 절 없음/, "D2 외 전부 누락");
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
@@ -261,15 +261,15 @@ test("checkDecisionLog: 닫히지 않은 fenced code block은 문서 끝까지 �
 // 같은 문자로 여는 것 이상 길이(뒤에 공백만 허용), 백틱 펜스의 info string에는 백틱이 올 수 없고,
 // 줄 끝은 LF·CRLF·단독 CR 모두다.
 const FENCE_CASES = [
-  ['4자 opener는 3자 closer로 안 닫힌다', ['````', '## D4', '```', '## D5', '````', '## D6'], ['D4', 'D5', 'D7']],
-  ['다른 문자 closer로는 안 닫힌다', ['```', '## D4', '~~~', '## D5', '```', '## D6'], ['D4', 'D5', 'D7']],
-  ['더 긴 closer로는 닫힌다', ['```', '## D4', '`````', '## D5'], ['D4', 'D6', 'D7']],
+  ['4자 opener는 3자 closer로 안 닫힌다', ['````', '## D4', '```', '## D5', '````', '## D6'], ['D4', 'D5', 'D7', 'D9']],
+  ['다른 문자 closer로는 안 닫힌다', ['```', '## D4', '~~~', '## D5', '```', '## D6'], ['D4', 'D5', 'D7', 'D9']],
+  ['더 긴 closer로는 닫힌다', ['```', '## D4', '`````', '## D5'], ['D4', 'D6', 'D7', 'D9']],
   // `\`\`\` x`는 닫지 못하므로 D7까지 펜스 안이고, 감시자 D8을 살리려면 그 뒤에 진짜 closer가 필요하다.
-  ['closer 뒤 공백은 허용, 다른 글자는 불허', ['```', '## D4', '```  ', '## D5', '```', '## D6', '``` x', '## D7', '```'], ['D4', 'D6', 'D7']],
-  ['들여쓰기 3칸까지는 펜스다', ['   ```', '## D4', '   ```', '## D5'], ['D4', 'D6', 'D7']],
-  ['들여쓰기 4칸은 펜스가 아니다(코드 블록 줄일 뿐)', ['    ```', '## D4', '    ```', '## D5'], ['D6', 'D7']],
-  ['백틱 펜스 info string에 백틱이 있으면 펜스가 아니다', ['```md `x', '## D4', '## D5'], ['D6', 'D7']],
-  ['물결 펜스 info string에는 백틱이 와도 된다', ['~~~md `x', '## D4', '~~~', '## D5'], ['D4', 'D6', 'D7']],
+  ['closer 뒤 공백은 허용, 다른 글자는 불허', ['```', '## D4', '```  ', '## D5', '```', '## D6', '``` x', '## D7', '```'], ['D4', 'D6', 'D7', 'D9']],
+  ['들여쓰기 3칸까지는 펜스다', ['   ```', '## D4', '   ```', '## D5'], ['D4', 'D6', 'D7', 'D9']],
+  ['들여쓰기 4칸은 펜스가 아니다(코드 블록 줄일 뿐)', ['    ```', '## D4', '    ```', '## D5'], ['D6', 'D7', 'D9']],
+  ['백틱 펜스 info string에 백틱이 있으면 펜스가 아니다', ['```md `x', '## D4', '## D5'], ['D6', 'D7', 'D9']],
+  ['물결 펜스 info string에는 백틱이 와도 된다', ['~~~md `x', '## D4', '~~~', '## D5'], ['D4', 'D6', 'D7', 'D9']],
 ];
 for (const [name, mid, expect] of FENCE_CASES) {
   test(`checkDecisionLog fence 계약: ${name}`, async () => {
@@ -290,7 +290,7 @@ for (const [name, eol] of [['CRLF', '\r\n'], ['단독 CR', '\r']]) {
     const dir = await makeDecisionLogFixture(['# Team Decision Log', '', '## D2 — a', '```', '## D4', '```', '## D5', '## D8 — tail', ''].join(eol));
     try {
       const w = await checkDecisionLog(dir);
-      assert.equal(/에 (.+?) 절 없음/.exec(w ?? '')?.[1], '## D4, ## D6, ## D7', name);
+      assert.equal(/에 (.+?) 절 없음/.exec(w ?? '')?.[1], '## D4, ## D6, ## D7, ## D9', name);
     } finally { await rm(dir, { recursive: true, force: true }); }
   });
 }
@@ -305,7 +305,7 @@ test('checkDecisionLog: 옛 스캐폴드(D2/D4/D5만) → 이후 절 전부 누�
   try {
     const w = await checkDecisionLog(dir);
     assert.ok(typeof w === 'string', 'returns a warning string');
-    assert.match(w, /## D6, ## D7, ## D8 절 없음/, '옛 스캐폴드 이후 절만 누락으로 나열');
+    assert.match(w, /## D6, ## D7, ## D8, ## D9 절 없음/, '옛 스캐폴드 이후 절만 누락으로 나열');
     assert.doesNotMatch(w, /## D[245]\b/, '존재하는 D2/D4/D5는 누락 목록에 없어야 한다');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

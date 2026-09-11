@@ -111,3 +111,40 @@ AGENTS.md의 task-gate·rules 서술은 **소비자 프로젝트**에 대한 규
 구멍이다(2026-09-08 codex 리뷰 MAJOR). 좁히면 아주 오래된 바이트 드리프트본을 잡던 net이 사라지므로
 의도적으로 남겼다. `doctor`가 이제 모든 소비자를 `migrate`로 유도하니 이 경로는 전보다 자주 실행된다 —
 훅 표면을 손볼 때 함께 재평가할 것.
+
+## D9 (2026-09-12) — Codex 강제력은 SessionStart 하나로 고정한다 (control 계층 배선 기각)
+
+`templates/.codex/hooks.json`은 SessionStart 1종이고 Claude는 5개 이벤트 + 스크립트 6종이다.
+"Codex에도 control 계층(`PreToolUse` 차단·관측)을 배선할 것인가"를 2026-09-12에 결정했다.
+
+**전제는 다 확인됐다 — 기술적 제약이 아니다.** codex-cli 0.153.4 실측:
+이벤트 12종(`PreToolUse`·`PostToolUse`·`PermissionRequest`·`SessionStart`·`Stop` 등)을 지원하고,
+`Command blocked by PreToolUse hook:`과 `PreToolUseDecisionWire`(approve/block/allow/deny/ask)가
+바이너리에 있으며, wire protocol(`hookSpecificOutput`·`permissionDecision`·`decision`/`reason`)이
+Claude와 **같다** — 훅 스크립트를 거의 그대로 재사용할 수 있다. 실험에서 6개 이벤트가 전부 발화했다
+(`docs/chad/codex-project-hooks-probe/`).
+
+**결정**: 배선하지 않는다. Codex의 강제력은 **SessionStart(컨텍스트 주입) 하나**로 유지한다.
+
+**왜** — 기술이 아니라 **D2 때문이다.** D2는 Codex를 **리뷰어(read-only)** 로 규정했고, 그 가치는
+작성자와 리뷰어의 분리에서 나온다. 리뷰어 세션에 쓰기 차단 훅(`protect-files`·`block-dangerous-git`)을
+다는 것은 "리뷰어가 쓰지 않는다"는 전제를 **훅으로 다시 강제**하는 일이다 — 이미 `--sandbox read-only`로
+보장되는 것을 두 번째 계층으로 얹는 셈이고, 지키는 대상이 없다. 관측(`observe-tools`) 역시 리뷰어의
+도구 호출을 세는 것이라 하네스의 관측 목적(작성 세션의 루프 감지)과 맞지 않는다.
+
+**비목표**: 이 결정은 Codex 훅의 **품질**을 낮추지 않는다. 0.38.3에서 SessionStart는 주입 형식
+(`hookSpecificOutput.additionalContext`)을 고쳤고 신뢰 부재를 `doctor`가 경고한다 — 있는 것 하나를
+제대로 돌리는 것과 새 계층을 얹는 것은 다른 문제다.
+
+**기각한 대안**
+- **PreToolUse만 선별 배선** — "차단은 안 하고 관측만"도 같은 문제를 남긴다. 리뷰어의 도구 호출을
+  작성 세션의 신호와 같은 로그에 섞으면 트립와이어 판정이 오염된다.
+- **결정 보류** — 보류 상태가 오래가면 "설치는 했는데 왜 안 도나"를 다시 묻게 된다. 0.38.3에서
+  현재 상태를 정직하게 문서화했으므로 지금 닫는 편이 낫다.
+
+**뒤집는 조건**: Codex를 리뷰어가 아니라 **작성 세션**으로 쓰기 시작하면 이 결정은 무효다.
+그때는 D2를 먼저 고쳐야 하고, 배선 비용은 위 전제대로 크지 않다.
+
+**AGENTS.md 규범 목록에 넣지 않은 이유**: 이 결정은 에이전트가 매 세션 지켜야 할 규칙이 아니라
+**닫힌 결정**이다(무엇을 더 만들지 않는다). eager 계층 예산(24 KiB, 현재 소계 17.5 KiB 상한)에
+여유가 27 B뿐이기도 하다 — MAINTAINING의 "절차 본문은 lazy 정본으로" 원칙 그대로 D-log에만 둔다.

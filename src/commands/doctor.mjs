@@ -400,7 +400,7 @@ export async function checkCodexHookTrust(targetDir, env = process.env) {
 // copies it); missing sections need a manual merge from the plugin's
 // templates/docs/decisions.md.
 export const DECISION_LOG_PATH = 'docs/decisions.md';
-export const DECISION_HEADINGS = ['## D2', '## D4', '## D5', '## D6', '## D7', '## D8'];
+export const DECISION_HEADINGS = ['## D2', '## D4', '## D5', '## D6', '## D7', '## D8', '## D9'];
 // Derived so the absence message cannot drift from the list it describes.
 const DECISION_IDS = DECISION_HEADINGS.map(h => h.replace(/^## /, '')).join('/');
 
