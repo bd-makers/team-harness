@@ -1,10 +1,10 @@
 # chad — Tasks
 
 ## Open
-- handoff-hook-churn (created 2026-09-11)
 
 ## Completed
 - ✅ done-on-main-nudge
+- ✅ handoff-hook-churn
 - ✅ review-adopt-record-quality
 - ✅ review-codex-live-check
 - ✅ review-evidence-cli-owned
