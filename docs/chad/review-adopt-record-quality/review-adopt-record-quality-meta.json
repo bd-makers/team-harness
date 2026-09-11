@@ -3,8 +3,8 @@
   "task": "review-adopt-record-quality",
   "created": "2026-09-11",
   "firstActivatedAt": "2026-09-11T08:37:41.212Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-09-11T11:05:35.660Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [

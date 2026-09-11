@@ -4,6 +4,7 @@
 
 ## Completed
 - ✅ done-on-main-nudge
+- ✅ review-adopt-record-quality
 - ✅ review-codex-live-check
 - ✅ review-evidence-cli-owned
 - ✅ migrate-init-gaps

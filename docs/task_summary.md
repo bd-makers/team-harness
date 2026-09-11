@@ -94,4 +94,5 @@
 | chad | migrate-init-gaps | ✅ done | 2026-09-09 |
 | chad | review-evidence-cli-owned | ✅ done | 2026-09-10 |
 | chad | done-on-main-nudge | ✅ done | 2026-09-11 |
+| chad | review-adopt-record-quality | ✅ done | 2026-09-11 |
 | chad | review-codex-live-check | ✅ done | 2026-09-11 |
