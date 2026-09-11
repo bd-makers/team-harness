@@ -11,3 +11,7 @@
  .../codex-project-hooks-probe-spec.md              | 49 +++++++++++++++
  docs/followups.md                                  | 39 +++++++-----
  7 files changed, 204 insertions(+), 16 deletions(-)
+
+## 2026-09-11T16:31:44.728Z — 완료
+
+태스크 종료.

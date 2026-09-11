@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ codex-project-hooks-probe
 - ✅ done-on-main-nudge
 - ✅ handoff-amend-dedup
 - ✅ handoff-hook-churn
