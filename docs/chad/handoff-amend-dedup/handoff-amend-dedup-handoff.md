@@ -26,6 +26,9 @@
  tests/handoff-hook-churn.test.mjs                  | 148 +++++++++
  21 files changed, 936 insertions(+), 102 deletions(-)
 
-## 2026-09-11T16:21:00.440Z — 3ed4d72 chore(task): handoff-amend-dedup plan 종결
-docs/chad/handoff-amend-dedup/handoff-amend-dedup-plan.md | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+## 2026-09-11T16:21:05.346Z — 9835a60 chore(task): handoff-amend-dedup plan 종결
+docs/chad/chad-handoff.md                                     | 2 +-
+ docs/chad/handoff-amend-dedup/handoff-amend-dedup-artifact.md | 6 ++++++
+ docs/chad/handoff-amend-dedup/handoff-amend-dedup-handoff.md  | 4 ++++
+ docs/chad/handoff-amend-dedup/handoff-amend-dedup-plan.md     | 4 ++--
+ 4 files changed, 13 insertions(+), 3 deletions(-)
