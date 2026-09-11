@@ -26,3 +26,13 @@ CHANGELOG.md                                       |  14 ++
  src/commands/task.mjs                              |   2 +-
  tests/review-command.test.mjs                      | 123 ++++++++++++++++
  22 files changed, 832 insertions(+), 116 deletions(-)
+
+## 2026-09-11T19:31:27.495Z — 6240fe4 chore(docs): post-commit handoff 갱신 + plan 종결 단계 체크
+docs/chad/chad-handoff.md                          |  9 ++++----
+ .../framing-prompts-in-src-handoff.md              | 25 ++++++++++++++++++++++
+ .../framing-prompts-in-src-plan.md                 |  2 +-
+ 3 files changed, 30 insertions(+), 6 deletions(-)
+
+## 2026-09-11T19:31:27.612Z — 완료
+
+태스크 종료.

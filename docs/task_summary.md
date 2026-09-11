@@ -96,6 +96,7 @@
 | chad | codex-hook-injection-fix | ✅ done | 2026-09-11 |
 | chad | codex-project-hooks-probe | ✅ done | 2026-09-11 |
 | chad | done-on-main-nudge | ✅ done | 2026-09-11 |
+| chad | framing-prompts-in-src | ✅ done | 2026-09-11 |
 | chad | handoff-amend-dedup | ✅ done | 2026-09-11 |
 | chad | handoff-hook-churn | ✅ done | 2026-09-11 |
 | chad | review-adopt-record-quality | ✅ done | 2026-09-11 |

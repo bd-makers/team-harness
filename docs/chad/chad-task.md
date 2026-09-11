@@ -6,6 +6,7 @@
 - ✅ codex-hook-injection-fix
 - ✅ codex-project-hooks-probe
 - ✅ done-on-main-nudge
+- ✅ framing-prompts-in-src
 - ✅ handoff-amend-dedup
 - ✅ handoff-hook-churn
 - ✅ review-adopt-record-quality
