@@ -203,7 +203,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.38.4</span>
+      <span class="tag tag-purple">v0.39.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -211,6 +211,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.39.0 — 검증 프레이밍 프롬프트의 정본이 문서에서 src로 간다:</strong>
+    <br>
+    <code>0.39.0</code> <strong>D6 검증 프레이밍 5종(adversarial·testcritic·shipcheck·contrarian·simplifier)의 리뷰 프롬프트를 <code>src/commands/review-prompts.mjs</code> 상수로 옮긴다.</strong> 0.37.0 은 공용 프롬프트만 src 에 두고 프레이밍은 "문서를 읽어 파일에 옮겨 쓴 뒤 <code>--prompt-file</code>" 로 남겼는데, 그 옮겨 쓰기 단계가 kind 와 실제로 엔진에 간 프롬프트 사이에 <strong>기록되지 않는 변형</strong>을 끼웠고 contrarian·simplifier·shipcheck 는 리터럴조차 없이 "표+산문을 조합하라" 였다. 이제 <code>harness-team review &lt;engine&gt; --framing &lt;접미사&gt;</code> 만으로 실행되고, 각 커맨드 문서의 <code>&lt;!-- harness:prompt … --&gt;</code> 마커 다음 text 블록이 미러로 pin 테스트에 묶인다(7 템플릿, 고아 마커 검출). testcritic 은 테스트 스킬 3종이 다른 루브릭을 같은 kind 로 남기므로 <code>--rubric unit|component|integration</code> 선택자를 더했다 — kind 는 <code>&lt;engine&gt;-testcritic</code> 그대로, <code>meta.reviews</code> 항목에는 있을 때만 <code>rubric</code> 필드. contrarian·simplifier 는 scope 가 <code>task-docs</code> 로 고정되고(다른 값은 거부) spec/plan 경로를 CLI 가 채운다. <code>--prompt-file</code> 은 override 로 남는다. kind·allowlist·마커·runner·루브릭 문구는 불변.
+    <br><br>
     <strong>🆕 0.38.4 — "부모 세션의 인증을 상속한다" 는 환경에 따라 다르다:</strong>
     <br>
     <code>0.38.4</code> <strong><code>harness-review.md</code> 가 무조건으로 적어 둔 인증 주장을 고친다.</strong> 중첩 <code>claude -p</code> 가 부모 세션 로그인을 상속하는지는 <strong>환경 의존</strong>이다 — 원격 컨테이너에서는 상속했고(0.37.0 dogfood 리뷰가 그 경로), 데스크톱 앱 세션에서는 <code>exit 1</code> 과 <code>Failed to authenticate: OAuth session expired and could not be refreshed</code> 로 끝난다(2026-09-12 실측). 에이전트가 그 문장을 믿고 claude 엔진을 고르면 리뷰가 실패한다. 반대로 <code>tests/sim/*.mjs</code> 헤더의 "credential isolation" 은 결론은 맞지만 <strong>사유가 틀렸다</strong> — 자격이 아예 없는 게 아니라 갱신하지 못하는 store 에 닿는다. 세 표면을 환경 의존으로 정리하고 대안(codex 엔진 · <code>CLAUDE_CODE_OAUTH_TOKEN</code>)을 명시했으며, sim 의 토큰 경로는 <strong>유지</strong>했다(상속되지 않는 환경의 유일한 길이고 코드는 이미 조건부다). <strong>코드 변경은 없다</strong> — 인증 실패는 exit 1 이라 "실패한 실행은 증거로 기록하지 않는다"(0.37.0)가 이미 덮는다. 틀린 것은 사람과 에이전트가 읽는 문장뿐이었다.
@@ -2669,7 +2673,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.38.4 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.39.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

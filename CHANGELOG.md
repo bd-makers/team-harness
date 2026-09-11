@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-09-10
+modified: 2026-09-12
 ---
 
 # Changelog
@@ -17,6 +17,8 @@ modified: 2026-09-10
 -->
 
 ## [Unreleased]
+
+## [0.39.0] - 2026-09-12
 
 ### Changed
 - **검증 프레이밍 프롬프트의 정본을 src로 옮겼다** (`src/commands/review-prompts.mjs`, task `framing-prompts-in-src`).
