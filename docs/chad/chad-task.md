@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ codex-hook-injection-fix
 - ✅ codex-project-hooks-probe
 - ✅ done-on-main-nudge
 - ✅ handoff-amend-dedup
