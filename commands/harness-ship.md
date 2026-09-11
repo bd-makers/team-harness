@@ -77,19 +77,27 @@ Raw slash-command 인수:
 7. **정합 검증 — 적대적 검증 (옵트인, D6)** — ship은 PR 직전 마지막 게이트인데 문서↔diff
    정합을 ship을 도는 세션이 자기 채점하면 낙관적 통과가 샌다. 중요한 변경(AGENTS.md 리뷰
    프로토콜 기준)이면 **별도 컨텍스트의 read-only 검증자**에게 반박시킨다. 절차·엔진 표는
-   `/harness-review`를 그대로 쓰되(scope는 2번에서 파악한 diff) 리뷰 프롬프트를 아래 루브릭으로
-   교체한다 — 루브릭을 파일에 쓰고 `harness-team review <engine> --framing shipcheck --prompt-file <path>
-   --scope diff --base <ref>`로 실행하면 CLI가 `kind=<engine>-shipcheck`로 meta.reviews와 artifact
-   `## Reviews` 마커를 남긴다(마커를 손으로 쓰지 않는다). 건너뛰면
-   보고(8번)에 "정합 검증: 미실행"을 명시한다.
+   `/harness-review`를 그대로 쓰되(scope는 2번에서 파악한 diff) 리뷰 프롬프트를 아래 블록으로
+   교체한다 — 정본은 `src/commands/review-prompts.mjs`의 `shipcheck` 템플릿이고 이 블록은 미러다
+   (pin 테스트가 동기화; scope·spec/plan/artifact 경로·focus는 CLI가 채운다).
+   `harness-team review <engine> --framing shipcheck --scope diff --base <ref>`로 실행하면 CLI가
+   `kind=<engine>-shipcheck`로 meta.reviews와 artifact `## Reviews` 마커를 남긴다(마커를 손으로
+   쓰지 않는다). 건너뛰면 보고(8번)에 "정합 검증: 미실행"을 명시한다.
 
-   | id | 항목 | 심각도 |
-   |---|---|---|
-   | S1 | spec 요구사항마다 diff에 대응 구현이 있거나 "의도적 미구현"으로 기록돼 있다 | BLOCKER |
-   | S2 | plan의 `- [x]` 각 항목에 대응하는 변경·커밋이 실재한다 | MAJOR |
-   | S3 | spec/plan에 없는 스코프 밖 변경이 diff에 없다 (있으면 문서에 사유 기록) | MAJOR |
-   | S4 | 실행된 리뷰가 전부 artifact `## Reviews`에 마커와 함께 기록돼 있다 | MAJOR |
-   | S5 | 보고의 "검증 결과"가 실제 명령·출력 인용이다 — 산문 선언이 아니다 | BLOCKER |
+   <!-- harness:prompt framing=shipcheck -->
+   ```text
+   You are an independent read-only verifier checking that this task's documents and its diff agree before a PR (D6).
+   Scope: <working tree changes | diff against <base>>. Inspect the changes yourself with git (git status, git diff).
+   Read these files first: <spec path>, <plan path> and <artifact path>. Do not modify anything.
+   Score each rubric row below as one finding: id · 항목 · 심각도(BLOCKER/MAJOR/MINOR) · 판정(pass/fail/na) · 근거.
+   근거는 문서 문장 또는 diff 인용이어야 하고, 증거 없는 항목은 pass가 아니라 na다.
+   S1 [BLOCKER] spec 요구사항마다 diff에 대응 구현이 있거나 "의도적 미구현"으로 기록돼 있다
+   S2 [MAJOR] plan의 `- [x]` 각 항목에 대응하는 변경·커밋이 실재한다
+   S3 [MAJOR] spec/plan에 없는 스코프 밖 변경이 diff에 없다 (있으면 문서에 사유 기록)
+   S4 [MAJOR] 실행된 리뷰가 전부 artifact `## Reviews`에 마커와 함께 기록돼 있다
+   S5 [BLOCKER] 보고의 "검증 결과"가 실제 명령·출력 인용이다 — 산문 선언이 아니다
+   End with a verdict that lists every fail. <focus arguments, if any>
+   ```
 
    검증자의 발견은 주장이다 — 재현·판별 후 **문서만** 고친다(핵심 제약 유지). 코드 결함은
    보고만 한다. **BLOCKER fail이 남아 있으면 "준비 완료"를 선언하지 않는다.**

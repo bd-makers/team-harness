@@ -149,19 +149,28 @@ Principles, Practices, and Patterns* 전략을 실행 규칙으로 적용해 단
 
 중요한 변경(AGENTS.md 리뷰 프로토콜 기준)이면 완료 선언 전에 작성자가 아닌 **별도 컨텍스트의
 read-only 검증자**에게 새 테스트를 비평시킨다. 절차·엔진 표는 `/harness-review`를 그대로 쓰되
-리뷰 프롬프트를 아래 루브릭으로 교체한다 — 루브릭을 파일에 쓰고
-`harness-team review <engine> --framing testcritic --prompt-file <path>`로 실행하면 CLI가
-`kind=<engine>-testcritic`으로 meta.reviews와 artifact 마커를 남긴다(마커를 손으로 쓰지 않는다).
+리뷰 프롬프트를 아래 블록으로 교체한다 — 정본은 `src/commands/review-prompts.mjs`의 `testcritic`
+템플릿(루브릭 `unit`)이고 이 블록은 미러다(pin 테스트가 동기화; scope·artifact 경로·focus는 CLI가 채운다).
+`harness-team review <engine> --framing testcritic --rubric unit`으로 실행하면 CLI가
+`kind=<engine>-testcritic`으로 meta.reviews와 artifact 마커를 남긴다(마커를 손으로 쓰지 않는다 —
+루브릭은 kind를 바꾸지 않고 meta 항목의 `rubric` 필드에만 남는다).
 검증자의 발견은 주장이다 — 재현·판별 후 반영한다. 사소한 변경에는 실행하지 않는다.
 
-| id | 항목 | 심각도 |
-|---|---|---|
-| T1 | 새 테스트가 실제 실행되어 전부 통과했다는 증거(명령·출력)가 있다 | BLOCKER |
-| T2 | tautological 테스트 없음 — 프로덕션을 망가뜨려도 통과하는 테스트 부재 | BLOCKER |
-| T3 | mock 반향 테스트 없음 — mock 세팅값을 그대로 assert하는 테스트 부재 | BLOCKER |
-| T4 | 각 테스트가 죽일 수 있는 프로덕션 변이(mutation)를 최소 1개 지목할 수 있다 | MAJOR |
-| T5 | GWT 3구획·서술형 테스트명·When 한 줄 규율 준수 | MAJOR |
-| T6 | 구현 세부사항 assert 없음 — private/호출 순서/내부 상태 검증 부재 | MAJOR |
+<!-- harness:prompt framing=testcritic rubric=unit -->
+```text
+You are an independent read-only verifier critiquing the NEW UNIT TESTS in this change (D6).
+Scope: <working tree changes | diff against <base>>. Inspect the changes yourself with git (git status, git diff).
+Read the test files and <artifact path> (recorded evidence). Do not modify anything.
+Score each rubric row below as one finding: id · 항목 · 심각도(BLOCKER/MAJOR/MINOR) · 판정(pass/fail/na) · 근거.
+pass 판정은 증거에만 근거한다 — 산문은 신호가 아니다. 증거 없는 항목은 pass가 아니라 na다.
+T1 [BLOCKER] 새 테스트가 실제 실행되어 전부 통과했다는 증거(명령·출력)가 있다
+T2 [BLOCKER] tautological 테스트 없음 — 프로덕션을 망가뜨려도 통과하는 테스트 부재
+T3 [BLOCKER] mock 반향 테스트 없음 — mock 세팅값을 그대로 assert하는 테스트 부재
+T4 [MAJOR] 각 테스트가 죽일 수 있는 프로덕션 변이(mutation)를 최소 1개 지목할 수 있다
+T5 [MAJOR] GWT 3구획·서술형 테스트명·When 한 줄 규율 준수
+T6 [MAJOR] 구현 세부사항 assert 없음 — private/호출 순서/내부 상태 검증 부재
+End with a verdict that lists every fail. <focus arguments, if any>
+```
 
 pass 판정은 증거에만 근거한다(산문은 신호가 아니다 — D6 정직성 규칙). **BLOCKER fail이
 남아 있으면 완료를 선언하지 않는다**; MAJOR fail은 수정하거나 사유를 보고에 남긴다.

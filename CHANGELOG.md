@@ -18,6 +18,20 @@ modified: 2026-09-10
 
 ## [Unreleased]
 
+### Changed
+- **검증 프레이밍 프롬프트의 정본을 src로 옮겼다** (`src/commands/review-prompts.mjs`, task `framing-prompts-in-src`).
+  0.37.0은 공용 리뷰 프롬프트만 src 상수로 두고 프레이밍 5종은 "문서를 읽어 파일에 옮겨 쓴 뒤 `--prompt-file`"로
+  남겼다 — 그 옮겨 쓰기 단계가 kind와 실제로 엔진에 간 프롬프트 사이에 기록되지 않는 변형을 끼웠고,
+  contrarian·simplifier·shipcheck는 리터럴 블록조차 없이 "표+산문을 조합하라"였다. 이제
+  `harness-team review <engine> --framing <접미사>`만으로 실행되고, 각 커맨드 문서의
+  `<!-- harness:prompt … -->` 마커 다음 text 블록이 미러로 pin 테스트에 묶인다(문서에만 있는 고아 마커도
+  잡는다). contrarian·simplifier는 scope가 `task-docs`로 고정되고(다른 값은 거부) spec/plan 경로를 CLI가
+  채운다. `--prompt-file`은 override로 남는다 — kind는 그대로 `--framing`에서 온다.
+- **`--rubric unit|component|integration`** — testcritic은 테스트 스킬 3종이 각자 다른 루브릭(T·C·I)을 같은
+  kind로 남기므로 선택자를 추가했다. kind는 `<engine>-testcritic` 그대로이고 `meta.reviews` 항목에는
+  `rubric` 필드가 있을 때만 붙는다. testcritic에 `--rubric`이 없거나, 다른 프레이밍에 붙이거나, 열거 밖이면
+  엔진을 돌리기 전에 거부한다. 루브릭 행의 문구는 문서 표에서 그대로 옮겼다 — 기준 개정이 아니다.
+
 ## [0.38.4] - 2026-09-12
 
 ### Fixed

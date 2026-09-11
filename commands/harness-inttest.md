@@ -186,19 +186,28 @@ DB→응답의 수직 슬라이스 전체를 실물 인프라와 함께 태우�
 
 중요한 변경(AGENTS.md 리뷰 프로토콜 기준)이면 완료 선언 전에 작성자가 아닌 **별도 컨텍스트의
 read-only 검증자**에게 새 테스트를 비평시킨다. 절차·엔진 표는 `/harness-review`를 그대로 쓰되
-리뷰 프롬프트를 아래 루브릭으로 교체한다 — 루브릭을 파일에 쓰고
-`harness-team review <engine> --framing testcritic --prompt-file <path>`로 실행하면 CLI가
-`kind=<engine>-testcritic`으로 meta.reviews와 artifact 마커를 남긴다(마커를 손으로 쓰지 않는다).
+리뷰 프롬프트를 아래 블록으로 교체한다 — 정본은 `src/commands/review-prompts.mjs`의 `testcritic`
+템플릿(루브릭 `integration`)이고 이 블록은 미러다(pin 테스트가 동기화; scope·artifact 경로·focus는 CLI가 채운다).
+`harness-team review <engine> --framing testcritic --rubric integration`으로 실행하면 CLI가
+`kind=<engine>-testcritic`으로 meta.reviews와 artifact 마커를 남긴다(마커를 손으로 쓰지 않는다 —
+루브릭은 kind를 바꾸지 않고 meta 항목의 `rubric` 필드에만 남는다).
 검증자의 발견은 주장이다 — 재현·판별 후 반영한다. 사소한 변경에는 실행하지 않는다.
 
-| id | 항목 | 심각도 |
-|---|---|---|
-| I1 | 실행·전부 통과 증거(명령·출력)가 있다 — 단독 1회 + 전체 1회, 결과 동일(격리 증명) | BLOCKER |
-| I2 | tautological 테스트 없음 — 프로덕션을 망가뜨려도 통과하는 테스트 부재 | BLOCKER |
-| I3 | mock 반향 테스트 없음 — mock 세팅값을 그대로 assert하는 테스트 부재 | BLOCKER |
-| I4 | DB assert를 지우면 실패한다 — 부수효과 검증이 존재한다 (해당 시) | MAJOR |
-| I5 | msw 핸들러를 지우면 실패한다 — 아웃바운드 경로를 실제로 태운다 (해당 시) | MAJOR |
-| I6 | managed/unmanaged 구분 준수 — managed 의존성 목킹 없음 | MAJOR |
+<!-- harness:prompt framing=testcritic rubric=integration -->
+```text
+You are an independent read-only verifier critiquing the NEW INTEGRATION TESTS in this change (D6).
+Scope: <working tree changes | diff against <base>>. Inspect the changes yourself with git (git status, git diff).
+Read the test files and <artifact path> (recorded evidence). Do not modify anything.
+Score each rubric row below as one finding: id · 항목 · 심각도(BLOCKER/MAJOR/MINOR) · 판정(pass/fail/na) · 근거.
+pass 판정은 증거에만 근거한다 — 산문은 신호가 아니다. 증거 없는 항목은 pass가 아니라 na다.
+I1 [BLOCKER] 실행·전부 통과 증거(명령·출력)가 있다 — 단독 1회 + 전체 1회, 결과 동일(격리 증명)
+I2 [BLOCKER] tautological 테스트 없음 — 프로덕션을 망가뜨려도 통과하는 테스트 부재
+I3 [BLOCKER] mock 반향 테스트 없음 — mock 세팅값을 그대로 assert하는 테스트 부재
+I4 [MAJOR] DB assert를 지우면 실패한다 — 부수효과 검증이 존재한다 (해당 시)
+I5 [MAJOR] msw 핸들러를 지우면 실패한다 — 아웃바운드 경로를 실제로 태운다 (해당 시)
+I6 [MAJOR] managed/unmanaged 구분 준수 — managed 의존성 목킹 없음
+End with a verdict that lists every fail. <focus arguments, if any>
+```
 
 pass 판정은 증거에만 근거한다(산문은 신호가 아니다 — D6 정직성 규칙). **BLOCKER fail이
 남아 있으면 완료를 선언하지 않는다**; MAJOR fail은 수정하거나 사유를 보고에 남긴다.

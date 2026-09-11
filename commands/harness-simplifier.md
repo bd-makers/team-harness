@@ -35,23 +35,28 @@ Raw slash-command 인수:
 인수를 주면 위 체크리스트 순회를 **별도 컨텍스트의 read-only 검증자**가 수행한다. 엔진
 결정(preflight 포함)·엔진 runner 표·발견 검증·기록 절차는 `/harness-review`를 그대로
 쓰되, **scope 결정(2단계)은 쓰지 않는다** — 리뷰 대상이 git diff가 아니라 활성 task의
-plan.md(와 spec.md, 변경 예정 파일 목록)이기 때문이다. 리뷰 프롬프트는 아래로 구성한다:
-활성 task 문서의 **실제 경로**를 읽으라고 지시하고, 아래 R1–R4 루브릭을 D6 finding
-스키마(`id · 항목 · 심각도(BLOCKER/MAJOR/MINOR) · 판정(pass/fail/na) · 근거`)로 채점하게
-하며, fail마다 **제거안 한 줄**을 요구한다. 근거는 문서 문장 인용이어야 하고 증거 없는
-항목은 pass가 아니라 na다(D6 정직성 규칙).
+plan.md(와 spec.md, 변경 예정 파일 목록)이기 때문이다. 리뷰 프롬프트는 아래 블록이다 — 정본은 `src/commands/review-prompts.mjs`의
+`simplifier` 템플릿이고 이 블록은 미러다(pin 테스트가 동기화). 활성 task 문서의 **실제 경로**와
+focus는 CLI가 채운다. 루브릭 R1–R4는 D6 finding 스키마로 채점하고, 근거는 문서 문장
+인용이어야 하며 증거 없는 항목은 pass가 아니라 na다(D6 정직성 규칙).
 
-| id | 항목 (pass 조건) | 심각도 |
-|---|---|---|
-| R1 | YAGNI — spec 요구사항에 대응하지 않는 선행 구현 단계가 plan에 없다 | MAJOR |
-| R2 | 단일 사용처 추상화 — 1곳에서만 쓰일 새 클래스/함수/계층 도입이 없다 | MAJOR |
-| R3 | 중복 단계 — 동일 효과를 내는 단계가 plan에 둘 이상 없다 | MAJOR |
-| R4 | 죽은 옵션 — 항상 같은 값으로만 쓰일 플래그·설정 추가가 없다 | MINOR |
+<!-- harness:prompt framing=simplifier -->
+```text
+You are an independent read-only verifier looking for steps and abstractions to REMOVE from this task's plan (D6).
+Read these files first: <plan path> and <spec path>, plus any file list the plan names. Do not modify anything.
+Score each rubric row below as one finding: id · 항목 · 심각도(BLOCKER/MAJOR/MINOR) · 판정(pass/fail/na) · 근거.
+근거는 문서 문장 인용이어야 하고, 증거 없는 항목은 pass가 아니라 na다. fail마다 제거안을 한 줄로 붙인다.
+R1 [MAJOR] YAGNI — spec 요구사항에 대응하지 않는 선행 구현 단계가 plan에 없다
+R2 [MAJOR] 단일 사용처 추상화 — 1곳에서만 쓰일 새 클래스/함수/계층 도입이 없다
+R3 [MAJOR] 중복 단계 — 동일 효과를 내는 단계가 plan에 둘 이상 없다
+R4 [MINOR] 죽은 옵션 — 항상 같은 값으로만 쓰일 플래그·설정 추가가 없다
+Propose removals only — never new abstractions. End with a verdict that lists every fail. <focus arguments, if any>
+```
 
 검증자의 발견은 주장이다 — driver(현재 세션)가 각 제거안을 재현·판별해 위 절차 3번대로
 사용자 승인 후 **driver가** plan.md를 수정한다. 검증자는 어떤 파일도 고치지 않는다
-(자동 수정 루프 금지 — 제거"안"까지가 검증자의 몫이다). 실행은 위 프롬프트를 파일에 쓰고
-`harness-team review <engine> --framing simplifier --prompt-file <path> --scope task-docs`로 한다 —
+(자동 수정 루프 금지 — 제거"안"까지가 검증자의 몫이다). 실행은 `harness-team review <engine> --framing simplifier [focus ...]`로 한다 — scope는
+task-docs가 기본값이라 명시하지 않아도 되고, 다른 scope를 주면 CLI가 거부한다.
 CLI가 meta.reviews와 artifact `## Reviews`에 아래 형태의 마커를 남기고, 에이전트는 그 블록 아래에
 판별 결과를 산문으로 쓴다(마커를 손으로 쓰지 않는다):
 

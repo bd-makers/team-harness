@@ -12,6 +12,7 @@ import { promisify } from 'node:util';
 import { readTaskMeta } from '../src/commands/summary.mjs';
 import { parseReviewMarkers, taskArtifactTemplate, VERIFY_KIND_SUFFIXES, runTask, runDone } from '../src/commands/task.mjs';
 import { promptPlaceholderIsBare, resolveScope } from '../src/commands/review.mjs';
+import { FRAMING_TEMPLATES, RUBRICS, findFramingTemplate, promptMarker } from '../src/commands/review-prompts.mjs';
 
 const pexec = promisify(execFile);
 const git = (dir, ...args) => pexec('git', ['-C', dir, ...args]);
@@ -442,4 +443,126 @@ test('P3: custom 의 상대경로 preflight 는 targetDir 기준 — process cwd
     const { result } = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
     assert.equal(result.recorded, true, '실행 기준(cwd=targetDir)과 preflight 기준이 같다');
   } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+// ─── 프레이밍 프롬프트 src 이관 (framing-prompts-in-src) ─────────────────────
+
+test('프레이밍 템플릿 7종 ↔ 커맨드 문서 마커 다음 text 블록 동기화 (pin) + allowlist 양방향', async () => {
+  assert.equal(FRAMING_TEMPLATES.length, 7, '5 접미사 + testcritic 루브릭 2 추가');
+  assert.deepEqual([...new Set(FRAMING_TEMPLATES.map(t => t.framing))].sort(), [...VERIFY_KIND_SUFFIXES].sort(),
+    '템플릿의 framing 집합 == verify allowlist');
+  assert.deepEqual(FRAMING_TEMPLATES.filter(t => t.framing === 'testcritic').map(t => t.rubric), RUBRICS);
+  let markers = 0;
+  const seenDocs = new Set();
+  for (const t of FRAMING_TEMPLATES) {
+    const doc = await readFile(new URL(`../${t.doc}`, import.meta.url), 'utf8');
+    if (!seenDocs.has(t.doc)) { seenDocs.add(t.doc); markers += doc.split('<!-- harness:prompt ').length - 1; }
+    const marker = promptMarker(t);
+    const idx = doc.indexOf(marker);
+    assert.ok(idx >= 0, `${t.doc}: 마커 ${marker} 가 있다`);
+    const m = doc.slice(idx).match(/```text\n([\s\S]*?)\n\s*```/);
+    assert.ok(m, `${t.doc}: 마커 다음에 text 블록이 있다`);
+    const docPrompt = m[1].split('\n').map(l => l.replace(/^ {3}/, '')).join('\n');
+    assert.equal(docPrompt, t.template, `${t.doc}: ${marker} 블록이 src 상수와 한 글자도 다르지 않다`);
+    assert.ok(t.template.endsWith('<focus arguments, if any>'), `${t.framing}: focus 자리`);
+    if (t.target === 'git') assert.ok(t.template.includes('<working tree changes | diff against <base>>'), `${t.framing}: scope 자리`);
+    else assert.ok(!t.template.includes('<working tree changes'), `${t.framing}: task-docs 템플릿은 git scope 를 말하지 않는다`);
+  }
+  assert.equal(markers, FRAMING_TEMPLATES.length, '문서에만 있는 고아 마커가 없다');
+});
+
+test('findFramingTemplate: testcritic 은 --rubric 필수, 다른 프레이밍은 rubric 없이 하나로 결정된다', () => {
+  assert.equal(findFramingTemplate('adversarial').template.framing, 'adversarial');
+  assert.equal(findFramingTemplate('contrarian').template.target, 'task-docs');
+  assert.ok(findFramingTemplate('testcritic').error.includes('--rubric'));
+  assert.equal(findFramingTemplate('testcritic', 'component').template.doc, 'commands/harness-comptest.md');
+  assert.ok(findFramingTemplate('testcritic', 'bogus').error);
+  assert.ok(findFramingTemplate('nope').error);
+});
+
+test('--framing contrarian 은 --prompt-file 없이 src 템플릿으로 실행되고, scope 는 task-docs 가 기본값이며 경로가 채워진다', async () => {
+  const { dir, taskDir } = await makeFixture();
+  const prompts = [];
+  const runEngine = async ({ prompt }) => { prompts.push(prompt); return { exitCode: 0, stdout: 'A1 pass\nverdict: ok', stderr: '' }; };
+  const { logs, restore } = captureLogs();
+  try {
+    const r = await withExit(() => runReview({ targetDir: dir, flags: { framing: 'contrarian' }, taskArgs: ['custom', 'focus-x'] }, { runEngine }));
+    assert.equal(r.result.recorded, true);
+    const meta = await readTaskMeta(dir, 'tester', 'demo');
+    assert.equal(meta.reviews[0].kind, 'custom-contrarian');
+    assert.equal(meta.reviews[0].scope, 'task-docs', 'task-docs target 의 기본 scope');
+    assert.equal('rubric' in meta.reviews[0], false, 'rubric 없는 프레이밍은 필드를 만들지 않는다');
+    const [p] = prompts;
+    assert.ok(p.includes('docs/tester/demo/demo-spec.md') && p.includes('docs/tester/demo/demo-plan.md'), '활성 task 경로 치환');
+    assert.ok(p.includes('A1 [BLOCKER]'), '루브릭 행이 프롬프트에 있다');
+    assert.ok(p.endsWith('focus-x'), 'focus 는 끝에');
+    assert.ok(!/<(spec|plan|artifact) path>|<focus arguments|<working tree/.test(p), 'placeholder 가 남지 않는다');
+    assert.ok((await readFile(join(taskDir, 'demo-artifact.md'), 'utf8')).includes('scope: task-docs'));
+
+    // 충돌 scope 는 실행 전 거부 — 프롬프트는 문서를 보는데 diff 로 기록하면 거짓 기록.
+    const c = await withExit(() => runReview({ targetDir: dir, flags: { framing: 'simplifier', scope: 'worktree' }, taskArgs: ['custom'] }, { runEngine }));
+    assert.equal(c.exitCode, 1);
+    assert.equal(prompts.length, 1, '거부 경로는 엔진을 돌리지 않는다');
+    assert.equal((await readTaskMeta(dir, 'tester', 'demo')).reviews.length, 1);
+    void logs;
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('testcritic 은 --rubric 으로 루브릭을 고르고 kind 는 그대로다 — 조합이 틀리면 실행 전에 거부한다', async () => {
+  const { dir, taskDir } = await makeFixture();
+  const prompts = [];
+  const runEngine = async ({ prompt }) => { prompts.push(prompt); return { exitCode: 0, stdout: 'C1 pass', stderr: '' }; };
+  const { logs, restore } = captureLogs();
+  try {
+    let r = await withExit(() => runReview({ targetDir: dir, flags: { framing: 'testcritic' }, taskArgs: ['custom'] }, { runEngine }));
+    assert.equal(r.exitCode, 1, 'rubric 없는 testcritic 은 거부');
+    assert.ok(logs.some(l => l.includes('--rubric')), '사유가 --rubric 을 가리킨다');
+    r = await withExit(() => runReview({ targetDir: dir, flags: { framing: 'testcritic', rubric: 'bogus' }, taskArgs: ['custom'] }, { runEngine }));
+    assert.equal(r.exitCode, 1, '열거 밖 rubric');
+    r = await withExit(() => runReview({ targetDir: dir, flags: { framing: 'adversarial', rubric: 'unit' }, taskArgs: ['custom'] }, { runEngine }));
+    assert.equal(r.exitCode, 1, 'testcritic 아닌 프레이밍에 rubric');
+    assert.equal(prompts.length, 0, '거부 세 경로 모두 엔진을 돌리지 않는다');
+    assert.deepEqual((await readTaskMeta(dir, 'tester', 'demo')).reviews, []);
+
+    r = await withExit(() => runReview({ targetDir: dir, flags: { framing: 'testcritic', rubric: 'component' }, taskArgs: ['custom'] }, { runEngine }));
+    assert.equal(r.result.recorded, true);
+    const meta = await readTaskMeta(dir, 'tester', 'demo');
+    assert.equal(meta.reviews[0].kind, 'custom-testcritic', 'kind 는 rubric 과 무관');
+    assert.equal(meta.reviews[0].rubric, 'component');
+    assert.equal(meta.reviews[0].scope, 'worktree', 'git target 은 종전 scope 결정');
+    assert.ok(prompts[0].includes('C1 [BLOCKER]') && !prompts[0].includes('T1 [BLOCKER]'), '고른 루브릭만');
+    assert.ok(prompts[0].includes('docs/tester/demo/demo-artifact.md'), 'artifact 경로 치환');
+    assert.ok((await readFile(join(taskDir, 'demo-artifact.md'), 'utf8')).includes('· rubric: component ·'), 'artifact 정보 줄에 rubric');
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('git target 프레이밍은 task-docs scope 를 받지 않고, --prompt-file 은 템플릿을 override 한다', async () => {
+  const { dir } = await makeFixture();
+  const prompts = [];
+  const runEngine = async ({ prompt }) => { prompts.push(prompt); return { exitCode: 0, stdout: 'ok', stderr: '' }; };
+  const { logs, restore } = captureLogs();
+  try {
+    let r = await withExit(() => runReview({ targetDir: dir, flags: { framing: 'adversarial', scope: 'task-docs' }, taskArgs: ['custom'] }, { runEngine }));
+    assert.equal(r.exitCode, 1, 'adversarial 은 git 을 보므로 task-docs 로 기록할 수 없다');
+    assert.equal(prompts.length, 0);
+
+    const promptFile = join(dir, 'p.txt');
+    await writeFile(promptFile, 'MY OWN PROMPT\n');
+    r = await withExit(() => runReview({ targetDir: dir, flags: { framing: 'testcritic', 'prompt-file': promptFile }, taskArgs: ['custom', 'f'] }, { runEngine }));
+    assert.equal(r.result.recorded, true, 'override 경로에서는 rubric 이 없어도 된다');
+    assert.equal(prompts[0], 'MY OWN PROMPT\nf', '파일 내용이 프롬프트, 템플릿은 쓰지 않는다');
+    assert.equal((await readTaskMeta(dir, 'tester', 'demo')).reviews[0].kind, 'custom-testcritic');
+    void logs;
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('프레이밍 문서 7종과 verify 힌트에 "프롬프트를 파일에 쓰고 --prompt-file" 지시가 남아 있지 않다', async () => {
+  for (const doc of new Set(FRAMING_TEMPLATES.map(t => t.doc))) {
+    const text = await readFile(new URL(`../${doc}`, import.meta.url), 'utf8');
+    assert.ok(!/파일에 쓰고|--prompt-file <path>/.test(text), `${doc}: 옮겨 쓰기 지시 부재`);
+  }
+  const task = await readFile(new URL('../src/commands/task.mjs', import.meta.url), 'utf8');
+  assert.ok(!task.includes('--prompt-file <프롬프트>'), 'verify 힌트가 파일 경로를 요구하지 않는다');
+  const review = await readFile(new URL('../commands/harness-review.md', import.meta.url), 'utf8');
+  assert.ok(!review.includes('자기 프롬프트를 파일에 두고'), 'harness-review.md 5단계');
 });

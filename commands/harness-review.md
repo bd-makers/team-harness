@@ -101,9 +101,13 @@ Raw slash-command 인수:
    **위 접미사 열거로 끝나는 항목만** 검증 증거로 센다(이 열거가 verify kind allowlist의
    정본이고, `src/commands/task.mjs`의 상수는 pin 테스트로 동기화된다). `--framing`도 이 열거
    밖의 접미사를 거부한다. 검증 증거는 review 증거를 겸하지만 역은 성립하지 않는다.
-   프레이밍 커맨드는 자기 프롬프트를 파일에 두고
-   `harness-team review <engine> --framing <접미사> --prompt-file <path> [--scope task-docs]`로
-   호출한다 — kind 조립은 CLI가 한다.
+   프레이밍 프롬프트의 정본은 `src/commands/review-prompts.mjs`의 템플릿 7종(접미사 5 + testcritic
+   루브릭 `unit`·`component`·`integration`)이고, 각 프레이밍 커맨드 문서의 `<!-- harness:prompt … -->`
+   마커 다음 text 블록이 미러다(pin 테스트). 프레이밍 커맨드는
+   `harness-team review <engine> --framing <접미사> [--rubric <루브릭>] [focus ...]`로 호출한다 —
+   kind 조립·템플릿 채우기(scope·활성 task 경로·focus)는 CLI가 한다. contrarian·simplifier는 scope가
+   `task-docs`로 고정된다(다른 값은 거부). `--prompt-file`은 템플릿 대신 다른 프롬프트를 쓸 때의
+   override이며 kind는 그대로 `--framing`에서 온다.
 
    **구 task 호환.** `reviews` 키가 없는 meta(이 변경 이전에 만든 task)는 종전대로 artifact 마커로
    판정하고, CLI도 그 task에는 **키를 만들지 않는다** — artifact 마커만 남긴다(그 마커가 종전 증거다).

@@ -657,7 +657,7 @@ async function collectDoneIssues(targetDir, active) {
     const verifySource = cliOwned ? freshCli : freshMarkers;
     if (evidence.verify === 'required' && !verifySource.some(m => isVerifyKind(m.kind))) {
       const where = cliOwned
-        ? '검증 항목이 meta.reviews에 없음 (`harness-team review <engine> --framing <접미사> --prompt-file <프롬프트>` 실행 — 손으로 쓴 artifact 마커는 세지 않는다)'
+        ? '검증 항목이 meta.reviews에 없음 (`harness-team review <engine> --framing <접미사>` 실행, testcritic 은 `--rubric` 추가 — 손으로 쓴 artifact 마커는 세지 않는다)'
         : '검증 마커가 artifact에 없음 (검증 프레이밍 리뷰 실행 후 기록)';
       issues.push(`spec이 \`verify: required\`인데 이 task 기간의 ${where} (kind 접미사 ${VERIFY_KIND_SUFFIXES.map(s => `-${s}`).join('·')})`);
     }

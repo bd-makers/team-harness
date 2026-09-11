@@ -15,7 +15,7 @@
 
 import { KNOWN_STACK_IDS } from './detect-stack.mjs';
 
-export const VALUE_FLAGS = new Set(['stack', 'member', 'target', 'backup-dir', 'backup-parent', 'days', 'name', 'paths', 'framing', 'prompt-file', 'scope', 'base']);
+export const VALUE_FLAGS = new Set(['stack', 'member', 'target', 'backup-dir', 'backup-parent', 'days', 'name', 'paths', 'framing', 'rubric', 'prompt-file', 'scope', 'base']);
 
 // Accepted on every command: they change where the harness looks or how it
 // reports, not what it does. Keeping them global means a hook can pass --target
@@ -71,9 +71,9 @@ export const COMMANDS = [
   // the model. Claude reads plain stdout, so the default output is unchanged.
   { name: 'session-context', args: '[--codex-hook]', summary: 'Emit bounded SessionStart Context Card or no-task nudge (--codex-hook wraps it in Codex\'s additionalContext envelope)', flags: ['codex-hook'] },
   { name: 'retro', args: '[text]', summary: "Append a dated Learnings entry to the active task's artifact.md", flags: [] },
-  { name: 'review', args: '[codex|claude|custom] [--framing <suffix>] [--prompt-file <path>] [--scope worktree|diff|task-docs] [--base <ref>] [focus ...]',
+  { name: 'review', args: '[codex|claude|custom] [--framing <suffix>] [--rubric unit|component|integration] [--prompt-file <path>] [--scope worktree|diff|task-docs] [--base <ref>] [focus ...]',
     summary: "Run a read-only review engine and record the evidence in the active task's meta.reviews + artifact (only exit 0 counts)",
-    flags: ['framing', 'prompt-file', 'scope', 'base'] },
+    flags: ['framing', 'rubric', 'prompt-file', 'scope', 'base'] },
   { name: 'rules', args: 'promote [<n>] [--name <slug>] [--paths <a,b>]',
     summary: "Promote a Learnings entry from the active task's artifact.md into .claude/rules/<slug>.md (lists entries when <n> is omitted)",
     flags: ['name', 'paths'] },

@@ -36,24 +36,30 @@ Raw slash-command 인수:
 4각도 반론을 **별도 컨텍스트의 read-only 검증자**가 수행한다. 엔진 결정(preflight 포함)·
 엔진 runner 표·발견 검증·기록 절차는 `/harness-review`를 그대로 쓰되, **scope 결정
 (2단계)은 쓰지 않는다** — 리뷰 대상이 git diff가 아니라 활성 task의 spec/plan 문서이기
-때문이다. 리뷰 프롬프트는 아래로 구성한다: 활성 task의 spec/plan **실제 경로**를 읽으라고
-지시하고, 아래 A1–A4 루브릭을 D6 finding 스키마(`id · 항목 · 심각도(BLOCKER/MAJOR/MINOR)
-· 판정(pass/fail/na) · 근거`)로 채점하게 하며, 근거는 spec/plan 문장 인용이어야 하고
-증거 없는 항목은 pass가 아니라 na임을 명시한다(D6 정직성 규칙). 각 각도에서 유효한
-반론을 찾지 못하면 그 행은 근거와 함께 pass다.
+때문이다. 리뷰 프롬프트는 아래 블록이다 — 정본은 `src/commands/review-prompts.mjs`의
+`contrarian` 템플릿이고 이 블록은 미러다(pin 테스트가 동기화). 활성 task 문서의 **실제 경로**와
+focus는 CLI가 채운다. 루브릭 A1–A4는 D6 finding 스키마로 채점하고, 근거는 spec/plan 문장
+인용이어야 하며 증거 없는 항목은 pass가 아니라 na다(D6 정직성 규칙).
 
-| id | 항목 (pass 조건) | 심각도 |
-|---|---|---|
-| A1 | 반대가 사실이라면 — 핵심 가정이 뒤집혀도 목표가 즉시 무너지지 않거나, 무너지는 조건이 spec에 식별돼 있다 | BLOCKER |
-| A2 | 이게 필요 없다면 — 가장 비싼 단계를 제거하면 목표 달성이 불가능하다 (제거 가능하면 fail) | MAJOR |
-| A3 | 숨은 비용 — 6개월 뒤 유지보수 부담을 만드는 결정이 없거나, 있다면 spec에 비용이 기록돼 있다 | MAJOR |
-| A4 | 잘못된 추상화 — 단일 사용처뿐인 추상화 도입이 plan에 없다 | MINOR |
+<!-- harness:prompt framing=contrarian -->
+```text
+You are an independent read-only verifier challenging the assumptions in this task's spec and plan (D6).
+Read these files first: <spec path> and <plan path>. Do not modify anything.
+Score each rubric row below as one finding: id · 항목 · 심각도(BLOCKER/MAJOR/MINOR) · 판정(pass/fail/na) · 근거.
+근거는 spec/plan 문장 인용이어야 하고, 증거 없는 항목은 pass가 아니라 na다.
+각 각도에서 유효한 반론을 찾지 못하면 그 행은 근거와 함께 pass다.
+A1 [BLOCKER] 반대가 사실이라면 — 핵심 가정이 뒤집혀도 목표가 즉시 무너지지 않거나, 무너지는 조건이 spec에 식별돼 있다
+A2 [MAJOR] 이게 필요 없다면 — 가장 비싼 단계를 제거하면 목표 달성이 불가능하다 (제거 가능하면 fail)
+A3 [MAJOR] 숨은 비용 — 6개월 뒤 유지보수 부담을 만드는 결정이 없거나, 있다면 spec에 비용이 기록돼 있다
+A4 [MINOR] 잘못된 추상화 — 단일 사용처뿐인 추상화 도입이 plan에 없다
+End with a verdict that lists every fail. <focus arguments, if any>
+```
 
 검증자의 발견은 주장이다 — driver(현재 세션)가 각 반론을 사용자에게 제시해 위 절차
 3~4번을 대화형과 동일하게 수행한 뒤 단일 스레드로 반영한다. 검증자는 spec/plan을 고치지
 않는다(자동 수정 루프 금지). **A1(BLOCKER) fail이 해소되기 전에는 구현에 진입하지
-않는다.** 실행은 위 프롬프트를 파일에 쓰고
-`harness-team review <engine> --framing contrarian --prompt-file <path> --scope task-docs`로 한다 —
+않는다.** 실행은 `harness-team review <engine> --framing contrarian [focus ...]`로 한다 — scope는
+task-docs가 기본값이라 명시하지 않아도 되고, 다른 scope를 주면 CLI가 거부한다.
 CLI가 meta.reviews와 artifact `## Reviews`에 아래 형태의 마커를 남기고, 에이전트는 그 블록 아래에
 판별 결과를 산문으로 쓴다(마커를 손으로 쓰지 않는다):
 

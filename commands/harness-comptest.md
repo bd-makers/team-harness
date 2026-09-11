@@ -191,19 +191,28 @@ Trophy* 전략과 Testing Library 설계 원칙("테스트가 실제 사용 방�
 
 중요한 변경(AGENTS.md 리뷰 프로토콜 기준)이면 완료 선언 전에 작성자가 아닌 **별도 컨텍스트의
 read-only 검증자**에게 새 테스트를 비평시킨다. 절차·엔진 표는 `/harness-review`를 그대로 쓰되
-리뷰 프롬프트를 아래 루브릭으로 교체한다 — 루브릭을 파일에 쓰고
-`harness-team review <engine> --framing testcritic --prompt-file <path>`로 실행하면 CLI가
-`kind=<engine>-testcritic`으로 meta.reviews와 artifact 마커를 남긴다(마커를 손으로 쓰지 않는다).
+리뷰 프롬프트를 아래 블록으로 교체한다 — 정본은 `src/commands/review-prompts.mjs`의 `testcritic`
+템플릿(루브릭 `component`)이고 이 블록은 미러다(pin 테스트가 동기화; scope·artifact 경로·focus는 CLI가 채운다).
+`harness-team review <engine> --framing testcritic --rubric component`으로 실행하면 CLI가
+`kind=<engine>-testcritic`으로 meta.reviews와 artifact 마커를 남긴다(마커를 손으로 쓰지 않는다 —
+루브릭은 kind를 바꾸지 않고 meta 항목의 `rubric` 필드에만 남는다).
 검증자의 발견은 주장이다 — 재현·판별 후 반영한다. 사소한 변경에는 실행하지 않는다.
 
-| id | 항목 | 심각도 |
-|---|---|---|
-| C1 | 실행·전부 통과 증거(명령·출력)가 있고 콘솔 워닝(`act` 포함) 0건이다 | BLOCKER |
-| C2 | tautological 테스트 없음 — 프로덕션 컴포넌트를 망가뜨려도 통과하는 테스트 부재 | BLOCKER |
-| C3 | mock 반향 테스트 없음 — 프로덕션 렌더·상호작용을 태우지 않는 테스트 부재 | BLOCKER |
-| C4 | 마크업 리팩토링(div→section, 스타일 변경)에도 살아남는다 — 사용자 관점 쿼리 우선순위 준수 | MAJOR |
-| C5 | msw 핸들러를 지우면 실패한다 — 네트워크 경로를 실제로 태운다 (해당 시) | MAJOR |
-| C6 | 로딩/에러/빈 상태 기본 세트가 커버되거나 미커버 사유가 보고됐다 | MAJOR |
+<!-- harness:prompt framing=testcritic rubric=component -->
+```text
+You are an independent read-only verifier critiquing the NEW COMPONENT TESTS in this change (D6).
+Scope: <working tree changes | diff against <base>>. Inspect the changes yourself with git (git status, git diff).
+Read the test files and <artifact path> (recorded evidence). Do not modify anything.
+Score each rubric row below as one finding: id · 항목 · 심각도(BLOCKER/MAJOR/MINOR) · 판정(pass/fail/na) · 근거.
+pass 판정은 증거에만 근거한다 — 산문은 신호가 아니다. 증거 없는 항목은 pass가 아니라 na다.
+C1 [BLOCKER] 실행·전부 통과 증거(명령·출력)가 있고 콘솔 워닝(`act` 포함) 0건이다
+C2 [BLOCKER] tautological 테스트 없음 — 프로덕션 컴포넌트를 망가뜨려도 통과하는 테스트 부재
+C3 [BLOCKER] mock 반향 테스트 없음 — 프로덕션 렌더·상호작용을 태우지 않는 테스트 부재
+C4 [MAJOR] 마크업 리팩토링(div→section, 스타일 변경)에도 살아남는다 — 사용자 관점 쿼리 우선순위 준수
+C5 [MAJOR] msw 핸들러를 지우면 실패한다 — 네트워크 경로를 실제로 태운다 (해당 시)
+C6 [MAJOR] 로딩/에러/빈 상태 기본 세트가 커버되거나 미커버 사유가 보고됐다
+End with a verdict that lists every fail. <focus arguments, if any>
+```
 
 pass 판정은 증거에만 근거한다(산문은 신호가 아니다 — D6 정직성 규칙). **BLOCKER fail이
 남아 있으면 완료를 선언하지 않는다**; MAJOR fail은 수정하거나 사유를 보고에 남긴다.

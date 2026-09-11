@@ -18,8 +18,10 @@ Raw slash-command 인수:
 
 엔진 결정(probe 폴백 체인 포함)·scope 결정·엔진 runner 표(각 엔진의 호출 형태와 주의사항
 전부)·발견 검증·artifact 기록·review-only 제약을 포함한 전체 절차는 `harness-review.md`와
-동일하다. 차이는 공용 리뷰 프롬프트뿐이며, 아래로 교체한다:
+동일하다. 차이는 공용 리뷰 프롬프트뿐이며, 아래로 교체한다 — 정본은 `src/commands/review-prompts.mjs`의
+`adversarial` 템플릿이고 이 블록은 미러다(pin 테스트가 동기화; scope·focus 자리는 CLI가 채운다):
 
+<!-- harness:prompt framing=adversarial -->
 ```text
 You are performing an adversarial read-only code review of this repository.
 Scope: <working tree changes | diff against <base>>. Inspect the changes yourself with git (git status, git diff).
@@ -31,9 +33,10 @@ scenario breaks. Separate real blockers from theoretical concerns in your verdic
 If the approach survives your objections, say so explicitly. <focus arguments, if any>
 ```
 
-실행은 위 프롬프트를 파일에 쓰고 `harness-team review <engine> --framing adversarial --prompt-file <path>
-[focus ...]`로 한다 — CLI가 `kind=<engine>-adversarial`(예: `codex-adversarial`)로 meta.reviews와
-artifact 마커를 남긴다. 에이전트는 그 블록 아래에 **적대적 리뷰**였음과 판별 결과를 산문으로 쓴다.
+실행은 `harness-team review <engine> --framing adversarial [--base <ref>] [focus ...]`로 한다 — CLI가 위
+템플릿을 채워 엔진에 넘기고 `kind=<engine>-adversarial`(예: `codex-adversarial`)로 meta.reviews와
+artifact 마커를 남긴다. 프롬프트를 손으로 옮겨 쓰지 않는다(`--prompt-file`은 다른 프롬프트를 쓸 때의
+override다). 에이전트는 그 블록 아래에 **적대적 리뷰**였음과 판별 결과를 산문으로 쓴다.
 마커를 손으로 쓰지 않는다 — 기록 계약은 `harness-review.md` 5단계와 동일하다.
 
 ## 언제 이걸 쓰나

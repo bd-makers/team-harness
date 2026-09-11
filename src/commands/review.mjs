@@ -7,8 +7,9 @@
 // 고치기)는 막지 않는다 — 그건 done-guard-window가 `--force`와 같은 고의로 분류한 범주이고 가드의
 // 위협 모델(망각·실수) 밖이다.
 //
-// 엔진 runner 표·프롬프트·scope 규칙의 정본은 commands/harness-review.md다. 이 파일은 그 표를
-// 코드로 옮긴 것이고, 프롬프트 상수는 pin 테스트가 문서와 동기화한다.
+// 엔진 runner 표·scope 규칙의 정본은 commands/harness-review.md다. 이 파일은 그 표를 코드로 옮긴
+// 것이고, 공용 프롬프트 상수는 pin 테스트가 문서와 동기화한다. 검증 프레이밍 프롬프트 7 템플릿은
+// review-prompts.mjs 가 정본이고 각 커맨드 문서의 text 블록이 미러다(같은 pin).
 
 import { join, resolve } from 'node:path';
 import { readFile, access, constants } from 'node:fs/promises';
@@ -17,6 +18,7 @@ import { promisify } from 'node:util';
 import { exists, writeText } from '../fsx.mjs';
 import { readActive, taskArtifactTemplate, VERIFY_KIND_SUFFIXES } from './task.mjs';
 import { readTaskMeta, writeTaskMeta } from './summary.mjs';
+import { RUBRICS, findFramingTemplate } from './review-prompts.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 
 const pexec = promisify(execFile);
@@ -40,15 +42,25 @@ export const REVIEW_PROMPT_TEMPLATE = [
   'If nothing significant is found, say so explicitly. <focus arguments, if any>',
 ].join('\n');
 
-export function buildPrompt({ scope, base, focus = [], promptText = null }) {
+// template 은 프레이밍 템플릿(review-prompts.mjs)의 본문 — 없으면 공용 프롬프트. taskPaths 는 활성 task 의
+// spec/plan/artifact 상대 경로: task-docs·shipcheck·testcritic 템플릿이 엔진에게 읽으라고 지시하는 자리를
+// CLI 가 채운다(에이전트가 경로를 써 넣던 일이 사라진다). promptText(--prompt-file)가 있으면 둘 다 무시한다.
+export function buildPrompt({ scope, base, focus = [], promptText = null, template = null, taskPaths = null }) {
   const focusText = focus.join(' ').trim();
   if (promptText !== null) {
     return focusText ? `${promptText.trimEnd()}\n${focusText}` : promptText;
   }
   const scopeText = scope === 'diff' ? `diff against ${base}` : 'working tree changes';
-  return REVIEW_PROMPT_TEMPLATE
+  let text = (template ?? REVIEW_PROMPT_TEMPLATE)
     .replace('<working tree changes | diff against <base>>', scopeText)
     .replace(' <focus arguments, if any>', focusText ? ` ${focusText}` : '');
+  if (taskPaths) {
+    text = text
+      .replace('<spec path>', taskPaths.spec)
+      .replace('<plan path>', taskPaths.plan)
+      .replace('<artifact path>', taskPaths.artifact);
+  }
+  return text;
 }
 
 // kind = <engine> 또는 <engine>-<프레이밍>. 프레이밍은 verify allowlist 안에서만 — 열거 밖 접미사를
@@ -101,14 +113,14 @@ export function renderReviewMarker({ kind, scope, tip, at }) {
   return `<!-- harness:review kind=${kind} scope=${scope} tip=${tip} at=${at} -->`;
 }
 
-export function renderReviewBlock({ kind, engine, scope, tip, at, output }) {
+export function renderReviewBlock({ kind, engine, scope, tip, at, output, rubric }) {
   const { text, bytes, truncated } = truncateOutput(output);
   const fence = fenceFor(text);
   return [
     '',
     `### ${at} — ${kind} (harness-team review)`,
     '',
-    `- engine: ${engine} · scope: ${scope} · tip: ${tip} · exit 0 · ${bytes} B${truncated ? ' (artifact에는 앞부분만)' : ''}`,
+    `- engine: ${engine} · scope: ${scope}${rubric ? ` · rubric: ${rubric}` : ''} · tip: ${tip} · exit 0 · ${bytes} B${truncated ? ' (artifact에는 앞부분만)' : ''}`,
     '',
     fence + 'text',
     text.trimEnd(),
@@ -310,13 +322,25 @@ export async function runReview(ctx, deps = {}) {
       stop: 'scope 값을 지어내지 말 것 — 가드는 scope를 대조하지 않지만 기록은 정확해야 한다',
     }));
   }
-  if (flags.scope === 'task-docs' && !flags['prompt-file']) {
-    return emitError(json, 'task-docs scope 에는 --prompt-file 이 필요', buildErrorPacket({
-      cause: 'task-docs 는 git diff 가 아니라 spec/plan 문서를 대상으로 하므로 공용 프롬프트를 쓸 수 없음',
-      retry: '프레이밍 커맨드의 프롬프트를 파일에 쓰고 `--prompt-file <path>` 와 함께 다시 실행',
-      safeDefault: '엔진을 실행하지 않았고 어느 파일도 바뀌지 않았다',
-      stop: '문서 리뷰 프롬프트 없이 task-docs 를 기록하지 말 것',
-    }));
+  // --rubric 은 testcritic 의 루브릭 선택자다. 열거 밖·다른 프레이밍과의 조합은 엔진을 고르기 전에 거른다.
+  const rubric = flags.rubric;
+  if (rubric !== undefined) {
+    if (!RUBRICS.includes(rubric)) {
+      return emitError(json, `알 수 없는 rubric "${rubric}"`, buildErrorPacket({
+        cause: `--rubric ${rubric} 은 허용 값(${RUBRICS.join('|')}) 밖`,
+        retry: '허용 값 중 하나로 다시 실행',
+        safeDefault: '엔진을 실행하지 않았고 어느 파일도 바뀌지 않았다',
+        stop: 'rubric 값을 지어내지 말 것',
+      }));
+    }
+    if (flags.framing !== 'testcritic') {
+      return emitError(json, '--rubric 은 --framing testcritic 전용', buildErrorPacket({
+        cause: `--rubric 은 testcritic 의 루브릭(${RUBRICS.join('·')})을 고르는 선택자인데 framing 이 ${flags.framing ?? '없음'}`,
+        retry: '`--framing testcritic --rubric <이름>` 으로 다시 실행하거나 --rubric 을 뺀다',
+        safeDefault: '엔진을 실행하지 않았고 어느 파일도 바뀌지 않았다',
+        stop: '다른 프레이밍에 rubric 을 기록하지 말 것',
+      }));
+    }
   }
 
   const resolved = await resolveEngine(requestedEngine, { targetDir: ctx.targetDir, which: deps.which });
@@ -342,7 +366,45 @@ export async function runReview(ctx, deps = {}) {
   }
   const { kind } = kindResult;
 
-  const scoped = await resolveScope({ targetDir: ctx.targetDir, scope: flags.scope, base: flags.base });
+  // 프레이밍 템플릿 — --prompt-file 이 없을 때만 src 상수를 쓴다(있으면 override). task-docs target 은
+  // scope 기본값이 task-docs 이고 다른 scope 명시는 거부한다 — 프롬프트가 diff 를 보지 않는데 diff 로
+  // 기록하면 거짓 기록이다. git target 프레이밍(공용 프롬프트 포함)에 task-docs 를 붙이는 것도 같은 이유.
+  let template = null;
+  if (flags.framing !== undefined && !flags['prompt-file']) {
+    const found = findFramingTemplate(flags.framing, rubric);
+    if (found.error) {
+      return emitError(json, '프레이밍 템플릿을 결정할 수 없음', buildErrorPacket({
+        cause: found.error,
+        retry: found.retry,
+        alternatives: ['프롬프트를 직접 주려면 `--prompt-file <path>` (kind 는 --framing 그대로)'],
+        safeDefault: '엔진을 실행하지 않았고 어느 파일도 바뀌지 않았다',
+        stop: '템플릿 없이 프레이밍 kind 를 기록하지 말 것',
+      }));
+    }
+    template = found.template;
+  }
+  let requestedScope = flags.scope;
+  if (template && template.target === 'task-docs') {
+    if (requestedScope !== undefined && requestedScope !== 'task-docs') {
+      return emitError(json, `${flags.framing} 프레이밍은 task-docs scope 전용`, buildErrorPacket({
+        cause: `${flags.framing} 템플릿은 엔진에게 활성 task 의 spec/plan 을 읽으라고 지시한다 — --scope ${requestedScope} 로 기록하면 거짓 기록`,
+        retry: '`--scope` 를 빼거나 `--scope task-docs` 로 다시 실행',
+        safeDefault: '엔진을 실행하지 않았고 어느 파일도 바뀌지 않았다',
+        stop: 'scope 와 프롬프트 대상이 다른 기록을 남기지 말 것',
+      }));
+    }
+    requestedScope = 'task-docs';
+  }
+  if (requestedScope === 'task-docs' && !flags['prompt-file'] && !(template && template.target === 'task-docs')) {
+    return emitError(json, 'task-docs scope 에는 task-docs 프레이밍 또는 --prompt-file 이 필요', buildErrorPacket({
+      cause: 'task-docs 는 git diff 가 아니라 spec/plan 문서를 대상으로 하므로 공용·git target 프롬프트를 쓸 수 없음',
+      retry: '`--framing contrarian|simplifier` 로 src 템플릿을 쓰거나, 문서 리뷰 프롬프트를 `--prompt-file <path>` 로 주고 다시 실행',
+      safeDefault: '엔진을 실행하지 않았고 어느 파일도 바뀌지 않았다',
+      stop: '문서 리뷰 프롬프트 없이 task-docs 를 기록하지 말 것',
+    }));
+  }
+
+  const scoped = await resolveScope({ targetDir: ctx.targetDir, scope: requestedScope, base: flags.base });
   if (scoped.error) {
     return emitError(json, 'scope 를 결정할 수 없음', buildErrorPacket({
       cause: scoped.error,
@@ -372,7 +434,12 @@ export async function runReview(ctx, deps = {}) {
       }));
     }
   }
-  const prompt = buildPrompt({ scope, base, focus, promptText });
+  const taskPaths = {
+    spec: `docs/${active.user}/${active.task}/${active.task}-spec.md`,
+    plan: `docs/${active.user}/${active.task}/${active.task}-plan.md`,
+    artifact: `docs/${active.user}/${active.task}/${active.task}-artifact.md`,
+  };
+  const prompt = buildPrompt({ scope, base, focus, promptText, template: template ? template.template : null, taskPaths });
 
   let result;
   try {
@@ -412,7 +479,7 @@ export async function runReview(ctx, deps = {}) {
   if (!(await exists(artifactPath))) await writeText(artifactPath, taskArtifactTemplate(task));
 
   const outputBytes = Buffer.byteLength(result.stdout, 'utf8');
-  const entry = { kind, engine, scope, tip, at, exitCode: 0, outputBytes };
+  const entry = { kind, engine, scope, tip, at, exitCode: 0, outputBytes, ...(rubric !== undefined ? { rubric } : {}) };
 
   // meta 에 `reviews` 키가 있는 task(새 템플릿)만 meta 에 쓴다 — 가드의 verify 정본이고, artifact
   // 쓰기가 실패해도 증거는 남도록 먼저 쓴다. 키가 없는 구 task 에는 키를 **만들지 않는다**: 여기서

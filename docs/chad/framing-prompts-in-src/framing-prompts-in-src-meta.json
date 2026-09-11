@@ -1,0 +1,21 @@
+{
+  "user": "chad",
+  "task": "framing-prompts-in-src",
+  "created": "2026-09-11",
+  "firstActivatedAt": "2026-09-11T18:25:14.507Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex-adversarial",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "51f04a62dada0cd2c3821ff495e05e6f5029aaed",
+      "at": "2026-09-11T19:19:35.876Z",
+      "exitCode": 0,
+      "outputBytes": 1245
+    }
+  ]
+}
