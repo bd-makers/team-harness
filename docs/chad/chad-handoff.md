@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+codex-project-hooks-probe
 
-## Last Completed Task (2026-09-11)
-`handoff-amend-dedup` — done
+## Last Commit (2026-09-11)
+03db65e docs(probe): codex project hooks 발화 조건 실측 — 신뢰 2겹 + JSON 주입 형식
 
 ## Full Context
-→ docs/chad/handoff-amend-dedup/handoff-amend-dedup-handoff.md
+→ docs/chad/codex-project-hooks-probe/codex-project-hooks-probe-handoff.md
