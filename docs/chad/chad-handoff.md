@@ -5,7 +5,7 @@
 새 작업은 `harness-team task <name>` 으로 시작한다.
 
 ## Last Completed Task (2026-09-11)
-`review-codex-live-check` — done
+`done-on-main-nudge` — done
 
 ## Full Context
-→ docs/chad/review-codex-live-check/review-codex-live-check-handoff.md
+→ docs/chad/done-on-main-nudge/done-on-main-nudge-handoff.md
