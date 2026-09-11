@@ -114,6 +114,18 @@ churn이 자기 자신을 먹여 트리가 깨끗해지는 지점이 사라지�
 제외 경로 집합은 `done` 가드가 "훅 자신의 출력"으로 무시하는 것과 **같은 함수**(`handoffRelPaths`)에서 나온다.
 가드의 제외는 그대로 필요하다 — 실제 작업 커밋 뒤에는 여전히 dirty다.
 
+**`--amend`는 마지막 항목을 교체한다(0.38.2).** amend는 훅을 다시 돌리므로 append만 하면 같은 논리 커밋에
+항목이 둘 남고, 첫 항목의 sha는 amend가 밀어낸 **없는 커밋**을 가리킨다. 두 조건이 **모두** 참일 때만 교체한다:
+
+- `git reflog -1 --format=%gs HEAD`가 `commit (amend)`로 시작한다(일반 커밋·병합·rebase·checkout과 구분된다).
+- 마지막 항목의 sha가 `git rev-parse HEAD@{1}`(amend 직전 HEAD)과 **같다**(항목에는 short sha가 들어가므로 접두 대조).
+  훅이 직전 커밋을 건너뛰었다면(sweep) 마지막 항목은 더 이전의 진짜 커밋이므로 지우면 안 된다.
+
+"현재 이력에 없다(ancestor 실패)"로는 판정하지 않는다 — 브랜치 전환·rebase 뒤 amend에서 **다른 브랜치에
+살아 있는** 커밋의 항목까지 지운다.
+
+판정 불가(git·reflog·형식 파싱 실패)는 append다 — 잃는 쪽이 아니라 남기는 쪽으로 틀린다.
+
 ## `<name>-meta.json`과 판정 창
 
 `<name>-meta.json`은 harness가 소유하는 **기계 상태**다(`created`·`firstActivatedAt`·`status`·

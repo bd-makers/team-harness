@@ -18,6 +18,19 @@ modified: 2026-09-10
 
 ## [Unreleased]
 
+## [0.38.2] - 2026-09-12
+
+### Fixed
+- **`git commit --amend`가 남기던 고아 handoff 항목.** amend는 post-commit 훅을 다시 돌리므로 append만 하면
+  같은 논리 커밋에 항목이 둘 남고, 첫 항목의 sha는 amend가 밀어낸 **존재하지 않는 커밋**을 가리켰다
+  (0.38.0 릴리스에서 실제로 발생). 이제 amend면 마지막 항목을 교체한다 — 단 **두 조건이 모두** 참일 때만:
+  ① `git reflog -1 --format=%gs HEAD`가 `commit (amend)`로 시작하고(일반 커밋·병합·rebase·checkout과 구분된다),
+  ② 그 항목의 sha가 `git rev-parse HEAD@{1}`(amend 직전 HEAD)과 같다. 조건 ①만으로는 부족하다 —
+  훅이 직전 커밋을 건너뛰었다면(0.38.1의 sweep 침묵) 마지막 항목은 더 이전의 진짜 커밋이다.
+  **"현재 이력에 없다(ancestor 실패)"로는 판정하지 않는다** — 브랜치 전환·rebase 뒤 amend에서 다른 브랜치에
+  살아 있는 커밋의 항목까지 지운다(0.38.1이 기각한 휴리스틱). 판정 불가(git·reflog·형식 파싱 실패)는 append다.
+  소급하지 않는다 — 이미 남은 고아 항목은 직접 지우면 된다.
+
 ## [0.38.1] - 2026-09-11
 
 ### Fixed

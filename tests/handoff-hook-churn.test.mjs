@@ -191,3 +191,151 @@ test('submodule.<name>.ignore=all + handoff 커밋 → sweep 으로 오인하지
     await rm(root, { recursive: true, force: true });
   }
 });
+
+// --- 0.38.2: `git commit --amend` 가 남기던 고아 항목 ---
+
+const entryCount = (text) => [...text.matchAll(/^## \d{4}-\d\d-\d\dT/gm)].length;
+const shasIn = (text) => [...text.matchAll(/^## \d{4}-\d\d-\d\dT[^\n]*—\s+([0-9a-f]{7,40})\b/gm)].map(m => m[1]);
+
+test('amend → 마지막 항목을 교체한다 (없는 커밋을 가리키는 고아 항목을 남기지 않는다)', async () => {
+  const dir = await makeRepo();
+  try {
+    await writeFile(join(dir, 'src.txt'), 'v2\n');
+    await git(dir, 'add', '-A'); await git(dir, 'commit', '-qm', 'feat: work');
+    await runHandoffAuto({ targetDir: dir });
+    const before = await snapshot(dir);
+    assert.equal(entryCount(before.task), 1);
+    const [oldSha] = shasIn(before.task);
+
+    await writeFile(join(dir, 'src.txt'), 'v3\n');
+    await git(dir, 'add', '-A'); await git(dir, 'commit', '-q', '--amend', '-m', 'feat: work (amended)');
+    await runHandoffAuto({ targetDir: dir });
+
+    const after = await snapshot(dir);
+    assert.equal(entryCount(after.task), 1, '항목이 둘로 늘지 않는다');
+    assert.match(after.task, /feat: work \(amended\)/);
+    const [newSha] = shasIn(after.task);
+    assert.notEqual(newSha, oldSha, '새 sha 로 교체됐다');
+    // 남은 sha 는 실제 이력에 있어야 한다 — 고아 항목이 아니라는 증거.
+    await git(dir, 'merge-base', '--is-ancestor', newSha, 'HEAD');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('일반 커밋 연속 → 교체하지 않고 쌓인다', async () => {
+  const dir = await makeRepo();
+  try {
+    for (const v of ['v2', 'v3']) {
+      await writeFile(join(dir, 'src.txt'), `${v}\n`);
+      await git(dir, 'add', '-A'); await git(dir, 'commit', '-qm', `feat: ${v}`);
+      await runHandoffAuto({ targetDir: dir });
+    }
+    assert.equal(entryCount((await snapshot(dir)).task), 2, 'amend 가 아니면 append');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('훅이 직전 커밋을 건너뛴 뒤의 amend → 더 이전의 진짜 항목을 지우지 않는다', async () => {
+  // 조건 2(마지막 항목의 sha 가 `HEAD@{1}` 과 같다)가 없으면 여기서 진짜 항목이 사라진다.
+  // sweep 커밋을 amend 하면서 **실제 소스 변경을 함께 넣는** 경우가 그 자리다 —
+  // amend 된 커밋은 더 이상 handoff-only 가 아니라 skip 을 통과해 amend 경로로 들어온다.
+  const dir = await makeRepo();
+  try {
+    await writeFile(join(dir, 'src.txt'), 'v2\n');
+    await git(dir, 'add', '-A'); await git(dir, 'commit', '-qm', 'feat: real work');
+    await runHandoffAuto({ targetDir: dir });          // 진짜 항목 1건
+    const realSha = shasIn((await snapshot(dir)).task)[0];
+
+    // sweep 커밋(핸드오프만) → 훅은 침묵한다
+    await git(dir, 'add', '-A'); await git(dir, 'commit', '-qm', 'chore: sweep handoff');
+    await runHandoffAuto({ targetDir: dir });
+    assert.equal(entryCount((await snapshot(dir)).task), 1, '전제: sweep 은 기록되지 않는다');
+
+    // 그 커밋을 amend 하며 소스를 넣는다 → skip 을 통과하고, 마지막 항목은 여전히 **살아 있는** 커밋을 가리킨다
+    await writeFile(join(dir, 'src.txt'), 'v3\n');
+    await git(dir, 'add', '-A');
+    await git(dir, 'commit', '-q', '--amend', '-m', 'feat: folded into sweep');
+    await runHandoffAuto({ targetDir: dir });
+
+    const after = await snapshot(dir);
+    assert.ok(shasIn(after.task).includes(realSha), '진짜 항목이 살아남는다');
+    assert.equal(entryCount(after.task), 2, '새 항목은 append 된다 (교체가 아니다)');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('병합 커밋의 amend 도 교체된다 — 병합은 append, 그 amend 는 교체', async () => {
+  const dir = await makeRepo();
+  try {
+    await git(dir, 'checkout', '-qb', 'feat');
+    await writeFile(join(dir, 'feature.txt'), 'f\n');
+    await git(dir, 'add', '-A'); await git(dir, 'commit', '-qm', 'feat: branch');
+    await git(dir, 'checkout', '-q', 'main');
+    await git(dir, 'merge', '--no-ff', '-q', 'feat', '-m', 'merge feat');
+    await runHandoffAuto({ targetDir: dir });
+    assert.equal(entryCount((await snapshot(dir)).task), 1);
+
+    await git(dir, 'commit', '-q', '--amend', '-m', 'merge feat (amended)');
+    await runHandoffAuto({ targetDir: dir });
+    const after = await snapshot(dir);
+    assert.equal(entryCount(after.task), 1, '병합의 amend 도 항목을 늘리지 않는다');
+    assert.match(after.task, /merge feat \(amended\)/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('판정 불가(reflog 실패)는 append 로 degrade — 잃는 쪽으로 틀리지 않는다', async () => {
+  const { amendCutPoint } = await import('../src/commands/task.mjs');
+  const content = '# demo — Handoff\n\n## 2026-09-11T00:00:00.000Z — abc1234 work\n';
+  const boom = async () => { throw new Error('no reflog'); };
+  assert.equal(await amendCutPoint('/nonexistent', content, { git: boom }), null);
+  // amend 지만 항목 형식이 다르면(sha 없음) 판정하지 않는다
+  const amendOnly = async (...a) => (a[0] === 'reflog' ? { stdout: 'commit (amend): x\n' } : { stdout: '' });
+  assert.equal(await amendCutPoint('/nonexistent', '# demo\n\n## 2026-09-11T00:00:00.000Z — (no sha)\n', { git: amendOnly }), null);
+  // rev-parse 실패(HEAD@{1} 없음)도 append 로 degrade
+  const revParseFails = async (...a) => {
+    if (a[0] === 'reflog') return { stdout: 'commit (amend): x\n' };
+    throw new Error('unknown revision');
+  };
+  assert.equal(await amendCutPoint('/nonexistent', content, { git: revParseFails }), null);
+});
+
+test('P1: 브랜치 전환 뒤의 amend → 다른 브랜치에 살아 있는 커밋의 항목을 지우지 않는다', async () => {
+  // "HEAD 의 조상이 아니다" 로 판정하면 여기서 main 의 진짜 항목이 사라진다.
+  // `HEAD@{1}`(amend 직전 HEAD)과의 **정확한 동일성**만 교체 근거로 쓴다.
+  const dir = await makeRepo();
+  try {
+    await writeFile(join(dir, 'src.txt'), 'main-work\n');
+    await git(dir, 'add', '-A'); await git(dir, 'commit', '-qm', 'feat: main work');
+    await runHandoffAuto({ targetDir: dir });
+    const mainSha = shasIn((await snapshot(dir)).task)[0];
+
+    // 다른 브랜치에서 커밋하고 amend — 마지막 항목(main 의 커밋)은 이 HEAD 의 조상이 아니다
+    await git(dir, 'checkout', '-qb', 'side', 'HEAD~1');
+    await writeFile(join(dir, 'side.txt'), 's\n');
+    await git(dir, 'add', '-A'); await git(dir, 'commit', '-qm', 'feat: side');
+    await git(dir, 'commit', '-q', '--amend', '-m', 'feat: side (amended)');
+    await runHandoffAuto({ targetDir: dir });
+
+    const after = await snapshot(dir);
+    assert.ok(shasIn(after.task).includes(mainSha), 'main 브랜치 커밋의 항목이 살아남는다');
+    assert.equal(entryCount(after.task), 2, '새 항목은 append 된다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('교체 경로도 append 경로와 같은 빈 줄 구분을 유지한다', async () => {
+  const dir = await makeRepo();
+  try {
+    await writeFile(join(dir, 'src.txt'), 'v2\n');
+    await git(dir, 'add', '-A'); await git(dir, 'commit', '-qm', 'feat: one');
+    await runHandoffAuto({ targetDir: dir });
+    await writeFile(join(dir, 'src.txt'), 'v3\n');
+    await git(dir, 'add', '-A'); await git(dir, 'commit', '-qm', 'feat: two');
+    await runHandoffAuto({ targetDir: dir });           // append 로 2건
+    const appended = (await snapshot(dir)).task;
+
+    await git(dir, 'commit', '-q', '--amend', '-m', 'feat: two amended');
+    await runHandoffAuto({ targetDir: dir });           // 교체
+    const replaced = (await snapshot(dir)).task;
+
+    const sep = t => t.slice(0, t.lastIndexOf('\n## ') + 1).slice(-2);
+    assert.equal(sep(replaced), sep(appended), '마지막 항목 앞의 개행 모양이 같다');
+    assert.doesNotMatch(replaced, /\n\n$/, 'EOF 에 빈 줄을 남기지 않는다 (git diff --check)');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

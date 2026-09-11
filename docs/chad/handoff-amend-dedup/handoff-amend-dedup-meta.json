@@ -1,0 +1,39 @@
+{
+  "user": "chad",
+  "task": "handoff-amend-dedup",
+  "created": "2026-09-11",
+  "firstActivatedAt": "2026-09-11T16:04:08.125Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "66affa8a12be56d5aa4b7bf2f9d8f17dd330538c",
+      "at": "2026-09-11T16:11:16.811Z",
+      "exitCode": 0,
+      "outputBytes": 2691
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "66affa8a12be56d5aa4b7bf2f9d8f17dd330538c",
+      "at": "2026-09-11T16:15:30.774Z",
+      "exitCode": 0,
+      "outputBytes": 1445
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "66affa8a12be56d5aa4b7bf2f9d8f17dd330538c",
+      "at": "2026-09-11T16:18:43.467Z",
+      "exitCode": 0,
+      "outputBytes": 1572
+    }
+  ]
+}

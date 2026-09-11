@@ -863,6 +863,42 @@ async function commitTouchesOnlyHandoff(targetDir, handoffRels) {
   }
 }
 
+// amend 는 post-commit 훅을 **다시** 돌린다. append 만 하면 같은 논리 커밋에 항목이 둘 남고, 첫 항목이
+// 가리키는 sha 는 amend 가 밀어낸 **없는 커밋**이다(고아 항목). 0.38.0 릴리스에서 실제로 그랬다.
+//
+// 두 조건이 **모두** 참일 때만 마지막 항목을 잘라낸다:
+//   1. reflog 주제가 `commit (amend)` 로 시작한다. 2026-09-12 실측으로 `commit: …`·`commit (initial): …`·
+//      `merge <b>: …`·`checkout: …`·`rebase (finish): …` 와 모두 구분된다.
+//   2. 마지막 항목의 sha 가 `git rev-parse HEAD@{1}`(amend 직전 HEAD)과 **같다**(항목은 short sha 라 접두 대조).
+//      훅이 직전 커밋을 건너뛰었다면(sweep) 마지막 항목은 더 이전의 **진짜** 커밋이므로 지우면 안 된다.
+// "현재 이력에 없다(ancestor 실패)" 로는 판정하지 않는다 — 브랜치 전환·rebase 뒤 amend 에서 **다른 브랜치에
+// 살아 있는** 커밋의 항목까지 지운다(0.38.1 에서 기각한 휴리스틱의 변형, 2026-09-12 codex P1).
+// 판정 불가(git 없음·reflog 없음·파싱 실패)는 append 로 남긴다 — 잃는 쪽이 아니라 남기는 쪽으로 틀린다.
+const HANDOFF_ENTRY_RE = /^## \d{4}-\d\d-\d\dT[^\n]*$/gm;
+
+export async function amendCutPoint(targetDir, content, deps = {}) {
+  const run = deps.git || ((...args) => pexec('git', ['-C', targetDir, ...args], { maxBuffer: 1024 * 1024 }));
+  try {
+    const { stdout } = await run('reflog', '-1', '--format=%gs', 'HEAD');
+    if (!stdout.trimStart().startsWith('commit (amend)')) return null;
+  } catch { return null; }
+
+  const headings = [...content.matchAll(HANDOFF_ENTRY_RE)];
+  if (!headings.length) return null;
+  const last = headings[headings.length - 1];
+  // `## <ISO> — <sha> <msg>` 의 첫 토큰만 읽는다(`git log --oneline` 형식). 메시지 안의 hex 는 보지 않는다.
+  const sha = /—\s+([0-9a-f]{7,40})\b/.exec(last[0]);
+  if (!sha) return null;
+
+  // amend 가 **밀어낸 바로 그 커밋**인지 정확히 대조한다. `HEAD@{1}` 은 amend 직전의 HEAD 다(실측).
+  // "HEAD 의 조상이 아니다" 로 판정하면 브랜치 전환·rebase 뒤의 amend 에서 **다른 브랜치에 살아 있는**
+  // 커밋의 항목까지 지운다 (2026-09-12 codex P1). 정확한 동일성만 교체 근거로 쓴다.
+  let previous;
+  try { previous = (await run('rev-parse', 'HEAD@{1}')).stdout.trim(); } catch { return null; }
+  if (!previous || !previous.startsWith(sha[1])) return null;
+  return last.index;
+}
+
 export async function runHandoffAuto(ctx) {
   const active = await readActive(ctx.targetDir);
   if (!active || !active.task) return;
@@ -888,7 +924,18 @@ export async function runHandoffAuto(ctx) {
   // No trailing blank line: entries are separated by the next entry's leading
   // newline, and a blank line at EOF trips `git diff --check` on every commit.
   const taskEntry = `\n## ${ts} — ${commitMsg}\n${diffStat ? diffStat + '\n' : ''}`;
-  await appendFile(taskHandoffPath, taskEntry);
+  const existing = await readFile(taskHandoffPath, 'utf8').catch(() => null);
+  const cut = existing === null ? null : await amendCutPoint(ctx.targetDir, existing);
+  if (cut === null) {
+    await appendFile(taskHandoffPath, taskEntry);
+  } else {
+    // 고아 항목을 잘라내고 그 자리에 새 항목을 쓴다. 앞부분의 끝 공백은 정리한다 —
+    // `taskEntry` 가 선행 개행을 들고 있어 항목 사이 간격이 append 경로와 같아진다.
+    // 앞부분은 **정확히 개행 하나**로 끝낸다 — `taskEntry` 의 선행 개행과 합쳐져 append 경로와 같은
+    // 빈 줄 구분이 된다. 끝 공백을 통째로 지우면 항목 사이 빈 줄이 사라진다 (codex P3).
+    const head = existing.slice(0, cut).replace(/\n+$/, '') + '\n';
+    await writeFile(taskHandoffPath, head + taskEntry);
+  }
 
   const userHandoffPath = join(ctx.targetDir, 'docs', user, `${user}-handoff.md`);
   await writeFile(userHandoffPath, renderUserHandoff({

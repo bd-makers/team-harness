@@ -512,6 +512,7 @@ task 디렉토리 구조와 파일 계약은 scaffold 되는 `AGENTS.md`의 **�
 
 # 활성 task의 handoff.md를 최신 커밋 정보로 갱신 (post-commit hook이 자동 호출)
 # 핸드오프 파일만 바꾼 커밋(sweep)에는 아무것도 쓰지 않는다 — 병합·빈 커밋·git 실패는 종전대로 기록 (0.38.1+)
+# --amend 는 마지막 항목을 교체한다 (고아 sha 항목을 남기지 않음, 0.38.2+)
 /harness-task handoff
 
 # spec에 선언한 JSON Schema producer/consumer boundary 대조
