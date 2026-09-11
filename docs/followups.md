@@ -40,30 +40,37 @@ codex-cli **0.153.4** 바이너리 문자열 실측:
 
 **즉 "배선만 안 된 상태"라는 종전 판단은 맞다.** 남은 것은 의지의 문제가 아니라 아래 선행 검증이다.
 
-### 선행 검증 — 지금 훅이 살아 있는가 (부정 정황 2건)
+### 선행 검증 — **완료** (2026-09-12, task `codex-project-hooks-probe`)
 
-- **(1) 마커 훅이 발화하지 않았다.** 새 git 저장소에 `.codex/hooks.json`(SessionStart → 마커 파일 생성)을 두고
-  `codex exec --sandbox read-only --dangerously-bypass-hook-trust` 실행 → 세션은 정상 완료(다른 훅의
-  `hook: Stop Completed` 출력은 보임)했지만 **마커 파일이 생기지 않았다.**
-- **(2) 신뢰 등록이 한 번도 안 됐다.** `~/.codex/config.toml`의 `[hooks.state]`에는 `~/.codex/hooks.json`과
-  플러그인 훅 항목만 있고, **project-level 경로 항목이 하나도 없다.** 이 저장소는 `trust_level = "trusted"`이고
-  `.codex/hooks.json`을 2026-09-03부터 갖고 있으며 codex를 수십 번 돌렸는데도 그렇다.
-- **아직 모르는 것**: 바이너리에는 `Error parsing project hooks config file` · `Failed to read project hooks config file`
-  문자열이 있으므로 project-level 훅 자체는 **개념으로 존재한다**. 경로가 `.codex/hooks.json`이 아닌지,
-  별도 활성화가 필요한지는 **미규명**이다.
-- **`~/.codex/hooks.json`(전역)은 같은 스키마로 실제 동작 중이다** — 사용자 환경의 Orca·Otty 훅이 그 파일에
-  Claude와 동일한 중첩 구조로 등록돼 있고 `[hooks.state]`에 신뢰 해시가 있다. **스키마는 맞다**는 뜻이다.
+**답: project-level 훅은 동작한다. 단 조건이 둘이고, 우리 훅은 둘 다 만족하지 못한다. 형식도 틀렸다.**
+
+- **발화 조건 2개(AND)**: ① `[projects."<path>"] trust_level = "trusted"` ② 훅 소스 신뢰
+  (`[hooks.state]` 해시 또는 `--dangerously-bypass-hook-trust`). 하나라도 없으면 **오류 없이 조용히** 안 돈다.
+- **주입 형식**: 평문 stdout은 **주입되지 않는다.**
+  `{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"…"}}` 만 주입된다.
+- **이 저장소 실측**: 프로젝트는 신뢰됐지만 `[hooks.state]`에 `.codex/hooks.json` 항목이 **없다**(2026-09-03 설치
+  이후 지금까지). `harness-review`의 `codex exec`에는 bypass 플래그가 없으므로 **훅이 실행되지 않는다** —
+  모델에게 직접 물어 `NONE` 확인.
+- **조건이 갖춰지면**: `SessionStart`·`UserPromptSubmit`·`PreToolUse`·`PostToolUse`·`Stop`·`SessionEnd`
+  6개가 전부 발화했다(실험 P2). 즉 선택지 B는 기술적으로 가능하다.
+- 전체 실험 표·재현 절차: `docs/chad/codex-project-hooks-probe/codex-project-hooks-probe-artifact.md`.
+
+**파생된 별건(먼저 처리할 것):** `README.md:111` 표와 그 아래 문장이 사실과 다르다 —
+"SessionStart 1종 (신뢰 승인 필요)"은 실행 조건을 절반만 말하고, "둘 다 … Context Card를 주입합니다"는
+Codex 쪽이 거짓이다. 정정은 이 항목의 결정과 **무관하게** 필요하다(C를 고르더라도).
 
 ### 선택지
 
 | | 무엇 | 비용 | 남는 위험 |
 |---|---|---|---|
-| **A. 검증 먼저 (권장)** | 코드 변경 없는 작은 task로 project-level 훅의 **정확한 로딩 경로**를 규명한다. 결과에 따라 B/C로 간다 | 로컬 codex 실험 1회분 | 없음 — 지금 README가 사실과 다를 수 있는 상태만 정리된다 |
+| ~~A. 검증 먼저~~ | **완료** — 위 절 참조 | — | — |
+| **A'. 고쳐서 살린다 (권장)** | 주입 형식을 JSON `additionalContext`로 바꾸고, 훅 신뢰가 없으면 **doctor가 경고**하게 한다(설치 ≠ 동작). README 정정 포함 | 템플릿 1파일 + doctor 검사 1건 + 문서 | 훅 신뢰는 사용자가 1회 승인해야 한다 — 하네스가 대신 못 한다 |
 | **B. 확장** | A에서 경로가 확인되면 `PreToolUse`(보호 경로·위험 git)와 관측을 Codex에 배선 | 훅 스크립트는 재사용 가능하나 테스트·문서·doctor 표면이 늘어난다 | Codex가 리뷰어(D2)인데 쓰기 차단 훅을 다는 것이 역할과 맞는지 |
 | **C. 비대칭 유지** | README 문장을 그대로 두고 이 항목을 종결 | 0 | Codex 세션의 control 부재가 영구 고정 |
 
-**권장: A.** B/C 어느 쪽을 고르든 "설치했지만 발화하지 않는 훅"이 남아 있으면 안 된다. 검증 결과가
-"project-level 훅은 지원되지 않는다"로 나오면 C가 자동으로 옳아지고, 경로가 밝혀지면 B의 비용이 크게 준다.
+**권장: A' 먼저, 그다음 B/C 결정.** 지금 상태는 "설치했지만 돌지 않는 훅 + 사실과 다른 README"다.
+B(확장)를 고르든 C(비대칭 유지)를 고르든 그 정리는 선행이다. A'를 하고 나면 B의 비용은 "이벤트를 더 거는 것"뿐이고,
+C를 고르면 Codex 훅을 **설치하지 않는 선택**까지 포함해 표를 정직하게 다시 쓰면 된다.
 
 ### 정본
 
