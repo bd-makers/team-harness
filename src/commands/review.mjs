@@ -10,8 +10,8 @@
 // 엔진 runner 표·프롬프트·scope 규칙의 정본은 commands/harness-review.md다. 이 파일은 그 표를
 // 코드로 옮긴 것이고, 프롬프트 상수는 pin 테스트가 문서와 동기화한다.
 
-import { join } from 'node:path';
-import { readFile, appendFile, access, constants } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+import { readFile, access, constants } from 'node:fs/promises';
 import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { exists, writeText } from '../fsx.mjs';
@@ -119,16 +119,50 @@ export function renderReviewBlock({ kind, engine, scope, tip, at, output }) {
   ].join('\n');
 }
 
+// 리뷰 블록의 자리 — 기본 artifact 템플릿에서 `## Reviews` 는 `## Learnings` 앞에 있다. EOF 에 붙이면
+// 리뷰가 `## Learnings` 아래에 쌓여 두 절의 의미가 뒤집힌다 (2026-09-11 codex 리뷰 P3).
+// **fence 를 세는 이유**: 블록 안에는 엔진 출력이 그대로 들어가고, 이 저장소를 리뷰하면 그 출력에
+// `## Learnings` 문자열이 들어온다(템플릿·가드 코드에 있는 문자열이다). fence 를 무시하면 두 번째
+// 리뷰부터 이전 리뷰의 출력 한가운데를 찍어 파일을 깨뜨린다.
+// `runRetro` 가 EOF 에 붙이는 `## Learnings (<date>)` 절도 헤딩이므로 **첫 번째** 헤딩 앞에만 넣는다.
+export function insertReviewBlock(artifact, block) {
+  const lines = artifact.split('\n');
+  let fence = null;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const open = line.match(/^\s{0,3}(`{3,}|~{3,})/);
+    if (fence) {
+      // 닫는 fence 는 같은 문자로, 연 길이 이상이어야 한다 (CommonMark).
+      if (open && open[1][0] === fence[0] && open[1].length >= fence.length && !line.slice(open[0].length).trim()) fence = null;
+      continue;
+    }
+    if (open) { fence = open[1]; continue; }
+    if (/^## Learnings\b/.test(line)) {
+      const head = lines.slice(0, i).join('\n').replace(/\s+$/, '');
+      const tail = lines.slice(i).join('\n');
+      return `${head}\n${block.replace(/^\n+/, '\n')}\n${tail}`;
+    }
+  }
+  return artifact + block;
+}
+
 // PATH 탐색. 문서의 `command -v`와 같은 질문 — 실행 가능한 파일이 PATH에 있는가.
-export async function which(name, env = process.env) {
+// `cwd` 는 **상대 경로 토큰의 기준**이다. 엔진은 `targetDir` 에서 실행되므로(`runEngine` 의 spawn cwd)
+// preflight 도 같은 기준으로 봐야 한다 — process cwd 로 보면 `--target` + `./tool` 조합에서 실행
+// 가능한 reviewer 를 "PATH 에 없음"으로 오거부한다 (2026-09-11 codex 리뷰 P3).
+export async function which(name, env = process.env, cwd = process.cwd()) {
   // 경로가 주어지면(custom.command 의 첫 토큰이 `./tool`·`/opt/x` 인 경우) PATH 를 보지 않고 그 파일을 본다.
   if (name.includes('/')) {
-    try { await access(name, constants.X_OK); return name; } catch { return null; }
+    const path = resolve(cwd, name);
+    try { await access(path, constants.X_OK); return path; } catch { return null; }
   }
   for (const dir of (env.PATH || '').split(':').filter(Boolean)) {
+    // PATH 항목 자체가 상대 경로(`.`·`../bin`)일 수 있다 — 그것도 실행 기준(cwd)으로 푼다.
+    // 여기서만 process cwd 로 풀면 첫 토큰 경로는 고쳐 놓고 PATH 항목에서 같은 버그가 남는다.
+    const candidate = resolve(cwd, dir, name);
     try {
-      await access(join(dir, name), constants.X_OK);
-      return join(dir, name);
+      await access(candidate, constants.X_OK);
+      return candidate;
     } catch { /* next */ }
   }
   return null;
@@ -154,16 +188,18 @@ export async function resolveEngine(requested, { targetDir, which: probe = which
       return { error: `custom.command 의 {prompt} 는 공백으로 둘러싸인 독립 토큰이어야 함 (예: "mycli review {prompt}") — 따옴표나 다른 문자에 붙어 있으면 단일 인용 치환이 깨져 프롬프트 내용이 셸 명령으로 해석될 수 있다: ${JSON.stringify(template)}` };
     }
     const head = template.trim().split(/\s+/)[0];
-    if (!(await probe(head))) return { error: `custom.command 의 첫 토큰 "${head}" 이 PATH 에 없음` };
+    // 상대 경로 토큰은 실행 위치(targetDir) 기준으로 판정한다 — 실행과 preflight 의 기준을 맞춘다.
+    if (!(await probe(head, process.env, targetDir))) return { error: `custom.command 의 첫 토큰 "${head}" 이 PATH 에 없음` };
     return { engine: 'custom', command: template };
   }
   if (requested) {
     if (!ENGINES.includes(requested)) return { error: `알 수 없는 엔진 "${requested}" (허용: ${ENGINES.join('|')})` };
-    if (!(await probe(requested))) return { error: `${requested} CLI 가 PATH 에 없음 — 설치·인증 상태를 공식 문서로 확인` };
+    if (!(await probe(requested, process.env, targetDir))) return { error: `${requested} CLI 가 PATH 에 없음 — 설치·인증 상태를 공식 문서로 확인` };
     return { engine: requested };
   }
+  // 엔진 probe 도 같은 기준을 쓴다 — 한 자리만 고치면 상대 PATH 항목에서 기준이 갈린다.
   for (const candidate of PROBE_CHAIN) {
-    if (await probe(candidate)) return { engine: candidate, probed: true };
+    if (await probe(candidate, process.env, targetDir)) return { engine: candidate, probed: true };
   }
   return { error: `probe 폴백 체인(${PROBE_CHAIN.join(' → ')})에서 가용 엔진을 찾지 못함` };
 }
@@ -356,6 +392,19 @@ export async function runReview(ctx, deps = {}) {
     }));
   }
 
+  // 빈 출력은 증거가 아니다 — exit 0 만 보면 "아무것도 출력하지 않는" 잘못 설정된 custom reviewer 가
+  // `verify: required` 를 통과시킨다 (2026-09-11 codex 리뷰 P3). artifact 템플릿 생성보다 **앞**에 둔다:
+  // 거부한 실행이 파일을 만들면 아래 safeDefault 가 거짓말이 된다.
+  if (!result.stdout.trim()) {
+    return emitError(json, `${engine} 이 exit 0 이지만 출력이 비어 있음`, buildErrorPacket({
+      cause: [`${engine} stdout 0 B (공백만) — 리뷰 내용이 없는 실행은 증거로 치지 않는다`, ...stderrTail(result.stderr).map(l => `stderr: ${l}`)],
+      retry: '엔진이 stdout 으로 리뷰를 내도록 설정을 고친 뒤 다시 실행 (custom 은 .harness/reviewers.json 의 command 확인)',
+      alternatives: ['다른 엔진을 명시한다: `harness-team review claude`'],
+      safeDefault: '증거는 기록되지 않았다 — meta.reviews 와 artifact 는 그대로다',
+      stop: '내용 없는 실행을 리뷰로 치지 말 것',
+    }));
+  }
+
   const at = new Date().toISOString();
   const { user, task } = active;
   const artifactRel = `docs/${user}/${task}/${task}-artifact.md`;
@@ -369,12 +418,15 @@ export async function runReview(ctx, deps = {}) {
   // 쓰기가 실패해도 증거는 남도록 먼저 쓴다. 키가 없는 구 task 에는 키를 **만들지 않는다**: 여기서
   // 키를 만들면 가드가 그 순간 CLI 소유로 전환돼 이미 있던 손 마커 증거가 무효가 된다(2026-09-10
   // adversarial 리뷰 P1). 구 task 의 증거는 아래 artifact 마커(CLI 가 쓴다)이고 판정도 종전 그대로다.
+  // 옮기는 인가 경로는 `harness-team migrate --adopt-reviews` 하나뿐이다 — 잃는 증거를 세어 보여주고
+  // 확인을 받는다. 여기서 조용히 만들지 않는 이유가 거기서 묻는 이유다.
   const meta = await readTaskMeta(ctx.targetDir, user, task);
   const cliOwned = Boolean(meta && Array.isArray(meta.reviews));
   if (cliOwned) {
     await writeTaskMeta(ctx.targetDir, user, task, { ...meta, user, task, reviews: [...meta.reviews, entry] });
   }
-  await appendFile(artifactPath, renderReviewBlock({ ...entry, output: result.stdout }));
+  const block = renderReviewBlock({ ...entry, output: result.stdout });
+  await writeText(artifactPath, insertReviewBlock(await readFile(artifactPath, 'utf8'), block));
 
   const summary = `${kind} recorded (exit 0, ${outputBytes} B)`;
   const nextActions = [
@@ -391,7 +443,7 @@ export async function runReview(ctx, deps = {}) {
     console.log(`review: ${summary}${resolved.probed ? ` — probe 체인이 ${engine} 선택` : ''}`);
     console.log(cliOwned
       ? `recorded: ${artifactRel} · meta.reviews[${meta.reviews.length}]`
-      : `recorded: ${artifactRel} (구 task — meta 에 reviews 키가 없어 artifact 마커만, 판정도 종전 그대로)`);
+      : `recorded: ${artifactRel} (구 task — meta 에 reviews 키가 없어 artifact 마커만, 판정도 종전 그대로; 옮기려면 \`harness-team migrate --adopt-reviews\`)`);
     for (const n of nextActions) console.log(`next: ${n}`);
   }
   return { recorded: true, metaRecorded: cliOwned, entry };

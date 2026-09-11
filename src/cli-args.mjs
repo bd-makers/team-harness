@@ -46,8 +46,12 @@ export const COMMANDS = [
     flags: BACKUP_DIR_FLAG },
   { name: 'delete', args: '[dir]', summary: 'Remove harness symlinks from project',
     flags: [...BACKUP_DIR_FLAG, 'include-real'] },
-  { name: 'migrate', args: '[dir]', summary: 'Migrate to latest: backup scripts → root, task structure (→0.6, →0.7 artifact.md split)',
-    flags: [] },
+  // `--adopt-reviews` is opt-in on purpose: it flips legacy tasks to CLI-owned review
+  // evidence, which drops their hand-written verify markers from the guard's count.
+  // Every other migrate step is a structure move that is safe unattended; this one is not,
+  // so it never runs from a bare `migrate` (or from `--yes` alone).
+  { name: 'migrate', args: '[dir] [--adopt-reviews]', summary: 'Migrate to latest: backup scripts → root, task structure (→0.6, →0.7 artifact.md split); --adopt-reviews moves legacy tasks to CLI-owned review evidence',
+    flags: ['adopt-reviews'] },
   { name: 'upgrade', args: '[dir]', summary: 'Migrate real files → symlinks in one step (v0.3.x → v0.4+)',
     flags: BACKUP_DIR_FLAG },
   { name: 'sync', args: '[dir]', summary: 'Mirror .claude/rules → .cursor/rules and reinstall the post-commit hook', flags: [] },

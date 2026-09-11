@@ -456,6 +456,11 @@ v0.2.x에서 backup dir에 있던 `clone.sh`, `symlink.sh`, `delete.sh`를 프�
 > (hook은 `init` 재실행의 deep-merge로도 들어옵니다 — migrate는 구조 변경 없이 hook만 보강할 때 유용하고,
 > 설치된 stock 훅 스크립트(observe-tools·boundary-checkpoint 포함)를 현재 템플릿으로 갱신하는 유일한 경로입니다.)
 
+> `--adopt-reviews`는 **옵트인**입니다(0.38+). `meta.reviews` 키가 없는 구 task를 CLI 소유 리뷰 증거로
+> 옮기는 유일한 인가 경로이며, 채택하면 그 task의 손으로 쓴 검증 마커는 `verify: required`에서 빠집니다.
+> 그래서 플래그 없이는 안내 한 줄만 내고, `--yes` 단독으로도 채택하지 않습니다 — 잃는 마커 수와
+> 그 결과를 먼저 보여주고 확인을 받습니다.
+
 ### `/harness-upgrade` — v0.3.x → v0.4+ 원스텝 전환
 
 실제 파일로 존재하는 harness 아티팩트를 symlink 구조로 일괄 전환합니다.

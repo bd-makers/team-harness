@@ -105,6 +105,8 @@ created: docs/<user>/<name>/
 고치지 않는다** — `done` 가드가 증거를 찾는 판정 창의 시작점과, `verify: required`가 세는 리뷰 증거
 (`reviews[]`, `harness-team review`가 성공한 실행마다 append)가 여기 있기 때문이다. `reviews` 키가
 없는 구 task는 종전대로 artifact 마커로 판정한다 — 상세는 harness-review 명령 문서 5단계.
+구 task를 CLI 소유로 옮기는 **유일한 인가 경로**는 `harness-team migrate --adopt-reviews`다 — 잃는
+증거를 세어 보여주고 확인을 받은 뒤 CLI가 키를 넣는다. 손으로 `"reviews": []`를 넣지 않는다.
 
 - **판정 창 = `reopenedAt || firstActivatedAt`** (처음 유효한 값). 창을 통째로 버리면 마커 신선도·
   커밋·테스트 시각 가드가 전부 꺼지는 fail-open이 된다.

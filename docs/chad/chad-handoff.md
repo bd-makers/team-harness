@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+review-adopt-record-quality
 
-## Last Completed Task (2026-09-11)
-`done-on-main-nudge` — done
+## Last Commit (2026-09-11)
+f528422 feat(review): 구 task 채택 경로와 기록 품질 3건 — 0.38.0
 
 ## Full Context
-→ docs/chad/done-on-main-nudge/done-on-main-nudge-handoff.md
+→ docs/chad/review-adopt-record-quality/review-adopt-record-quality-handoff.md

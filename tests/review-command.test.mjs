@@ -340,3 +340,106 @@ test('P3: which() 는 경로 토큰을 PATH 가 아니라 그 파일로 판정�
     assert.equal(await which('definitely-not-a-binary-xyz', { PATH: dir }), null);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+// --- 0.38.0: 기록 품질 3건 (2026-09-11 codex 실측 리뷰 P3) ---
+
+test('P3: 리뷰 블록은 `## Learnings` 앞에 삽입된다 — 기본 템플릿에서 `## Reviews` 아래', async () => {
+  const { dir, taskDir } = await makeFixture();
+  const { restore } = captureLogs();
+  try {
+    await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    const artifact = await readFile(join(taskDir, 'demo-artifact.md'), 'utf8');
+    const block = artifact.indexOf('(harness-team review)');
+    assert.ok(block > 0, '블록이 있다');
+    assert.ok(block > artifact.indexOf('## Reviews'), '`## Reviews` 아래');
+    assert.ok(block < artifact.indexOf('\n## Learnings'), '`## Learnings` 위');
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('P3: 두 번째 리뷰는 이전 리뷰 출력 안의 `## Learnings` 문자열을 자리로 착각하지 않는다', async () => {
+  // 이 저장소를 리뷰하면 엔진 출력에 `## Learnings` 가 그대로 들어온다 — fence 를 세지 않으면
+  // 두 번째 리뷰가 첫 블록의 fence 안쪽을 찍어 파일을 깨뜨린다.
+  const { dir, taskDir } = await makeFixture({ script: '#!/bin/sh\necho "artifact 템플릿에는"\necho "## Learnings"\necho "가 있다"\n' });
+  const { restore } = captureLogs();
+  try {
+    await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    const artifact = await readFile(join(taskDir, 'demo-artifact.md'), 'utf8');
+    assert.equal(parseReviewMarkers(artifact).length, 2, '두 블록 모두 온전하다');
+    const body = 'artifact 템플릿에는\n## Learnings\n가 있다';
+    assert.equal(artifact.split(body).length - 1, 2, '두 블록의 출력이 갈라지지 않고 온전히 남아 있다');
+    const [first, second] = [...artifact.matchAll(/\(harness-team review\)/g)].map(m => m.index);
+    // 진짜 헤딩은 fence 안쪽 문자열들보다 뒤에 있다 — 삽입이 fence 안을 찍었다면 순서가 뒤집힌다.
+    assert.ok(first < second && second < artifact.lastIndexOf('\n## Learnings'), '두 블록 모두 진짜 Learnings 헤딩 위, 순서대로');
+    // 첫 블록의 fence 가 닫힌 채로 남아야 한다 — 삽입이 한가운데를 갈랐다면 fence 수가 홀수가 된다.
+    assert.equal(artifact.split('\n').filter(l => /^```/.test(l)).length % 2, 0, 'fence 짝이 맞는다');
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('P3: `## Learnings` 가 없는 artifact 는 종전대로 EOF append', async () => {
+  const { dir, taskDir } = await makeFixture();
+  await writeFile(join(taskDir, 'demo-artifact.md'), '# demo — Artifact\n\n## 결과\n손으로 쓴 결과.\n');
+  const { restore } = captureLogs();
+  try {
+    await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    const artifact = await readFile(join(taskDir, 'demo-artifact.md'), 'utf8');
+    assert.ok(artifact.startsWith('# demo — Artifact\n\n## 결과\n손으로 쓴 결과.\n'), '기존 내용 보존');
+    assert.equal(parseReviewMarkers(artifact).length, 1);
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('P3: exit 0 이어도 stdout 이 공백뿐이면 거부 — meta·artifact 어느 쪽도 바뀌지 않는다', async () => {
+  const { dir, taskDir } = await makeFixture({ script: '#!/bin/sh\necho "설정이 틀려 아무것도 못 봤다" >&2\nprintf "  \\n\\n"\n' });
+  const before = await readFile(join(taskDir, 'demo-artifact.md'), 'utf8');
+  const { logs, restore } = captureLogs();
+  try {
+    const { result, exitCode } = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    assert.equal(exitCode, 1);
+    assert.equal(result.recorded, false);
+    assert.deepEqual((await readTaskMeta(dir, 'tester', 'demo')).reviews, []);
+    assert.equal(await readFile(join(taskDir, 'demo-artifact.md'), 'utf8'), before, 'artifact 불변');
+    assert.ok(logs.some(l => l.includes('출력이 비어 있음')), '사유를 말한다');
+    assert.ok(logs.some(l => l.includes('설정이 틀려')), 'stderr 꼬리를 패킷에 담는다 — 아니면 디버그 불가');
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('P3: 거부된 빈 출력 실행은 artifact 파일을 만들지도 않는다 (부수효과 없음)', async () => {
+  const { dir, taskDir } = await makeFixture({ script: '#!/bin/sh\nexit 0\n' });
+  await rm(join(taskDir, 'demo-artifact.md'));
+  const { restore } = captureLogs();
+  try {
+    await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    let created = true;
+    try { await readFile(join(taskDir, 'demo-artifact.md')); } catch { created = false; }
+    assert.equal(created, false, '거부한 실행이 템플릿을 만들면 safeDefault 가 거짓말이 된다');
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('P2: PATH 항목 자체가 상대 경로여도 실행 기준(cwd)으로 푼다', async () => {
+  // 첫 토큰만 고치고 PATH 항목을 process cwd 로 두면 `PATH=bin` 같은 설정에서 같은 오거부가 남는다.
+  const { which } = await import('../src/commands/review.mjs');
+  const { dir } = await makeFixture();
+  await mkdir(join(dir, 'bin'), { recursive: true });
+  const tool = join(dir, 'bin', 'mycli');
+  await writeFile(tool, '#!/bin/sh\nexit 0\n');
+  await chmod(tool, 0o755);
+  try {
+    assert.equal(await which('mycli', { PATH: 'bin' }, dir), tool);
+    assert.equal(await which('mycli', { PATH: 'bin' }, tmpdir()), null, '다른 기준에서는 없다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('P3: custom 의 상대경로 preflight 는 targetDir 기준 — process cwd 기준이면 오거부한다', async () => {
+  const { which } = await import('../src/commands/review.mjs');
+  const { dir } = await makeFixture();
+  await writeFile(join(dir, '.harness/reviewers.json'), JSON.stringify({ custom: { command: './fake-reviewer.sh {prompt}' } }));
+  const { restore } = captureLogs();
+  try {
+    assert.equal(await which('./fake-reviewer.sh', process.env, dir), join(dir, 'fake-reviewer.sh'));
+    assert.equal(await which('./fake-reviewer.sh', process.env, tmpdir()), null, '다른 기준에서는 없다');
+    const resolved = await resolveEngine('custom', { targetDir: dir });
+    assert.equal(resolved.error, undefined, `--target 아래 상대경로 reviewer 는 실행 가능하다: ${resolved.error || ''}`);
+    const { result } = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    assert.equal(result.recorded, true, '실행 기준(cwd=targetDir)과 preflight 기준이 같다');
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});

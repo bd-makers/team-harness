@@ -1,7 +1,7 @@
 ---
 description: 구버전 구조를 최신으로 마이그레이션 + 설치된 훅·스킬·규칙을 최신 템플릿으로 refresh — init은 기존 파일을 건너뛰므로 템플릿 수정이 도달하는 유일한 경로
 phase: Migration
-argument-hint: [--yes] [--target <dir>]
+argument-hint: [--yes] [--adopt-reviews] [--target <dir>]
 tags:
   - project
   - ai
@@ -22,6 +22,14 @@ refresh는 설치본의 바이트가 **하네스가 실제로 배포한 적 있�
 갱신한다. 사용자가 편집한 파일은 "customized"로 보고 **절대 덮지 않고** 경고만 남긴다.
 `docs/` seed(`README.md`·`decisions.md`)는 설치 후 팀 저작물이라 refresh 대상이 아니다.
 낡은 설치본이 있으면 `harness-team doctor`가 경고로 알려 준다 — 근거는 `docs/decisions.md` D8.
+
+**리뷰 증거 채택은 옵트인이다(`--adopt-reviews`).** 0.37.0 이후 `verify: required`의 정본은 meta의
+`reviews[]`이고, 그 키가 없는 구 task는 종전대로 artifact 마커로 판정한다. 이 플래그는 열린 구 task를
+CLI 소유로 옮긴다 — 각 task마다 "채택하면 증거에서 빠지는 검증 마커 N개"(가드와 같은 파서·같은 판정 창)와
+그 결과(`verify: required`인 task는 종결 전 리뷰 재실행 필요)를 보여주고, 확인을 받은 뒤 meta에
+`reviews: []`를 넣는다. **플래그 없이는 안내 한 줄만 내고 아무것도 바꾸지 않으며, `--yes` 단독으로도
+채택하지 않는다** — 다른 단계는 구조를 옮기지만 이 단계는 증거를 잃기 때문이다. 되돌리려면 그 meta에서
+`reviews` 키를 지우면 된다.
 
 **배선은 자기가 책임질 수 있는 것만 한다.** SessionStart 병합 대상은 `harness-team session-context`
 항목뿐이다 — migrate는 **설치하지 않는 훅을 배선하지 않는다**. 예전에는 템플릿의 SessionStart 그룹을

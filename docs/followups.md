@@ -7,9 +7,9 @@
 
 ## 우선순위
 
-**3 → 8.** 3은 `migrate`·`session-context` 영역이라 5번 구현 위에 붙이기 좋고, 8은 P3 세 건을 다음 minor에 묶는다.
-2는 결정이 먼저. 4·6·7은 급하지 않다.
-(1번·5번은 2026-09-11 task `review-codex-live-check`·`done-on-main-nudge`로 올려 여기서 지웠다 — 번호는 참조 안정을 위해 유지.)
+**남은 것: 2(결정 먼저) · 4 · 6 · 7 — 어느 것도 급하지 않다.**
+(1·5번은 2026-09-11 task `review-codex-live-check`·`done-on-main-nudge`로, 3·8번은 같은 날 task
+`review-adopt-record-quality`로 올려 여기서 지웠다 — 번호는 참조 안정을 위해 유지.)
 
 ---
 
@@ -27,16 +27,6 @@
 - **선행 검증**: 같은 spec `:49-51` — Codex SessionStart 훅이 실제로 **실행**되어 주입되는지 미검증
   (샌드박스가 `codex exec --dangerously-bypass-hook-trust`를 막음). `pre_tool_use`를 배선하기 전에
   SessionStart부터 실측해야 한다. 코드 변경 없는 작은 검증 task로 분리 가능 — 로컬 Codex 필요.
-
-## 3. 구 task → CLI 소유 마이그레이션 — 0.37.0 후속
-
-- **무엇**: 0.37.0은 `reviews` 키가 없는 구 task를 종전 판정(artifact 마커)으로 두고, CLI도 키를 만들지 않는다
-  (키 생성을 부수효과로 두면 첫 `review` 호출 순간 기존 손 마커가 verify 증거에서 빠진다 — adversarial 리뷰 P1).
-  옮기는 **명시적** 경로가 없다.
-- **어떻게**: `harness-team migrate`에 옵트인 단계 — 활성/열린 task의 meta에 `reviews: []`를 넣되, 넣기 전에
-  "이 task의 기존 verify 마커 N개가 증거에서 빠집니다"를 보여주고 확인. 또는 `harness-team review --adopt`.
-- **주의**: 손으로 `"reviews": []`를 넣으면 안 된다는 것이 현재 문서 계약(`what-changes-0.37.0.html` 소비자 절).
-- **정본**: `src/commands/task.mjs` `collectDoneIssues` cliOwned 분기, `commands/harness-review.md` 5단계 "구 task 호환".
 
 ## 4. 프레이밍 프롬프트 src 이관 — 0.37.0 후속
 
@@ -62,19 +52,6 @@
   `$1`·`$2`·`$5`·`$10`·`$25`·`$50`이 슬래시 커맨드 인자 치환(`$1` = 첫 인자)에 잡혀 셀이 인자 문자열로
   바뀐다(2026-09-10 실측: haiku 행 입력 가격이 "작동한건가?"로 렌더).
 - **어떻게**: `USD 1` 또는 `1 $/MTok`처럼 `$숫자` 패턴을 피한다. 이 저장소가 아니라 스킬 저장소의 변경.
-
-## 8. `harness-team review` 기록 품질 3건 — 0.37.0 codex 실측 리뷰 발견 (P3)
-
-- **출처**: 2026-09-11 task `review-codex-live-check`의 codex 리뷰(대상 `v0.36.0...HEAD`). 판별 근거는 그 artifact
-  `## Reviews` 아래 표. 세 건 모두 `done` 가드 판정에는 영향 없어 patch 사유는 아니다 — 다음 minor에 묶는다.
-- **(1) 블록 위치**: `src/commands/review.mjs` `appendFile`이 EOF에 붙여 기본 템플릿에서 `## Reviews`가 아니라
-  `## Learnings` 아래에 남는다(실측 artifact가 증거). `## Learnings` 헤딩이 있으면 그 앞에 삽입, 없으면 append.
-  `runRetro`(`task.mjs`)는 `## Learnings (<date>)` 절을 EOF append하므로 순서 규칙을 같이 정한다.
-- **(2) 빈 출력 기록**: exit 0이면 stdout 0 B여도 `meta.reviews[]`에 기록된다. 아무것도 출력하지 않는 잘못
-  설정된 custom reviewer가 `verify: required`를 통과시킬 수 있다 — 공백뿐인 stdout은 error 패킷으로 거부.
-- **(3) custom 상대경로 preflight**: `which()`가 `./tool` 같은 경로를 process cwd 기준 `access`로 검사하지만 실행은
-  `targetDir`에서 한다. `--target` + 상대경로 조합에서 실행 가능한 reviewer가 오거부된다 — `targetDir` 기준으로 resolve.
-- **정본**: `src/commands/review.mjs` (`which`·`runReview` 기록부), `tests/review-command.test.mjs`.
 
 ---
 

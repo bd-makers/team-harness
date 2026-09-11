@@ -10,7 +10,10 @@ import { extractSections, deepMergeJson, simpleDiff } from '../merge.mjs';
 import { render } from '../render.mjs';
 import { confirm } from '../prompt.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
-import { taskArtifactTemplate } from './task.mjs';
+import {
+  taskArtifactTemplate, parseReviewMarkers, evidenceWindowStart, isVerifyKind,
+  parseDoneEvidenceDeclaration, VERIFY_KIND_SUFFIXES,
+} from './task.mjs';
 import { collectTasks, readTaskMeta, writeTaskMeta, metaRel } from './summary.mjs';
 import { settingsHasSessionGate } from './session-context.mjs';
 
@@ -953,6 +956,72 @@ async function backfillTaskMeta(ctx) {
   return written.length > 0;
 }
 
+// --- 구 task → CLI 소유 리뷰 증거 채택 (0.37.0 후속, opt-in) ---
+//
+// 0.37.0 이후 `verify: required` 의 정본은 meta 의 `reviews[]` 다. 그 키가 없는 구 task 는 종전대로
+// artifact 마커로 판정하고, `harness-team review` 는 구 task 에 키를 **만들지 않는다** — 키 생성을
+// 부수효과로 두면 첫 리뷰 호출 순간 기존 손 마커가 증거에서 빠지기 때문이다(adversarial 리뷰 P1).
+// 그래서 옮기는 길이 필요하다. 이 단계가 그 길이고, 세 가지를 지킨다:
+//   1. `--adopt-reviews` 없이는 **아무것도 바꾸지 않는다** (한 줄 안내만). `--yes` 단독으로도 채택하지 않는다.
+//   2. 잃는 증거는 가드와 **같은 파서·같은 판정 창**으로 센다 — 사용자가 보는 수와 가드가 세는 수가 같아야 한다.
+//   3. 비용을 수가 아니라 결과로 말한다 — `verify: required` task 는 채택 뒤 리뷰를 **다시 돌려야** 종결된다.
+export async function collectReviewAdoptionCandidates(targetDir) {
+  const candidates = [];
+  for (const t of await collectTasks(targetDir)) {
+    if (t.status === 'done') continue;
+    const meta = await readTaskMeta(targetDir, t.user, t.task);
+    // meta 파일이 없으면 건너뛴다 — backfillTaskMeta 가 먼저 만들고, 다음 실행에서 후보가 된다.
+    if (!meta || Array.isArray(meta.reviews)) continue;
+
+    const dir = join(targetDir, 'docs', t.user, t.task);
+    const artifact = await readTextSafe(join(dir, `${t.task}-artifact.md`));
+    const { at: windowStart } = evidenceWindowStart(meta);
+    const dropped = (artifact ? parseReviewMarkers(artifact) : [])
+      .filter(m => (windowStart === null || m.at >= windowStart) && isVerifyKind(m.kind));
+
+    const spec = await readTextSafe(join(dir, `${t.task}-spec.md`));
+    const evidence = parseDoneEvidenceDeclaration(spec ?? '');
+    candidates.push({ user: t.user, task: t.task, meta, dropped: dropped.length, verifyRequired: evidence.verify === 'required' });
+  }
+  return candidates;
+}
+
+export async function adoptTaskReviews(ctx) {
+  const { targetDir } = ctx;
+  const candidates = await collectReviewAdoptionCandidates(targetDir);
+
+  if (candidates.length === 0) {
+    console.log('  review evidence: up to date (no legacy tasks)');
+    return false;
+  }
+  if (!ctx.flags['adopt-reviews']) {
+    console.log(`  review evidence: ${candidates.length} legacy task(s) still judged by artifact markers — rerun with --adopt-reviews to move them to CLI-owned evidence`);
+    return false;
+  }
+
+  console.log(`\nFound ${candidates.length} task(s) on legacy (artifact-marker) review evidence:`);
+  for (const c of candidates) {
+    const cost = !c.verifyRequired
+      ? 'spec이 verify를 요구하지 않음 — 잃는 증거 없음'
+      : c.dropped
+        ? `검증 마커 ${c.dropped}개가 증거에서 빠짐 → 종결 전 \`harness-team review <engine> --framing <접미사>\` 재실행 필요`
+        : '이 판정 창에 검증 마커 없음 — 어차피 지금도 종결이 막혀 있다';
+    console.log(`  docs/${c.user}/${c.task}/ — ${cost}`);
+  }
+  console.log('\n채택은 각 meta 에 `reviews: []` 를 넣는다. 그 뒤 `verify: required` 는 `harness-team review` 가');
+  console.log(`기록한 실행만 센다 (kind 접미사 ${VERIFY_KIND_SUFFIXES.map(x => `-${x}`).join('·')}). 손으로 쓴 artifact 마커는 세지 않는다.`);
+  console.log('되돌리려면 그 meta 에서 `reviews` 키를 지우면 된다 — 그 외 필드는 건드리지 않는다.');
+
+  const ok = ctx.flags.yes || await confirm('\nAdopt CLI-owned review evidence for these task(s)?', { defaultYes: false });
+  if (!ok) { console.log('Skipped review evidence adoption.'); return false; }
+
+  for (const c of candidates) {
+    await writeTaskMeta(targetDir, c.user, c.task, { ...c.meta, user: c.user, task: c.task, reviews: [] });
+    console.log(`  ✓ ${metaRel(c.user, c.task)} — reviews: []`);
+  }
+  return true;
+}
+
 export async function runMigrate(ctx) {
   console.log(`harness-team migrate → ${ctx.targetDir}`);
 
@@ -969,13 +1038,15 @@ export async function runMigrate(ctx) {
   const hookMigrated = await migrateSessionStartHook(ctx);
   const boundaryHookMigrated = await migrateBoundaryCheckpointHook(ctx);
   const metaBackfilled = await backfillTaskMeta(ctx);
+  // backfill 뒤에 둔다 — 방금 만들어진 meta 도 같은 실행에서 후보가 되게 한다.
+  const reviewsAdopted = await adoptTaskReviews(ctx);
 
   if (boundaryHookMigrated === null) {
     console.log('\nMigration incomplete — resolve the PreToolUse boundary checkpoint issue and rerun.');
     return;
   }
 
-  if (!managedBackedUp && !agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !claudeHooksRefreshed && !claudeTemplatesRefreshed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated && !metaBackfilled) {
+  if (!managedBackedUp && !agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !claudeHooksRefreshed && !claudeTemplatesRefreshed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated && !metaBackfilled && !reviewsAdopted) {
     console.log('\nNothing to migrate — project is already up to date.');
     return;
   }

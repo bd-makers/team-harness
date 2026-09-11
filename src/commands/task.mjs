@@ -516,6 +516,12 @@ const REVIEW_MARKER_RE = /<!--\s*harness:review\s+([^>]*?)-->/g;
 export const VERIFY_KIND_SUFFIXES = ['adversarial', 'testcritic', 'shipcheck', 'contrarian', 'simplifier'];
 const VERIFY_KIND_RE = new RegExp(`-(?:${VERIFY_KIND_SUFFIXES.join('|')})$`);
 
+// 가드 밖에서도 같은 판정이 필요하다 — `migrate --adopt-reviews` 가 "채택하면 잃는 검증 증거"를
+// 셀 때 이 함수를 쓴다. 정규식을 복제하면 접미사 열거가 바뀔 때 사용자가 보는 수와 가드가 세는 수가 갈라진다.
+export function isVerifyKind(kind) {
+  return VERIFY_KIND_RE.test(kind ?? '');
+}
+
 // `meta.reviews[]` 항목을 마커와 같은 형태 `{ kind, at, scope, tip }`로 정규화한다. 손으로 고쳐
 // 깨진 항목(kind 없음·at 비ISO)은 마커 파서와 같은 규약으로 없는 것 취급 — fail-open 이 아니라
 // "그 항목은 증거가 아니다"이므로 verify 가드는 더 엄격해진다.
@@ -546,31 +552,35 @@ export function parseReviewMarkers(artifact) {
   return markers;
 }
 
+// 판정 창(evidence window) — "이 task의 작업 구간"의 시작.
+// active.json의 `switchedAt`은 *마지막 활성화* 시각이라 재활성화·task 전환이 창을 초기화하고,
+// 이미 만족된 증거를 창 밖으로 밀어냈다. `meta.firstActivatedAt`은 생성 시 1회만 기록되므로
+// 몇 번을 오가도 창이 움직이지 않는다.
+// 완료가 만료(reopen)되면 창은 그 만료 시각에서 다시 시작한다 — 새 라운드의 완료는 새 증거로
+// 재야 하고, 옛 firstActivatedAt을 그대로 쓰면 `--since`가 지난 라운드까지 훑어 가드가 통과 전용이 된다.
+// `reopenedAt`이 없으면(한 번도 만료되지 않은 task) 종전대로 firstActivatedAt이 창의 시작이다.
+// 후보를 좁은 것부터 늘어놓고 **처음 유효한 값**을 창으로 쓴다. 값이 깨졌다고 창을 통째로
+// 버리면 리뷰 마커 신선도·커밋·테스트 시각 가드가 전부 꺼져(fail-open) 손상된 기계 상태가
+// 가드를 무력화한다 — 더 넓지만 유효한 창이 남아 있으면 그쪽으로 내려간다.
+// 유효한 후보가 하나도 없을 때만(구 task 등) 시각 비교를 포기한다. (2026-09-06 Codex 리뷰 P2)
+//
+// 가드 밖에서도 이 창을 쓴다 — `migrate --adopt-reviews`가 "채택하면 잃는 증거"를 셀 때 가드와
+// **같은 창·같은 파서**를 써야 사용자가 보는 수와 가드가 세는 수가 갈라지지 않는다. 그래서 추출했다.
+export function evidenceWindowStart(meta) {
+  for (const candidate of [meta && meta.reopenedAt, meta && meta.firstActivatedAt]) {
+    const parsed = parseIsoInstant(candidate);
+    if (Number.isNaN(parsed)) continue;
+    return { at: parsed, iso: candidate };
+  }
+  return { at: null, iso: null };
+}
+
 async function collectDoneIssues(targetDir, active) {
   const { user, task } = active;
   const issues = [];
 
-  // 판정 창(evidence window) — "이 task의 작업 구간"의 시작.
-  // active.json의 `switchedAt`은 *마지막 활성화* 시각이라 재활성화·task 전환이 창을 초기화하고,
-  // 이미 만족된 증거를 창 밖으로 밀어냈다. `meta.firstActivatedAt`은 생성 시 1회만 기록되므로
-  // 몇 번을 오가도 창이 움직이지 않는다.
-  // 완료가 만료(reopen)되면 창은 그 만료 시각에서 다시 시작한다 — 새 라운드의 완료는 새 증거로
-  // 재야 하고, 옛 firstActivatedAt을 그대로 쓰면 `--since`가 지난 라운드까지 훑어 가드가 통과 전용이 된다.
-  // `reopenedAt`이 없으면(한 번도 만료되지 않은 task) 종전대로 firstActivatedAt이 창의 시작이다.
-  // 후보를 좁은 것부터 늘어놓고 **처음 유효한 값**을 창으로 쓴다. 값이 깨졌다고 창을 통째로
-  // 버리면 리뷰 마커 신선도·커밋·테스트 시각 가드가 전부 꺼져(fail-open) 손상된 기계 상태가
-  // 가드를 무력화한다 — 더 넓지만 유효한 창이 남아 있으면 그쪽으로 내려간다.
-  // 유효한 후보가 하나도 없을 때만(구 task 등) 시각 비교를 포기한다. (2026-09-06 Codex 리뷰 P2)
   const meta = await readTaskMeta(targetDir, user, task);
-  let windowStart = null;
-  let windowStartIso = null;
-  for (const candidate of [meta && meta.reopenedAt, meta && meta.firstActivatedAt]) {
-    const parsed = parseIsoInstant(candidate);
-    if (Number.isNaN(parsed)) continue;
-    windowStart = parsed;
-    windowStartIso = candidate;
-    break;
-  }
+  const { at: windowStart, iso: windowStartIso } = evidenceWindowStart(meta);
 
   // spec 선언 — 없으면 기본값(tests 검사 / review 미검사), 깨져 있으면 그 자체가 차단 사유.
   let evidence = { status: 'not-configured', ...DONE_EVIDENCE_DEFAULT };
@@ -626,7 +636,7 @@ async function collectDoneIssues(targetDir, active) {
     // verify는 검증 프레이밍 kind만 센다 — 검증 마커는 review도 겸하지만 역은 성립하지 않는다.
     // 가드는 존재·kind·시각만 읽는다(D6: finding 내용 판정은 결정론 게이트 밖).
     const verifySource = cliOwned ? freshCli : freshMarkers;
-    if (evidence.verify === 'required' && !verifySource.some(m => VERIFY_KIND_RE.test(m.kind))) {
+    if (evidence.verify === 'required' && !verifySource.some(m => isVerifyKind(m.kind))) {
       const where = cliOwned
         ? '검증 항목이 meta.reviews에 없음 (`harness-team review <engine> --framing <접미사> --prompt-file <프롬프트>` 실행 — 손으로 쓴 artifact 마커는 세지 않는다)'
         : '검증 마커가 artifact에 없음 (검증 프레이밍 리뷰 실행 후 기록)';

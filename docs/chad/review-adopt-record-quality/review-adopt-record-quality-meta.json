@@ -1,0 +1,39 @@
+{
+  "user": "chad",
+  "task": "review-adopt-record-quality",
+  "created": "2026-09-11",
+  "firstActivatedAt": "2026-09-11T08:37:41.212Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "97504046f7eeb33fd8b74ab7e8b885a04614f632",
+      "at": "2026-09-11T08:48:55.898Z",
+      "exitCode": 0,
+      "outputBytes": 1340
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "97504046f7eeb33fd8b74ab7e8b885a04614f632",
+      "at": "2026-09-11T08:55:11.331Z",
+      "exitCode": 0,
+      "outputBytes": 1837
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "97504046f7eeb33fd8b74ab7e8b885a04614f632",
+      "at": "2026-09-11T09:00:04.343Z",
+      "exitCode": 0,
+      "outputBytes": 1366
+    }
+  ]
+}

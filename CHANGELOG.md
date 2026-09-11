@@ -18,13 +18,32 @@ modified: 2026-09-10
 
 ## [Unreleased]
 
+## [0.38.0] - 2026-09-11
+
 ### Added
+- **`harness-team migrate --adopt-reviews` — 구 task를 CLI 소유 리뷰 증거로 옮기는 인가 경로.** 0.37.0은
+  `reviews` 키가 없는 구 task를 종전 판정(artifact 마커)에 두고 `review`도 키를 만들지 않는다(키 생성을 부수효과로
+  두면 첫 호출 순간 기존 손 마커가 증거에서 빠진다 — 적대적 리뷰 P1). 옮기는 명시적 경로가 없던 것을 채운다.
+  열린(`status !== 'done'`) 구 task마다 **"채택하면 증거에서 빠지는 검증 마커 N개"**와 그 결과(`verify: required`면
+  종결 전 리뷰 재실행 필요)를 보여주고 확인을 받은 뒤에만 `reviews: []`를 넣는다. **플래그 없이는 안내 한 줄만 내고
+  아무것도 바꾸지 않으며, `--yes` 단독으로도 채택하지 않는다** — 다른 migrate 단계는 구조를 옮기지만 이 단계는
+  증거를 잃기 때문이다. N은 가드와 **같은 함수**로 센다: 판정 창 계산(`evidenceWindowStart`)과 verify kind 대조
+  (`isVerifyKind`)를 `task.mjs`에서 추출해 가드와 공유한다.
 - **"main에서 이미 종결된 task" 감지 (`done-on-main-nudge`).** 활성(또는 활성화하려는) task의 meta를
   `origin/<default>`에서 fetch 없이 읽어 `status === 'done'`이면 세 지점이 nudge를 낸다 — `session-context`(SessionStart,
   breadcrumb·TCC 대신 nudge만), `doctor`(`done on main` warning), `task <name>`(출력 첫 줄, 막지 않음). 판정은 새 모듈
   `src/commands/remote-task.mjs` 한 곳. 로컬 meta가 done이거나 로컬 `reopenedAt`이 원격 `closedAt`보다 나중(고의 재개)이면
   조용하다. 배경: 2026-09-10 두 클론이 같은 task를 각자 구현해 6커밋을 폐기한 사고 — `.harness/active.json`이 gitignore라
   하네스가 구조적으로 못 잡던 실패.
+
+### Fixed
+- **`harness-team review`의 기록 품질 3건** (0.37.0 codex 실측 리뷰 P3). ① 리뷰 블록이 EOF에 붙어 `## Reviews`가
+  아니라 Learnings 절 아래에 쌓이던 것 → fence 상태를 추적해 **fence 밖** 첫 줄머리 Learnings 헤딩 앞에 삽입한다
+  (엔진 출력 안의 같은 문자열을 자리로 오인하지 않는다). ② exit 0이면 stdout이 0 B여도 기록돼, 아무것도 출력하지
+  않는 잘못 설정된 custom reviewer가 `verify: required`를 통과시킬 수 있던 것 → 공백뿐인 stdout은 error 패킷으로
+  거부하고 artifact 파일을 만들지도 않는다(패킷에 stderr 꼬리 포함). ③ custom reviewer의 상대경로 preflight가
+  process cwd 기준이라 `--target`과 조합하면 실행 가능한 reviewer가 오거부되던 것 → 첫 토큰 경로와 PATH 항목
+  **양쪽**을 실행 기준(`targetDir`)으로 resolve한다.
 
 ## [0.37.0] - 2026-09-10
 
