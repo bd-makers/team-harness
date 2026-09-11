@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "harness-team session-context --target \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\" 2>/dev/null || true",
+            "command": "harness-team session-context --codex-hook --target \"$(git rev-parse --show-toplevel 2>/dev/null || pwd)\" 2>/dev/null || true",
             "timeout": 10
           }
         ]

@@ -18,6 +18,24 @@ modified: 2026-09-10
 
 ## [Unreleased]
 
+## [0.38.3] - 2026-09-12
+
+### Fixed
+- **`init`이 설치하던 Codex SessionStart 훅이 아무것도 주입하지 않던 것.** 두 가지가 틀려 있었다(2026-09-12 실측,
+  `docs/chad/codex-project-hooks-probe/`): ① Codex는 훅의 **평문 stdout을 주입하지 않는다** — 훅은 실행되고
+  부수효과도 남지만 출력이 모델에 닿지 않는다. ② 훅이 돌려면 **신뢰 2겹**(`[projects]`의 프로젝트 신뢰 +
+  `[hooks.state]`의 훅 소스 신뢰)이 모두 필요하고, 하나라도 없으면 **오류 없이 조용히** 실행되지 않는다.
+  하네스는 파일 존재만 검사하고 README에 "주입합니다"라고 적었다.
+  → `session-context --codex-hook`이 `hookSpecificOutput.additionalContext` 봉투를 씌운다
+  (**Claude 경로는 불변** — Claude는 평문 stdout을 읽는다). `doctor`에 `Codex hook trust` 검사를 더해
+  어느 신뢰가 없는지까지 말한다(codex 설정이 없으면 침묵). 설치 건강 판정도 봉투 플래그를 요구하도록 좁혔다 —
+  **주입 못 하는 훅은 healthy가 아니다**. 기존 설치는 `migrate`가 옛 커맨드를 제자리 업그레이드한다
+  (출하한 적 있는 형태만 — 사용자가 쓴 훅은 건드리지 않는다). README `:111` 표·문장을 사실대로 고쳤다.
+
+### Changed
+- **e2e 샌드박스가 `CODEX_HOME`을 격리한다.** 없으면 테스트가 개발 머신의 실제 `~/.codex/config.toml`을 읽어
+  샌드박스마다 새 경고가 뜨고 CI에서만 초록이 된다(`CLAUDE_CONFIG_DIR`와 같은 이유).
+
 ## [0.38.2] - 2026-09-12
 
 ### Fixed

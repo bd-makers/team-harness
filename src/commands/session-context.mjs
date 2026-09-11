@@ -148,13 +148,33 @@ export async function buildSessionContext(targetDir, { now = new Date(), doneOnM
   return observe ? `${gate}\n${observe}` : gate;
 }
 
+// Codex 훅은 **평문 stdout 을 주입하지 않는다** — 훅은 실행되지만 출력이 어디에도 닿지 않는다
+// (2026-09-12 실측: 마커 파일은 생기는데 모델은 그 문자열을 못 본다). 주입되는 것은 이 봉투 하나뿐이다.
+// Claude 훅은 종전대로 평문을 읽으므로 기본 출력은 바꾸지 않는다 — `--codex-hook` 일 때만 감싼다.
+export function renderCodexHookEnvelope(context) {
+  return JSON.stringify({
+    hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext: context },
+  });
+}
+
 export async function runSessionContext(ctx) {
   // The task-gate half goes out BEFORE the observe verdict is computed: if the SessionStart
   // hook timeout (10 s) ever hits during the log scan, only the observe line is lost, never
   // the task context (codex P2 2026-09-09). Measured 0.34 s at 140k records / 71 MB, so this
   // is a safety ordering, not a budget — no cap or deadline is added.
+  const codexHook = !!(ctx.flags && ctx.flags['codex-hook']);
   const gate = await buildTaskGateContext(ctx.targetDir);
-  if (gate) console.log(gate);
-  const observe = await observeSurfacingLine(ctx.targetDir, new Date());
-  if (observe) console.log(observe);
+  if (gate && !codexHook) console.log(gate);
+  // codex 봉투는 **한 덩어리**라 여기서 버퍼링한다 — 그래서 위 주석의 "gate 를 먼저 흘린다" 보호가
+  // codex 경로에는 없다. observe 계산이 훅 타임아웃(10 s)에 걸리면 gate 까지 함께 잃는다.
+  // 그 대신 observe 가 **던지는** 경우에는 gate 만이라도 내보낸다.
+  let observe = null;
+  try { observe = await observeSurfacingLine(ctx.targetDir, new Date()); } catch { /* gate 는 살린다 */ }
+  if (!codexHook) {
+    if (observe) console.log(observe);
+    return;
+  }
+  const context = [gate, observe].filter(Boolean).join('\n');
+  // 빈 컨텍스트에 봉투만 씌우지 않는다 — Codex 에 빈 블록을 주입하는 것과 같다.
+  if (context) console.log(renderCodexHookEnvelope(context));
 }

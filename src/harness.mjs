@@ -24,13 +24,52 @@ function hasCommand(group, command) {
 // A project can author its own `.codex/hooks.json`. `init` deep-merges the harness
 // group in, but a hand-edited file can still drop it — and then Codex sessions silently
 // lose task context while the file stays valid JSON. Content check, not just parse.
+//
+// `--codex-hook` 는 **건강의 일부**다. Codex 는 훅의 평문 stdout 을 주입하지 않으므로(2026-09-12 실측),
+// 플래그 없는 옛 커맨드는 훅이 돌아도 **아무것도 주입하지 않는다**. 그 설치를 healthy 로 보고하면
+// doctor 가 "괜찮다"고 말하는 동안 Codex 세션은 계속 컨텍스트 없이 돈다 (2026-09-12 codex P1).
+// 토큰 경계를 본다 — `my-harness-team session-context` 는 남의 훅이다 (2026-09-12 codex P2).
+// 앞에 올 수 있는 것은 줄머리·공백·경로 구분자·따옴표뿐이다(`/opt/bin/harness-team` 은 우리 것).
+// **인접**도 요구한다: CLI 토큰 바로 다음이 `session-context` 여야 한다 — 그래야
+// `printf " session-context "; harness-team session-context …` 에서 앞의 출력 문자열을 건드리지 않는다.
+const HARNESS_INVOCATION_RE = /(^|[\s"'/])harness-team(\.mjs)?["']?\s+session-context(?=\s|$)/;
+// 플래그는 **독립 토큰**일 때만 센다 — `--target /work/--codex-hook-repro` 같은 경로 조각이 아니라.
+const CODEX_HOOK_FLAG_RE = /(^|\s)--codex-hook(?=\s|$)/;
+// 치환도 같은 자리에만: CLI 바로 뒤의 `session-context` 인자.
+const SESSION_CONTEXT_ARG_RE = /((^|[\s"'/])harness-team(\.mjs)?["']?\s+session-context)(?=\s|$)/;
+
+export function isHarnessCodexSessionCommand(command) {
+  return typeof command === 'string'
+    && HARNESS_INVOCATION_RE.test(command)
+    && CODEX_HOOK_FLAG_RE.test(command);
+}
+
+export function withCodexHookFlag(command) {
+  return command.replace(SESSION_CONTEXT_ARG_RE, '$1 --codex-hook');
+}
+
+// migrate 가 **쓰는** 대상은 우리가 출하한 적 있는 형태로 한정한다 — `refreshClaudeHooks` 가 sha 테이블로
+// 하는 것과 같은 보수성이다. 남이 쓴 훅(따옴표 안의 echo 문자열 포함)을 문자열 매칭으로 고치지 않는다.
+// 여기 없는 형태는 doctor 가 경고만 하고 사람이 고친다 (2026-09-12 codex P2 3건의 공통 해법).
+const SHIPPED_LEGACY_FORMS = [
+  /^harness-team session-context --target /,                       // templates/.codex/hooks.json
+  /^root="\$\(git rev-parse[^"]*"[^;]*; node "\$root\/bin\/harness-team\.mjs" session-context --target /, // 이 저장소
+];
+
+export function isLegacyCodexSessionCommand(command) {
+  return typeof command === 'string'
+    && SHIPPED_LEGACY_FORMS.some(re => re.test(command))
+    && !CODEX_HOOK_FLAG_RE.test(command);
+}
+
 export function codexHooksHaveSessionContext(hooks) {
   const groups = hooks?.hooks?.SessionStart;
   return Array.isArray(groups) && groups.some(group =>
     Array.isArray(group?.hooks) && group.hooks.some(hook =>
-      hook?.type === 'command' && typeof hook.command === 'string'
-        && hook.command.includes('harness-team session-context')));
+      hook?.type === 'command' && isHarnessCodexSessionCommand(hook.command)));
 }
+
+
 
 // Both Edit and Write must be wired: a Write that rewrites the plan completes
 // checkboxes too, and an Edit-only group used to pass this check so doctor never

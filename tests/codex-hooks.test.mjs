@@ -19,7 +19,9 @@ const VARS = {
   cmdLint: 'npm run lint', cmdTypecheck: 'npm run tc',
 };
 
-const HARNESS_COMMAND_RE = /^harness-team session-context --target /;
+// `--codex-hook` 이 빠지면 훅은 돌지만 **아무것도 주입되지 않는다**(Codex 는 평문 stdout 을 무시한다,
+// 2026-09-12 실측). 그래서 pin 이 플래그까지 본다 — 빠뜨리면 조용히 죽는 회귀다.
+const HARNESS_COMMAND_RE = /^harness-team session-context --codex-hook --target /;
 const codexChange = (changes) => changes.find(c => c.path.endsWith('.codex/hooks.json'));
 const groupCommands = (group) => (group.hooks ?? []).map(h => h.command);
 

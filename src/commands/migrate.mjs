@@ -3,7 +3,7 @@ import { constants } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { unlink, rmdir, readdir, mkdir, lstat, stat, access } from 'node:fs/promises';
 import { readTextSafe, writeText, exists } from '../fsx.mjs';
-import { loadBackupDir, mergeClaudeSettings, settingsHasBoundaryCheckpoint, mirrorCursorRules, AGENT_FILE_TEMPLATES } from '../harness.mjs';
+import { loadBackupDir, mergeClaudeSettings, settingsHasBoundaryCheckpoint, mirrorCursorRules, AGENT_FILE_TEMPLATES, isLegacyCodexSessionCommand, withCodexHookFlag } from '../harness.mjs';
 import { detectStack } from '../detect-stack.mjs';
 import { loadRenderState } from '../render-state.mjs';
 import { extractSections, deepMergeJson, simpleDiff } from '../merge.mjs';
@@ -956,6 +956,57 @@ async function backfillTaskMeta(ctx) {
   return written.length > 0;
 }
 
+// --- Codex SessionStart 훅에 `--codex-hook` 붙이기 (0.38.3) ---
+//
+// Codex 는 훅의 평문 stdout 을 주입하지 않는다(2026-09-12 실측). 그래서 플래그 없는 옛 하네스 훅은
+// **실행되지만 아무것도 주입하지 않는다**. `init` 의 배열 union 은 새 그룹을 *추가*할 뿐이라 옛 훅이
+// 죽은 채 남는다 — 제자리에서 올려 주는 경로가 이것뿐이다(템플릿 수정이 기존 설치에 닿는 유일한 길).
+// 하네스 CLI 를 부르는 커맨드만 건드린다. 사용자가 직접 쓴 훅은 이름이 달라 매칭되지 않는다.
+export async function migrateCodexHookFlag(ctx) {
+  const { targetDir } = ctx;
+  const path = join(targetDir, '.codex/hooks.json');
+  const raw = await readTextSafe(path);
+  if (raw === null) {
+    console.log('  Codex hook flag: no .codex/hooks.json — skipping');
+    return false;
+  }
+  let hooks;
+  try { hooks = JSON.parse(raw); } catch {
+    console.log('  Codex hook flag: .codex/hooks.json parse 실패 — 건너뜀');
+    return false;
+  }
+  const groups = hooks?.hooks?.SessionStart;
+  if (!Array.isArray(groups)) {
+    console.log('  Codex hook flag: up to date');
+    return false;
+  }
+
+  const upgraded = [];
+  for (const group of groups) {
+    for (const hook of (Array.isArray(group?.hooks) ? group.hooks : [])) {
+      if (hook?.type !== 'command' || !isLegacyCodexSessionCommand(hook.command)) continue;
+      const before = hook.command;
+      hook.command = withCodexHookFlag(before);
+      upgraded.push(before);
+    }
+  }
+  if (!upgraded.length) {
+    console.log('  Codex hook flag: up to date');
+    return false;
+  }
+
+  console.log(`\nFound ${upgraded.length} Codex SessionStart hook(s) without --codex-hook:`);
+  console.log('  이 상태에서는 훅이 실행돼도 Codex 에 아무것도 주입되지 않습니다 (평문 stdout 은 무시됩니다).');
+  for (const cmd of upgraded) console.log(`  - ${cmd.slice(0, 100)}${cmd.length > 100 ? '…' : ''}`);
+
+  const ok = ctx.flags.yes || await confirm('\nAdd --codex-hook to these hook command(s)?', { defaultYes: true });
+  if (!ok) { console.log('Skipped Codex hook flag migration.'); return false; }
+
+  await writeText(path, JSON.stringify(hooks, null, 2) + '\n');
+  console.log(`  ✓ .codex/hooks.json — ${upgraded.length} command(s) upgraded`);
+  return true;
+}
+
 // --- 구 task → CLI 소유 리뷰 증거 채택 (0.37.0 후속, opt-in) ---
 //
 // 0.37.0 이후 `verify: required` 의 정본은 meta 의 `reviews[]` 다. 그 키가 없는 구 task 는 종전대로
@@ -1037,6 +1088,7 @@ export async function runMigrate(ctx) {
   const taskLabelsRenamed = await migrateTaskIndexLabels(ctx);
   const hookMigrated = await migrateSessionStartHook(ctx);
   const boundaryHookMigrated = await migrateBoundaryCheckpointHook(ctx);
+  const codexFlagMigrated = await migrateCodexHookFlag(ctx);
   const metaBackfilled = await backfillTaskMeta(ctx);
   // backfill 뒤에 둔다 — 방금 만들어진 meta 도 같은 실행에서 후보가 되게 한다.
   const reviewsAdopted = await adoptTaskReviews(ctx);
@@ -1046,7 +1098,7 @@ export async function runMigrate(ctx) {
     return;
   }
 
-  if (!managedBackedUp && !agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !claudeHooksRefreshed && !claudeTemplatesRefreshed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated && !metaBackfilled && !reviewsAdopted) {
+  if (!managedBackedUp && !agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !claudeHooksRefreshed && !claudeTemplatesRefreshed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated && !metaBackfilled && !reviewsAdopted && !codexFlagMigrated) {
     console.log('\nNothing to migrate — project is already up to date.');
     return;
   }

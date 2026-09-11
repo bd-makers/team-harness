@@ -1,0 +1,39 @@
+{
+  "user": "chad",
+  "task": "codex-hook-injection-fix",
+  "created": "2026-09-11",
+  "firstActivatedAt": "2026-09-11T16:37:25.874Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "64d8ccca0495d4e7c4b519cdf4a3590853f4d0fb",
+      "at": "2026-09-11T16:48:04.913Z",
+      "exitCode": 0,
+      "outputBytes": 2369
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "64d8ccca0495d4e7c4b519cdf4a3590853f4d0fb",
+      "at": "2026-09-11T16:51:57.786Z",
+      "exitCode": 0,
+      "outputBytes": 1660
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "64d8ccca0495d4e7c4b519cdf4a3590853f4d0fb",
+      "at": "2026-09-11T16:55:17.224Z",
+      "exitCode": 0,
+      "outputBytes": 2062
+    }
+  ]
+}

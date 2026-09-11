@@ -1,10 +1,10 @@
-import { lstat, readFile } from 'node:fs/promises';
+import { lstat, readFile, realpath } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join, isAbsolute, resolve } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { exists } from '../fsx.mjs';
-import { loadBackupDir, settingsHasBoundaryCheckpoint, codexHooksHaveSessionContext } from '../harness.mjs';
+import { loadBackupDir, settingsHasBoundaryCheckpoint, codexHooksHaveSessionContext, isHarnessCodexSessionCommand } from '../harness.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation } from '../observation.mjs';
 import { settingsHasSessionGate } from './session-context.mjs';
 import { checkDoneOnMain } from './remote-task.mjs';
@@ -300,6 +300,97 @@ export async function checkCodexSessionHook(targetDir) {
   catch { return null; }
   if (codexHooksHaveSessionContext(hooks)) return null;
   return '.codex/hooks.json에 harness SessionStart 훅 없음 — Codex 세션이 task context를 못 받음; run: harness-team init';
+}
+
+// **설치는 동작이 아니다.** `.codex/hooks.json` 이 있어도 Codex 는 두 신뢰가 모두 있어야 훅을 돌린다
+// (2026-09-12 실측, `docs/chad/codex-project-hooks-probe/`):
+//   1. 프로젝트 신뢰 — `[projects."<path>"] trust_level = "trusted"`
+//   2. 훅 소스 신뢰 — `[hooks.state]` 에 그 hooks.json 경로의 해시
+// 하나라도 없으면 **오류 없이 조용히** 실행되지 않는다. 이 저장소에서 6개월간 그랬고 아무도 몰랐다.
+// 훅 신뢰는 사용자가 대화형 codex 에서 1회 승인해야 하는 것이라 하네스가 대신 줄 수 없다 — 그래서 경고다.
+//
+// TOML 을 줄 단위로 읽는다: 이 파일은 codex 가 기계로 쓰고 우리가 보는 두 키는 모두 **섹션 헤더**라
+// 파서를 들일 이유가 없다. 읽기 전용이며 사용자 설정을 **절대 수정하지 않는다**.
+//
+// **한계(알고 남긴다)**: 기록된 `trusted_hash` 가 **현재 파일의 것인지**는 확인하지 못한다 — codex 의
+// 해시 계약이 공개돼 있지 않다. 훅을 고친 뒤라면 codex 는 재승인을 요구하는데 이 검사는 여전히
+// "신뢰됨"으로 읽는다. 즉 이 경고는 **없는 신뢰를 잡고**, 낡은 신뢰는 놓친다.
+export function parseCodexTrust(configToml, { projectPath, trustKeys = [] }) {
+  const wanted = new Set(trustKeys);
+  const lines = configToml.split('\n');
+  let project = false;
+  let hookSource = false;
+  let inProject = false;
+  let inWantedHook = false;
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (line.startsWith('#')) continue;                      // 주석은 설정이 아니다
+    if (line.startsWith('[')) {
+      inProject = line === `[projects."${projectPath}"]`;
+      // `[hooks.state."<file>:<event>:<group>:<hook>"]` — **정확히 우리 훅의 키**여야 한다.
+      // 경로 접두만 보면 같은 파일의 **다른 훅**(`session_start:1:0`)이 승인된 것만으로 경고가 사라진다
+      // (2026-09-12 codex P2). 키 형식은 사용자 전역 파일로 실측했다: SessionStart 5그룹 ↔ `:0:0`~`:4:0`.
+      inWantedHook = [...wanted].some(k => line === `[hooks.state."${k}"]`);
+      continue;
+    }
+    if (inProject && /^trust_level\s*=\s*"trusted"/.test(line)) project = true;
+    // 헤더만으로는 부족하다 — 승인 기록은 `trusted_hash` 다. 주석 처리된 해시는 위에서 걸러진다.
+    if (inWantedHook && /^trusted_hash\s*=\s*"\S+"/.test(line)) hookSource = true;
+  }
+  return { project, hookSource };
+}
+
+// 하네스가 소유한 SessionStart 훅의 신뢰 키를 만든다 — `<hooks.json>:session_start:<group>:<hook>`.
+export function harnessCodexTrustKeys(hooks, hooksPath) {
+  const groups = hooks?.hooks?.SessionStart;
+  if (!Array.isArray(groups)) return [];
+  const keys = [];
+  groups.forEach((group, gi) => {
+    (Array.isArray(group?.hooks) ? group.hooks : []).forEach((hook, hi) => {
+      if (hook?.type !== 'command') return;
+      // **봉투를 내는 훅만** 센다. `init` 의 배열 union 은 업그레이드 때 옛 훅 옆에 새 훅을 나란히 두는데,
+      // 옛 훅의 승인만으로 경고가 사라지면 "승인됐는데 여전히 아무것도 주입되지 않는" 상태가 조용해진다
+      // (2026-09-12 codex P2). 옛 훅만 있는 설치는 `checkCodexSessionHook` 이 따로 경고한다.
+      if (!isHarnessCodexSessionCommand(hook.command)) return;
+      keys.push(`${hooksPath}:session_start:${gi}:${hi}`);
+    });
+  });
+  return keys;
+}
+
+export async function checkCodexHookTrust(targetDir, env = process.env) {
+  let hooks;
+  try { hooks = JSON.parse(await readFile(join(targetDir, '.codex/hooks.json'), 'utf8')); }
+  catch { return null; }                                   // 훅이 없으면 이 검사의 대상이 아니다
+
+  const codexHome = env.CODEX_HOME || join(homedir(), '.codex');
+  let config;
+  try { config = await readFile(join(codexHome, 'config.toml'), 'utf8'); }
+  catch { return null; }                                    // codex 설정이 없다 = codex 를 안 쓴다 → 침묵
+
+  // codex 는 realpath 로 적는다(`/tmp` → `/private/tmp`). 둘 다 대조한다.
+  const candidates = new Set([targetDir]);
+  try { candidates.add(await realpath(targetDir)); } catch { /* 경로가 사라졌으면 원본만 */ }
+
+  let best = { project: false, hookSource: false };
+  let sawHarnessHook = false;
+  for (const p of candidates) {
+    const keys = harnessCodexTrustKeys(hooks, join(p, '.codex/hooks.json'));
+    if (!keys.length) continue;                             // 남의 훅만 있는 파일은 우리 관심사가 아니다
+    sawHarnessHook = true;
+    const t = parseCodexTrust(config, { projectPath: p, trustKeys: keys });
+    best = { project: best.project || t.project, hookSource: best.hookSource || t.hookSource };
+  }
+  if (!sawHarnessHook) return null;
+  if (best.project && best.hookSource) return null;
+
+  const missing = [
+    !best.project ? '프로젝트 신뢰' : null,
+    !best.hookSource ? '훅 소스 신뢰' : null,
+  ].filter(Boolean).join('·');
+  return `.codex/hooks.json 은 설치됐지만 Codex 가 실행하지 않는다 (${missing} 없음) — `
+    + '이 프로젝트에서 대화형 `codex` 를 한 번 띄워 훅 승인을 받으면 이후 세션부터 주입된다; '
+    + '승인 없이 확인만 하려면 `codex exec --dangerously-bypass-hook-trust`';
 }
 
 // docs/decisions.md is scaffolded with skipExisting (copyStaticAssets), so a project
@@ -792,6 +883,10 @@ export async function runDoctor(ctx) {
 
   const codexHookWarning = pluginDev ? null : await checkCodexSessionHook(ctx.targetDir);
   if (codexHookWarning) add('Codex SessionStart hook', 'warning', codexHookWarning, `\n⚠️ ${codexHookWarning}`);
+
+  // 훅이 **있는데 안 도는** 경우. pluginDev 여부와 무관하게 본다 — 이 저장소 자신도 그 상태였다.
+  const codexTrustWarning = codexHookWarning ? null : await checkCodexHookTrust(ctx.targetDir);
+  if (codexTrustWarning) add('Codex hook trust', 'warning', codexTrustWarning, `\n⚠️ ${codexTrustWarning}`);
 
   // Deliberately NOT gated on pluginDev: the D-log migration puts docs/decisions.md
   // in the source repo too, so its absence is real drift on either side.

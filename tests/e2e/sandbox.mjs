@@ -56,6 +56,10 @@ export async function createSandbox(stack) {
     PATH: `${binDir}:${process.env.PATH}`,
     CLAUDE_PLUGINS_ROOT: join(dir, '.plugins-isolated'),
     CLAUDE_CONFIG_DIR: join(dir, '.claude-config-isolated'),
+    // CODEX_HOME does the same for doctor's Codex hook-trust check: without it the spawned CLI
+    // reads the dev machine's real ~/.codex/config.toml, which never has a trust entry for a
+    // throwaway sandbox path, so every sandbox would warn here and nowhere in CI.
+    CODEX_HOME: join(dir, '.codex-home-isolated'),
   };
 
   await writeFile(join(dir, 'package.json'), JSON.stringify(stack.pkg, null, 2));

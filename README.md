@@ -113,10 +113,19 @@ harness-team doctor
 | 에이전트 | hooks | 커맨드/적용 표면 | 경로 스코프 규칙 |
 |---|---|---|---|
 | Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 23개 슬래시 커맨드 | `.claude/rules` `paths:` — 매칭 파일 **Read 시** 로드 |
-| Codex | SessionStart 1종 (신뢰 승인 필요) | 슬래시 커맨드는 없고 별도 `.codex-plugin` 설치 시 동명의 스킬 | 없음 — 하위 디렉터리 `AGENTS.md`로 대체 |
+| Codex | SessionStart 1종 — **신뢰 2겹이 모두 있어야 실행**(아래) | 슬래시 커맨드는 없고 별도 `.codex-plugin` 설치 시 동명의 스킬 | 없음 — 하위 디렉터리 `AGENTS.md`로 대체 |
 | Cursor | 0 | `.cursor/rules/*.mdc` 규칙만 (RN 계열 stack) | `.mdc` `globs:` — `.claude/rules`에서 미러 |
 
-`init`은 Claude Code용 `.claude/settings.json` 훅과 Codex용 `.codex/hooks.json` SessionStart 훅을 설치합니다. 둘 다 `harness-team session-context`를 호출해 활성 task의 Context Card를 주입합니다. Cursor는 훅 메커니즘이 없어 하네스 규칙이 결정론적 강제가 아니라 규범으로 적용됩니다.
+`init`은 Claude Code용 `.claude/settings.json` 훅과 Codex용 `.codex/hooks.json` SessionStart 훅을 설치합니다. 둘 다 `harness-team session-context`를 호출해 활성 task의 Context Card를 주입합니다 — 단 **Codex 쪽은 설치만으로 동작하지 않습니다.** Cursor는 훅 메커니즘이 없어 하네스 규칙이 결정론적 강제가 아니라 규범으로 적용됩니다.
+
+> **Codex 훅이 실제로 도는 조건 (2026-09-12 실측, codex-cli 0.153.4).** 두 가지가 **모두** 있어야 합니다 —
+> ① 프로젝트 신뢰(`~/.codex/config.toml`의 `[projects."<path>"] trust_level = "trusted"`)
+> ② 훅 소스 신뢰(`[hooks.state]`의 해시). 하나라도 없으면 **오류 없이 조용히** 실행되지 않습니다.
+> 훅 승인은 사용자가 대화형 `codex`에서 1회 해야 하며 하네스가 대신 줄 수 없습니다 —
+> 그래서 `harness-team doctor`가 `Codex hook trust` 경고로 그 상태를 표면화합니다.
+> 또한 Codex는 훅의 **평문 stdout을 주입하지 않습니다**. 그래서 하네스 훅은
+> `session-context --codex-hook`으로 `hookSpecificOutput.additionalContext` 봉투를 씌웁니다
+> (Claude는 종전대로 평문을 읽습니다). 실험 표는 `docs/chad/codex-project-hooks-probe/`에 있습니다.
 
 > **Codex 훅은 설치만으로 동작하지 않습니다 — 한 번의 신뢰 승인이 필요합니다.** Codex는 새로 나타난
 > 프로젝트 훅을 사용자가 검토·신뢰할 때까지 실행하지 않고, 승인 결과를 `~/.codex/config.toml`
