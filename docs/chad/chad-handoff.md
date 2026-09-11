@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+codex-hook-injection-fix
 
-## Last Completed Task (2026-09-11)
-`codex-project-hooks-probe` — done
+## Last Commit (2026-09-11)
+814ea37 fix(codex): 설치된 훅이 아무것도 주입하지 않던 것을 고친다 — 0.38.3
 
 ## Full Context
-→ docs/chad/codex-project-hooks-probe/codex-project-hooks-probe-handoff.md
+→ docs/chad/codex-hook-injection-fix/codex-hook-injection-fix-handoff.md
