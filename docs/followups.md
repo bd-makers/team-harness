@@ -1,0 +1,95 @@
+# 후속 후보 — 새 세션 검토용
+
+> 이 파일은 **task가 아니다.** 결정·착수 전의 후보 목록이며, 항목을 task로 올리면 여기서 지운다.
+> 각 항목은 새 세션이 이 파일만 읽고 spec을 쓸 수 있도록 맥락·정본 위치·선행 조건을 담는다.
+> 출처: 2026-09-10 세션 — 4요소(agent loop / tool interface / context management / control mechanisms)
+> 관점 분석 → `done-force-audit-trail`(0.34.0, main에서 별도 구현) → `review-evidence-cli-owned`(0.37.0).
+
+## 우선순위
+
+**1 → 5 → 3.** 1은 릴리스 직후여야 의미가 있고, 5는 같은 사고를 두 번 겪었으므로 값이 가장 크며,
+3은 5와 같은 영역(`session-context`·`migrate`)이라 붙여서 하기 좋다. 2는 결정이 먼저. 4·6·7은 급하지 않다.
+
+---
+
+## 1. `harness-team review codex` 실측 — 0.37.0 미검증 항목
+
+- **무엇**: 0.37.0의 codex 엔진 경로(`src/commands/review.mjs` `runEngine` codex 행)는 문서 runner 표를
+  그대로 옮겼지만 **실행은 한 번도 안 됐다** — 개발 컨테이너에 codex가 없어 claude 엔진으로만 실측.
+- **어떻게**: codex가 있는 로컬에서 활성 task 하나 잡고 `harness-team review codex` 1회. 확인할 것:
+  (a) `stdio: ['ignore', ...]`가 `< /dev/null` 계약을 실제로 대체하는가(멈추지 않는가),
+  (b) exit 0 시 `meta.reviews[]`·artifact 블록·마커가 남는가, (c) 출력 16 KiB 상한 절단 표기.
+- **실패하면**: patch 릴리스. `docs/what-changes-latest-version.html` 0.37.0 절이 "codex 미검증"을 명시하고 있다.
+- **정본**: `commands/harness-review.md` 엔진 runner 표, `tests/review-command.test.mjs`(custom 엔진 fake로만 검증).
+
+## 2. Codex 훅 확장 — 결정 항목 (task 아님)
+
+- **무엇**: `templates/.codex/hooks.json`은 SessionStart 1종뿐. Claude는 PreToolUse/PostToolUse/
+  PostToolUseFailure/PermissionDenied/SessionStart 5종 + 스크립트 6종. 4요소 관점에서 4번(control)이
+  Codex에는 없다.
+- **왜 결정이 먼저인가**: `README.md:111` — *"에이전트별 강제력은 의도적으로 대칭이 아닙니다."*
+  뒤집지 않으면 task가 없다.
+- **플랫폼 한계가 아니다**: `docs/chad/codex-hooks-template/codex-hooks-template-spec.md:53`이 Codex 바이너리
+  문자열에서 확인한 이벤트: `pre_tool_use`, `post_tool_use`, `permission_request` 등. 그리고
+  `templates/.claude/hooks/observe-tools.mjs`의 `toolCategory()`는 이미 Codex 도구명(`exec_command`·
+  `apply_patch`·`spawn_agent`)을 매핑한다 — 배선만 안 된 상태.
+- **선행 검증**: 같은 spec `:49-51` — Codex SessionStart 훅이 실제로 **실행**되어 주입되는지 미검증
+  (샌드박스가 `codex exec --dangerously-bypass-hook-trust`를 막음). `pre_tool_use`를 배선하기 전에
+  SessionStart부터 실측해야 한다. 코드 변경 없는 작은 검증 task로 분리 가능 — 로컬 Codex 필요.
+
+## 3. 구 task → CLI 소유 마이그레이션 — 0.37.0 후속
+
+- **무엇**: 0.37.0은 `reviews` 키가 없는 구 task를 종전 판정(artifact 마커)으로 두고, CLI도 키를 만들지 않는다
+  (키 생성을 부수효과로 두면 첫 `review` 호출 순간 기존 손 마커가 verify 증거에서 빠진다 — adversarial 리뷰 P1).
+  옮기는 **명시적** 경로가 없다.
+- **어떻게**: `harness-team migrate`에 옵트인 단계 — 활성/열린 task의 meta에 `reviews: []`를 넣되, 넣기 전에
+  "이 task의 기존 verify 마커 N개가 증거에서 빠집니다"를 보여주고 확인. 또는 `harness-team review --adopt`.
+- **주의**: 손으로 `"reviews": []`를 넣으면 안 된다는 것이 현재 문서 계약(`what-changes-0.37.0.html` 소비자 절).
+- **정본**: `src/commands/task.mjs` `collectDoneIssues` cliOwned 분기, `commands/harness-review.md` 5단계 "구 task 호환".
+
+## 4. 프레이밍 프롬프트 src 이관 — 0.37.0 후속
+
+- **무엇**: 검증 프레이밍 5종(adversarial·testcritic·shipcheck·contrarian·simplifier)의 프롬프트는 각 커맨드
+  문서가 정본이고, 에이전트가 파일에 써서 `--prompt-file`로 넘긴다. src에 두면 `harness-team review codex
+  --framing adversarial`만으로 실행된다.
+- **비용**: 공용 프롬프트처럼 문서 ↔ src pin 테스트 5개가 더 생긴다(`tests/review-command.test.mjs`의
+  `REVIEW_PROMPT_TEMPLATE` pin 참조). 문서가 정본이라는 현 구조를 유지할지, src가 정본이 되고 문서가
+  포인터가 될지 결정 필요.
+
+## 5. "main에서 이미 종결된 task" 감지 — 하네스가 구조적으로 못 잡던 실패
+
+- **사고**: 2026-09-10, 09-07 클론에서 `done-force-audit-trail`을 구현했는데 main에는 09-08에 같은 task가
+  이미 구현·종결·릴리스(0.34.0)돼 있었다. 6커밋을 폐기했다. 두 구현은 설계까지 갈렸다(sticky vs per-close).
+- **왜 하네스가 못 잡았나**: `.harness/active.json`이 gitignore라 클론은 "이 task가 main에서 `done`"인지
+  알 수 없고, SessionStart의 task-gate(`src/commands/session-context.mjs`)는 로컬 meta만 본다. D5 격리 병렬
+  모델이 전제하는 "task는 브랜치당 하나"가 **같은 task를 두 클론이 각자 활성으로 가진 경우**를 다루지 않는다.
+- **어떻게**: `session-context`가 활성 task의 meta를 `origin/<default>`에서 한 번 읽어(`git show
+  origin/main:docs/<user>/<task>/<task>-meta.json`) `status === 'done'`이면 breadcrumb 대신
+  "이 task는 main에서 <closedAt>에 종결됨 — 재개할 것인지 확인" nudge. fetch는 하지 않는다(네트워크·시간);
+  로컬 `origin/main` ref 기준이고, 없으면 조용히 건너뛴다. 같은 검사를 `doctor`에도.
+- **정본**: `src/commands/session-context.mjs` `buildSessionContext`, `AGENTS.md` task-gate 절, `docs/decisions.md` D5.
+
+## 6. `tests/sim/agentloop.mjs` 헤더 주석 정정 — 한 줄
+
+- **무엇**: 헤더가 *"a nested `claude -p` spawned from inside a Claude session is NOT logged in (credential
+  isolation — verified empirically)"* 라고 한다. `commands/harness-review.md` claude 엔진 절은 *"부모 세션의
+  인증을 상속한다 (2026-08-21 실측 검증)"*이고, 2026-09-10 원격 컨테이너 실측도 상속 동작(0.37.0의 dogfood
+  리뷰가 그 경로로 돌았다). 두 실측이 문서 쪽을 지지한다.
+- **주의**: sim이 OAuth 토큰 파일(`~/.claude-sim-oauth-token`)을 쓰는 이유가 그 주석이므로, 주석만 고칠지
+  토큰 경로 자체를 제거할지는 실측 후 결정. 환경(로컬 vs 원격 컨테이너)에 따라 다를 수 있음 — **미검증**.
+
+## 7. `delegation-router` 스킬 가격 표의 `$1`·`$2`… 치환 깨짐 — 레포 밖
+
+- **무엇**: `~/.claude/skills/.../delegation-router/references/context-and-model.md`의 모델 티어 표에서
+  `$1`·`$2`·`$5`·`$10`·`$25`·`$50`이 슬래시 커맨드 인자 치환(`$1` = 첫 인자)에 잡혀 셀이 인자 문자열로
+  바뀐다(2026-09-10 실측: haiku 행 입력 가격이 "작동한건가?"로 렌더).
+- **어떻게**: `USD 1` 또는 `1 $/MTok`처럼 `$숫자` 패턴을 피한다. 이 저장소가 아니라 스킬 저장소의 변경.
+
+---
+
+## 이 목록에 없는 것 (의도적으로)
+
+- **context check를 done 게이트로**: 4요소 분석에서 한때 "약점"으로 꼽았다가 철회. TCC는 AGENTS.md가
+  **비-SSOT cache/workpad**로 정의하므로 cache 유효성으로 종결을 막으면 정의와 충돌한다. 다시 올리지 말 것.
+- **리뷰 마커 HMAC 서명**: `review-evidence-cli-owned` spec `### 왜 서명이 아니라 meta인가`에서 기각.
+  머신별 키는 두 머신 작업을 깨고, 공유 키는 얻는 게 없으며, 위조는 가드의 위협 모델 밖.
