@@ -18,6 +18,14 @@ modified: 2026-09-10
 
 ## [Unreleased]
 
+### Added
+- **"main에서 이미 종결된 task" 감지 (`done-on-main-nudge`).** 활성(또는 활성화하려는) task의 meta를
+  `origin/<default>`에서 fetch 없이 읽어 `status === 'done'`이면 세 지점이 nudge를 낸다 — `session-context`(SessionStart,
+  breadcrumb·TCC 대신 nudge만), `doctor`(`done on main` warning), `task <name>`(출력 첫 줄, 막지 않음). 판정은 새 모듈
+  `src/commands/remote-task.mjs` 한 곳. 로컬 meta가 done이거나 로컬 `reopenedAt`이 원격 `closedAt`보다 나중(고의 재개)이면
+  조용하다. 배경: 2026-09-10 두 클론이 같은 task를 각자 구현해 6커밋을 폐기한 사고 — `.harness/active.json`이 gitignore라
+  하네스가 구조적으로 못 잡던 실패.
+
 ## [0.37.0] - 2026-09-10
 
 ### Added

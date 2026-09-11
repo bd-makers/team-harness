@@ -116,6 +116,7 @@ SSOT는 여전히 네 파일이며, TCC는 거기서 파생된 현재 working se
 > 카드가 없으면 `context init`, 읽을 수 없거나 유효하지 않으면 원문 대신 `context check` 안내만 내보낸다.
 > 활성 task가 없으면 첫 작업 프롬프트에서 `AskUserQuestion`으로
 > **재개 / 새 task / task 없이 진행**을 확인하라 — 이는 block이 아닌 nudge이며 판단은 Claude 몫.
+> 활성 task가 main에서 이미 `done`이면 "종결됨" nudge만 나온다 — harness-task 문서.
 
 ### task 워크플로우
 - **시작**: `harness-team task <name>` — 생성 또는 활성화

@@ -1,0 +1,21 @@
+{
+  "user": "chad",
+  "task": "done-on-main-nudge",
+  "created": "2026-09-11",
+  "firstActivatedAt": "2026-09-11T07:15:38.622Z",
+  "status": "done",
+  "closedAt": "2026-09-11T07:33:51.788Z",
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "7ba738000f49eb494b1afd804daf7359e367648a",
+      "at": "2026-09-11T07:30:22.564Z",
+      "exitCode": 0,
+      "outputBytes": 2025
+    }
+  ]
+}

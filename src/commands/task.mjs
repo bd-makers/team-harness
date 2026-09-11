@@ -7,6 +7,7 @@ import { exists, writeText } from '../fsx.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 import { readTaskMeta, writeTaskMeta, taskMetaTemplate, inferLegacyMeta, readLedger } from './summary.mjs';
 import { renderDoneMarker } from '../handoff-marker.mjs';
+import { checkDoneOnMain, renderDoneOnMainNudge } from './remote-task.mjs';
 
 const pexec = promisify(execFile);
 
@@ -203,7 +204,7 @@ export function taskContextTemplate(name) {
 `;
 }
 
-export async function runTask(ctx) {
+export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
   const json = !!(ctx.flags && ctx.flags.json);
   const name = (ctx.taskArgs || [])[0];
   if (!name || !/^[\w.-]+$/.test(name)) {
@@ -235,6 +236,14 @@ export async function runTask(ctx) {
   const user = await resolveUser(ctx.targetDir, ctx.flags);
   const dir = taskDir(ctx.targetDir, user, name);
   const date = today();
+
+  // 원격 done 감지(done-on-main-nudge). 사고의 시작점이 바로 여기였다 — 클론에서 `task <name>`을 쳤을 때 main에는
+  // 같은 task가 이미 종결돼 있었다. 막지 않는다(nudge). 로컬 meta가 done이면(아래 reopened 전이) 판정은 null이다 —
+  // 그것은 사용자가 종결을 보고 다시 여는 고의 재개다.
+  let doneOnMainVerdict = null;
+  try { doneOnMainVerdict = await doneOnMain(ctx.targetDir, user, name); } catch { doneOnMainVerdict = null; }
+  const nudge = doneOnMainVerdict ? renderDoneOnMainNudge({ user, task: name, ...doneOnMainVerdict }) : null;
+  if (nudge && !json) console.log(nudge);
 
   if (await exists(dir)) {
     const switchedAt = new Date().toISOString();
@@ -276,6 +285,7 @@ export async function runTask(ctx) {
         summary: `${verb}: ${user}/${name}`,
         nextActions: [`docs/${user}/${name}/${name}-plan.md 의 현재 단계 확인`],
         artifacts: [`docs/${user}/${name}`],
+        ...(doneOnMainVerdict ? { extra: { doneOnMain: doneOnMainVerdict } } : {}),
       }));
     } else {
       console.log(`${verb}: ${user}/${name}`);
@@ -320,6 +330,7 @@ export async function runTask(ctx) {
         `docs/${user}/${name}/${name}-context.md`,
         `docs/${user}/${name}/${name}-meta.json`,
       ],
+      ...(doneOnMainVerdict ? { extra: { doneOnMain: doneOnMainVerdict } } : {}),
     }));
   } else {
     console.log(`created: docs/${user}/${name}/`);

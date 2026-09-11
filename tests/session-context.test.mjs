@@ -361,3 +361,45 @@ test('observe 표면화: 3일 전 실패도 창(7일) 안이면 표면화된다 
     assert.match(lines[lines.length - 1], OBSERVE_LINE, '마지막 줄이 observe 표면화 줄');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+// ---- 원격 done 감지 (done-on-main-nudge) ----
+
+test('활성 task 가 origin/<default> 에서 이미 done → breadcrumb·card 대신 nudge 만 주입', async () => {
+  const dir = await baseDir();
+  try {
+    await writeActive(dir, { user: 'chad', task: 'demo', path: 'docs/chad/demo' });
+    await writeCard(dir, 'chad', 'demo');
+    const calls = [];
+    const doneOnMain = async (targetDir, user, task) => { calls.push([targetDir, user, task]); return { ref: 'origin/main', closedAt: '2026-09-08T10:00:00.000Z' }; };
+    const out = await buildSessionContext(dir, { doneOnMain });
+    assert.deepEqual(calls, [[dir, 'chad', 'demo']]);
+    assert.match(out, /^\[harness\] ⚠ task chad\/demo 는 origin\/main 에서 2026-09-08T10:00:00\.000Z 에 이미 종결됨/);
+    assert.match(out, /^next-action: /m);
+    assert.doesNotMatch(out, /활성 task: chad\/demo — 세션 시작 프로토콜대로/);
+    assert.doesNotMatch(out, /## Now/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('원격 판정이 null 이면(비-git 디렉터리 포함) 출력은 종전과 바이트 동일', async () => {
+  const dir = await baseDir();
+  try {
+    await writeActive(dir, { user: 'chad', task: 'demo', path: 'docs/chad/demo' });
+    const card = taskContextTemplate('demo');
+    await writeCard(dir, 'chad', 'demo', card);
+    const viaDefault = await buildSessionContext(dir); // tmpdir 은 git 저장소가 아니다 → 조용히 null
+    const viaNull = await buildSessionContext(dir, { doneOnMain: async () => null });
+    assert.equal(viaDefault, viaNull);
+    assert.equal(viaDefault, `[harness] 활성 task: chad/demo — 세션 시작 프로토콜대로 demo-plan.md 확인.\n${card}`);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('원격 판정 중 예외 → SessionStart 출력은 판정 없을 때와 바이트 동일 (절대 깨지지 않음)', async () => {
+  const dir = await baseDir();
+  try {
+    await writeActive(dir, { user: 'chad', task: 'demo', path: 'docs/chad/demo' });
+    await writeCard(dir, 'chad', 'demo');
+    const plain = await buildSessionContext(dir);
+    const thrown = await buildSessionContext(dir, { doneOnMain: async () => { throw new Error('git exploded'); } });
+    assert.equal(thrown, plain);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
