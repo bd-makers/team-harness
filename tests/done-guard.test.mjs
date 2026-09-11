@@ -246,9 +246,14 @@ test('handoff 외 실제 변경이 미커밋이면 여전히 차단', async () =
 });
 
 test('parsePorcelainPaths: 상태접두/rename/quotepath 파싱', () => {
-  assert.deepEqual(parsePorcelainPaths(' M docs/a.md\n?? b.txt\n'), ['docs/a.md', 'b.txt']);
-  assert.deepEqual(parsePorcelainPaths('R  old.md -> new.md\n'), ['new.md']);
-  assert.deepEqual(parsePorcelainPaths(' M "한글 경로.md"\n'), ['한글 경로.md']);
+  // 입력은 `--porcelain -z` — NUL 구분, 인용 없음.
+  assert.deepEqual(parsePorcelainPaths(' M docs/a.md\0?? b.txt\0'), ['docs/a.md', 'b.txt']);
+  assert.deepEqual(parsePorcelainPaths(' M docs/한글/u-handoff.md\0'), ['docs/한글/u-handoff.md'],
+    '비-ASCII 경로가 원문 그대로 나온다 — 기본 porcelain 의 octal 인용이 가드 오탐의 원인이었다');
+  // rename 은 두 경로를 낸다 — 목적지만 남기면 handoff 로 rename 된 실제 파일의 삭제가
+  // done 가드의 handoff 제외에 삼켜진다 (2026-09-11 codex P2).
+  assert.deepEqual(parsePorcelainPaths('R  new.md\0old.md\0'), ['new.md', 'old.md']);
+  assert.deepEqual(parsePorcelainPaths(' M 한글 경로.md\0'), ['한글 경로.md']);
   assert.deepEqual(parsePorcelainPaths(''), []);
 });
 
@@ -1056,4 +1061,14 @@ test('무시한 issue 가 없는 --force 는 우회가 아니다 — 두 필드�
     process.exitCode = prevExit;
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+// handoff 파일로의 rename 은 "핸드오프만 dirty" 처럼 보이지만 **원본의 삭제**가 실제 작업이다.
+// 목적지만 제외 대상과 대조하면 가드가 그 삭제를 놓친다 (2026-09-11 codex P2).
+test('parsePorcelainPaths: handoff 로 rename 된 원본은 제외 집합에 삼켜지지 않는다', async () => {
+  const { handoffRelPaths } = await import('../src/commands/task.mjs');
+  const rels = handoffRelPaths('tester', 'demo');
+  const dirty = parsePorcelainPaths('R  docs/tester/tester-handoff.md\0src/real.md\0')
+    .filter(p => !rels.has(p));
+  assert.deepEqual(dirty, ['src/real.md'], '원본 삭제가 실제 dirty 로 남는다');
 });

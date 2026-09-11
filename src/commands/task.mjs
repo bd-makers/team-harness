@@ -364,19 +364,29 @@ export async function runList(ctx) {
   if (!found) console.log('(no tasks)');
 }
 
-// Extract file paths from `git status --porcelain` output: strip the 2-char status +
-// space prefix, resolve rename arrows (`old -> new` → new), and unquote core.quotepath
-// paths. Used by the done-guard to tell real uncommitted work from hook-generated files.
+// Extract file paths from `git status --porcelain -z` output: strip the 2-char status +
+// space prefix and, for a rename/copy, also take the source path from the next NUL field.
+// Used by the done-guard to tell real uncommitted work from hook-generated files.
 export function parsePorcelainPaths(stdout) {
-  return stdout.split('\n')
-    .filter(l => l.length > 3)
-    .map(l => {
-      let p = l.slice(3);
-      const arrow = p.indexOf(' -> ');
-      if (arrow !== -1) p = p.slice(arrow + 4);
-      if (p.startsWith('"') && p.endsWith('"')) p = p.slice(1, -1);
-      return p;
-    });
+  // `git status --porcelain -z` 를 읽는다. `-z` 가 아닌 기본 출력은 ASCII 밖 경로를 C-style octal 로
+  // **인용**하므로(`"docs/\355\225\234…"`), 바깥 따옴표만 벗기는 파서는 원문과 영영 일치하지 않는다.
+  // 그 불일치가 곧 done 가드의 오탐이다 — 훅이 쓴 handoff 경로가 제외 집합과 안 맞아 "실제 dirty" 로
+  // 계산돼 종결이 영구히 막힌다. user 이름은 `.harness/config.json` 의 자유 입력으로도 들어오므로
+  // (`member.sanitize` 를 거치지 않는 경로다) 비-ASCII 는 가정이 아니라 실제 입력이다. (2026-09-11 codex P2)
+  //
+  // `-z` 형식: 항목마다 `XY <path>`, rename/copy 는 그 다음 필드가 **원본**이다 (`R  new\0old\0`).
+  // rename 은 두 경로 모두 돌려준다 — 목적지만 남기면 `src/real.md -> docs/<u>/<u>-handoff.md` 같은
+  // staged rename 이 handoff 제외에 통째로 삼켜져 가드가 원본의 삭제를 못 본다.
+  const fields = stdout.split('\0');
+  const out = [];
+  for (let i = 0; i < fields.length; i++) {
+    const entry = fields[i];
+    if (entry.length <= 3) continue;
+    const status = entry.slice(0, 2);
+    out.push(entry.slice(3));
+    if (/[RC]/.test(status) && fields[i + 1]) out.push(fields[++i]);
+  }
+  return out;
 }
 
 // spec의 `## Done evidence` 선언. `boundary check`의 `not-configured` 전례를 따른다 —
@@ -518,6 +528,15 @@ const VERIFY_KIND_RE = new RegExp(`-(?:${VERIFY_KIND_SUFFIXES.join('|')})$`);
 
 // 가드 밖에서도 같은 판정이 필요하다 — `migrate --adopt-reviews` 가 "채택하면 잃는 검증 증거"를
 // 셀 때 이 함수를 쓴다. 정규식을 복제하면 접미사 열거가 바뀔 때 사용자가 보는 수와 가드가 세는 수가 갈라진다.
+// 훅(`runHandoffAuto`)이 **쓰는** 파일이자 `done` 가드가 **무시하는** 파일. 두 곳이 같은 집합을 봐야
+// 한다 — 갈라지면 가드는 무시하는데 훅은 계속 써서 churn 이 조용히 되살아난다.
+export function handoffRelPaths(user, task) {
+  return new Set([
+    `docs/${user}/${task}/${task}-handoff.md`,
+    `docs/${user}/${user}-handoff.md`,
+  ]);
+}
+
 export function isVerifyKind(kind) {
   return VERIFY_KIND_RE.test(kind ?? '');
 }
@@ -655,14 +674,11 @@ async function collectDoneIssues(targetDir, active) {
 
   if (isGitRepo) {
     try {
-      const { stdout } = await pexec('git', ['-C', targetDir, 'status', '--porcelain'], { maxBuffer: 1024 * 1024 });
+      const { stdout } = await pexec('git', ['-C', targetDir, 'status', '--porcelain', '-z'], { maxBuffer: 1024 * 1024 });
       // The post-commit hook (`harness-team handoff`) regenerates these handoff files
       // after every commit, so they're ~always dirty at `done` time. Exclude them — the
       // guard should block on real uncommitted work, not the hook's own auto-output.
-      const handoffRels = new Set([
-        `docs/${user}/${task}/${task}-handoff.md`,
-        `docs/${user}/${user}-handoff.md`,
-      ]);
+      const handoffRels = handoffRelPaths(user, task);
       const realDirty = parsePorcelainPaths(stdout).filter(p => !handoffRels.has(p));
       if (realDirty.length) issues.push('커밋되지 않은 변경이 있음');
     } catch { /* transient git error → don't fabricate a problem */ }
@@ -822,11 +838,37 @@ export async function runRetro(ctx) {
   }
 }
 
+// 이 커밋이 **핸드오프 파일만** 바꿨는가. 그렇다면 기록할 작업이 없다 — 훅 자신의 출력을 쓸어 담은
+// sweep 커밋이므로 여기서 또 항목을 만들면 churn 이 자기 자신을 먹여 트리가 깨끗해지지 않는다.
+//
+// 병합 커밋을 조심해야 한다: `diff-tree --name-only` 도 `show --name-only` 도 병합에는 **아무 경로도
+// 내지 않는다**(2026-09-11 실측). 경로가 비었다고 건너뛰면 병합이 기록에서 사라지므로, 부모가 둘 이상이면
+// 판정 자체를 하지 않는다. 빈 커밋도 빈 목록을 내지만 종전대로 기록한다(동작 불변).
+// git 이 없거나 실패하면 기록한다 — "판정 불가"를 "건너뜀"으로 바꾸지 않는다.
+async function commitTouchesOnlyHandoff(targetDir, handoffRels) {
+  try {
+    const { stdout: parents } = await pexec('git', ['-C', targetDir, 'rev-list', '--parents', '-n', '1', 'HEAD'], { maxBuffer: 1024 * 1024 });
+    if (parents.trim().split(/\s+/).length > 2) return false; // merge → 항상 기록
+    // `-z` 로 읽는다 — `core.quotepath=false` 로도 `"`·`\\`·개행이 든 경로는 따옴표로 감싸 나오므로
+    // 줄 단위 파싱은 그 경로에서 틀린다. (핸드오프 경로 자체는 user·task 이름이 `[\\w.-]` 로
+    // 제한돼 항상 안전하지만, 같은 커밋의 **다른** 경로까지 정확히 읽어야 판정이 맞는다.)
+    // `--ignore-submodules=none`: `submodule.<name>.ignore=all` 이 설정돼 있으면 gitlink 변경이 이 출력에서
+    // **사라진다**(2026-09-11 실측: submodule bump + handoff 커밋이 `[handoff.md]` 로만 보였다).
+    // 그러면 실제 작업 커밋을 sweep 으로 오인해 기록을 건너뛴다.
+    const { stdout } = await pexec('git', ['-C', targetDir, 'diff-tree', '--no-commit-id', '--name-only', '--ignore-submodules=none', '-r', '-z', 'HEAD'], { maxBuffer: 8 * 1024 * 1024 });
+    const paths = stdout.split('\0').filter(Boolean);
+    return paths.length > 0 && paths.every(p => handoffRels.has(p));
+  } catch {
+    return false;
+  }
+}
+
 export async function runHandoffAuto(ctx) {
   const active = await readActive(ctx.targetDir);
   if (!active || !active.task) return;
 
   const { user, task } = active;
+  if (await commitTouchesOnlyHandoff(ctx.targetDir, handoffRelPaths(user, task))) return;
   const ts = new Date().toISOString();
 
   let commitMsg = '';

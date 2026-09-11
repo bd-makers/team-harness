@@ -98,6 +98,22 @@ created: docs/<user>/<name>/
   마찬가지다 — `GIT_NO_LAZY_FETCH=1`로 암묵 fetch를 막으므로 blob이 없으면 "모른다"(2 s timeout). `--json`이면 envelope 최상위에
   `doneOnMain: { ref, closedAt }` 필드가 붙는다.
 
+## post-commit handoff — sweep 커밋에서는 침묵한다
+
+`handoff`(post-commit 훅)는 커밋 **뒤에** `<name>-handoff.md`(항목 append)와 `<user>-handoff.md`(재작성)를
+쓴다. 그래서 커밋 직후 트리는 dirty이고, 그 변경을 쓸어 담는 커밋이 필요하다.
+
+그 sweep 커밋이 **핸드오프 파일만** 바꿨다면 훅은 아무것도 쓰지 않는다 — 기록할 작업이 없고, 쓰면
+churn이 자기 자신을 먹여 트리가 깨끗해지는 지점이 사라지기 때문이다(0.38.1). 판정은 보수적이다:
+
+- **병합 커밋은 항상 기록한다.** `git diff-tree --name-only`는 병합에 아무 경로도 내지 않으므로,
+  "경로가 비었다"를 "핸드오프만 바뀌었다"로 읽으면 병합이 조용히 누락된다. 부모가 둘 이상이면 판정하지 않는다.
+- **빈 커밋도 기록한다** — 종전 동작 그대로.
+- **git이 없거나 실패하면 기록한다** — 판정 불가를 건너뜀으로 바꾸지 않는다.
+
+제외 경로 집합은 `done` 가드가 "훅 자신의 출력"으로 무시하는 것과 **같은 함수**(`handoffRelPaths`)에서 나온다.
+가드의 제외는 그대로 필요하다 — 실제 작업 커밋 뒤에는 여전히 dirty다.
+
 ## `<name>-meta.json`과 판정 창
 
 `<name>-meta.json`은 harness가 소유하는 **기계 상태**다(`created`·`firstActivatedAt`·`status`·

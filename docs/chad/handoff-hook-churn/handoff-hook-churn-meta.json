@@ -1,0 +1,39 @@
+{
+  "user": "chad",
+  "task": "handoff-hook-churn",
+  "created": "2026-09-11",
+  "firstActivatedAt": "2026-09-11T11:47:45.437Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "257d0a2bc808937b7b10c75ff4df2a8a0ea9a633",
+      "at": "2026-09-11T11:58:00.828Z",
+      "exitCode": 0,
+      "outputBytes": 3113
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "257d0a2bc808937b7b10c75ff4df2a8a0ea9a633",
+      "at": "2026-09-11T12:06:11.373Z",
+      "exitCode": 0,
+      "outputBytes": 2422
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "257d0a2bc808937b7b10c75ff4df2a8a0ea9a633",
+      "at": "2026-09-11T12:13:00.809Z",
+      "exitCode": 0,
+      "outputBytes": 1566
+    }
+  ]
+}

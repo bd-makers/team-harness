@@ -18,6 +18,24 @@ modified: 2026-09-10
 
 ## [Unreleased]
 
+## [0.38.1] - 2026-09-11
+
+### Fixed
+- **post-commit 훅의 churn 루프.** 훅(`harness-team handoff`)은 커밋 *뒤에* `<name>-handoff.md`와
+  `<user>-handoff.md`를 쓰므로 커밋 직후 트리는 항상 dirty이고, 그 변경을 쓸어 담는 커밋이 **다시 훅을 돌려**
+  새 항목을 만들었다 — 트리가 깨끗해지는 지점이 없었다(0.38.0 릴리스에서 훅을 세 번 비켜 놓고 커밋해야 했다).
+  이제 **핸드오프 파일만** 바꾼 커밋에는 아무것도 기록하지 않는다. 판정은 보수적이다: 병합 커밋
+  (`diff-tree --name-only`는 병합에 아무 경로도 내지 않으므로 부모 수를 먼저 센다) · 빈 커밋 · git 실패는
+  모두 종전대로 기록하고, `submodule.<name>.ignore=all`로 gitlink 변경이 숨는 경우는
+  `--ignore-submodules=none`으로 막는다. 제외 경로는 `done` 가드와 같은 함수(`handoffRelPaths`)에서 나온다.
+  **`POST_COMMIT_HOOK` 스크립트 텍스트는 불변** — 기존 설치는 플러그인 갱신만으로 고쳐진다.
+- **`done` 가드의 경로 파싱 2건** (훅과 제외 집합을 공유하면서 드러난 기존 결함). ① 기본 `--porcelain`이
+  비-ASCII 경로를 C-style octal로 인용하는데 파서는 바깥 따옴표만 벗겨, 비-ASCII user에서 훅이 쓴 핸드오프가
+  제외 집합과 영영 불일치 → "실제 dirty"로 계산돼 **종결이 영구히 막혔다**(`.harness/config.json`의
+  `config.user`는 `member.sanitize`를 거치지 않는 자유 입력이다). `--porcelain -z` + NUL 파서로 고쳤다.
+  ② rename에서 목적지만 남겨 `src/real.md -> docs/<u>/<u>-handoff.md` 같은 staged rename이 제외에 삼켜지고
+  **원본의 삭제를 가드가 못 봤다** — 이제 rename은 두 경로를 모두 반환한다.
+
 ## [0.38.0] - 2026-09-11
 
 ### Added
