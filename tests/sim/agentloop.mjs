@@ -8,10 +8,16 @@
 // L4) structurally cannot reach: per-project installed hooks / SessionStart /
 // slash→CLI chain only activate for a session whose cwd IS the project.
 //
-// AUTH: a nested `claude -p` spawned from inside a Claude session is NOT logged in
-// (credential isolation — verified empirically). This harness uses a subscription
-// OAuth token (no API key, no extra billing) read from a 600 file and injected
-// ONLY into the spawned child env. Create it once:
+// AUTH: whether a nested `claude -p` is authenticated is ENVIRONMENT-DEPENDENT, so this
+// harness carries its own token instead of assuming either answer.
+//   • 2026-09-12, desktop-app session on this machine: the child exits 1 with
+//     `Failed to authenticate: OAuth session expired and could not be refreshed` (stdout).
+//     It is not "no credentials at all" — it reaches a store it cannot refresh.
+//   • 2026-08-21 and 2026-09-10 (remote container): inherited the parent login fine; the
+//     0.37.0 dogfood review ran through that path. commands/harness-review.md carries the caveat.
+// The portable route is a subscription OAuth token (no API key, no extra billing) read from a
+// 600 file and injected ONLY into the spawned child env. Ambient login is used when absent
+// (see `if (token) … else ambient login` below). Create it once:
 //     claude setup-token
 //     umask 077; echo '<token>' > ~/.claude-sim-oauth-token
 //

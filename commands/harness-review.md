@@ -141,8 +141,15 @@ codex exec --sandbox read-only "<공용 리뷰 프롬프트>" < /dev/null
 claude -p --permission-mode plan "<공용 리뷰 프롬프트>"
 ```
 
-`plan` 모드가 read-only를 강제한다 — 쓰기 도구는 차단되고 read-only git 명령은
-프롬프트 없이 실행되며, 부모 세션의 인증을 상속한다 (2026-08-21 실측 검증).
+`plan` 모드가 read-only를 강제한다 — 쓰기 도구는 차단되고 read-only git 명령은 프롬프트 없이 실행된다.
+
+> **인증은 환경에 따라 다르다(실측).** 원격 컨테이너 세션에서는 부모 세션의 인증을 **상속했다**
+> (2026-08-21·2026-09-10; 0.37.0 dogfood 리뷰가 그 경로로 돌았다). 데스크톱 앱 세션에서는 **상속하지 않는다** —
+> 2026-09-12 실측에서 자식이 `Failed to authenticate: OAuth session expired and could not be refreshed`를
+> stdout에 내고 **exit 1**로 끝났다. 그래서 `harness-team review claude`는 그 실행을 **증거로 기록하지 않는다**
+> (실패한 실행은 아무것도 쓰지 않는다는 규칙이 이 경우를 이미 덮는다).
+> 상속되지 않는 환경에서는 codex 엔진을 쓰거나, `claude setup-token`으로 받은 토큰을
+> `CLAUDE_CODE_OAUTH_TOKEN`으로 넘겨 실행한다.
 
 > **한계 명시:** claude 엔진은 **컨텍스트 분리만** 제공한다 — 작성 세션의 sunk-cost
 > 편향은 제거되지만, 같은 모델의 맹점은 공유한다(vendor 분리 없음). codex를

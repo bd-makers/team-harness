@@ -10,8 +10,10 @@
 // project, let the skill write tests, and score observable side-effects
 // (files written / greppable patterns / `npm test` exit code) — not prose.
 //
-// AUTH (same constraint as agentloop): a nested `claude -p` does NOT inherit the
-// parent session login. Two ways to get auth into the child:
+// AUTH (same as agentloop): whether a nested `claude -p` inherits the parent login is
+// ENVIRONMENT-DEPENDENT — it did in a remote container (2026-08-21·09-10) and did not in a
+// desktop-app session (2026-09-12: exit 1, `OAuth session expired and could not be refreshed`).
+// Two ways to get auth into the child:
 //   • USER-RUN  — run this yourself in an authenticated terminal (ambient login).
 //   • TOKEN-RUN — `claude setup-token` → `umask 077; echo '<tok>' > ~/.claude-sim-oauth-token`.
 //
