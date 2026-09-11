@@ -13,8 +13,8 @@ Codex 훅을 실제로 살린다 — 봉투 형식 전환 + 신뢰 부재의 표
 - [x] 실제 codex 세션으로 주입 실측
 - [x] `npm run test` 전체 통과 확인
 - [x] codex 리뷰 3회 → P1 1·P2 8 판별·반영 → artifact 기록 (루프 종료 근거 포함)
-- [ ] followups 2번 갱신 (A' 완료 → 남은 것은 B/C 결정)
-- [ ] 릴리스 문서 → `release 0.38.3` → 단일 커밋 → push·태그·clone 갱신 (사용자 승인 후)
+- [x] followups 2번 갱신 (A' 완료 → 남은 것은 B/C 결정)
+- [x] 릴리스 문서 → `release 0.38.3` → 단일 커밋(814ea37) → push·태그 v0.38.3·clone 갱신
 
 ## Ontology 변경 로그
 - 2026-09-12 **봉투(envelope)** · **신뢰 2겹** 신설 — probe task의 실측을 구현 어휘로 굳힌다.
