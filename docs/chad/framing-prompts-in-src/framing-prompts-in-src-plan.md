@@ -25,7 +25,7 @@
       이 저장소에서 실행(dogfood, prompt-file 없음) → `meta.reviews` 기록 확인.
 - [x] **리뷰 판별** — dogfood 리뷰 발견을 4단계로 판별해 artifact 블록 아래에 산문 기록, 진짜 결함은
       수정 후 테스트 재실행.
-- [ ] **retro** — `/harness-retro`로 Learnings 기록 후 `harness-team done`.
+- [x] **retro** — `/harness-retro`로 Learnings 기록 후 `harness-team done`.
 
 ## Ontology 변경 로그
 

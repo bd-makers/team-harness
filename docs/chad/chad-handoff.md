@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+framing-prompts-in-src
 
-## Last Completed Task (2026-09-11)
-`codex-hook-injection-fix` — done
+## Last Commit (2026-09-11)
+d987287 feat(review): 프레이밍 프롬프트 정본을 src로 이관 — --framing만으로 실행, testcritic은 --rubric
 
 ## Full Context
-→ docs/chad/codex-hook-injection-fix/codex-hook-injection-fix-handoff.md
+→ docs/chad/framing-prompts-in-src/framing-prompts-in-src-handoff.md
