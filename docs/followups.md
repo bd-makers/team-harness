@@ -7,20 +7,11 @@
 
 ## 우선순위
 
-**1 → 5 → 3.** 1은 릴리스 직후여야 의미가 있고, 5는 같은 사고를 두 번 겪었으므로 값이 가장 크며,
-3은 5와 같은 영역(`session-context`·`migrate`)이라 붙여서 하기 좋다. 2는 결정이 먼저. 4·6·7은 급하지 않다.
+**5 → 3.** 5는 같은 사고를 두 번 겪었으므로 값이 가장 크며, 3은 5와 같은 영역(`session-context`·`migrate`)이라
+붙여서 하기 좋다. 2는 결정이 먼저. 4·6·7은 급하지 않다.
+(1번 `review codex` 실측은 2026-09-11 task `review-codex-live-check`로 올려 여기서 지웠다 — 번호는 참조 안정을 위해 유지.)
 
 ---
-
-## 1. `harness-team review codex` 실측 — 0.37.0 미검증 항목
-
-- **무엇**: 0.37.0의 codex 엔진 경로(`src/commands/review.mjs` `runEngine` codex 행)는 문서 runner 표를
-  그대로 옮겼지만 **실행은 한 번도 안 됐다** — 개발 컨테이너에 codex가 없어 claude 엔진으로만 실측.
-- **어떻게**: codex가 있는 로컬에서 활성 task 하나 잡고 `harness-team review codex` 1회. 확인할 것:
-  (a) `stdio: ['ignore', ...]`가 `< /dev/null` 계약을 실제로 대체하는가(멈추지 않는가),
-  (b) exit 0 시 `meta.reviews[]`·artifact 블록·마커가 남는가, (c) 출력 16 KiB 상한 절단 표기.
-- **실패하면**: patch 릴리스. `docs/what-changes-latest-version.html` 0.37.0 절이 "codex 미검증"을 명시하고 있다.
-- **정본**: `commands/harness-review.md` 엔진 runner 표, `tests/review-command.test.mjs`(custom 엔진 fake로만 검증).
 
 ## 2. Codex 훅 확장 — 결정 항목 (task 아님)
 
@@ -84,6 +75,19 @@
   `$1`·`$2`·`$5`·`$10`·`$25`·`$50`이 슬래시 커맨드 인자 치환(`$1` = 첫 인자)에 잡혀 셀이 인자 문자열로
   바뀐다(2026-09-10 실측: haiku 행 입력 가격이 "작동한건가?"로 렌더).
 - **어떻게**: `USD 1` 또는 `1 $/MTok`처럼 `$숫자` 패턴을 피한다. 이 저장소가 아니라 스킬 저장소의 변경.
+
+## 8. `harness-team review` 기록 품질 3건 — 0.37.0 codex 실측 리뷰 발견 (P3)
+
+- **출처**: 2026-09-11 task `review-codex-live-check`의 codex 리뷰(대상 `v0.36.0...HEAD`). 판별 근거는 그 artifact
+  `## Reviews` 아래 표. 세 건 모두 `done` 가드 판정에는 영향 없어 patch 사유는 아니다 — 다음 minor에 묶는다.
+- **(1) 블록 위치**: `src/commands/review.mjs` `appendFile`이 EOF에 붙여 기본 템플릿에서 `## Reviews`가 아니라
+  `## Learnings` 아래에 남는다(실측 artifact가 증거). `## Learnings` 헤딩이 있으면 그 앞에 삽입, 없으면 append.
+  `runRetro`(`task.mjs`)는 `## Learnings (<date>)` 절을 EOF append하므로 순서 규칙을 같이 정한다.
+- **(2) 빈 출력 기록**: exit 0이면 stdout 0 B여도 `meta.reviews[]`에 기록된다. 아무것도 출력하지 않는 잘못
+  설정된 custom reviewer가 `verify: required`를 통과시킬 수 있다 — 공백뿐인 stdout은 error 패킷으로 거부.
+- **(3) custom 상대경로 preflight**: `which()`가 `./tool` 같은 경로를 process cwd 기준 `access`로 검사하지만 실행은
+  `targetDir`에서 한다. `--target` + 상대경로 조합에서 실행 가능한 reviewer가 오거부된다 — `targetDir` 기준으로 resolve.
+- **정본**: `src/commands/review.mjs` (`which`·`runReview` 기록부), `tests/review-command.test.mjs`.
 
 ---
 

@@ -1,0 +1,21 @@
+{
+  "user": "chad",
+  "task": "review-codex-live-check",
+  "created": "2026-09-11",
+  "firstActivatedAt": "2026-09-11T06:59:14.986Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "d9910930c9043d722457927dddb454929ed85010",
+      "at": "2026-09-11T07:05:34.583Z",
+      "exitCode": 0,
+      "outputBytes": 1786
+    }
+  ]
+}
