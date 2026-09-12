@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+docs-html-stub-tests
 
-## Last Completed Task (2026-09-12)
-`team-onboarding-kit` — done
+## Last Commit (2026-09-12)
+21085e1 chore(task): docs-html-stub-tests — DOM 스텁 3종 승격 task 생성
 
 ## Full Context
-→ docs/chad/team-onboarding-kit/team-onboarding-kit-handoff.md
+→ docs/chad/docs-html-stub-tests/docs-html-stub-tests-handoff.md
