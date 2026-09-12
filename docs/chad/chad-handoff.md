@@ -4,7 +4,7 @@
 team-onboarding-kit
 
 ## Last Commit (2026-09-12)
-b8316cd docs(team): 팀 전달용 온보딩 키트 4종 — 진입로·체크리스트·킥오프 덱·치트시트
+e0411c6 docs(team): codex-shipcheck 발견 2건 반영 — 카드 수 오기 정정, 검증 증거 실출력으로 교체
 
 ## Full Context
 → docs/chad/team-onboarding-kit/team-onboarding-kit-handoff.md

@@ -15,3 +15,12 @@
  docs/harness-operations-playground.html            | 562 +++++++++++++++++++++
  docs/index.html                                    | 118 ++++-
  11 files changed, 1840 insertions(+), 1 deletion(-)
+
+## 2026-09-12T18:41:03.542Z — e0411c6 docs(team): codex-shipcheck 발견 2건 반영 — 카드 수 오기 정정, 검증 증거 실출력으로 교체
+docs/chad/chad-handoff.md                          |  9 ++-
+ .../team-onboarding-kit-artifact.md                | 81 ++++++++++++++++++++--
+ .../team-onboarding-kit-handoff.md                 | 14 ++++
+ .../team-onboarding-kit-meta.json                  | 12 +++-
+ .../team-onboarding-kit-plan.md                    |  8 ++-
+ .../team-onboarding-kit-spec.md                    |  2 +-
+ 6 files changed, 111 insertions(+), 15 deletions(-)

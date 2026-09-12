@@ -17,8 +17,8 @@
 - [x] 검증 — 실제 명령·출력은 artifact.md `## 검증 증거` 참조
 - [x] codex-shipcheck 반영 — S1(카드 수 오기) · S5(증거 산문화) 수정, 판별·조치는 artifact.md `## Reviews`
 - [x] 커밋 (b8316cd)
-- [ ] shipcheck 조치 커밋
-- [ ] `/harness-ship` — spec·plan·artifact 최종 갱신 후 PR 준비 완료 보고
+- [x] shipcheck 조치 커밋 (e0411c6)
+- [x] `/harness-ship` — spec·plan·artifact 최종 갱신, 다이어그램 건너뜀(사용자 선택), codex-shipcheck 실행·조치 완료, PR 준비 완료 보고
 
 ## Ontology 변경 로그
 
