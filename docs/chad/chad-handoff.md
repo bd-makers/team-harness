@@ -5,7 +5,7 @@
 새 작업은 `harness-team task <name>` 으로 시작한다.
 
 ## Last Completed Task (2026-09-12)
-`team-onboarding-kit` — done
+`docs-html-stub-tests` — done
 
 ## Full Context
-→ docs/chad/team-onboarding-kit/team-onboarding-kit-handoff.md
+→ docs/chad/docs-html-stub-tests/docs-html-stub-tests-handoff.md

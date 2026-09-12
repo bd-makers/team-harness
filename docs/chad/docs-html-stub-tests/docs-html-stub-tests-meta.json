@@ -1,0 +1,21 @@
+{
+  "user": "chad",
+  "task": "docs-html-stub-tests",
+  "created": "2026-09-12",
+  "firstActivatedAt": "2026-09-12T19:11:34.902Z",
+  "status": "done",
+  "closedAt": "2026-09-12T19:49:25.030Z",
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "2549349397fec9140d699bf995ef493d104e388e",
+      "at": "2026-09-12T19:45:49.240Z",
+      "exitCode": 0,
+      "outputBytes": 1046
+    }
+  ]
+}
