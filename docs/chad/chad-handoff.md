@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-docs-html-stub-tests
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-12)
-c5125ff docs(task): retro 학습 4건 기록 + plan 단계 종결
+## Last Completed Task (2026-09-12)
+`docs-html-stub-tests` — done
 
 ## Full Context
 → docs/chad/docs-html-stub-tests/docs-html-stub-tests-handoff.md
