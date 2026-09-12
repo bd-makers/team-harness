@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ team-onboarding-kit
 - ✅ codex-hook-injection-fix
 - ✅ codex-project-hooks-probe
 - ✅ done-on-main-nudge
