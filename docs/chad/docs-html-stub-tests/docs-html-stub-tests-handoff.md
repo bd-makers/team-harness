@@ -36,3 +36,8 @@
  tests/docs-onboarding-checklist.test.mjs           | 19 +++++++---
  tests/docs-playground.test.mjs                     | 36 +++++++++++++-----
  5 files changed, 117 insertions(+), 32 deletions(-)
+
+## 2026-09-12T19:48:49.702Z — c5125ff docs(task): retro 학습 4건 기록 + plan 단계 종결
+.../docs-html-stub-tests-artifact.md               | 34 ++++++++++++++++++++++
+ .../docs-html-stub-tests-plan.md                   |  6 ++--
+ 2 files changed, 37 insertions(+), 3 deletions(-)
