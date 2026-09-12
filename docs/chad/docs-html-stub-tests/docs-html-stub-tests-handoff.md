@@ -14,3 +14,17 @@
  .../docs-html-stub-tests/raw-stubs/domstub2.mjs    |  77 ++++++++++++
  .../chad/docs-html-stub-tests/raw-stubs/obstub.mjs |  61 ++++++++++
  10 files changed, 472 insertions(+)
+
+## 2026-09-12T19:44:07.808Z — 1f33fb9 test(docs): 인라인 스크립트 산출물 3종에 DOM 스텁 테스트 승격
+.../docs-html-stub-tests-plan.md                   |  31 +++--
+ .../docs-html-stub-tests-spec.md                   |   5 +
+ docs/chad/docs-html-stub-tests/raw-stubs/README.md |  10 --
+ .../chad/docs-html-stub-tests/raw-stubs/dkstub.mjs |  62 ---------
+ .../docs-html-stub-tests/raw-stubs/domstub2.mjs    |  77 ----------
+ .../chad/docs-html-stub-tests/raw-stubs/obstub.mjs |  61 --------
+ docs/harness-overview.html                         |  20 +++
+ tests/docs-kickoff-deck.test.mjs                   | 141 +++++++++++++++++++
+ tests/docs-onboarding-checklist.test.mjs           | 122 ++++++++++++++++
+ tests/docs-playground.test.mjs                     | 155 +++++++++++++++++++++
+ tests/helpers/html-script.mjs                      |  45 ++++++
+ 11 files changed, 505 insertions(+), 224 deletions(-)
