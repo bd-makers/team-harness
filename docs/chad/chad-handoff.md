@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-team-onboarding-kit
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-12)
-e296a04 chore(task): team-onboarding-kit plan 종결 단계 체크 + post-commit handoff 갱신
+## Last Completed Task (2026-09-12)
+`team-onboarding-kit` — done
 
 ## Full Context
 → docs/chad/team-onboarding-kit/team-onboarding-kit-handoff.md
