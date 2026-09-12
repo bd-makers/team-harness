@@ -4,7 +4,7 @@
 docs-html-stub-tests
 
 ## Last Commit (2026-09-12)
-1f33fb9 test(docs): 인라인 스크립트 산출물 3종에 DOM 스텁 테스트 승격
+a969f00 fix(test): codex 리뷰 P2·P3 조치 — 상태 의존 제거, 원본 검사식 복원
 
 ## Full Context
 → docs/chad/docs-html-stub-tests/docs-html-stub-tests-handoff.md

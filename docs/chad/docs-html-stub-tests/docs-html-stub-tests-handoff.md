@@ -28,3 +28,11 @@
  tests/docs-playground.test.mjs                     | 155 +++++++++++++++++++++
  tests/helpers/html-script.mjs                      |  45 ++++++
  11 files changed, 505 insertions(+), 224 deletions(-)
+
+## 2026-09-12T19:48:12.576Z — a969f00 fix(test): codex 리뷰 P2·P3 조치 — 상태 의존 제거, 원본 검사식 복원
+.../docs-html-stub-tests-artifact.md               | 39 ++++++++++++++++++++
+ .../docs-html-stub-tests-meta.json                 | 12 +++++-
+ tests/docs-kickoff-deck.test.mjs                   | 43 ++++++++++++++--------
+ tests/docs-onboarding-checklist.test.mjs           | 19 +++++++---
+ tests/docs-playground.test.mjs                     | 36 +++++++++++++-----
+ 5 files changed, 117 insertions(+), 32 deletions(-)
