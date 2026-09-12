@@ -77,12 +77,25 @@ const preset = (name) => {
   b.onclick();
 };
 const prompt = () => document.getElementById('prompt').textContent;
+// 각 테스트가 자기 선행 상태를 직접 만든다 — --test-name-pattern 으로 골라 돌려도 통과해야 한다.
+const setAmbiguity = (v) => { if (state.ambiguity !== v) toggle('ck', 'ambiguity'); };
 
 describe('Ambiguity 수동 해제는 시나리오·규모를 바꿔도 유지된다', () => {
-  test('해제됨', () => { toggle('ck', 'ambiguity'); assert.equal(state.ambiguity, false); });
-  test('규모 변경 후에도 해제 유지', () => { click('scale', 'small'); assert.equal(state.ambiguity, false); });
-  test('시나리오 변경 후에도 해제 유지', () => { click('scenario', 'bug'); assert.equal(state.ambiguity, false); });
+  test('해제됨', () => { setAmbiguity(true); toggle('ck', 'ambiguity'); assert.equal(state.ambiguity, false); });
+  test('규모 변경 후에도 해제 유지', () => {
+    setAmbiguity(false);
+    click('scale', 'small');
+    assert.equal(state.ambiguity, false);
+  });
+  test('시나리오 변경 후에도 해제 유지', () => {
+    setAmbiguity(false);
+    click('scenario', 'bug');
+    assert.equal(state.ambiguity, false);
+  });
   test('작은 버그에서도 다시 켤 수 있다 (disabled 아님)', () => {
+    click('scenario', 'bug');
+    click('scale', 'small');
+    setAmbiguity(false);
     toggle('ck', 'ambiguity');
     assert.equal(state.ambiguity, true);
   });
@@ -106,23 +119,23 @@ describe('프리셋 — 클릭 경로로 프롬프트가 생성된다', () => {
 
   for (const name of Object.keys(PRESETS)) {
     describe(name, () => {
-      let text = '';
-      let scenario = '';
+      // preset() 적용은 idempotent 하므로 각 테스트가 직접 부른다.
+      const apply = () => { preset(name); return prompt(); };
       test('단계가 있고 충분히 길다', () => {
-        preset(name);
-        text = prompt();
-        scenario = state.scenario;
+        const text = apply();
         const steps = (text.match(/^\d+\. /gm) || []).length;
         assert.ok(steps > 0, '단계 없음');
         assert.ok(text.length > 300, `${text.length}자`);
       });
-      test('task를 닫는다', () => { assert.match(text, /\/harness-task done/); });
+      test('task를 닫는다', () => { assert.match(apply(), /\/harness-task done/); });
       test('HTML 엔티티 누출 없음', () => {
+        const text = apply();
         const hit = text.match(/&lt;|&gt;|&amp;/);
         assert.equal(hit, null, `누출: ${hit?.[0]}`);
       });
       test('시나리오에 맞는 본작업 단계', () => {
-        if (scenario === 'docs') assert.doesNotMatch(text, /구현 — 가장 작은/);
+        const text = apply();
+        if (state.scenario === 'docs') assert.doesNotMatch(text, /구현 — 가장 작은/);
         else assert.ok(true);
       });
     });
@@ -146,6 +159,9 @@ describe('verify:required 인데 증거원이 shipcheck 하나뿐이면 경고',
     assert.match(document.getElementById('preview').innerHTML, /증거원이 ship의 shipcheck 하나뿐/);
   });
   test('적대적 리뷰 추가 → 통과 행', () => {
+    preset('핫픽스 (최소)');
+    toggle('tk', 'unit');
+    click('ev:verify', 'required');
     click('reviewKind', 'adversarial');
     assert.match(
       document.getElementById('preview').innerHTML,

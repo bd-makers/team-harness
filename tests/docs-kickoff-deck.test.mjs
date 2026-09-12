@@ -84,6 +84,14 @@ const { SLIDES, go } = loadArtifactScript(HTML, '{ SLIDES, go }');
 
 const key = (k) => listeners['win:keydown'].forEach((f) => f({ key: k, preventDefault() {} }));
 const onIdx = () => store.stage.querySelectorAll('.slide').findIndex((s) => s.classList.contains('on'));
+// 각 테스트가 자기 선행 상태를 직접 만든다 — --test-name-pattern 으로 골라 돌려도 통과해야 한다.
+// 클래스를 직접 add/remove 하면 스크립트 내부의 토글 상태와 어긋나므로 실제 키로 몰아간다.
+// store[id] 대신 getElementById 를 쓴다 — overview 는 스크립트가 keydown 핸들러 안에서
+// 조회하므로 키 입력 전에는 store 에 없다.
+const el = (id) => document.getElementById(id);
+const ensureOn = (id, want) => {
+  if (el(id).classList.contains('on') !== want) key(id === 'notes' ? 's' : 'o');
+};
 
 describe('구성', () => {
   test('슬라이드 15~18장', () => {
@@ -103,8 +111,10 @@ describe('구성', () => {
     assert.equal(store.ovg._html.split('data-go=').length - 1, SLIDES.length);
   });
   test('미치환 템플릿 리터럴 없음', () => {
-    const hit = store.stage._html.match(/\$\{[^}]*\}/);
-    assert.equal(hit, null, `미치환: ${hit?.[0]}`);
+    // 원본과 같은 느슨한 검사 — 닫는 `}`를 요구하면 `${unfinished` 를 놓친다.
+    const html = store.stage._html;
+    const hit = html.match(/\$\{/);
+    assert.equal(hit, null, `미치환: ${html.slice(hit?.index ?? 0, (hit?.index ?? 0) + 60)}`);
   });
   test('SVG 렌더됨 (루프·게이트 2개)', () => {
     assert.equal((store.stage._html.match(/<svg/g) || []).length, 2);
@@ -112,24 +122,25 @@ describe('구성', () => {
 });
 
 describe('네비게이션', () => {
-  test('초기 0번', () => { assert.equal(onIdx(), 0); });
-  test('→ 1번', () => { key('ArrowRight'); assert.equal(onIdx(), 1); });
-  test('Space 2번', () => { key(' '); assert.equal(onIdx(), 2); });
-  test('← 1번', () => { key('ArrowLeft'); assert.equal(onIdx(), 1); });
-  test('End 마지막', () => { key('End'); assert.equal(onIdx(), SLIDES.length - 1); });
-  test('마지막에서 더 가도 클램프', () => { key('ArrowRight'); assert.equal(onIdx(), SLIDES.length - 1); });
-  test('Home 0번', () => { key('Home'); assert.equal(onIdx(), 0); });
-  test('0번에서 더 가도 클램프', () => { key('ArrowLeft'); assert.equal(onIdx(), 0); });
+  test('초기 0번', () => { go(0); assert.equal(onIdx(), 0); });
+  test('→ 1번', () => { go(0); key('ArrowRight'); assert.equal(onIdx(), 1); });
+  test('Space 2번', () => { go(1); key(' '); assert.equal(onIdx(), 2); });
+  test('← 1번', () => { go(2); key('ArrowLeft'); assert.equal(onIdx(), 1); });
+  test('End 마지막', () => { go(0); key('End'); assert.equal(onIdx(), SLIDES.length - 1); });
+  test('마지막에서 더 가도 클램프', () => { key('End'); key('ArrowRight'); assert.equal(onIdx(), SLIDES.length - 1); });
+  test('Home 0번', () => { go(3); key('Home'); assert.equal(onIdx(), 0); });
+  test('0번에서 더 가도 클램프', () => { key('Home'); key('ArrowLeft'); assert.equal(onIdx(), 0); });
 });
 
 describe('노트·개요', () => {
   test('노트에 현재 슬라이드', () => {
-    assert.match(store.notes._html, /01 하네스란/);
+    go(0);
+    assert.match(el('notes')._html, /01 하네스란/);
   });
-  test('S로 노트 on', () => { key('s'); assert.ok(store.notes.classList.contains('on')); });
-  test('S로 노트 off', () => { key('s'); assert.ok(!store.notes.classList.contains('on')); });
-  test('O로 개요 on', () => { key('o'); assert.ok(store.overview.classList.contains('on')); });
-  test('Esc로 개요 off', () => { key('Escape'); assert.ok(!store.overview.classList.contains('on')); });
+  test('S로 노트 on', () => { ensureOn('notes', false); key('s'); assert.ok(el('notes').classList.contains('on')); });
+  test('S로 노트 off', () => { ensureOn('notes', true); key('s'); assert.ok(!el('notes').classList.contains('on')); });
+  test('O로 개요 on', () => { ensureOn('overview', false); key('o'); assert.ok(el('overview').classList.contains('on')); });
+  test('Esc로 개요 off', () => { ensureOn('overview', true); key('Escape'); assert.ok(!el('overview').classList.contains('on')); });
 });
 
 describe('진행률·해시', () => {
@@ -137,5 +148,5 @@ describe('진행률·해시', () => {
     go(7);
     assert.equal(store.prog.style.width, `${(8 / SLIDES.length) * 100}%`);
   });
-  test('해시 갱신', () => { assert.equal(location.hash, '8'); });
+  test('해시 갱신', () => { go(7); assert.equal(location.hash, '8'); });
 });

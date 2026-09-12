@@ -74,6 +74,8 @@ const flag = (n) => {
 const cnt = () => document.getElementById('count').textContent;
 const alertHtml = () => document.getElementById('alert').innerHTML;
 const report = () => document.getElementById('report').textContent;
+// flag()는 토글이라 두 번 부르면 해제된다 — 선행 상태를 idempotent 하게 만든다.
+const ensureFlagged = (n) => { if (!/막혔습니다/.test(report())) flag(n); };
 
 describe('구조', () => {
   test('항목 24개 · 페이즈 5개', () => {
@@ -89,6 +91,7 @@ describe('구조', () => {
 describe('체크 → 진행률·저장', () => {
   test('1개 체크', () => { check(1); assert.equal(cnt(), `1 / ${ALL.length}`); });
   test('localStorage 저장됨', () => {
+    check(1);
     assert.ok(LS['harness-onboarding-v1']);
     assert.match(LS['harness-onboarding-v1'], /p0-1/);
   });
@@ -105,12 +108,15 @@ describe('게이트 경고', () => {
 describe('막힘 리포트', () => {
   test('초기엔 비어 있음', () => { assert.match(report(), /막힌 항목이 없습니다/); });
   test('막힘 표시 후 리포트 생성', () => { flag(9); assert.match(report(), /하네스 온보딩에서 막혔습니다/); });
-  test('항목 제목 포함', () => { assert.match(report(), /■ 09\./); });
+  test('항목 제목 포함', () => { ensureFlagged(9); assert.match(report(), /■ 09\./); });
   test('HTML 태그/엔티티 누출 없음', () => {
-    const hit = report().match(/<[a-z/][^>]*>|&lt;|&gt;|&amp;/);
-    assert.equal(hit, null, `누출: ${hit?.[0]}`);
+    ensureFlagged(9);
+    // 원본과 같은 느슨한 검사 — 닫는 `>`를 요구하면 `<broken` 을 놓친다.
+    const text = report();
+    const hit = text.match(/<[a-z/]|&lt;|&gt;|&amp;/);
+    assert.equal(hit, null, `누출: ${text.slice(hit?.index ?? 0, (hit?.index ?? 0) + 40)}`);
   });
-  test('실행 명령 포함', () => { assert.match(report(), /실행:/); });
+  test('실행 명령 포함', () => { ensureFlagged(9); assert.match(report(), /실행:/); });
 });
 
 describe('초기화', () => {
@@ -118,5 +124,8 @@ describe('초기화', () => {
     document.getElementById('reset').onclick();
     assert.equal(cnt(), `0 / ${ALL.length}`);
   });
-  test('경고 사라짐', () => { assert.equal(alertHtml(), ''); });
+  test('경고 사라짐', () => {
+    document.getElementById('reset').onclick();
+    assert.equal(alertHtml(), '');
+  });
 });
