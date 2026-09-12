@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ docs-html-stub-tests
 - ✅ team-onboarding-kit
 - ✅ codex-hook-injection-fix
 - ✅ codex-project-hooks-probe

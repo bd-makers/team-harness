@@ -101,4 +101,5 @@
 | chad | handoff-hook-churn | ✅ done | 2026-09-11 |
 | chad | review-adopt-record-quality | ✅ done | 2026-09-11 |
 | chad | review-codex-live-check | ✅ done | 2026-09-11 |
+| chad | docs-html-stub-tests | ✅ done | 2026-09-12 |
 | chad | team-onboarding-kit | ✅ done | 2026-09-12 |
