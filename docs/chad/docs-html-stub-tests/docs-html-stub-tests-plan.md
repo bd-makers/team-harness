@@ -41,7 +41,7 @@
 - [x] 커밋
 - [x] `/harness-review codex` — P2·P3 발견, 둘 다 진짜 결함으로 판별·조치 (a969f00)
 - [x] `/harness-retro` — 학습 4건 기록
-- [ ] `/harness-task done`
+- [x] `/harness-task done`
 
 ## Ontology 변경 로그
 
