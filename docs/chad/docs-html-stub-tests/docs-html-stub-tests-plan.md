@@ -7,15 +7,15 @@
 
 ## 단계
 
-- [ ] 작업 브랜치 생성 (`claude/docs-html-stub-tests`) — main 직접 작업 금지 (D5)
-- [ ] 원본 3종 무결성 확인 — `raw-stubs/`의 sha256이 아래 `## 참고` 표와 일치하는지 대조
-- [ ] `tests/helpers/html-script.mjs` — HTML에서 인라인 `<script>` 본문을 추출하는 헬퍼.
+- [x] 작업 브랜치 생성 (`claude/docs-html-stub-tests`) — main 직접 작업 금지 (D5)
+- [x] 원본 3종 무결성 확인 — `raw-stubs/`의 sha256이 아래 `## 참고` 표와 일치하는지 대조
+- [x] `tests/helpers/html-script.mjs` — HTML에서 인라인 `<script>` 본문을 추출하는 헬퍼.
       블록이 정확히 1개가 아니면 **throw** 한다 (HTML 구조가 바뀌면 조용히 틀리지 않게)
-- [ ] `tests/docs-kickoff-deck.test.mjs` — `dkstub.mjs` 변환 (22건). 셋 중 DOM 표면이 가장 넓어
+- [x] `tests/docs-kickoff-deck.test.mjs` — `dkstub.mjs` 변환 (22건). 셋 중 DOM 표면이 가장 넓어
       헬퍼 설계를 먼저 검증한다
-- [ ] `tests/docs-onboarding-checklist.test.mjs` — `obstub.mjs` 변환 (14건, `localStorage` 스텁 포함)
-- [ ] `tests/docs-playground.test.mjs` — `domstub2.mjs` 변환 (29건)
-- [ ] 양성 검증 — `npm test` 통과 + 아래 파일별 기준선과 대조.
+- [x] `tests/docs-onboarding-checklist.test.mjs` — `obstub.mjs` 변환 (14건, `localStorage` 스텁 포함)
+- [x] `tests/docs-playground.test.mjs` — `domstub2.mjs` 변환 (29건)
+- [x] 양성 검증 — `npm test` 통과 + 아래 파일별 기준선과 대조.
       **단위는 `node:assert` 호출 수(=원본 `t()` 호출 수)이지 `test()` 개수가 아니다** —
       `node:test`는 `test()` 개수만 출력하므로 총계를 러너 출력에서 그대로 읽을 수 없다.
       변환은 **원본 `t()` 하나당 `test()` 하나**로 한다(섹션 `[n]`은 `describe()`로 묶는다).
@@ -23,18 +23,20 @@
 
       | 파일 | 단언 | 원본 섹션 |
       |---|---|---|
-      | `tests/docs-playground.test.mjs` | 29 | 5 |
+      | `tests/docs-playground.test.mjs` | 29 (+1 추가) | 5 |
       | `tests/docs-onboarding-checklist.test.mjs` | 14 | 5 |
       | `tests/docs-kickoff-deck.test.mjs` | 22 | 4 |
-      | **합계** | **65** | 14 |
+      | **합계** | **65 변환 + 1 추가 = 66** | 14 |
+
+      추가 1건은 `PRESETS` 개수 가드 — 원본 루프가 `PRESETS` 비었을 때 조용히 통과하는 구멍을 닫는다.
 
       파일별로 대조해야 어느 변환에서 빠졌는지 좁혀진다. 총계만 보면 위치를 모른다
-- [ ] 음성 검증 — 세 HTML을 하나씩 고의로 깨서(예: 덱 슬라이드 1장 제거, 체크리스트 항목 1개 제거,
+- [x] 음성 검증 — 세 HTML을 하나씩 고의로 깨서(예: 덱 슬라이드 1장 제거, 체크리스트 항목 1개 제거,
       playground 프리셋 1개 제거) 해당 테스트가 **실패하는지** 확인한 뒤 되돌린다.
       통과만 보고 끝내면 테스트가 실제로 무엇도 지키지 않을 수 있다
-- [ ] `docs/chad/docs-html-stub-tests/raw-stubs/` 삭제 — 승격이 끝나면 원본은 중복이다
-- [ ] `git status`로 `docs/*.html`·`package.json` 무변경 확인
-- [ ] `git add -A` 후 `npm run docs:check` 재실행 — `docs:generate`는 `git ls-files` 기반이라
+- [x] `docs/chad/docs-html-stub-tests/raw-stubs/` 삭제 — 승격이 끝나면 원본은 중복이다
+- [x] `git status`로 `docs/*.html`·`package.json` 무변경 확인
+- [x] `git add -A` 후 `npm run docs:check` 재실행 — `docs:generate`는 `git ls-files` 기반이라
       untracked 파일을 못 본다. add 전의 green은 증거가 아니다
 - [ ] 커밋
 - [ ] `/harness-review codex` — read-only 외부 리뷰, 결과를 artifact `## Reviews`에 기록 (spec의 `review: required`)
@@ -58,7 +60,8 @@
 | `raw-stubs/obstub.mjs` | `93674f76981b5224d40f24dfdf7583f7ced87519c9426f22310860748e5542a1` |
 | `raw-stubs/dkstub.mjs` | `8c85a434b313dbecdc1d774aa1a588033a9d3944c64a348f143e70f25a02b293` |
 
-`/tmp`의 동명 파일이 원본이며 언제든 사라질 수 있다. `raw-stubs/`가 실질 정본이다.
+`/tmp`의 동명 파일이 원본이며 언제든 사라질 수 있다. `raw-stubs/`는 승격 완료 후 삭제했으므로
+이제 원본은 커밋 `21085e1`에만 남아 있다 — 필요하면 `git show 21085e1:docs/chad/docs-html-stub-tests/raw-stubs/<파일>`.
 
 ### 다이어그램
 
