@@ -28,7 +28,7 @@ task-guide 73 KB · fleet 58 KB · schematics 59 KB · rubric 44 KB), 팀에 하
 
 | 산출물 | 성격 | 대체하는 것 |
 |---|---|---|
-| `index.html` 역할별 진입로 7카드 | 라우팅 | 파일 나열 |
+| `index.html` 역할별 진입로 6카드 | 라우팅 | 파일 나열 |
 | `harness-operations-playground.html` | 구성기 | 매번 절차를 기억해 내는 것 |
 | `harness-onboarding-checklist.html` | 실행 목록 24항목 | "task-guide 읽으세요" |
 | `harness-kickoff-deck.html` | 발표 16장 | 구두 설명 |

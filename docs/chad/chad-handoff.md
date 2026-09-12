@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+team-onboarding-kit
 
-## Last Completed Task (2026-09-11)
-`framing-prompts-in-src` — done
+## Last Commit (2026-09-12)
+b8316cd docs(team): 팀 전달용 온보딩 키트 4종 — 진입로·체크리스트·킥오프 덱·치트시트
 
 ## Full Context
-→ docs/chad/framing-prompts-in-src/framing-prompts-in-src-handoff.md
+→ docs/chad/team-onboarding-kit/team-onboarding-kit-handoff.md

@@ -8,14 +8,16 @@
 ## 단계
 
 - [x] 기존 문서 자산 조사 — 6종 590 KB의 커버 범위 확인, 중복 제작 회피 근거 확보
-- [x] `docs/index.html` — 역할별 진입로 카드 (5분 / 새 팀원 / 리뷰어 / 크루 운용 / 팀 소개 / 메인테이너)
+- [x] `docs/index.html` — 역할별 진입로 **6카드** (5분 / 새 팀원 / 리뷰어 / 크루 운용 / 팀 소개 / 메인테이너)
 - [x] `harness-operations-playground.html` — 운용 시나리오 구성기 (상황·게이트·리뷰·격리 → 실행 순서 · 자동 훅 · done 가드 판정 · 프롬프트)
 - [x] `harness-onboarding-checklist.html` — 24항목 5페이즈, 진행률 localStorage, 게이트 경고, 막힘 리포트
 - [x] `harness-kickoff-deck.html` — 16장 자립형 덱 (키보드 네비 · 개요 · 발표자 노트 · 인쇄)
 - [x] `harness-cheatsheet.html` — A4 1장 인쇄용 (명령 8 · 4파일 · 세 게이트 · Done evidence · 하지 말 것 7 · 막혔을 때 · 자동 훅 · 채널 3 · D2~D6)
 - [x] 덱 문구 확정 — 14장 1번 "가급적"으로 완화, 15장을 7개 전체로 확장 (사용자 승인)
-- [x] 검증 — index 링크 121개 해석(앵커 포함), 치트시트 A4 1페이지(headless Chrome PDF), 덱 16장 오버플로 0, DOM 스텁 인터랙션 테스트 3종 통과, `npm run docs:check` green
-- [ ] 커밋
+- [x] 검증 — 실제 명령·출력은 artifact.md `## 검증 증거` 참조
+- [x] codex-shipcheck 반영 — S1(카드 수 오기) · S5(증거 산문화) 수정, 판별·조치는 artifact.md `## Reviews`
+- [x] 커밋 (b8316cd)
+- [ ] shipcheck 조치 커밋
 - [ ] `/harness-ship` — spec·plan·artifact 최종 갱신 후 PR 준비 완료 보고
 
 ## Ontology 변경 로그
