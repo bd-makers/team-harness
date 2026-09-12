@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light">
+<title>하네스 치트시트 — A4 한 장</title>
+<style>
+  :root{
+    color-scheme:light;
+    --ink:#15181f; --ink2:#3d4452; --faint:#6b7383; --line:#d4d9e2; --line2:#e8ebf0;
+    --hi:#5b4bd6; --ok:#0d7a4a; --bad:#b32c31; --warn:#8a6100;
+    --chip:#f0f2f6; --paper:#fff;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:#12151c; color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,'Pretendard','Apple SD Gothic Neo',system-ui,sans-serif;
+    padding:22px 12px 60px;
+  }
+  .sheet{
+    width:210mm; min-height:297mm; margin:0 auto; background:var(--paper);
+    padding:11mm 11mm 9mm; box-shadow:0 14px 50px rgba(0,0,0,.5);
+    display:flex; flex-direction:column;
+  }
+  header{display:flex;align-items:baseline;gap:9px;border-bottom:1.6pt solid var(--ink);padding-bottom:4px;margin-bottom:7px}
+  header h1{font-size:13pt;letter-spacing:-.01em;font-weight:700}
+  header .sub{font-size:7.6pt;color:var(--faint)}
+  header .ver{margin-left:auto;font-family:var(--mono);font-size:7pt;color:var(--faint)}
+
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:0 7mm;flex:1;align-content:stretch}
+  .col{display:flex;flex-direction:column;justify-content:space-between;gap:5.5px;min-width:0}
+  .box{border:.7pt solid var(--line);border-radius:2.4mm;padding:2.6mm 3mm;break-inside:avoid}
+  .box>h2{
+    font-size:8.4pt;font-weight:700;letter-spacing:-.01em;margin-bottom:2.4mm;
+    display:flex;align-items:center;gap:1.6mm;
+  }
+  .box>h2 .n{
+    font-family:var(--mono);font-size:6.4pt;background:var(--ink);color:#fff;
+    width:3.6mm;height:3.6mm;border-radius:.8mm;display:grid;place-items:center;flex:none;
+  }
+  .box>h2 .hint{margin-left:auto;font-weight:400;font-size:6.8pt;color:var(--faint)}
+  .box.alert{border-color:var(--bad);border-width:1pt}
+  .box.alert>h2{color:var(--bad)} .box.alert>h2 .n{background:var(--bad)}
+  .box.gate{border-color:var(--warn)}
+  .box.gate>h2{color:var(--warn)} .box.gate>h2 .n{background:var(--warn)}
+
+  table{width:100%;border-collapse:collapse;font-size:7.5pt;line-height:1.42}
+  td{padding:.9mm 0;vertical-align:top;border-top:.4pt solid var(--line2)}
+  tr:first-child td{border-top:none}
+  td.k{white-space:nowrap;padding-right:2.2mm;width:1%}
+  td.k code{font-size:7.3pt}
+  .d{color:var(--ink2)}
+  .d b{color:var(--ink);font-weight:600}
+  .d em{font-style:normal;color:var(--bad);font-weight:600}
+  code{
+    font-family:var(--mono);font-size:7.2pt;background:var(--chip);
+    padding:.2mm .9mm;border-radius:.7mm;white-space:nowrap;
+  }
+  code.big{font-size:7.6pt;font-weight:600;background:none;padding:0;color:var(--hi)}
+  ul{list-style:none;font-size:7.5pt;line-height:1.5}
+  ul li{display:grid;grid-template-columns:3.2mm 1fr;gap:1.4mm;padding:.7mm 0;color:var(--ink2)}
+  ul li .m{color:var(--bad);font-weight:700;line-height:1.35}
+  ul li .m.ok{color:var(--ok)}
+  ul li b{color:var(--ink);font-weight:600}
+  .flow{
+    display:flex;flex-wrap:wrap;gap:1.1mm;align-items:center;font-family:var(--mono);
+    font-size:6.9pt;margin-bottom:2mm;
+  }
+  .flow span{background:var(--chip);border-radius:.9mm;padding:.5mm 1.4mm}
+  .flow i{color:var(--faint);font-style:normal}
+  .flow span.g{background:#e8f3ec;color:var(--ok);font-weight:600}
+  .json{
+    font-family:var(--mono);font-size:7pt;background:#f7f8fb;border:.4pt solid var(--line2);
+    border-radius:1.2mm;padding:1.4mm 2mm;margin-bottom:1.8mm;color:var(--hi);
+  }
+  footer{border-top:.7pt solid var(--line);margin-top:5px;padding-top:2.4mm;font-size:6.8pt;color:var(--faint);line-height:1.55}
+  footer b{color:var(--ink2)}
+
+  #bar{position:fixed;right:16px;top:16px;display:flex;gap:7px;z-index:9}
+  #bar button{
+    background:#1e2230;border:1px solid #343b4d;color:#c9d1e0;border-radius:7px;
+    padding:7px 13px;font-size:12px;cursor:pointer;
+  }
+  #bar button:hover{border-color:#5b4bd6;color:#fff}
+  #warn{
+    position:fixed;left:16px;top:16px;background:#3a1b1e;border:1px solid #7a3a3f;color:#f2a0a3;
+    border-radius:7px;padding:7px 12px;font-size:12px;z-index:9;display:none;
+  }
+  /* 인쇄: @page가 여백을 잡고, sheet는 자연 높이로 흐르게 둔다.
+     화면용 297mm 고정 높이를 그대로 두면 여백과 겹쳐 2페이지로 넘어간다. */
+  @page{size:A4 portrait;margin:10mm}
+  @media print{
+    body{background:#fff;padding:0}
+    .sheet{box-shadow:none;margin:0;width:auto;min-height:0;padding:0}
+    .grid{flex:none}
+    .col{justify-content:flex-start}
+    #bar,#warn{display:none!important}
+  }
+</style>
+</head>
+<body>
+<div id="bar"><button onclick="print()">인쇄 / PDF</button></div>
+<div id="warn"></div>
+
+<div class="sheet" id="sheet">
+  <header>
+    <h1>하네스 치트시트</h1>
+    <span class="sub">harness-aijient-team — 하루에 실제로 쓰는 것만</span>
+    <span class="ver" id="ver"></span>
+  </header>
+
+  <div class="grid">
+  <div class="col">
+
+    <div class="box">
+      <h2><span class="n">1</span>하루의 명령<span class="hint">이 여덟 개면 충분</span></h2>
+      <div class="flow">
+        <span>task</span><i>→</i><span>spec</span><i>→</i><span>plan</span><i>→</i><span>구현</span>
+        <i>→</i><span>review</span><i>→</i><span>ship</span><i>→</i><span class="g">done</span>
+      </div>
+      <table>
+        <tr><td class="k"><code>/harness-task &lt;name&gt;</code></td><td class="d">생성 <b>또는</b> 활성화. 같은 이름이면 그 task로 전환</td></tr>
+        <tr><td class="k"><code>/harness-task list</code></td><td class="d"><code>*</code> 가 활성 task</td></tr>
+        <tr><td class="k"><code>/harness-spec</code></td><td class="d">spec 초안 — Confluence · Figma · 인터뷰 3소스 (writer)</td></tr>
+        <tr><td class="k"><code>/harness-interview</code></td><td class="d">선행 채점 + 소크라테스 검증 (validator)</td></tr>
+        <tr><td class="k"><code>/harness-review [engine]</code></td><td class="d">외부 read-only 리뷰. 엔진 생략 시 codex → claude 폴백</td></tr>
+        <tr><td class="k"><code>/harness-ship</code></td><td class="d"><em>준비 완료 보고에서 멈춘다</em> — PR을 만들지 않고 <code>done</code>도 아니다</td></tr>
+        <tr><td class="k"><code>/harness-task done</code></td><td class="d">가드 통과 시 종결</td></tr>
+        <tr><td class="k"><code>harness-team doctor</code></td><td class="d">막히면 제일 먼저. exit 1이면 작업을 시작하지 않는다</td></tr>
+      </table>
+    </div>
+
+    <div class="box">
+      <h2><span class="n">2</span>task 4파일<span class="hint">docs/&lt;member&gt;/&lt;name&gt;/</span></h2>
+      <table>
+        <tr><td class="k"><code>-spec.md</code></td><td class="d"><b>사람</b> · 요구사항 · Ambiguity 자가진단 · Ontology · Boundary contracts · Done evidence</td></tr>
+        <tr><td class="k"><code>-plan.md</code></td><td class="d"><b>사람</b> · 단계 체크리스트 — 산문이 아니라 <b>기계 입력</b></td></tr>
+        <tr><td class="k"><code>-handoff.md</code></td><td class="d"><b>하네스</b> · post-commit 훅이 갱신 — 손대지 않는다</td></tr>
+        <tr><td class="k"><code>-artifact.md</code></td><td class="d"><b>사람</b> · 결과 · 학습 · <code>## Reviews</code> — 팀 학습의 SSOT</td></tr>
+        <tr><td class="k"><code>-meta.json</code></td><td class="d"><b>하네스</b> · 기계 상태 — <em>손으로 고치지 않는다</em>. 판정 창이 여기서 정해진다</td></tr>
+        <tr><td class="k"><code>-context.md</code></td><td class="d">TCC(선택) · 6 KiB · 비공백 100행 · 미해결 <code>F-*</code> 3개 이하</td></tr>
+      </table>
+    </div>
+
+    <div class="box gate">
+      <h2><span class="n">3</span>세 게이트<span class="hint">코드가 판정한다</span></h2>
+      <table>
+        <tr><td class="k"><b>Ambiguity</b></td><td class="d">구현 진입 전 · spec에 자가진단·Ontology를 <b>직접</b> 쓴다<br>작은 버그·문서 수정은 생략해도 된다(강제 아님)</td></tr>
+        <tr><td class="k"><b>boundary</b></td><td class="d">plan 체크박스 완료 <b>직전</b> · 훅이 자동 실행<br>producer·consumer JSON Schema의 <code>required</code>·기본 <code>type</code> 대조. LLM 아님</td></tr>
+        <tr><td class="k"><b>done 가드</b></td><td class="d">종결 직전 · 마커의 <b>존재 · kind · 시각</b>만 읽는다<br>판정 창 = <code>reopenedAt || firstActivatedAt</code> 이후</td></tr>
+      </table>
+    </div>
+
+    <div class="box">
+      <h2><span class="n">4</span>Done evidence<span class="hint">spec에 선언</span></h2>
+      <div class="json">{ "version": 1, "tests": "required", "review": "optional", "verify": "optional" }</div>
+      <table>
+        <tr><td class="k"><code>tests</code></td><td class="d">기본 <code>required</code> — 소스가 바뀌었으면 테스트 파일 변경도 요구</td></tr>
+        <tr><td class="k"><code>review</code></td><td class="d">기본 <code>optional</code> — <code>required</code>면 판정 창 안의 리뷰 마커 요구 (kind 무관)</td></tr>
+        <tr><td class="k"><code>verify</code></td><td class="d">기본 <code>optional</code> — <b>검증 프레이밍 kind만</b> 인정<br>
+          <code>-adversarial</code> <code>-testcritic</code> <code>-shipcheck</code> <code>-contrarian</code> <code>-simplifier</code><br>
+          <em>검증 마커는 review를 겸하지만 역은 아니다</em></td></tr>
+      </table>
+    </div>
+
+  </div>
+  <div class="col">
+
+    <div class="box alert">
+      <h2><span class="n">✕</span>하지 말 것<span class="hint">전부 실제 사고 사례</span></h2>
+      <ul>
+        <li><span class="m">✕</span><span><b>안 끝난 단계를 <code>- [x]</code>로 켜기</b> — 체크박스는 <code>done</code> 가드와 세션 재개 판정이 읽는다</span></li>
+        <li><span class="m">✕</span><span><b>spec을 외부 문서 포인터 껍데기로 두기</b> — 자가진단 없는 spec은 doctor가 경고</span></li>
+        <li><span class="m">✕</span><span><b>같은 브랜치·워킹트리에서 병렬로 쓰기</b>(D4) — 격리하려면 worktree(D5). 읽기·반박 병렬은 자유</span></li>
+        <li><span class="m">✕</span><span><b>리뷰를 돌리고 기록 안 남기기</b> — 남기지 않은 리뷰는 “안 한 것”</span></li>
+        <li><span class="m">✕</span><span><b>집계 파일 손으로 고치기</b> — <code>task_summary.md</code>·<code>&lt;user&gt;-task.md</code>는 생성물</span></li>
+        <li><span class="m">✕</span><span><b>다이어그램 체크박스 지우기</b> — 못 했으면 지우지 말고 사유를 붙여 닫는다</span></li>
+        <li><span class="m">✕</span><span><b>개인 메모리에 팀 학습 넣기</b> — 다른 팀원·리뷰 엔진에게 안 보인다</span></li>
+      </ul>
+    </div>
+
+    <div class="box">
+      <h2><span class="n">5</span>막혔을 때<span class="hint">순서대로</span></h2>
+      <table>
+        <tr><td class="k">1 <code>/harness-interview</code></td><td class="d">입력(스펙)이 모호한가</td></tr>
+        <tr><td class="k">2 <code>/harness-contrarian</code></td><td class="d">가정이 옳은가 — 엔진 인수를 주면 외부 검증자가 반론</td></tr>
+        <tr><td class="k">3 <code>/harness-simplifier</code></td><td class="d">더 적게 만들 수 있는가</td></tr>
+        <tr><td class="k">4 <b>escalation</b></td><td class="d">5파일 이상 · 아키텍처 · 보안 · 동시성이면 <em>코드 쓰기 전에 멈추고</em><br>
+          결정 요청 / 권장안 / 시도한 대안 / 기다림의 비용 / 안전 기본값</td></tr>
+      </table>
+    </div>
+
+    <div class="box">
+      <h2><span class="n">6</span>자동으로 도는 것<span class="hint">내가 부르지 않는다</span></h2>
+      <table>
+        <tr><td class="k">SessionStart</td><td class="d">활성 task + Context Card 주입</td></tr>
+        <tr><td class="k">Edit/Write 전</td><td class="d">보호 파일 차단 · boundary 대조</td></tr>
+        <tr><td class="k">Bash 전</td><td class="d">위험 git 차단 · 커밋 전 점검</td></tr>
+        <tr><td class="k">Edit/Write 후</td><td class="d">자동 포맷</td></tr>
+        <tr><td class="k">post-commit</td><td class="d">handoff 갱신 (핸드오프만 바꾼 sweep 커밋은 제외)</td></tr>
+        <tr><td class="k">모든 도구</td><td class="d">관측 로그 · 트립와이어 (<code>/harness-observe</code>)</td></tr>
+      </table>
+    </div>
+
+    <div class="box">
+      <h2><span class="n">7</span>커맨드가 안 보이면<span class="hint">채널 3개</span></h2>
+      <table>
+        <tr><td class="k"><code>init</code></td><td class="d">프로젝트당 1회 — hooks · rules · AGENTS/CLAUDE · docs 구조<br>
+          <b>clone한 저장소엔 이미 커밋돼 있다</b></td></tr>
+        <tr><td class="k">플러그인</td><td class="d">사람·머신마다 — <code>/harness-*</code> 슬래시 커맨드는 <b>여기서만</b> 온다</td></tr>
+        <tr><td class="k">전역 CLI</td><td class="d">사람마다 — 터미널과 훅이 부르는 <code>harness-team</code><br>
+          <code>harness-team --version</code>이 <code>Unknown command</code>면 클론이 낡은 것</td></tr>
+      </table>
+    </div>
+
+    <div class="box">
+      <h2><span class="n">8</span>역할 규범<span class="hint">decisions.md가 정본</span></h2>
+      <ul>
+        <li><span class="m ok">D2</span><span>작성 = Claude, 리뷰 = Codex — 작성자와 리뷰어를 분리</span></li>
+        <li><span class="m ok">D4</span><span>같은 워킹트리·브랜치에서 쓰기는 <b>단일 스레드</b></span></li>
+        <li><span class="m ok">D5</span><span>격리된 브랜치·worktree + PR 병합은 <b>허용·권장</b></span></li>
+        <li><span class="m ok">D6</span><span>검증자는 별도 컨텍스트 read-only — <b>반박만 하고 고치지 않는다</b></span></li>
+      </ul>
+    </div>
+
+  </div>
+  </div>
+
+  <footer>
+    <b>종결 후</b> 기본 브랜치에서 <code>harness-team summary --write</code> — <code>task</code>/<code>done</code>은 집계 파일을 건드리지 않는다 ·
+    <b>학습</b>은 artifact.md에 append, 같은 교정이 3회 이상 반복되면 <code>/harness-promote</code>로 <code>.claude/rules</code> 승격(항목은 사람이 고른다) ·
+    <b>더 보기</b> docs/index.html · harness-onboarding-checklist.html · harness-operations-playground.html
+  </footer>
+</div>
+
+<script>
+// 한 장을 넘기면 화면에서 알려 준다 (인쇄 전에 눈으로 확인 가능)
+const PX_PER_MM = 96/25.4;
+function check(){
+  const el=document.getElementById('sheet'), w=document.getElementById('warn');
+  const over = el.scrollHeight - Math.round(297*PX_PER_MM);
+  if(over>2){ w.style.display='block'; w.textContent=`\u26a0 A4 한 장을 ${Math.round(over/PX_PER_MM)}mm 넘습니다 — 항목을 줄이세요`; }
+  else { w.style.display='none'; console.log('[cheatsheet] fits A4 · 여유 '+Math.round(-over/PX_PER_MM)+'mm'); }
+}
+document.getElementById('ver').textContent=new Date().toISOString().slice(0,10);
+addEventListener('load',check); addEventListener('resize',check); check();
+</script>
+</body>
+</html>

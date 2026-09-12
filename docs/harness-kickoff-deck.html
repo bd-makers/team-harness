@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>하네스 킥오프 — 팀 발표 덱</title>
+<style>
+  :root{
+    --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a; --border:#2e3350;
+    --accent:#7c6af5; --accent2:#50c8f5; --accent3:#4df0aa;
+    --warn:#f5c451; --bad:#f2777a; --text:#e2e6f0; --muted:#8a92ae;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:#07080c}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Pretendard','Apple SD Gothic Neo',system-ui,sans-serif;
+    color:var(--text);
+  }
+  #viewport{position:fixed;inset:0;display:grid;place-items:center}
+  #stage{
+    width:1280px;height:720px;background:var(--bg);position:relative;
+    transform-origin:center center;box-shadow:0 0 0 1px var(--border),0 30px 80px rgba(0,0,0,.6);
+    overflow:hidden;
+  }
+  .slide{
+    position:absolute;inset:0;padding:62px 72px 76px;display:none;
+    flex-direction:column;
+  }
+  .slide.on{display:flex}
+  .eyebrow{
+    font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent2);
+    font-weight:600;margin-bottom:14px;
+  }
+  h1{font-size:56px;line-height:1.12;letter-spacing:-.025em;font-weight:680}
+  h2{font-size:38px;line-height:1.2;letter-spacing:-.02em;font-weight:650;margin-bottom:10px}
+  .lede{font-size:20px;color:var(--muted);line-height:1.55;max-width:56ch}
+  .big{font-size:30px;line-height:1.45;font-weight:500;max-width:44ch}
+  .big em{font-style:normal;color:var(--accent3)}
+  .big s{color:var(--muted);text-decoration-color:var(--bad)}
+  .body{flex:1;display:flex;flex-direction:column;justify-content:center;gap:18px;min-height:0}
+  .body.top{justify-content:flex-start;padding-top:8px}
+  code{font-family:var(--mono);font-size:.88em;background:var(--surface2);padding:2px 7px;border-radius:5px;color:var(--text)}
+  .mono{font-family:var(--mono)}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:22px;min-width:0}
+  .cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;min-width:0}
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:12px;
+    padding:20px 22px;min-width:0;
+  }
+  .card h3{font-size:19px;font-weight:620;margin-bottom:7px;display:flex;align-items:center;gap:9px}
+  .card p{font-size:15px;color:var(--muted);line-height:1.6}
+  .card .num{
+    font-family:var(--mono);font-size:12px;color:var(--bg);background:var(--accent2);
+    border-radius:5px;width:22px;height:22px;display:grid;place-items:center;flex:none;font-weight:700;
+  }
+  .card.good{border-left:3px solid var(--accent3)}
+  .card.bad{border-left:3px solid var(--bad)}
+  .card.warn{border-left:3px solid var(--warn)}
+  .card.good h3{color:var(--accent3)} .card.bad h3{color:var(--bad)} .card.warn h3{color:var(--warn)}
+
+  ul.pts{list-style:none;display:flex;flex-direction:column;gap:14px}
+  ul.pts li{display:grid;grid-template-columns:26px 1fr;gap:14px;font-size:21px;line-height:1.5}
+  ul.pts li .b{
+    font-family:var(--mono);font-size:12px;color:var(--accent2);background:var(--surface2);
+    border-radius:6px;height:24px;display:grid;place-items:center;margin-top:5px;font-weight:700;
+  }
+  ul.pts li small{display:block;font-size:15px;color:var(--muted);line-height:1.55;margin-top:3px}
+  ul.pts.dense{display:grid;grid-template-columns:1fr 1fr;gap:11px 28px;align-content:start}
+  ul.pts.dense li{font-size:17.5px;grid-template-columns:23px 1fr;gap:11px;line-height:1.42}
+  ul.pts.dense li .b{height:21px;font-size:11px;margin-top:3px}
+  ul.pts.dense li small{font-size:13.5px;line-height:1.48;margin-top:2px}
+
+  table.t{width:100%;border-collapse:collapse;font-size:16px}
+  table.t th{
+    text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);
+    font-weight:600;padding:0 12px 9px;border-bottom:1px solid var(--border);
+  }
+  table.t td{padding:11px 12px;border-bottom:1px solid #1e2331;vertical-align:top;line-height:1.5}
+  table.t td:first-child{font-weight:550;white-space:nowrap}
+  table.t td small{color:var(--muted);font-size:14px}
+
+  .quote{
+    font-size:27px;line-height:1.5;font-weight:500;border-left:3px solid var(--accent);
+    padding-left:24px;max-width:48ch;
+  }
+  .quote cite{display:block;font-style:normal;font-size:15px;color:var(--muted);margin-top:14px}
+
+  .foot{
+    position:absolute;left:72px;right:72px;bottom:26px;display:flex;align-items:center;
+    gap:14px;font-size:13px;color:var(--muted);
+  }
+  .foot .dot{width:5px;height:5px;border-radius:50%;background:var(--border)}
+  .foot .pg{margin-left:auto;font-family:var(--mono)}
+  .prog{position:absolute;left:0;bottom:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent3));transition:width .2s}
+
+  /* 발표자 노트 */
+  #notes{
+    position:fixed;left:0;right:0;bottom:0;background:#0a0c12;border-top:1px solid var(--border);
+    padding:14px 20px;font-size:14px;line-height:1.6;color:var(--muted);max-height:26vh;overflow:auto;display:none;
+  }
+  #notes.on{display:block}
+  #notes b{color:var(--accent3)}
+
+  /* 개요 */
+  #overview{position:fixed;inset:0;background:#07080c;overflow:auto;padding:28px;display:none;z-index:20}
+  #overview.on{display:block}
+  #overview .g{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:14px;max-width:1200px;margin:0 auto}
+  #overview .th{
+    background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:12px 13px;
+    cursor:pointer;min-height:92px;
+  }
+  #overview .th:hover{border-color:var(--accent2)}
+  #overview .th.cur{border-color:var(--accent);background:#1c1a33}
+  #overview .th .n{font-family:var(--mono);font-size:11px;color:var(--muted)}
+  #overview .th .tt{font-size:14px;font-weight:560;margin-top:4px;line-height:1.35}
+
+  #help{
+    position:fixed;right:14px;top:14px;font-size:12px;color:var(--muted);font-family:var(--mono);
+    background:#0a0c12cc;border:1px solid var(--border);border-radius:7px;padding:7px 11px;z-index:30;
+  }
+  @media print{
+    html,body{overflow:visible;background:#fff}
+    #viewport{position:static;display:block}
+    #stage{width:100%;height:auto;box-shadow:none;transform:none!important}
+    .slide{display:flex!important;position:relative;inset:auto;height:720px;page-break-after:always;border-bottom:1px solid #333}
+    #help,#notes,#overview{display:none!important}
+  }
+</style>
+</head>
+<body>
+<div id="help">← → 이동 · O 개요 · S 노트 · F 전체화면</div>
+<div id="viewport"><div id="stage"></div></div>
+<div id="notes"></div>
+<div id="overview"><div class="g" id="ovg"></div></div>
+
+<script>
+const SLIDES = [
+{ t:'하네스란 무엇인가', kicker:null, note:'20분 목표: 왜 도입하는지 + 월요일부터 무엇을 바꾸는지. 메커니즘 전부를 설명하려 하지 말 것.',
+  html:`<div class="body">
+    <div class="eyebrow">team kickoff</div>
+    <h1>AI와 같이 일할 때<br>무엇을 기록으로 남길 것인가</h1>
+    <p class="lede" style="margin-top:22px">harness-aijient-team — Claude가 작성하고 Codex가 반박하며,
+      합의와 근거가 저장소에 남는 팀 작업 규약.</p>
+  </div>` },
+
+{ t:'문제 — 재작업은 실력 문제가 아니다', kicker:'왜',
+  note:'여기서 공감을 얻지 못하면 뒤가 안 먹힌다. 최근 우리 팀에서 있었던 재작업 사례 하나를 즉석에서 붙일 것.',
+  html:`<div class="body">
+    <h2>재작업의 원인은 코딩 실력이 아니라<br><em style="color:var(--warn);font-style:normal">입력의 모호성</em>입니다</h2>
+    <p class="lede">LLM은 모호한 요구사항을 되묻지 않고 그럴듯하게 채웁니다.
+      채워진 가정이 틀렸다는 건 대개 구현이 끝난 뒤에 드러납니다.</p>
+  </div>` },
+
+{ t:'문제 — 실제로 새는 곳 3가지', kicker:'왜',
+  note:'세 가지 모두 "사람이 성실하면 해결된다"고 믿었던 것들. 성실성에 기대는 대신 게이트로 만든 게 하네스.',
+  html:`<div class="body"><h2>성실성에 기대던 것들</h2>
+  <div class="cols3" style="margin-top:14px">
+    <div class="card bad"><h3>합의가 안 남는다</h3><p>무엇을 하기로 했는지가 대화창에만 있다. 세션이 끝나면 사라진다.</p></div>
+    <div class="card bad"><h3>리뷰가 기억에만 남는다</h3><p>돌리긴 했는데 무엇을 지적받았고 무엇을 반영했는지 추적이 안 된다.</p></div>
+    <div class="card bad"><h3>재개 비용이 크다</h3><p>어제 어디까지 했는지 다시 찾는 데 매번 20분.</p></div>
+  </div></div>` },
+
+{ t:'답 — task 하나 = 4파일', kicker:'무엇을',
+  note:'이 네 파일이 SSOT. 외부 문서로 분리하더라도 spec을 포인터 껍데기로 두지 말 것 — doctor가 경고한다.',
+  html:`<div class="body"><h2>task 하나가 네 파일을 가진다</h2>
+  <p class="lede" style="margin-bottom:6px"><code>docs/&lt;member&gt;/&lt;name&gt;/</code> — 이 넷이 단일 소스(SSOT)입니다.</p>
+  <table class="t"><tr>
+    <td><code>spec.md</code></td><td>요구사항·설계<br><small>Ambiguity 자가진단 · Ontology · Boundary contracts · Done evidence</small></td>
+    <td><code>plan.md</code></td><td>단계 체크리스트<br><small>줄머리 체크박스는 산문이 아니라 <b>기계 입력</b>이다</small></td></tr>
+  <tr><td><code>handoff.md</code></td><td>세션 인수인계<br><small>post-commit 훅이 자동 갱신 — 사람이 쓰지 않는다</small></td>
+    <td><code>artifact.md</code></td><td>실행 결과·학습·<code>## Reviews</code><br><small>팀 학습의 SSOT</small></td></tr>
+  </table></div>` },
+
+{ t:'하루의 루프', kicker:'어떻게',
+  note:'ship은 준비 완료 보고에서 멈춘다 — PR을 만들지 않고 done을 대체하지도 않는다. 여기 질문이 자주 나옴.',
+  html:`<div class="body"><h2>task 하나가 열리고 닫히는 길</h2>
+  <svg viewBox="0 0 1130 210" style="width:100%;max-height:250px;margin-top:6px" role="img" aria-label="task 수명주기">
+    <defs><marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+      <path d="M0,0 L7,3 L0,6 Z" fill="#3a4260"/></marker></defs>
+    ${[['task','열기'],['spec','합의'],['plan','분해'],['구현','+테스트'],['review','반박'],['ship','정리'],['done','판정']]
+      .map((n,i)=>`<g transform="translate(${i*160},58)">
+        <rect width="128" height="66" rx="11" fill="${i===6?'#12261d':'#1a1d27'}" stroke="${i===6?'#2e6b4e':'#2e3350'}"/>
+        <text x="64" y="29" text-anchor="middle" fill="#e2e6f0" font-size="19" font-weight="600" font-family="ui-monospace,Menlo,monospace">${n[0]}</text>
+        <text x="64" y="50" text-anchor="middle" fill="#8a92ae" font-size="13">${n[1]}</text></g>
+        ${i<6?`<line x1="${i*160+130}" y1="91" x2="${i*160+156}" y2="91" stroke="#3a4260" stroke-width="2" marker-end="url(#ar)"/>`:''}`).join('')}
+    <text x="0" y="165" fill="#8a92ae" font-size="14">SessionStart 훅이 활성 task와 Context Card를 주입</text>
+    <text x="640" y="165" fill="#8a92ae" font-size="14">post-commit 훅이 handoff 갱신</text>
+    <text x="0" y="192" fill="#f5c451" font-size="14">ship은 “준비 완료 보고”에서 멈춘다 — PR을 만들지 않고, done을 대체하지도 않는다</text>
+  </svg></div>` },
+
+{ t:'세 개의 게이트', kicker:'어떻게',
+  note:'핵심 슬라이드. 셋 다 "사람의 성실성"이 아니라 코드가 판정한다는 점을 강조.',
+  html:`<div class="body"><h2>task는 세 개의 게이트를 지난다</h2>
+  <svg viewBox="0 0 1130 150" style="width:100%;max-height:170px" role="img" aria-label="세 게이트">
+    <line x1="20" y1="62" x2="1110" y2="62" stroke="#2e3350" stroke-width="2"/>
+    ${[[120,'Ambiguity','구현 진입 전','#f5c451'],[520,'boundary check','plan 체크박스 직전','#50c8f5'],[930,'done 가드','종결 직전','#4df0aa']]
+      .map(([x,a,b,c])=>`<g><circle cx="${x}" cy="62" r="13" fill="#0f1117" stroke="${c}" stroke-width="3"/>
+        <text x="${x}" y="26" text-anchor="middle" fill="${c}" font-size="19" font-weight="650">${a}</text>
+        <text x="${x}" y="108" text-anchor="middle" fill="#8a92ae" font-size="14">${b}</text></g>`).join('')}
+    <text x="20" y="142" fill="#8a92ae" font-size="14">셋 다 사람의 성실성이 아니라 코드가 판정합니다 — 두 번째와 세 번째는 LLM조차 개입하지 않습니다.</text>
+  </svg>
+  <div class="cols3" style="margin-top:6px">
+    <div class="card warn"><h3>① 자가진단</h3><p>spec에 모호성 점검과 Ontology를 직접 쓴다. 외부 포인터 껍데기는 doctor가 경고.</p></div>
+    <div class="card"><h3>② 결정론적 대조</h3><p>producer·consumer JSON Schema의 필수 필드와 기본 type을 훅이 자동 대조.</p></div>
+    <div class="card good"><h3>③ 증거 판정</h3><p>마커의 <b>존재·kind·시각</b>만 읽는다. 내용의 품질은 판정하지 않는다.</p></div>
+  </div></div>` },
+
+{ t:'게이트 ③ done — 증거로 닫는다', kicker:'어떻게',
+  note:'"검증 마커는 review 증거를 겸하지만 역은 아니다" — 이 비대칭이 자주 헷갈린다.',
+  html:`<div class="body"><h2><code style="font-size:.8em">done</code>은 상태가 아니라 판정이다</h2>
+  <p class="lede">spec에 이렇게 선언하면, 그 수준을 만족하는 증거가 판정 창 안에 있어야 task가 닫힙니다.</p>
+  <div style="background:#0b0e15;border:1px solid var(--border);border-radius:10px;padding:16px 20px;font-family:var(--mono);font-size:19px;color:var(--accent2)">
+    { "version": 1, "tests": "required", "review": "required", "verify": "required" }</div>
+  <table class="t" style="margin-top:4px">
+    <tr><td><code>tests</code></td><td>소스가 바뀌었으면 테스트 파일 변경도 요구</td></tr>
+    <tr><td><code>review</code></td><td>판정 창 안의 리뷰 마커를 요구 — kind는 대조하지 않음</td></tr>
+    <tr><td><code>verify</code></td><td><b>검증 프레이밍 kind</b> 마커만 인정<br>
+      <small><code>-adversarial</code> · <code>-testcritic</code> · <code>-shipcheck</code> · <code>-contrarian</code> · <code>-simplifier</code> —
+      검증 마커는 review 증거를 겸하지만 <b>역은 성립하지 않습니다</b></small></td></tr>
+  </table></div>` },
+
+{ t:'무엇이 자동이고 무엇이 규범인가', kicker:'경계',
+  note:'왼쪽은 안 지킬 수가 없고, 오른쪽은 안 지켜도 아무도 안 막는다. 오른쪽이 오늘 발표의 진짜 대상.',
+  html:`<div class="body"><h2>훅이 하는 일 vs 사람이 지키는 일</h2>
+  <div class="cols">
+    <div class="card good"><h3>자동 — 안 지킬 수가 없다</h3><p style="line-height:1.85">
+      SessionStart → 활성 task·Context Card 주입<br>
+      Edit/Write 전 → 보호 파일 차단 · boundary 대조<br>
+      Bash 전 → 위험 git 차단 · 커밋 전 점검<br>
+      Edit/Write 후 → 자동 포맷<br>
+      post-commit → handoff 갱신<br>
+      모든 도구 → 관측 로그 · 트립와이어</p></div>
+    <div class="card warn"><h3>규범 — 안 지켜도 아무도 안 막는다</h3><p style="line-height:1.85">
+      spec에 자가진단을 <b>실제로</b> 쓰는 것<br>
+      끝난 단계만 체크박스를 켜는 것<br>
+      리뷰 결과를 artifact에 남기는 것<br>
+      학습을 artifact에 append하는 것<br>
+      같은 브랜치에서 병렬로 쓰지 않는 것<br>
+      <b style="color:var(--warn)">오늘 발표의 대상은 이쪽입니다</b></p></div>
+  </div></div>` },
+
+{ t:'왜 병렬로 쓰지 않나', kicker:'규범',
+  note:'D4/D5. 격리하면 병렬은 권장이다 — 금지가 아니라 조건부라는 점을 분명히.',
+  html:`<div class="body"><h2>쓰기는 한 레인, 반박은 다른 레인</h2>
+  <div class="cols">
+    <div class="card bad"><h3>D4 — 같은 워킹트리·브랜치</h3><p>어떤 세션·에이전트도 <b>동시에 병렬로 쓰지 않습니다.</b>
+      같은 대상에 대한 병렬 쓰기는 상충 위험이 실재합니다. 한 세션 안에서는 예외가 없습니다.</p></div>
+    <div class="card good"><h3>D5 — 격리된 브랜치·worktree</h3><p>각자 다른 worktree에서 작업하고 PR/MR로 병합하는 경로는
+      쓰기 대상이 겹치지 않으므로 <b>허용이자 권장</b>입니다. 집계 파일만 기본 브랜치에서 갱신합니다.</p></div>
+  </div>
+  <p class="lede" style="font-size:18px">읽기·조사·반박은 병렬로 마음껏 — 컨텍스트 격리 서브에이전트는 표준 실무입니다.
+    제한은 <b>쓰기</b>에만 걸립니다.</p></div>` },
+
+{ t:'리뷰 — 작성자와 리뷰어를 나눈다', kicker:'규범',
+  note:'D2/D6. 검증자가 고치지 않는 이유: 고치면 그 수정 자체가 검증받지 않은 쓰기가 된다.',
+  html:`<div class="body"><h2>검증자는 반박만 하고 고치지 않는다</h2>
+  <ul class="pts">
+    <li><span class="b">D2</span><div>작성은 Claude, 리뷰는 Codex<small>작성자와 리뷰어의 분리를 우선합니다. 자기가 쓴 코드를 자기가 승인하지 않습니다.</small></div></li>
+    <li><span class="b">D6</span><div>검증자는 별도 컨텍스트의 <b>read-only</b><small>반박만 하고 고치지 않습니다. 반영은 작성 세션이 재현·판별한 뒤 단일 스레드로 합니다.</small></div></li>
+    <li><span class="b">기록</span><div>결과는 artifact <code>## Reviews</code>에 날짜·엔진과 함께<small><b>남기지 않은 리뷰는 “안 한 것”으로 칩니다.</b> 그 마커가 곧 done 가드의 증거입니다.</small></div></li>
+  </ul></div>` },
+
+{ t:'검증 프레이밍 5 + 1', kicker:'규범',
+  note:'전부 외울 필요 없다 — 단계마다 붙는 게 다르다는 것만. 상세는 루브릭 가이드.',
+  html:`<div class="body"><h2>어느 층을 반박할 것인가</h2>
+  <table class="t"><thead><tr><th>프레이밍</th><th>무엇을 반박하나</th><th>어느 단계</th></tr></thead>
+  <tr><td><code>contrarian</code></td><td>가정이 옳은가</td><td>spec · plan</td></tr>
+  <tr><td><code>simplifier</code></td><td>더 적게 만들 수 있는가</td><td>plan</td></tr>
+  <tr><td><code>testcritic</code></td><td>이 테스트가 진짜 무엇을 보장하나</td><td>테스트 3형제</td></tr>
+  <tr><td><code>adversarial</code></td><td>설계 결정과 가정 전반</td><td>구현 후</td></tr>
+  <tr><td><code>shipcheck</code></td><td>문서와 코드 현실이 어긋나지 않나</td><td>ship 직전</td></tr>
+  </table>
+  <p class="lede" style="font-size:17px">전부 외울 필요 없습니다 — 단계마다 붙는 게 다르다는 것만 알면 됩니다.</p></div>` },
+
+{ t:'학습이 쌓이는 자리', kicker:'규범',
+  note:'개인 메모리에 팀 학습을 넣지 말 것 — 다른 팀원과 리뷰 엔진에게 안 보인다.',
+  html:`<div class="body"><h2>교정은 어디에 남는가</h2>
+  <div class="cols3">
+    <div class="card"><h3><span class="num">1</span>artifact.md</h3><p>교정받은 패턴을 그 자리에서 append. 팀·프로젝트 학습의 SSOT입니다.</p></div>
+    <div class="card"><h3><span class="num">2</span>3회 반복</h3><p>같은 교정이 3회 이상 반복되고, 주관 없이 검사할 수 있고, 어기면 재작업이 따를 때만 후보.</p></div>
+    <div class="card good"><h3><span class="num">3</span>.claude/rules</h3><p><code>/harness-promote</code>로 승격. <b>어떤 항목을 올릴지는 사람이 고릅니다</b> — LLM 자기 승격 경로는 없습니다.</p></div>
+  </div>
+  <p class="lede" style="font-size:17px"><b style="color:var(--bad)">개인 메모리에 팀 학습을 넣지 마세요</b> — 다른 팀원과 리뷰 엔진에게 보이지 않습니다.</p></div>` },
+
+{ t:'3개 채널', kicker:'설치',
+  note:'"커맨드가 안 보인다 / 훅이 안 돈다"의 절반이 여기서 생긴다. 체크리스트로 넘기면 됨.',
+  html:`<div class="body"><h2>“커맨드가 안 보인다”의 절반은 여기</h2>
+  <p class="lede">구성요소는 서로 <b>독립된 3개 채널</b>로 도달합니다. 한 채널이 끝나도 다른 채널은 자동으로 끝나지 않습니다.</p>
+  <table class="t"><thead><tr><th>채널</th><th>단위</th><th>제공하는 것</th></tr></thead>
+  <tr><td><code>init</code></td><td>프로젝트당 1회</td><td>hooks · rules · AGENTS/CLAUDE.md · docs 구조</td></tr>
+  <tr><td>플러그인 설치</td><td>사람·머신마다</td><td><code>/harness-*</code> 슬래시 커맨드</td></tr>
+  <tr><td>전역 CLI 링크</td><td>사람마다</td><td>터미널과 훅이 부르는 <code>harness-team</code></td></tr>
+  </table>
+  <p class="lede" style="font-size:17px">이미 적용된 저장소를 clone했다면 <code>init</code>은 불필요합니다 — 없는 건 아래 두 채널뿐입니다.</p></div>` },
+
+{ t:'월요일부터 — 할 것 3가지', kicker:'행동',
+  note:'★ 덱의 존재 이유. 여기서 시간을 쓸 것. 이 3개만 남기면 성공.',
+  html:`<div class="body"><div class="eyebrow" style="color:var(--accent3)">월요일부터 이것만</div>
+  <h2 style="margin-bottom:20px">할 것</h2>
+  <ul class="pts">
+    <li><span class="b">1</span><div>작업은 <b>가급적</b> <code>/harness-task &lt;name&gt;</code>으로 연다
+      <small>세션이 끊겨도 어디까지 했는지가 남습니다. 한 번에 끝나는 사소한 수정은 예외로 둬도 됩니다.</small></div></li>
+    <li><span class="b">2</span><div>plan 체크박스는 <b>끝난 뒤에만</b> 켠다
+      <small>이건 산문이 아니라 <code>done</code> 가드와 세션 재개 판정이 읽는 기계 입력입니다.</small></div></li>
+    <li><span class="b">3</span><div>리뷰는 돌리는 것으로 끝내지 말고 artifact에 남긴다
+      <small>남기지 않은 리뷰는 “안 한 것”입니다. 그 마커가 곧 종결 증거입니다.</small></div></li>
+  </ul></div>` },
+
+{ t:'월요일부터 — 하지 말 것 7가지', kicker:'행동',
+  note:'★ 일곱 가지 모두 실제로 사고가 났던 것. 치트시트와 같은 목록이라 책상에 붙여 두면 됩니다. 가능하면 우리 저장소의 실제 사례를 붙일 것.',
+  html:`<div class="body"><div class="eyebrow" style="color:var(--bad)">월요일부터 이것만</div>
+  <h2 style="margin-bottom:16px">하지 말 것 <span style="font-size:.55em;color:var(--muted);font-weight:400">치트시트와 동일한 7개</span></h2>
+  <ul class="pts dense">
+    <li><span class="b" style="color:var(--bad)">1</span><div>안 끝난 단계를 <code>- [x]</code>로 켜기
+      <small>체크박스는 <code>done</code> 가드와 세션 재개 판정이 읽는 기계 입력입니다.</small></div></li>
+    <li><span class="b" style="color:var(--bad)">2</span><div>spec을 <b>포인터 껍데기</b>로 두기
+      <small>요구사항·자가진단·Ontology는 spec 본문에 직접. 외부는 보조 참조로만 — doctor가 경고합니다.</small></div></li>
+    <li><span class="b" style="color:var(--bad)">3</span><div>같은 브랜치·워킹트리에서 <b>병렬로 쓰기</b>
+      <small>D4. 격리하려면 worktree(D5). 읽기·조사·반박의 병렬은 얼마든지 좋습니다.</small></div></li>
+    <li><span class="b" style="color:var(--bad)">4</span><div>리뷰를 돌리고 <b>기록 안 남기기</b>
+      <small>남기지 않은 리뷰는 “안 한 것”. 그 마커가 곧 종결 증거입니다.</small></div></li>
+    <li><span class="b" style="color:var(--bad)">5</span><div>집계 파일 손으로 고치기
+      <small><code>task_summary.md</code>·<code>&lt;user&gt;-task.md</code>는 생성물. 기본 브랜치에서 <code>summary --write</code>로만.</small></div></li>
+    <li><span class="b" style="color:var(--bad)">6</span><div>다이어그램 체크박스 지우기
+      <small>못 했으면 지우지 말고 사유를 붙여 닫습니다. 지우면 옵트인한 사실이 사라집니다.</small></div></li>
+    <li><span class="b" style="color:var(--bad)">7</span><div>개인 메모리에 팀 학습 넣기
+      <small>다른 팀원과 리뷰 엔진에게 보이지 않습니다. 팀 학습은 artifact.md가 SSOT.</small></div></li>
+  </ul></div>` },
+
+{ t:'다음 단계', kicker:'끝',
+  note:'각자 온보딩 체크리스트를 켜고 doctor green까지 오늘 안에. 막히면 막힘 리포트를 복사해서 보낼 것.',
+  html:`<div class="body"><h2>오늘 안에 여기까지</h2>
+  <div class="cols3">
+    <div class="card good"><h3>1 · 온보딩 체크리스트</h3><p><code>docs/harness-onboarding-checklist.html</code><br>
+      24항목. <b>doctor green까지</b>가 오늘의 목표. 막히면 막힘 리포트를 복사해서 보내세요.</p></div>
+    <div class="card"><h3>2 · 운용 시나리오 구성기</h3><p><code>docs/harness-operations-playground.html</code><br>
+      다음 작업의 상황을 고르면 실행 순서·자동 훅·종결 판정이 나옵니다.</p></div>
+    <div class="card"><h3>3 · 문서 인덱스</h3><p><code>docs/index.html</code><br>
+      역할별 진입로에서 자기 자리를 고르세요 — 새 팀원 · 리뷰어 · 크루 운용 · 메인테이너.</p></div>
+  </div>
+  <p class="quote" style="font-size:22px;margin-top:10px">동작을 증명하지 않고 완료 처리하지 않는다.
+    <cite>— 하네스가 전제하는 단 하나의 규율</cite></p></div>` },
+];
+
+const stage=document.getElementById('stage');
+let cur=0, notesOn=false;
+
+stage.innerHTML = SLIDES.map((s,i)=>`<section class="slide" data-i="${i}">
+  ${s.html}
+  <div class="foot"><span>harness-aijient-team</span><span class="dot"></span><span>${s.kicker||'킥오프'}</span>
+    <span class="pg">${String(i+1).padStart(2,'0')} / ${String(SLIDES.length).padStart(2,'0')}</span></div>
+</section>`).join('') + '<div class="prog" id="prog"></div>';
+
+document.getElementById('ovg').innerHTML = SLIDES.map((s,i)=>
+  `<div class="th" data-go="${i}"><div class="n">${String(i+1).padStart(2,'0')}</div><div class="tt">${s.t}</div></div>`).join('');
+document.querySelectorAll('[data-go]').forEach(e=>e.onclick=()=>{ go(+e.dataset.go); toggleOv(false); });
+
+function go(i){
+  cur=Math.max(0,Math.min(SLIDES.length-1,i));
+  stage.querySelectorAll('.slide').forEach(s=>s.classList.toggle('on',+s.dataset.i===cur));
+  document.getElementById('prog').style.width=((cur+1)/SLIDES.length*100)+'%';
+  document.getElementById('notes').innerHTML=`<b>${String(cur+1).padStart(2,'0')} ${SLIDES[cur].t}</b> — ${SLIDES[cur].note||'(노트 없음)'}`;
+  document.querySelectorAll('#ovg .th').forEach((e,j)=>e.classList.toggle('cur',j===cur));
+  try{ location.hash=cur+1; }catch(_){}
+}
+function toggleOv(v){ document.getElementById('overview').classList.toggle('on', v===undefined?undefined:v); }
+
+function fit(){
+  const pad=notesOn?0.78:0.94;
+  const s=Math.min(innerWidth/1280, innerHeight*pad/720);
+  stage.style.transform=`scale(${s})`;
+  document.getElementById('viewport').style.alignItems=notesOn?'flex-start':'center';
+  document.getElementById('viewport').style.paddingTop=notesOn?'2vh':'0';
+}
+addEventListener('resize',fit);
+
+addEventListener('keydown',e=>{
+  const ov=document.getElementById('overview');
+  if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown'){ e.preventDefault(); go(cur+1); }
+  else if(e.key==='ArrowLeft'||e.key==='PageUp'){ e.preventDefault(); go(cur-1); }
+  else if(e.key==='Home'){ go(0); } else if(e.key==='End'){ go(SLIDES.length-1); }
+  else if(e.key==='o'||e.key==='O'){ ov.classList.toggle('on'); }
+  else if(e.key==='Escape'){ ov.classList.remove('on'); }
+  else if(e.key==='s'||e.key==='S'){ notesOn=!notesOn; document.getElementById('notes').classList.toggle('on',notesOn); fit(); }
+  else if(e.key==='f'||e.key==='F'){ if(!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); }
+});
+stage.addEventListener('click',e=>go(cur + (e.clientX < innerWidth/2 ? -1 : 1)));
+
+go(Math.max(0,(parseInt(location.hash.slice(1))||1)-1));
+fit();
+</script>
+</body>
+</html>
