@@ -55,13 +55,125 @@
     .grid a { flex-direction: column; align-items: flex-start; gap: 0.15rem; }
     .grid a .desc { white-space: normal; text-align: left; }
     footer { color: var(--muted); font-size: 0.8rem; margin-top: 3rem; }
+
+    /* 역할별 진입로 */
+    .routes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0.9rem; }
+    .route {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: 1rem 1.1rem 0.9rem; min-width: 0;
+    }
+    .route > h3 {
+      font-size: 0.95rem; font-weight: 600; margin-bottom: 0.15rem;
+      display: flex; align-items: baseline; gap: 0.5rem; flex-wrap: wrap;
+    }
+    .route > h3 .mins {
+      font-size: 0.72rem; font-weight: 400; color: var(--muted);
+      border: 1px solid var(--border); border-radius: 999px; padding: 0.05rem 0.45rem;
+    }
+    .route > p { color: var(--muted); font-size: 0.82rem; margin-bottom: 0.6rem; line-height: 1.5; }
+    .route ol { list-style: none; counter-reset: r; }
+    .route ol li { counter-increment: r; margin-bottom: 0.1rem; }
+    .route ol a {
+      display: grid; grid-template-columns: 1.15rem 1fr; gap: 0.55rem; align-items: start;
+      padding: 0.3rem 0.4rem; font-size: 0.85rem;
+    }
+    .route ol a::before {
+      content: counter(r); color: var(--muted); font-size: 0.7rem;
+      background: var(--surface2); border-radius: 4px; text-align: center; line-height: 1.15rem;
+    }
+    .route ol a .name { font-weight: 500; font-size: 0.85rem; }
+    .route ol a .desc {
+      display: block; color: var(--muted); font-size: 0.75rem;
+      text-align: left; white-space: normal; margin-top: 0.05rem;
+    }
+    .route .later { color: var(--muted); font-size: 0.75rem; margin-top: 0.5rem; line-height: 1.5; }
+    .route .later a { display: inline; padding: 0; color: var(--accent2); }
+    .route .later a:hover { background: none; border-color: transparent; text-decoration: underline; }
+    .quick {
+      border-color: var(--accent); background: linear-gradient(180deg, #1d1a33 0%, var(--surface) 100%);
+    }
+    .quick > h3 { color: var(--accent3); }
     code { background: var(--surface2); padding: 0.1rem 0.35rem; border-radius: 4px; font-size: 0.85em; }
   </style>
 </head>
 <body>
   <main>
     <h1>harness-aijient-team-plugin</h1>
-    <div class="subtitle">Documentation index — guides, release notes, and task records under <code>docs/</code>.</div>
+    <div class="subtitle">Documentation index — guides, release notes, and task records under <code>docs/</code>.<br>
+      처음 왔다면 아래 <strong>역할별 진입로</strong>에서 자기 자리를 고르세요 — 전체 목록은 그 아래에 있습니다.</div>
+
+    <section>
+      <h2>역할별 진입로 — 어디부터 읽나</h2>
+      <div class="routes">
+
+        <div class="route quick">
+          <h3>Master in 5 minutes <span class="mins">5분</span></h3>
+          <p>전체 그림을 한 번에 보고 나중에 되돌아올 생각이라면.</p>
+          <ol>
+            <li><a href="harness-workflow-schematics.html"><span><span class="name">워크플로우 5단면</span><span class="desc">게이트 3종 · 쓰기/반박 레인 · atomic step · done 판정 · SSOT — 정적 SVG</span></span></a></li>
+            <li><a href="harness-operations-playground.html"><span><span class="name">운용 시나리오 구성기</span><span class="desc">상황을 고르면 실행 순서 · 자동 훅 · done 가드 판정이 함께 바뀐다</span></span></a></li>
+          </ol>
+        </div>
+
+        <div class="route">
+          <h3>새 팀원 — 오늘 처음 쓴다 <span class="mins">60분</span></h3>
+          <p>목표는 읽기가 아니라 <strong>task 하나를 열고 닫아 보는 것</strong>입니다.</p>
+          <ol>
+            <li><a href="harness-onboarding-checklist.html"><span><span class="name">온보딩 체크리스트 — 여기서 시작</span><span class="desc">따라 하는 목록 24항목. 끝나면 task 하나를 실제로 열고 닫아 본 상태가 된다 (진행률 저장 · 막힘 리포트)</span></span></a></li>
+            <li><a href="harness-task-guide.html#loop"><span><span class="name">task 가이드 §1 — 하루의 루프</span><span class="desc">task 하나가 열리고 닫히는 길</span></span></a></li>
+            <li><a href="harness-task-guide.html#spec"><span><span class="name">task 가이드 §3 — spec.md</span><span class="desc">재작업의 원인은 코딩 실력이 아니라 입력 모호성이다</span></span></a></li>
+            <li><a href="harness-task-guide.html#pitfalls"><span><span class="name">task 가이드 §9 — 자주 밟는 함정</span><span class="desc">남들이 이미 밟은 것부터 피한다</span></span></a></li>
+          </ol>
+          <p class="later">배경이 궁금하면 → <a href="prerequisites.md">사전 준비(능력 매트릭스)</a> · <a href="harness-task-guide.html#start">§0 3개 채널</a> · <a href="harness-overview.html">아키텍처 개요</a></p>
+        </div>
+
+        <div class="route">
+          <h3>리뷰어 — 남의 변경을 검증한다 <span class="mins">40분</span></h3>
+          <p>결정론 가드가 <strong>못 하는 일</strong>을 사람이 맡는 자리입니다 (D6).</p>
+          <ol>
+            <li><a href="harness-rubric-guide.html#why"><span><span class="name">루브릭 §1 — 왜 루브릭인가</span><span class="desc">결정론 가드는 마커의 존재·kind·시각만 읽는다</span></span></a></li>
+            <li><a href="harness-rubric-guide.html#framings"><span><span class="name">루브릭 §4 — 프레이밍 5 + 1</span><span class="desc">adversarial · testcritic · shipcheck · contrarian · simplifier</span></span></a></li>
+            <li><a href="harness-rubric-guide.html#marker"><span><span class="name">루브릭 §7 — 마커 계약과 증거 게이트</span><span class="desc">검증을 결정론에 연결하는 지점</span></span></a></li>
+            <li><a href="harness-task-guide.html#done"><span><span class="name">task 가이드 §8 — 종결</span><span class="desc">가드 7종 + 선언 유효성을 통과해야 닫힌다</span></span></a></li>
+          </ol>
+          <p class="later">근거·이력은 <a href="decisions.md">decisions.md</a>의 <strong>D2 · D6</strong>가 정본</p>
+        </div>
+
+        <div class="route">
+          <h3>크루 운용 — 에이전트를 여럿 돌린다 <span class="mins">45분</span></h3>
+          <p>격리 없이 병렬로 쓰면 무엇이 실제로 깨지는지부터 봅니다.</p>
+          <ol>
+            <li><a href="harness-fleet-guide.html#bootstrap"><span><span class="name">fleet §1 — 크루메이트 부트스트랩</span><span class="desc">워크트리에 들어가면 이 순서로</span></span></a></li>
+            <li><a href="harness-fleet-guide.html#boundary"><span><span class="name">fleet §3 — 소유 경계</span><span class="desc">세 시스템이 각각 무엇을 소유하나</span></span></a></li>
+            <li><a href="harness-fleet-guide.html#conflict"><span><span class="name">fleet §6 — 병렬 충돌 지도</span><span class="desc">어느 하네스 파일이 실제로 깨지나</span></span></a></li>
+            <li><a href="harness-fleet-guide.html#safety"><span><span class="name">fleet §7 — 안전</span><span class="desc">“확인 목적”으로 실행하면 안 되는 것</span></span></a></li>
+          </ol>
+          <p class="later">근거는 <a href="decisions.md">decisions.md</a>의 <strong>D4</strong>(단일 스레드 쓰기) · <strong>D5</strong>(격리 병렬은 허용)</p>
+        </div>
+
+        <div class="route">
+          <h3>팀에 소개한다 — 발표·전달 <span class="mins">20분 발표</span></h3>
+          <p>팀원이 읽게 만드는 게 아니라 <strong>하게 만드는</strong> 자료들.</p>
+          <ol>
+            <li><a href="harness-kickoff-deck.html"><span><span class="name">킥오프 덱 — 16장</span><span class="desc">왜 · 하루의 루프 · 세 게이트 · 자동vs규범 · <strong>월요일부터 이것만</strong>. ← → 이동 · O 개요 · S 발표자 노트</span></span></a></li>
+            <li><a href="harness-onboarding-checklist.html"><span><span class="name">온보딩 체크리스트</span><span class="desc">발표 직후 각자 켜고 doctor green까지 — 막히면 막힘 리포트를 복사해 보낸다</span></span></a></li>
+            <li><a href="harness-cheatsheet.html"><span><span class="name">치트시트 — A4 한 장</span><span class="desc">하루의 명령 8개 · 4파일 · 세 게이트 · Done evidence · 하지 말 것 7가지. 인쇄해서 책상에</span></span></a></li>
+          </ol>
+        </div>
+
+        <div class="route">
+          <h3>메인테이너 — 하네스 자체를 고친다 <span class="mins">—</span></h3>
+          <p>소비자 프로젝트가 아니라 이 저장소를 손대는 경우.</p>
+          <ol>
+            <li><a href="ao-worker-rules.md"><span><span class="name">ao-worker-rules.md</span><span class="desc">상시 규칙 — <code>npm install</code>·lockfile 생성 금지 등</span></span></a></li>
+            <li><a href="harness-overview.html"><span><span class="name">아키텍처 개요 (최신)</span><span class="desc"><code>npm run docs:generate</code>로 갱신되는 생성물</span></span></a></li>
+            <li><a href="what-changes-latest-version.html"><span><span class="name">what-changes (최신)</span><span class="desc">직전 릴리스에서 무엇이 바뀌었나</span></span></a></li>
+            <li><a href="decisions.md"><span><span class="name">decisions.md</span><span class="desc">역할·프로토콜 규범의 근거·이력 정본</span></span></a></li>
+          </ol>
+        </div>
+
+      </div>
+    </section>
 
     <section>
       <h2>Guides</h2>
@@ -72,6 +184,10 @@
         <li><a href="harness-rubric-guide.html"><span class="name">harness-rubric-guide.html</span><span class="desc">Rubric evaluation guide (D6 adversarial verification)</span></a></li>
         <li><a href="harness-workflow-simulation.html"><span class="name">harness-workflow-simulation.html</span><span class="desc">Workflow simulation walkthrough (latest)</span></a></li>
         <li><a href="harness-workflow-diagrams.html"><span class="name">harness-workflow-diagrams.html</span><span class="desc">Workflow diagrams — 5 Mermaid views (browser only)</span></a></li>
+        <li><a href="harness-cheatsheet.html"><span class="name">harness-cheatsheet.html</span><span class="desc">치트시트 — A4 1장 인쇄용</span></a></li>
+        <li><a href="harness-kickoff-deck.html"><span class="name">harness-kickoff-deck.html</span><span class="desc">킥오프 발표 덱 — 16장 (자립형)</span></a></li>
+        <li><a href="harness-onboarding-checklist.html"><span class="name">harness-onboarding-checklist.html</span><span class="desc">온보딩 체크리스트 — 실행형 (interactive)</span></a></li>
+        <li><a href="harness-operations-playground.html"><span class="name">harness-operations-playground.html</span><span class="desc">운용 시나리오 구성기 (interactive)</span></a></li>
         <li><a href="harness-workflow-schematics.html"><span class="name">harness-workflow-schematics.html</span><span class="desc">Workflow schematics — 5 static SVG views (Obsidian-safe)</span></a></li>
         <li><a href="loop-graph-workflow-qna-0.13.html"><span class="name">loop-graph-workflow-qna-0.13.html</span><span class="desc">Loop/graph workflow Q&amp;A (0.13)</span></a></li>
         <li><a href="prerequisites.md"><span class="name">prerequisites.md</span><span class="desc">Setup prerequisites</span></a></li>

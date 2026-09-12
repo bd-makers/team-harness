@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>하네스 온보딩 체크리스트</title>
+<style>
+  :root{
+    --bg:#0f1117; --surface:#1a1d27; --surface2:#22263a; --border:#2e3350;
+    --accent:#7c6af5; --accent2:#50c8f5; --accent3:#4df0aa;
+    --warn:#f5c451; --bad:#f2777a; --text:#e2e6f0; --muted:#7a82a0;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Pretendard','Apple SD Gothic Neo',system-ui,sans-serif;
+    background:var(--bg);color:var(--text);line-height:1.6;
+  }
+  main{max-width:880px;margin:0 auto;padding:2.5rem 1.25rem 5rem}
+  h1{font-size:1.5rem;margin-bottom:.3rem;letter-spacing:-.01em}
+  .subtitle{color:var(--muted);font-size:.9rem;margin-bottom:.4rem}
+  .premise{
+    background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--accent3);
+    border-radius:8px;padding:.8rem 1rem;font-size:.85rem;color:var(--muted);margin:1.2rem 0 1.6rem;
+  }
+  .premise b{color:var(--text)}
+
+  /* 진행률 */
+  .bar-wrap{position:sticky;top:0;background:var(--bg);padding:.9rem 0 .7rem;z-index:5;border-bottom:1px solid var(--border);margin-bottom:1.6rem}
+  .bar-row{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap}
+  .bar{flex:1;min-width:180px;height:7px;background:var(--surface2);border-radius:99px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--accent3));transition:width .25s}
+  .bar-n{font-family:var(--mono);font-size:.8rem;color:var(--muted);white-space:nowrap}
+  .bar-row button{
+    background:var(--surface);border:1px solid var(--border);color:var(--muted);
+    border-radius:6px;padding:.3rem .7rem;font-size:.75rem;cursor:pointer;
+  }
+  .bar-row button:hover{color:var(--text);border-color:var(--accent2)}
+  .alert{
+    margin-top:.6rem;font-size:.8rem;border-radius:6px;padding:.45rem .7rem;
+    background:#2a2010;border:1px solid #4a3a15;color:var(--warn);
+  }
+
+  /* 페이즈 */
+  .phase{margin-bottom:2rem}
+  .phase>h2{
+    font-size:.95rem;font-weight:600;margin-bottom:.15rem;
+    display:flex;align-items:baseline;gap:.55rem;flex-wrap:wrap;
+  }
+  .phase>h2 .mins{
+    font-size:.7rem;font-weight:400;color:var(--muted);
+    border:1px solid var(--border);border-radius:99px;padding:.05rem .45rem;
+  }
+  .phase>h2 .ratio{font-family:var(--mono);font-size:.72rem;color:var(--muted);margin-left:auto}
+  .phase>p.note{color:var(--muted);font-size:.82rem;margin-bottom:.7rem}
+  .phase.done>h2{color:var(--accent3)}
+
+  /* 항목 */
+  .item{
+    background:var(--surface);border:1px solid var(--border);border-radius:9px;
+    padding:.7rem .85rem;margin-bottom:.5rem;
+    display:grid;grid-template-columns:auto 1fr;gap:.75rem;align-items:start;min-width:0;
+  }
+  .item.gate{border-left:3px solid var(--warn)}
+  .item.on{border-color:#2a4a3a;background:#141d1a}
+  .item.stuck{border-color:#5a2b2d;background:#1d1416}
+  .item input[type=checkbox]{width:17px;height:17px;margin-top:.22rem;accent-color:var(--accent3);cursor:pointer}
+  .item .body{min-width:0}
+  .t{font-size:.9rem;font-weight:500;display:flex;align-items:baseline;gap:.45rem;flex-wrap:wrap}
+  .t .idx{font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+  .item.on .t{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--border)}
+  .tag{font-size:.65rem;border-radius:4px;padding:.05rem .38rem;border:1px solid var(--border);color:var(--muted)}
+  .tag.gate{background:#2a2010;color:var(--warn);border-color:#4a3a15}
+  .tag.opt{background:var(--surface2)}
+  pre{
+    font-family:var(--mono);font-size:.75rem;line-height:1.65;color:var(--accent2);
+    background:#0b0e15;border:1px solid var(--border);border-radius:6px;
+    padding:.5rem .65rem;margin:.45rem 0 .35rem;overflow-x:auto;white-space:pre;
+  }
+  .meta{font-size:.76rem;color:var(--muted);line-height:1.55}
+  .meta b{color:var(--text);font-weight:500}
+  .meta .row{display:grid;grid-template-columns:2.6rem 1fr;gap:.5rem;margin-top:.18rem}
+  .meta .k{color:var(--accent3);font-size:.7rem;padding-top:.06rem}
+  .meta .k.bad{color:var(--bad)}
+  code{font-family:var(--mono);font-size:.85em;background:var(--surface2);padding:.05rem .3rem;border-radius:4px;color:var(--text)}
+  .flag{
+    background:none;border:1px solid var(--border);color:var(--muted);border-radius:5px;
+    padding:.12rem .45rem;font-size:.68rem;cursor:pointer;margin-top:.4rem;
+  }
+  .flag:hover{border-color:var(--bad);color:var(--bad)}
+  .item.stuck .flag{background:#3a1b1e;border-color:#5a2b2d;color:var(--bad)}
+
+  /* 막힘 리포트 */
+  .report{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem;margin-top:2rem}
+  .report h2{font-size:.85rem;color:var(--accent2);margin-bottom:.5rem;text-transform:uppercase;letter-spacing:.05em}
+  .report p{font-size:.8rem;color:var(--muted);margin-bottom:.6rem}
+  .report pre{color:#cbd5e1;white-space:pre-wrap;max-height:16rem;overflow:auto}
+  .report button{
+    background:#1c2340;border:1px solid var(--accent);color:var(--accent2);border-radius:6px;
+    padding:.4rem .9rem;font-size:.8rem;cursor:pointer;
+  }
+  footer{color:var(--muted);font-size:.75rem;margin-top:2.5rem;line-height:1.7}
+  footer a{color:var(--accent2)}
+  @media(max-width:560px){ .meta .row{grid-template-columns:1fr;gap:.1rem} .meta .k{padding-top:.25rem} }
+</style>
+</head>
+<body>
+<main>
+  <h1>하네스 온보딩 체크리스트</h1>
+  <div class="subtitle">읽는 문서가 아니라 <b>따라 하는 목록</b>입니다. 끝나면 task 하나를 실제로 열고 닫아 본 상태가 됩니다.</div>
+
+  <div class="premise">
+    <b>전제:</b> 하네스가 <b>이미 적용된 저장소를 clone</b> 한 팀원 기준입니다.
+    프로젝트 채널(<code>init</code>)은 이미 커밋돼 있으므로 다시 돌릴 필요가 없습니다 —
+    당신에게 없는 것은 <b>플러그인 설치</b>와 <b>전역 CLI 링크</b> 두 채널뿐입니다.
+    새 프로젝트에 처음 도입하는 경우라면 Phase 1 다음에 <code>/harness-init</code>을 한 번 실행하세요.
+  </div>
+
+  <div class="bar-wrap">
+    <div class="bar-row">
+      <div class="bar"><i id="fill"></i></div>
+      <span class="bar-n" id="count">0 / 0</span>
+      <button id="reset">진행률 초기화</button>
+    </div>
+    <div id="alert"></div>
+  </div>
+
+  <div id="phases"></div>
+
+  <div class="report">
+    <h2>막힌 항목 리포트</h2>
+    <p>항목의 <b>막힘</b> 버튼을 누르면 여기에 모입니다. 그대로 복사해 팀 리드나 세션에 붙여넣으세요.</p>
+    <pre id="report">막힌 항목이 없습니다.</pre>
+    <button id="copy">복사</button>
+  </div>
+
+  <footer>
+    더 읽을 것 — <a href="harness-task-guide.html#loop">task 가이드 §1 하루의 루프</a> ·
+    <a href="harness-task-guide.html#pitfalls">§9 자주 밟는 함정</a> ·
+    <a href="harness-operations-playground.html">운용 시나리오 구성기</a> ·
+    <a href="index.html">문서 인덱스</a><br>
+    진행률은 이 브라우저에만 저장됩니다(localStorage). 다른 기기·브라우저에서는 다시 시작합니다.
+  </footer>
+</main>
+
+<script>
+const PHASES = [
+{ id:'p0', title:'Phase 0 — 내 머신 준비', mins:'5분',
+  note:'하드 요구사항은 Node ≥ 24 하나뿐입니다. 나머지는 "있으면 켜지고 없으면 그 기능만 꺼지는" 능력 매트릭스입니다.',
+  items:[
+  { t:'Node.js ≥ 24 확인', cmd:'node --version',
+    ok:'v24 이상', fail:'<b>유일한 하드 요구사항입니다.</b> 미만이면 <code>harness-team</code> CLI 자체가 실행되지 않습니다. 여기서 멈추고 Node를 올리세요.', gate:true },
+  { t:'jq 확인', cmd:'jq --version',
+    ok:'버전 출력', fail:'없어도 진행은 됩니다. 다만 Claude Code 훅이 <b>저정밀 모드</b>(grep 폴백)로 판정합니다 — 차단 자체는 유지되지만 JSON 이스케이프를 디코드하지 못해 일부 명령을 놓칠 수 있습니다. doctor가 warning으로 알려 줍니다.' },
+  { t:'git 확인', cmd:'git --version',
+    ok:'버전 출력', fail:'없으면 CLI는 돌지만 post-commit handoff · summary 브랜치 감지 · task 전환 diff가 모두 no-op이 됩니다.' },
+  { t:'(선택) gh · codex 확인', cmd:'gh --version\ncodex --version',
+    ok:'있으면 좋음', fail:'<code>gh</code>는 ship 이후 <b>사용자가 직접 여는</b> PR 단계용이라 하네스 명령에는 영향이 없습니다. <code>codex</code>가 없으면 리뷰 probe 체인이 <code>claude</code> 엔진으로 내려갑니다.', opt:true },
+]},
+
+{ id:'p1', title:'Phase 1 — 내 채널 2개 닫기', mins:'10분',
+  note:'하네스는 서로 독립된 3개 채널로 도달합니다. 한 채널이 끝나도 다른 채널은 자동으로 끝나지 않습니다 — "커맨드가 안 보인다 / 훅이 안 돈다"의 절반이 여기서 생깁니다.',
+  items:[
+  { t:'마켓플레이스 등록', cmd:'/plugin marketplace add https://github.com/bd-makers/team-harness',
+    ok:'Claude Code에서 실행', fail:'슬래시 커맨드는 이 채널로만 옵니다. <code>init</code>은 <code>commands/*.md</code>를 프로젝트에 복사하지 않습니다.' },
+  { t:'플러그인 설치 → /harness-* 슬래시 커맨드', cmd:'/plugin install harness-aijient-team',
+    ok:'<code>/harness-</code> 입력 시 커맨드 목록이 뜬다', fail:'Claude Code를 재시작한 뒤 다시 확인하세요.' },
+  { t:'전역 harness-team CLI 링크', cmd:'npm i -g "${CLAUDE_PLUGINS_ROOT:-$HOME/.claude/plugins}/marketplaces/harness-aijient-team-marketplace"',
+    ok:'터미널과 훅이 부르는 CLI가 PATH에 생김', fail:'이 패키지는 <b>npm 공개 저장소에 배포되지 않습니다.</b> 전역 CLI는 위처럼 <code>/plugin install</code>이 만든 로컬 마켓플레이스 클론을 링크해서 얻습니다.' },
+  { t:'버전 드리프트 확인', cmd:'harness-team --version',
+    ok:'버전이 출력된다', fail:'<code>Unknown command</code>로 떨어지면 <b>그 자체가 클론이 낡았다는 신호</b>입니다. 릴리스는 슬래시 커맨드 캐시만 새 버전으로 만들고, PATH의 CLI는 마켓플레이스 클론에 묶여 옛 버전으로 남을 수 있습니다. 신기능이 "없다"고 느껴지면 먼저 여기를 보세요.' },
+  { t:'doctor green 확인 — 여기서 green이 아니면 작업을 시작하지 않는다',
+    cmd:'cd <내-프로젝트>\nharness-team doctor',
+    ok:'<code>All checks passed.</code> — 심볼은 ✓ 정상 / ✗ 실패(exit 1) / - 선택 항목 없음(정상)',
+    fail:'doctor는 파일 무결성만 보지 않고 <b>PATH의 <code>harness-team</code>이 실제로 실행되며 <code>session-context</code>·<code>handoff</code>를 지원하는지</b>까지 확인합니다. 실패하면 전역 CLI 재링크 안내가 나옵니다 — 훅이 조용히 죽어 있는 채로 며칠을 보내는 사고를 막는 검사입니다. <br>참고: <b>eager 계층 24 KiB 경고</b>는 fail이 아니라 warning이라 doctor는 계속 green입니다.',
+    gate:true },
+]},
+
+{ id:'p2', title:'Phase 2 — Codex를 리뷰어로 쓸 거면', mins:'5분',
+  note:'Codex는 팀 규범상 리뷰어(D2)입니다. 이 페이즈를 건너뛰어도 Claude 엔진으로 리뷰가 돌아가므로 필수는 아닙니다.',
+  items:[
+  { t:'대화형 codex에서 훅 신뢰 승인 (2겹 모두)', cmd:'codex   # 대화형으로 1회 실행해 승인',
+    ok:'① 프로젝트 신뢰(<code>trust_level = "trusted"</code>) ② 훅 소스 신뢰(<code>[hooks.state]</code> 해시) — <b>둘 다</b> 있어야 합니다',
+    fail:'하나라도 없으면 <b>오류 없이 조용히</b> 실행되지 않습니다. 승인은 사용자가 직접 해야 하며 하네스가 대신 줄 수 없습니다. 훅 파일이 바뀌면(하네스 업그레이드 후 <code>init</code> 재실행 포함) 해시가 달라져 재승인이 필요합니다.',
+    opt:true },
+  { t:'doctor에서 Codex hook trust 경고가 사라졌는지', cmd:'harness-team doctor',
+    ok:'<code>Codex hook trust</code> 경고 없음',
+    fail:'doctor는 <code>.codex/hooks.json</code>은 있는데 harness SessionStart 훅이 없는 상태도 경고로 잡습니다.', opt:true },
+  { t:'(선택) Codex 스킬이 필요하면 .codex-plugin을 따로 설치', cmd:'# 슬래시 커맨드는 Claude Code 전용입니다',
+    ok:'Codex는 동명의 스킬을 별도 채널로 받습니다',
+    fail:'<code>init</code>이 설치해 주지 않습니다 — 커맨드 표면과 스킬 표면은 별개입니다.', opt:true },
+]},
+
+{ id:'p3', title:'Phase 3 — 첫 task를 열고 닫아 본다', mins:'15분',
+  note:'온보딩의 목표는 읽기가 아니라 여기입니다. 실제 작업 대신 아주 작은 변경 하나(오타 수정 수준)로 한 바퀴를 돌려 보세요.',
+  items:[
+  { t:'task 생성', cmd:'/harness-task onboarding-<내이름>',
+    ok:'<code>created:</code> 출력 · <code>.harness/active.json</code>이 이 task를 가리킨다',
+    fail:'<code>docs/&lt;member&gt;/&lt;name&gt;/</code> 평탄 구조로 4파일(spec·plan·handoff·artifact)이 생겼는지 확인하세요.' },
+  { t:'spec.md — Ambiguity 자가진단 + Ontology를 직접 쓴다',
+    cmd:'docs/<member>/onboarding-<내이름>/onboarding-<내이름>-spec.md',
+    ok:'요구사항·자가진단·Ontology가 spec.md <b>본문에</b> 있다',
+    fail:'외부 문서를 가리키는 <b>포인터 껍데기</b>로 두지 마세요 — doctor가 자가진단 없는 포인터 spec을 경고합니다. 막히면 <code>/harness-interview</code>로 돌아가세요.',
+    gate:true },
+  { t:'spec.md — Done evidence 선언',
+    cmd:'{ "version": 1, "tests": "skip", "review": "optional", "verify": "optional" }',
+    ok:'온보딩용이므로 가장 느슨하게 선언해도 됩니다',
+    fail:'기본값은 <code>tests: required</code>라, 소스를 고쳤는데 테스트 파일을 안 고치면 <code>done</code>이 막힙니다.' },
+  { t:'plan.md — 단계 2~3개 작성', cmd:'- [ ] 단계 1\n- [ ] 단계 2',
+    ok:'줄머리 체크박스로 작성',
+    fail:'<b>하지 않은 단계를 미리 <code>- [x]</code>로 켜지 않습니다.</b> 이 체크박스는 산문이 아니라 <code>done</code> 가드와 SessionStart 재개 판정이 읽는 기계 입력입니다.',
+    gate:true },
+  { t:'아주 작은 변경 1개 + 커밋 — 자동 훅이 실제로 도는지 본다',
+    cmd:'git commit -m "chore: 온보딩 확인"\ngit diff HEAD~1 -- docs/',
+    ok:'post-commit 훅이 <code>&lt;name&gt;-handoff.md</code>와 <code>&lt;user&gt;-handoff.md</code>를 자동 갱신한다',
+    fail:'handoff가 안 바뀌면 전역 CLI 링크(Phase 1)나 <code>git</code>을 다시 확인하세요. 핸드오프 파일만 바꾼 sweep 커밋에는 원래 아무것도 쓰지 않습니다.' },
+  { t:'끝난 단계만 plan 체크박스를 켠다', cmd:'- [x] 단계 1',
+    ok:'실제로 끝난 시점에 켠다', fail:'미완 <code>- [ ]</code>가 하나라도 남으면 <code>done</code>이 막힙니다.' },
+  { t:'(선택) 외부 리뷰를 한 번 돌려 본다', cmd:'/harness-review',
+    ok:'artifact.md <code>## Reviews</code>에 날짜·엔진과 마커가 남는다',
+    fail:'엔진을 안 주면 probe 폴백 체인(codex → claude)으로 실행됩니다. <b>기록을 남기지 않은 리뷰는 "안 한 것"</b>으로 칩니다.', opt:true },
+  { t:'task 종결 — 가드를 통과시킨다', cmd:'/harness-task done',
+    ok:'meta 상태가 <code>done</code>으로 바뀐다',
+    fail:'가드는 판정 창(<code>reopenedAt || firstActivatedAt</code> 이후) 안의 증거를 결정론적으로 검사합니다. 막히면 미완 체크박스·Done evidence 선언부터 보세요.', gate:true },
+  { t:'집계 원장 갱신 — 기본 브랜치에서만', cmd:'harness-team summary --write',
+    ok:'<code>docs/task_summary.md</code>와 <code>&lt;user&gt;-task.md</code>가 갱신된다',
+    fail:'<code>task</code>/<code>done</code>은 이 파일들을 건드리지 않습니다 — 그래서 브랜치를 병렬로 둬도 충돌하지 않습니다.' },
+]},
+
+{ id:'p4', title:'Phase 4 — 그 다음 읽을 것', mins:'읽기',
+  note:'한 바퀴를 돌려 본 뒤에 읽어야 붙습니다. 순서를 바꾸지 마세요.',
+  items:[
+  { t:'task 가이드 §9 — 자주 밟는 함정', cmd:'harness-task-guide.html#pitfalls',
+    ok:'남들이 이미 밟은 것부터 피한다', fail:'' },
+  { t:'decisions.md — D2 · D4 · D5 · D6', cmd:'decisions.md',
+    ok:'작성자/리뷰어 분리 · 단일 스레드 쓰기 · 격리 병렬 · read-only 검증자',
+    fail:'역할·프로토콜 규범의 근거·이력 정본입니다. "왜 병렬로 쓰면 안 되나"의 답이 여기 있습니다.' },
+  { t:'운용 시나리오 구성기로 내 다음 작업을 구성해 본다', cmd:'harness-operations-playground.html',
+    ok:'상황을 고르면 실행 순서·자동 훅·done 가드 판정이 함께 나온다', fail:'', opt:true },
+]},
+];
+
+const KEY='harness-onboarding-v1';
+let saved = {};
+try{ saved = JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(_){ saved={}; }
+const save=()=>{ try{ localStorage.setItem(KEY, JSON.stringify(saved)); }catch(_){} };
+
+const ALL=[]; let gi=0;
+PHASES.forEach(p=>p.items.forEach(it=>{ it._id=p.id+'-'+(++gi); it._phase=p; it._n=gi; ALL.push(it); }));
+
+function render(){
+  document.getElementById('phases').innerHTML = PHASES.map(p=>{
+    const done=p.items.filter(i=>saved[i._id]==='done').length;
+    return `<section class="phase ${done===p.items.length?'done':''}">
+      <h2>${p.title} <span class="mins">${p.mins}</span><span class="ratio">${done}/${p.items.length}</span></h2>
+      <p class="note">${p.note}</p>
+      ${p.items.map(it=>{
+        const st=saved[it._id];
+        return `<div class="item ${it.gate?'gate':''} ${st==='done'?'on':''} ${st==='stuck'?'stuck':''}">
+          <input type="checkbox" data-id="${it._id}" ${st==='done'?'checked':''}>
+          <div class="body">
+            <div class="t"><span class="idx">${String(it._n).padStart(2,'0')}</span>${it.t}
+              ${it.gate?'<span class="tag gate">게이트</span>':''}${it.opt?'<span class="tag opt">선택</span>':''}</div>
+            ${it.cmd?`<pre>${it.cmd.replace(/</g,'&lt;')}</pre>`:''}
+            <div class="meta">
+              ${it.ok?`<div class="row"><span class="k">기대</span><span>${it.ok}</span></div>`:''}
+              ${it.fail?`<div class="row"><span class="k bad">안 되면</span><span>${it.fail}</span></div>`:''}
+            </div>
+            <button class="flag" data-flag="${it._id}">${st==='stuck'?'막힘 해제':'막힘'}</button>
+          </div>
+        </div>`;
+      }).join('')}
+    </section>`;
+  }).join('');
+
+  document.querySelectorAll('input[type=checkbox]').forEach(cb=>cb.onchange=()=>{
+    if(cb.checked) saved[cb.dataset.id]='done'; else delete saved[cb.dataset.id];
+    save(); render();
+  });
+  document.querySelectorAll('[data-flag]').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.flag;
+    if(saved[id]==='stuck') delete saved[id]; else saved[id]='stuck';
+    save(); render();
+  });
+
+  const done=ALL.filter(i=>saved[i._id]==='done').length;
+  document.getElementById('fill').style.width=(done/ALL.length*100)+'%';
+  document.getElementById('count').textContent=`${done} / ${ALL.length}`;
+
+  // 게이트 경고: 통과 안 한 게이트보다 뒤 항목이 체크돼 있으면
+  const openGate=ALL.find(i=>i.gate && saved[i._id]!=='done' && ALL.some(j=>j._n>i._n && saved[j._id]==='done'));
+  document.getElementById('alert').innerHTML = openGate
+    ? `<div class="alert">⚠ <b>${String(openGate._n).padStart(2,'0')}. ${openGate.t.split(' —')[0]}</b> 게이트를 통과하지 않았는데 이후 항목이 체크돼 있습니다. 이 게이트가 막힌 채로 진행하면 뒤에서 원인 없이 실패합니다.</div>`
+    : '';
+
+  const stuck=ALL.filter(i=>saved[i._id]==='stuck');
+  document.getElementById('report').textContent = stuck.length
+    ? [`하네스 온보딩에서 막혔습니다. (진행 ${done}/${ALL.length})`,'',
+       ...stuck.map(i=>[
+         `■ ${String(i._n).padStart(2,'0')}. ${i.t}  [${i._phase.title}]`,
+         i.cmd?`   실행: ${i.cmd.replace(/\n/g,'\n         ')}`:'',
+         i.ok?`   기대: ${strip(i.ok)}`:'',
+         `   실제: (여기에 적어 주세요)`,''].filter(Boolean).join('\n')),
+       '환경: node --version / harness-team --version / harness-team doctor 출력을 함께 붙여 주세요.'].join('\n')
+    : '막힌 항목이 없습니다.';
+}
+function strip(h){ return h.replace(/<[^>]+>/g,'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&amp;/g,'&').trim(); }
+
+document.getElementById('reset').onclick=()=>{ saved={}; save(); render(); };
+document.getElementById('copy').onclick=async e=>{
+  const b=e.currentTarget, t=document.getElementById('report').textContent;
+  try{ await navigator.clipboard.writeText(t); }catch(_){}
+  const o=b.textContent; b.textContent='복사됨!'; setTimeout(()=>b.textContent=o,1200);
+};
+render();
+</script>
+</body>
+</html>
