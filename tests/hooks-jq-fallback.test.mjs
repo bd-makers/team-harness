@@ -315,7 +315,8 @@ for (const mode of MODES) {
     try {
       // 뒤 넷은 codex 리뷰 P2: 정규식 전환으로 셸 연산자 경계(`;`·`&&`·`|`·`)`)가 새지 않아야 한다.
       for (const cmd of ['git -C . commit -m "wip"', 'git --no-pager commit -m "wip"', 'git -c user.name=x commit', 'git commit -m "wip"',
-        'git commit; echo ok', 'git commit&&echo ok', '(git commit)', 'git commit|cat']) {
+        'git commit; echo ok', 'git commit&&echo ok', '(git commit)', 'git commit|cat',
+        'git commit>/dev/null', "bash -c 'git commit'", 'git commit`echo`']) {
         const r = await runHook('pre-commit-check.sh', bash(cmd), { mode, cwd: dir });
         assert.match(r.stderr, /커밋 전 검증 실행 중/, `${cmd}: 게이트에 도달해야 한다`);
         assert.equal(r.code, 2, `${cmd}: test 실행이 실패하면 커밋을 막는다`);
@@ -328,7 +329,7 @@ for (const mode of MODES) {
     try {
       // `grep "git commit"`처럼 인용 부호가 commit 바로 뒤에 오는 경우는 END가 `"`를 경계로 인정하므로
       // (저정밀 payload 스캔 계약) 게이트가 돈다 — block-dangerous-git.sh와 같은 fail-closed 오탐이며 여기서 다루지 않는다.
-      for (const cmd of ['git -C . status', 'git log --oneline', 'git --no-pager diff --stat', 'echo "commit message" > notes.txt']) {
+      for (const cmd of ['git -C . status', 'git log --oneline', 'git --no-pager diff --stat', 'echo "commit message" > notes.txt', 'git commit-tree HEAD^{tree}']) {
         const r = await runHook('pre-commit-check.sh', bash(cmd), { mode, cwd: dir });
         assert.equal(r.code, 0, `${cmd}: stderr: ${r.stderr}`);
         assert.doesNotMatch(r.stderr, /커밋 전 검증 실행 중/, `${cmd}: 게이트를 돌리지 않아야 한다`);

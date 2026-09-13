@@ -52,9 +52,10 @@ fi
 # 통과하던 우회(2026-09-13 Codex 분석 P2)를 막는다. subcommand 자리에는 대시 없는 토큰이 와야 하므로
 # `git log | grep "git commit"` 같은 인용 안 문자열은 잡지 않는다.
 GIT='git([[:space:]]+(-C[[:space:]]+[^[:space:]]+|-c[[:space:]]+[^[:space:]]+|--(git-dir|work-tree|namespace|super-prefix|exec-path)[[:space:]]+[^[:space:]]+|-[^[:space:]]+))*[[:space:]]+'
-# 경계에 셸 연산자(`;`·`&`·`|`·`)`)도 포함한다 — `git commit; git status`가 종전 부분 문자열 검사는
-# 잡았는데 정규식 전환으로 새지 않도록(2026-09-13 codex 리뷰 P2).
-END='([[:space:]]|$|[";&|)])'
+# 경계는 "단어 문자가 아니면 전부"다 — 공백·`"`·`;`·`&&`·`|`·`)`·`>`·`'` 등 어떤 구분자가 와도
+# 게이트가 돈다(열거하면 `git commit>/dev/null`처럼 빠진 글자마다 새는 회귀 — 2026-09-13 codex 리뷰 P2 ×2).
+# `-`는 단어 문자로 둔다: `git commit-tree`는 ref를 옮기지 않는 저수준 명령이라 commit이 아니다.
+END='([^[:alnum:]_-]|$)'
 if ! [[ "$COMMAND" =~ ${GIT}commit${END} ]]; then
   exit 0
 fi

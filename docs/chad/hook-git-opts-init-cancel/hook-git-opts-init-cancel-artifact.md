@@ -48,6 +48,26 @@ init과 마이그레이션 변경에서는 추가적인 유의미한 결함을 �
 - 같은 `END`를 쓰는 `block-dangerous-git.sh`도 `git push --force;echo`·`git push -f; echo`가 exit 0 — **main에 이미 있던 별도 결함**으로
   이 task 범위 밖(다른 훅 + stock fixture 추가 필요). 후속 task로 넘긴다.
 
+### 2026-09-13T01:41:24.782Z — codex (harness-team review)
+
+- engine: codex · scope: diff · tip: 1b4bd38e6e1009c5365184f2f3e2e5b4ff1d926c · exit 0 · 866 B
+
+```text
+전하, **P2 1건**을 발견했습니다.
+
+- **P2 — [templates/.claude/hooks/pre-commit-check.sh:57](</Users/hsonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/templates/.claude/hooks/pre-commit-check.sh:57>)**: `END`가 `>`, `<`, `'`를 경계로 인정하지 않아 `git commit>/dev/null`, `bash -c 'git commit'` 등이 검증을 우회합니다. 실패 스텁으로 재현한 결과, jq 유무 모두 `main`은 exit 2, 변경본은 exit 0입니다.
+
+그 외 유의미한 결함은 발견하지 못했습니다. 문법 검사와 stock fixture SHA 검증은 통과했습니다. 전체 테스트는 읽기 전용 제약으로 실행하지 않았으며 파일 변경은 없습니다.
+
+**최종 판정: REQUEST CHANGES — 명령 경계 처리와 회귀 테스트 보완이 필요합니다.**
+```
+
+<!-- harness:review kind=codex scope=diff tip=1b4bd38e6e1009c5365184f2f3e2e5b4ff1d926c at=2026-09-13T01:41:24.782Z -->
+
+**판별·조치 (2026-09-13)** — P2 `>`·`<`·`'` 경계 누락 — **진짜 결함**이자 직전 조치의 방식 오류(구분자 열거는 빠진 글자마다 샌다).
+`END`를 `([^[:alnum:]_-]|$)`(단어 문자가 아니면 전부 경계)로 바꿔 열거를 없앰. `git commit>/dev/null`·`bash -c 'git commit'`·
+`git commit\`echo\``를 회귀 테스트에 추가, `git commit-tree`는 비대상으로 고정.
+
 
 ## Learnings
 
