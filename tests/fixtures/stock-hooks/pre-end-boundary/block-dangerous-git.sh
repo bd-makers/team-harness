@@ -74,11 +74,9 @@ block() {  # $1 = 사유 한 줄
 # --work-tree·--namespace·--super-prefix·--exec-path)은 공백 분리 값까지 소비한다. subcommand 자리에는
 # 대시 없는 토큰이 와야 하므로 `git log | grep "push -f"` 같은 무관한 파이프는 여전히 잡지 않는다.
 GIT='git([[:space:]]+(-C[[:space:]]+[^[:space:]]+|-c[[:space:]]+[^[:space:]]+|--(git-dir|work-tree|namespace|super-prefix|exec-path)[[:space:]]+[^[:space:]]+|-[^[:space:]]+))*[[:space:]]+'
-# 토큰 끝 경계 = "단어 문자가 아니면 전부". 공백·`"`(저정밀 payload 스캔이 값을 닫는 글자)뿐 아니라
-# `;`·`&&`·`|`·`)`·`>`·`'` 등 어떤 구분자가 와도 경계다 — 열거하면 `git push --force;echo`처럼 빠진 글자마다
-# 샌다(2026-09-13 dangerous-git-end-boundary). `-`는 단어 문자로 둔다: `--force-if-includes`가 `-f` 패턴에
-# 걸리지 않는 것은 `-force` 뒤 `-`가 경계가 아니기 때문이다.
-END='([^[:alnum:]_-]|$)'
+# 토큰 끝 경계. 저정밀 모드는 command를 못 뽑으면 payload 전체(JSON)를 스캔하므로 값을 닫는
+# `"`도 경계로 인정해야 한다 — 그렇지 않으면 그 폴백이 조용히 fail-open으로 돌아간다.
+END='([[:space:]]|$|")'
 
 # 파괴적 패턴 (ERE). git+subcommand 인접 요구.
 # `(.*[[:space:]])?` = subcommand 뒤 다른 인자(있으면 공백으로 끝남)를 선택적으로 소비 —

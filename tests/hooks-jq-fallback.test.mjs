@@ -112,6 +112,12 @@ const GIT_BLOCK = [
   ['git --work-tree <dir> clean -fd', bash('git --work-tree /tmp/repo clean -fd')],
   ['git -p push --force', bash('git -p push --force')],
   ['git --git-dir=<dir> push -f', bash('git --git-dir=/x/.git push -f')],
+  // dangerous-git-end-boundary (2026-09-13) — END가 공백·`"`만 경계라 셸 연산자로 새던 우회
+  ['push --force 뒤 세미콜론', bash('git push --force;echo')],
+  ['push -f 뒤 세미콜론+공백', bash('git push -f; echo')],
+  ['push --force 뒤 리다이렉트', bash('git push --force>/dev/null')],
+  ["bash -c 인용 안 push -f", bash("bash -c 'git push -f'")],
+  ['checkout . 뒤 세미콜론', bash('git checkout .;echo')],
 ];
 
 const GIT_ALLOW = [
