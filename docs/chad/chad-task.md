@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ dangerous-git-end-boundary ⚠️
 - ✅ hook-git-opts-init-cancel ⚠️
 - ✅ docs-html-stub-tests
 - ✅ team-onboarding-kit
