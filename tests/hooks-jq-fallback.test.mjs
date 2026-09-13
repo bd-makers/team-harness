@@ -112,6 +112,16 @@ const GIT_BLOCK = [
   ['git --work-tree <dir> clean -fd', bash('git --work-tree /tmp/repo clean -fd')],
   ['git -p push --force', bash('git -p push --force')],
   ['git --git-dir=<dir> push -f', bash('git --git-dir=/x/.git push -f')],
+  // dangerous-git-end-boundary (2026-09-13) — END가 공백·`"`만 경계라 셸 연산자로 새던 우회
+  ['push --force 뒤 세미콜론', bash('git push --force;echo')],
+  ['push -f 뒤 세미콜론+공백', bash('git push -f; echo')],
+  ['push --force 뒤 리다이렉트', bash('git push --force>/dev/null')],
+  ["bash -c 인용 안 push -f", bash("bash -c 'git push -f'")],
+  ['checkout . 뒤 세미콜론', bash('git checkout .;echo')],
+  // codex 리뷰 P1 — 셸이 인용 제거 후 `-SW`로 넘기는 형태. 허용 판정(staged)은 공백·끝만 경계로 본다.
+  ["restore -S'W' (인용으로 붙인 -SW)", bash("git restore -S'W' src/app.ts")],
+  ['restore -S\\W (이스케이프로 붙인 -SW)', bash('git restore -S\\W src/app.ts')],
+  ['restore -S"W" (큰따옴표로 붙인 -SW)', bash('git restore -S"W" src/app.ts')],
 ];
 
 const GIT_ALLOW = [
@@ -134,6 +144,7 @@ const GIT_ALLOW = [
   ['push HEAD:main (콜론 refspec, 삭제 아님)', bash('git push origin HEAD:main')],
   ['push --dry-run', bash('git push --dry-run origin main')],
   ['restore -S (--staged 단축)', bash('git restore -S src/app.ts')],
+  ['restore -S 뒤 세미콜론 (staged만, 인자 없이 끝)', bash('git restore -S src/app.ts; git status')],
   ['git -C 뒤 안전한 명령', bash('git -C other status')],
   ['git 밖의 push -f 문자열', bash('git log --oneline | grep "push -f"')],
   ['전역 옵션 뒤 안전한 subcommand', bash('git --no-pager log --oneline | grep "push -f"')],

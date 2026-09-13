@@ -78,7 +78,7 @@ test('KNOWN_STOCK_HOOK_SHA256는 fixture의 실제 바이트와 일치한다 (�
       checked++;
     }
   }
-  assert.equal(checked, 15, `알려진 stock 버전 15개를 기대 — 실제: ${checked}`);
+  assert.equal(checked, 16, `알려진 stock 버전 16개를 기대 — 실제: ${checked}`);
 });
 
 // audit-cleanup (2026-09-03) — observe-tools.mjs와 boundary-checkpoint.sh는 refresh 목록에 없어

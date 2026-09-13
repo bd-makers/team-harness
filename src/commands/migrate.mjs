@@ -373,6 +373,7 @@ export const KNOWN_STOCK_HOOK_SHA256 = {
     '4146387004a9139c4318ed75bcbfe41b838ca476caedea0361ddf9ffec0cee69', // 8367653a 상류 출처 표기판
     '2c8671affb60fee88f1e16467a23a13dde4df2ff80cb9d102036536903ea11ac', // e1c87ee4 PR #29 (tool_input 스코프 이전)
     '87f05509b6bc67c528e4a8f0ead3962aed754556765763fcb6e606bcc702c106', // 599cd2d4 tool_input 스코프판 (audit-cleanup 이전)
+    '9aa8b5d0206a732e07062213000884a9f0da1dbd29517754e30b008d9aafae26', // 9822cd7f audit-cleanup판 (END 열거 경계 — `push --force;` 우회 이전)
   ],
   'protect-files.sh': [
     '8031a9db866e2d79e9ed2837f6b12214e1a4cb3a91e510c1c89bbe0ac7962e63', // 286e227e initial

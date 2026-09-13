@@ -25,3 +25,6 @@
 | `pre-git-opts/pre-commit-check.sh` | `757d115f` | `aa9de65` tool_input 스코프판 (`git -C`·`--no-pager` 전역 옵션 우회 이전) |
 
 `pre-git-opts`는 2026-09-13 Codex 분석 P2(커밋 훅이 git 전역 옵션을 놓침) 수정 직전 판이다.
+| `pre-end-boundary/block-dangerous-git.sh` | `9822cd7f` | `58b2284` audit-cleanup판 (END 열거 경계 — `git push --force;echo` 우회 이전) |
+
+`pre-end-boundary`는 2026-09-13 dangerous-git-end-boundary(토큰 경계를 비단어 문자 전부로) 수정 직전 판이다.

@@ -74,11 +74,9 @@ block() {  # $1 = 사유 한 줄
 # --work-tree·--namespace·--super-prefix·--exec-path)은 공백 분리 값까지 소비한다. subcommand 자리에는
 # 대시 없는 토큰이 와야 하므로 `git log | grep "push -f"` 같은 무관한 파이프는 여전히 잡지 않는다.
 GIT='git([[:space:]]+(-C[[:space:]]+[^[:space:]]+|-c[[:space:]]+[^[:space:]]+|--(git-dir|work-tree|namespace|super-prefix|exec-path)[[:space:]]+[^[:space:]]+|-[^[:space:]]+))*[[:space:]]+'
-# 토큰 끝 경계 = "단어 문자가 아니면 전부". 공백·`"`(저정밀 payload 스캔이 값을 닫는 글자)뿐 아니라
-# `;`·`&&`·`|`·`)`·`>`·`'` 등 어떤 구분자가 와도 경계다 — 열거하면 `git push --force;echo`처럼 빠진 글자마다
-# 샌다(2026-09-13 dangerous-git-end-boundary). `-`는 단어 문자로 둔다: `--force-if-includes`가 `-f` 패턴에
-# 걸리지 않는 것은 `-force` 뒤 `-`가 경계가 아니기 때문이다.
-END='([^[:alnum:]_-]|$)'
+# 토큰 끝 경계. 저정밀 모드는 command를 못 뽑으면 payload 전체(JSON)를 스캔하므로 값을 닫는
+# `"`도 경계로 인정해야 한다 — 그렇지 않으면 그 폴백이 조용히 fail-open으로 돌아간다.
+END='([[:space:]]|$|")'
 
 # 파괴적 패턴 (ERE). git+subcommand 인접 요구.
 # `(.*[[:space:]])?` = subcommand 뒤 다른 인자(있으면 공백으로 끝남)를 선택적으로 소비 —
@@ -110,13 +108,9 @@ fi
 
 # restore: 워킹트리 파괴만 차단. --staged/-S(언스테이징)만 있으면 허용하되,
 # --worktree/-W가 함께 오면 워킹트리도 덮어쓰므로 차단한다.
-# 허용 판정(staged)의 경계는 END보다 엄격한 공백·끝만 쓴다 — END는 차단 방향(fail-closed)용이라
-# `'`·`"`·`\`도 경계로 보는데, 셸은 `-S'W'`·`-S\W`·`-S"W"`를 인용 제거 후 `-SW`로 넘기므로 그 경계로
-# 허용하면 워킹트리 덮어쓰기가 통과한다(2026-09-13 codex 리뷰 P1). 차단 판정(worktree)은 END 그대로.
-SAFE_END='([[:space:]]|$)'
 if echo "$COMMAND" | grep -qE "${GIT}restore[[:space:]]"; then
   staged=0; worktree=0
-  echo "$COMMAND" | grep -qE "${GIT}restore[[:space:]]+(.*[[:space:]])?(--staged|-S)${SAFE_END}" && staged=1
+  echo "$COMMAND" | grep -qE "${GIT}restore[[:space:]]+(.*[[:space:]])?(--staged|-S)${END}" && staged=1
   echo "$COMMAND" | grep -qE "${GIT}restore[[:space:]]+(.*[[:space:]])?(--worktree|-W)${END}" && worktree=1
   if [[ $staged -eq 0 || $worktree -eq 1 ]]; then
     block "git restore는 워킹트리의 커밋되지 않은 변경을 되돌릴 수 없게 만듭니다 (--staged/-S만 허용)."
