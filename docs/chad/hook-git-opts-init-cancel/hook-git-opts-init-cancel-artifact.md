@@ -102,3 +102,5 @@ init과 마이그레이션 변경에서는 추가적인 유의미한 결함을 �
   경계는 "단어 문자가 아니면 전부"로 정의해 미열거 구분자를 fail-closed로 둔다. 같은 `END`를 쓰는 형제 훅(`block-dangerous-git.sh`)도 점검 대상.
 - 2026-09-13: `harness-team review codex`는 기본 scope가 worktree라 **이미 커밋한 수정은 보지 않는다** — 커밋 뒤 리뷰는 `--scope diff --base main`.
 - 2026-09-13: 훅 템플릿을 고치면 `docs/harness-overview.html`(생성물)도 바뀐다 — `docs:generate`를 커밋 전에 돌려야 `npm test`의 overview 대조가 통과한다.
+
+- 2026-09-13 `done --force` 사유: 가드의 "커밋되지 않은 변경"은 task 이전부터 있던 미추적 `.lavish/`(Codex 분석 HTML, 사용자 소유)뿐 — task 산출물은 전부 커밋됨(`git status --porcelain` = `?? .lavish/` 1건).

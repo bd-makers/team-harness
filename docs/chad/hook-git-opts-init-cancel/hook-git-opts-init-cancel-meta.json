@@ -3,10 +3,12 @@
   "task": "hook-git-opts-init-cancel",
   "created": "2026-09-13",
   "firstActivatedAt": "2026-09-13T01:24:01.562Z",
-  "status": "open",
-  "closedAt": null,
-  "forcedAt": null,
-  "forcedIssues": null,
+  "status": "done",
+  "closedAt": "2026-09-13T01:48:53.188Z",
+  "forcedAt": "2026-09-13T01:48:53.188Z",
+  "forcedIssues": [
+    "커밋되지 않은 변경이 있음"
+  ],
   "reviews": [
     {
       "kind": "codex",
