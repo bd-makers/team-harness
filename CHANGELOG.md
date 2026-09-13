@@ -4,7 +4,7 @@ tags:
   - ai
   - obsidian
 created: 2026-06-02
-modified: 2026-09-12
+modified: 2026-09-13
 ---
 
 # Changelog
@@ -17,6 +17,32 @@ modified: 2026-09-12
 -->
 
 ## [Unreleased]
+
+## [0.39.1] - 2026-09-13
+
+### Fixed
+- **커밋 게이트 훅(`pre-commit-check.sh`)이 git 전역 옵션·셸 연산자로 우회되던 것.** `*"git commit"*` 부분 문자열
+  검사라 `git -C . commit`·`git --no-pager commit`이 검증 없이 exit 0으로 통과했다(2026-09-13 Codex 전체 분석 P2, 재현).
+  `block-dangerous-git.sh`와 같은 `GIT` 전역 옵션 정규식으로 교체하고, 토큰 경계는 **"단어 문자가 아니면 전부"**
+  (`([^[:alnum:]_-]|$)`)로 정의했다 — 구분자를 열거하면 `;`→`>`처럼 빠진 글자마다 새는 것을 codex 리뷰가 두 라운드
+  연속 잡았다. `git commit; echo`·`git commit>/dev/null`·`bash -c 'git commit'`까지 게이트가 돈다. `git commit-tree`는
+  비대상. (task `hook-git-opts-init-cancel`, PR #89)
+- **파괴적 git 차단 훅(`block-dangerous-git.sh`)이 셸 연산자로 우회되던 것.** 같은 `END` 경계가 공백·끝·`"`만 인정해
+  `git push --force;echo`·`git push -f; echo`가 exit 0으로 통과했다. 위와 같은 경계로 교체 — `-`는 단어 문자라
+  `--force-if-includes` 허용은 유지. **restore의 허용 판정만은 공백·끝(`SAFE_END`)으로 좁혔다** — 넓힌 경계를 허용
+  방향에도 쓰면 `git restore -S'W' f`(셸이 인용 제거 후 `-SW`로 넘김)가 staged로 오판돼 워킹트리 덮어쓰기가 통과한다
+  (codex 리뷰 P1). 차단 방향은 fail-closed로 넓히고 허용 방향은 좁게 두는 것이 원칙이다. (task `dangerous-git-end-boundary`, PR #90)
+- **`init`의 최종 "Apply?"에 `n`을 답해도 `.harness/config.json`이 남던 것.** `ensureUsername`이 이름을 확정하는 즉시
+  파일을 썼다. `resolveUsername`(결정)·`saveUsername`(저장)으로 나누고 init은 적용 단계에서만 저장한다. `sync`는 종전대로.
+  (PR #89)
+- 두 훅의 직전 배포 판을 `tests/fixtures/stock-hooks/pre-git-opts/`·`pre-end-boundary/`에 보존하고 `KNOWN_STOCK_HOOK_SHA256`에
+  추가했다 — 설치본은 `harness-team migrate`의 refresh 경로로 갱신된다(D8).
+
+### Added
+- **팀 전달용 온보딩 키트 4종** (`docs/harness-onboarding-checklist.html`·`harness-kickoff-deck.html`·`harness-cheatsheet.html`·
+  `harness-operations-playground.html`, `docs/index.html` 등재) — 진입로·체크리스트·킥오프 덱·치트시트. (PR #87)
+- 인라인 스크립트가 있는 산출물 3종(킥오프 덱·온보딩 체크리스트·운영 플레이그라운드)에 DOM 스텁 테스트
+  (`tests/helpers/html-script.mjs`) — 상태·문자열 회귀만 잡는다; clipboard 권한·focus·layout은 보장하지 않는다. (PR #88)
 
 ## [0.39.0] - 2026-09-12
 
