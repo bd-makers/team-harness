@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ hook-git-opts-init-cancel ⚠️
 - ✅ docs-html-stub-tests
 - ✅ team-onboarding-kit
 - ✅ codex-hook-injection-fix

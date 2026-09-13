@@ -103,3 +103,4 @@
 | chad | review-codex-live-check | ✅ done | 2026-09-11 |
 | chad | docs-html-stub-tests | ✅ done | 2026-09-12 |
 | chad | team-onboarding-kit | ✅ done | 2026-09-12 |
+| chad | hook-git-opts-init-cancel | ✅ done ⚠️ | 2026-09-13 |
