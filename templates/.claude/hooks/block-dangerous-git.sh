@@ -110,9 +110,13 @@ fi
 
 # restore: 워킹트리 파괴만 차단. --staged/-S(언스테이징)만 있으면 허용하되,
 # --worktree/-W가 함께 오면 워킹트리도 덮어쓰므로 차단한다.
+# 허용 판정(staged)의 경계는 END보다 엄격한 공백·끝만 쓴다 — END는 차단 방향(fail-closed)용이라
+# `'`·`"`·`\`도 경계로 보는데, 셸은 `-S'W'`·`-S\W`·`-S"W"`를 인용 제거 후 `-SW`로 넘기므로 그 경계로
+# 허용하면 워킹트리 덮어쓰기가 통과한다(2026-09-13 codex 리뷰 P1). 차단 판정(worktree)은 END 그대로.
+SAFE_END='([[:space:]]|$)'
 if echo "$COMMAND" | grep -qE "${GIT}restore[[:space:]]"; then
   staged=0; worktree=0
-  echo "$COMMAND" | grep -qE "${GIT}restore[[:space:]]+(.*[[:space:]])?(--staged|-S)${END}" && staged=1
+  echo "$COMMAND" | grep -qE "${GIT}restore[[:space:]]+(.*[[:space:]])?(--staged|-S)${SAFE_END}" && staged=1
   echo "$COMMAND" | grep -qE "${GIT}restore[[:space:]]+(.*[[:space:]])?(--worktree|-W)${END}" && worktree=1
   if [[ $staged -eq 0 || $worktree -eq 1 ]]; then
     block "git restore는 워킹트리의 커밋되지 않은 변경을 되돌릴 수 없게 만듭니다 (--staged/-S만 허용)."
