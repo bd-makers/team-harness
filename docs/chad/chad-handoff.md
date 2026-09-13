@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+hook-git-opts-init-cancel
 
-## Last Completed Task (2026-09-12)
-`docs-html-stub-tests` — done
+## Last Commit (2026-09-13)
+a2b934f fix(hooks,init): 커밋 훅 git 전역 옵션 우회 차단 + init 취소 시 config 미생성
 
 ## Full Context
-→ docs/chad/docs-html-stub-tests/docs-html-stub-tests-handoff.md
+→ docs/chad/hook-git-opts-init-cancel/hook-git-opts-init-cancel-handoff.md
