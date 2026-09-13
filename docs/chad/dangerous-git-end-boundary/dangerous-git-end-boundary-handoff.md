@@ -16,3 +16,11 @@
  tests/hooks-jq-fallback.test.mjs                   |   6 ++
  tests/migrate-hooks.test.mjs                       |   2 +-
  12 files changed, 254 insertions(+), 4 deletions(-)
+
+## 2026-09-13T04:24:57.231Z — 3f287c5 fix(hooks): codex 리뷰 P1 — restore 허용 판정은 공백·끝만 경계로 (SAFE_END)
+.../dangerous-git-end-boundary-artifact.md           | 20 ++++++++++++++++++++
+ .../dangerous-git-end-boundary-meta.json             | 12 +++++++++++-
+ docs/harness-overview.html                           |  5 +++++
+ templates/.claude/hooks/block-dangerous-git.sh       |  6 +++++-
+ tests/hooks-jq-fallback.test.mjs                     |  5 +++++
+ 5 files changed, 46 insertions(+), 2 deletions(-)
