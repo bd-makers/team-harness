@@ -313,7 +313,9 @@ for (const mode of MODES) {
   test(`pre-commit-check [${mode}]: git 전역 옵션이 끼어도 commit 게이트가 돈다`, async () => {
     const dir = await jsProject({ name: 'x', scripts: { test: 'node --test' } });
     try {
-      for (const cmd of ['git -C . commit -m "wip"', 'git --no-pager commit -m "wip"', 'git -c user.name=x commit', 'git commit -m "wip"']) {
+      // 뒤 넷은 codex 리뷰 P2: 정규식 전환으로 셸 연산자 경계(`;`·`&&`·`|`·`)`)가 새지 않아야 한다.
+      for (const cmd of ['git -C . commit -m "wip"', 'git --no-pager commit -m "wip"', 'git -c user.name=x commit', 'git commit -m "wip"',
+        'git commit; echo ok', 'git commit&&echo ok', '(git commit)', 'git commit|cat']) {
         const r = await runHook('pre-commit-check.sh', bash(cmd), { mode, cwd: dir });
         assert.match(r.stderr, /커밋 전 검증 실행 중/, `${cmd}: 게이트에 도달해야 한다`);
         assert.equal(r.code, 2, `${cmd}: test 실행이 실패하면 커밋을 막는다`);

@@ -52,7 +52,9 @@ fi
 # 통과하던 우회(2026-09-13 Codex 분석 P2)를 막는다. subcommand 자리에는 대시 없는 토큰이 와야 하므로
 # `git log | grep "git commit"` 같은 인용 안 문자열은 잡지 않는다.
 GIT='git([[:space:]]+(-C[[:space:]]+[^[:space:]]+|-c[[:space:]]+[^[:space:]]+|--(git-dir|work-tree|namespace|super-prefix|exec-path)[[:space:]]+[^[:space:]]+|-[^[:space:]]+))*[[:space:]]+'
-END='([[:space:]]|$|")'
+# 경계에 셸 연산자(`;`·`&`·`|`·`)`)도 포함한다 — `git commit; git status`가 종전 부분 문자열 검사는
+# 잡았는데 정규식 전환으로 새지 않도록(2026-09-13 codex 리뷰 P2).
+END='([[:space:]]|$|[";&|)])'
 if ! [[ "$COMMAND" =~ ${GIT}commit${END} ]]; then
   exit 0
 fi

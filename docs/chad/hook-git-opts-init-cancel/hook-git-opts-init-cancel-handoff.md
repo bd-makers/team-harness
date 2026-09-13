@@ -19,3 +19,10 @@
  tests/migrate-hooks.test.mjs                       |   2 +-
  tests/user-config.test.mjs                         |  51 +++++++++
  15 files changed, 381 insertions(+), 12 deletions(-)
+
+## 2026-09-13T01:31:04.699Z — f98fd07 chore(docs): post-commit 훅이 갱신한 handoff 반영
+docs/chad/chad-handoff.md                              |  9 ++++-----
+ .../hook-git-opts-init-cancel-artifact.md              | 16 ++++++++++++++++
+ .../hook-git-opts-init-cancel-handoff.md               | 18 ++++++++++++++++++
+ .../hook-git-opts-init-cancel-meta.json                | 12 +++++++++++-
+ 4 files changed, 49 insertions(+), 6 deletions(-)
