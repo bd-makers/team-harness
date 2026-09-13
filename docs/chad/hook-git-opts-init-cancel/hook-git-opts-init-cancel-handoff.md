@@ -26,3 +26,13 @@ docs/chad/chad-handoff.md                              |  9 ++++-----
  .../hook-git-opts-init-cancel-handoff.md               | 18 ++++++++++++++++++
  .../hook-git-opts-init-cancel-meta.json                | 12 +++++++++++-
  4 files changed, 49 insertions(+), 6 deletions(-)
+
+## 2026-09-13T01:37:18.587Z — 2147dca fix(hooks): codex 리뷰 P2 — commit 뒤 셸 연산자 경계(;·&&·|·))도 게이트 대상
+docs/chad/chad-handoff.md                          |  2 +-
+ .../hook-git-opts-init-cancel-artifact.md          | 23 ++++++++++++++++++++++
+ .../hook-git-opts-init-cancel-handoff.md           |  7 +++++++
+ .../hook-git-opts-init-cancel-meta.json            |  9 +++++++++
+ docs/harness-overview.html                         | 10 ++++++++++
+ templates/.claude/hooks/pre-commit-check.sh        |  4 +++-
+ tests/hooks-jq-fallback.test.mjs                   |  4 +++-
+ 7 files changed, 56 insertions(+), 3 deletions(-)
