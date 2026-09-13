@@ -36,3 +36,10 @@ docs/chad/chad-handoff.md                          |  2 +-
  templates/.claude/hooks/pre-commit-check.sh        |  4 +++-
  tests/hooks-jq-fallback.test.mjs                   |  4 +++-
  7 files changed, 56 insertions(+), 3 deletions(-)
+
+## 2026-09-13T01:42:25.966Z — 72e6642 fix(hooks): codex 리뷰 P2 재발 — commit 경계를 "비단어 문자 전부"로 (열거 제거)
+.../hook-git-opts-init-cancel-artifact.md            | 20 ++++++++++++++++++++
+ .../hook-git-opts-init-cancel-meta.json              |  9 +++++++++
+ templates/.claude/hooks/pre-commit-check.sh          |  7 ++++---
+ tests/hooks-jq-fallback.test.mjs                     |  5 +++--
+ 4 files changed, 36 insertions(+), 5 deletions(-)
