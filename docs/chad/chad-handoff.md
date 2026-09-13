@@ -4,8 +4,8 @@
 없음 — `.harness/active.json` 은 `null` 이다.
 새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Completed Task (2026-09-12)
-`docs-html-stub-tests` — done
+## Last Completed Task (2026-09-13)
+`hook-git-opts-init-cancel` — done
 
 ## Full Context
-→ docs/chad/docs-html-stub-tests/docs-html-stub-tests-handoff.md
+→ docs/chad/hook-git-opts-init-cancel/hook-git-opts-init-cancel-handoff.md

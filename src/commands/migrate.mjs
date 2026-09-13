@@ -383,6 +383,7 @@ export const KNOWN_STOCK_HOOK_SHA256 = {
     '97b4e1802c5ab75e463c8280d055e0a723390673bacf7116f98c63d3c87d4297', // 813a2212 initial (pnpm 하드코딩판)
     '239cedf809c22cfcf09b07ac5f9d21a98da88bc85aaadd0cd577daadaf5de392', // d4662b9b detect_pm판
     'f5b79e0c0fd2cd54a284a7c4f3139681ad95b761cf45738282523f1c85bdcf0d', // d2132caf PR #29
+    '524cf3b6cb5952a02c4464a3b46b47dbef8abb82388ea786d50ca8ca17ca24ef', // 757d115f tool_input 스코프판 (`git -C`·`--no-pager` 우회 이전)
   ],
   'auto-format.sh': [
     'ba2ab843b6609543748e66d96ba26dbb2982444e8f24c4af10910ab8546e8327', // 58c4fe2e initial

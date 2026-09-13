@@ -1,0 +1,50 @@
+{
+  "user": "chad",
+  "task": "hook-git-opts-init-cancel",
+  "created": "2026-09-13",
+  "firstActivatedAt": "2026-09-13T01:24:01.562Z",
+  "status": "done",
+  "closedAt": "2026-09-13T01:48:53.188Z",
+  "forcedAt": "2026-09-13T01:48:53.188Z",
+  "forcedIssues": [
+    "커밋되지 않은 변경이 있음"
+  ],
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "a2b934f1cb93082a5786b994ee4d8f344619a386",
+      "at": "2026-09-13T01:30:48.715Z",
+      "exitCode": 0,
+      "outputBytes": 537
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "f98fd074225516de5ee1e154979718fe10db1d48",
+      "at": "2026-09-13T01:35:29.108Z",
+      "exitCode": 0,
+      "outputBytes": 842
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "1b4bd38e6e1009c5365184f2f3e2e5b4ff1d926c",
+      "at": "2026-09-13T01:41:24.782Z",
+      "exitCode": 0,
+      "outputBytes": 866
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "f836ab7ede79146a71d43889a0689216e5993c51",
+      "at": "2026-09-13T01:47:46.046Z",
+      "exitCode": 0,
+      "outputBytes": 727
+    }
+  ]
+}

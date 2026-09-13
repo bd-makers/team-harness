@@ -22,3 +22,6 @@
 | `pre-audit-cleanup/observe-tools.mjs` | `7bc95dd0` | 도입판 (`URL.pathname` 비교 — 공백 경로에서 no-op) |
 
 `pre-audit-cleanup`은 2026-09-03 점검(audit-cleanup) 직전 판이다. `.mjs`도 같은 sha 규칙으로 refresh한다.
+| `pre-git-opts/pre-commit-check.sh` | `757d115f` | `aa9de65` tool_input 스코프판 (`git -C`·`--no-pager` 전역 옵션 우회 이전) |
+
+`pre-git-opts`는 2026-09-13 Codex 분석 P2(커밋 훅이 git 전역 옵션을 놓침) 수정 직전 판이다.

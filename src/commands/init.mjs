@@ -8,7 +8,7 @@ import {
 } from '../harness.mjs';
 import { saveRenderState } from '../render-state.mjs';
 import { confirm, ask } from '../prompt.mjs';
-import { ensureUsername } from '../user-config.mjs';
+import { resolveUsername, saveUsername } from '../user-config.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
 
 export async function runInit(ctx) {
@@ -26,7 +26,8 @@ export async function runInit(ctx) {
   ctx.stackId = stack.id;
   console.log(`  stack: ${stack.stackLabel} (${stack.id})`);
 
-  await ensureUsername(ctx.targetDir, ctx.flags);
+  // 결정만 — 저장은 최종 Apply 뒤(applyChanges 직후). 여기서 쓰면 취소해도 config가 남는다.
+  const pendingUsername = await resolveUsername(ctx.targetDir, ctx.flags);
 
   // Resolve the sibling backup directory: ../<parent>/<projectName>.
   // The 3 scripts (clone.sh, symlink.sh, delete.sh) are written INTO the project
@@ -109,6 +110,7 @@ export async function runInit(ctx) {
 
   if (ctx.backupDir) await mkdir(ctx.backupDir, { recursive: true });
   await applyChanges(changes);
+  if (pendingUsername) await saveUsername(ctx.targetDir, pendingUsername);
   await saveRenderState(ctx.targetDir, renderState);
   if (saveConfig) await saveBackupConfig(ctx.targetDir, saveConfig);
   const copied = await copyStaticAssets(ctx);
