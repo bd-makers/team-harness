@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+dangerous-git-end-boundary
 
-## Last Completed Task (2026-09-13)
-`hook-git-opts-init-cancel` — done
+## Last Commit (2026-09-13)
+a4e45a3 fix(hooks): block-dangerous-git 토큰 경계를 "비단어 문자 전부"로 — `push --force;echo` 우회 차단
 
 ## Full Context
-→ docs/chad/hook-git-opts-init-cancel/hook-git-opts-init-cancel-handoff.md
+→ docs/chad/dangerous-git-end-boundary/dangerous-git-end-boundary-handoff.md
