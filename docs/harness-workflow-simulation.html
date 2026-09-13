@@ -937,8 +937,8 @@ Last commit: 로그인 토큰 검증 수정 (2026-05-15)
 
   <!-- SKILLS ROSTER -->
   <section id="skills">
-    <div class="section-title">전체 스킬 로스터 — 옵트인 여부 (0.21.0)</div>
-    <p class="section-sub">슬래시 커맨드 23종 + 커맨드 없는 스킬 2종. 전부 플러그인에 번들되며, 외부 설치가 필요한 것은 <code>diagram-design</code>(다이어그램 옵트인용) 하나뿐이다 — <code>docs/prerequisites.md</code> §5 참조.</p>
+    <div class="section-title">전체 스킬 로스터 — 옵트인 여부</div>
+    <p class="section-sub">슬래시 커맨드 25종 + 커맨드 없는 스킬 2종. 전부 플러그인에 번들되며, 외부 설치가 필요한 것은 <code>diagram-design</code>(다이어그램 옵트인용) 하나뿐이다 — <code>docs/prerequisites.md</code> §5 참조.</p>
 
     <div class="infobox">
       <strong>"옵트인"의 정확한 범위:</strong> 결정론 계약으로 정식 선언된 옵트인은 셋뿐이다 —
@@ -967,11 +967,13 @@ Last commit: 로그인 토큰 검증 수정 (2026-05-15)
           <tr><td>/harness-contrarian</td><td>spec/plan의 모든 가정에 의문 제기</td><td><span class="badge badge-persona">페르소나</span> 막힐 때 2순위 · 엔진 인수 시 D6 외부 검증자 (0.20.0)</td></tr>
           <tr><td>/harness-simplifier</td><td>plan에서 제거 가능한 단계·추상화 탐색</td><td><span class="badge badge-persona">페르소나</span> 막힐 때 3순위 · 엔진 인수 시 D6 외부 검증자 채점 (0.20.0)</td></tr>
           <tr><td>/harness-retro</td><td>artifact.md에 학습·교정 append (자기개선 루프)</td><td><span class="badge badge-core">기본</span> 교정 받은 후 · done 전</td></tr>
+          <tr><td>/harness-promote</td><td>artifact의 <code>## Learnings</code> 항목을 사용자 승인 후 <code>.claude/rules/&lt;slug&gt;.md</code>로 승격 — 유래 마커 부착·cursor 미러 재생성 (0.27.0)</td><td><span class="badge badge-maint">상황별</span> 같은 학습·교정이 3회 이상 반복될 때 · retro 다음</td></tr>
           <tr><td>/harness-ship</td><td>PR/MR 직전 spec·plan·artifact 정합 + shipcheck 정합 검증(0.20.0) — PR은 만들지 않는다</td><td><span class="badge badge-core">기본</span> PR/MR 직전 · 다이어그램 갱신은 옵트인(<code>--no-diagram</code>)</td></tr>
           <tr class="skills-group"><td colspan="3">설치 · 온보딩</td></tr>
           <tr><td>/harness-init</td><td>하네스 scaffold 또는 기존 설치 갱신 (Claude 메인 + Codex 리뷰어 + Cursor 미러; 마커 병합이라 재실행 안전)</td><td><span class="badge badge-cond">1회</span> 새 프로젝트 · 재실행은 갱신</td></tr>
           <tr class="skills-group"><td colspan="3">유지보수 · 상황별</td></tr>
           <tr><td>/harness-doctor</td><td>무결성 점검 — 파일·훅·CLI PATH·외부 도구</td><td><span class="badge badge-maint">상황별</span> 설치 직후·뭔가 이상할 때</td></tr>
+          <tr><td>/harness-observe</td><td>관측 로그(<code>.harness/observability</code>) 스코어카드·트립와이어 판정 — read-only, 발화 시 exit 1 (0.26.0)</td><td><span class="badge badge-maint">상황별</span> 관측 로그가 쌓인 소비자 프로젝트에서</td></tr>
           <tr><td>/harness-sync</td><td>symlink 재생성 + <code>.cursor/rules</code> ↔ <code>.claude/rules</code> 동기화</td><td><span class="badge badge-maint">상황별</span></td></tr>
           <tr><td>/harness-clone</td><td>project → backup dir 동기화 (merge, newer-wins)</td><td><span class="badge badge-maint">상황별</span> backup dir 운용 시</td></tr>
           <tr><td>/harness-symlink</td><td>backup dir → project symlink 생성·교체</td><td><span class="badge badge-maint">상황별</span> backup dir 운용 시</td></tr>
