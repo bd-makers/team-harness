@@ -47,13 +47,7 @@ else
   COMMAND=$(json_input_field command "$INPUT") || COMMAND="$INPUT"
 fi
 
-# git과 subcommand 사이에 올 수 있는 전역 옵션 — block-dangerous-git.sh의 GIT/END와 같은 규칙.
-# `git -C . commit`·`git --no-pager commit`이 `*"git commit"*` 부분 문자열 검사를 비껴가 게이트 없이
-# 통과하던 우회(2026-09-13 Codex 분석 P2)를 막는다. subcommand 자리에는 대시 없는 토큰이 와야 하므로
-# `git log | grep "git commit"` 같은 인용 안 문자열은 잡지 않는다.
-GIT='git([[:space:]]+(-C[[:space:]]+[^[:space:]]+|-c[[:space:]]+[^[:space:]]+|--(git-dir|work-tree|namespace|super-prefix|exec-path)[[:space:]]+[^[:space:]]+|-[^[:space:]]+))*[[:space:]]+'
-END='([[:space:]]|$|")'
-if ! [[ "$COMMAND" =~ ${GIT}commit${END} ]]; then
+if [[ "$COMMAND" != *"git commit"* ]]; then
   exit 0
 fi
 

@@ -307,6 +307,34 @@ for (const mode of MODES) {
   });
 }
 
+for (const mode of MODES) {
+  // 2026-09-13 Codex 분석 P2: `git -C . commit`·`git --no-pager commit`이 `*"git commit"*` 부분 문자열
+  // 검사를 비껴가 exit 0으로 통과했다. block-dangerous-git.sh와 같은 전역 옵션 규칙으로 잡는다.
+  test(`pre-commit-check [${mode}]: git 전역 옵션이 끼어도 commit 게이트가 돈다`, async () => {
+    const dir = await jsProject({ name: 'x', scripts: { test: 'node --test' } });
+    try {
+      for (const cmd of ['git -C . commit -m "wip"', 'git --no-pager commit -m "wip"', 'git -c user.name=x commit', 'git commit -m "wip"']) {
+        const r = await runHook('pre-commit-check.sh', bash(cmd), { mode, cwd: dir });
+        assert.match(r.stderr, /커밋 전 검증 실행 중/, `${cmd}: 게이트에 도달해야 한다`);
+        assert.equal(r.code, 2, `${cmd}: test 실행이 실패하면 커밋을 막는다`);
+      }
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  });
+
+  test(`pre-commit-check [${mode}]: subcommand가 commit이 아니면 옵션·인용 안 'commit'에도 관여하지 않는다`, async () => {
+    const dir = await jsProject({ name: 'x', scripts: { test: 'node --test' } });
+    try {
+      // `grep "git commit"`처럼 인용 부호가 commit 바로 뒤에 오는 경우는 END가 `"`를 경계로 인정하므로
+      // (저정밀 payload 스캔 계약) 게이트가 돈다 — block-dangerous-git.sh와 같은 fail-closed 오탐이며 여기서 다루지 않는다.
+      for (const cmd of ['git -C . status', 'git log --oneline', 'git --no-pager diff --stat', 'echo "commit message" > notes.txt']) {
+        const r = await runHook('pre-commit-check.sh', bash(cmd), { mode, cwd: dir });
+        assert.equal(r.code, 0, `${cmd}: stderr: ${r.stderr}`);
+        assert.doesNotMatch(r.stderr, /커밋 전 검증 실행 중/, `${cmd}: 게이트를 돌리지 않아야 한다`);
+      }
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  });
+}
+
 test('pre-commit-check: jq 없이도 게이트가 돌고 저정밀 모드를 알린다', async () => {
   const dir = await jsProject({ name: 'x', scripts: { test: 'node --test' } });
   try {
