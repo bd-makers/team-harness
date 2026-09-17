@@ -49,20 +49,22 @@ DB→응답의 수직 슬라이스 전체를 실물 인프라와 함께 태우�
 
 테스트를 한 줄도 쓰기 전에 다음을 확정한다.
 
-1. **`package.json` 파싱** — `dependencies` + `devDependencies`에서 판별:
-   - 테스트 러너: `vitest` / `jest` (둘 다 없으면 아래 "러너·인프라 부재" 분기).
-   - TypeScript: `typescript` 존재 여부 → `.ts` 사용.
-   - 커버리지: `@vitest/coverage-v8` / `jest --coverage` 설정, `test:coverage` 스크립트.
-2. **통합 특화 판별** (형제 0단계에 추가되는 부분):
-   - **서버 프레임워크**: next / express / fastify / hono / nestjs / trpc — 그에 맞는
-     **인프로세스 호출 수단**을 선택한다: Fastify `inject`, Hono `app.request`,
-     supertest, Next.js 핸들러 직접 호출, tRPC `createCaller`.
-   - **DB/ORM**: prisma / drizzle / typeorm / knex / pg / mysql2 / mongoose + 마이그레이션
-     도구. **테스트 DB 전략의 기존 흔적**(globalSetup, `.env.test`,
-     `docker-compose.test.yml`, testcontainers) 존재 여부.
-   - **아웃바운드 HTTP 목킹**: msw(node) / nock / undici `MockAgent` 존재 여부.
-   - **Docker 가용성 확인** — `docker info`를 실제로 실행해 testcontainers 사용 가능
-     여부를 확인한다. 불가하면 아래 "Docker 부재" 분기.
+1. **설비 감지는 CLI가 한다** — 러너·TypeScript·커버리지에 더해 **서버 프레임워크**와 그에 맞는
+   **인프로세스 호출 수단**, **DB/ORM·드라이버**, **아웃바운드 HTTP 목킹**, 그리고 **테스트 인프라의
+   기존 흔적**(testcontainers 의존성·`.env.test`·`docker-compose.test.yml`)까지 한 번에 받는다.
+   `package.json`을 직접 열어 의존성을 눈으로 훑지 않는다:
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" stack --json
+   ```
+
+   - 출력 필드는 **CLI가 정본**이다 — 이 문서에 나열하지 않는다(`--help`와 envelope가 답한다).
+   - `status: "warning"`을 러너 부재로 단정하지 않는다 — 매니페스트를 파싱하지 못한 경우도 warning이다.
+     `next_actions`를 읽고 그것이 가리키는 곳으로 간다(러너가 없으면 아래 "러너·인프라 부재" 분기).
+   - CLI는 read-only다. 설치하지도, 러너를 추천하지도 않는다 — 그건 아래 4번이 할 일이다.
+2. **Docker 가용성 확인** (CLI가 알 수 없는 부분 — 의존성이 아니라 머신 상태다):
+   `docker info`를 실제로 실행해 testcontainers 사용 가능 여부를 확인한다.
+   불가하면 아래 "Docker 부재" 분기로 간다. 1번이 보고한 인프라 흔적이 있으면 그 전략을 먼저 따른다.
 3. **기존 통합 테스트 2~3개 샘플링** — 테스트 DB 준비 방식(**트랜잭션 롤백 vs
    truncate**), 시드/팩토리 패턴, 셋업 파일을 추출한다. **팀 컨벤션이 이 계약과
    충돌하면 팀 컨벤션을 따른다** (인메모리 대체 금지는 §2 예외 참조).
@@ -75,8 +77,9 @@ DB→응답의 수직 슬라이스 전체를 실물 인프라와 함께 태우�
 5. **Docker 부재 분기** — testcontainers가 불가하면 대안(로컬 DB 인스턴스, pglite 등
    **동일-엔진** 경량 대체)을 제시하고 사용자 선택을 받는다. **[금지] 임의로 외부 공유
    DB에 붙기**.
-6. **스택 요약을 5줄 이내로 보고**한 다음 작성에 들어간다.
-   예: `러너: Vitest · 서버: Fastify(inject) · DB: Prisma+Postgres(testcontainers) · 아웃바운드: msw(node) · 격리: 트랜잭션 롤백`.
+6. **스택 요약을 5줄 이내로 보고**한 다음 작성에 들어간다. CLI의 `summary`를 그대로 쓰고,
+   CLI가 알 수 없는 것(2번의 Docker 가용성, 3번의 격리 전략)만 덧붙인다.
+   예: `러너: Vitest · 서버: Fastify(inject) · DB: Prisma+Postgres · 아웃바운드: msw(node) · 격리: 트랜잭션 롤백(testcontainers 가용)`.
 
 ---
 

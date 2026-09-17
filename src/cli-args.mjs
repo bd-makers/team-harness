@@ -56,6 +56,10 @@ export const COMMANDS = [
     flags: BACKUP_DIR_FLAG },
   { name: 'sync', args: '[dir]', summary: 'Mirror .claude/rules → .cursor/rules and reinstall the post-commit hook', flags: [] },
   { name: 'doctor', args: '[dir]', summary: 'Diagnose harness integrity', flags: [] },
+  // Read-only. Owns the dependency lookup that the three test commands' 0단계 used to
+  // describe in prose three times over; the judgment steps (convention sampling, the
+  // missing-runner branch, the Docker branch) stay in those documents.
+  { name: 'stack', args: '[dir]', summary: 'Report the detected stack + testing profile (read-only)', flags: ['stack'] },
   { name: 'task', args: '<name>', summary: 'Create or activate a task', flags: [] },
   { name: 'list', args: '', summary: 'List all tasks', flags: [] },
   { name: 'summary', args: '[--write|--check] [--force]',
@@ -102,7 +106,7 @@ const OPTIONS_HELP = `Options:
   --target <dir>       Target directory (default: cwd)
   --gitignore-ai       Add AI tool entries to .gitignore without prompting
   --no-gitignore-ai    Skip AI gitignore entries without prompting
-  --json               Structured JSON envelope output for drive commands (task/retro/release/doctor/summary/observe/rules)`;
+  --json               Structured JSON envelope output for drive commands (task/retro/release/doctor/summary/observe/rules/stack)`;
 
 // `doctor` proves the hook CLI is reachable by matching `session-context` and
 // `handoff` at the start of a line in this output, so the two-space indent is a
