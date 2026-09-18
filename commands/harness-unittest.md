@@ -23,27 +23,31 @@ Principles, Practices, and Patterns* 전략을 실행 규칙으로 적용해 단
 
 테스트를 한 줄도 쓰기 전에 다음을 확정한다.
 
-1. **`package.json` 파싱** — `dependencies` + `devDependencies`에서 판별:
-   - 테스트 러너: `vitest` / `jest` (둘 다 없으면 아래 "러너 부재" 분기).
-   - React vs React Native: `react-native` / `expo` 존재 시 RN, 아니면 web React.
-   - TypeScript: `typescript` 존재 여부 → `.ts`/`.tsx` 사용.
-   - Testing Library 계열: `@testing-library/react`, `@testing-library/react-native`,
-     `@testing-library/user-event`, `@testing-library/jest-dom`.
-   - 네트워크 목킹: `msw` 존재 여부.
-   - 커버리지: `@vitest/coverage-v8` / `jest --coverage` 설정, `test:coverage` 스크립트.
+1. **설비 감지는 CLI가 한다** — 러너·프레임워크·TypeScript·Testing Library 계열·목킹·커버리지를
+   한 번에 받는다. `package.json`을 직접 열어 의존성을 눈으로 훑지 않는다:
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" stack --json
+   ```
+
+   - 출력 필드는 **CLI가 정본**이다 — 이 문서에 나열하지 않는다(`--help`와 envelope가 답한다).
+   - `status: "warning"`을 러너 부재로 단정하지 않는다 — 매니페스트를 파싱하지 못한 경우도 warning이다.
+     `next_actions`를 읽고 그것이 가리키는 곳으로 간다(러너가 없으면 아래 "러너 부재" 분기).
+   - CLI는 read-only다. 설치하지도, 러너를 추천하지도 않는다 — 그건 아래 3번이 할 일이다.
 2. **기존 테스트 2~3개 샘플링** — 이미 있는 `*.test.*` / `*.spec.*` / `__tests__/`
    파일을 열어 팀 컨벤션을 추출한다:
    - 파일 위치: `__tests__/` 디렉토리 vs co-location(`Foo.tsx` 옆 `Foo.test.tsx`).
    - `describe`/`it` vs `test` 스타일, 테스트명 언어(한국어/영어).
    - 목킹 패턴(`vi.mock`/`jest.mock`), 픽스처·팩토리 헬퍼, 셋업 파일.
-   - **팀 컨벤션이 이 계약과 충돌하면 팀 컨벤션을 따른다** (스냅샷 정책 등은 §5 예외 참조).
+   - **팀 컨벤션이 이 계약과 충돌하면 팀 컨벤션을 따른다** (스냅샷 정책 등은 §4 예외 참조).
 3. **러너 부재 분기** — 러너가 하나도 없으면:
    - 웹 검색으로 현시점 권장 조합을 1회 확인한다.
    - 기본 추천: **web/라이브러리 → Vitest + Testing Library**,
      **React Native → Jest + @testing-library/react-native** (RN 공식 러너는 Jest).
    - `AskUserQuestion`으로 러너 설치를 **1회 확인**한 뒤 설치한다 (사용자 승인 없이 설치 금지).
-4. **스택 요약을 5줄 이내로 보고**한 다음 테스트 작성에 들어간다.
-   예: `러너: Vitest · 프레임워크: React(web) · TS: 예 · 컨벤션: co-location, it()/한국어 · msw: 있음`.
+4. **스택 요약을 5줄 이내로 보고**한 다음 테스트 작성에 들어간다. CLI의 `summary`를 그대로 쓰고,
+   CLI가 알 수 없는 것(2번에서 추출한 팀 컨벤션)만 덧붙인다.
+   예: `러너: Vitest · 프레임워크: React(web) · TS: 예 · msw: 있음 · 컨벤션: co-location, it()/한국어`.
 
 ---
 

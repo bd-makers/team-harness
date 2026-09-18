@@ -30,10 +30,18 @@ Raw slash-command 인수:
    `docs/<user>/<name>/`를 확인한다. 활성 task가 없으면 갱신할 문서가 없다는 사실을
    사용자에게 보고하고 종료한다(임의로 task를 만들지 않는다).
 
-2. **Scope 파악** — 이번 PR/MR에 실릴 변경을 먼저 읽는다. base는 `--base <ref>` 인수가 있으면
-   그 값, 없으면 `origin/main`, 그것도 없으면(`git rev-parse --verify origin/main` 실패) `main`.
-   working tree가 dirty면 uncommitted 변경도 scope에 포함한다. 변경이 비어 있으면 ship할 것이
-   없다고 보고하고 종료한다.
+2. **Scope 파악** — scope와 base 판정은 CLI가 한다. 사다리를 손으로 실행하지 않는다:
+
+   ```bash
+   node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" scope --json [--base <ref>]
+   ```
+
+   - 판정 규칙의 정본은 `commands/harness-review.md` 2단계다 — 이 문서에 다시 적지 않는다.
+   - `status: "warning"`(diff 비어 있음)이면 ship할 것이 없다고 보고하고 종료한다.
+   - `status: "error"`면 `next_actions`를 따르고, 판정하지 못한 base로 진행하지 않는다.
+   - 출력의 `base`를 7단계 검증에 그대로 넘긴다 — 여기서 정한 기준과 검증자가 보는 기준을 맞춘다.
+
+   그다음 그 scope의 변경을 실제로 읽는다. `worktree`면 uncommitted 변경까지 포함된 상태다.
 
 3. **spec 최종 갱신** — 구현하면서 바뀐 요구사항·설계 결정을 `<name>-spec.md`에 반영한다.
    Ontology와 Ambiguity 자가진단은 spec에 직접 두고, 외부 문서를 가리키는 포인터 껍데기로
@@ -77,12 +85,23 @@ Raw slash-command 인수:
 7. **정합 검증 — 적대적 검증 (옵트인, D6)** — ship은 PR 직전 마지막 게이트인데 문서↔diff
    정합을 ship을 도는 세션이 자기 채점하면 낙관적 통과가 샌다. 중요한 변경(AGENTS.md 리뷰
    프로토콜 기준)이면 **별도 컨텍스트의 read-only 검증자**에게 반박시킨다. 절차·엔진 표는
-   `/harness-review`를 그대로 쓰되(scope는 2번에서 파악한 diff) 리뷰 프롬프트를 아래 블록으로
-   교체한다 — 정본은 `src/commands/review-prompts.mjs`의 `shipcheck` 템플릿이고 이 블록은 미러다
+   `/harness-review`를 그대로 쓰되 리뷰 프롬프트를 아래 블록으로 교체한다 — 정본은
+   `src/commands/review-prompts.mjs`의 `shipcheck` 템플릿이고 이 블록은 미러다
    (pin 테스트가 동기화; scope·spec/plan/artifact 경로·focus는 CLI가 채운다).
-   `harness-team review <engine> --framing shipcheck --scope diff --base <ref>`로 실행하면 CLI가
-   `kind=<engine>-shipcheck`로 meta.reviews와 artifact `## Reviews` 마커를 남긴다(마커를 손으로
-   쓰지 않는다). 건너뛰면 보고(8번)에 "정합 검증: 미실행"을 명시한다.
+
+   **scope는 2번이 판정한 값을 그대로 넘긴다** — `diff`로 고정하지 않는다. 2번이 `worktree`를
+   줬다는 것은 미커밋 변경이 있다는 뜻이고, 그때 `--scope diff`로 검증하면 **검증자가 ship이 읽은
+   것과 다른 것을 본다**(미커밋 변경이 D6 검증에서 통째로 빠진다):
+
+   ```bash
+   # 2번 출력이 scope=diff 인 경우
+   harness-team review <engine> --framing shipcheck --scope diff --base "$BASE"
+   # 2번 출력이 scope=worktree 인 경우 (base 없음)
+   harness-team review <engine> --framing shipcheck --scope worktree
+   ```
+
+   실행하면 CLI가 `kind=<engine>-shipcheck`로 meta.reviews와 artifact `## Reviews` 마커를
+   남긴다(마커를 손으로 쓰지 않는다). 건너뛰면 보고(8번)에 "정합 검증: 미실행"을 명시한다.
 
    <!-- harness:prompt framing=shipcheck -->
    ```text
@@ -110,10 +129,20 @@ Raw slash-command 인수:
 ## 예시
 
 ```bash
-# 2번 Scope 파악
+# 2번 Scope 파악 — scope 와 base 는 CLI 가 판정한다
+node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" scope --json
 git status --short
-git log --oneline origin/main..HEAD
-git diff --stat origin/main...HEAD
+
+# scope=diff 일 때만 base 범위를 읽는다. BASE 는 위 출력의 base 값이며,
+# 비어 있는 채로 "$BASE"..HEAD 를 쓰면 git 이 에러 없이 빈 범위로 읽어 변경을 통째로 놓친다.
+git log --oneline "$BASE"..HEAD
+git diff --stat "$BASE"...HEAD
+
+# scope=worktree 일 때 (base 는 null 이다 — 위 두 줄을 쓰지 않는다)
+git diff --stat HEAD
+# `--stat HEAD` 는 untracked 를 세지 않는다. scope 판정은 `git status --porcelain` 기준이라
+# untracked 도 worktree 에 포함되므로 새 파일을 따로 확인한다 — 빠뜨리면 ship 이 신규 파일을 놓친다.
+git ls-files --others --exclude-standard
 ```
 
 준비 완료 보고 형식:

@@ -5,6 +5,7 @@ import { promisify } from 'node:util';
 import { exists, writeText } from '../fsx.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 import { hasDoneMarker } from '../handoff-marker.mjs';
+import { readOriginHead } from '../git-default-branch.mjs';
 
 const pexec = promisify(execFile);
 
@@ -267,13 +268,16 @@ async function findGitDir(startDir) {
 // `init.defaultBranch` is deliberately NOT consulted: it is usually global config and
 // states which name the user prefers for NEW repos, not what this repo's default is.
 // Someone with init.defaultBranch=main working in a master repo would be refused.
+// `readOriginHead` 에 넘길 exec 어댑터. summary 는 plain pexec 을 쓴다 — remote-task 의
+// GIT_NO_LAZY_FETCH·timeout 정책을 여기로 들여오면 이 파일의 동작이 바뀐다.
+const gitArgs = (targetDir) => async (args) => {
+  const { stdout } = await pexec('git', ['-C', targetDir, ...args]);
+  return stdout;
+};
+
 export async function defaultBranchCandidates(targetDir) {
-  try {
-    const { stdout } = await pexec('git', ['-C', targetDir, 'symbolic-ref', '--short', 'refs/remotes/origin/HEAD']);
-    const ref = stdout.trim();
-    if (ref) return [ref.replace(/^origin\//, '')];
-  } catch { /* no origin/HEAD → conventional names below */ }
-  return ['main', 'master'];
+  const name = await readOriginHead(gitArgs(targetDir));
+  return name ? [name] : ['main', 'master'];
 }
 
 // A branch whose HEAD is the *same commit* as the default branch has no local commits of
@@ -303,14 +307,16 @@ async function isSyncedWithDefault(targetDir) {
     const { stdout } = await pexec('git', ['-C', targetDir, ...args]);
     return stdout.trim();
   };
+  // No fallback on purpose — see the block comment above. `readOriginHead` answers only what
+  // `origin/HEAD` says; its null closes this path, which is the fail-closed behaviour this guard needs.
+  const base = await readOriginHead(gitArgs(targetDir));
+  if (!base) return false;
   try {
-    // `origin/main` shape. Spelled back as `refs/remotes/origin/main` below so that a local
-    // branch or tag literally named `origin/main` cannot answer in its place.
-    const base = await rev('symbolic-ref', '--short', 'refs/remotes/origin/HEAD');
-    if (!base) return false;
     const head = await rev('rev-parse', 'HEAD');
     if (!head) return false;
-    return (await rev('rev-parse', '--verify', `refs/remotes/${base}`)) === head;
+    // Spelled back as `refs/remotes/origin/<base>` so that a local branch or tag literally named
+    // `origin/main` cannot answer in its place.
+    return (await rev('rev-parse', '--verify', `refs/remotes/origin/${base}`)) === head;
   } catch {
     return false;
   }

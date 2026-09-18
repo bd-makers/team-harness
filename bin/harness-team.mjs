@@ -7,6 +7,8 @@ import { runInit } from '../src/commands/init.mjs';
 import { runBackup } from '../src/commands/backup.mjs';
 import { runSync } from '../src/commands/sync.mjs';
 import { runDoctor } from '../src/commands/doctor.mjs';
+import { runStack } from '../src/commands/stack.mjs';
+import { runScope } from '../src/commands/scope.mjs';
 import { runTask, runList, runDone, runHandoffAuto, runRetro } from '../src/commands/task.mjs';
 import { runClone } from '../src/commands/clone.mjs';
 import { runSymlink } from '../src/commands/symlink.mjs';
@@ -69,6 +71,8 @@ async function main() {
     case 'upgrade': return runUpgrade(ctx);
     case 'sync': return runSync(ctx);
     case 'doctor': return runDoctor(ctx);
+    case 'stack': return runStack(ctx);
+    case 'scope': return runScope(ctx);
     case 'task': return runTask(ctx);
     case 'list': return runList(ctx);
     case 'summary': return runSummary(ctx);

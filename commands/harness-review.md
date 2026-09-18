@@ -40,9 +40,20 @@ Raw slash-command 인수:
      `custom`은 체인에 포함되지 않는다 — 명시 호출 전용이다.
 
 2. **Scope 결정** — `git status --short`가 dirty면 working tree 전체가 리뷰 대상이다.
-   clean이면 base 대비 브랜치 diff를 리뷰한다 — base는 `--base <ref>` 인수가 있으면
-   그 값, 없으면 `origin/main`, 그것도 없으면(`git rev-parse --verify origin/main` 실패)
-   `main`. diff가 비어 있으면 리뷰할 것이 없다고 보고하고 종료한다.
+   clean이면 base 대비 브랜치 diff를 리뷰한다 — base는 `--base <ref>` 인수가 있으면 그 값,
+   없으면 **원격 기본 브랜치**를 찾는다: `origin/HEAD`가 가리키는 것 → `origin/main` → `origin/master`,
+   **실재하는 것만** 채택한다(`origin/HEAD`는 삭제된 브랜치를 가리킨 채 남아 있을 수 있다).
+
+   폴백 규칙이 두 갈래인 이유가 중요하다. **로컬 `main`은 origin이 아예 없을 때만 base가 된다.**
+   origin이 있는데 기본 브랜치를 못 찾았다면 로컬 브랜치로 때우지 않고 **에러로 멈춘다** — 기본
+   브랜치가 `master`·`develop`인 저장소에서 낡은 로컬 `main`을 base로 잡으면 엉뚱한 diff를 **조용히**
+   리뷰하게 되고, 그 실패는 눈에 보이지 않는다. 그때는 `--base <ref>`를 주거나
+   `git remote set-head origin -a`로 `origin/HEAD`를 설정한다.
+
+   diff가 비어 있으면 리뷰할 것이 없다고 보고하고 종료한다.
+
+   이 판정만 따로 필요하면(예: `/harness-ship` 2단계) `harness-team scope --json`이 같은 규칙으로
+   `{scope, base, tip}`을 돌려준다 — 판정을 손으로 다시 실행하지 않는다.
 
 3. **실행** — `harness-team review [엔진] [--base <ref>] [focus ...]`를 실행한다. CLI가 1·2단계를
    같은 규칙으로 다시 판정하고(엔진 인자·`--base`·focus를 그대로 넘긴다), 아래 "엔진 runner 표"의

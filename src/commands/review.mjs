@@ -19,6 +19,7 @@ import { exists, writeText } from '../fsx.mjs';
 import { readActive, taskArtifactTemplate, VERIFY_KIND_SUFFIXES } from './task.mjs';
 import { readTaskMeta, writeTaskMeta } from './summary.mjs';
 import { RUBRICS, findFramingTemplate } from './review-prompts.mjs';
+import { resolveDefaultRef } from './remote-task.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 
 const pexec = promisify(execFile);
@@ -238,8 +239,39 @@ export async function resolveScope({ targetDir, scope, base }) {
 
   let resolvedBase = base;
   if (!resolvedBase) {
-    try { await git(targetDir, ['rev-parse', '--verify', '--quiet', 'origin/main']); resolvedBase = 'origin/main'; }
-    catch { resolvedBase = 'main'; }
+    // 기본 브랜치는 `origin/HEAD`가 정본이다. 여기서 `origin/main`을 하드코딩했더니 기본 브랜치가
+    // master·develop인 저장소에서 base를 `main`으로 잡았다 — 그런 ref가 없으면 죽고, **동명의 낡은
+    // 로컬 브랜치가 있으면 엉뚱한 diff를 조용히 리뷰한다.** remote-task가 같은 판정을 이미 올바르게
+    // 하고 있었으므로 그 함수를 쓴다(판정을 네 번째로 복제하지 않는다).
+    // origin이 없으면 null이 오고, 그때만 `main`으로 떨어진다(origin 없는 저장소의 기존 동작 보존).
+    // 후보를 순서대로 훑되 **실재하는 것만** 채택한다. origin/HEAD 는 삭제된 브랜치를 가리키는 채로
+    // 남아 있을 수 있고(기본 브랜치 개명·정리 후 흔하다), resolveDefaultRef 는 존재를 확인하지 않는다
+    // — remote-task 는 뒤이은 `git show` 실패를 null 로 삼켜 문제가 되지 않았지만 여기는 그 뒤처리가 없다.
+    let hasOrigin = false;
+    try { hasOrigin = (await git(targetDir, ['remote'])).split('\n').some(r => r.trim() === 'origin'); }
+    catch { /* git 없음 — 아래 로컬 폴백 */ }
+
+    // 로컬 `main` 은 **origin 이 아예 없을 때만** 안전한 기준이다. origin 이 있는데 그 기본 브랜치를
+    // 못 찾았다면 로컬 브랜치로 때우는 순간, 기본 브랜치가 develop 인 저장소에서 낡은 로컬 main 을
+    // 상대로 조용히 엉뚱한 diff 를 리뷰한다 — 이 판정이 없애려던 바로 그 실패 모드다. 모르면 묻는다.
+    const candidates = hasOrigin
+      ? [await resolveDefaultRef(targetDir), 'origin/main', 'origin/master']
+      : ['main'];
+    for (const candidate of candidates) {
+      if (!candidate) continue;
+      try {
+        await git(targetDir, ['rev-parse', '--verify', '--quiet', candidate]);
+        resolvedBase = candidate;
+        break;
+      } catch { /* 다음 후보 */ }
+    }
+    if (!resolvedBase) {
+      return {
+        error: hasOrigin
+          ? 'origin 의 기본 브랜치를 판정하지 못함 — `--base <ref>` 로 기준을 직접 주거나 `git remote set-head origin -a` 로 origin/HEAD 를 설정할 것 (로컬 브랜치로 때우면 엉뚱한 diff 를 조용히 리뷰한다)'
+          : 'base ref "main" 를 찾을 수 없음',
+      };
+    }
   }
   try {
     await git(targetDir, ['rev-parse', '--verify', '--quiet', resolvedBase]);

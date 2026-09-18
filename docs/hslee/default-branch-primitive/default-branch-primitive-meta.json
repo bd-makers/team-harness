@@ -1,0 +1,66 @@
+{
+  "user": "hslee",
+  "task": "default-branch-primitive",
+  "created": "2026-09-18",
+  "firstActivatedAt": "2026-09-18T12:46:11.272Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "fc18bf7710435ed369156a611dc67422cf42bfce",
+      "at": "2026-09-18T12:50:48.972Z",
+      "exitCode": 0,
+      "outputBytes": 1518
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "fc18bf7710435ed369156a611dc67422cf42bfce",
+      "at": "2026-09-18T12:54:03.397Z",
+      "exitCode": 0,
+      "outputBytes": 1623
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "fc18bf7710435ed369156a611dc67422cf42bfce",
+      "at": "2026-09-18T12:56:29.617Z",
+      "exitCode": 0,
+      "outputBytes": 859
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "fc18bf7710435ed369156a611dc67422cf42bfce",
+      "at": "2026-09-18T12:58:10.200Z",
+      "exitCode": 0,
+      "outputBytes": 561
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "fc18bf7710435ed369156a611dc67422cf42bfce",
+      "at": "2026-09-18T13:00:09.680Z",
+      "exitCode": 0,
+      "outputBytes": 1269
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "fc18bf7710435ed369156a611dc67422cf42bfce",
+      "at": "2026-09-18T13:02:19.591Z",
+      "exitCode": 0,
+      "outputBytes": 460
+    }
+  ]
+}

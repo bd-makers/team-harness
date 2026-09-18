@@ -33,6 +33,8 @@ Common commands:
 - `harness-team task <name>`: create or activate a task.
 - `harness-team list`: list task directories.
 - `harness-team doctor --json`: diagnose install health with a structured observation.
+- `harness-team stack --json`: report the detected stack and testing profile (read-only). The test commands' stack-detection step reads this instead of parsing `package.json` by hand.
+- `harness-team scope --json`: resolve the review/ship scope and base ref (read-only). The base is the remote default branch (`origin/HEAD`), not a hardcoded `origin/main`.
 - `harness-team done`: complete the active task after the plan and artifact are complete.
 - `harness-team retro "<note>"`: append a learning to the active task artifact.
 - `harness-team context init` / `context check`: create or validate the active task's Context Card. Agents own this file — update it when the plan's atomic step changes or a reproducible failure appears or clears.
