@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-default-branch-primitive
+config-rmw-cli
 
 ## Last Commit (2026-09-18)
-4989c5f refactor(default-branch-primitive): origin/HEAD 읽기를 readOriginHead 하나로 모음
+7365800 feat(config-rmw-cli): .harness/config.json read-modify-write 를 harness-team config 로 이관
 
 ## Full Context
-→ docs/hslee/default-branch-primitive/default-branch-primitive-handoff.md
+→ docs/hslee/config-rmw-cli/config-rmw-cli-handoff.md
