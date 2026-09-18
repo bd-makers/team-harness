@@ -1,0 +1,39 @@
+{
+  "user": "hslee",
+  "task": "diagram-record-cli",
+  "created": "2026-09-18",
+  "firstActivatedAt": "2026-09-18T14:19:01.545Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "ea2c5176cf2e4c5e302d67975128c407e7a1fc90",
+      "at": "2026-09-18T14:27:59.223Z",
+      "exitCode": 0,
+      "outputBytes": 1623
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "ea2c5176cf2e4c5e302d67975128c407e7a1fc90",
+      "at": "2026-09-18T14:31:43.021Z",
+      "exitCode": 0,
+      "outputBytes": 955
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "ea2c5176cf2e4c5e302d67975128c407e7a1fc90",
+      "at": "2026-09-18T14:34:20.578Z",
+      "exitCode": 0,
+      "outputBytes": 398
+    }
+  ]
+}

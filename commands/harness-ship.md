@@ -66,8 +66,9 @@ Raw slash-command 인수:
    - **Degrade** — 스킬이 없거나 호출이 실패하면 **ship을 실패로 만들지 않는다.** 다이어그램
      단계만 건너뛰고 나머지 절차를 계속한다. 인라인 SVG를 손으로 대신 그려 채우지 않는다 —
      그러면 옵트인의 의미가 사라진다.
-   - **Record** — 실행했든 건너뛰었든 결과를 artifact에 한 줄 남긴다. 예:
-     `- 다이어그램: 미실행 (diagram-design 스킬이 이 머신에 없음 — 2026-08-20)`.
+   - **Record** — 실행했든 건너뛰었든 `harness-team diagram record`(건너뛰었으면 `--skipped "<사유>"`)로
+     남긴다 — artifact 한 줄과 plan 단계 닫기를 한 명령이 한다. 예: `harness-team diagram record --skipped
+     "diagram-design 스킬이 이 머신에 없음"`.
 
    실제 생성·갱신은 `/harness-diagram`(`commands/harness-diagram.md`)이 담당한다 — 그 어댑터가
    산출물 경로·자립형 inline SVG 제약·artifact 기록을 상류 스킬 호출에 실어 준다. 위 세 단계는

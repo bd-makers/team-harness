@@ -222,7 +222,9 @@ test('commands/harness-task.md는 created/activated를 구분하고 건너뛴 �
   assert.match(doc, /`AskUserQuestion`으로 한 번만 묻는다/, 'AskUserQuestion으로 1회만 묻는 계약');
   assert.match(doc, /설치 명령을 단정해 안내하지 말고/, 'preflight에서 설치 명령을 단정해 안내하지 않는 계약');
   assert.match(doc, /자립형 \*\*inline SVG\*\*로 쓴다/, '산출물은 inline SVG 요구');
-  assert.match(doc, /"다이어그램 미실행 — 도구 없음"을 날짜와 함께 한 줄 남긴다/, '도구 없을 때 artifact 기록 계약');
+  // 기록 형식의 정본은 CLI다(0.40 diagram-record-cli) — 문서는 손으로 쓰는 문구가 아니라 호출을 가리킨다.
+  assert.match(doc, /`harness-team diagram record`\(건너뛰었으면 `--skipped "<사유>"`\)/, '도구 없을 때 artifact 기록 계약 — CLI 호출');
+  assert.doesNotMatch(doc, /"다이어그램 미실행 — 도구 없음"을 날짜와 함께 한 줄 남긴다/, '손으로 쓰는 문구 회귀 금지');
 });
 
 // 완료 만료(reopen)가 세 번째 출력 동사를 만들었다. 문서가 created/activated 둘로만 갈리면

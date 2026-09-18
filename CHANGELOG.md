@@ -26,6 +26,14 @@ modified: 2026-09-13
   알린다 — 조용히 `{}`로 읽으면 "미설정"과 "깨짐"이 같은 답이 된다. `saveUsername`(init/sync)은 쓰기 바이트만
   새 `writeConfig`로 공유하고 **관대한 읽기는 그대로다** — init 재실행이 깨진 config에서 멈추는 동작 변화는
   별도 합의 항목으로 남겼다.
+- **`harness-team diagram record [--skipped] [note ...]`** (task `diagram-record-cli`). 다이어그램 옵트인의 **기록**
+  단계 — artifact 한 줄 + plan 체크박스 닫기 — 를 CLI가 소유한다. `harness-diagram.md` 7번·`harness-task.md` 6번·
+  `harness-ship.md` Record가 같은 한 줄을 세 가지 문구로 들고 있었고(`미실행 — 도구 없음 (날짜)` /
+  `"다이어그램 미실행 — 도구 없음"` / `미실행 (… — 날짜)`), plan 닫기는 두 곳에 나뉘어 있었다. 산출물이 없으면 생성으로
+  기록하지 않고(exit 1), `--skipped`는 사유가 필수이며, plan에 다이어그램 단계가 없으면 거부한다 — 옵트인은 plan 단계
+  추가로 남기는 사용자 결정이라 기록 명령이 만들지 않는다. 두 번째 기록부터는 `갱신`으로 적되 파일 상태가 아니라
+  artifact 기록으로 판정한다. probe(세션에 노출된 스킬)·degrade(건너뛸지)는 산문에 남는다.
+  `review.mjs`의 fence 추적 삽입을 `insertBeforeHeading`으로 일반화해 공유했다 — `insertReviewBlock` 동작은 그대로다.
 
 ### Fixed
 - **슬래시 커맨드 개수를 23으로 적어 둔 문서 4곳** (`README.md` 3곳, `docs/prerequisites.md`) — 실제는 25개다.

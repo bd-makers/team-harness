@@ -10,6 +10,7 @@ import { runDoctor } from '../src/commands/doctor.mjs';
 import { runStack } from '../src/commands/stack.mjs';
 import { runScope } from '../src/commands/scope.mjs';
 import { runConfig } from '../src/commands/config.mjs';
+import { runDiagram } from '../src/commands/diagram.mjs';
 import { runTask, runList, runDone, runHandoffAuto, runRetro } from '../src/commands/task.mjs';
 import { runClone } from '../src/commands/clone.mjs';
 import { runSymlink } from '../src/commands/symlink.mjs';
@@ -53,13 +54,13 @@ async function main() {
 
   const { cmd, positional, flags } = invocation;
 
-  const taskCmds = new Set(['task', 'list', 'summary', 'done', 'handoff', 'retro', 'release', 'context', 'boundary', 'session-context', 'observe', 'rules', 'review', 'config']);
+  const taskCmds = new Set(['task', 'list', 'summary', 'done', 'handoff', 'retro', 'release', 'context', 'boundary', 'session-context', 'observe', 'rules', 'review', 'config', 'diagram']);
   const target = flags.target || (taskCmds.has(cmd) ? process.cwd() : positional[0]) || process.cwd();
   const ctx = {
     root: ROOT,
     targetDir: resolve(process.cwd(), target),
     flags,
-    taskArgs: (cmd === 'task' || cmd === 'retro' || cmd === 'release' || cmd === 'context' || cmd === 'boundary' || cmd === 'rules' || cmd === 'review' || cmd === 'config') ? positional : [],
+    taskArgs: (cmd === 'task' || cmd === 'retro' || cmd === 'release' || cmd === 'context' || cmd === 'boundary' || cmd === 'rules' || cmd === 'review' || cmd === 'config' || cmd === 'diagram') ? positional : [],
   };
 
   switch (cmd) {
@@ -75,6 +76,7 @@ async function main() {
     case 'stack': return runStack(ctx);
     case 'scope': return runScope(ctx);
     case 'config': return runConfig(ctx);
+    case 'diagram': return runDiagram(ctx);
     case 'task': return runTask(ctx);
     case 'list': return runList(ctx);
     case 'summary': return runSummary(ctx);

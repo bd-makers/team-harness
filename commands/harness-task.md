@@ -69,8 +69,8 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name>
    다이어그램은 볼트에서 렌더되지 않는다. 이 파일은 `<name>-meta.json`과 마찬가지로 SSOT 4파일이
    아니다.
 
-6. **기록** — 만들었으면 `<name>-artifact.md`에 산출물 경로를, 도구가 없어 건너뛰었으면
-   "다이어그램 미실행 — 도구 없음"을 날짜와 함께 한 줄 남긴다. 기록하지 않으면 나중에
+6. **기록** — `harness-team diagram record`(건너뛰었으면 `--skipped "<사유>"`)가 `<name>-artifact.md`에
+   날짜 한 줄을 남기고 위 4번의 plan 단계를 함께 닫는다. 형식은 CLI가 정본이다. 기록하지 않으면 나중에
    "묻지 않은 것"과 "묻고 건너뛴 것"을 구분할 수 없다.
 
 7. **실행은 `/harness-diagram`이 담당한다** — 위 4~6번(probe·degrade·산출물·기록)을 실제로 수행하는

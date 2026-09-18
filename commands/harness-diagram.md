@@ -55,7 +55,7 @@ Raw slash-command 인수:
    안내한다. 설치 경로가 필요하면 README "동반 플러그인" 절을 가리킨다.
 
 5. **Degrade** — 스킬이 없거나 호출이 실패하면 **이 명령을 실패로 만들지 않는다.** 다이어그램만
-   건너뛰고 7번(기록)으로 간다. plan의 단계는 지우지 말고 `commands/harness-task.md` 4번의 형식으로 닫는다.
+   건너뛰고 7번(기록)으로 간다 — plan 단계는 7번의 CLI가 `commands/harness-task.md` 4번의 형식으로 닫는다.
 
 6. **생성** — 스킬이 있으면 호출하되, 프롬프트에 아래 하네스 제약을 **명시적으로 실어** 보낸다.
    상류 스킬은 하네스 규약을 모른다:
@@ -68,16 +68,22 @@ Raw slash-command 인수:
      6번과 같은 예외), 그때는 **어느 뷰어에서 확인했는지와 판단 근거를 artifact에 남긴다.** 근거를
      남기지 않는 예외는 없다.
 
-   이미 파일이 있으면 새로 만들지 말고 갱신한다. 만들었으면 plan의 해당 단계를 `- [x]`로 닫는다. 산출물은 `<name>-meta.json`·`<name>-context.md`와
+   이미 파일이 있으면 새로 만들지 말고 갱신한다. plan 단계는 7번의 CLI가 닫는다. 산출물은 `<name>-meta.json`·`<name>-context.md`와
    마찬가지로 **SSOT 4파일이 아닌 생성물**이며, 없어도 task는 유효하다.
 
-7. **기록** — 실행했든 건너뛰었든 `<name>-artifact.md`에 날짜와 함께 한 줄 남긴다.
+7. **기록** — 실행했든 건너뛰었든 `harness-team diagram record`로 남긴다. 이 한 명령이 `<name>-artifact.md`
+   `## 결과` 절에 날짜 한 줄을 넣고 plan의 다이어그램 단계를 닫는다(만들었으면 `- [x]`, 건너뛰었으면 사유를
+   붙여). 두 파일을 손으로 고치지 않는다 — 형식은 CLI가 정본이다.
    기록하지 않으면 나중에 "묻지 않은 것"과 "묻고 건너뛴 것"을 구분할 수 없다.
 
-   ```markdown
-   - 다이어그램: docs/chad/auth-redesign/auth-redesign-diagram.html 생성 (2026-08-21)
-   - 다이어그램: 미실행 — 도구 없음 (2026-08-21)
+   ```bash
+   harness-team diagram record                      # 산출물이 있을 때 — 없으면 exit 1
+   harness-team diagram record --skipped "도구 없음"  # 사유 필수
    ```
+
+   plan에 다이어그램 단계가 없으면 CLI가 exit 1로 거부한다 — 2번(단계 추가)을 건너뛴 것이다. 6번의 예외
+   (script를 실행하는 뷰어)를 택했으면 뷰어와 근거를 `record`의 메모 인자로 넘긴다:
+   `harness-team diagram record "Confluence 뷰어에서 확인 — script 실행됨"`.
 
 8. **보고** — 산출물 경로(또는 미실행 사유), 무엇을 드러낸 다이어그램인지, plan 단계 처리 결과를
    한 화면으로 보고하고 멈춘다.
