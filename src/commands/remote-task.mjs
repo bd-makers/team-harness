@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { readTaskMeta } from './summary.mjs';
+import { readOriginHead } from '../git-default-branch.mjs';
 
 const pexec = promisify(execFile);
 
@@ -27,10 +28,10 @@ async function git(targetDir, args) {
 
 // origin/HEAD → 그 브랜치(예: origin/main). 없으면 origin/main. 그것도 없으면 null.
 export async function resolveDefaultRef(targetDir, { git: run = git } = {}) {
-  try {
-    const head = (await run(targetDir, ['symbolic-ref', '-q', 'refs/remotes/origin/HEAD'])).trim();
-    if (head.startsWith('refs/remotes/')) return head.slice('refs/remotes/'.length);
-  } catch { /* origin/HEAD 미설정 — 폴백 */ }
+  // 읽기는 공용 프리미티브가, 폴백은 여기가 정한다. `run` 을 그대로 넘겨 이 모듈의
+  // GIT_NO_LAZY_FETCH·timeout 정책이 유지되게 한다.
+  const name = await readOriginHead(args => run(targetDir, args));
+  if (name) return `origin/${name}`;
   try {
     await run(targetDir, ['rev-parse', '--verify', '--quiet', 'origin/main']);
     return 'origin/main';
