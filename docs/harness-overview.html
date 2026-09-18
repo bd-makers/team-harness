@@ -203,7 +203,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.39.1</span>
+      <span class="tag tag-purple">v0.40.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -211,6 +211,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.40.0 — 산문으로 세 벌 들고 있던 절차가 명령 네 개가 됐다:</strong>
+    <br>
+    <code>0.40.0</code> <strong>슬래시 커맨드 문서가 에이전트에게 손으로 시키던 절차 네 가지 — 스택 감지·리뷰/ship 범위 판정·<code>config.json</code> 저장·다이어그램 기록 — 를 <code>harness-team stack</code>·<code>scope</code>·<code>config get/set</code>·<code>diagram record</code>로 내린다.</strong> 같은 절차가 세 문서에 세 벌로 복제돼 이미 드리프트가 나 있었고(테스트 3형제 0단계 29/42/36줄, 다이어그램 기록 한 줄이 세 문구), 판정이 없는 부분만 CLI가 소유하고 판단이 남는 부분(기존 테스트 샘플링·러너 부재·Docker 분기, probe·degrade)은 산문에 남긴다. <strong><code>review</code>가 base를 <code>origin/main</code>으로 하드코딩하던 결함</strong>도 고쳤다 — 기본 브랜치가 <code>master</code>면 죽고 동명의 낡은 로컬 브랜치가 있으면 엉뚱한 diff를 조용히 리뷰했다. 이제 origin이 있으면 <code>origin/HEAD</code> → <code>origin/main</code> → <code>origin/master</code> 중 실재하는 것만, 없으면 에러. <code>origin/HEAD</code> 읽기 3벌은 <code>readOriginHead</code> 하나로 모았다. <code>templates/</code>는 불변이라 소비자는 플러그인 갱신만 하면 되고 <code>migrate</code>는 필요 없다. 문서 정정 2건(슬래시 커맨드 개수 23→25, workflow-simulation 0.23.0→0.39.1 현행화)이 함께 실린다.
+    <br><br>
     <strong>🆕 0.39.1 — 훅 두 개가 옵션 하나·세미콜론 하나로 우회되고 있었다:</strong>
     <br>
     <code>0.39.1</code> <strong>커밋 게이트 훅(<code>pre-commit-check.sh</code>)이 <code>git -C . commit</code>·<code>git --no-pager commit</code>을, 파괴적 명령 차단 훅(<code>block-dangerous-git.sh</code>)이 <code>git push --force;echo</code>를 exit 0으로 통과시켰다</strong>(2026-09-13 Codex 전체 분석 P2, 재현). 둘 다 토큰 경계를 <strong>열거</strong>로 정의한 탓이라 <code>END='([^[:alnum:]_-]|$)'</code>(단어 문자가 아니면 전부 경계, 미열거 구분자는 fail-closed)로 통일했다 — <code>-</code>는 단어 문자라 <code>--force-if-includes</code> 허용과 <code>commit-tree</code> 비대상은 유지. <strong>restore의 허용 판정만은 공백·끝(<code>SAFE_END</code>)으로 좁혔다</strong>: 넓힌 경계를 허용 방향에 쓰면 <code>git restore -S'W' f</code>(셸 인용 제거 후 <code>-SW</code>)가 staged로 오판된다(codex P1). <code>init</code>은 마지막 "Apply?"에 <code>n</code>을 답해도 <code>.harness/config.json</code>이 남았는데 <code>resolveUsername</code>/<code>saveUsername</code>으로 나눠 적용 단계에서만 저장한다. 두 훅의 직전 판은 stock fixture·sha 테이블에 보존해 설치본은 <code>migrate</code>로 refresh된다(D8). 온보딩 키트 4종(체크리스트·킥오프 덱·치트시트·운영 플레이그라운드)과 DOM 스텁 테스트가 함께 실린다.
@@ -2767,7 +2771,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.39.1 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.40.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

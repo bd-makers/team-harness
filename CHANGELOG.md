@@ -18,6 +18,8 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.40.0] - 2026-09-19
+
 ### Added
 - **`harness-team stack [--json]`** (task `stack-detection-cli`, PR #91). 테스트 3형제 커맨드(`/harness-unittest`·`comptest`·
   `inttest`)의 0단계가 같은 의존성 조회 절차를 29/42/36줄로 세 벌 들고 있었고 이미 드리프트가 났다(단계 번호·예외 참조·
@@ -27,14 +29,14 @@ modified: 2026-09-13
 - **`harness-team scope [--scope …] [--base <ref>]`** (task `scope-resolve-cli`, PR #91). `/harness-ship` 2단계가 산문으로
   다시 적어 손으로 실행시키던 리뷰/ship 사다리를 CLI로 노출한다. 판정은 `review.mjs`의 `resolveScope`가 소유하고 규칙의
   정본은 `harness-review.md` 2단계 그대로다. 알 수 없는 `--scope`는 exit 2로 거부한다(조용히 diff로 흘리지 않는다).
-- **`harness-team config get [<key>]` / `config set <key> <value>`** (task `config-rmw-cli`). `/harness-spec` 4단계가
+- **`harness-team config get [<key>]` / `config set <key> <value>`** (task `config-rmw-cli`, PR #92). `/harness-spec` 4단계가
   `.harness/config.json`의 `specSources` 저장을 산문 규칙 세 개("read-modify-write" · "기존 키 보존" · "malformed면
   덮어쓰지 말고 중단")로 에이전트에게 손으로 시키던 것을 CLI가 소유한다. 키는 점 경로, 값은 항상 문자열이며
   `__proto__` 류 세그먼트와 중간 비객체 경로(`user.x`)는 거부한다. malformed JSON은 `get`에서도 exit 1로
   알린다 — 조용히 `{}`로 읽으면 "미설정"과 "깨짐"이 같은 답이 된다. `saveUsername`(init/sync)은 쓰기 바이트만
   새 `writeConfig`로 공유하고 **관대한 읽기는 그대로다** — init 재실행이 깨진 config에서 멈추는 동작 변화는
   별도 합의 항목으로 남겼다.
-- **`harness-team diagram record [--skipped] [note ...]`** (task `diagram-record-cli`). 다이어그램 옵트인의 **기록**
+- **`harness-team diagram record [--skipped] [note ...]`** (task `diagram-record-cli`, PR #92). 다이어그램 옵트인의 **기록**
   단계 — artifact 한 줄 + plan 체크박스 닫기 — 를 CLI가 소유한다. `harness-diagram.md` 7번·`harness-task.md` 6번·
   `harness-ship.md` Record가 같은 한 줄을 세 가지 문구로 들고 있었고(`미실행 — 도구 없음 (날짜)` /
   `"다이어그램 미실행 — 도구 없음"` / `미실행 (… — 날짜)`), plan 닫기는 두 곳에 나뉘어 있었다. 산출물이 없으면 생성으로
