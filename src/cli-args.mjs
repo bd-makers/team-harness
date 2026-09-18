@@ -60,6 +60,9 @@ export const COMMANDS = [
   // describe in prose three times over; the judgment steps (convention sampling, the
   // missing-runner branch, the Docker branch) stay in those documents.
   { name: 'stack', args: '[dir]', summary: 'Report the detected stack + testing profile (read-only)', flags: ['stack'] },
+  // Read-only. Owns the base/scope ladder that harness-ship.md used to make the agent run by
+  // hand; the rule itself still lives in harness-review.md (doc is 정본, review.mjs mirrors it).
+  { name: 'scope', args: '[dir]', summary: 'Resolve the review/ship scope and base ref (read-only)', flags: ['scope', 'base'] },
   { name: 'task', args: '<name>', summary: 'Create or activate a task', flags: [] },
   { name: 'list', args: '', summary: 'List all tasks', flags: [] },
   { name: 'summary', args: '[--write|--check] [--force]',
@@ -106,7 +109,7 @@ const OPTIONS_HELP = `Options:
   --target <dir>       Target directory (default: cwd)
   --gitignore-ai       Add AI tool entries to .gitignore without prompting
   --no-gitignore-ai    Skip AI gitignore entries without prompting
-  --json               Structured JSON envelope output for drive commands (task/retro/release/doctor/summary/observe/rules/stack)`;
+  --json               Structured JSON envelope output for drive commands (task/retro/release/doctor/summary/observe/rules/stack/scope)`;
 
 // `doctor` proves the hook CLI is reachable by matching `session-context` and
 // `handoff` at the start of a line in this output, so the two-space indent is a

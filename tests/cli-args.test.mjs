@@ -194,5 +194,5 @@ test('cli-args: rules promote 는 번호 positional 과 --name/--paths 값 플�
 
 test('cli-args: 전역 도움말의 --json 지원 명령 목록에 observe·rules 가 있다 (codex P3)', () => {
   const { text } = resolveInvocation(['--help']);
-  assert.match(text, /--json\s+.*\(task\/retro\/release\/doctor\/summary\/observe\/rules\/stack\)/);
+  assert.match(text, /--json\s+.*\(task\/retro\/release\/doctor\/summary\/observe\/rules\/stack\/scope\)/);
 });

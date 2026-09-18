@@ -1,0 +1,84 @@
+{
+  "user": "hslee",
+  "task": "scope-resolve-cli",
+  "created": "2026-09-17",
+  "firstActivatedAt": "2026-09-17T14:21:08.544Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "0bcd5099f014db50bd7ffe71b07fcde2eb989098",
+      "at": "2026-09-17T14:25:46.393Z",
+      "exitCode": 0,
+      "outputBytes": 989
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "0bcd5099f014db50bd7ffe71b07fcde2eb989098",
+      "at": "2026-09-17T14:29:28.285Z",
+      "exitCode": 0,
+      "outputBytes": 1176
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "0bcd5099f014db50bd7ffe71b07fcde2eb989098",
+      "at": "2026-09-17T14:32:07.640Z",
+      "exitCode": 0,
+      "outputBytes": 650
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "0bcd5099f014db50bd7ffe71b07fcde2eb989098",
+      "at": "2026-09-17T14:34:43.085Z",
+      "exitCode": 0,
+      "outputBytes": 851
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "0bcd5099f014db50bd7ffe71b07fcde2eb989098",
+      "at": "2026-09-17T14:37:32.849Z",
+      "exitCode": 0,
+      "outputBytes": 1048
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "0bcd5099f014db50bd7ffe71b07fcde2eb989098",
+      "at": "2026-09-17T14:40:49.285Z",
+      "exitCode": 0,
+      "outputBytes": 909
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "0bcd5099f014db50bd7ffe71b07fcde2eb989098",
+      "at": "2026-09-17T14:44:55.382Z",
+      "exitCode": 0,
+      "outputBytes": 1767
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "0bcd5099f014db50bd7ffe71b07fcde2eb989098",
+      "at": "2026-09-17T14:48:00.692Z",
+      "exitCode": 0,
+      "outputBytes": 437
+    }
+  ]
+}
