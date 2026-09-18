@@ -21,18 +21,17 @@ modified: 2026-09-06
    merge는 기존 절을 보존하며 빈 부분만 채우고, 알 수 없는 절(예: `## Boundary contracts`)은 항상 보존한다.
 3. 이번 task에 사용할 소스를 선택받는다(복수 선택): **confluence / figma / interview**.
    외부 소스가 하나도 없으면 interview 단독으로 진행한다.
-4. 선택된 외부 소스에 한해 `.harness/config.json`의 `specSources`에서 기본 위치를 읽는다.
-   누락된 필드만 AskUserQuestion으로 lazy 수집해 저장한다:
-   ```json
-   {
-     "specSources": {
-       "confluence": { "baseUrl": "https://x.atlassian.net/wiki", "spaceKey": "PROJ" },
-       "figma": { "fileUrl": "https://www.figma.com/design/KEY/name" }
-     }
-   }
+4. 선택된 외부 소스에 한해 `.harness/config.json`의 `specSources`에서 기본 위치를 읽는다 —
+   `harness-team config get specSources --json`. 누락된 필드만 AskUserQuestion으로 lazy 수집해
+   `harness-team config set <key> <value>`로 저장한다(키는 점 경로, 값은 문자열):
+   ```bash
+   harness-team config set specSources.confluence.baseUrl https://x.atlassian.net/wiki
+   harness-team config set specSources.confluence.spaceKey PROJ
+   harness-team config set specSources.figma.fileUrl https://www.figma.com/design/KEY/name
    ```
-   - config 저장은 **read-modify-write**로 한다: 기존 키(`user` 등)를 반드시 보존하고 `specSources`만 갱신한다.
-     파일이 malformed JSON이면 덮어쓰지 말고 사용자에게 알리고 중단한다.
+   - 파일을 직접 읽고 합쳐 쓰지 않는다. read-modify-write·기존 키(`user` 등) 보존·malformed JSON 거부는
+     CLI가 보장한다 — malformed면 `set`이 exit 1로 멈추고 파일은 바뀌지 않으니, 그 에러 패킷을 사용자에게
+     보이고 중단한다.
    - config에는 **프로젝트 수준 기본 위치만** 저장한다. task별 구체 페이지/프레임 URL은 매 실행 시 입력받는다.
 5. 소스별 수집:
    - **Confluence** (PRD·spec·policy): Atlassian MCP 도구(페이지 조회·검색)가 연결돼 있으면 task별 페이지

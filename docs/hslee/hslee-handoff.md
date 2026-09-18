@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-default-branch-primitive
+diagram-record-cli
 
 ## Last Commit (2026-09-18)
-4989c5f refactor(default-branch-primitive): origin/HEAD 읽기를 readOriginHead 하나로 모음
+70e28cd feat(diagram-record-cli): 다이어그램 옵트인 기록 단계를 harness-team diagram record 로 이관
 
 ## Full Context
-→ docs/hslee/default-branch-primitive/default-branch-primitive-handoff.md
+→ docs/hslee/diagram-record-cli/diagram-record-cli-handoff.md

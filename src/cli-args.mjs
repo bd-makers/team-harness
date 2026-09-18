@@ -63,6 +63,12 @@ export const COMMANDS = [
   // Read-only. Owns the base/scope ladder that harness-ship.md used to make the agent run by
   // hand; the rule itself still lives in harness-review.md (doc is 정본, review.mjs mirrors it).
   { name: 'scope', args: '[dir]', summary: 'Resolve the review/ship scope and base ref (read-only)', flags: ['scope', 'base'] },
+  // Owns the read-modify-write that harness-spec.md 4단계 used to describe in prose (preserve `user`,
+  // refuse malformed JSON). Values are always strings; the judgment of *what* to ask stays in the doc.
+  { name: 'config', args: 'get [<key>] | set <key> <value>', summary: 'Read or set one dotted key in .harness/config.json (read-modify-write; refuses malformed JSON)', flags: [] },
+  // Owns the diagram opt-in's *record* step (artifact line + plan checkbox) that three command docs
+  // used to describe in three different wordings. Probe/degrade (session-only judgment) stay in prose.
+  { name: 'diagram', args: 'record [--skipped] [note ...]', summary: "Record the diagram outcome in the active task's artifact and close its plan step (--skipped needs a reason)", flags: ['skipped'] },
   { name: 'task', args: '<name>', summary: 'Create or activate a task', flags: [] },
   { name: 'list', args: '', summary: 'List all tasks', flags: [] },
   { name: 'summary', args: '[--write|--check] [--force]',
@@ -109,7 +115,7 @@ const OPTIONS_HELP = `Options:
   --target <dir>       Target directory (default: cwd)
   --gitignore-ai       Add AI tool entries to .gitignore without prompting
   --no-gitignore-ai    Skip AI gitignore entries without prompting
-  --json               Structured JSON envelope output for drive commands (task/retro/release/doctor/summary/observe/rules/stack/scope)`;
+  --json               Structured JSON envelope output for drive commands (task/retro/release/doctor/summary/observe/rules/stack/scope/config/diagram)`;
 
 // `doctor` proves the hook CLI is reachable by matching `session-context` and
 // `handoff` at the start of a line in this output, so the two-space indent is a

@@ -35,6 +35,8 @@ Common commands:
 - `harness-team doctor --json`: diagnose install health with a structured observation.
 - `harness-team stack --json`: report the detected stack and testing profile (read-only). The test commands' stack-detection step reads this instead of parsing `package.json` by hand.
 - `harness-team scope --json`: resolve the review/ship scope and base ref (read-only). The base is the remote default branch (`origin/HEAD`), not a hardcoded `origin/main`.
+- `harness-team config get [<key>]` / `config set <key> <value>`: read or set one dotted key in `.harness/config.json` (read-modify-write, other keys preserved, malformed JSON refused). `/harness-spec` stores `specSources.*` through this instead of editing the file by hand.
+- `harness-team diagram record [--skipped] [note ...]`: record the diagram opt-in outcome — one dated line in the active task's artifact plus the plan checkbox closed (`--skipped` needs a reason; refuses when the plan has no diagram step). `/harness-diagram`, `/harness-task`, `/harness-ship` all call this instead of writing the line by hand.
 - `harness-team done`: complete the active task after the plan and artifact are complete.
 - `harness-team retro "<note>"`: append a learning to the active task artifact.
 - `harness-team context init` / `context check`: create or validate the active task's Context Card. Agents own this file — update it when the plan's atomic step changes or a reproducible failure appears or clears.

@@ -139,6 +139,12 @@ export function renderReviewBlock({ kind, engine, scope, tip, at, output, rubric
 // 리뷰부터 이전 리뷰의 출력 한가운데를 찍어 파일을 깨뜨린다.
 // `runRetro` 가 EOF 에 붙이는 `## Learnings (<date>)` 절도 헤딩이므로 **첫 번째** 헤딩 앞에만 넣는다.
 export function insertReviewBlock(artifact, block) {
+  return insertBeforeHeading(artifact, block, /^## Learnings\b/);
+}
+
+// fence 밖 첫 `pattern` 헤딩 앞에 block 을 넣는다. 헤딩이 없으면 EOF. `diagram record` 가 `## Reviews`
+// 앞(= `## 결과` 절의 끝)에 한 줄을 넣을 때 같은 fence 추적을 쓴다 — 두 벌이면 fence 규칙이 갈린다.
+export function insertBeforeHeading(artifact, block, pattern) {
   const lines = artifact.split('\n');
   let fence = null;
   for (let i = 0; i < lines.length; i++) {
@@ -150,7 +156,7 @@ export function insertReviewBlock(artifact, block) {
       continue;
     }
     if (open) { fence = open[1]; continue; }
-    if (/^## Learnings\b/.test(line)) {
+    if (pattern.test(line)) {
       const head = lines.slice(0, i).join('\n').replace(/\s+$/, '');
       const tail = lines.slice(i).join('\n');
       return `${head}\n${block.replace(/^\n+/, '\n')}\n${tail}`;
