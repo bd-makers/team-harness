@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-diagram-record-cli
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-18)
-70e28cd feat(diagram-record-cli): 다이어그램 옵트인 기록 단계를 harness-team diagram record 로 이관
+## Last Completed Task (2026-09-18)
+`config-rmw-cli` — done
 
 ## Full Context
-→ docs/hslee/diagram-record-cli/diagram-record-cli-handoff.md
+→ docs/hslee/config-rmw-cli/config-rmw-cli-handoff.md

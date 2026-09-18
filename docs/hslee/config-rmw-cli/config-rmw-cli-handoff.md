@@ -20,3 +20,7 @@ CHANGELOG.md                                       |   9 +
  tests/cli-args.test.mjs                            |   2 +-
  tests/config-command.test.mjs                      | 251 +++++++++++++++++++++
  16 files changed, 844 insertions(+), 17 deletions(-)
+
+## 2026-09-18T22:32:18.299Z — 완료
+
+태스크 종료.
