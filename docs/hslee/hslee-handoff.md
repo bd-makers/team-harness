@@ -1,10 +1,10 @@
 # Session Handoff
 
 ## Active Task
-scope-resolve-cli
+default-branch-primitive
 
 ## Last Commit (2026-09-18)
-0c9df2f fix(scope-resolve-cli): base ref 를 원격 기본 브랜치로 판정하고 harness-team scope 로 노출
+4989c5f refactor(default-branch-primitive): origin/HEAD 읽기를 readOriginHead 하나로 모음
 
 ## Full Context
-→ docs/hslee/scope-resolve-cli/scope-resolve-cli-handoff.md
+→ docs/hslee/default-branch-primitive/default-branch-primitive-handoff.md
