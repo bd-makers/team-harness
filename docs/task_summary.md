@@ -105,8 +105,8 @@
 | chad | team-onboarding-kit | ✅ done | 2026-09-12 |
 | chad | dangerous-git-end-boundary | ✅ done ⚠️ | 2026-09-13 |
 | chad | hook-git-opts-init-cancel | ✅ done ⚠️ | 2026-09-13 |
-| hslee | scope-resolve-cli | 🔄 open | 2026-09-17 |
-| hslee | stack-detection-cli | 🔄 open | 2026-09-17 |
+| hslee | scope-resolve-cli | ✅ done | 2026-09-17 |
+| hslee | stack-detection-cli | ✅ done | 2026-09-17 |
 | hslee | config-rmw-cli | ✅ done | 2026-09-18 |
-| hslee | default-branch-primitive | 🔄 open | 2026-09-18 |
+| hslee | default-branch-primitive | ✅ done | 2026-09-18 |
 | hslee | diagram-record-cli | ✅ done | 2026-09-18 |

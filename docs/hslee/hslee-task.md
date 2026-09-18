@@ -1,13 +1,13 @@
 # hslee — Tasks
 
 ## Open
-- default-branch-primitive (created 2026-09-18)
-- scope-resolve-cli (created 2026-09-17)
-- stack-detection-cli (created 2026-09-17)
 
 ## Completed
 - ✅ config-rmw-cli
+- ✅ default-branch-primitive
 - ✅ diagram-record-cli
+- ✅ scope-resolve-cli
+- ✅ stack-detection-cli
 - ✅ done-status-expiry
 - ✅ handoff-marker-typing
 - ✅ intent-md-alignment
