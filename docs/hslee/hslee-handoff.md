@@ -5,7 +5,7 @@
 새 작업은 `harness-team task <name>` 으로 시작한다.
 
 ## Last Completed Task (2026-09-18)
-`scope-resolve-cli` — done
+`default-branch-primitive` — done
 
 ## Full Context
-→ docs/hslee/scope-resolve-cli/scope-resolve-cli-handoff.md
+→ docs/hslee/default-branch-primitive/default-branch-primitive-handoff.md
