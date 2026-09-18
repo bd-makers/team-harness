@@ -18,6 +18,15 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Added
+- **`harness-team config get [<key>]` / `config set <key> <value>`** (task `config-rmw-cli`). `/harness-spec` 4단계가
+  `.harness/config.json`의 `specSources` 저장을 산문 규칙 세 개("read-modify-write" · "기존 키 보존" · "malformed면
+  덮어쓰지 말고 중단")로 에이전트에게 손으로 시키던 것을 CLI가 소유한다. 키는 점 경로, 값은 항상 문자열이며
+  `__proto__` 류 세그먼트와 중간 비객체 경로(`user.x`)는 거부한다. malformed JSON은 `get`에서도 exit 1로
+  알린다 — 조용히 `{}`로 읽으면 "미설정"과 "깨짐"이 같은 답이 된다. `saveUsername`(init/sync)은 쓰기 바이트만
+  새 `writeConfig`로 공유하고 **관대한 읽기는 그대로다** — init 재실행이 깨진 config에서 멈추는 동작 변화는
+  별도 합의 항목으로 남겼다.
+
 ### Fixed
 - **슬래시 커맨드 개수를 23으로 적어 둔 문서 4곳** (`README.md` 3곳, `docs/prerequisites.md`) — 실제는 25개다.
   `/harness-observe`(0.26.0)·`/harness-promote`(0.27.0)가 들어온 뒤 11개 릴리스 동안 밀려 있었다. 이 표면에는 가드가 없다.

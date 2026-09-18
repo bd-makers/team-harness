@@ -1,0 +1,48 @@
+{
+  "user": "hslee",
+  "task": "config-rmw-cli",
+  "created": "2026-09-18",
+  "firstActivatedAt": "2026-09-18T14:01:12.602Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "27c9fafd89b65ad2c4ec26c567ef58501e283e07",
+      "at": "2026-09-18T14:08:48.692Z",
+      "exitCode": 0,
+      "outputBytes": 957
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "27c9fafd89b65ad2c4ec26c567ef58501e283e07",
+      "at": "2026-09-18T14:12:50.639Z",
+      "exitCode": 0,
+      "outputBytes": 1009
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "27c9fafd89b65ad2c4ec26c567ef58501e283e07",
+      "at": "2026-09-18T14:15:18.742Z",
+      "exitCode": 0,
+      "outputBytes": 627
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "27c9fafd89b65ad2c4ec26c567ef58501e283e07",
+      "at": "2026-09-18T14:18:02.272Z",
+      "exitCode": 0,
+      "outputBytes": 1130
+    }
+  ]
+}
