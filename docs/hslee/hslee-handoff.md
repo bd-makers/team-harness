@@ -5,7 +5,7 @@
 새 작업은 `harness-team task <name>` 으로 시작한다.
 
 ## Last Completed Task (2026-09-18)
-`diagram-record-cli` — done
+`stack-detection-cli` — done
 
 ## Full Context
-→ docs/hslee/diagram-record-cli/diagram-record-cli-handoff.md
+→ docs/hslee/stack-detection-cli/stack-detection-cli-handoff.md
