@@ -19,6 +19,14 @@ modified: 2026-09-13
 ## [Unreleased]
 
 ### Added
+- **`harness-team stack [--json]`** (task `stack-detection-cli`, PR #91). 테스트 3형제 커맨드(`/harness-unittest`·`comptest`·
+  `inttest`)의 0단계가 같은 의존성 조회 절차를 29/42/36줄로 세 벌 들고 있었고 이미 드리프트가 났다(단계 번호·예외 참조·
+  러너 추천 문장). 판단이 없는 부분(러너·TS·coverage·프로바이더·서버/ORM·목킹 의존성 유무)을 read-only CLI로 내리고,
+  판단이 남는 부분(기존 테스트 샘플링·러너 부재 분기·Docker 분기)은 산문에 남겼다. `detect-stack.mjs`의 `buildProfile`
+  출력은 건드리지 않는다 — `init`/`migrate`의 AGENTS.md 렌더 변수라서다.
+- **`harness-team scope [--scope …] [--base <ref>]`** (task `scope-resolve-cli`, PR #91). `/harness-ship` 2단계가 산문으로
+  다시 적어 손으로 실행시키던 리뷰/ship 사다리를 CLI로 노출한다. 판정은 `review.mjs`의 `resolveScope`가 소유하고 규칙의
+  정본은 `harness-review.md` 2단계 그대로다. 알 수 없는 `--scope`는 exit 2로 거부한다(조용히 diff로 흘리지 않는다).
 - **`harness-team config get [<key>]` / `config set <key> <value>`** (task `config-rmw-cli`). `/harness-spec` 4단계가
   `.harness/config.json`의 `specSources` 저장을 산문 규칙 세 개("read-modify-write" · "기존 키 보존" · "malformed면
   덮어쓰지 말고 중단")로 에이전트에게 손으로 시키던 것을 CLI가 소유한다. 키는 점 경로, 값은 항상 문자열이며
@@ -36,6 +44,13 @@ modified: 2026-09-13
   `review.mjs`의 fence 추적 삽입을 `insertBeforeHeading`으로 일반화해 공유했다 — `insertReviewBlock` 동작은 그대로다.
 
 ### Fixed
+- **`harness-team review`가 base를 `origin/main`으로 하드코딩하던 것** (task `scope-resolve-cli`, PR #91). 기본 브랜치가
+  `master`·`develop`인 저장소에서 그 ref가 없으면 죽고, **동명의 낡은 로컬 브랜치가 있으면 엉뚱한 diff를 조용히 리뷰**했다.
+  같은 저장소의 `remote-task.mjs`는 이미 올바르게 판정하고 있었으므로 취향 차이가 아니라 불일치였다. 폴백을 두 갈래로
+  갈랐다 — origin이 있으면 `origin/HEAD` → `origin/main` → `origin/master` 중 **실재하는 것만**, 하나도 없으면 로컬로
+  때우지 않고 에러. 로컬 `main`은 origin이 아예 없을 때만 base다. `isSyncedWithDefault`(`summary --write` 가드)의 무폴백은
+  의도적으로 통일하지 않았다 — 후보를 넓히면 낡은 `origin/master` tip에 선 브랜치까지 `--write`가 열린다.
+
 - **슬래시 커맨드 개수를 23으로 적어 둔 문서 4곳** (`README.md` 3곳, `docs/prerequisites.md`) — 실제는 25개다.
   `/harness-observe`(0.26.0)·`/harness-promote`(0.27.0)가 들어온 뒤 11개 릴리스 동안 밀려 있었다. 이 표면에는 가드가 없다.
 - **`docs/harness-workflow-simulation.html`의 전체 스킬 로스터에서 빠져 있던 커맨드 2종** — 위 두 개가 표에 없어
@@ -49,6 +64,11 @@ modified: 2026-09-13
   아니라 HEAD 커밋이 `origin/HEAD`와 같은지로 판정한다(0.30.0). D6 검증 엔진 목록에 남아 있던 `gemini`는
   0.24.0 D7에서 제외된 것을 병기했다. 관례대로 `docs/harness-workflow-simulation-0.39.1.html` 스냅샷을 만들고
   `docs/index.html`에 등재했다. 종결 가드 7종 구성은 소스 대조 결과 0.21.0 이후 불변이라 개수는 그대로 뒀다.
+
+### Changed
+- **`origin/HEAD` 읽기 3벌을 `readOriginHead` 하나로** (`src/git-default-branch.mjs`, task `default-branch-primitive`,
+  PR #91). 기존 테스트 파일 무수정으로 전원 통과 — 단, 그 "동작 변화 0"은 커버된 범위 안에서만 참이었다(비표준
+  `origin/HEAD`에서 거짓, codex 리뷰가 잡아 회귀 테스트 추가).
 
 ## [0.39.1] - 2026-09-13
 
