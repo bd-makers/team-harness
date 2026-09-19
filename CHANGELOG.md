@@ -18,6 +18,8 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.40.1] - 2026-09-19
+
 ### Fixed
 - **`docs/harness-workflow-simulation.html`이 0.40.0 직후 틀린 사실을 말하던 것** — ship 단계 설명이 base 사다리를
   `--base` → `origin/main` → `main`으로 적고 있었는데, 0.40.0이 바로 그 하드코딩을 고쳤다. 새 사다리를 산문에 다시
