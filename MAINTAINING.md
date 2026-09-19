@@ -155,6 +155,23 @@ Codex manifest/skill을 수정했다면 Codex validator도 실행하세요. 로�
 `0.22.0`(소비자 HTML 문서 6종 정합화)은 이 기준이 생기기 전에 발행됐고, 이 기준을 적용하면
 ②에 해당해 patch였습니다. 선례로 인용하지 마세요.
 
+`0.40.0` 직후의 `docs/harness-workflow-simulation.html` 수정은 **②가 틀린 사실을 말했는데도 이월한
+첫 사례이고, 인용해도 되는 선례입니다**(위 0.22.0과 반대). 그 문서는 ship의 base 사다리를
+`--base` → `origin/main` → `main`로 적고 있었고, 0.40.0이 바로 그 하드코딩을 고쳐 문장이 거짓이
+됐습니다. 그래도 patch를 끊지 않은 근거는 **①이 멀쩡하다는 확인**이었습니다:
+
+```bash
+grep -rn 'origin/main' commands/ skills/ templates/
+```
+
+`commands/harness-review.md`는 이미 새 사다리를, `commands/harness-ship.md`는 `harness-team scope`
+위임을, `skills/harness-team/SKILL.md`는 "하드코딩이 아니다"를 적고 있었습니다 — 에이전트가 실행하는
+표면은 한 번도 틀리지 않았고, 틀린 문장은 **사람이 읽는 워크스루 한 곳**에만 4시간 존재했으며 수정은
+이미 main에 있었습니다. 그래서 `[Unreleased]`에 두고 다음 릴리스에 묶었습니다.
+
+**이 선례를 인용할 때 같이 확인할 것:** 위 grep에서 ①에도 옛 규칙이 남아 있었다면 이 건은 patch였습니다.
+"② 문서 수정은 언제나 미뤄도 된다"로 읽지 마세요 — 가른 것은 문서의 중요도가 아니라 **①의 무결성**입니다.
+
 ---
 
 ## 릴리스 절차
