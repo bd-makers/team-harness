@@ -18,6 +18,18 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Fixed
+- **`docs/harness-workflow-simulation.html`이 0.40.0 직후 틀린 사실을 말하던 것** — ship 단계 설명이 base 사다리를
+  `--base` → `origin/main` → `main`으로 적고 있었는데, 0.40.0이 바로 그 하드코딩을 고쳤다. 새 사다리를 산문에 다시
+  열거하지 않고 **판정의 소유자(`harness-team scope`)를 가리키도록** 바꿨다 — 규칙을 가드 없는 곳에 복제하면
+  0.40.0이 방금 없앤 드리프트가 그대로 재발한다. 다이어그램 기록 한 줄도 `harness-team diagram record --skipped <사유>`
+  소유로 고쳤다(사유 필수).
+- **같은 파일의 footer가 v0.23.0(2026-08-30)에 머물러 있던 것** — 직전 현행화가 hero 배지와 🆕 배너 두 표면만 세고
+  footer를 빠뜨려, 17개 릴리스 동안 밀린 채였다. 이 파일의 버전 표면은 **셋**이다.
+- hero 배지를 `v0.40.0`으로 올리고 🆕 배너에 0.40.0 그룹을 추가했다. 관례대로
+  `docs/harness-workflow-simulation-0.40.0.html` 스냅샷을 만들고 `docs/index.html`에 등재했다.
+  `-0.39.1.html` 스냅샷은 그 시점의 사실 기록이라 수정하지 않았다.
+
 ## [0.40.0] - 2026-09-19
 
 ### Added
