@@ -67,6 +67,18 @@ test('core.hooksPath: git이 실제로 읽는 디렉터리에 설치한다', asy
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+test('.git/hooks가 없으면 만들어서 설치한다 — core.hooksPath 미설정', async () => {
+  // bodoc4 실측(2026-09-21): hooks 디렉터리가 없는 저장소에서 조용히 건너뛰어, 미러는 성공을
+  // 보고했는데 훅은 한 번도 깔리지 않았다. 기본 경로는 git이 실제로 읽는 곳이므로 우리가 만든다.
+  const dir = await repo();
+  try {
+    await rm(join(dir, '.git/hooks'), { recursive: true, force: true });
+    await installPostCommitHook(dir);
+    assert.match(await readFile(join(dir, '.git/hooks/post-commit'), 'utf8'), /harness-team handoff/);
+    await access(join(dir, '.git/hooks/post-commit'), constants.X_OK);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('core.hooksPath가 존재하지 않는 디렉터리면 안내하고 건너뛴다', async () => {
   const dir = await repo();
   const lines = [];
