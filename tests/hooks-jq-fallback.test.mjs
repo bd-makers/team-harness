@@ -220,6 +220,11 @@ const PROTECT_BLOCK = [
   ['.git/', { tool_name: 'Edit', tool_input: { file_path: '/proj/.git/config' } }],
   ['command 폴백', { tool_name: 'Bash', tool_input: { command: 'echo x > .env' } }],
   ['.env.example (settings deny `.env.*`와 같은 범위)', { tool_name: 'Edit', tool_input: { file_path: '/proj/.env.example' } }],
+  // hs-style-pack 0.10.0에서 넘겨받은 RN·iOS 빌드 비밀 3종
+  ['Fastfile', { tool_name: 'Edit', tool_input: { file_path: '/proj/fastlane/Fastfile' } }],
+  ['figma-export.yml', { tool_name: 'Write', tool_input: { file_path: '/proj/figma-export.yml' } }],
+  ['figma-export.yaml', { tool_name: 'Write', tool_input: { file_path: '/proj/config/figma-export.yaml' } }],
+  ['xcconfig', { tool_name: 'Edit', tool_input: { file_path: '/proj/ios/Release.xcconfig' } }],
 ];
 
 const PROTECT_ALLOW = [
@@ -233,6 +238,11 @@ const PROTECT_ALLOW = [
   ['.envelope.ts', { tool_name: 'Edit', tool_input: { file_path: '/proj/docs/environment/.envelope.ts' } }],
   ['src/android/builder.ts', { tool_name: 'Edit', tool_input: { file_path: '/proj/src/android/builder.ts' } }],
   ['android/build.gradle', { tool_name: 'Edit', tool_input: { file_path: '/proj/apps/android/build.gradle' } }],
+  // 넘겨받은 3종도 이름만 닮은 파일에 낚이지 않아야 한다
+  ['FastfileGenerator.ts', { tool_name: 'Edit', tool_input: { file_path: '/proj/src/FastfileGenerator.ts' } }],
+  ['Fastfile.md', { tool_name: 'Edit', tool_input: { file_path: '/proj/docs/Fastfile.md' } }],
+  ['figma-export.ts', { tool_name: 'Edit', tool_input: { file_path: '/proj/src/figma-export.ts' } }],
+  ['xcconfig.md', { tool_name: 'Edit', tool_input: { file_path: '/proj/docs/xcconfig.md' } }],
 ];
 
 for (const mode of MODES) {

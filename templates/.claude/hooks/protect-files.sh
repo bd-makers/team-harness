@@ -40,13 +40,18 @@ fi
 # `.env.*`(local/example 등)는 settings.json의 deny와 같은 범위로 보호한다.
 # 앞 경계에 공백을 허용하는 것은 Bash `command` 폴백(`echo x > .env`)과 저정밀 모드의
 # payload 전체 스캔(fail-closed)을 그대로 유지하기 위해서다.
-PROTECTED_LABELS=(".env" "ios/Pods" "android/build" "node_modules/" ".git/")
+# 뒤 3개는 hs-style-pack이 0.9.x까지 자기 훅으로 들고 있던 RN·iOS 빌드 비밀이다.
+# 같은 파일명으로 두 벌을 두는 대신 소유권을 여기로 모았다(팩 0.10.0, 팩 문서 §9 #16).
+PROTECTED_LABELS=(".env" "ios/Pods" "android/build" "node_modules/" ".git/" "Fastfile" "figma-export.y(a)ml" "*.xcconfig")
 PROTECTED_PATTERNS=(
   '(^|/|[[:space:]])\.env(\.[^/"[:space:]]*)?("|[[:space:]]|$)'
   '(^|/|[[:space:]])ios/Pods(/|"|[[:space:]]|$)'
   '(^|/|[[:space:]])android/build(/|"|[[:space:]]|$)'
   '(^|/|[[:space:]])node_modules/'
   '(^|/|[[:space:]])\.git/'
+  '(^|/|[[:space:]])Fastfile("|[[:space:]]|$)'
+  '(^|/|[[:space:]])figma-export\.ya?ml("|[[:space:]]|$)'
+  '\.xcconfig("|[[:space:]]|$)'
 )
 
 for i in "${!PROTECTED_PATTERNS[@]}"; do
