@@ -203,7 +203,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.40.1</span>
+      <span class="tag tag-purple">v0.40.2</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -211,6 +211,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.40.2 — 성공이라고 보고하면서 훅을 깔지 않던 것을 고친다:</strong>
+    <br>
+    <code>0.40.2</code> <strong><code>.git/hooks</code> 디렉터리가 없는 저장소에서 post-commit 훅이 조용히 설치되지 않던 것을 고친다.</strong> <code>installPostCommitHook</code>이 디렉터리 부재를 만나면 한 줄 찍고 돌아왔고, 그 줄은 긴 출력에 묻히며 커맨드는 <strong>exit 0</strong>으로 끝났다 — <code>init</code>·<code>sync</code>·<code>migrate</code> 셋 다 <strong>성공을 보고하는데</strong> 훅은 없고, 이후 <code>.claude/rules</code>를 고쳐도 <code>.cursor/rules</code> 미러가 <strong>영영</strong> 갱신되지 않는다. 부재는 <strong>두 경우</strong>이고 처방이 정반대라 <code>core.hooksPath</code>로 가른다 — 설정돼 있으면 husky·lefthook 소유라 <strong>종전대로 안내만</strong>, 없으면 git이 실제로 읽는 <code>.git/hooks</code>이므로 <strong><code>mkdir</code> 하고 설치한다.</strong> 판정 불가는 <strong>만드는 쪽</strong>으로 틀린다. 임시 디렉터리 테스트 60종이 못 잡고 <strong>bodoc4 실전 설치 1회</strong>가 잡았다 — 픽스처는 <code>git init</code>으로 만들어져 항상 hooks 디렉터리를 갖기 때문이다. <code>templates/</code>·훅 스크립트 텍스트는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 되고, 이미 훅 없이 설치된 프로젝트는 <strong>소급되지 않으므로</strong> <code>ls .git/hooks/post-commit</code>로 확인해 <code>harness-team sync</code>로 고친다.
+    <br><br>
     <strong>🆕 0.40.1 — 이월했던 문서 사실 정정 한 건을 발행한다:</strong>
     <br>
     <code>0.40.1</code> <strong><code>docs/harness-workflow-simulation.html</code>이 0.40.0 직후 틀린 사실을 말하던 것을 고친다.</strong> ship 단계 설명이 base 사다리를 <code>--base</code> → <code>origin/main</code> → <code>main</code>으로 적고 있었는데, 0.40.0이 바로 그 하드코딩을 없앤 릴리스여서 문장이 거짓이 됐다. 새 사다리를 산문에 다시 열거하지 않고 <strong>판정의 소유자(<code>harness-team scope</code>)를 가리키도록</strong> 바꿨다 — 규칙을 가드 없는 곳에 복제하면 방금 없앤 드리프트가 재발한다. 같은 파일의 footer가 <strong>17개 릴리스</strong> 동안 v0.23.0에 머물러 있던 것도 함께 고쳤다(이 파일의 버전 표면은 <strong>셋</strong>이다 — hero 배지·🆕 배너·footer). 코드·<code>templates/</code>·커맨드 문서는 불변이라 소비자가 할 일은 없다.
@@ -2775,7 +2779,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.40.1 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.40.2 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

@@ -18,6 +18,17 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.40.2] - 2026-09-21
+
+### Fixed
+- **`.git/hooks` 디렉터리가 없는 저장소에서 post-commit 훅이 조용히 설치되지 않던 것** — bodoc4 실측(2026-09-21).
+  `installPostCommitHook`이 디렉터리 부재를 만나면 건너뛰기만 해서, `harness-team init`과
+  `hs-style-pack install --mirror`가 **성공을 보고하는데도** 훅은 한 번도 깔리지 않았다. 그 뒤로는
+  `.claude/rules`를 고쳐도 `.cursor/rules` 미러가 **영영** 갱신되지 않는다 — 실패가 조용해서 아무도 모른다.
+  디렉터리 부재는 두 경우이고 처방이 다르므로 갈라서 처리한다: `core.hooksPath`가 **설정돼 있고** 그 디렉터리가
+  없으면 husky/lefthook 소유이므로 종전대로 **안내만** 하고, `core.hooksPath`가 **없고** `.git/hooks`가 없으면
+  git이 실제로 읽는 경로이므로 **`mkdir` 하고 설치한다.** 부재를 한 덩어리로 보면 둘 중 하나는 반드시 틀린다.
+
 ## [0.40.1] - 2026-09-19
 
 ### Fixed
