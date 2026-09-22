@@ -18,6 +18,19 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.40.3] - 2026-09-22
+
+### Added
+- **`protect-files` 훅에 RN·iOS 빌드 비밀 3종** — `Fastfile`(fastlane 서명·배포 자격증명),
+  `figma-export.y(a)ml`(디자인 토큰 파이프라인), `*.xcconfig`(빌드 설정·API 키). 기존 5종에 더해 8종이 된다.
+  이 셋은 `hs-style-pack`이 0.9.x까지 **자기 훅**으로 들고 있던 패턴인데, 그 훅의 파일명이 하네스 것과
+  같아 **먼저 깐 쪽만 남았다** — bodoc4 실측에서는 하네스가 이겨 팩의 3종 보호가 한 번도 걸리지 않았다.
+  팩 0.10.0이 훅 이름에 `style-pack-` 접두를 붙여 충돌을 끝냈고, 그러면 두 훅이 나란히 돌아 차단이
+  합집합이 된다. 남는 구멍은 **팩을 안 쓰는 하네스 사용자**뿐이라 이 셋을 하네스가 갖는다.
+  경계 규약은 기존 5종과 같다 — `src/FastfileGenerator.ts`·`docs/Fastfile.md`·`src/figma-export.ts`·
+  `docs/xcconfig.md`는 통과해야 하며 jq·저정밀 두 모드의 회귀 테스트로 고정했다.
+  **`templates/`가 바뀌었으므로 플러그인 갱신만으로는 도달하지 않는다 — `harness-migrate`가 필요하다.**
+
 ## [0.40.2] - 2026-09-21
 
 ### Fixed

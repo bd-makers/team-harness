@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.40.2</span>
+      <span class="tag tag-purple">v0.40.3</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.40.3 — 두 도구가 같은 파일명을 다투던 자리를 정리하고 보호 3종을 더한다:</strong>
+    <br>
+    <code>0.40.3</code> <strong><code>protect-files</code>에 <code>Fastfile</code>·<code>figma-export.y(a)ml</code>·<code>*.xcconfig</code>를 더한다</strong>(기존 5종 → 8종). 이 셋은 <code>hs-style-pack</code>이 0.9.x까지 <strong>자기 훅</strong>으로 들고 있던 패턴인데, 두 도구가 <code>.claude/hooks/</code>에 <strong>같은 파일명 3개</strong>를 쓰는 바람에 skip-existing으로 <strong>먼저 깐 쪽만 남았다</strong> — bodoc4 실측에서는 하네스가 이겨 팩의 3종 보호가 <strong>한 번도 걸리지 않았다.</strong> 팩 0.10.0이 훅 이름에 <code>style-pack-</code> 접두를 붙여 충돌을 끝냈고, 그러면 두 <code>protect-files</code>가 나란히 돌아 차단이 <strong>합집합</strong>이 된다(더 안전해질 뿐이다). 남는 구멍은 <strong>팩을 안 쓰는 하네스 사용자</strong>뿐이라 이 셋을 하네스가 가져온다. 하네스 쪽은 팩을 전혀 모르며 <code>src/</code>는 한 줄도 바뀌지 않았다. 경계 규약은 기존 5종과 같아 <code>src/FastfileGenerator.ts</code>·<code>docs/Fastfile.md</code>·<code>src/figma-export.ts</code>·<code>docs/xcconfig.md</code>는 통과하고, jq·저정밀 두 모드의 회귀 테스트로 고정했다. <strong>이번에는 <code>templates/</code>가 바뀌었다</strong> — 0.40.2와 달리 플러그인 갱신만으로는 도달하지 않으므로 <strong><code>harness-migrate</code>가 필요하다.</strong> 손으로 고친 훅은 migrate가 보존하므로 그 경우 3줄을 직접 더한다.
+    <br><br>
     <strong>🆕 0.40.2 — 성공이라고 보고하면서 훅을 깔지 않던 것을 고친다:</strong>
     <br>
     <code>0.40.2</code> <strong><code>.git/hooks</code> 디렉터리가 없는 저장소에서 post-commit 훅이 조용히 설치되지 않던 것을 고친다.</strong> <code>installPostCommitHook</code>이 디렉터리 부재를 만나면 한 줄 찍고 돌아왔고, 그 줄은 긴 출력에 묻히며 커맨드는 <strong>exit 0</strong>으로 끝났다 — <code>init</code>·<code>sync</code>·<code>migrate</code> 셋 다 <strong>성공을 보고하는데</strong> 훅은 없고, 이후 <code>.claude/rules</code>를 고쳐도 <code>.cursor/rules</code> 미러가 <strong>영영</strong> 갱신되지 않는다. 부재는 <strong>두 경우</strong>이고 처방이 정반대라 <code>core.hooksPath</code>로 가른다 — 설정돼 있으면 husky·lefthook 소유라 <strong>종전대로 안내만</strong>, 없으면 git이 실제로 읽는 <code>.git/hooks</code>이므로 <strong><code>mkdir</code> 하고 설치한다.</strong> 판정 불가는 <strong>만드는 쪽</strong>으로 틀린다. 임시 디렉터리 테스트 60종이 못 잡고 <strong>bodoc4 실전 설치 1회</strong>가 잡았다 — 픽스처는 <code>git init</code>으로 만들어져 항상 hooks 디렉터리를 갖기 때문이다. <code>templates/</code>·훅 스크립트 텍스트는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 되고, 이미 훅 없이 설치된 프로젝트는 <strong>소급되지 않으므로</strong> <code>ls .git/hooks/post-commit</code>로 확인해 <code>harness-team sync</code>로 고친다.
@@ -890,7 +894,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.40.2 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.40.3 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
