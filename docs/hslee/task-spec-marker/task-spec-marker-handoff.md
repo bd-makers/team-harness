@@ -14,3 +14,10 @@ CHANGELOG.md                                       | 10 +++
  src/commands/task.mjs                              | 27 ++++++-
  tests/task-spec-marker.test.mjs                    | 91 ++++++++++++++++++++++
  10 files changed, 299 insertions(+), 2 deletions(-)
+
+## 2026-09-24T14:21:56.444Z — 2fde6a5 chore(task-spec-marker): PR 단계 체크 + post-commit 훅이 갱신한 handoff 반영
+docs/hslee/hslee-handoff.md                             |  9 ++++-----
+ docs/hslee/task-spec-marker/task-spec-marker-context.md |  2 +-
+ docs/hslee/task-spec-marker/task-spec-marker-handoff.md | 13 +++++++++++++
+ docs/hslee/task-spec-marker/task-spec-marker-plan.md    |  2 +-
+ 4 files changed, 19 insertions(+), 7 deletions(-)
