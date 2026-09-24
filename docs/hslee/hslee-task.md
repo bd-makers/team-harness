@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ task-spec-marker
 - ✅ config-rmw-cli
 - ✅ default-branch-primitive
 - ✅ diagram-record-cli
