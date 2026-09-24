@@ -38,6 +38,15 @@ test('artifact 템플릿은 Learnings 섹션을 포함한다', () => {
   assert.match(out, /## Learnings/);
 });
 
+// EOF 빈 줄은 새 task 를 커밋할 때마다 `git diff --check` 경고("new blank line at EOF")를 낸다.
+test('task 템플릿은 개행 하나로 끝난다 — EOF 빈 줄 없음', () => {
+  const templates = { spec: taskSpecTemplate, plan: taskPlanTemplate, artifact: taskArtifactTemplate, context: taskContextTemplate };
+  for (const [kind, render] of Object.entries(templates)) {
+    const out = render('demo');
+    assert.ok(out.endsWith('\n') && !out.endsWith('\n\n'), kind);
+  }
+});
+
 test('artifact 템플릿은 Reviews 섹션을 포함한다 (리뷰 산출물 규약)', () => {
   const out = taskArtifactTemplate('demo');
   assert.match(out, /## Reviews/);

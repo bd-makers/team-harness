@@ -167,7 +167,6 @@ export function taskArtifactTemplate(name) {
 
 
 ## Learnings
-
 `;
 }
 

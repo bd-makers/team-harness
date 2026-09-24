@@ -1,0 +1,21 @@
+{
+  "user": "hslee",
+  "task": "artifact-template-eof",
+  "created": "2026-09-24",
+  "firstActivatedAt": "2026-09-24T23:13:18.568Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "8c79b19508acddcd5c112dba95d6eb096544bdbd",
+      "at": "2026-09-24T23:16:41.955Z",
+      "exitCode": 0,
+      "outputBytes": 1295
+    }
+  ]
+}
