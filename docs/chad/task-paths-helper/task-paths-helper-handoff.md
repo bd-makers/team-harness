@@ -28,3 +28,7 @@ CHANGELOG.md                                       |  10 +
  tests/fixtures/task-paths-golden/expected.txt      | 414 +++++++++++++++++++++
  tests/task-paths-single-source.test.mjs            |  58 +++
  24 files changed, 1326 insertions(+), 167 deletions(-)
+
+## 2026-09-24T12:10:28.371Z — 3a4cb05 docs(overview): 새 파일(task-paths·golden·spec) 인벤토리 재생성
+docs/harness-overview.html | 20 ++++++++++++++++++++
+ 1 file changed, 20 insertions(+)
