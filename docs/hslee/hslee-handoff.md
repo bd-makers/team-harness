@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-artifact-template-eof
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-24)
-928ea98 chore(artifact-template-eof): PR 단계 체크 + post-commit 훅이 갱신한 handoff 반영
+## Last Completed Task (2026-09-24)
+`artifact-template-eof` — done
 
 ## Full Context
 → docs/hslee/artifact-template-eof/artifact-template-eof-handoff.md

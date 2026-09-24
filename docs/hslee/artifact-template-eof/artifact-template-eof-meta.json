@@ -3,8 +3,8 @@
   "task": "artifact-template-eof",
   "created": "2026-09-24",
   "firstActivatedAt": "2026-09-24T23:13:18.568Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-09-24T23:23:44.556Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [
