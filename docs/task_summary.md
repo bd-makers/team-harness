@@ -112,4 +112,5 @@
 | hslee | diagram-record-cli | ✅ done | 2026-09-18 |
 | chad | task-area-flag | ✅ done | 2026-09-24 |
 | chad | task-paths-helper | ✅ done | 2026-09-24 |
+| hslee | artifact-template-eof | ✅ done | 2026-09-24 |
 | hslee | task-spec-marker | ✅ done | 2026-09-24 |

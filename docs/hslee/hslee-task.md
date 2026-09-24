@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ artifact-template-eof
 - ✅ task-spec-marker
 - ✅ config-rmw-cli
 - ✅ default-branch-primitive
