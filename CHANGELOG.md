@@ -18,6 +18,16 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Fixed
+- **`task <name>` 이 spec 마커 없는 디렉터리를 "기존 task"로 활성화하던 결함.** `runTask` 는 디렉터리 존재만 봤고
+  `list`·`summary`·SessionStart 는 `<name>-spec.md` 마커를 봤다. 그래서 `task hslee --member web-next` 가
+  `docs/web-next/hslee/`(task 가 아닌 user 디렉터리)를 `activated:` 로 잡아 `.harness/active.json` 을 썼는데 `list` 는
+  `(no tasks)` 였고, 0.41.0 부터는 `--area` 채택 분기가 그 안에 `<name>-meta.json` 까지 써 넣었다
+  (`docs/spec-monorepo-scope.md` §6 R1). 이제 판정 기준이 `list` 와 같다 — spec 이 있으면 종전대로 활성화하고,
+  없는데 디렉터리에 내용물이 있으면 exit 1 오류 패킷으로 거부하며 아무것도 쓰지 않는다(meta·active.json·scaffold 없음).
+  spec 만 잃은 task 도 거부된다 — scaffold 하면 남은 plan·handoff 를 템플릿으로 덮어쓰기 때문이며, spec 을 복원하면
+  종전대로 활성화된다. 빈 디렉터리는 없는 것과 같이 보고 새로 만든다. spec 이 있는 task 의 동작은 바뀌지 않는다.
+
 ## [0.41.0] - 2026-09-24
 
 ### Added
