@@ -142,7 +142,6 @@ null
 
 ## Learnings
 
-
 ## Learnings (<DATE>)
 
 - golden learning
@@ -284,7 +283,6 @@ null
 
 
 ## Learnings
-
 
 
 === docs/tester/other/other-context.md

@@ -18,6 +18,12 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Fixed
+- **새 task 의 `<name>-artifact.md` 가 EOF 빈 줄로 끝나던 문제.** artifact 템플릿이 `## Learnings` 뒤에 빈 줄을 하나 더
+  남겨, `task <name>` 직후 커밋마다 `git diff --check` 가 `new blank line at EOF` 를 냈고 `retro` 가 붙이는
+  `## Learnings (<date>)` 앞에는 빈 줄이 둘 생겼다. 이제 템플릿은 개행 하나로 끝난다. 이미 만들어진 artifact 는 건드리지
+  않으며, `done` 가드의 "템플릿 그대로" 판정은 앞뒤 공백을 무시하므로 구 템플릿으로 만든 artifact 도 종전대로 판정된다.
+
 ## [0.41.1] - 2026-09-24
 
 ### Fixed
