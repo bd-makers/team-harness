@@ -202,6 +202,31 @@ export function taskContextTemplate(name) {
 `;
 }
 
+// `--area` — 모노레포에서 task 를 앱·서비스 단위로 묶는 기계 판독 라벨. meta 에만 살고 경로는 바꾸지 않는다
+// (docs/spec-monorepo-scope.md §4.2). 점은 금지다 — area 와 이름 나머지의 경계를 `-` 하나로 고정해, 이름만
+// 봐도 접두가 보이게 한다. 접두는 사람을 위한 것이고 정본은 `meta.area` 다(`web` 과 `web-next` 는 접두가 겹친다).
+const AREA_RE = /^[A-Za-z0-9][A-Za-z0-9_-]*$/;
+
+function areaNameError(area, name) {
+  if (typeof area !== 'string' || !AREA_RE.test(area)) {
+    return `area "${area}" 형식이 올바르지 않음 (허용: 영숫자로 시작하고 영숫자·_·- 만)`;
+  }
+  if (!name.startsWith(`${area}-`) || name.length === area.length + 1) {
+    return `task 이름 "${name}"이 "${area}-<이름>" 형식이 아님 — area task 는 이름에 area 접두를 단다`;
+  }
+  return null;
+}
+
+function emitTaskError(json, summary, packet) {
+  process.exitCode = 1;
+  if (json) {
+    emitObservation(buildEnvelope({ command: 'task', status: 'error', summary: `task 생성/활성화 실패: ${summary}`, error: packet }));
+    return;
+  }
+  console.log(`✗ task: ${summary}`);
+  for (const line of renderErrorPacket(packet)) console.log(line);
+}
+
 export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
   const json = !!(ctx.flags && ctx.flags.json);
   const name = (ctx.taskArgs || [])[0];
@@ -231,6 +256,21 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
     return;
   }
 
+  // 모든 쓰기 전에 검증한다 — 실패 경로가 meta·active.json 을 건드리지 않게.
+  const area = ctx.flags && ctx.flags.area;
+  if (area !== undefined) {
+    const cause = areaNameError(area, name);
+    if (cause) {
+      return emitTaskError(json, 'area 규칙 위반', buildErrorPacket({
+        cause,
+        retry: '`harness-team task <area>-<이름> --area <area>` 형식으로 재실행',
+        alternatives: ['area 없이 쓰려면 `--area` 를 빼고 `harness-team task <name>` 으로 실행한다'],
+        safeDefault: 'task 디렉터리도 meta 도 .harness/active.json 도 바뀌지 않는다',
+        stop: 'area 와 이름 접두가 맞지 않으면 만들지 말 것',
+      }));
+    }
+  }
+
   const user = await resolveUser(ctx.targetDir, ctx.flags);
   const dir = taskDirPath(ctx.targetDir, user, name);
   const date = today();
@@ -258,10 +298,23 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
     // 구 task는 종전대로 시각 가드를 건너뛴다.
     const meta = (await readTaskMeta(ctx.targetDir, user, name))
       || await inferLegacyMeta(ctx.targetDir, user, name, await readLedger(ctx.targetDir));
+    // area 는 한 번 기록되면 바꾸지 않는다 — 다른 area 로 옮기는 것은 사실상 다른 task 다.
+    if (area !== undefined && meta.area && meta.area !== area) {
+      return emitTaskError(json, 'area 충돌', buildErrorPacket({
+        cause: `${taskLabel(user, name)} 의 area 는 이미 "${meta.area}" — "${area}" 로 바꾸지 않는다`,
+        retry: `\`--area ${meta.area}\` 로 다시 실행하거나 \`--area\` 없이 활성화`,
+        safeDefault: 'meta 도 .harness/active.json 도 바뀌지 않는다',
+        stop: '다른 area 의 작업이면 그 area 접두로 새 task 를 만든다',
+      }));
+    }
+    // 채택: 접두 규약으로 먼저 만든 task 에 area 를 처음 기록한다. 판정 창 필드는 건드리지 않는다.
+    const adopted = area !== undefined && !meta.area;
     const reopened = Boolean(meta && meta.status === 'done');
-    if (reopened) {
+    if (reopened || adopted) {
       await writeTaskMeta(ctx.targetDir, user, name, {
-        ...meta, user, task: name, status: 'open', closedAt: null, reopenedAt: switchedAt,
+        ...meta, user, task: name,
+        ...(reopened ? { status: 'open', closedAt: null, reopenedAt: switchedAt } : {}),
+        ...(adopted ? { area } : {}),
       });
     }
     const verb = reopened ? 'reopened' : 'activated';
@@ -283,10 +336,13 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
         summary: `${verb}: ${taskLabel(user, name)}`,
         nextActions: [`${taskFileRel(user, name, 'plan.md')} 의 현재 단계 확인`],
         artifacts: [taskDirRel(user, name)],
-        ...(doneOnMainVerdict ? { extra: { doneOnMain: doneOnMainVerdict } } : {}),
+        ...(doneOnMainVerdict || adopted ? {
+          extra: { ...(doneOnMainVerdict ? { doneOnMain: doneOnMainVerdict } : {}), ...(adopted ? { areaAdopted: area } : {}) },
+        } : {}),
       }));
     } else {
       console.log(`${verb}: ${taskLabel(user, name)}`);
+      if (adopted) console.log(`area adopted: ${area}`);
       printTaskNextActions(user, name, { activated: true });
     }
     return;
@@ -312,7 +368,7 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
   // Per-task state only. The shared ledger (docs/task_summary.md and the user index)
   // is rendered by `harness-team summary`; writing it here is what made every parallel
   // branch collide on the same line.
-  await writeText(taskFilePath(ctx.targetDir, user, name, 'meta.json'), taskMetaTemplate(user, name, date, firstActivatedAt));
+  await writeText(taskFilePath(ctx.targetDir, user, name, 'meta.json'), taskMetaTemplate(user, name, date, firstActivatedAt, area));
 
   if (json) {
     emitObservation(buildEnvelope({
@@ -335,12 +391,18 @@ export async function runList(ctx) {
   if (!(await exists(docsPath(ctx.targetDir)))) { console.log('(no docs/)'); return; }
 
   const active = await readActive(ctx.targetDir);
-  const refs = await listTaskRefs(ctx.targetDir);
-  for (const { user, task } of refs) {
+  const areaFilter = ctx.flags && ctx.flags.area;
+  let shown = 0;
+  for (const { user, task } of await listTaskRefs(ctx.targetDir)) {
+    // area 는 meta 에만 산다 — 원장 추론으로 복구할 대상이 아니다.
+    const meta = await readTaskMeta(ctx.targetDir, user, task);
+    const area = meta && typeof meta.area === 'string' ? meta.area : null;
+    if (areaFilter !== undefined && area !== areaFilter) continue;
     const isActive = active && active.user === user && active.task === task;
-    console.log(`${isActive ? '*' : ' '} ${taskLabel(user, task)}`);
+    console.log(`${isActive ? '*' : ' '} ${taskLabel(user, task)}${area ? `  [${area}]` : ''}`);
+    shown++;
   }
-  if (!refs.length) console.log('(no tasks)');
+  if (!shown) console.log('(no tasks)');
 }
 
 // Extract file paths from `git status --porcelain -z` output: strip the 2-char status +

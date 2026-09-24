@@ -44,9 +44,10 @@ const isForced = (t) => Boolean(t.forcedAt || t.forcedRecovered);
 // `{ kind, engine, scope, tip, at, exitCode, outputBytes }`. 키가 있으면 done 가드의
 // `verify: required`는 이 배열만 읽고 artifact 마커를 세지 않는다. 키가 없는 구 meta는
 // 종전대로 마커로 판정한다(소급하면 이미 닫힌 증거가 무효가 돼 가드가 `--force` 훈련기가 된다).
-export function taskMetaTemplate(user, task, created, firstActivatedAt) {
+// `area`는 `task --area`로 만든 task에만 있다 — 키 부재가 "area 없음"이다(무설정 설치본의 meta 바이트 불변).
+export function taskMetaTemplate(user, task, created, firstActivatedAt, area) {
   return JSON.stringify(
-    { user, task, created, firstActivatedAt, status: 'open', closedAt: null, forcedAt: null, forcedIssues: null, reviews: [] },
+    { user, task, ...(area === undefined ? {} : { area }), created, firstActivatedAt, status: 'open', closedAt: null, forcedAt: null, forcedIssues: null, reviews: [] },
     null, 2,
   ) + '\n';
 }
@@ -184,13 +185,19 @@ function byCreatedDescThenName(a, b) {
   return (b.created || '').localeCompare(a.created || '') || a.task.localeCompare(b.task);
 }
 
+// `Area` 열은 area 를 가진 task 가 하나라도 있을 때만, 그리고 **맨 뒤에** 붙는다 — 없으면 원장이 종전과
+// 바이트 단위로 같고, 맨 뒤라 앞 4칸만 읽는 `SUMMARY_ROW_RE` 역파싱이 그대로 맞는다.
 export function renderTaskSummary(tasks) {
+  const withArea = tasks.some(t => typeof t.area === 'string' && t.area);
   const rows = [...tasks].sort(byCreatedAscThenName)
-    .map(t => `| ${t.user} | ${t.task} | ${t.status === 'done' ? doneCell(isForced(t)) : '🔄 open'} | ${t.created || ''} |`);
+    .map(t => `| ${t.user} | ${t.task} | ${t.status === 'done' ? doneCell(isForced(t)) : '🔄 open'} | ${t.created || ''} |`
+      + (withArea ? ` ${t.area || ''} |` : ''));
+  const head = withArea
+    ? '| User | Task | Status | Created | Area |\n|------|------|--------|---------|------|'
+    : '| User | Task | Status | Created |\n|------|------|--------|---------|';
   return `# Task Summary
 
-| User | Task | Status | Created |
-|------|------|--------|---------|
+${head}
 ${rows.join('\n')}${rows.length ? '\n' : ''}`;
 }
 
