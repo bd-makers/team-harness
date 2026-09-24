@@ -18,6 +18,8 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.41.1] - 2026-09-24
+
 ### Fixed
 - **`task <name>` 이 spec 마커 없는 디렉터리를 "기존 task"로 활성화하던 결함.** `runTask` 는 디렉터리 존재만 봤고
   `list`·`summary`·SessionStart 는 `<name>-spec.md` 마커를 봤다. 그래서 `task hslee --member web-next` 가

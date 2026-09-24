@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.41.0</span>
+      <span class="tag tag-purple">v0.41.1</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.41.1 — task가 아닌 디렉터리를 task로 활성화하지 않는다:</strong>
+    <br>
+    <code>0.41.1</code> <strong><code>task &lt;name&gt;</code>이 디렉터리 존재만 보고 "기존 task"로 활성화하던 결함을 고친다.</strong> <code>list</code>·<code>summary</code>·SessionStart는 <code>&lt;name&gt;-spec.md</code>가 있어야 task로 보는데 <code>task</code>만 달랐다 — user 디렉터리를 활성화해 <code>active.json</code>을 썼고, 0.41.0부터는 <code>--area</code> 채택 경로가 그 안에 <code>meta.json</code>까지 썼다. 이제 기준이 <code>list</code>와 같다: spec이 있으면 종전대로 활성화하고, 없는데 내용이 있으면 <strong>exit 1로 거부하며 아무것도 쓰지 않는다</strong>. spec만 잃은 task도 거부한다 — scaffold하면 남은 plan·handoff를 덮어쓰기 때문이고, spec을 복원하면 다시 열린다. <code>templates/</code>는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 된다.
+    <br><br>
     <strong>🆕 0.41.0 — 모노레포 task를 앱·서비스 단위로 묶는다:</strong>
     <br>
     <code>0.41.0</code> <strong><code>task &lt;area&gt;-&lt;name&gt; --area &lt;area&gt;</code>가 task의 <code>meta.json</code>에 <code>area</code>를 기록하고, <code>list</code>는 <code>[area]</code> 표시와 <code>--area</code> 필터를, 원장은 area가 있을 때만 맨 뒤 <code>Area</code> 열을 붙인다.</strong> 앱마다 제품·담당·릴리스가 다른 모노레포에서 이름 접두는 사람만 읽었고 <code>web</code>과 <code>web-next</code>처럼 접두가 겹치면 모호했다 — 정본은 이제 <code>meta.area</code>다. <strong>경로는 바꾸지 않았다</strong>: <code>docs/&lt;app&gt;/&lt;user&gt;/&lt;task&gt;/</code> 3단 구조는 레이아웃 설정이 놓일 <code>.harness/config.json</code>이 gitignore라 클론마다 갈리고, <code>migrate</code>의 레거시 탐지가 3단 구조를 옛 task로 오인하는 것을 실측해 보류했다(<code>docs/spec-monorepo-scope.md</code>). 그 준비로 13파일 약 60줄에 흩어져 있던 task 경로 조립을 <code>src/task-paths.mjs</code> 한 곳으로 모았다 — 리팩터 <strong>전</strong> 코드에서 고정한 golden e2e가 그대로 통과하는, 동작 변화 없는 변경이다. <code>templates/</code>는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 된다.
@@ -898,7 +902,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.41.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.41.1 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
