@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { readFile, writeFile, mkdir, appendFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, appendFile, readdir } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { detectMember } from '../member.mjs';
@@ -217,6 +217,11 @@ function areaNameError(area, name) {
   return null;
 }
 
+// 새로 scaffold 해도 되는 자리 — 없거나 비어 있는 디렉터리. 파일이거나 내용물이 있으면 false 다.
+async function isAbsentOrEmpty(p) {
+  try { return (await readdir(p)).length === 0; } catch (e) { return e.code === 'ENOENT'; }
+}
+
 function emitTaskError(json, summary, packet) {
   process.exitCode = 1;
   if (json) {
@@ -275,6 +280,24 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
   const dir = taskDirPath(ctx.targetDir, user, name);
   const date = today();
 
+  // "기존 task"의 정의는 `<name>-spec.md` 마커다 — `list`·`summary`·SessionStart 가 쓰는 `listTaskRefs` 와 같은 기준.
+  // 디렉터리 존재만 보면 user 디렉터리(`task <user> --member <x>`)나 spec 을 잃은 폴더를 활성화하고, `--area` 면
+  // 그 안에 meta 까지 쓴다(docs/spec-monorepo-scope.md §6 R1). 마커도 없고 비어 있지도 않은 자리는 거부한다 —
+  // scaffold 하면 남은 plan·handoff 를 템플릿으로 덮어쓴다. spec 만 잃은 task 는 spec 을 복원하면 종전대로 활성화된다.
+  const isTask = await exists(taskFilePath(ctx.targetDir, user, name, 'spec.md'));
+  if (!isTask && !(await isAbsentOrEmpty(dir))) {
+    return emitTaskError(json, '기존 디렉터리가 task 가 아님', buildErrorPacket({
+      cause: `${taskDirRel(user, name)}/ 가 이미 있지만 ${taskFileRel(user, name, 'spec.md')} 가 없다 — list·summary 와 같은 기준으로 task 가 아니다`,
+      retry: '다른 이름으로 `harness-team task <name>` 을 재실행',
+      alternatives: [
+        `spec 을 잃은 task 라면 \`git log -- ${taskFileRel(user, name, 'spec.md')}\` 로 찾아 복원한 뒤 재실행한다`,
+        'user 디렉터리를 task 이름으로 준 것이면 `--member` 또는 `.harness/config.json` 의 user 를 확인한다',
+      ],
+      safeDefault: 'task 디렉터리도 meta 도 .harness/active.json 도 바뀌지 않는다',
+      stop: 'spec 마커 없는 디렉터리는 활성화하지도, 그 안에 scaffold 하지도 말 것',
+    }));
+  }
+
   // 원격 done 감지(done-on-main-nudge). 사고의 시작점이 바로 여기였다 — 클론에서 `task <name>`을 쳤을 때 main에는
   // 같은 task가 이미 종결돼 있었다. 막지 않는다(nudge). 로컬 meta가 done이면(아래 reopened 전이) 판정은 null이다 —
   // 그것은 사용자가 종결을 보고 다시 여는 고의 재개다.
@@ -283,7 +306,7 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
   const nudge = doneOnMainVerdict ? renderDoneOnMainNudge({ user, task: name, ...doneOnMainVerdict }) : null;
   if (nudge && !json) console.log(nudge);
 
-  if (await exists(dir)) {
+  if (isTask) {
     const switchedAt = new Date().toISOString();
 
     // 완료 상태의 만료. 시간 경과가 아니라 **전이**다 — done된 task를 다시 활성화하는 행위가
