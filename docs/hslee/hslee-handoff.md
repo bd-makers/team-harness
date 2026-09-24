@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+task-spec-marker
 
-## Last Completed Task (2026-09-18)
-`default-branch-primitive` — done
+## Last Commit (2026-09-24)
+387b47f fix(task): spec 마커 없는 디렉터리를 기존 task 로 활성화하지 않는다 (R1)
 
 ## Full Context
-→ docs/hslee/default-branch-primitive/default-branch-primitive-handoff.md
+→ docs/hslee/task-spec-marker/task-spec-marker-handoff.md

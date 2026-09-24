@@ -10,7 +10,7 @@
 - [x] `npm test`·golden e2e·`doctor` green
 - [x] CHANGELOG `[Unreleased]` `### Fixed`
 - [x] Codex 리뷰(`review codex --scope worktree`) + artifact 판별 기록
-- [ ] `git add` → `npm run docs:generate` → commit → PR
+- [x] `git add` → `npm run docs:generate` → commit → PR (#95)
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: `task` 의 기존-task 판정을 `<name>-spec.md` 마커 기준(listTaskRefs 와 동일)으로 맞춘다 (R1)
-- Current atomic step: Codex 리뷰 → artifact 판별 → commit/PR
+- Current atomic step: PR #95 리뷰·CI 대기 — merge·done 은 사용자 승인
 - Stop / human-decision condition: merge·release·브랜치 삭제는 사용자 승인
 
 ## Constraints and settled decisions
