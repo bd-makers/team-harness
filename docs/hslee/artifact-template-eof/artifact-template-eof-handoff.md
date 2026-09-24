@@ -14,3 +14,10 @@ CHANGELOG.md                                       |  6 +++
  tests/fixtures/task-paths-golden/expected.txt      |  2 -
  tests/task-templates.test.mjs                      |  9 ++++
  10 files changed, 177 insertions(+), 3 deletions(-)
+
+## 2026-09-24T23:17:46.246Z — 928ea98 chore(artifact-template-eof): PR 단계 체크 + post-commit 훅이 갱신한 handoff 반영
+.../artifact-template-eof/artifact-template-eof-context.md  |  2 +-
+ .../artifact-template-eof/artifact-template-eof-handoff.md  | 13 +++++++++++++
+ .../artifact-template-eof/artifact-template-eof-plan.md     |  2 +-
+ docs/hslee/hslee-handoff.md                                 |  9 ++++-----
+ 4 files changed, 19 insertions(+), 7 deletions(-)
