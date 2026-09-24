@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+artifact-template-eof
 
-## Last Completed Task (2026-09-24)
-`task-spec-marker` — done
+## Last Commit (2026-09-24)
+1ee856a fix(task): artifact 템플릿이 EOF 빈 줄로 끝나지 않게 한다
 
 ## Full Context
-→ docs/hslee/task-spec-marker/task-spec-marker-handoff.md
+→ docs/hslee/artifact-template-eof/artifact-template-eof-handoff.md

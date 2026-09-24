@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: artifact 템플릿 EOF 빈 줄 제거
-- Current atomic step: Codex 리뷰 → artifact 판별 → commit/PR
+- Current atomic step: PR #96 리뷰·CI 대기 — merge·done 은 사용자 승인
 - Stop / human-decision condition: merge·release·브랜치 삭제는 사용자 승인
 
 ## Constraints and settled decisions
