@@ -15,7 +15,7 @@
 
 import { KNOWN_STACK_IDS } from './detect-stack.mjs';
 
-export const VALUE_FLAGS = new Set(['stack', 'member', 'target', 'backup-dir', 'backup-parent', 'days', 'name', 'paths', 'framing', 'rubric', 'prompt-file', 'scope', 'base']);
+export const VALUE_FLAGS = new Set(['stack', 'member', 'target', 'backup-dir', 'backup-parent', 'days', 'name', 'paths', 'framing', 'rubric', 'prompt-file', 'scope', 'base', 'area']);
 
 // Accepted on every command: they change where the harness looks or how it
 // reports, not what it does. Keeping them global means a hook can pass --target
@@ -69,8 +69,8 @@ export const COMMANDS = [
   // Owns the diagram opt-in's *record* step (artifact line + plan checkbox) that three command docs
   // used to describe in three different wordings. Probe/degrade (session-only judgment) stay in prose.
   { name: 'diagram', args: 'record [--skipped] [note ...]', summary: "Record the diagram outcome in the active task's artifact and close its plan step (--skipped needs a reason)", flags: ['skipped'] },
-  { name: 'task', args: '<name>', summary: 'Create or activate a task', flags: [] },
-  { name: 'list', args: '', summary: 'List all tasks', flags: [] },
+  { name: 'task', args: '<name> [--area <area>]', summary: 'Create or activate a task (--area records its monorepo app/service in meta)', flags: ['area'] },
+  { name: 'list', args: '[--area <area>]', summary: 'List all tasks (--area filters by meta.area)', flags: ['area'] },
   { name: 'summary', args: '[--write|--check] [--force]',
     summary: 'Render the task ledger from task dirs (--write is default-branch only)',
     flags: ['write', 'check', 'force'] },

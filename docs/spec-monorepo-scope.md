@@ -216,6 +216,8 @@ harness-team list [--area <area>]
  각 task 디렉토리는 네 파일로 구성:
 ```
 
+> **구현 메모 (2단계, 2026-09-24): 이 AGENTS 줄은 넣지 않았다.** `main` 의 프로젝트 eager 소계가 17,476 B 로 상한 17,500 B 까지 24 B 뿐이라 한 줄(170 B)도 `tests/agent-files.test.mjs` 의 eager 가드에 걸렸다. 정본(`commands/harness-task.md` 의 "모노레포 area" 절)과 `--help` 로 충분하고, 템플릿을 바꾸지 않으니 소비자 `migrate` 도 필요 없다.
+
 - eager 예산: 약 +150 B입니다. 현재 이 저장소의 프로젝트 소계가 15,968 B이므로 `doctor`로 24 KiB 합계를 확인합니다.
 - `commands/harness-task.md`: `--area` 사용법, 채택 규칙, 충돌 시 거부를 적습니다. 정본은 여기 두고 AGENTS에는 트리거 한 줄만 둡니다.
 

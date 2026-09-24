@@ -1,0 +1,21 @@
+{
+  "user": "chad",
+  "task": "task-area-flag",
+  "created": "2026-09-24",
+  "firstActivatedAt": "2026-09-24T12:12:26.393Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "ce00da86a118ca17d8e60968142d1f90069b897c",
+      "at": "2026-09-24T12:37:58.751Z",
+      "exitCode": 0,
+      "outputBytes": 502
+    }
+  ]
+}

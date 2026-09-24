@@ -1,7 +1,7 @@
 ---
 description: "task 관리 (task/list/done/handoff) — docs/<user>/<name>/ 구조"
 phase: Workflow
-argument-hint: '<name> | list | done [--force] | handoff'
+argument-hint: '<name> [--area <area>] | list [--area <area>] | done [--force] | handoff'
 tags:
   - project
   - ai
@@ -19,14 +19,35 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" list
 node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" done [--force]
 node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" handoff
 
-# 그 외 → task 생성 또는 활성화
-node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name>
+# 그 외 → task 생성 또는 활성화 (모노레포 area 는 아래 절)
+node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name> [--area <area>]
 ```
 
 예시:
 - `harness-team task auth-redesign`   # 생성 또는 활성화
 - `harness-team list`                 # 전체 task 목록
 - `harness-team done`                 # 활성 task 완료 처리 (meta 상태만 — 원장은 `summary --write`)
+- `harness-team task web-next-login --area web-next`   # 모노레포 area task 생성 또는 활성화
+- `harness-team list --area web-next`  # 그 area 의 task 만
+
+## 모노레포 area (`--area`)
+
+앱·서비스마다 제품·담당·릴리스가 다른 모노레포에서 task 를 앱 단위로 묶는다. **경로는 바꾸지 않는다** —
+area 는 `<name>-meta.json` 의 `area` 키에만 기록되고 task 는 여전히 `docs/<user>/<name>/` 에 있다
+(설계 근거·3단 경로를 택하지 않은 이유: `docs/spec-monorepo-scope.md`).
+
+- **이름에 접두를 단다:** `task <area>-<이름> --area <area>`. 접두가 없거나 나머지가 비면 거부한다
+  (exit 1, 아무것도 쓰지 않음). `<area>` 는 영숫자로 시작하고 영숫자·`_`·`-` 만 — 점은 쓰지 않는다.
+- **정본은 `meta.area` 다.** 이름 접두는 사람을 위한 것이다 — `web` 과 `web-next` 처럼 접두가 겹칠 수 있다.
+- **기존 task 에 `--area`:**
+  - `meta.area` 가 같으면 평소 활성화와 같다.
+  - `meta.area` 가 없고 이름이 `<area>-` 로 시작하면 **채택** — meta 에 `area` 만 더하고
+    `area adopted: <area>` 를 출력한다. 접두 규약으로 먼저 만든 task 를 옮기는 경로다.
+  - 다른 area 가 이미 있으면 거부한다(exit 1). area 는 바꾸지 않는다 — 다른 area 의 일이면 새 task 다.
+- **표시:** `list` 는 area 를 가진 task 줄 끝에 `  [area]` 를 붙이고 `list --area <area>` 로 거른다.
+  원장(`summary`)은 area 를 가진 task 가 하나라도 있을 때만 `Area` 열을 **맨 뒤에** 추가한다.
+  `--area` 를 한 번도 쓰지 않은 저장소의 출력·파일은 종전과 같다.
+- **언제 쓰지 않나:** 앱들이 한 제품이면(담당·릴리스가 같으면) area 없이 이름만으로 충분하다.
 
 ## spec/plan 다이어그램 옵트인
 

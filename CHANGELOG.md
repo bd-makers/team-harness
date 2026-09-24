@@ -18,6 +18,17 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Added
+- **`task --area <area>` · `list --area <area>` — 모노레포에서 task 를 앱·서비스 단위로 묶는다.** 앱마다 제품·담당·
+  릴리스가 다른 모노레포에서 `<area>-<name>` 이름 접두만으로는 기계가 area 를 몰랐다(`web` 과 `web-next` 처럼
+  접두가 겹치면 이름으로는 모호하다). `harness-team task web-next-login --area web-next` 는 `<name>-meta.json` 에
+  `area` 를 기록하고, `list` 는 줄 끝에 `[area]` 를 붙이며 `--area` 로 거르고, 원장(`summary`)은 area 를 가진
+  task 가 있을 때만 `Area` 열을 맨 뒤에 붙인다. **경로는 바꾸지 않는다** — `docs/<area>/<user>/<task>/` 3단 구조는
+  `.harness/config.json` 이 gitignore 대상이라 클론마다 레이아웃이 갈리고 migrate 레거시 탐지가 오인하는 것을
+  실측해 보류했다(`docs/spec-monorepo-scope.md`). 접두로 먼저 만든 task 는 `--area` 로 **채택**된다(meta 에 `area`
+  만 추가). 이미 다른 area 인 task·접두 없는 이름·형식 위반은 exit 1 이고 아무것도 쓰지 않는다.
+  `--area` 를 쓰지 않은 저장소의 파일·출력은 종전과 같다(golden e2e). 템플릿은 바뀌지 않아 `migrate` 가 필요 없다.
+
 ### Changed
 - **task 경로 조립을 `src/task-paths.mjs` 한 곳으로 모았다 — 동작 변화 없음.** `docs/<user>/<task>/…`를
   `join(targetDir, 'docs', user, task)`·`` `docs/${user}/${task}` ``로 따로 만들던 곳이 13파일 약 60줄이었고,
