@@ -18,3 +18,7 @@ CHANGELOG.md                                       |  11 ++
  src/commands/task.mjs                              |  78 ++++++++-
  tests/task-area.test.mjs                           | 176 +++++++++++++++++++++
  14 files changed, 472 insertions(+), 19 deletions(-)
+
+## 2026-09-24T13:06:05.874Z — 완료
+
+태스크 종료.
