@@ -110,4 +110,5 @@
 | hslee | config-rmw-cli | ✅ done | 2026-09-18 |
 | hslee | default-branch-primitive | ✅ done | 2026-09-18 |
 | hslee | diagram-record-cli | ✅ done | 2026-09-18 |
+| chad | task-area-flag | ✅ done | 2026-09-24 |
 | chad | task-paths-helper | ✅ done | 2026-09-24 |
