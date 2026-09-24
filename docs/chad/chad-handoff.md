@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+task-area-flag
 
-## Last Completed Task (2026-09-24)
-`task-paths-helper` — done
+## Last Commit (2026-09-24)
+ebe37fb feat(task): --area 로 모노레포 task 를 앱·서비스 단위로 묶는다
 
 ## Full Context
-→ docs/chad/task-paths-helper/task-paths-helper-handoff.md
+→ docs/chad/task-area-flag/task-area-flag-handoff.md
