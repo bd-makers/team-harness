@@ -1,5 +1,5 @@
 import { join } from 'node:path';
-import { readdir, readFile, writeFile, mkdir, appendFile } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, appendFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { detectMember } from '../member.mjs';
@@ -8,6 +8,9 @@ import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } f
 import { readTaskMeta, writeTaskMeta, taskMetaTemplate, inferLegacyMeta, readLedger } from './summary.mjs';
 import { renderDoneMarker } from '../handoff-marker.mjs';
 import { checkDoneOnMain, renderDoneOnMainNudge } from './remote-task.mjs';
+import {
+  taskDirRel, taskFileRel, userHandoffRel, taskLabel, docsPath, taskDirPath, taskFilePath, userHandoffPath, listTaskRefs,
+} from '../task-paths.mjs';
 
 const pexec = promisify(execFile);
 
@@ -38,18 +41,13 @@ async function resolveUser(targetDir, flags) {
   return cfg.user || await detectMember(targetDir, flags);
 }
 
-function taskDir(targetDir, user, name) {
-  return join(targetDir, 'docs', user, name);
-}
-
 function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
 function printTaskNextActions(user, name, { activated = false } = {}) {
-  const base = `docs/${user}/${name}/${name}`;
-  if (activated) console.log(`next: 현재 단계는 ${base}-plan.md 에서 확인`);
-  else console.log(`next: /harness-spec으로 ${base}-spec.md 초안 생성 (또는 직접 작성, Ambiguity 자가진단 포함)`);
+  if (activated) console.log(`next: 현재 단계는 ${taskFileRel(user, name, 'plan.md')} 에서 확인`);
+  else console.log(`next: /harness-spec으로 ${taskFileRel(user, name, 'spec.md')} 초안 생성 (또는 직접 작성, Ambiguity 자가진단 포함)`);
   console.log('next: /harness-interview → plan.md 작성 → 구현 → 테스트 (/harness-unittest 계열) → 리뷰 → /harness-retro → done');
 }
 
@@ -144,7 +142,7 @@ ${commitMsg}
 
 ${head}
 ## Full Context
-→ docs/${user}/${task}/${task}-handoff.md
+→ ${taskFileRel(user, task, 'handoff.md')}
 `;
 }
 
@@ -234,7 +232,7 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
   }
 
   const user = await resolveUser(ctx.targetDir, ctx.flags);
-  const dir = taskDir(ctx.targetDir, user, name);
+  const dir = taskDirPath(ctx.targetDir, user, name);
   const date = today();
 
   // 원격 done 감지(done-on-main-nudge). 사고의 시작점이 바로 여기였다 — 클론에서 `task <name>`을 쳤을 때 main에는
@@ -274,7 +272,7 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
     // 재실행이 그대로 이어받는다.
     await writeActive(ctx.targetDir, {
       user, task: name,
-      path: `docs/${user}/${name}`,
+      path: taskDirRel(user, name),
       switchedAt,
     });
 
@@ -282,24 +280,24 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
       emitObservation(buildEnvelope({
         command: 'task',
         status: 'success',
-        summary: `${verb}: ${user}/${name}`,
-        nextActions: [`docs/${user}/${name}/${name}-plan.md 의 현재 단계 확인`],
-        artifacts: [`docs/${user}/${name}`],
+        summary: `${verb}: ${taskLabel(user, name)}`,
+        nextActions: [`${taskFileRel(user, name, 'plan.md')} 의 현재 단계 확인`],
+        artifacts: [taskDirRel(user, name)],
         ...(doneOnMainVerdict ? { extra: { doneOnMain: doneOnMainVerdict } } : {}),
       }));
     } else {
-      console.log(`${verb}: ${user}/${name}`);
+      console.log(`${verb}: ${taskLabel(user, name)}`);
       printTaskNextActions(user, name, { activated: true });
     }
     return;
   }
 
   await mkdir(dir, { recursive: true });
-  await writeText(join(dir, `${name}-spec.md`), taskSpecTemplate(name));
-  await writeText(join(dir, `${name}-plan.md`), taskPlanTemplate(name));
-  await writeText(join(dir, `${name}-handoff.md`), taskHandoffTemplate(name));
-  await writeText(join(dir, `${name}-artifact.md`), taskArtifactTemplate(name));
-  await writeText(join(dir, `${name}-context.md`), taskContextTemplate(name));
+  await writeText(taskFilePath(ctx.targetDir, user, name, 'spec.md'), taskSpecTemplate(name));
+  await writeText(taskFilePath(ctx.targetDir, user, name, 'plan.md'), taskPlanTemplate(name));
+  await writeText(taskFilePath(ctx.targetDir, user, name, 'handoff.md'), taskHandoffTemplate(name));
+  await writeText(taskFilePath(ctx.targetDir, user, name, 'artifact.md'), taskArtifactTemplate(name));
+  await writeText(taskFilePath(ctx.targetDir, user, name, 'context.md'), taskContextTemplate(name));
 
   // 판정 창의 시작점. 생성 시 1회만 찍고 meta에 굳힌다 — 재활성화(위 분기)는 `switchedAt`만
   // 갱신하고 이 값은 건드리지 않는다. 둘이 갈라지는 순간이 done 가드 오탐의 원인이었다.
@@ -307,61 +305,42 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
 
   await writeActive(ctx.targetDir, {
     user, task: name,
-    path: `docs/${user}/${name}`,
+    path: taskDirRel(user, name),
     switchedAt: firstActivatedAt,
   });
 
   // Per-task state only. The shared ledger (docs/task_summary.md and the user index)
   // is rendered by `harness-team summary`; writing it here is what made every parallel
   // branch collide on the same line.
-  await writeText(join(dir, `${name}-meta.json`), taskMetaTemplate(user, name, date, firstActivatedAt));
+  await writeText(taskFilePath(ctx.targetDir, user, name, 'meta.json'), taskMetaTemplate(user, name, date, firstActivatedAt));
 
   if (json) {
     emitObservation(buildEnvelope({
       command: 'task',
       status: 'success',
-      summary: `created: docs/${user}/${name}/`,
-      nextActions: [`/harness-spec으로 docs/${user}/${name}/${name}-spec.md 초안 생성 (또는 직접 작성, Ambiguity 자가진단 포함)`],
-      artifacts: [
-        `docs/${user}/${name}/${name}-spec.md`,
-        `docs/${user}/${name}/${name}-plan.md`,
-        `docs/${user}/${name}/${name}-handoff.md`,
-        `docs/${user}/${name}/${name}-artifact.md`,
-        `docs/${user}/${name}/${name}-context.md`,
-        `docs/${user}/${name}/${name}-meta.json`,
-      ],
+      summary: `created: ${taskDirRel(user, name)}/`,
+      nextActions: [`/harness-spec으로 ${taskFileRel(user, name, 'spec.md')} 초안 생성 (또는 직접 작성, Ambiguity 자가진단 포함)`],
+      artifacts: ['spec.md', 'plan.md', 'handoff.md', 'artifact.md', 'context.md', 'meta.json']
+        .map(kind => taskFileRel(user, name, kind)),
       ...(doneOnMainVerdict ? { extra: { doneOnMain: doneOnMainVerdict } } : {}),
     }));
   } else {
-    console.log(`created: docs/${user}/${name}/`);
-    console.log(`active: ${user}/${name}`);
+    console.log(`created: ${taskDirRel(user, name)}/`);
+    console.log(`active: ${taskLabel(user, name)}`);
     printTaskNextActions(user, name);
   }
 }
 
 export async function runList(ctx) {
-  const docs = join(ctx.targetDir, 'docs');
-  if (!(await exists(docs))) { console.log('(no docs/)'); return; }
+  if (!(await exists(docsPath(ctx.targetDir)))) { console.log('(no docs/)'); return; }
 
   const active = await readActive(ctx.targetDir);
-  const entries = await readdir(docs, { withFileTypes: true });
-  const userDirs = entries.filter(e => e.isDirectory()).map(e => e.name);
-
-  let found = false;
-  for (const user of userDirs) {
-    const userPath = join(docs, user);
-    const userEntries = await readdir(userPath, { withFileTypes: true });
-    const taskDirs = userEntries.filter(e => e.isDirectory()).map(e => e.name);
-    for (const task of taskDirs) {
-      // Only list dirs carrying a task marker (<name>-spec.md); this skips non-task
-      // dirs like docs/superpowers/{plans,specs} that are not user/task at all.
-      if (!(await exists(join(userPath, task, `${task}-spec.md`)))) continue;
-      const isActive = active && active.user === user && active.task === task;
-      console.log(`${isActive ? '*' : ' '} ${user}/${task}`);
-      found = true;
-    }
+  const refs = await listTaskRefs(ctx.targetDir);
+  for (const { user, task } of refs) {
+    const isActive = active && active.user === user && active.task === task;
+    console.log(`${isActive ? '*' : ' '} ${taskLabel(user, task)}`);
   }
-  if (!found) console.log('(no tasks)');
+  if (!refs.length) console.log('(no tasks)');
 }
 
 // Extract file paths from `git status --porcelain -z` output: strip the 2-char status +
@@ -532,8 +511,8 @@ const VERIFY_KIND_RE = new RegExp(`-(?:${VERIFY_KIND_SUFFIXES.join('|')})$`);
 // 한다 — 갈라지면 가드는 무시하는데 훅은 계속 써서 churn 이 조용히 되살아난다.
 export function handoffRelPaths(user, task) {
   return new Set([
-    `docs/${user}/${task}/${task}-handoff.md`,
-    `docs/${user}/${user}-handoff.md`,
+    taskFileRel(user, task, 'handoff.md'),
+    userHandoffRel(user),
   ]);
 }
 
@@ -604,7 +583,7 @@ async function collectDoneIssues(targetDir, active) {
   // spec 선언 — 없으면 기본값(tests 검사 / review 미검사), 깨져 있으면 그 자체가 차단 사유.
   let evidence = { status: 'not-configured', ...DONE_EVIDENCE_DEFAULT };
   try {
-    const specPath = join(targetDir, 'docs', user, task, `${task}-spec.md`);
+    const specPath = taskFilePath(targetDir, user, task, 'spec.md');
     evidence = parseDoneEvidenceDeclaration(await readFile(specPath, 'utf8'));
   } catch { /* spec.md 없음 → 기본값 유지 */ }
   if (evidence.status === 'invalid') {
@@ -613,7 +592,7 @@ async function collectDoneIssues(targetDir, active) {
 
   // plan.md: unchecked boxes remaining
   try {
-    const planPath = join(targetDir, 'docs', user, task, `${task}-plan.md`);
+    const planPath = taskFilePath(targetDir, user, task, 'plan.md');
     const planContent = await readFile(planPath, 'utf8');
     // Match only line-leading checkboxes, so inline/prose mentions of `- [ ]`
     // (e.g. text describing the guard itself) don't trigger a false positive.
@@ -623,7 +602,7 @@ async function collectDoneIssues(targetDir, active) {
   } catch { /* no plan.md → not a positive signal, skip */ }
 
   // artifact.md: missing or still the untouched template
-  const artifactPath = join(targetDir, 'docs', user, task, `${task}-artifact.md`);
+  const artifactPath = taskFilePath(targetDir, user, task, 'artifact.md');
   let artifactContent = null;
   if (!(await exists(artifactPath))) {
     issues.push('artifact.md가 없음 (결과/학습 미기록)');
@@ -745,7 +724,7 @@ export async function runDone(ctx) {
   }
 
   const { user, task } = active;
-  const handoffPath = join(ctx.targetDir, 'docs', user, task, `${task}-handoff.md`);
+  const handoffPath = taskFilePath(ctx.targetDir, user, task, 'handoff.md');
   const ts = new Date().toISOString();
 
   await appendFile(handoffPath, renderDoneMarker(ts));
@@ -771,15 +750,14 @@ export async function runDone(ctx) {
   // 상태 전이를 아는 유일한 지점이 여기이므로 여기서 1회 종결 형태로 쓴다. 훅에서 매 커밋
   // 쓰게 하지 않는 이유: 활성 없는 기간의 모든 커밋이 이 파일을 재작성해 diff 소음이 된다.
   // 차단 경로는 위에서 이미 반환했으므로 이 쓰기는 실제로 종결될 때만 일어난다.
-  const userHandoffPath = join(ctx.targetDir, 'docs', user, `${user}-handoff.md`);
-  await writeFile(userHandoffPath, renderUserHandoff({
+  await writeFile(userHandoffPath(ctx.targetDir, user), renderUserHandoff({
     user, task, date: ts.slice(0, 10), closed: true,
   }));
 
   await writeActive(ctx.targetDir, null);
-  console.log(`done: ${user}/${task}`);
-  console.log(`handoff updated: docs/${user}/${task}/${task}-handoff.md`);
-  console.log(`handoff updated: docs/${user}/${user}-handoff.md`);
+  console.log(`done: ${taskLabel(user, task)}`);
+  console.log(`handoff updated: ${taskFileRel(user, task, 'handoff.md')}`);
+  console.log(`handoff updated: ${userHandoffRel(user)}`);
 }
 
 export async function runRetro(ctx) {
@@ -809,7 +787,7 @@ export async function runRetro(ctx) {
   }
 
   const { user, task } = active;
-  const artifactPath = join(ctx.targetDir, 'docs', user, task, `${task}-artifact.md`);
+  const artifactPath = taskFilePath(ctx.targetDir, user, task, 'artifact.md');
 
   if (!(await exists(artifactPath))) {
     await writeText(artifactPath, taskArtifactTemplate(task));
@@ -823,7 +801,7 @@ export async function runRetro(ctx) {
 
   await appendFile(artifactPath, section);
 
-  const relPath = `docs/${user}/${task}/${task}-artifact.md`;
+  const relPath = taskFileRel(user, task, 'artifact.md');
   if (json) {
     emitObservation(buildEnvelope({
       command: 'retro',
@@ -920,7 +898,7 @@ export async function runHandoffAuto(ctx) {
     diffStat = stdout.trim();
   } catch {}
 
-  const taskHandoffPath = join(ctx.targetDir, 'docs', user, task, `${task}-handoff.md`);
+  const taskHandoffPath = taskFilePath(ctx.targetDir, user, task, 'handoff.md');
   // No trailing blank line: entries are separated by the next entry's leading
   // newline, and a blank line at EOF trips `git diff --check` on every commit.
   const taskEntry = `\n## ${ts} — ${commitMsg}\n${diffStat ? diffStat + '\n' : ''}`;
@@ -937,13 +915,12 @@ export async function runHandoffAuto(ctx) {
     await writeFile(taskHandoffPath, head + taskEntry);
   }
 
-  const userHandoffPath = join(ctx.targetDir, 'docs', user, `${user}-handoff.md`);
-  await writeFile(userHandoffPath, renderUserHandoff({
+  await writeFile(userHandoffPath(ctx.targetDir, user), renderUserHandoff({
     user, task, date: ts.slice(0, 10), commitMsg, closed: false,
   }));
 
   try {
-    const planPath = join(ctx.targetDir, 'docs', user, task, `${task}-plan.md`);
+    const planPath = taskFilePath(ctx.targetDir, user, task, 'plan.md');
     const planContent = await readFile(planPath, 'utf8');
     const hasUnchecked = planContent.includes('- [ ]');
     const hasChecked = planContent.includes('- [x]');

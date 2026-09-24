@@ -6,6 +6,7 @@ import { exists, writeText } from '../fsx.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 import { hasDoneMarker } from '../handoff-marker.mjs';
 import { readOriginHead } from '../git-default-branch.mjs';
+import { SUMMARY_REL, userIndexRel, metaRel, taskLabel, docsPath, taskFilePath, listTaskRefs } from '../task-paths.mjs';
 
 const pexec = promisify(execFile);
 
@@ -13,10 +14,8 @@ const pexec = promisify(execFile);
 // which made every parallel branch collide on the same line: the summary row is
 // appended at EOF and the index entry is inserted right under a fixed header.
 // They are rendered from the task directories now — nothing writes them per task.
-export const SUMMARY_REL = join('docs', 'task_summary.md');
-export const userIndexRel = (user) => join('docs', user, `${user}-task.md`);
-
-export const metaRel = (user, task) => join('docs', user, task, `${task}-meta.json`);
+// 경로 조립의 정본은 src/task-paths.mjs 다 — 기존 import 경로를 위해 re-export 한다.
+export { SUMMARY_REL, userIndexRel, metaRel };
 
 // 우회 종결 표시. 렌더와 역파싱이 **같은 상수**를 쓰게 해 두 곳이 갈라지는 것을 막는다.
 // ⚠️ 는 U+26A0 + U+FE0F 두 코드포인트라 한쪽에서 손으로 다시 타이핑하면 변이 선택자가
@@ -67,14 +66,14 @@ export async function writeTaskMeta(targetDir, user, task, meta) {
 
 // user/task both match ^[\w.-]+$ (enforced by runTask), so `/` cannot appear inside
 // either half and the joined key stays unambiguous.
-const key = (user, task) => `${user}/${task}`;
+const key = taskLabel;
 
 // Recover a pre-meta.json task's facts from whatever the older harness left behind.
 // Order matters: the committed ledger is the ONLY surviving source of `created` for a
 // completed task, because `done` used to overwrite `- <name> (created …)` with `- ✅ <name>`.
 export async function inferLegacyMeta(targetDir, user, task, ledger) {
   const summaryRow = ledger.summaryRows.get(key(user, task));
-  const handoff = await readTextOrNull(join(targetDir, 'docs', user, task, `${task}-handoff.md`));
+  const handoff = await readTextOrNull(taskFilePath(targetDir, user, task, 'handoff.md'));
 
   const done = Boolean(
     (handoff && hasDoneMarker(handoff)) ||
@@ -129,7 +128,7 @@ export async function readLedger(targetDir) {
     }
   }
 
-  const docs = join(targetDir, 'docs');
+  const docs = docsPath(targetDir);
   if (await exists(docs)) {
     for (const entry of await readdir(docs, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
@@ -155,29 +154,20 @@ export async function readLedger(targetDir) {
 // A directory is a task when it carries the `<name>-spec.md` marker — the same rule
 // `list` uses, so docs/superpowers/{plans,specs} and similar non-task dirs stay out.
 export async function collectTasks(targetDir) {
-  const docs = join(targetDir, 'docs');
-  if (!(await exists(docs))) return [];
+  if (!(await exists(docsPath(targetDir)))) return [];
 
   const ledger = await readLedger(targetDir);
   const tasks = [];
 
-  for (const userEntry of await readdir(docs, { withFileTypes: true })) {
-    if (!userEntry.isDirectory()) continue;
-    const user = userEntry.name;
-    const userPath = join(docs, user);
-    for (const taskEntry of await readdir(userPath, { withFileTypes: true })) {
-      if (!taskEntry.isDirectory()) continue;
-      const task = taskEntry.name;
-      if (!(await exists(join(userPath, task, `${task}-spec.md`)))) continue;
-      const meta = (await readTaskMeta(targetDir, user, task))
-        || await inferLegacyMeta(targetDir, user, task, ledger);
-      // meta 가 정본이다. 원장 복구값은 meta 에 기록이 없을 때만 얹는다 —
-      // 그러지 않으면 원장의 낡은 표시가 meta 를 이긴다. meta 에 이미 굳어 있는 복구값
-      // (reopen 이 써 둔 것)은 원장이 그 사실을 잊은 뒤에도 그대로 살아남는다.
-      const forcedRecovered = Boolean(meta.forcedRecovered)
-        || (!meta.forcedAt && ledger.forcedNames.has(key(user, task)));
-      tasks.push({ ...meta, user, task, forcedRecovered });
-    }
+  for (const { user, task } of await listTaskRefs(targetDir)) {
+    const meta = (await readTaskMeta(targetDir, user, task))
+      || await inferLegacyMeta(targetDir, user, task, ledger);
+    // meta 가 정본이다. 원장 복구값은 meta 에 기록이 없을 때만 얹는다 —
+    // 그러지 않으면 원장의 낡은 표시가 meta 를 이긴다. meta 에 이미 굳어 있는 복구값
+    // (reopen 이 써 둔 것)은 원장이 그 사실을 잊은 뒤에도 그대로 살아남는다.
+    const forcedRecovered = Boolean(meta.forcedRecovered)
+      || (!meta.forcedAt && ledger.forcedNames.has(key(user, task)));
+    tasks.push({ ...meta, user, task, forcedRecovered });
   }
 
   return tasks;

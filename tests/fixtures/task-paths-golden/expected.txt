@@ -1,0 +1,414 @@
+$ task demo (exit 0)
+created: docs/tester/demo/
+active: tester/demo
+next: /harness-spec으로 docs/tester/demo/demo-spec.md 초안 생성 (또는 직접 작성, Ambiguity 자가진단 포함)
+next: /harness-interview → plan.md 작성 → 구현 → 테스트 (/harness-unittest 계열) → 리뷰 → /harness-retro → done
+
+$ task other --json (exit 0)
+{
+  "schema": "harness/observation/v1",
+  "command": "task",
+  "status": "success",
+  "summary": "created: docs/tester/other/",
+  "next_actions": [
+    "/harness-spec으로 docs/tester/other/other-spec.md 초안 생성 (또는 직접 작성, Ambiguity 자가진단 포함)"
+  ],
+  "artifacts": [
+    "docs/tester/other/other-spec.md",
+    "docs/tester/other/other-plan.md",
+    "docs/tester/other/other-handoff.md",
+    "docs/tester/other/other-artifact.md",
+    "docs/tester/other/other-context.md",
+    "docs/tester/other/other-meta.json"
+  ],
+  "error": null
+}
+
+$ task demo (exit 0)
+activated: tester/demo
+next: 현재 단계는 docs/tester/demo/demo-plan.md 에서 확인
+next: /harness-interview → plan.md 작성 → 구현 → 테스트 (/harness-unittest 계열) → 리뷰 → /harness-retro → done
+
+$ list (exit 0)
+  tester/other
+* tester/demo
+
+$ retro (exit 0)
+✓ retro: docs/tester/demo/demo-artifact.md 에 ## Learnings (<DATE>) 추가
+next: artifact.md를 열어 학습 내용을 채우거나, 추가 메모는 `harness-team retro "<메모>"` 재실행
+
+$ context check (exit 0)
+context: valid
+path: <DIR>/docs/tester/demo/demo-context.md
+bytes: 490/6144
+nonblank-lines: 22/100
+unresolved-failure-capsules: 0/3
+
+$ boundary check (exit 0)
+boundary: not-configured
+
+$ done (blocked: open plan box) (exit 1)
+✗ done: 종결 가드에 걸림 (3개)
+cause: plan.md에 미완 체크박스(`- [ ]`)가 남아 있음
+cause: 커밋되지 않은 변경이 있음
+cause: task 시작 이후 커밋이 0개임
+retry: 위 항목을 해소한 뒤 다시 `harness-team done` 실행
+alternatives: `harness-team done --force` 로 가드를 무시하고 종결한다 — 무시한 사유를 artifact.md 에 남길 것
+default: task는 활성으로 남고 handoff·artifact 어느 파일도 바뀌지 않는다
+stop: 가드가 지적한 증거가 실제로 없으면 종결하지 말 것
+
+$ handoff (exit 0)
+PLAN_COMPLETE
+
+$ session-context (exit 0)
+[harness] 활성 task: tester/demo — 세션 시작 프로토콜대로 demo-plan.md 확인.
+# demo — Context Card
+<!-- working set only; UTF-8 <= 6 KiB, nonblank lines <= 100 -->
+
+## Now
+- Goal:
+- Current atomic step:
+- Stop / human-decision condition:
+
+## Constraints and settled decisions
+-
+
+## JIT retrieval map
+- Identifiers / symbols:
+- Narrow globs:
+- Read next:
+- Verification command:
+
+## Failure capsules (max 3 unresolved)
+### F-001
+- Signal:
+- Tried:
+- Compact finding / current hypothesis:
+- Next discriminator:
+- Source (safe path or command):
+
+## Resume checklist
+-
+
+$ done (exit 0)
+done: tester/demo
+handoff updated: docs/tester/demo/demo-handoff.md
+handoff updated: docs/tester/tester-handoff.md
+
+$ done --force (exit 0)
+no active task
+
+$ summary (exit 0)
+# Task Summary
+
+| User | Task | Status | Created |
+|------|------|--------|---------|
+| tester | demo | ✅ done | <DATE> |
+| tester | other | 🔄 open | <DATE> |
+
+$ list (exit 0)
+  tester/demo
+  tester/other
+
+$ session-context (no active: resume candidates) (exit 0)
+[harness] ⚠ 활성 task가 없습니다.
+이 세션의 첫 프롬프트가 실질 작업(기능/수정/리팩토링/디버깅)이면, 코드를 건드리기 전에
+반드시 AskUserQuestion으로 다음 중 하나를 확인하세요:
+  · 재개: tester/other   (plan 미완)
+  · 새 task 생성
+  · task 없이 진행
+(단순 질문·조회·잡일이면 무시.)
+
+=== .harness/active.json
+null
+
+
+=== docs/superpowers/plans/p.md
+# p
+
+
+=== docs/tester/demo/demo-artifact.md
+# demo — Artifact
+
+*최종 결과물과 학습 내용을 기록한다.*
+
+## 결과
+
+
+## Reviews
+*Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
+*기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
+
+
+## Learnings
+
+
+## Learnings (<DATE>)
+
+- golden learning
+
+
+=== docs/tester/demo/demo-context.md
+# demo — Context Card
+<!-- working set only; UTF-8 <= 6 KiB, nonblank lines <= 100 -->
+
+## Now
+- Goal:
+- Current atomic step:
+- Stop / human-decision condition:
+
+## Constraints and settled decisions
+-
+
+## JIT retrieval map
+- Identifiers / symbols:
+- Narrow globs:
+- Read next:
+- Verification command:
+
+## Failure capsules (max 3 unresolved)
+### F-001
+- Signal:
+- Tried:
+- Compact finding / current hypothesis:
+- Next discriminator:
+- Source (safe path or command):
+
+## Resume checklist
+-
+
+
+=== docs/tester/demo/demo-handoff.md
+# demo — Handoff
+
+(세션 종료 시 post-commit hook이 자동 갱신합니다)
+
+## <ISO> — <SHA> feat: golden step
+
+## <ISO> — 완료
+
+태스크 종료.
+
+
+=== docs/tester/demo/demo-meta.json
+{
+  "user": "tester",
+  "task": "demo",
+  "created": "<DATE>",
+  "firstActivatedAt": "<ISO>",
+  "status": "done",
+  "closedAt": "<ISO>",
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": []
+}
+
+
+=== docs/tester/demo/demo-plan.md
+# demo — Plan
+
+## 목표
+
+
+## 단계
+- [x] step one
+
+## Ontology 변경 로그
+*개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
+
+- (none)
+
+## 참고
+-
+
+
+=== docs/tester/demo/demo-spec.md
+# demo — Spec
+
+## 목적 / 요구사항
+*문제(오늘 무엇이 안 되는가) → 영향받는 사용자·시스템 → 기대 결과 → 제약 순으로 쓴다.
+답 없는 질문은 요구가 아니다 — `## 참고` 절에 `- (open) …`으로 남긴다.*
+
+
+## 설계 / 접근
+
+
+## Ontology
+*이 task가 다루는 핵심 개념의 정의. "X가 정확히 뭔가?"에 답한다.*
+
+- **개념 A**:
+- **개념 B**:
+
+## Ambiguity 자가진단
+*각 항목이 명확하면 체크. 3개 이상 미체크면 구현 진입 금지 — 인터뷰/브레인스토밍으로 복귀해
+모호성을 제거한다. 게이트를 통과하면 그 근거를 위 Ontology 섹션에 한 줄로 남긴다.*
+
+- [ ] **Goal 명확도** (40%) — 목표가 한 문장으로 구체화되었는가?
+- [ ] **Constraint 명확도** (30%) — 기술/시간/범위 제약이 명시되었는가?
+- [ ] **Success 기준** (30%) — 완료를 어떻게 측정하는가?
+- [ ] **Context 명확도** (brownfield 한정) — 영향 받는 기존 코드/파일을 식별했는가?
+- [ ] **Ambiguity ≤ 0.2** — 위 항목 가중합 ≥ 0.8
+
+<!-- 선택 선언. 아래 주석을 벗기면 done 가드가 검사한다.
+     미선언 기본값: "tests": "required" (소스가 바뀌면 테스트 파일 변경을 요구), "review": "optional",
+     "verify": "optional" ("required"면 검증 프레이밍 kind 마커 — -adversarial 등 — 를 요구). -->
+## Done evidence
+<!--
+```json
+{ "version": 1, "review": "required", "tests": "skip" }
+```
+-->
+
+## 참고
+*코드 기반 참조가 산문 설계보다 정밀하다 — 테스트 스위트·Boundary contract(JSON Schema)·
+다이어그램·기존 코드 경로를 우선 링크하고, 산문은 코드로 표현 못 하는 의도만 담는다.*
+
+-
+
+
+=== docs/tester/notes/n.md
+# n
+
+
+=== docs/tester/other/other-artifact.md
+# other — Artifact
+
+*최종 결과물과 학습 내용을 기록한다.*
+
+## 결과
+
+
+## Reviews
+*Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
+*기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
+
+
+## Learnings
+
+
+
+=== docs/tester/other/other-context.md
+# other — Context Card
+<!-- working set only; UTF-8 <= 6 KiB, nonblank lines <= 100 -->
+
+## Now
+- Goal:
+- Current atomic step:
+- Stop / human-decision condition:
+
+## Constraints and settled decisions
+-
+
+## JIT retrieval map
+- Identifiers / symbols:
+- Narrow globs:
+- Read next:
+- Verification command:
+
+## Failure capsules (max 3 unresolved)
+### F-001
+- Signal:
+- Tried:
+- Compact finding / current hypothesis:
+- Next discriminator:
+- Source (safe path or command):
+
+## Resume checklist
+-
+
+
+=== docs/tester/other/other-handoff.md
+# other — Handoff
+
+(세션 종료 시 post-commit hook이 자동 갱신합니다)
+
+
+=== docs/tester/other/other-meta.json
+{
+  "user": "tester",
+  "task": "other",
+  "created": "<DATE>",
+  "firstActivatedAt": "<ISO>",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": []
+}
+
+
+=== docs/tester/other/other-plan.md
+# other — Plan
+
+## 목표
+
+
+## 단계
+- [ ]
+
+## Ontology 변경 로그
+*개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
+
+- (none)
+
+## 참고
+-
+
+
+=== docs/tester/other/other-spec.md
+# other — Spec
+
+## 목적 / 요구사항
+*문제(오늘 무엇이 안 되는가) → 영향받는 사용자·시스템 → 기대 결과 → 제약 순으로 쓴다.
+답 없는 질문은 요구가 아니다 — `## 참고` 절에 `- (open) …`으로 남긴다.*
+
+
+## 설계 / 접근
+
+
+## Ontology
+*이 task가 다루는 핵심 개념의 정의. "X가 정확히 뭔가?"에 답한다.*
+
+- **개념 A**:
+- **개념 B**:
+
+## Ambiguity 자가진단
+*각 항목이 명확하면 체크. 3개 이상 미체크면 구현 진입 금지 — 인터뷰/브레인스토밍으로 복귀해
+모호성을 제거한다. 게이트를 통과하면 그 근거를 위 Ontology 섹션에 한 줄로 남긴다.*
+
+- [ ] **Goal 명확도** (40%) — 목표가 한 문장으로 구체화되었는가?
+- [ ] **Constraint 명확도** (30%) — 기술/시간/범위 제약이 명시되었는가?
+- [ ] **Success 기준** (30%) — 완료를 어떻게 측정하는가?
+- [ ] **Context 명확도** (brownfield 한정) — 영향 받는 기존 코드/파일을 식별했는가?
+- [ ] **Ambiguity ≤ 0.2** — 위 항목 가중합 ≥ 0.8
+
+<!-- 선택 선언. 아래 주석을 벗기면 done 가드가 검사한다.
+     미선언 기본값: "tests": "required" (소스가 바뀌면 테스트 파일 변경을 요구), "review": "optional",
+     "verify": "optional" ("required"면 검증 프레이밍 kind 마커 — -adversarial 등 — 를 요구). -->
+## Done evidence
+<!--
+```json
+{ "version": 1, "review": "required", "tests": "skip" }
+```
+-->
+
+## 참고
+*코드 기반 참조가 산문 설계보다 정밀하다 — 테스트 스위트·Boundary contract(JSON Schema)·
+다이어그램·기존 코드 경로를 우선 링크하고, 산문은 코드로 표현 못 하는 의도만 담는다.*
+
+-
+
+
+=== docs/tester/tester-handoff.md
+# Session Handoff
+
+## Active Task
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
+
+## Last Completed Task (<DATE>)
+`demo` — done
+
+## Full Context
+→ docs/tester/demo/demo-handoff.md
+

@@ -7,11 +7,11 @@
 //
 // 기록 명령은 **옵트인을 만들지 않는다.** plan 에 다이어그램 단계가 없으면 거부한다 — 옵트인은 plan 단계
 // 추가로 남기는 사용자 결정이고(task.md 2번), 그것을 기록 명령의 부수효과로 두면 두 결정이 섞인다.
-import { join } from 'node:path';
 import { readFile } from 'node:fs/promises';
 import { exists, writeText } from '../fsx.mjs';
 import { readActive, taskArtifactTemplate } from './task.mjs';
 import { insertBeforeHeading } from './review.mjs';
+import { taskFileRel, taskFilePath } from '../task-paths.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 
 const ACTIONS = ['record'];
@@ -132,15 +132,13 @@ async function runRecord(ctx, json, noteTokens) {
   }
 
   const { user, task } = active;
-  const taskRel = `docs/${user}/${task}`;
-  const taskDir = join(ctx.targetDir, taskRel);
-  const diagramRel = `${taskRel}/${task}-diagram.html`;
-  const artifactRel = `${taskRel}/${task}-artifact.md`;
-  const planRel = `${taskRel}/${task}-plan.md`;
+  const diagramRel = taskFileRel(user, task, 'diagram.html');
+  const artifactRel = taskFileRel(user, task, 'artifact.md');
+  const planRel = taskFileRel(user, task, 'plan.md');
   const outcome = skipped ? 'skipped' : 'produced';
 
   // 없는 산출물을 "생성" 으로 남기는 것이 산문이 막으려던 거짓 기록이다.
-  if (outcome === 'produced' && !(await exists(join(ctx.targetDir, diagramRel)))) {
+  if (outcome === 'produced' && !(await exists(taskFilePath(ctx.targetDir, user, task, 'diagram.html')))) {
     emitError(json, `${diagramRel} 이 없어 생성으로 기록할 수 없음`, buildErrorPacket({
       cause: `${diagramRel} 이 없음`,
       retry: '다이어그램을 그 경로에 만든 뒤 다시 실행',
@@ -151,8 +149,8 @@ async function runRecord(ctx, json, noteTokens) {
     return;
   }
 
-  const planPath = join(taskDir, `${task}-plan.md`);
-  const artifactPath = join(taskDir, `${task}-artifact.md`);
+  const planPath = taskFilePath(ctx.targetDir, user, task, 'plan.md');
+  const artifactPath = taskFilePath(ctx.targetDir, user, task, 'artifact.md');
   const planText = (await exists(planPath)) ? await readFile(planPath, 'utf8') : '';
   const closed = closeDiagramStep(planText, { outcome, note });
   if (closed.status === 'missing') {

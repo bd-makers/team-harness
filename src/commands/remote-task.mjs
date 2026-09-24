@@ -2,6 +2,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { readTaskMeta } from './summary.mjs';
 import { readOriginHead } from '../git-default-branch.mjs';
+import { taskDirRel, taskFileRel, taskLabel } from '../task-paths.mjs';
 
 const pexec = promisify(execFile);
 
@@ -43,7 +44,7 @@ export async function readRemoteTaskMeta(targetDir, user, task, { git: run = git
   const ref = await resolveDefaultRef(targetDir, { git: run });
   if (!ref) return null;
   try {
-    const raw = await run(targetDir, ['show', `${ref}:docs/${user}/${task}/${task}-meta.json`]);
+    const raw = await run(targetDir, ['show', `${ref}:${taskFileRel(user, task, 'meta.json')}`]);
     const meta = JSON.parse(raw);
     if (meta && typeof meta === 'object') return { ref, meta };
   } catch { /* 경로 없음(exit 128)·JSON 아님 — 모른다 */ }
@@ -67,8 +68,8 @@ export function doneOnMainVerdict({ localMeta, remote }) {
 // 다시 열면 `reopenedAt`이 생겨 다음 세션부터 이 nudge가 사라진다.
 export function renderDoneOnMainNudge({ user, task, ref, closedAt }) {
   const when = closedAt ?? '(시각 미기록)';
-  return `[harness] ⚠ task ${user}/${task} 는 ${ref} 에서 ${when} 에 이미 종결됨 — 재개할 것인지 확인. `
-    + `이어가면 main과 구현이 갈릴 수 있다. 근거: git log ${ref} -- docs/${user}/${task} · `
+  return `[harness] ⚠ task ${taskLabel(user, task)} 는 ${ref} 에서 ${when} 에 이미 종결됨 — 재개할 것인지 확인. `
+    + `이어가면 main과 구현이 갈릴 수 있다. 근거: git log ${ref} -- ${taskDirRel(user, task)} · `
     + `고의로 이어가려면 main을 가져온 뒤 harness-team task ${task} 로 다시 연다(reopened).`;
 }
 

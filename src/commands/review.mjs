@@ -20,6 +20,7 @@ import { readActive, taskArtifactTemplate, VERIFY_KIND_SUFFIXES } from './task.m
 import { readTaskMeta, writeTaskMeta } from './summary.mjs';
 import { RUBRICS, findFramingTemplate } from './review-prompts.mjs';
 import { resolveDefaultRef } from './remote-task.mjs';
+import { taskFileRel, taskFilePath } from '../task-paths.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 
 const pexec = promisify(execFile);
@@ -473,9 +474,9 @@ export async function runReview(ctx, deps = {}) {
     }
   }
   const taskPaths = {
-    spec: `docs/${active.user}/${active.task}/${active.task}-spec.md`,
-    plan: `docs/${active.user}/${active.task}/${active.task}-plan.md`,
-    artifact: `docs/${active.user}/${active.task}/${active.task}-artifact.md`,
+    spec: taskFileRel(active.user, active.task, 'spec.md'),
+    plan: taskFileRel(active.user, active.task, 'plan.md'),
+    artifact: taskFileRel(active.user, active.task, 'artifact.md'),
   };
   const prompt = buildPrompt({ scope, base, focus, promptText, template: template ? template.template : null, taskPaths });
 
@@ -512,8 +513,8 @@ export async function runReview(ctx, deps = {}) {
 
   const at = new Date().toISOString();
   const { user, task } = active;
-  const artifactRel = `docs/${user}/${task}/${task}-artifact.md`;
-  const artifactPath = join(ctx.targetDir, artifactRel);
+  const artifactRel = taskFileRel(user, task, 'artifact.md');
+  const artifactPath = taskFilePath(ctx.targetDir, user, task, 'artifact.md');
   if (!(await exists(artifactPath))) await writeText(artifactPath, taskArtifactTemplate(task));
 
   const outputBytes = Buffer.byteLength(result.stdout, 'utf8');
@@ -537,11 +538,11 @@ export async function runReview(ctx, deps = {}) {
   const nextActions = [
     `${artifactRel} 의 새 블록 아래에 발견 판별(진짜 결함/오탐)과 조치를 산문으로 남긴다 — harness-review.md 4단계`,
   ];
-  const metaRel = `docs/${user}/${task}/${task}-meta.json`;
+  const metaFileRel = taskFileRel(user, task, 'meta.json');
   if (json) {
     emitObservation(buildEnvelope({
       command: 'review', status: 'success', summary, nextActions,
-      artifacts: cliOwned ? [artifactRel, metaRel] : [artifactRel],
+      artifacts: cliOwned ? [artifactRel, metaFileRel] : [artifactRel],
       extra: { ...entry, probed: !!resolved.probed, recorded: true, metaRecorded: cliOwned },
     }));
   } else {

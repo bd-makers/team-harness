@@ -2,6 +2,7 @@ import { readFile, realpath } from 'node:fs/promises';
 import { isAbsolute, relative, resolve } from 'node:path';
 import { exists } from '../fsx.mjs';
 import { readActive } from './task.mjs';
+import { taskFilePath } from '../task-paths.mjs';
 
 const DECLARATION_RE = /^## Boundary contracts[ \t]*\r?\n(?:[ \t]*\r?\n)*```json[ \t]*\r?\n([\s\S]*?)^```[ \t]*$/m;
 
@@ -14,7 +15,7 @@ function failure(id, code, message) {
 }
 
 function taskSpecPath(targetDir, active) {
-  return resolve(targetDir, 'docs', active.user, active.task, `${active.task}-spec.md`);
+  return resolve(taskFilePath(targetDir, active.user, active.task, 'spec.md'));
 }
 
 export function parseBoundaryDeclaration(spec) {
@@ -244,7 +245,7 @@ export async function runBoundaryCheckpoint(ctx) {
 
   const active = await readActive(ctx.targetDir);
   if (!active || !active.task) return { status: 'ignored' };
-  const planPath = resolve(ctx.targetDir, 'docs', active.user, active.task, `${active.task}-plan.md`);
+  const planPath = resolve(taskFilePath(ctx.targetDir, active.user, active.task, 'plan.md'));
   let editedPath;
   let canonicalPlanPath;
   try {

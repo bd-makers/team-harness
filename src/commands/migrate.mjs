@@ -16,6 +16,7 @@ import {
 } from './task.mjs';
 import { collectTasks, readTaskMeta, writeTaskMeta, metaRel } from './summary.mjs';
 import { settingsHasSessionGate } from './session-context.mjs';
+import { SUMMARY_REL, userIndexRel, docsPath, taskDirRel, taskFilePath } from '../task-paths.mjs';
 
 const USER_REGION_RE = /<!--\s*harness:user:begin\s*-->[\s\S]*?<!--\s*harness:user:end\s*-->/;
 const EMPTY_USER_REGION = '<!-- harness:user:begin -->\n<!-- 이 마커 아래 작성한 내용은 harness가 절대 수정하지 않습니다. -->\n<!-- harness:user:end -->';
@@ -24,6 +25,10 @@ const SCRIPT_FILES = ['clone.sh', 'symlink.sh', 'delete.sh'];
 const OLD_CATEGORIES = ['feature', 'fix'];
 
 // --- Task structure migration (pre-0.6.0 → 0.6.0) ---
+//
+// 여기부터 migrateTaskTo07 까지는 **옛 구조를 서술하는** 코드라 src/task-paths.mjs 를 경유하지 않는다 —
+// 입력이 헬퍼가 모르는 모양(`docs/<u>/{feature,fix}/<n>`, 0.6 handoff)이다. 이 구간은 동결돼 있고,
+// tests/task-paths-single-source.test.mjs 가 이 표지부터 아래 Backup 표지까지를 허용 구간으로 본다.
 
 async function findOldTasks(targetDir) {
   const docs = join(targetDir, 'docs');
@@ -583,14 +588,14 @@ export async function refreshClaudeTemplates(ctx) {
 
 export async function migrateTaskIndexLabels(ctx) {
   const { targetDir } = ctx;
-  const docsDir = join(targetDir, 'docs');
+  const docsDir = docsPath(targetDir);
   let changed = false;
 
   let entries = [];
   try { entries = await readdir(docsDir, { withFileTypes: true }); } catch { entries = []; }
   for (const ent of entries) {
     if (!ent.isDirectory()) continue;
-    const idxPath = join(docsDir, ent.name, `${ent.name}-task.md`);
+    const idxPath = join(targetDir, userIndexRel(ent.name));
     const body = await readTextSafe(idxPath);
     if (body && body.includes('## Active\n')) {
       await writeText(idxPath, body.replace('## Active\n', '## Open\n'));
@@ -599,7 +604,7 @@ export async function migrateTaskIndexLabels(ctx) {
     }
   }
 
-  const summaryPath = join(docsDir, 'task_summary.md');
+  const summaryPath = join(targetDir, SUMMARY_REL);
   const sum = await readTextSafe(summaryPath);
   if (sum && sum.includes('🔄 active')) {
     await writeText(summaryPath, sum.replaceAll('🔄 active', '🔄 open'));
@@ -1026,13 +1031,12 @@ export async function collectReviewAdoptionCandidates(targetDir) {
     // meta 파일이 없으면 건너뛴다 — backfillTaskMeta 가 먼저 만들고, 다음 실행에서 후보가 된다.
     if (!meta || Array.isArray(meta.reviews)) continue;
 
-    const dir = join(targetDir, 'docs', t.user, t.task);
-    const artifact = await readTextSafe(join(dir, `${t.task}-artifact.md`));
+    const artifact = await readTextSafe(taskFilePath(targetDir, t.user, t.task, 'artifact.md'));
     const { at: windowStart } = evidenceWindowStart(meta);
     const dropped = (artifact ? parseReviewMarkers(artifact) : [])
       .filter(m => (windowStart === null || m.at >= windowStart) && isVerifyKind(m.kind));
 
-    const spec = await readTextSafe(join(dir, `${t.task}-spec.md`));
+    const spec = await readTextSafe(taskFilePath(targetDir, t.user, t.task, 'spec.md'));
     const evidence = parseDoneEvidenceDeclaration(spec ?? '');
     candidates.push({ user: t.user, task: t.task, meta, dropped: dropped.length, verifyRequired: evidence.verify === 'required' });
   }
@@ -1059,7 +1063,7 @@ export async function adoptTaskReviews(ctx) {
       : c.dropped
         ? `검증 마커 ${c.dropped}개가 증거에서 빠짐 → 종결 전 \`harness-team review <engine> --framing <접미사>\` 재실행 필요`
         : '이 판정 창에 검증 마커 없음 — 어차피 지금도 종결이 막혀 있다';
-    console.log(`  docs/${c.user}/${c.task}/ — ${cost}`);
+    console.log(`  ${taskDirRel(c.user, c.task)}/ — ${cost}`);
   }
   console.log('\n채택은 각 meta 에 `reviews: []` 를 넣는다. 그 뒤 `verify: required` 는 `harness-team review` 가');
   console.log(`기록한 실행만 센다 (kind 접미사 ${VERIFY_KIND_SUFFIXES.map(x => `-${x}`).join('·')}). 손으로 쓴 artifact 마커는 세지 않는다.`);

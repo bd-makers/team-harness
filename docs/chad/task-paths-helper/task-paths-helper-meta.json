@@ -1,0 +1,21 @@
+{
+  "user": "chad",
+  "task": "task-paths-helper",
+  "created": "2026-09-24",
+  "firstActivatedAt": "2026-09-24T09:11:07.128Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "dce0a5b91f5c7c638c86408724c948494af9f9ba",
+      "at": "2026-09-24T09:21:44.812Z",
+      "exitCode": 0,
+      "outputBytes": 1673
+    }
+  ]
+}

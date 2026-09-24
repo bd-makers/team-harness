@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+task-paths-helper
 
-## Last Completed Task (2026-09-13)
-`dangerous-git-end-boundary` — done
+## Last Commit (2026-09-24)
+3a4cb05 docs(overview): 새 파일(task-paths·golden·spec) 인벤토리 재생성
 
 ## Full Context
-→ docs/chad/dangerous-git-end-boundary/dangerous-git-end-boundary-handoff.md
+→ docs/chad/task-paths-helper/task-paths-helper-handoff.md
