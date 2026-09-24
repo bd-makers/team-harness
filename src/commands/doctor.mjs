@@ -8,6 +8,7 @@ import { loadBackupDir, settingsHasBoundaryCheckpoint, codexHooksHaveSessionCont
 import { buildEnvelope, buildErrorPacket, emitObservation } from '../observation.mjs';
 import { settingsHasSessionGate } from './session-context.mjs';
 import { checkDoneOnMain } from './remote-task.mjs';
+import { taskLabel, taskFilePath } from '../task-paths.mjs';
 import { checkRuleProvenance } from './rules.mjs';
 import { findStaleTemplates, isKnownStockTemplate } from './migrate.mjs';
 import { evaluateObserveVerdict, observeLoopbackNudge, tripWireDetail } from './observe.mjs';
@@ -235,13 +236,13 @@ export async function checkActiveSpecGate(targetDir) {
   if (!active || !active.task) return null;
 
   const { user, task } = active;
-  const specPath = join(targetDir, 'docs', user, task, `${task}-spec.md`);
+  const specPath = taskFilePath(targetDir, user, task, 'spec.md');
   if (!(await exists(specPath))) {
-    return `active task ${user}/${task}: spec.md 없음 (task 도구 우회 의심)`;
+    return `active task ${taskLabel(user, task)}: spec.md 없음 (task 도구 우회 의심)`;
   }
   const content = await readFile(specPath, 'utf8');
   if (!content.includes('Ambiguity 자가진단')) {
-    return `active task ${user}/${task}: spec.md에 Ambiguity 자가진단 섹션 없음 (게이트 우회 — 포인터 껍데기 spec 의심)`;
+    return `active task ${taskLabel(user, task)}: spec.md에 Ambiguity 자가진단 섹션 없음 (게이트 우회 — 포인터 껍데기 spec 의심)`;
   }
   return null;
 }
@@ -257,7 +258,7 @@ export async function checkActiveDoneOnMain(targetDir, { doneOnMain = checkDoneO
   let verdict = null;
   try { verdict = await doneOnMain(targetDir, active.user, active.task); } catch { return null; }
   if (!verdict) return null;
-  return `active task ${active.user}/${active.task}: ${verdict.ref} 에서 ${verdict.closedAt ?? '(시각 미기록)'} 에 이미 종결됨 — 클론이 main의 종결을 모른 채 이어가는 중일 수 있음`;
+  return `active task ${taskLabel(active.user, active.task)}: ${verdict.ref} 에서 ${verdict.closedAt ?? '(시각 미기록)'} 에 이미 종결됨 — 클론이 main의 종결을 모른 채 이어가는 중일 수 있음`;
 }
 
 // Detect the legacy structure (0.7.x): CLAUDE.md was the master and AGENTS.md/

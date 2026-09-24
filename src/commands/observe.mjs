@@ -7,6 +7,7 @@ import { createHmac } from 'node:crypto';
 import { lstat, readdir, readFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
+import { docsPath, taskFilePath, taskLabel } from '../task-paths.mjs';
 
 export const OBSERVABILITY_BASE = '.harness/observability/v1';
 export const OBSERVE_DEFAULT_DAYS = 7;
@@ -176,7 +177,7 @@ export async function resolveTaskRefs(targetDir) {
     key = await readFile(join(targetDir, OBSERVABILITY_BASE, '.key'));
     if (key.length !== 32) return refs;
   } catch { return refs; }
-  const docs = join(targetDir, 'docs');
+  const docs = docsPath(targetDir);
   let users = [];
   try { users = (await readdir(docs, { withFileTypes: true })).filter(e => e.isDirectory()).map(e => e.name); } catch { return refs; }
   for (const user of users) {
@@ -184,10 +185,10 @@ export async function resolveTaskRefs(targetDir) {
     try { tasks = (await readdir(join(docs, user), { withFileTypes: true })).filter(e => e.isDirectory()).map(e => e.name); } catch { continue; }
     for (const task of tasks) {
       try {
-        const meta = JSON.parse(await readFile(join(docs, user, task, `${task}-meta.json`), 'utf8'));
+        const meta = JSON.parse(await readFile(taskFilePath(targetDir, user, task, 'meta.json'), 'utf8'));
         const u = typeof meta.user === 'string' ? meta.user : user;
         const t = typeof meta.task === 'string' ? meta.task : task;
-        refs.set(hmacRef(key, 'task', `${u}\u0000${t}`), `${u}/${t}`);
+        refs.set(hmacRef(key, 'task', `${u}\u0000${t}`), taskLabel(u, t));
       } catch { /* not a task dir */ }
     }
   }

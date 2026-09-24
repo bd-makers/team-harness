@@ -18,6 +18,16 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Changed
+- **task 경로 조립을 `src/task-paths.mjs` 한 곳으로 모았다 — 동작 변화 없음.** `docs/<user>/<task>/…`를
+  `join(targetDir, 'docs', user, task)`·`` `docs/${user}/${task}` ``로 따로 만들던 곳이 13파일 약 60줄이었고,
+  spec 마커로 task를 판정하는 2단 스캐너가 3벌(`list`·`summary`·SessionStart 재개 후보) 복제돼 있었다.
+  모노레포 area 논의(`docs/spec-monorepo-scope.md`)에서 경로 규칙을 바꾸려면 그 전부를 같이 고쳐야 한다는 것이
+  드러나 먼저 일원화했다. 파일 배치·파일 바이트·stdout은 이전과 같다 — 리팩터 **전** 코드에서 green으로 고정한
+  golden e2e(`tests/e2e/task-paths-golden.test.mjs`)가 그대로 통과한다. 새 조립 지점은
+  `tests/task-paths-single-source.test.mjs`가 막는다. 0.6·0.7 이관처럼 **옛 구조를 서술하는** migrate 구간과
+  소비자에 복사되는 훅 템플릿 `observe-tools.mjs`는 의도적으로 옮기지 않았다.
+
 ## [0.40.3] - 2026-09-22
 
 ### Added

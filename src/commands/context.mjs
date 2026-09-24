@@ -1,7 +1,7 @@
-import { join } from 'node:path';
 import { readFile } from 'node:fs/promises';
 import { exists, writeText } from '../fsx.mjs';
 import { readActive, taskContextTemplate } from './task.mjs';
+import { taskFilePath } from '../task-paths.mjs';
 
 export const CONTEXT_MAX_BYTES = 6 * 1024;
 export const CONTEXT_MAX_NONBLANK_LINES = 100;
@@ -78,7 +78,7 @@ function requiredHeadings(task) {
 }
 
 export function contextCardPath(targetDir, active) {
-  return join(targetDir, 'docs', active.user, active.task, `${active.task}-context.md`);
+  return taskFilePath(targetDir, active.user, active.task, 'context.md');
 }
 
 export function validateContextCard(content, task) {

@@ -4,6 +4,7 @@ import { exists, readTextSafe, writeText } from '../fsx.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 import { collectRuleFiles, mirrorCursorRules, splitRulePaths } from '../harness.mjs';
 import { readActive } from './task.mjs';
+import { taskFileRel, taskFilePath, taskLabel } from '../task-paths.mjs';
 
 // ── 순수 부분 ──────────────────────────────────────────────────────────────
 
@@ -203,8 +204,8 @@ export async function runRulesPromote(ctx) {
     });
   }
   const { user, task } = active;
-  const relArtifact = `docs/${user}/${task}/${task}-artifact.md`;
-  const artifactPath = join(ctx.targetDir, relArtifact);
+  const relArtifact = taskFileRel(user, task, 'artifact.md');
+  const artifactPath = taskFilePath(ctx.targetDir, user, task, 'artifact.md');
   const artifact = await readTextSafe(artifactPath);
   if (artifact === null) {
     return fail(ctx, {
@@ -270,7 +271,7 @@ export async function runRulesPromote(ctx) {
 
   const paths = parsePathsFlag(flags.paths);
   const since = today();
-  const origin = `${user}/${task}`;
+  const origin = taskLabel(user, task);
   // 검증은 위에서 끝났다. 쓰기 순서: 규칙 → artifact 표기 → 미러. 표기가 먼저면 규칙 쓰기 실패 시 유령 표기가 남는다.
   await writeText(rulePath, renderRule({ slug: name, text: entry.text, origin, since, paths }));
   try {
