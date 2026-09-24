@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ task-paths-helper
 - ✅ dangerous-git-end-boundary ⚠️
 - ✅ hook-git-opts-init-cancel ⚠️
 - ✅ docs-html-stub-tests
