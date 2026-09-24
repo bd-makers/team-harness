@@ -18,6 +18,8 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.41.0] - 2026-09-24
+
 ### Added
 - **`task --area <area>` · `list --area <area>` — 모노레포에서 task 를 앱·서비스 단위로 묶는다.** 앱마다 제품·담당·
   릴리스가 다른 모노레포에서 `<area>-<name>` 이름 접두만으로는 기계가 area 를 몰랐다(`web` 과 `web-next` 처럼
