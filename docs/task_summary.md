@@ -117,6 +117,7 @@
 | hslee | active-json-validation | ✅ done | 2026-09-25 |
 | hslee | agents-md-native | ✅ done | 2026-09-25 |
 | hslee | config-user-validation | ✅ done | 2026-09-25 |
+| hslee | eager-budget-headroom | ✅ done | 2026-09-25 |
 | hslee | handoff-sweep-fold | ✅ done | 2026-09-25 |
 | hslee | list-remote-branches | ✅ done | 2026-09-25 |
 | hslee | managed-section-refresh-path | ✅ done | 2026-09-25 |

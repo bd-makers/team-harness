@@ -6,6 +6,7 @@
 - ✅ active-json-validation
 - ✅ agents-md-native
 - ✅ config-user-validation
+- ✅ eager-budget-headroom
 - ✅ handoff-sweep-fold
 - ✅ list-remote-branches
 - ✅ managed-section-refresh-path
