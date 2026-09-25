@@ -18,3 +18,13 @@ CHANGELOG.md                                       |  6 ++
  tests/task-user-validation.test.mjs                | 80 ++++++++++++++++++++++
  tests/user-config.test.mjs                         | 26 ++++++-
  14 files changed, 294 insertions(+), 5 deletions(-)
+
+## 2026-09-25T11:29:59.149Z — edc59dc chore(config-user-validation): codex 리뷰 판별 — falsy config user 폴백 계약을 spec·테스트 제목에 명시
+.../config-user-validation-artifact.md              | 21 +++++++++++++++++++++
+ .../config-user-validation-handoff.md               | 17 +++++++++++++++++
+ .../config-user-validation-meta.json                | 12 +++++++++++-
+ .../config-user-validation-plan.md                  |  2 +-
+ .../config-user-validation-spec.md                  |  3 ++-
+ docs/hslee/hslee-handoff.md                         |  9 ++++-----
+ tests/task-user-validation.test.mjs                 |  3 ++-
+ 7 files changed, 58 insertions(+), 9 deletions(-)
