@@ -8,7 +8,7 @@
 - [x] 구현 — `resolveScope` origin 후보 전체 ref, `resolveDefaultRef` 폴백 검증 전체 ref
 - [x] 짧은 이름을 단정하던 기대치 4곳 갱신, `commands/harness-review.md`·CHANGELOG
 - [x] `npm test` 1027 pass / 0 fail / skip 1
-- [ ] `harness-team review codex` (config 모델 `gpt-6-astra` 로 교체 후 첫 실측) → artifact Reviews 기록
+- [x] `harness-team review codex` (config 모델 `gpt-6-astra` 로 교체 후 첫 실측) → artifact Reviews 기록 — 발견 없음, 리뷰어가 전체 ref 로 diff
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
