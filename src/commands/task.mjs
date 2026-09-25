@@ -22,6 +22,23 @@ export function planHasOpenBoxes(content) {
   return /^\s*- \[ \]/m.test(content);
 }
 
+// 줄머리 체크박스를 켠(`- [ ]`→`- [x]`) 것 외에 바뀐 줄이 없는가. done 가드는 이 경우 plan.md를
+// 미커밋 작업으로 세지 않는다 — 머지 후 마지막 단계를 켜려고 커밋을 따로 만들 이유가 없다.
+// 끄기·줄 추가·산문 변경은 실제 작업이라 거부한다.
+export function isCheckboxOnlyChange(before, after) {
+  const a = before.split('\n');
+  const b = after.split('\n');
+  if (a.length !== b.length) return false;
+  let changed = false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] === b[i]) continue;
+    const m = /^(\s*- )\[ \]([^\n]*)$/.exec(a[i]); // `.`은 CRLF의 `\r`에 매칭되지 않는다
+    if (!m || b[i] !== `${m[1]}[x]${m[2]}`) return false;
+    changed = true;
+  }
+  return changed;
+}
+
 async function readConfig(targetDir) {
   const p = join(targetDir, '.harness/config.json');
   try { return JSON.parse(await readFile(p, 'utf8')); } catch { return {}; }
@@ -826,7 +843,25 @@ async function collectDoneIssues(targetDir, active) {
       // after every commit, so they're ~always dirty at `done` time. Exclude them — the
       // guard should block on real uncommitted work, not the hook's own auto-output.
       const handoffRels = handoffRelPaths(user, task);
-      const realDirty = parsePorcelainPaths(stdout).filter(p => !handoffRels.has(p));
+      let realDirty = parsePorcelainPaths(stdout).filter(p => !handoffRels.has(p));
+      // 체크박스만 켠 plan.md는 종결 커밋에 함께 담는다(isCheckboxOnlyChange). index와 작업 트리를
+      // **둘 다** 본다 — 작업 트리만 보면 산문을 stage한 뒤 작업 트리를 되돌려 가드를 우회할 수 있다.
+      const planRel = taskFileRel(user, task, 'plan.md');
+      if (realDirty.includes(planRel)) {
+        try {
+          const show = async rev => (await pexec('git', ['-C', targetDir, 'show', `${rev}:./${planRel}`], { maxBuffer: 1024 * 1024 })).stdout;
+          const committed = await show('HEAD');
+          const staged = await show('');
+          const current = await readFile(taskFilePath(targetDir, user, task, 'plan.md'), 'utf8');
+          const ok = c => c === committed || isCheckboxOnlyChange(committed, c);
+          // 내용 비교는 mode·파일 유형(chmod·symlink 교체)을 못 본다 — raw diff의 양쪽 mode가 일반 파일로 같아야 한다.
+          const raw = async args => (await pexec('git', ['-C', targetDir, 'diff', ...args, '--raw', '--', `./${planRel}`], { maxBuffer: 1024 * 1024 })).stdout;
+          const sameRegularMode = out => out.split('\n').filter(Boolean).every(l => /^:100644 100644 /.test(l));
+          if (ok(staged) && ok(current) && sameRegularMode(await raw(['--cached'])) && sameRegularMode(await raw([]))) {
+            realDirty = realDirty.filter(p => p !== planRel);
+          }
+        } catch { /* HEAD·index에 plan 없음(신규·미추적·삭제) → 면제하지 않는다 */ }
+      }
       if (realDirty.length) issues.push('커밋되지 않은 변경이 있음');
     } catch { /* transient git error → don't fabricate a problem */ }
 

@@ -170,6 +170,17 @@ churn이 자기 자신을 먹여 트리가 깨끗해지는 지점이 사라지�
 
 판정 불가(git·reflog·형식 파싱 실패)는 append다 — 잃는 쪽이 아니라 남기는 쪽으로 틀린다.
 
+## 머지 후 종결 — 커밋 하나
+
+PR/MR이 머지된 뒤 기본 브랜치에서: plan의 마지막 단계(보통 "커밋·PR")를 `- [x]`로 켠다 → `harness-team done`
+→ `harness-team summary --write` → **커밋 하나**(`chore(task): <name> 종결`)에 plan·meta·handoff·원장을 함께 담는다.
+
+`done` 가드는 미커밋 변경을 막지만, 활성 task의 plan.md 변경이 **줄머리 체크박스를 켠 것뿐**이면 세지 않는다
+(`isCheckboxOnlyChange` — HEAD의 plan과 index·작업 트리를 **둘 다** 줄 단위로 대조한다. 끄기·줄 추가·산문 수정은
+종전대로 막는다. 한계: 경로 대조는 `targetDir`가 저장소 루트라고 가정한다 — handoff 제외와 같다).
+그래서 체크·종결·원장을 커밋 셋으로 나눌 이유가 없다(2026-09-26 이전 관례는 셋이었다). 단계를 켜는 판단은
+여전히 에이전트 몫이다 — 머지를 확인하기 전에 켜지 않는다.
+
 ## `<name>-meta.json`과 판정 창
 
 `<name>-meta.json`은 harness가 소유하는 **기계 상태**다(`created`·`firstActivatedAt`·`status`·

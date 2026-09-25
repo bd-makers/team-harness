@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, readFile, rm, stat } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm, stat, chmod } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { execFile } from 'node:child_process';
@@ -8,7 +8,7 @@ import { promisify } from 'node:util';
 import {
   runDone, taskArtifactTemplate, taskPlanTemplate, taskSpecTemplate, parsePorcelainPaths,
   parseDoneEvidenceDeclaration, classifyChangedPaths, parseReviewMarkers, DONE_EVIDENCE_DEFAULT,
-  VERIFY_KIND_SUFFIXES, parseMetaReviews,
+  VERIFY_KIND_SUFFIXES, parseMetaReviews, isCheckboxOnlyChange,
 } from '../src/commands/task.mjs';
 
 const pexec = promisify(execFile);
@@ -243,6 +243,97 @@ test('handoff 외 실제 변경이 미커밋이면 여전히 차단', async () =
     process.exitCode = prevExit;
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+// 머지 후 마지막 단계("커밋·PR")를 켜려고 커밋을 따로 만들지 않는다 — 체크박스만 켠 plan.md는
+// 종결 커밋에 함께 담긴다. 다른 줄이 바뀌면 실제 작업이므로 종전대로 막는다.
+async function commitPlanWithOpenBox(dir, taskDir) {
+  await writeFile(join(taskDir, 'demo-plan.md'), '# demo — Plan\n\n## 단계\n- [x] 구현\n- [ ] 커밋·PR\n');
+  await pexec('git', ['-C', dir, 'add', '-A']);
+  await pexec('git', ['-C', dir, 'commit', '-q', '-m', 'plan']);
+}
+
+test('plan.md의 줄머리 체크박스만 켠 미커밋 변경이면 가드 통과', async () => {
+  const { dir, taskDir } = await makeGitFixture();
+  await commitPlanWithOpenBox(dir, taskDir);
+  await writeFile(join(taskDir, 'demo-plan.md'), '# demo — Plan\n\n## 단계\n- [x] 구현\n- [x] 커밋·PR\n');
+  const prevExit = process.exitCode;
+  const { logs, restore } = captureLogs();
+  try {
+    await runDone({ targetDir: dir, flags: {} });
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds — checkbox-only plan change excluded');
+    assert.ok(!logs.some(l => l.includes('커밋되지 않은 변경')), 'no uncommitted-change block');
+  } finally {
+    restore();
+    process.exitCode = prevExit;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('plan.md에 체크박스 외 변경이 섞이면 여전히 차단', async () => {
+  const { dir, taskDir } = await makeGitFixture();
+  await commitPlanWithOpenBox(dir, taskDir);
+  await writeFile(join(taskDir, 'demo-plan.md'), '# demo — Plan\n\n## 단계\n- [x] 구현 (범위 변경)\n- [x] 커밋·PR\n');
+  const prevExit = process.exitCode;
+  const { logs, restore } = captureLogs();
+  try {
+    await runDone({ targetDir: dir, flags: {} });
+    assert.equal(process.exitCode, 1, 'blocks on non-checkbox plan edit');
+    assert.ok(logs.some(l => l.includes('커밋되지 않은 변경')), 'flags uncommitted change');
+  } finally {
+    restore();
+    process.exitCode = prevExit;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('stage한 산문 변경은 작업 트리를 체크박스만 남겨 되돌려도 차단 (index도 검사)', async () => {
+  const { dir, taskDir } = await makeGitFixture();
+  await commitPlanWithOpenBox(dir, taskDir);
+  const planPath = join(taskDir, 'demo-plan.md');
+  await writeFile(planPath, '# demo — Plan\n\n## 단계\n- [x] 구현 (범위 변경)\n- [ ] 커밋·PR\n');
+  await pexec('git', ['-C', dir, 'add', planPath]);
+  await writeFile(planPath, '# demo — Plan\n\n## 단계\n- [x] 구현\n- [x] 커밋·PR\n');
+  const prevExit = process.exitCode;
+  const { logs, restore } = captureLogs();
+  try {
+    await runDone({ targetDir: dir, flags: {} });
+    assert.equal(process.exitCode, 1, 'blocks on staged non-checkbox edit');
+    assert.ok(logs.some(l => l.includes('커밋되지 않은 변경')), 'flags uncommitted change');
+  } finally {
+    restore();
+    process.exitCode = prevExit;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('plan.md의 mode 변경이 섞이면 체크박스만 켰어도 차단', async () => {
+  const { dir, taskDir } = await makeGitFixture();
+  await commitPlanWithOpenBox(dir, taskDir);
+  const planPath = join(taskDir, 'demo-plan.md');
+  await writeFile(planPath, '# demo — Plan\n\n## 단계\n- [x] 구현\n- [x] 커밋·PR\n');
+  await chmod(planPath, 0o755);
+  const prevExit = process.exitCode;
+  const { logs, restore } = captureLogs();
+  try {
+    await runDone({ targetDir: dir, flags: {} });
+    assert.equal(process.exitCode, 1, 'blocks on mode change');
+    assert.ok(logs.some(l => l.includes('커밋되지 않은 변경')), 'flags uncommitted change');
+  } finally {
+    restore();
+    process.exitCode = prevExit;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('isCheckboxOnlyChange: 켜기만 허용하고 끄기·줄 추가·산문 변경은 거부', () => {
+  assert.equal(isCheckboxOnlyChange('- [ ] a\r\n- [x] b\r\n', '- [x] a\r\n- [x] b\r\n'), true, 'CRLF');
+  const before = '## 단계\n- [x] a\n- [ ] b\n  - [ ] c\n';
+  assert.equal(isCheckboxOnlyChange(before, '## 단계\n- [x] a\n- [x] b\n  - [x] c\n'), true);
+  assert.equal(isCheckboxOnlyChange(before, before), false, '변경 없음은 면제 대상 아님');
+  assert.equal(isCheckboxOnlyChange(before, '## 단계\n- [ ] a\n- [x] b\n  - [ ] c\n'), false, '끄기');
+  assert.equal(isCheckboxOnlyChange(before, before + '- [x] d\n'), false, '줄 추가');
+  assert.equal(isCheckboxOnlyChange(before, '## 단계\n- [x] a\n- [x] b 수정\n  - [ ] c\n'), false, '텍스트 변경');
 });
 
 test('parsePorcelainPaths: 상태접두/rename/quotepath 파싱', () => {
