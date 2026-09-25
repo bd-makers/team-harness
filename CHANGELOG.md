@@ -18,6 +18,12 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Fixed
+- **`.harness/config.json` 의 `user` 가 `docs/` 밖에 task 를 만들 수 있던 결함.** config user 는 검증 없이 경로 조립에
+  쓰여 `{"user":"../../x"}` 면 `task foo` 가 프로젝트 root 밖에 task 파일 6개를 만들고 `active.json` 이 그곳을 가리켰다.
+  이제 결정된 member(config·`--member`·폴백 어느 출처든)가 비어 있거나 `/`·`\`·선행 `.`·제어문자를 포함하면 `task` 가
+  쓰기 전에 거부하고, `init`/`sync` 는 저장 전에 멈춘다. 한글·공백 이름은 종전대로 통과한다(문자 집합은 제한하지 않는다).
+
 ## [0.41.5] - 2026-09-25
 
 ### Fixed

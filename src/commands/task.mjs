@@ -9,6 +9,7 @@ import { readTaskMeta, writeTaskMeta, taskMetaTemplate, inferLegacyMeta, readLed
 import { renderDoneMarker } from '../handoff-marker.mjs';
 import { checkDoneOnMain, renderDoneOnMainNudge } from './remote-task.mjs';
 import { findCommand } from '../cli-args.mjs';
+import { userNameError } from '../user-config.mjs';
 import {
   taskDirRel, taskFileRel, userHandoffRel, taskLabel, docsPath, taskDirPath, taskFilePath, userHandoffPath, listTaskRefs,
 } from '../task-paths.mjs';
@@ -39,10 +40,16 @@ async function writeActive(targetDir, data) {
 
 // README "member 식별 규칙"대로 `--member` 가 최우선이다 — config user 가 이기면 한 머신에 두 정체성이 있을 때
 // 다른 member 의 task 를 가리킬 방법이 없다. `explicit` 은 다른 member 와의 이름 충돌 가드를 끌지 정한다.
+// `error` 는 결정된 user 가 `docs/<user>/` 한 세그먼트가 아닐 때의 사유다 — 출처(config·--member·폴백)와 무관하게
+// 여기서 판정해야 손으로 고친 config 나 `config set user` 도 막힌다.
 async function resolveUser(targetDir, flags) {
-  if (flags.member) return { user: await detectMember(targetDir, flags), explicit: true };
-  const cfg = await readConfig(targetDir);
-  return { user: cfg.user || await detectMember(targetDir, flags), explicit: false };
+  let resolved;
+  if (flags.member) resolved = { user: await detectMember(targetDir, flags), explicit: true };
+  else {
+    const cfg = await readConfig(targetDir);
+    resolved = { user: cfg.user || await detectMember(targetDir, flags), explicit: false };
+  }
+  return { ...resolved, error: userNameError(resolved.user) };
 }
 
 function today() {
@@ -279,7 +286,16 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
     }
   }
 
-  const { user, explicit } = await resolveUser(ctx.targetDir, ctx.flags);
+  const { user, explicit, error: userError } = await resolveUser(ctx.targetDir, ctx.flags);
+  if (userError) {
+    return emitTaskError(json, 'user 가 docs/<user>/ 경로 규칙 위반', buildErrorPacket({
+      cause: `${userError} — 이대로면 task 파일이 docs/ 밖에 생긴다`,
+      retry: '.harness/config.json 의 user 를 경로 구분자·선행 .·제어문자 없는 이름으로 고친 뒤 재실행 (`harness-team config set user <이름>`)',
+      alternatives: ['config user 를 두지 않으려면 `--member <이름>` 으로 명시해 재실행한다'],
+      safeDefault: 'task 디렉터리도 meta 도 .harness/active.json 도 바뀌지 않는다',
+      stop: '경로를 벗어나는 user 로 task 를 만들지 말 것',
+    }));
+  }
   const dir = taskDirPath(ctx.targetDir, user, name);
   const date = today();
 
