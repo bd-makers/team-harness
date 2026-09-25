@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-eager-budget-headroom
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-25)
-8dcff42 docs(eager-budget-headroom): AGENTS protocol 절 압축으로 eager 여유 5 B → 1,075 B
+## Last Completed Task (2026-09-25)
+`eager-budget-headroom` — done
 
 ## Full Context
 → docs/hslee/eager-budget-headroom/eager-budget-headroom-handoff.md

@@ -3,8 +3,8 @@
   "task": "eager-budget-headroom",
   "created": "2026-09-25",
   "firstActivatedAt": "2026-09-25T23:19:51.211Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-09-25T23:42:35.555Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [

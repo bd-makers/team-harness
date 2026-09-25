@@ -15,3 +15,11 @@ AGENTS.md                                          |  34 +++----
  src/commands/doctor.mjs                            |   4 +-
  templates/AGENTS.md.hbs                            |  34 +++----
  11 files changed, 272 insertions(+), 49 deletions(-)
+
+## 2026-09-25T23:42:35.467Z — abf5fa9 docs(eager-budget-headroom): Done evidence 선언 — tests skip 사유 명시
+docs/hslee/eager-budget-headroom/eager-budget-headroom-spec.md | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+## 2026-09-25T23:42:35.555Z — 완료
+
+태스크 종료.
