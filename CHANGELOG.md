@@ -18,6 +18,8 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.41.2] - 2026-09-25
+
 ### Fixed
 - **새 task 의 `<name>-artifact.md` 가 EOF 빈 줄로 끝나던 문제.** artifact 템플릿이 `## Learnings` 뒤에 빈 줄을 하나 더
   남겨, `task <name>` 직후 커밋마다 `git diff --check` 가 `new blank line at EOF` 를 냈고 `retro` 가 붙이는

@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.41.1</span>
+      <span class="tag tag-purple">v0.41.2</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.41.2 — 새 task의 artifact가 EOF 빈 줄로 끝나지 않는다:</strong>
+    <br>
+    <code>0.41.2</code> <strong><code>task &lt;name&gt;</code>이 만드는 <code>&lt;name&gt;-artifact.md</code> 템플릿의 끝 빈 줄을 지운다.</strong> 템플릿이 <code>## Learnings</code> 뒤에 빈 줄을 하나 더 남겨 새 task를 커밋할 때마다 <code>git diff --check</code>가 <code>new blank line at EOF</code>를 냈고, <code>retro</code>가 붙이는 절 앞에는 빈 줄이 둘 생겼다. 기존 artifact는 건드리지 않으며 <code>done</code> 가드의 "템플릿 그대로" 판정은 공백을 무시해 옛 artifact도 종전대로 판정된다. <code>templates/</code>는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 된다.
+    <br><br>
     <strong>🆕 0.41.1 — task가 아닌 디렉터리를 task로 활성화하지 않는다:</strong>
     <br>
     <code>0.41.1</code> <strong><code>task &lt;name&gt;</code>이 디렉터리 존재만 보고 "기존 task"로 활성화하던 결함을 고친다.</strong> <code>list</code>·<code>summary</code>·SessionStart는 <code>&lt;name&gt;-spec.md</code>가 있어야 task로 보는데 <code>task</code>만 달랐다 — user 디렉터리를 활성화해 <code>active.json</code>을 썼고, 0.41.0부터는 <code>--area</code> 채택 경로가 그 안에 <code>meta.json</code>까지 썼다. 이제 기준이 <code>list</code>와 같다: spec이 있으면 종전대로 활성화하고, 없는데 내용이 있으면 <strong>exit 1로 거부하며 아무것도 쓰지 않는다</strong>. spec만 잃은 task도 거부한다 — scaffold하면 남은 plan·handoff를 덮어쓰기 때문이고, spec을 복원하면 다시 열린다. <code>templates/</code>는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 된다.
@@ -902,7 +906,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.41.1 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.41.2 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
