@@ -49,7 +49,8 @@ for (const user of ['../../x', '..', '.hidden', 'a/b', 'a\\b', 'a\u0000b']) {
   });
 }
 
-test('config user 가 문자열이 아니면 거부한다', async () => {
+// falsy(null·false·0·'')는 종전대로 미설정 → 폴백이다(init 의 `if (config.user)` 와 같은 기준). truthy 비문자열만 거부.
+test('config user 가 truthy 비문자열이면 거부한다', async () => {
   const { base, dir } = await fixture({ name: 'x' });
   try {
     const { exitCode } = await task(dir, 'foo');

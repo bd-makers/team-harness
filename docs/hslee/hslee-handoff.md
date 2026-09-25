@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+config-user-validation
 
-## Last Completed Task (2026-09-25)
-`task-member-collision` — done
+## Last Commit (2026-09-25)
+5c930e1 fix(task): config user 가 docs/ 밖을 가리키면 task 는 쓰기 전에, init 은 저장 전에 거부한다
 
 ## Full Context
-→ docs/hslee/task-member-collision/task-member-collision-handoff.md
+→ docs/hslee/config-user-validation/config-user-validation-handoff.md

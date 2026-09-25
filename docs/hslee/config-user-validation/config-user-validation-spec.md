@@ -21,7 +21,8 @@
   구분자를 막으면 `..` 은 단독 세그먼트일 때만 의미가 있고 그것은 선행 `.` 이 덮는다 — `a..b` 는 무해한 한 세그먼트라 통과.
 - **읽기(보안 경계)**: `task.mjs` `resolveUser` 가 **최종 결정된 user**(config · `--member` · git · $USER 어느 출처든)에 규칙을 적용하고,
   `runTask` 가 모든 쓰기 전에 `emitTaskError` 로 거부한다. 수동 편집·`config set` 까지 여기서 막힌다.
-  config `user` 가 빈 문자열이면 종전대로 미설정으로 보고 git 폴백한다.
+  config `user` 가 falsy(빈 문자열·`null`·`false`·`0`)면 종전대로 미설정으로 보고 git 폴백한다 — `resolveUsername` 의
+  `if (config.user)` 와 같은 기준이고, 폴백 결과도 같은 규칙을 거치므로 탈출 경로가 아니다. truthy 비문자열(숫자·객체)만 거부된다.
 - **저장(조기 거부 UX)**: `resolveUsername` 이 확정한 이름이 비어 있지 않은데 규칙을 어기면 throw — init 의 쓰기(Apply) 전이라
   아무것도 남지 않는다. 빈 입력은 종전대로 저장하지 않는다. `ensureUsername`(sync)도 같은 경로를 탄다.
 - 범위 밖: `config set` 명령 자체의 키별 검증(읽기 경계가 덮는다), 이미 저장된 `active.json` 의 user(쓰기 전 검증으로 새로 생기지 않는다),
