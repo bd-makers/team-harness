@@ -203,7 +203,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.42.1</span>
+      <span class="tag tag-purple">v0.43.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -211,6 +211,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.43.0 — doctor가 낡은 관리 절을 경고한다:</strong>
+    <br>
+    <code>0.43.0</code> <strong>사용자가 편집하지 않은 <code>AGENTS.md</code>·<code>CLAUDE.md</code> 관리 절이 현재 템플릿과 다르면 <code>doctor</code>가 경고하고 <code>harness-team init</code>을 처방한다.</strong> 판정은 init과 같은 병합을 메모리에서 돌려 init이 실제로 바꿀 절만 센다(편집된 절·render-state 없는 설치본·symlink·마커 깨진 파일 제외). migrate·init 문서가 migrate를 "템플릿 수정이 도달하는 유일한 경로"로 적던 것을 파일 단위 설치본으로 한정했다 — 관리 절은 <code>init</code>으로 받는다. <code>templates/</code>는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 된다.
+    <br><br>
     <strong>🆕 0.42.1 — 리뷰 base 전체 ref · handoff 단독 커밋 중단:</strong>
     <br>
     <code>0.42.1</code> <strong><code>review</code>·<code>scope</code>가 추론한 base를 <code>refs/remotes/origin/&lt;branch&gt;</code> 전체 이름으로 쓴다</strong> — 같은 이름의 로컬 브랜치(<code>refs/heads/origin/main</code>)로 풀려 diff가 틀어지던 결함을 고쳤고, 출력의 base 표기도 전체 이름이 된다. 또 post-commit 훅이 갱신한 handoff 2파일만 담는 커밋을 매번 만들지 않고 <strong>다음 작업 커밋에 함께 담는다</strong>(예외: 푸시·브랜치 전환·워크트리 정리 직전, 정본은 <code>commands/harness-task.md</code>). 훅 동작은 불변이고 <code>AGENTS.md</code> <code>protocol</code> 관리 절이 바뀌어 소비자는 <strong><code>init --yes</code></strong>(관리 절 재렌더, 사용자 편집 절은 건너뜀)로 받는다 — <code>migrate</code>는 관리 절을 렌더하지 않는다.
@@ -2879,7 +2883,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.42.1 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.43.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

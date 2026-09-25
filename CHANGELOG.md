@@ -18,6 +18,8 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.43.0] - 2026-09-26
+
 ### Added
 - **`doctor`가 템플릿보다 낡은 관리 절을 경고한다.** 사용자가 편집하지 않은(현재 블록 == `render-state.json` 기록) 관리 절이
   현재 템플릿 렌더와 다르면 `관리 절 N개가 최신 템플릿보다 낡음: AGENTS.md#protocol …`을 내고 `harness-team init`을 처방한다.
