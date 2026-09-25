@@ -401,7 +401,7 @@ export async function checkCodexHookTrust(targetDir, env = process.env) {
 // copies it); missing sections need a manual merge from the plugin's
 // templates/docs/decisions.md.
 export const DECISION_LOG_PATH = 'docs/decisions.md';
-export const DECISION_HEADINGS = ['## D2', '## D4', '## D5', '## D6', '## D7', '## D8', '## D9'];
+export const DECISION_HEADINGS = ['## D2', '## D4', '## D5', '## D6', '## D7', '## D8', '## D9', '## D10'];
 // Derived so the absence message cannot drift from the list it describes.
 const DECISION_IDS = DECISION_HEADINGS.map(h => h.replace(/^## /, '')).join('/');
 
@@ -487,15 +487,22 @@ export async function checkBoundaryCheckpointHook(targetDir) {
 
 // The "eager tier" = instruction files loaded into context at EVERY session start,
 // unlike lazy-loaded command docs/skills. Every source below was read out of the Claude
-// Code binary's own resolution (2.1.251) rather than assumed:
+// Code binary's own resolution (2.1.251; AGENTS.md handling re-read on 2.1.281) rather
+// than assumed:
 //
 //   join(dir, "CLAUDE.md") / join(dir, ".claude", "CLAUDE.md")  -> loaded as "Project"
 //   join(CLAUDE_CONFIG_DIR ?? homedir()/".claude", "CLAUDE.md") -> loaded as "User"
 //
 // AGENTS.md joins them because CLAUDE.md imports it (`@AGENTS.md`), so it is in context
-// every session too. The budget is on the SUM: the context window does not care which
-// file a byte came from, and a per-file budget would let "each part passes, the total
-// does not" slip through green — the blind spot this measurement exists to close.
+// every session too. 2.1.277+ reads AGENTS.md natively, but this sum still holds: in the
+// default mode (`claude-md-or-agents-md`) AGENTS.md is only a fallback for a project with
+// no CLAUDE.md, so here it arrives solely through the @import; `claude-md-and-agents-md`
+// skips files CLAUDE.md already imported, so it is not counted twice either. Keeping
+// CLAUDE.md is decision D10 (docs/decisions.md).
+//
+// The budget is on the SUM: the context window does not care which file a byte came
+// from, and a per-file budget would let "each part passes, the total does not" slip
+// through green — the blind spot this measurement exists to close.
 //
 // The budget covers the SUM of all four sources above, and its last term — the user-scope
 // file — is machine-local, so no repo-fixed number describes the tier being measured.

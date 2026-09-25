@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+agents-md-native
 
-## Last Completed Task (2026-09-25)
-`config-user-validation` — done
+## Last Commit (2026-09-25)
+b92a0e8 docs(agents-md-native): D10 CLAUDE.md 유지 결정 + doctor eager tier 주석을 2.1.277 기준으로 정정
 
 ## Full Context
-→ docs/hslee/config-user-validation/config-user-validation-handoff.md
+→ docs/hslee/agents-md-native/agents-md-native-handoff.md

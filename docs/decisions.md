@@ -148,3 +148,43 @@ Claude와 **같다** — 훅 스크립트를 거의 그대로 재사용할 수 �
 **AGENTS.md 규범 목록에 넣지 않은 이유**: 이 결정은 에이전트가 매 세션 지켜야 할 규칙이 아니라
 **닫힌 결정**이다(무엇을 더 만들지 않는다). eager 계층 예산(24 KiB, 현재 소계 17.5 KiB 상한)에
 여유가 27 B뿐이기도 하다 — MAINTAINING의 "절차 본문은 lazy 정본으로" 원칙 그대로 D-log에만 둔다.
+
+## D10 (2026-09-25) — CLAUDE.md 유지: AGENTS.md 네이티브 지원(2.1.277, fallback 기본)에도 불구하고
+
+Claude Code 2.1.277부터 AGENTS.md를 네이티브로 읽는다. "그렇다면 `CLAUDE.md`(`@AGENTS.md` import)를
+없애고 AGENTS.md 하나로 갈 것인가"를 2026-09-25에 결정했다.
+
+**확인된 사실** — 2.1.281 바이너리에서 직접 확인:
+- 기본 동작은 **fallback**이다 — 프로젝트에 CLAUDE.md가 **없을 때만** AGENTS.md를 대신 읽는다.
+- 내장 plugin `agents-md`의 `instructionFiles` 옵션(사용자 `/config`): `claude-md` |
+  `claude-md-or-agents-md`(기본) | `claude-md-and-agents-md`(CLAUDE.md가 이미 import한 파일은 중복
+  로드하지 않음) | `managed-only`.
+- 기능 전체가 원격 플래그 `tengu_agents_md_mod`(기본 true)에 묶여 있다.
+
+**미검증**(에이전트 조사만, 바이너리·실측 확인 없음): AGENTS.md 안의 `@import` 지원, 상위 디렉터리
+walk, `/memory` 미표시, 2.1.280에서 Bedrock/Vertex/Foundry로 확장.
+
+**결정**: CLAUDE.md(`@AGENTS.md` import) 구조를 **유지한다.**
+
+**왜** — 제거해서 얻는 것이 거의 없고 잃는 것은 조용히 잃는다.
+- CLAUDE.md를 없애면 팀 계약의 로드 여부가 **버전(<2.1.277)·사용자 `/config`(`claude-md`·`managed-only`)·
+  원격 플래그**에 따라 갈리고, 빠질 때 아무 경고도 없다. 지금 구조는 세 조건 모두에서 같은 결과를 낸다.
+- Claude 전용 절(현재 CLAUDE.md 약 5.8 KB)은 어차피 어딘가로 옮겨야 한다. AGENTS.md로 옮기면
+  Codex·Cursor에 Claude 전용 레버(플랜 모드·서브에이전트·advisor)가 노출되고, `.claude/rules`로
+  옮기면 cursor 미러와 `doctor`의 유래 마커 검사와 충돌한다.
+- 영향 범위가 작지 않다 — CLAUDE.md를 전제하는 코드 경로가 약 13곳(`src/harness.mjs:16`,
+  `src/commands/doctor.mjs:685`, migrate·backup·clone·symlink·delete·upgrade·init, 셸 템플릿 3종)이고
+  테스트 참조가 약 100건(픽스처 제외 97행)이다.
+
+**기각한 대안**
+- **CLAUDE.md 제거 + AGENTS.md 단독** — 위 세 조건 중 하나라도 어긋나면 계약이 조용히 빠진다.
+- **`claude-md-and-agents-md` 모드를 팀 설정으로 요구** — 사용자 `/config` 값이라 하네스가 강제하거나
+  검사할 수단이 없고, 강제해도 CLAUDE.md가 import한 파일은 중복 로드되지 않으니 얻는 것이 없다.
+
+**재검토 조건**: ① 원격 플래그 없이 GA ② 팀 최소 버전 ≥ 2.1.277을 강제할 수 있음 ③ `/memory`에 표시됨.
+셋이 갖춰지면 opt-in `init --agents-md-only`부터 시도한다 — Claude 전용 절은
+`.claude/rules/harness-workflow.md`로 옮기되 cursor 미러·유래 마커 검사에서 예외로 두고, CLAUDE.md는
+user 영역이 비었을 때만 제거한다.
+
+**AGENTS.md 규범 목록에 넣지 않은 이유**: D9와 같다 — 에이전트가 매 세션 지킬 규칙이 아니라 현 구조를
+유지하는 **닫힌 결정**이다. `doctor`의 eager 계층 주석이 이 결정을 가리킨다.
