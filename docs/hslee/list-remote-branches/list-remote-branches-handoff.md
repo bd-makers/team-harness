@@ -47,3 +47,7 @@ CHANGELOG.md                                       |  6 +++
  src/commands/task.mjs                              | 15 +++++-
  tests/active-json-validation.test.mjs              | 54 ++++++++++++++++++++++
  12 files changed, 285 insertions(+), 7 deletions(-)
+
+## 2026-09-25T12:43:42.160Z — 완료
+
+태스크 종료.

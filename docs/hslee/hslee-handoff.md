@@ -5,7 +5,7 @@
 새 작업은 `harness-team task <name>` 으로 시작한다.
 
 ## Last Completed Task (2026-09-25)
-`active-json-validation` — done
+`list-remote-branches` — done
 
 ## Full Context
-→ docs/hslee/active-json-validation/active-json-validation-handoff.md
+→ docs/hslee/list-remote-branches/list-remote-branches-handoff.md
