@@ -36,3 +36,12 @@ docs/hslee/hslee-handoff.md                         |  2 +-
  src/commands/task.mjs                               |  4 +++-
  tests/task-member-collision.test.mjs                | 12 ++++++++++++
  6 files changed, 57 insertions(+), 2 deletions(-)
+
+## 2026-09-25T09:52:02.883Z — 4614bad chore(task-member-collision): ship — 3차 리뷰 판별·README sanitize 예외·artifact 결과
+README.md                                          |  2 ++
+ docs/hslee/hslee-handoff.md                        |  2 +-
+ .../task-member-collision-artifact.md              | 31 +++++++++++++++++++++-
+ .../task-member-collision-handoff.md               |  9 +++++++
+ .../task-member-collision-meta.json                |  9 +++++++
+ .../task-member-collision-plan.md                  |  2 +-
+ 6 files changed, 52 insertions(+), 3 deletions(-)

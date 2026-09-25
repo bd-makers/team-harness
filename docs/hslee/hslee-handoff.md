@@ -4,7 +4,7 @@
 task-member-collision
 
 ## Last Commit (2026-09-25)
-16094de fix(task-member-collision): 재리뷰 P2 반영 — 닿지 않는 추론 member 에 --member 대안을 권하지 않는다
+4614bad chore(task-member-collision): ship — 3차 리뷰 판별·README sanitize 예외·artifact 결과
 
 ## Full Context
 → docs/hslee/task-member-collision/task-member-collision-handoff.md
