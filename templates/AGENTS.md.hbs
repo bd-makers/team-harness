@@ -80,10 +80,8 @@
 
 활성 task는 `.harness/active.json`에 저장.
 
-`<name>-meta.json`은 harness가 소유하는 기계 상태이며 SSOT 4파일이 아니다. **손으로 고치지 않는다** —
-`done` 가드의 판정 창이 여기서 정해진다. **완료 상태는 재활성화로 만료되고**(`status` → `open`,
-출력 `reopened:`), SessionStart 재개 후보 판정의 정본도 plan 체크박스가 아니라 이 값이다.
-필드·판정 창 계산·만료 전이의 상세는 harness-task 명령 문서가 정본이다.
+`<name>-meta.json`은 harness 소유 기계 상태(SSOT 아님)다 — **손으로 고치지 않는다**
+(`done` 판정 창·완료 만료의 정본, 상세는 harness-task 명령 문서).
 
 집계 파일 `docs/task_summary.md`와 `docs/<user>/<user>-task.md`는 **생성물**이다.
 `task`/`done`은 이 파일들을 건드리지 않으므로 브랜치를 병렬로 둬도 충돌하지 않는다.
@@ -120,13 +118,11 @@ SSOT는 여전히 네 파일이며, TCC는 거기서 파생된 현재 working se
 
 ### task 워크플로우
 - **시작**: `harness-team task <name>` — 생성 또는 활성화
-- **다이어그램(옵트인)**: 신규 task 생성(`created:`) 직후 **1회만** 묻는다 — 기존 task를 다시
-  활성화할 때는 묻지 않는다. **plan.md에 그 단계가 있는지가 곧 상태다** — 전용 설정 키는 없다.
-  도구가 없으면 task를 실패시키지 말고 그 단계를 **지우지 말고** `- [x] … — 미실행(도구 없음)`처럼
-  사유를 붙여 닫고 `<name>-artifact.md`에 한 줄 남긴다(지우면 옵트인 사실이 사라지고, 열어 두면
-  `done` 가드가 막는다 — 기록이 없으면 "묻지 않은 것"과 "묻고 건너뛴 것"을 구분할 수 없다).
-  산출물 `<name>-diagram.html`은 **자립형 inline SVG**로 쓴다(Obsidian이 script를 제거한다).
-  SSOT 4파일이 아니며 옵트인이라 없는 task가 정상이다. 상세는 harness-task 명령 문서가 정본이다.
+- **다이어그램(옵트인)**: 신규 task 생성(`created:`) 직후 **1회만** 묻고, 기존 task를 다시
+  활성화할 때는 묻지 않는다 — **plan.md에 그 단계가 있는지가 곧 상태다.** 도구가 없으면 그 단계를
+  **지우지 말고** `harness-team diagram record --skipped "<사유>"`로 닫는다(`- [x] … — 미실행(도구 없음)`과
+  artifact 기록을 한 명령이 한다 — 손으로 고치지 않는다). 산출물 `<name>-diagram.html`은 자립형 inline SVG로
+  쓰고, 옵트인이라 없는 task가 정상이다. 상세는 harness-task 명령 문서가 정본이다.
 - **진행**: `<name>-plan.md` 체크리스트 항목 완료 시 `- [x]`로 갱신
 - **경계 계약**: spec의 `## Boundary contracts` JSON 선언이 있으면 plan checkbox 완료 직전에
   `harness-team boundary check`가 생산자·소비자 JSON Schema의 필수 필드와 기본 type을 대조한다.
@@ -137,17 +133,11 @@ SSOT는 여전히 네 파일이며, TCC는 거기서 파생된 현재 working se
 - **완료**: plan 전체 완료 감지 또는 사용자 신호 → AskUserQuestion → `harness-team done`
 
 ### plan.md 계약
-
-plan 초안의 writer는 하네스 밖에 있다 — `superpowers:writing-plans`가 있으면 그것으로 쓰고, 없으면
-직접 쓴다(도구가 없다고 멈추지 않는다). 어느 경로든 `<name>-plan.md`는 아래를 지킨다 — 산문이 아니라
-다른 명령의 입력이기 때문이다. 상세 정본은 각 원 위치이고 이 목록은 색인이다.
-
-- **`## 단계`의 줄머리 체크박스는 기계 입력이다** — 미완 `- [ ]`가 남으면 `harness-team done`이 막히고
-  SessionStart 재개 후보 판정도 이 값을 본다. 하지 않은 단계를 미리 `- [x]`로 켜지 않는다.
-- **다이어그램 옵트인 체크박스는 그 자체가 상태다** — 지우지 말고 사유를 붙여 닫는다.
-- **`## Ontology 변경 로그`** — 개념이 바뀌면 한 줄. spec.md의 Ontology 절 갱신 트리거다.
-- **spec 선언이 plan 단계와 물린다** — `## Boundary contracts`는 checkbox 완료 직전 `boundary check`,
-  `## Done evidence`는 종결 시 `done` 가드가 읽는다.
+`<name>-plan.md`는 산문이 아니라 다른 명령의 입력이다 — 초안 도구가 없으면 직접 쓴다(멈추지 않는다).
+- `## 단계`의 줄머리 체크박스를 `done` 가드가 읽는다(미완 `- [ ]`가 남으면 막힌다) —
+  **하지 않은 단계를 미리 `- [x]`로 켜지 않는다**.
+- 개념이 바뀌면 `## Ontology 변경 로그`에 한 줄 — spec.md Ontology 절 갱신 트리거다.
+- spec의 `## Done evidence`는 종결 시 `done` 가드가 읽는다.
 
 ### 코드 리뷰 기준
 중요한 변경 완료 시 아래 항목을 순서대로 확인하고 결과를 사용자에게 보고합니다:
