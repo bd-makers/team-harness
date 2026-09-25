@@ -10,7 +10,7 @@
 - [x] CHANGELOG Unreleased
 - [x] `npm test`·`docs:check` + 소비자 1곳 실측(doctor가 stale 없음을 보고)
 - [x] codex 리뷰 → artifact `## Reviews` (1차 P2 1·P3 1 반영, 2차 PASS)
-- [ ] 커밋·PR
+- [x] 커밋·PR — #106 머지(`423ecd5`)
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
