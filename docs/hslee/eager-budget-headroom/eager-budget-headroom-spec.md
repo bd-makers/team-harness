@@ -37,11 +37,11 @@
      미선언 기본값: "tests": "required" (소스가 바뀌면 테스트 파일 변경을 요구), "review": "optional",
      "verify": "optional" ("required"면 검증 프레이밍 kind 마커 — -adversarial 등 — 를 요구). -->
 ## Done evidence
-<!--
 ```json
 { "version": 1, "review": "required", "tests": "skip" }
 ```
--->
+- tests skip 사유: 소스 변경은 `doctor.mjs` 주석 수치와 템플릿 문구뿐(동작 불변). 기존 `tests/agent-files.test.mjs`가
+  protocol drift·eager 상한·고정 문구를 이미 검사하고 통과했다(1033 tests, fail 0).
 
 ## 참고
 - 인계: `.claude/handoffs/2026-09-26-0811-eager-budget-and-cleanup.md` (§3 상한 상향 기각)
