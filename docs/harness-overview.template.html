@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.42.0</span>
+      <span class="tag tag-purple">v0.42.1</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.42.1 — 리뷰 base 전체 ref · handoff 단독 커밋 중단:</strong>
+    <br>
+    <code>0.42.1</code> <strong><code>review</code>·<code>scope</code>가 추론한 base를 <code>refs/remotes/origin/&lt;branch&gt;</code> 전체 이름으로 쓴다</strong> — 같은 이름의 로컬 브랜치(<code>refs/heads/origin/main</code>)로 풀려 diff가 틀어지던 결함을 고쳤고, 출력의 base 표기도 전체 이름이 된다. 또 post-commit 훅이 갱신한 handoff 2파일만 담는 커밋을 매번 만들지 않고 <strong>다음 작업 커밋에 함께 담는다</strong>(예외: 푸시·브랜치 전환·워크트리 정리 직전, 정본은 <code>commands/harness-task.md</code>). 훅 동작은 불변이고 <code>AGENTS.md</code> <code>protocol</code> 절이 바뀌어 소비자는 <strong><code>migrate</code></strong>로 받는다.
+    <br><br>
     <strong>🆕 0.42.0 — <code>list --remote</code>와 경로 경계 보강:</strong>
     <br>
     <code>0.42.0</code> <strong><code>list --remote</code>가 머지되지 않은 원격 브랜치에만 있는 task를 보여 준다</strong>(fetch 없음, 마지막 fetch 기준). 손으로 고친 <code>.harness/active.json</code>이 <code>docs/</code> 밖을 가리키면 활성 task 없음으로 보고, task 이름 <code>.</code>·<code>..</code>을 거부하며, done-on-main 판정은 같은 이름의 로컬 브랜치를 읽지 않는다. 결정 D10(CLAUDE.md 유지)이 템플릿에 들어가 소비자는 <strong><code>migrate</code></strong>로 받는다.
@@ -926,7 +930,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.42.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.42.1 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
