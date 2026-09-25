@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ task-reserved-names
 - ✅ artifact-template-eof
 - ✅ task-spec-marker
 - ✅ config-rmw-cli
