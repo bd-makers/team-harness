@@ -24,3 +24,7 @@ docs/hslee/hslee-handoff.md                            |  9 ++++-----
  .../task-reserved-names/task-reserved-names-plan.md    |  2 +-
  tests/task-reserved-names.test.mjs                     |  4 +++-
  6 files changed, 51 insertions(+), 8 deletions(-)
+
+## 2026-09-25T09:26:33.373Z — 82211bd chore(task-reserved-names): ship — artifact 결과 절
+docs/hslee/task-reserved-names/task-reserved-names-artifact.md | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
