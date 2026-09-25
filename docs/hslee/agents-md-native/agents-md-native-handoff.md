@@ -14,3 +14,17 @@ docs/decisions.md                                  | 40 +++++++++++++++
  templates/docs/decisions.md                        | 40 +++++++++++++++
  tests/doctor.test.mjs                              | 28 +++++-----
  10 files changed, 233 insertions(+), 17 deletions(-)
+
+## 2026-09-25T11:55:34.703Z — 985f813 docs(agents-md-native): D10 CLAUDE.md 유지 결정 + doctor eager tier 주석을 2.1.277 기준으로 정정
+docs/decisions.md                                  | 40 +++++++++++++++
+ .../agents-md-native/agents-md-native-artifact.md  | 13 +++++
+ .../agents-md-native/agents-md-native-context.md   | 27 ++++++++++
+ .../agents-md-native/agents-md-native-handoff.md   | 16 ++++++
+ .../agents-md-native/agents-md-native-meta.json    | 11 ++++
+ .../agents-md-native/agents-md-native-plan.md      | 18 +++++++
+ .../agents-md-native/agents-md-native-spec.md      | 59 ++++++++++++++++++++++
+ docs/hslee/hslee-handoff.md                        |  9 ++--
+ src/commands/doctor.mjs                            | 17 +++++--
+ templates/docs/decisions.md                        | 40 +++++++++++++++
+ tests/doctor.test.mjs                              | 28 +++++-----
+ 11 files changed, 254 insertions(+), 24 deletions(-)
