@@ -6,6 +6,7 @@
 - ✅ active-json-validation
 - ✅ agents-md-native
 - ✅ config-user-validation
+- ✅ handoff-sweep-fold
 - ✅ list-remote-branches
 - ✅ path-edge-fixes
 - ✅ review-base-full-ref
