@@ -8,6 +8,7 @@
 - ✅ config-user-validation
 - ✅ list-remote-branches
 - ✅ path-edge-fixes
+- ✅ review-base-full-ref
 - ✅ task-member-collision
 - ✅ task-reserved-names
 - ✅ artifact-template-eof
