@@ -18,6 +18,8 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.41.5] - 2026-09-25
+
 ### Fixed
 - **`task <name> --member <x>` 가 `.harness/config.json` 의 `user` 에 밀리던 결함.** README 의 member 식별 규칙은
   `--member` 를 최우선으로 적었지만 `task` 는 config user 를 먼저 봤다. 그래서 config user 와 다른 member 의 task 를
