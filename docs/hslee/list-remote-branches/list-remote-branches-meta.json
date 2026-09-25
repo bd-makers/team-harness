@@ -7,5 +7,15 @@
   "closedAt": null,
   "forcedAt": null,
   "forcedIssues": null,
-  "reviews": []
+  "reviews": [
+    {
+      "kind": "claude",
+      "engine": "claude",
+      "scope": "diff",
+      "tip": "9068073ef63a4cbcc4518d1b70814f30cf4f5c80",
+      "at": "2026-09-25T12:35:57.197Z",
+      "exitCode": 0,
+      "outputBytes": 2946
+    }
+  ]
 }
