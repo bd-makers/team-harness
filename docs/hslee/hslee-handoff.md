@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+config-user-validation
 
-## Last Completed Task (2026-09-25)
-`task-member-collision` — done
+## Last Commit (2026-09-25)
+edc59dc chore(config-user-validation): codex 리뷰 판별 — falsy config user 폴백 계약을 spec·테스트 제목에 명시
 
 ## Full Context
-→ docs/hslee/task-member-collision/task-member-collision-handoff.md
+→ docs/hslee/config-user-validation/config-user-validation-handoff.md

@@ -13,6 +13,8 @@ modified: 2026-05-15
 `$ARGUMENTS`의 **첫 토큰**으로 분기한다. `list`·`done`·`handoff`는 `task`의 인자가 아니라 **별개 하위명령**이다 —
 `task done`처럼 넘기면 CLI가 명령 이름이라며 거부한다(exit 1, 아무것도 쓰지 않음) — 그 이름의 task가 이미 있을 때만 활성화된다.
 다른 member의 task를 이어서 하려면 `task <name> --member <그 member>` — `--member`는 `.harness/config.json`의 user보다 우선한다.
+결정된 user가 `docs/<user>/` 한 세그먼트가 아니면(빈 값·`/`·`\`·선행 `.`·제어문자) `task`는 exit 1로 거부하고 아무것도 쓰지 않는다 —
+config를 고치라는 안내를 그대로 사용자에게 전하고, user를 임의로 바꿔 재시도하지 않는다.
 
 ```bash
 # 첫 토큰이 list | done | handoff → task 없이 그 하위명령을 그대로 실행

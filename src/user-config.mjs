@@ -98,6 +98,18 @@ export function setConfigValue(config, key, value) {
   return config;
 }
 
+// user 는 raw 로 `docs/<user>/` 디렉터리 이름이 된다 — 경로 세그먼트 하나로 해석되지 않으면 거부 사유를, 아니면 null.
+// 문자 집합은 제한하지 않는다: 한글·공백 이름은 실제 입력이다(sanitize 를 적용하면 한글이 통째로 지워진다).
+// 구분자를 막으면 `..` 은 단독 세그먼트일 때만 탈출하고, 그것은 선행 `.` 규칙이 덮는다(`a..b` 는 무해).
+export function userNameError(name) {
+  if (typeof name !== 'string') return `user 가 문자열이 아님 (${JSON.stringify(name)})`;
+  if (!name.trim()) return 'user 가 비어 있음';
+  if (/[/\\]/.test(name)) return `user "${name}" 에 경로 구분자(/ 또는 \\)가 있음`;
+  if (name.startsWith('.')) return `user "${name}" 가 . 으로 시작함`;
+  if (/[\u0000-\u001f\u007f]/.test(name)) return `user ${JSON.stringify(name)} 에 제어문자가 있음`;
+  return null;
+}
+
 // 결정만 한다 — 파일을 쓰지 않는다. 이미 user가 있으면 null(저장할 것 없음).
 // init은 이 값을 계획 단계에서 들고 있다가 최종 Apply 뒤에 saveUsername으로 저장한다 —
 // 그전에 쓰면 "Apply?"에 n을 답해도 .harness/config.json이 남는다(2026-09-13 Codex 분석 P2).
@@ -130,6 +142,9 @@ export async function resolveUsername(targetDir, flags = {}) {
       name = await ask('docs/ 경로에 사용할 이름을 입력하세요:');
     }
   }
+  // 빈 입력은 종전대로 저장하지 않는다(호출자가 falsy 를 건너뛴다). 그 밖의 위반은 쓰기 전에 멈춘다.
+  const cause = name && userNameError(name);
+  if (cause) throw new Error(`${cause} — docs/<user>/ 경로 밖을 가리키므로 저장하지 않음. 다른 이름으로 재실행`);
   console.log(`  user: ${name}`);
   return name;
 }
