@@ -4,7 +4,7 @@
 list-remote-branches
 
 ## Last Commit (2026-09-25)
-abd34a3 feat(list): --remote 로 원격 브랜치에만 있는 task 를 보여 준다
+9068073 fix(list): --remote 의 default ref 를 refs/remotes/ 전체 ref 로 푼다
 
 ## Full Context
 → docs/hslee/list-remote-branches/list-remote-branches-handoff.md

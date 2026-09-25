@@ -18,3 +18,10 @@ CHANGELOG.md                                       |   8 +
  src/commands/task.mjs                              |  25 ++-
  tests/list-remote.test.mjs                         | 195 +++++++++++++++++++++
  14 files changed, 464 insertions(+), 8 deletions(-)
+
+## 2026-09-25T12:34:31.579Z — 9068073 fix(list): --remote 의 default ref 를 refs/remotes/ 전체 ref 로 푼다
+.../list-remote-branches-artifact.md               | 27 ++++++++++++++++++++++
+ .../list-remote-branches-plan.md                   |  4 ++--
+ src/commands/remote-task.mjs                       |  8 ++++---
+ tests/list-remote.test.mjs                         | 15 +++++++++++-
+ 4 files changed, 48 insertions(+), 6 deletions(-)
