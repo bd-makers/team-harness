@@ -7,6 +7,7 @@
 - ✅ agents-md-native
 - ✅ config-user-validation
 - ✅ list-remote-branches
+- ✅ path-edge-fixes
 - ✅ task-member-collision
 - ✅ task-reserved-names
 - ✅ artifact-template-eof

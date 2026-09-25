@@ -118,5 +118,6 @@
 | hslee | agents-md-native | ✅ done | 2026-09-25 |
 | hslee | config-user-validation | ✅ done | 2026-09-25 |
 | hslee | list-remote-branches | ✅ done | 2026-09-25 |
+| hslee | path-edge-fixes | ✅ done | 2026-09-25 |
 | hslee | task-member-collision | ✅ done | 2026-09-25 |
 | hslee | task-reserved-names | ✅ done | 2026-09-25 |
