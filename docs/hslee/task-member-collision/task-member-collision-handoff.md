@@ -16,3 +16,14 @@ CHANGELOG.md                                       |  9 +++
  src/commands/task.mjs                              | 22 +++++-
  tests/task-member-collision.test.mjs               | 89 ++++++++++++++++++++++
  12 files changed, 243 insertions(+), 5 deletions(-)
+
+## 2026-09-25T09:44:55.729Z — 66b9ea9 fix(task-member-collision): codex 리뷰 반영 — 닿지 않는 member 안내 분기·README sanitize 범위·docs 부재 테스트
+README.md                                          |  2 +-
+ docs/hslee/hslee-handoff.md                        |  9 ++++----
+ .../task-member-collision-artifact.md              | 24 ++++++++++++++++++++++
+ .../task-member-collision-handoff.md               | 15 ++++++++++++++
+ .../task-member-collision-meta.json                | 12 ++++++++++-
+ src/commands/task.mjs                              |  8 ++++++--
+ src/member.mjs                                     |  2 +-
+ tests/task-member-collision.test.mjs               | 24 ++++++++++++++++++++++
+ 8 files changed, 86 insertions(+), 10 deletions(-)

@@ -34,4 +34,25 @@
 - P2 README — 진짜(이번 편집이 만든 오독). sanitize 가 1·3·4번에만 적용되고 config user 는 그대로라고 고쳤다.
 - P3 docs/ 부재 — 진짜. 첫 생성 테스트와 공백 member 안내 테스트를 추가(6건 green).
 
+### 2026-09-25T09:47:41.987Z — codex (harness-team review)
+
+- engine: codex · scope: diff · tip: 66b9ea9e814593138456e9bcf8fb605fc63d9888 · exit 0 · 823 B
+
+```text
+전하, P1은 없습니다.
+
+- P2 — `src/commands/task.mjs:328`: raw config user가 `Chad Lee`처럼 공백을 포함할 때 “`--member Chad Lee`” 대안은 인자 분리·sanitize로 `docs/Chad-Lee/...`를 가리켜, 의도한 `docs/Chad Lee/...` task를 명시적으로 만들 수 없습니다.
+
+직전 지적 반영은 확인했습니다: 도달 불가 owner는 config user 설정을 안내하고, README는 config user의 raw 범위를 명시하며, `docs/` 부재 최초 생성 테스트도 추가됐습니다.
+
+검증: `node --check` 및 `npm run docs:check` 통과, diff whitespace 오류 없음. 신규 테스트 실행은 읽기 전용 sandbox가 `mkdtemp`를 차단해(`EPERM`) 독립 실행하지 못했습니다.
+
+최종 판정: **수정 요청** — 위 P2를 보완하면 승인 가능해 보입니다.
+```
+
+<!-- harness:review kind=codex scope=diff tip=66b9ea9e814593138456e9bcf8fb605fc63d9888 at=2026-09-25T09:47:41.987Z -->
+
+**판별·조치**: P2 진짜 — 1차 수정이 retry 에만 분기를 넣고 alternatives 의 `--member ${user}` 는 남겼다. 같은 sanitize-stable
+분기로 고치고, 닿지 않으면 다른 이름을 권한다. 테스트 1건 추가(7건 green). 직전 3건 반영은 리뷰어가 확인했다.
+
 ## Learnings

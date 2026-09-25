@@ -325,7 +325,9 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
         retry: reachable
           ? `그 task 를 이어서 하려면 \`harness-team task ${name} --member ${reachable}\` 실행`
           : `그 task 를 이어서 하려면 .harness/config.json 의 user 를 "${owners[0]}" 로 두고 \`harness-team task ${name}\` 실행 (공백·특수문자가 있는 member 는 --member 로 가리킬 수 없다)`,
-        alternatives: [`같은 이름의 ${user} task 를 따로 만들려면 \`--member ${user}\` 를 명시해 재실행한다`],
+        alternatives: [sanitize(user) === user
+          ? `같은 이름의 ${user} task 를 따로 만들려면 \`--member ${user}\` 를 명시해 재실행한다`
+          : `${user} 는 --member 로 가리킬 수 없다 — 같은 작업이 아니면 다른 이름으로 \`harness-team task <name>\` 을 재실행한다`],
         safeDefault: 'task 디렉터리도 meta 도 .harness/active.json 도 바뀌지 않는다',
         stop: 'member 를 명시하지 않은 채 다른 member 와 같은 이름의 task 를 만들지 말 것',
       }));

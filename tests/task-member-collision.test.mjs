@@ -101,6 +101,18 @@ test('--member 로 닿지 않는 member(공백 포함)면 config user 로 안내
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+test('추론한 member 가 --member 로 닿지 않으면(공백 포함) 대안에 --member 를 권하지 않는다', async () => {
+  const dir = await fixture();
+  try {
+    await writeFile(join(dir, '.harness/config.json'), '{ "user": "Chad Lee" }\n');
+    const r = await task(dir, 'foo');
+    assert.equal(r.exitCode, 1);
+    const alt = r.logs.find(l => l.startsWith('alternatives:'));
+    assert.ok(!alt.includes('--member Chad Lee'), alt);
+    assert.match(alt, /다른 이름으로/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('추론한 member 에 이미 같은 이름의 task 가 있으면 종전대로 활성화한다', async () => {
   const dir = await fixture();
   try {
