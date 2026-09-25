@@ -86,7 +86,9 @@ export async function listBranchOnlyTasks(targetDir, { git: run = git, exclude =
   try {
     const defaultRef = await resolveDefaultRef(targetDir, { git: run });
     if (!defaultRef) return { ok: false };
-    const skip = new Set(['refs/remotes/origin/HEAD', `refs/remotes/${defaultRef}`]);
+    // 전체 ref 로 쓴다 — 짧은 `origin/main` 은 `refs/heads/origin/main` 같은 로컬 브랜치가 있으면 그쪽으로 풀린다.
+    const defaultFull = `refs/remotes/${defaultRef}`;
+    const skip = new Set(['refs/remotes/origin/HEAD', defaultFull]);
     const refs = (await run(targetDir, ['for-each-ref', '--format=%(refname)', 'refs/remotes/origin/']))
       .split('\n').filter(ref => ref && !skip.has(ref));
     // `-z`: 비-ASCII 경로가 C-style 로 인용되지 않게 한다(parsePorcelainPaths 와 같은 이유).
@@ -102,11 +104,11 @@ export async function listBranchOnlyTasks(targetDir, { git: run = git, exclude =
     };
     // default ref 에 이미 있는 task 도 "브랜치에만" 이 아니다 — 새 main 에서 딴 브랜치는 main 의 task 를 전부 싣고 있고,
     // 로컬이 옛 브랜치면 `exclude` 만으로는 그것들이 branch-only 로 보인다.
-    const onDefault = new Set((await specMarkers(defaultRef)).map(({ label }) => label));
+    const onDefault = new Set((await specMarkers(defaultFull)).map(({ label }) => label));
     const found = new Map();
     for (const ref of refs) {
       try {
-        await run(targetDir, ['merge-base', '--is-ancestor', ref, defaultRef]);
+        await run(targetDir, ['merge-base', '--is-ancestor', ref, defaultFull]);
         continue; // exit 0 = 조상 = 머지됨
       } catch (err) {
         if (err?.code !== 1) throw err; // exit 1 = 조상 아님. 그 외는 git 오류

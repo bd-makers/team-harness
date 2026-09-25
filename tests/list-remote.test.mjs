@@ -101,6 +101,19 @@ test('list --remote: 미머지 브랜치에만 있는 task 만, 브랜치를 모
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
+test('list --remote: 로컬 브랜치 `origin/main` 이 있어도 default ref 는 refs/remotes/origin/main 으로 푼다', async () => {
+  const { root, dir } = await fixture();
+  try {
+    // 머지 전 커밋을 가리키는 로컬 `refs/heads/origin/main`. 짧은 이름으로 풀면 carol/done 이 branch-only 로 새어 나온다.
+    await git(dir, ['branch', 'origin/main', 'work~1']);
+    const logs = await list(dir, { remote: true });
+    assert.deepEqual(logs.slice(2), [
+      'branch-only (origin, 마지막 fetch 기준):',
+      '  alice/foo  (origin/feat-foo, origin/feat-foo2)',
+    ]);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
 test('listBranchOnlyTasks: default ref 의 조상(머지된 브랜치)은 트리를 읽지도 않는다', async () => {
   const { root, dir } = await fixture();
   try {
@@ -115,7 +128,7 @@ test('listBranchOnlyTasks: default ref 의 조상(머지된 브랜치)은 트리
     // exclude 없이 부르면 작업 트리에 있는 dave/wip 도 나온다. carol/done 은 main 트리에 있어 빠진다(feat-foo 도 싣고 있다).
     assert.deepEqual(result.tasks.map(t => `${t.user}/${t.task}`), ['alice/foo', 'dave/wip']);
     const lsTreeRefs = calls.filter(a => a[0] === 'ls-tree').map(a => a[4]);
-    assert.deepEqual(lsTreeRefs, ['origin/main', 'refs/remotes/origin/dup', 'refs/remotes/origin/feat-foo', 'refs/remotes/origin/feat-foo2']);
+    assert.deepEqual(lsTreeRefs, ['refs/remotes/origin/main', 'refs/remotes/origin/dup', 'refs/remotes/origin/feat-foo', 'refs/remotes/origin/feat-foo2']);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 

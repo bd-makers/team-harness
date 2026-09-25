@@ -8,8 +8,8 @@
 - [x] 구현 — `remote-task.mjs` `listBranchOnlyTasks` + `task.mjs` `runList` 원격 절 + `cli-args.mjs` `--remote` 등록
 - [x] 문서 — README `list` 사용법 · `commands/harness-task.md` · CHANGELOG `[Unreleased]` Added
 - [x] 검증 — `npm test` 전체 · `npm run docs:check` green
-- [ ] 리뷰 — `review codex --scope diff --base origin/main` 기록 + 판정 · 결함 수정
-- [ ] artifact `## 결과` 기록
+- [x] 리뷰 — `review codex --scope diff --base origin/main` 기록 + 판정 · 결함 수정 — codex 미실행(config 모델 400), 자기 점검 결함 1건 수정
+- [x] artifact `## 결과` 기록
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
