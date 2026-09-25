@@ -212,7 +212,7 @@
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
     <strong>🆕 0.42.1 — 리뷰 base 전체 ref · handoff 단독 커밋 중단:</strong>
     <br>
-    <code>0.42.1</code> <strong><code>review</code>·<code>scope</code>가 추론한 base를 <code>refs/remotes/origin/&lt;branch&gt;</code> 전체 이름으로 쓴다</strong> — 같은 이름의 로컬 브랜치(<code>refs/heads/origin/main</code>)로 풀려 diff가 틀어지던 결함을 고쳤고, 출력의 base 표기도 전체 이름이 된다. 또 post-commit 훅이 갱신한 handoff 2파일만 담는 커밋을 매번 만들지 않고 <strong>다음 작업 커밋에 함께 담는다</strong>(예외: 푸시·브랜치 전환·워크트리 정리 직전, 정본은 <code>commands/harness-task.md</code>). 훅 동작은 불변이고 <code>AGENTS.md</code> <code>protocol</code> 절이 바뀌어 소비자는 <strong><code>migrate</code></strong>로 받는다.
+    <code>0.42.1</code> <strong><code>review</code>·<code>scope</code>가 추론한 base를 <code>refs/remotes/origin/&lt;branch&gt;</code> 전체 이름으로 쓴다</strong> — 같은 이름의 로컬 브랜치(<code>refs/heads/origin/main</code>)로 풀려 diff가 틀어지던 결함을 고쳤고, 출력의 base 표기도 전체 이름이 된다. 또 post-commit 훅이 갱신한 handoff 2파일만 담는 커밋을 매번 만들지 않고 <strong>다음 작업 커밋에 함께 담는다</strong>(예외: 푸시·브랜치 전환·워크트리 정리 직전, 정본은 <code>commands/harness-task.md</code>). 훅 동작은 불변이고 <code>AGENTS.md</code> <code>protocol</code> 관리 절이 바뀌어 소비자는 <strong><code>init --yes</code></strong>(관리 절 재렌더, 사용자 편집 절은 건너뜀)로 받는다 — <code>migrate</code>는 관리 절을 렌더하지 않는다.
     <br><br>
     <strong>🆕 0.42.0 — <code>list --remote</code>와 경로 경계 보강:</strong>
     <br>

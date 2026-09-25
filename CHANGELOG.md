@@ -18,6 +18,13 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Fixed
+- **0.42.1 릴리스 노트·CHANGELOG의 소비자 안내가 틀렸다 — `AGENTS.md` 관리 절 변경은 `migrate`가 아니라 `init --yes`로 받는다.**
+  `migrate`는 훅·스킬·규칙과 구조만 갱신하고 관리 절(`protocol` 등)은 렌더하지 않는다(2026-09-26 소비자 3곳 실측: `migrate`는
+  "Nothing to migrate", `init --yes` 뒤에 `commit 시` 줄이 바뀌었다). overview 배너는 고쳤고, 발행된 `what-changes-0.42.1.html`
+  스냅샷은 그 시점의 기록이라 고치지 않는다. 0.42.0의 D10 안내도 같은 결이다 — `docs/decisions.md`는 둘 다 쓰지 않으니 doctor
+  안내대로 템플릿의 절을 손으로 덧붙인다.
+
 ## [0.42.1] - 2026-09-26
 
 ### Changed
