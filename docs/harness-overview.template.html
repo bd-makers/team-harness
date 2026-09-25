@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.41.3</span>
+      <span class="tag tag-purple">v0.41.4</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.41.4 — <code>task list</code>가 "list"라는 task를 만들지 않는다:</strong>
+    <br>
+    <code>0.41.4</code> <strong>새 task 이름이 <code>harness-team</code> 명령 이름이면 <code>task</code>가 거부한다.</strong> <code>task list</code>·<code>task done</code>처럼 하위명령을 인자로 넘기면 이름 규칙을 통과해 스캐폴드를 만들고 활성 포인터를 옮겼다. 커맨드 문서 경고는 CLI를 직접 치는 에이전트에게 닿지 않아 재발했다 — 이제 exit 1·무쓰기로 멈추고 <code>harness-team &lt;name&gt;</code>을 안내한다. 그 이름의 task(spec 마커)가 이미 있으면 종전대로 활성화한다. <code>templates/</code>는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 된다.
+    <br><br>
     <strong>🆕 0.41.3 — migrate가 v0.24.0~v0.40.2의 protect-files 설치본을 다시 갱신한다:</strong>
     <br>
     <code>0.41.3</code> <strong><code>migrate</code>의 stock 판별 테이블에 빠져 있던 <code>protect-files.sh</code> 한 판을 채운다.</strong> 0.40.3이 RN·iOS 빌드 비밀 3종(<code>Fastfile</code>·<code>figma-export.y(a)ml</code>·<code>*.xcconfig</code>)을 추가하면서 직전 판의 sha를 넣지 않아, v0.24.0~v0.40.2 설치본이 "looks customized"로 건너뛰어졌다. 같은 누락을 막으려고 훅 테이블에도 스킬·규칙과 같은 git 이력 완전성 가드를 붙였다 — <code>main</code> first-parent 이력의 모든 훅 판이 테이블에 있어야 <code>npm test</code>가 통과한다. 영향 설치본은 플러그인 갱신 뒤 <strong><code>migrate --yes</code> 1회</strong>면 된다.
@@ -910,7 +914,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.41.3 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.41.4 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

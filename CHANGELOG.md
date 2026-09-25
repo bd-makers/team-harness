@@ -18,6 +18,8 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.41.4] - 2026-09-25
+
 ### Fixed
 - **`harness-team task list` 가 "list" 라는 task 를 만들던 결함.** 하위명령 이름은 이름 규칙(`^[\w.-]+$`)을 통과해
   스캐폴드 6파일을 만들고 `.harness/active.json` 을 옮겼다. 커맨드 문서의 경고는 슬래시 명령을 거칠 때만 읽혀,
