@@ -37,9 +37,12 @@ async function writeActive(targetDir, data) {
   await writeFile(p, JSON.stringify(data, null, 2) + '\n');
 }
 
+// README "member 식별 규칙"대로 `--member` 가 최우선이다 — config user 가 이기면 한 머신에 두 정체성이 있을 때
+// 다른 member 의 task 를 가리킬 방법이 없다. `explicit` 은 다른 member 와의 이름 충돌 가드를 끌지 정한다.
 async function resolveUser(targetDir, flags) {
+  if (flags.member) return { user: await detectMember(targetDir, flags), explicit: true };
   const cfg = await readConfig(targetDir);
-  return cfg.user || await detectMember(targetDir, flags);
+  return { user: cfg.user || await detectMember(targetDir, flags), explicit: false };
 }
 
 function today() {
@@ -276,7 +279,7 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
     }
   }
 
-  const user = await resolveUser(ctx.targetDir, ctx.flags);
+  const { user, explicit } = await resolveUser(ctx.targetDir, ctx.flags);
   const dir = taskDirPath(ctx.targetDir, user, name);
   const date = today();
 
@@ -308,6 +311,21 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
       safeDefault: 'task 디렉터리도 meta 도 .harness/active.json 도 바뀌지 않는다',
       stop: 'harness-team 명령 이름으로 새 task 를 만들지 말 것',
     }));
+  }
+
+  // member 를 추론했는데 다른 member 에 같은 이름의 task 가 있으면, 대개 그 task 를 이어서 하려던 것이다.
+  // 새로 만들면 별개 스캐폴드가 생긴다. `--member` 를 명시했으면 의도한 것이므로 막지 않는다.
+  if (!isTask && !explicit && await exists(docsPath(ctx.targetDir))) {
+    const owners = (await listTaskRefs(ctx.targetDir)).filter(r => r.task === name && r.user !== user).map(r => r.user);
+    if (owners.length) {
+      return emitTaskError(json, '다른 member 에 같은 이름의 task 가 있음', buildErrorPacket({
+        cause: `${owners.map(u => taskDirRel(u, name)).join(', ')} 가 이미 있다 — 추론한 member(${user})로는 별개 task ${taskDirRel(user, name)} 가 새로 생긴다`,
+        retry: `그 task 를 이어서 하려면 \`harness-team task ${name} --member ${owners[0]}\` 실행`,
+        alternatives: [`같은 이름의 ${user} task 를 따로 만들려면 \`--member ${user}\` 를 명시해 재실행한다`],
+        safeDefault: 'task 디렉터리도 meta 도 .harness/active.json 도 바뀌지 않는다',
+        stop: 'member 를 명시하지 않은 채 다른 member 와 같은 이름의 task 를 만들지 말 것',
+      }));
+    }
   }
 
   // 원격 done 감지(done-on-main-nudge). 사고의 시작점이 바로 여기였다 — 클론에서 `task <name>`을 쳤을 때 main에는

@@ -18,6 +18,15 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Fixed
+- **`task <name> --member <x>` 가 `.harness/config.json` 의 `user` 에 밀리던 결함.** README 의 member 식별 규칙은
+  `--member` 를 최우선으로 적었지만 `task` 는 config user 를 먼저 봤다. 그래서 config user 와 다른 member 의 task 를
+  가리킬 방법이 없었고, 한 머신에 두 정체성이 있는 checkout 에서 `task <name>` 이 `docs/<config user>/<name>/` 을
+  새로 만들었다(2026-09-19 실측). 이제 `--member` 가 이긴다.
+- **추론한 member 로 다른 member 와 같은 이름의 task 를 만들지 않는다.** member 를 명시하지 않았고 다른 member 에
+  같은 이름의 task(spec 마커)가 있으면 exit 1·무쓰기로 멈추고 `--member <그 member>` 를 안내한다. 같은 이름으로
+  따로 만들려면 `--member` 를 명시한다.
+
 ## [0.41.4] - 2026-09-25
 
 ### Fixed
