@@ -18,6 +18,14 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.42.0] - 2026-09-25
+
+### Changed
+- **결정 D10 — CLAUDE.md(`@AGENTS.md` import) 구조를 유지한다.** Claude Code 2.1.277 부터 AGENTS.md 를 네이티브로 읽지만
+  기본은 fallback(CLAUDE.md 가 없을 때만)이고 사용자 설정·원격 플래그에 묶여 있다. `docs/decisions.md`·템플릿에 D10 을 넣고
+  doctor 의 결정 절 목록(`DECISION_HEADINGS`)에 등록했다 — D10 이 없는 소비자 `docs/decisions.md` 는 doctor warn 1건,
+  **`migrate` 로 해소**한다. doctor eager 계층 주석도 2.1.277 기준으로 정정(계산 불변).
+
 ### Added
 - **`list --remote` — 머지되지 않은 원격 브랜치에만 있는 task 를 보여 준다.** `list` 는 체크아웃한 브랜치만 봐서
   다른 세션이 올린 브랜치의 열린 task 가 보이지 않았다(2026-09-08, 그 브랜치가 "머지됨"으로 오인돼 지워질 뻔했다).
