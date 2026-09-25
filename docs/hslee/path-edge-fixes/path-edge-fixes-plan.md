@@ -8,7 +8,7 @@ task 이름 `.`·`..` 거부 + `readRemoteTaskMeta` 를 전체 ref 로 읽기 �
 - [x] 실패 테스트 — `tests/task-user-validation.test.mjs`(`.`·`..`), `tests/remote-task.test.mjs`(로컬 `origin/main` 브랜치) — 원 코드 3 red
 - [x] 구현 — runTask 이름 검사, readRemoteTaskMeta `refs/remotes/<ref>`
 - [x] CHANGELOG Unreleased Fixed 2줄 · `npm test` 1026 pass / 0 fail / skip 1
-- [ ] 외부 리뷰(claude 엔진 — codex 400 지속 시) → artifact Reviews 기록
+- [x] 외부 리뷰 → artifact Reviews 기록 — codex 400 지속으로 claude 엔진, P3 1건 반영(에러 안내 문구)·1건 후속 후보
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

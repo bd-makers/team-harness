@@ -268,10 +268,10 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
         : `task 이름 "${name}"에 허용되지 않는 문자가 있음 (허용: 영숫자·_·.·-)`;
     const packet = buildErrorPacket({
       cause: rootCause,
-      retry: '`harness-team task <name>` 형식으로 영숫자·_·.·- 만 사용한 이름을 주고 재실행',
+      retry: '`harness-team task <name>` 형식으로 영숫자·_·.·- 만 사용한 이름(`.`·`..` 제외)을 주고 재실행',
       alternatives: ['기존 task를 이어서 하려면 `harness-team task <기존 이름>` 으로 활성화한다 — 새로 만들지 않는다'],
       safeDefault: 'task 디렉터리도 .harness/active.json 도 만들어지지 않는다',
-      stop: '이름 규칙(^[\\w.-]+$)을 만족하지 못하면 생성하지 말 것',
+      stop: '이름 규칙(^[\\w.-]+$, `.`·`..` 제외)을 만족하지 못하면 생성하지 말 것',
     });
     if (json) {
       emitObservation(buildEnvelope({
