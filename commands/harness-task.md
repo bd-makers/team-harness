@@ -1,7 +1,7 @@
 ---
 description: "task 관리 (task/list/done/handoff) — docs/<user>/<name>/ 구조"
 phase: Workflow
-argument-hint: '<name> [--area <area>] | list [--area <area>] | done [--force] | handoff'
+argument-hint: '<name> [--area <area>] | list [--area <area>] [--remote] | done [--force] | handoff'
 tags:
   - project
   - ai
@@ -32,6 +32,20 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name> [--area <area>]
 - `harness-team done`                 # 활성 task 완료 처리 (meta 상태만 — 원장은 `summary --write`)
 - `harness-team task web-next-login --area web-next`   # 모노레포 area task 생성 또는 활성화
 - `harness-team list --area web-next`  # 그 area 의 task 만
+- `harness-team list --remote`        # + 머지되지 않은 origin 브랜치에만 있는 task
+
+## 원격 브랜치에만 있는 task (`list --remote`)
+
+`list` 는 체크아웃한 브랜치의 `docs/` 만 본다. 다른 세션·클론이 올린 브랜치에만 있는 task 는 `--remote` 로 본다 —
+브랜치를 "머지됨"으로 판단해 지우기 전에 확인한다.
+
+- **fetch 하지 않는다.** 로컬 `refs/remotes/origin/*`(마지막 fetch 기준)만 읽는다. 최신이 필요하면 먼저 `git fetch --prune`
+  (`--prune` 없이는 origin 에서 지운 브랜치의 remote-tracking ref 가 남아 계속 보인다).
+- origin 기본 브랜치의 조상인 브랜치(머지됨)는 건너뛰고, 로컬 작업 트리나 기본 브랜치에 이미 있는 task 는 빼고 보여 준다.
+  task 판정은 로컬과 같다(`docs/<user>/<task>/<task>-spec.md`).
+- 출력: 로컬 목록 뒤에 `branch-only (origin, 마지막 fetch 기준):` 절, 줄마다 `  <user>/<task>  (<브랜치>, …)`.
+  없으면 `  (none)`. git·origin 이 없거나 git 오류면 `branch-only: 원격 스캔 건너뜀 …` 한 줄이고 exit code 는 그대로다.
+- `--area` 와 같이 쓰면 그 브랜치의 `<task>-meta.json` 의 `area` 로 거른다 — meta 가 없으면 area 없음으로 빠진다.
 
 ## 모노레포 area (`--area`)
 

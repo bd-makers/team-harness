@@ -7,7 +7,7 @@ import { exists, writeText } from '../fsx.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 import { readTaskMeta, writeTaskMeta, taskMetaTemplate, inferLegacyMeta, readLedger } from './summary.mjs';
 import { renderDoneMarker } from '../handoff-marker.mjs';
-import { checkDoneOnMain, renderDoneOnMainNudge } from './remote-task.mjs';
+import { checkDoneOnMain, renderDoneOnMainNudge, listBranchOnlyTasks } from './remote-task.mjs';
 import { findCommand } from '../cli-args.mjs';
 import { userNameError } from '../user-config.mjs';
 import {
@@ -475,13 +475,28 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
   }
 }
 
-export async function runList(ctx) {
-  if (!(await exists(docsPath(ctx.targetDir)))) { console.log('(no docs/)'); return; }
-
-  const active = await readActive(ctx.targetDir);
+export async function runList(ctx, { branchOnly = listBranchOnlyTasks } = {}) {
   const areaFilter = ctx.flags && ctx.flags.area;
+  const local = (await exists(docsPath(ctx.targetDir))) ? await listTaskRefs(ctx.targetDir) : null;
+  if (local) await printLocalList(ctx, local, areaFilter);
+  else console.log('(no docs/)');
+  if (!(ctx.flags && ctx.flags.remote)) return;
+
+  // opt-in 원격 절 — fetch 하지 않는다(마지막 fetch 기준). 실패는 한 줄로 알리고 exit code 에 영향을 주지 않는다.
+  const exclude = new Set((local ?? []).map(({ user, task }) => taskLabel(user, task)));
+  const result = await branchOnly(ctx.targetDir, { exclude, withMeta: areaFilter !== undefined });
+  if (!result.ok) { console.log('branch-only: 원격 스캔 건너뜀 (git·origin 없음 또는 git 오류)'); return; }
+  console.log('branch-only (origin, 마지막 fetch 기준):');
+  const rows = result.tasks.filter(({ meta }) =>
+    areaFilter === undefined || (meta && typeof meta.area === 'string' ? meta.area : null) === areaFilter);
+  for (const { user, task, branches } of rows) console.log(`  ${taskLabel(user, task)}  (${branches.join(', ')})`);
+  if (!rows.length) console.log('  (none)');
+}
+
+async function printLocalList(ctx, refs, areaFilter) {
+  const active = await readActive(ctx.targetDir);
   let shown = 0;
-  for (const { user, task } of await listTaskRefs(ctx.targetDir)) {
+  for (const { user, task } of refs) {
     // area 는 meta 에만 산다 — 원장 추론으로 복구할 대상이 아니다.
     const meta = await readTaskMeta(ctx.targetDir, user, task);
     const area = meta && typeof meta.area === 'string' ? meta.area : null;
