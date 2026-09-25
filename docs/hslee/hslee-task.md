@@ -3,8 +3,10 @@
 ## Open
 
 ## Completed
+- ✅ active-json-validation
 - ✅ agents-md-native
 - ✅ config-user-validation
+- ✅ list-remote-branches
 - ✅ task-member-collision
 - ✅ task-reserved-names
 - ✅ artifact-template-eof

@@ -114,7 +114,9 @@
 | chad | task-paths-helper | ✅ done | 2026-09-24 |
 | hslee | artifact-template-eof | ✅ done | 2026-09-24 |
 | hslee | task-spec-marker | ✅ done | 2026-09-24 |
+| hslee | active-json-validation | ✅ done | 2026-09-25 |
 | hslee | agents-md-native | ✅ done | 2026-09-25 |
 | hslee | config-user-validation | ✅ done | 2026-09-25 |
+| hslee | list-remote-branches | ✅ done | 2026-09-25 |
 | hslee | task-member-collision | ✅ done | 2026-09-25 |
 | hslee | task-reserved-names | ✅ done | 2026-09-25 |
