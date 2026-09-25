@@ -25,3 +25,10 @@ CHANGELOG.md                                       |   8 +
  src/commands/remote-task.mjs                       |  8 ++++---
  tests/list-remote.test.mjs                         | 15 +++++++++++-
  4 files changed, 48 insertions(+), 6 deletions(-)
+
+## 2026-09-25T12:36:40.883Z — 815b274 docs(list-remote-branches): claude 리뷰 기록·판정 + fetch --prune 안내
+commands/harness-task.md                           |  3 +-
+ .../list-remote-branches-artifact.md               | 41 ++++++++++++++++++++++
+ .../list-remote-branches-meta.json                 | 12 ++++++-
+ .../list-remote-branches-plan.md                   |  2 +-
+ 4 files changed, 55 insertions(+), 3 deletions(-)
