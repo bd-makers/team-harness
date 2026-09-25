@@ -28,3 +28,7 @@ docs/decisions.md                                  | 40 +++++++++++++++
  templates/docs/decisions.md                        | 40 +++++++++++++++
  tests/doctor.test.mjs                              | 28 +++++-----
  11 files changed, 254 insertions(+), 24 deletions(-)
+
+## 2026-09-25T12:16:26.959Z — c3a02f9 docs(agents-md-native): doctor eager tier 주석의 프로젝트 소계를 실측값으로 갱신 (17,476 B, 여유 7,100 B)
+src/commands/doctor.mjs | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
