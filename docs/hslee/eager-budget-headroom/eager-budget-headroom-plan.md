@@ -8,7 +8,7 @@
 - [x] 검증 — `wc -c AGENTS.md CLAUDE.md`, `npm test`, `npm run docs:check`
 - [x] `MAINTAINING.md`·`src/commands/doctor.mjs` 주석 eager 실측 수치 현행화
 - [x] 리뷰(codex 401로 claude 폴백 ×2) → artifact Reviews 기록
-- [ ] 커밋·PR (머지 후 체크)
+- [x] 커밋·PR — #107 머지(a97f19e)
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
