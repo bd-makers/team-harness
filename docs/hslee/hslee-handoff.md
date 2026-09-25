@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-task-member-collision
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-25)
-4614bad chore(task-member-collision): ship — 3차 리뷰 판별·README sanitize 예외·artifact 결과
+## Last Completed Task (2026-09-25)
+`task-member-collision` — done
 
 ## Full Context
 → docs/hslee/task-member-collision/task-member-collision-handoff.md
