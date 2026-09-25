@@ -18,6 +18,8 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.41.3] - 2026-09-25
+
 ### Fixed
 - **`migrate` 가 v0.24.0~v0.40.2 의 `protect-files.sh` 설치본을 "looks customized" 로 건너뛰던 결함.** 설치 훅 refresh 는
   바이트가 과거 배포판(`KNOWN_STOCK_HOOK_SHA256`)과 같을 때만 갱신하는데, 0.40.3 이 RN·iOS 빌드 비밀 3종(`Fastfile`·

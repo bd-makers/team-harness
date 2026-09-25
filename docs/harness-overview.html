@@ -203,7 +203,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.41.2</span>
+      <span class="tag tag-purple">v0.41.3</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -211,6 +211,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.41.3 — migrate가 v0.24.0~v0.40.2의 protect-files 설치본을 다시 갱신한다:</strong>
+    <br>
+    <code>0.41.3</code> <strong><code>migrate</code>의 stock 판별 테이블에 빠져 있던 <code>protect-files.sh</code> 한 판을 채운다.</strong> 0.40.3이 RN·iOS 빌드 비밀 3종(<code>Fastfile</code>·<code>figma-export.y(a)ml</code>·<code>*.xcconfig</code>)을 추가하면서 직전 판의 sha를 넣지 않아, v0.24.0~v0.40.2 설치본이 "looks customized"로 건너뛰어졌다. 같은 누락을 막으려고 훅 테이블에도 스킬·규칙과 같은 git 이력 완전성 가드를 붙였다 — <code>main</code> first-parent 이력의 모든 훅 판이 테이블에 있어야 <code>npm test</code>가 통과한다. 영향 설치본은 플러그인 갱신 뒤 <strong><code>migrate --yes</code> 1회</strong>면 된다.
+    <br><br>
     <strong>🆕 0.41.2 — 새 task의 artifact가 EOF 빈 줄로 끝나지 않는다:</strong>
     <br>
     <code>0.41.2</code> <strong><code>task &lt;name&gt;</code>이 만드는 <code>&lt;name&gt;-artifact.md</code> 템플릿의 끝 빈 줄을 지운다.</strong> 템플릿이 <code>## Learnings</code> 뒤에 빈 줄을 하나 더 남겨 새 task를 커밋할 때마다 <code>git diff --check</code>가 <code>new blank line at EOF</code>를 냈고, <code>retro</code>가 붙이는 절 앞에는 빈 줄이 둘 생겼다. 기존 artifact는 건드리지 않으며 <code>done</code> 가드의 "템플릿 그대로" 판정은 공백을 무시해 옛 artifact도 종전대로 판정된다. <code>templates/</code>는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 된다.
@@ -2830,7 +2834,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.41.2 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.41.3 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
