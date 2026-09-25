@@ -8,6 +8,7 @@ import { loadBackupDir, settingsHasBoundaryCheckpoint, codexHooksHaveSessionCont
 import { buildEnvelope, buildErrorPacket, emitObservation } from '../observation.mjs';
 import { settingsHasSessionGate } from './session-context.mjs';
 import { checkDoneOnMain } from './remote-task.mjs';
+import { readActive } from './task.mjs';
 import { taskLabel, taskFilePath } from '../task-paths.mjs';
 import { checkRuleProvenance } from './rules.mjs';
 import { findStaleTemplates, isKnownStockTemplate } from './migrate.mjs';
@@ -230,9 +231,7 @@ export function hookCliInstallCommand(env = process.env) {
 // section (a "pointer shell" spec authored outside the task tool). Returns a warning
 // string, or null when there is no active task / the spec is intact.
 export async function checkActiveSpecGate(targetDir) {
-  let active;
-  try { active = JSON.parse(await readFile(join(targetDir, '.harness/active.json'), 'utf8')); }
-  catch { return null; }
+  const active = await readActive(targetDir);
   if (!active || !active.task) return null;
 
   const { user, task } = active;
@@ -251,9 +250,7 @@ export async function checkActiveSpecGate(targetDir) {
 // working on a task main had finished. Same verdict as session-context/task; warning string or null.
 // `doneOnMain` is injectable for tests (a tmpdir is not a git repo → the default resolves to null).
 export async function checkActiveDoneOnMain(targetDir, { doneOnMain = checkDoneOnMain } = {}) {
-  let active;
-  try { active = JSON.parse(await readFile(join(targetDir, '.harness/active.json'), 'utf8')); }
-  catch { return null; }
+  const active = await readActive(targetDir);
   if (!active || !active.task) return null;
   let verdict = null;
   try { verdict = await doneOnMain(targetDir, active.user, active.task); } catch { return null; }

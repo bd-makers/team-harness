@@ -1,0 +1,21 @@
+{
+  "user": "hslee",
+  "task": "active-json-validation",
+  "created": "2026-09-25",
+  "firstActivatedAt": "2026-09-25T12:27:03.408Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "claude",
+      "engine": "claude",
+      "scope": "diff",
+      "tip": "e96243f68f83b39c0e859f7c5ad48965575d3a74",
+      "at": "2026-09-25T12:35:26.284Z",
+      "exitCode": 0,
+      "outputBytes": 2613
+    }
+  ]
+}

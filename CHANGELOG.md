@@ -26,6 +26,12 @@ modified: 2026-09-13
   `--area` 는 그 브랜치의 meta 로 거른다. git·origin 이 없거나 git 오류면 건너뜀 한 줄이고 exit code 는 그대로다.
   `--remote` 없는 `list` 의 출력·비용은 종전과 같다.
 
+### Fixed
+- **손으로 고친 `.harness/active.json` 이 `docs/` 밖 경로를 가리킬 수 있던 결함.** context·boundary·review·done·doctor 는
+  active 의 `user`·`task` 로 곧장 경로를 조립한다. 0.41.6 에서 `task` 는 검증된 값만 쓰게 됐지만 손으로 고친 포인터는
+  그대로 통과했다. 이제 `user`·`task` 가 `docs/<user>/<task>/` 한 세그먼트가 아니면 "활성 task 없음" 으로 보고 stderr 에
+  경고한다. doctor 의 active 판독 두 곳도 같은 판독을 쓴다.
+
 ## [0.41.6] - 2026-09-25
 
 ### Fixed
