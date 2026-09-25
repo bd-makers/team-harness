@@ -1,6 +1,6 @@
 {
   "name": "harness-aijient-team",
-  "version": "0.41.5",
+  "version": "0.41.6",
   "description": "Claude-led team harness: scaffold multi-agent (Codex/Cursor) configuration from a single source of truth (AGENTS.md).",
   "author": {
     "name": "chad"

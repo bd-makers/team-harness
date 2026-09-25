@@ -18,6 +18,8 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.41.6] - 2026-09-25
+
 ### Fixed
 - **`.harness/config.json` 의 `user` 가 `docs/` 밖에 task 를 만들 수 있던 결함.** config user 는 검증 없이 경로 조립에
   쓰여 `{"user":"../../x"}` 면 `task foo` 가 프로젝트 root 밖에 task 파일 6개를 만들고 `active.json` 이 그곳을 가리켰다.
