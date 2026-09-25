@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ agents-md-native
 - ✅ config-user-validation
 - ✅ task-member-collision
 - ✅ task-reserved-names
