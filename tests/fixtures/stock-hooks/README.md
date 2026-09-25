@@ -28,3 +28,6 @@
 | `pre-end-boundary/block-dangerous-git.sh` | `9822cd7f` | `58b2284` audit-cleanup판 (END 열거 경계 — `git push --force;echo` 우회 이전) |
 
 `pre-end-boundary`는 2026-09-13 dangerous-git-end-boundary(토큰 경계를 비단어 문자 전부로) 수정 직전 판이다.
+| `pre-rn-ios-secrets/protect-files.sh` | `804e3181` | `58b2284` audit-cleanup판 (`Fastfile`·`figma-export.y(a)ml`·`*.xcconfig` 보호 이전) |
+
+`pre-rn-ios-secrets`는 `c46ea0d`(2026-09-22, RN·iOS 빌드 비밀 3종 추가) 직전 판이다 — v0.24.0~v0.40.2가 이 바이트를 배포했다.

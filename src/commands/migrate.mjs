@@ -384,6 +384,7 @@ export const KNOWN_STOCK_HOOK_SHA256 = {
     '8031a9db866e2d79e9ed2837f6b12214e1a4cb3a91e510c1c89bbe0ac7962e63', // 286e227e initial
     '2fb1c2ff7fbd956503634a641596039cf452ac07c8fa5c7fad5a003c7e8cbe42', // 75858c28 PR #29
     '07459eed771b5b6d467877a1c34147a1d9bf634d1cf9873c08b0113da61c8ecf', // bf6c4f6e tool_input 스코프판 (audit-cleanup 이전, substring 패턴)
+    '2f811753d4b10ec51ed99ab0f8cd8a1f77230ead15d07232fc2ea385238bbf9d', // 804e3181 audit-cleanup판 (RN·iOS 비밀 3종 이전 — v0.24.0~v0.40.2 배포본)
   ],
   'pre-commit-check.sh': [
     '97b4e1802c5ab75e463c8280d055e0a723390673bacf7116f98c63d3c87d4297', // 813a2212 initial (pnpm 하드코딩판)

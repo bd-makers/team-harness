@@ -18,6 +18,16 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Fixed
+- **`migrate` 가 v0.24.0~v0.40.2 의 `protect-files.sh` 설치본을 "looks customized" 로 건너뛰던 결함.** 설치 훅 refresh 는
+  바이트가 과거 배포판(`KNOWN_STOCK_HOOK_SHA256`)과 같을 때만 갱신하는데, 0.40.3 이 RN·iOS 빌드 비밀 3종(`Fastfile`·
+  `figma-export.y(a)ml`·`*.xcconfig`)을 추가하면서 직전 판(blob `804e3181`)의 sha 를 테이블에 넣지 않았다. 그래서 그 구간
+  설치본은 `migrate --yes` 로도 새 보호 패턴을 받지 못했다. 이제 그 판을 stock 으로 인식해 갱신한다 — 손으로 고친 설치본은
+  종전대로 보존된다.
+- **같은 누락의 재발 방지.** 훅 sha 테이블에는 "테이블 ≡ fixture" 드리프트 가드만 있어 둘에서 함께 빠지면 통과했다.
+  스킬·규칙 테이블처럼 git 이력 완전성 가드를 붙였다 — `main` 의 first-parent 이력에 있던 모든 훅 판이 테이블에 있어야
+  `npm test` 가 통과한다(PR 브랜치의 중간 커밋은 배포된 적이 없어 요구하지 않는다).
+
 ## [0.41.2] - 2026-09-25
 
 ### Fixed

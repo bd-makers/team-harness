@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { spawn, execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdtemp, mkdir, readdir, readFile, writeFile, symlink, rm, access } from 'node:fs/promises';
 import { constants, rmSync } from 'node:fs';
@@ -78,7 +78,7 @@ test('KNOWN_STOCK_HOOK_SHA256는 fixture의 실제 바이트와 일치한다 (�
       checked++;
     }
   }
-  assert.equal(checked, 16, `알려진 stock 버전 16개를 기대 — 실제: ${checked}`);
+  assert.equal(checked, 17, `알려진 stock 버전 17개를 기대 — 실제: ${checked}`);
 });
 
 // audit-cleanup (2026-09-03) — observe-tools.mjs와 boundary-checkpoint.sh는 refresh 목록에 없어
@@ -177,4 +177,30 @@ test('훅 미설치 프로젝트 → false (설치 없는 곳에 새로 깔지 �
     assert.equal(await refreshClaudeHooks(ctxFor(dir)), false);
     assert.equal((await readdir(dir)).includes('.claude'), false, 'refresh가 .claude를 만들면 안 된다');
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 드리프트 가드는 "테이블 ≡ fixture"만 본다 — 둘에서 같이 빠지면 통과한다. 2026-09-25 protect-files의
+// audit-cleanup판(804e3181, v0.24.0~v0.40.2 배포)이 바로 그렇게 빠져 migrate가 "looks customized"로 건너뛰었다.
+// templates 쪽 완전성 가드와 같되 --first-parent로 main이 실제로 가졌던 판만 요구한다 — PR 브랜치 중간 커밋은
+// 배포된 적이 없다(마켓플레이스 clone은 main을 따른다).
+test('KNOWN_STOCK_HOOK_SHA256가 main의 실제 git 이력을 빠짐없이 담는다 (완전성)', (t) => {
+  try { execFileSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, stdio: 'ignore' }); }
+  catch { return t.skip('git 이력 없음 — 소비자 설치본에서는 건너뛴다'); }
+  const shallow = execFileSync('git', ['rev-parse', '--is-shallow-repository'], { cwd: ROOT }).toString().trim();
+  if (shallow === 'true') return t.skip('얕은 클론 — 이력 완전성은 판정 불가');
+
+  for (const name of REFRESHABLE_HOOK_FILES) {
+    const p = `templates/.claude/hooks/${name}`;
+    const cur = sha256(execFileSync('git', ['show', `HEAD:${p}`], { cwd: ROOT, maxBuffer: 1 << 26 }));
+    const commits = execFileSync('git', ['log', '--first-parent', '--format=%H', '--', p], { cwd: ROOT }).toString().trim().split('\n').filter(Boolean);
+    const historical = new Set();
+    for (const c of commits) {
+      let body;
+      try { body = execFileSync('git', ['show', `${c}:${p}`], { cwd: ROOT, maxBuffer: 1 << 26, stdio: ['pipe', 'pipe', 'ignore'] }); }
+      catch { continue; }
+      if (sha256(body) !== cur) historical.add(sha256(body));
+    }
+    assert.deepEqual(new Set(KNOWN_STOCK_HOOK_SHA256[name] || []), historical,
+      `${name}: 테이블과 main 이력이 어긋난다 — 훅을 고쳤으면 이전 판 sha와 fixture를 함께 추가하라`);
+  }
 });
