@@ -3,8 +3,8 @@
   "task": "task-reserved-names",
   "created": "2026-09-25",
   "firstActivatedAt": "2026-09-25T09:18:54.171Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-09-25T09:27:59.879Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [
