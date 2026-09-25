@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { runTask } from '../src/commands/task.mjs';
 import { exists } from '../src/fsx.mjs';
+import { COMMANDS } from '../src/cli-args.mjs';
 
 const noRemote = { doneOnMain: async () => null };
 
@@ -26,7 +27,8 @@ async function task(dir, name, flags = {}) {
 }
 
 test('명령 이름으로는 새 task 를 만들지 않는다 — exit 1, 무쓰기, 뜻했을 명령을 안내한다', async () => {
-  for (const name of ['list', 'done', 'handoff', 'summary']) {
+  // COMMANDS 전체를 돈다 — 구현이 하드코딩 목록으로 바뀌거나 새 명령이 빠지면 여기서 잡힌다.
+  for (const { name } of COMMANDS) {
     const dir = await mkdtemp(join(tmpdir(), 'harness-reserved-'));
     try {
       const r = await task(dir, name);
