@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+agents-md-native
 
-## Last Completed Task (2026-09-25)
-`config-user-validation` — done
+## Last Commit (2026-09-25)
+c3a02f9 docs(agents-md-native): doctor eager tier 주석의 프로젝트 소계를 실측값으로 갱신 (17,476 B, 여유 7,100 B)
 
 ## Full Context
-→ docs/hslee/config-user-validation/config-user-validation-handoff.md
+→ docs/hslee/agents-md-native/agents-md-native-handoff.md
