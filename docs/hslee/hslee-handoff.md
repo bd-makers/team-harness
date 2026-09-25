@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+active-json-validation
 
-## Last Completed Task (2026-09-25)
-`agents-md-native` — done
+## Last Commit (2026-09-25)
+dffedc6 chore(active-json-validation): 리뷰 판별 반영 — 경고 문구 치환 제거·README 순서, artifact 결과
 
 ## Full Context
-→ docs/hslee/agents-md-native/agents-md-native-handoff.md
+→ docs/hslee/active-json-validation/active-json-validation-handoff.md
