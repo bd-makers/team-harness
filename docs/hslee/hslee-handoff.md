@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-review-base-full-ref
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-25)
-012b2b8 chore(review-base-full-ref): codex 리뷰 기록·판별, artifact 결과, post-commit handoff
+## Last Completed Task (2026-09-25)
+`review-base-full-ref` — done
 
 ## Full Context
 → docs/hslee/review-base-full-ref/review-base-full-ref-handoff.md
