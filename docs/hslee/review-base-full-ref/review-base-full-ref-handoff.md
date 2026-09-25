@@ -15,3 +15,11 @@ CHANGELOG.md                                       |  6 +++
  src/commands/review.mjs                            |  4 +-
  tests/scope-command.test.mjs                       | 33 ++++++++++++--
  11 files changed, 167 insertions(+), 6 deletions(-)
+
+## 2026-09-25T13:12:31.341Z — 012b2b8 chore(review-base-full-ref): codex 리뷰 기록·판별, artifact 결과, post-commit handoff
+docs/hslee/hslee-handoff.md                        |  9 ++++----
+ .../review-base-full-ref-artifact.md               | 24 +++++++++++++++++++++-
+ .../review-base-full-ref-handoff.md                | 14 +++++++++++++
+ .../review-base-full-ref-meta.json                 | 12 ++++++++++-
+ .../review-base-full-ref-plan.md                   |  2 +-
+ 5 files changed, 53 insertions(+), 8 deletions(-)
