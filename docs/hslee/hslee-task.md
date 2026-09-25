@@ -8,6 +8,7 @@
 - ✅ config-user-validation
 - ✅ handoff-sweep-fold
 - ✅ list-remote-branches
+- ✅ managed-section-refresh-path
 - ✅ path-edge-fixes
 - ✅ review-base-full-ref
 - ✅ task-member-collision
