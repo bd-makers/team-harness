@@ -4,7 +4,7 @@
 agents-md-native
 
 ## Last Commit (2026-09-25)
-c3a02f9 docs(agents-md-native): doctor eager tier 주석의 프로젝트 소계를 실측값으로 갱신 (17,476 B, 여유 7,100 B)
+e9c0361 chore(agents-md-native): artifact 결과·리뷰 생략 사유 기록
 
 ## Full Context
 → docs/hslee/agents-md-native/agents-md-native-handoff.md
