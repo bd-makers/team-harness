@@ -27,3 +27,12 @@ README.md                                          |  2 +-
  src/member.mjs                                     |  2 +-
  tests/task-member-collision.test.mjs               | 24 ++++++++++++++++++++++
  8 files changed, 86 insertions(+), 10 deletions(-)
+
+## 2026-09-25T09:48:19.573Z — 16094de fix(task-member-collision): 재리뷰 P2 반영 — 닿지 않는 추론 member 에 --member 대안을 권하지 않는다
+docs/hslee/hslee-handoff.md                         |  2 +-
+ .../task-member-collision-artifact.md               | 21 +++++++++++++++++++++
+ .../task-member-collision-handoff.md                | 11 +++++++++++
+ .../task-member-collision-meta.json                 |  9 +++++++++
+ src/commands/task.mjs                               |  4 +++-
+ tests/task-member-collision.test.mjs                | 12 ++++++++++++
+ 6 files changed, 57 insertions(+), 2 deletions(-)

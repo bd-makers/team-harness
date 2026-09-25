@@ -8,7 +8,7 @@
 - [x] `resolveUser` 우선순위 수정 + 충돌 가드
 - [x] README 식별 규칙·`commands/harness-task.md`·CHANGELOG
 - [x] `npm test` 전체 통과 + `docs:check`
-- [ ] read-only 리뷰(codex) 기록
+- [x] read-only 리뷰(codex) 기록
 
 ## Ontology 변경 로그
 - 2026-09-25 **명시/추론 member**, **이름 충돌** 도입 — spec Ontology 반영

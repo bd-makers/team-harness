@@ -3,7 +3,12 @@
 *최종 결과물과 학습 내용을 기록한다.*
 
 ## 결과
-
+- `resolveUser` → `{ user, explicit }`: `--member` 가 config user 를 이긴다(README 식별 규칙과 일치).
+- 추론 member 에 없는 이름이 다른 member 에 spec 마커로 있으면 exit 1·무쓰기. 안내는 sanitize-stable 여부로 분기
+  (`--member <owner>` 또는 config user 설정 / 대안은 `--member <me>` 또는 다른 이름).
+- 테스트 `tests/task-member-collision.test.mjs` 7건. 원 코드에서 2건 red. `npm test` 996 / fail 0.
+- 문서: README 식별 규칙(빠져 있던 config user 단계·sanitize 범위·가드), `commands/harness-task.md`, CHANGELOG.
+- codex 3회: 1차 P2×2·P3 반영, 2차 P2 반영, 3차 P2 반영·P1(config.user 경로 탈출)은 기존 동작으로 판별해 후속 후보.
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
@@ -54,5 +59,29 @@
 
 **판별·조치**: P2 진짜 — 1차 수정이 retry 에만 분기를 넣고 alternatives 의 `--member ${user}` 는 남겼다. 같은 sanitize-stable
 분기로 고치고, 닿지 않으면 다른 이름을 권한다. 테스트 1건 추가(7건 green). 직전 3건 반영은 리뷰어가 확인했다.
+
+### 2026-09-25T09:51:25.403Z — codex (harness-team review)
+
+- engine: codex · scope: diff · tip: 16094de1338b43a96dfaa0c8301d3b8a6451ba8c · exit 0 · 1370 B
+
+```text
+전하, 직전 P2의 alternatives 분기는 반영됐습니다. `src/commands/task.mjs:328`이 sanitize 불가능한 추론 member에 `--member`를 더 이상 권하지 않고, 해당 회귀 테스트도 추가돼 있습니다.
+
+발견 사항:
+
+- P1 — [src/commands/task.mjs](/Users/hsonpro/Library/Mobile%20Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/task-member-collision/src/commands/task.mjs:45): `.harness/config.json`의 `user`를 검증 없이 경로 조립에 사용하므로 `../../...` 같은 값이 `docs/` 밖에 task 파일을 생성할 수 있습니다.
+
+- P2 — [README.md](/Users/hsonpro/Library/Mobile%20Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/task-member-collision/README.md:509): 공백·특수문자가 든 기존 member에도 `--member <그 member>`를 안내한다고 적었지만, 실제로는 sanitize되어 별도 task를 만들 수 있으므로 config `user` 경로를 사용하라는 예외를 문서화해야 합니다.
+
+최종 판정: **Block** — 직전 P2 자체는 해결됐으나, `config.user` 경로 탈출(P1)을 막기 전에는 병합하면 안 됩니다. `git diff --check`은 통과했고, 리뷰 요청에 맞춰 파일 수정이나 테스트 실행은 하지 않았습니다.
+```
+
+<!-- harness:review kind=codex scope=diff tip=16094de1338b43a96dfaa0c8301d3b8a6451ba8c at=2026-09-25T09:51:25.403Z -->
+
+**판별·조치**:
+- P1 config.user 경로 탈출 — **기존 동작, 이 diff 의 회귀 아님.** 플래그가 없을 때 `cfg.user || detectMember` 는 변경 전과 같다.
+  `.harness/config.json` 을 쓸 수 있는 주체는 이미 작업 트리 전체를 쓸 수 있어 위협 모델 밖이다. 이 task 에서 고치지 않고
+  후속 후보로 보고한다(`init` 저장 시 이름 규칙 검증이 자연스러운 자리).
+- P2 README — 진짜. 추가한 가드 설명에 sanitize 예외(config user 경로 안내)를 적었다. 문서 한 문장이라 재리뷰는 생략.
 
 ## Learnings
