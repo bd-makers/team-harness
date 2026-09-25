@@ -506,8 +506,8 @@ export async function checkBoundaryCheckpointHook(targetDir) {
 //
 // The budget covers the SUM of all four sources above, and its last term — the user-scope
 // file — is machine-local, so no repo-fixed number describes the tier being measured.
-// What is fixed here is the project-side portion: 15,968 B (AGENTS.md 11,079 + CLAUDE.md
-// 4,889; this repo has no .claude/CLAUDE.md). Against a 24 KiB budget that leaves 8,608 B
+// What is fixed here is the project-side portion: 17,476 B as of 2026-09-25 (AGENTS.md 11,692 +
+// CLAUDE.md 5,784; this repo has no .claude/CLAUDE.md). Against a 24 KiB budget that leaves 7,100 B
 // of headroom for whatever the user's own CLAUDE.md carries. Do NOT re-justify this budget
 // from the project subtotal alone — sizing a superset budget by a subset measurement is
 // the exact defect this check was widened to fix. This is a deterministic
