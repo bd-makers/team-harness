@@ -16,3 +16,11 @@ CHANGELOG.md                                       |  8 +++
  src/commands/doctor.mjs                            | 51 +++++++++++++++--
  tests/doctor.test.mjs                              | 61 +++++++++++++++++++-
  12 files changed, 332 insertions(+), 11 deletions(-)
+
+## 2026-09-25T17:21:45.624Z — e2717b4 docs(managed-section-refresh-path): plan 커밋·PR 단계 체크 (#106 머지)
+.../managed-section-refresh-path/managed-section-refresh-path-plan.md   | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+## 2026-09-25T17:21:45.726Z — 완료
+
+태스크 종료.
