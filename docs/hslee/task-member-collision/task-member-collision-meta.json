@@ -1,0 +1,39 @@
+{
+  "user": "hslee",
+  "task": "task-member-collision",
+  "created": "2026-09-25",
+  "firstActivatedAt": "2026-09-25T09:37:06.845Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "040d13445153481291b0ee3d16f77a926cdb4eec",
+      "at": "2026-09-25T09:43:25.577Z",
+      "exitCode": 0,
+      "outputBytes": 1413
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "66b9ea9e814593138456e9bcf8fb605fc63d9888",
+      "at": "2026-09-25T09:47:41.987Z",
+      "exitCode": 0,
+      "outputBytes": 823
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "16094de1338b43a96dfaa0c8301d3b8a6451ba8c",
+      "at": "2026-09-25T09:51:25.403Z",
+      "exitCode": 0,
+      "outputBytes": 1370
+    }
+  ]
+}
