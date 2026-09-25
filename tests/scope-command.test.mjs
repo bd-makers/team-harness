@@ -67,7 +67,7 @@ test('resolveScope: origin/HEAD 가 가리키는 브랜치를 base 로 잡는다
     const r = await resolveScope({ targetDir: dir });
     assert.equal(r.error, undefined, `에러 없이 판정해야 한다: ${r.error}`);
     assert.equal(r.scope, 'diff');
-    assert.equal(r.base, 'origin/master');
+    assert.equal(r.base, 'refs/remotes/origin/master');
   } finally {
     await rm(dir, { recursive: true, force: true });
     if (bare) await rm(bare, { recursive: true, force: true });
@@ -106,7 +106,7 @@ test('resolveScope: dangling origin/HEAD 는 건너뛰고 실재하는 후보로
 
     const r = await resolveScope({ targetDir: dir });
     assert.equal(r.error, undefined, `dangling origin/HEAD 로 죽으면 안 된다: ${r.error}`);
-    assert.equal(r.base, 'origin/main');
+    assert.equal(r.base, 'refs/remotes/origin/main');
   } finally {
     await rm(dir, { recursive: true, force: true });
     if (bare) await rm(bare, { recursive: true, force: true });
@@ -123,6 +123,31 @@ test('CLI scope: task-docs 안내는 framing 이 필요하다는 사실을 담�
     assert.match(hint, /--framing/);
     assert.doesNotMatch(hint, /--scope task-docs/, '그대로 따라 하면 거절당하는 명령을 안내하지 않는다');
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 짧은 `origin/main` 은 같은 이름의 로컬 브랜치(`refs/heads/origin/main`)로 먼저 풀린다 — 그러면 diff 기준과,
+// 프롬프트의 base 로 직접 git 을 돌리는 리뷰어 둘 다 엉뚱한 트리를 본다. 추론한 origin 후보는 전체 ref 로 쓴다.
+test('resolveScope: 로컬 브랜치 `origin/main` 이 있어도 base 는 refs/remotes/origin/main 이다', async () => {
+  const dir = await repo('main');
+  let bare;
+  try {
+    bare = await withOrigin(dir, 'main');
+    await git(dir, 'checkout', '-qb', 'feature');
+    await writeFile(join(dir, 'b.txt'), 'b\n');
+    await git(dir, 'add', '-A');
+    await git(dir, 'commit', '-qm', 'feat');
+    // feature 끝을 가리키는 로컬 `origin/main` — 짧은 이름으로 풀면 diff 가 비어 "리뷰할 것 없음" 이 된다.
+    await git(dir, 'branch', 'origin/main', 'HEAD');
+
+    const r = await resolveScope({ targetDir: dir });
+    assert.equal(r.error, undefined, r.error);
+    assert.equal(r.empty, undefined, '로컬 브랜치를 base 로 잡아 diff 가 비었다');
+    assert.equal(r.scope, 'diff');
+    assert.equal(r.base, 'refs/remotes/origin/main');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+    if (bare) await rm(bare, { recursive: true, force: true });
+  }
 });
 
 test('resolveScope: 명시한 --base 가 origin/HEAD 를 이긴다', async () => {
@@ -185,7 +210,7 @@ test('CLI scope: 안내 문구의 base 는 셸 인용된다', async () => {
 
     const { stdout } = await cli(['scope', '--json', '--target', dir]);
     const hint = JSON.parse(stdout).next_actions.join('\n');
-    assert.match(hint, /--base 'origin\/release\$\(whoami\)'/);
+    assert.match(hint, /--base 'refs\/remotes\/origin\/release\$\(whoami\)'/);
   } finally {
     await rm(dir, { recursive: true, force: true });
     if (bare) await rm(bare, { recursive: true, force: true });
@@ -208,7 +233,7 @@ test('CLI scope: diff 판정을 envelope 로 보고한다', async () => {
     assert.equal(env.command, 'scope');
     assert.equal(env.status, 'success');
     assert.equal(env.scope, 'diff');
-    assert.equal(env.base, 'origin/master');
+    assert.equal(env.base, 'refs/remotes/origin/master');
     assert.equal(env.tip.length, 40);
   } finally {
     await rm(dir, { recursive: true, force: true });
