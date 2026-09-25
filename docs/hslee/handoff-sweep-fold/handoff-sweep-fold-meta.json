@@ -1,0 +1,21 @@
+{
+  "user": "hslee",
+  "task": "handoff-sweep-fold",
+  "created": "2026-09-25",
+  "firstActivatedAt": "2026-09-25T15:03:13.018Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "d98cdb9cd0fb690970339dfb54069ea94fa00063",
+      "at": "2026-09-25T15:07:37.786Z",
+      "exitCode": 0,
+      "outputBytes": 1553
+    }
+  ]
+}

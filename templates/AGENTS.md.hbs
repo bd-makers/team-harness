@@ -131,7 +131,7 @@ SSOT는 여전히 네 파일이며, TCC는 거기서 파생된 현재 working se
 - **경계 계약**: spec의 `## Boundary contracts` JSON 선언이 있으면 plan checkbox 완료 직전에
   `harness-team boundary check`가 생산자·소비자 JSON Schema의 필수 필드와 기본 type을 대조한다.
   선언이 없으면 `boundary: not-configured`으로 통과한다.
-- **commit 시**: post-commit hook이 `<name>-handoff.md`와 `<user>-handoff.md` 자동 갱신
+- **commit 시**: post-commit hook이 handoff 2파일 갱신 — 다음 커밋에 담는다(예외: harness-task)
 - **PR/MR 직전(ship)**: spec·plan·artifact를 최종 갱신하고 준비 완료를 보고한다 — 다이어그램
   갱신은 옵트인이며, 절차·산출물 계약은 ship 명령 문서가 정본이다(PR/MR 생성은 별도 지시).
 - **완료**: plan 전체 완료 감지 또는 사용자 신호 → AskUserQuestion → `harness-team done`
