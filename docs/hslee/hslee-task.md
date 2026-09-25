@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ config-user-validation
 - ✅ task-member-collision
 - ✅ task-reserved-names
 - ✅ artifact-template-eof
