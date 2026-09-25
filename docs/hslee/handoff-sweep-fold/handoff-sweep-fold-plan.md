@@ -11,7 +11,7 @@ handoff만 담는 sweep 커밋을 푸시·브랜치 전환 직전으로만 줄�
 - [x] CHANGELOG Unreleased `### Changed`
 - [x] `npm test`·`npm run docs:check` 통과
 - [x] codex 리뷰 → artifact `## Reviews` 기록 (P2 1·P3 2, 전부 반영)
-- [ ] 커밋·PR
+- [x] 커밋·PR — #105 머지(`32f7c2e`)
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
