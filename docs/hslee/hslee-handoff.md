@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+list-remote-branches
 
-## Last Completed Task (2026-09-25)
-`agents-md-native` — done
+## Last Commit (2026-09-25)
+abd34a3 feat(list): --remote 로 원격 브랜치에만 있는 task 를 보여 준다
 
 ## Full Context
-→ docs/hslee/agents-md-native/agents-md-native-handoff.md
+→ docs/hslee/list-remote-branches/list-remote-branches-handoff.md
