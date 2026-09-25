@@ -27,9 +27,23 @@ async function readConfig(targetDir) {
   try { return JSON.parse(await readFile(p, 'utf8')); } catch { return {}; }
 }
 
+// 소비자(context·boundary·review·done·doctor)가 user·task 로 곧장 `docs/<user>/<task>/` 를 조립한다. `task` 는 검증된
+// 값만 쓰지만 손으로 고친 포인터는 그 검증을 거치지 않으므로, 한 세그먼트가 아닌 값은 여기서 "활성 task 없음" 으로 본다.
+// init 의 빈 placeholder `{}` 는 필드가 없어 그대로 통과한다.
 export async function readActive(targetDir) {
   const p = join(targetDir, '.harness/active.json');
-  try { return JSON.parse(await readFile(p, 'utf8')); } catch { return null; }
+  let active;
+  try { active = JSON.parse(await readFile(p, 'utf8')); } catch { return null; }
+  if (!active || typeof active !== 'object') return null;
+  for (const key of ['user', 'task']) {
+    if (active[key] === undefined) continue;
+    const cause = userNameError(active[key]);
+    if (cause) {
+      console.error(`⚠ .harness/active.json 의 ${key} 가 docs/<user>/<task>/ 경로 규칙 위반 — 활성 task 없음으로 처리 (${cause.replace(/^user/, key)}). \`harness-team task <name>\` 으로 다시 활성화하세요.`);
+      return null;
+    }
+  }
+  return active;
 }
 
 async function writeActive(targetDir, data) {
