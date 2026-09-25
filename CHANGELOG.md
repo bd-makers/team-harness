@@ -18,6 +18,12 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Changed
+- **post-commit 훅이 갱신한 handoff 2파일만 담는 커밋을 따로 만들지 않는다.** 다음 작업 커밋(또는 ship 문서 커밋)에
+  함께 담는다 — 커밋마다 "handoff 반영" 커밋이 붙어 2026-09-20~25 이력 98커밋 중 23개를 차지했다. 단독 sweep은 푸시·
+  브랜치 전환·워크트리 정리 직전에 남은 변경이 handoff뿐일 때만 만든다(보통 PR/MR당 한 번). 훅 동작은 그대로이고 규범만 바뀐다 —
+  `AGENTS.md` 템플릿의 `protocol` 절이 바뀌므로 소비자는 `migrate`로 받는다.
+
 ### Fixed
 - **`review`·`scope` 의 추론 base 가 같은 이름의 로컬 브랜치로 풀릴 수 있던 결함.** 기본 브랜치 후보를 짧은 `origin/main`
   으로 검증·사용해, `refs/heads/origin/main` 이 있으면 그 트리를 base 로 잡았다 — 이 base 는 프롬프트로 리뷰어에게도 넘어가
