@@ -37,9 +37,8 @@ export async function readActive(targetDir) {
   if (!active || typeof active !== 'object') return null;
   for (const key of ['user', 'task']) {
     if (active[key] === undefined) continue;
-    const cause = userNameError(active[key]);
-    if (cause) {
-      console.error(`⚠ .harness/active.json 의 ${key} 가 docs/<user>/<task>/ 경로 규칙 위반 — 활성 task 없음으로 처리 (${cause.replace(/^user/, key)}). \`harness-team task <name>\` 으로 다시 활성화하세요.`);
+    if (userNameError(active[key])) {
+      console.error(`⚠ .harness/active.json 의 ${key} ${JSON.stringify(active[key])} 가 docs/<user>/<task>/ 한 세그먼트가 아님 — 활성 task 없음으로 처리. \`harness-team task <name>\` 으로 다시 활성화하세요.`);
       return null;
     }
   }

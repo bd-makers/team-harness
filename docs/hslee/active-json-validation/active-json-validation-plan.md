@@ -9,7 +9,7 @@
 - [x] 구현 — `readActive` 검증, doctor `checkActiveSpecGate`·`checkActiveDoneOnMain` 을 `readActive` 로
 - [x] 문서 — README 식별 규칙 한 줄, CHANGELOG Unreleased
 - [x] `npm test` green — 1014 pass / 0 fail / skip 1
-- [ ] `harness-team review codex --scope diff --base origin/main` → artifact Reviews 기록
+- [x] 외부 리뷰 → artifact Reviews 기록 — codex 400(모델 미지원)으로 claude 엔진 대체(사용자 승인), P3 2건 반영·2건 유지
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
