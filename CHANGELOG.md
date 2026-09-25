@@ -18,6 +18,12 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Fixed
+- **`harness-team task list` 가 "list" 라는 task 를 만들던 결함.** 하위명령 이름은 이름 규칙(`^[\w.-]+$`)을 통과해
+  스캐폴드 6파일을 만들고 `.harness/active.json` 을 옮겼다. 커맨드 문서의 경고는 슬래시 명령을 거칠 때만 읽혀,
+  CLI 를 직접 치는 에이전트에게서 재발했다(2026-09-25). 이제 새 task 이름이 `harness-team` 명령 이름이면
+  exit 1 로 거부하고 아무것도 쓰지 않는다 — 그 이름의 task(spec 마커)가 이미 있으면 종전대로 활성화한다.
+
 ## [0.41.3] - 2026-09-25
 
 ### Fixed

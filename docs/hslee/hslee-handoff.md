@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+task-reserved-names
 
-## Last Completed Task (2026-09-24)
-`artifact-template-eof` — done
+## Last Commit (2026-09-25)
+82211bd chore(task-reserved-names): ship — artifact 결과 절
 
 ## Full Context
-→ docs/hslee/artifact-template-eof/artifact-template-eof-handoff.md
+→ docs/hslee/task-reserved-names/task-reserved-names-handoff.md

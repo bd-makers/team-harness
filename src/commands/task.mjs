@@ -8,6 +8,7 @@ import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } f
 import { readTaskMeta, writeTaskMeta, taskMetaTemplate, inferLegacyMeta, readLedger } from './summary.mjs';
 import { renderDoneMarker } from '../handoff-marker.mjs';
 import { checkDoneOnMain, renderDoneOnMainNudge } from './remote-task.mjs';
+import { findCommand } from '../cli-args.mjs';
 import {
   taskDirRel, taskFileRel, userHandoffRel, taskLabel, docsPath, taskDirPath, taskFilePath, userHandoffPath, listTaskRefs,
 } from '../task-paths.mjs';
@@ -294,6 +295,18 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
       ],
       safeDefault: 'task 디렉터리도 meta 도 .harness/active.json 도 바뀌지 않는다',
       stop: 'spec 마커 없는 디렉터리는 활성화하지도, 그 안에 scaffold 하지도 말 것',
+    }));
+  }
+
+  // `task list` 처럼 하위명령을 task 인자로 넘긴 실수는 이름 규칙을 통과한다 — 새로 만들기 전에 거부한다.
+  // 이미 그 이름의 task 가 있으면 위 마커 판정대로 활성화한다(소비자 프로젝트 호환).
+  if (!isTask && findCommand(name)) {
+    return emitTaskError(json, '명령 이름은 task 이름으로 쓸 수 없음', buildErrorPacket({
+      cause: `harness-team 명령 이름과 같은 task 이름: "${name}" — 이대로면 그 명령이 아니라 새 task 생성으로 해석된다`,
+      retry: `그 명령을 뜻했다면 \`harness-team ${name}\` 실행`,
+      alternatives: ['task 이름이 맞다면 명령 이름과 겹치지 않는 이름으로 `harness-team task <name>` 을 재실행한다'],
+      safeDefault: 'task 디렉터리도 meta 도 .harness/active.json 도 바뀌지 않는다',
+      stop: 'harness-team 명령 이름으로 새 task 를 만들지 말 것',
     }));
   }
 
