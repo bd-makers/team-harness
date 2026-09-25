@@ -1,0 +1,30 @@
+{
+  "user": "hslee",
+  "task": "done-ritual-fold",
+  "created": "2026-09-25",
+  "firstActivatedAt": "2026-09-25T23:47:39.720Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "3c19ee07c9c550076a688d52e72a88779fabea22",
+      "at": "2026-09-25T23:52:32.802Z",
+      "exitCode": 0,
+      "outputBytes": 1612
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "3c19ee07c9c550076a688d52e72a88779fabea22",
+      "at": "2026-09-25T23:56:36.461Z",
+      "exitCode": 0,
+      "outputBytes": 1205
+    }
+  ]
+}
