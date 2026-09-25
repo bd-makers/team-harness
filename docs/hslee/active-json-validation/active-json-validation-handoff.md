@@ -16,3 +16,13 @@ CHANGELOG.md                                       |  6 +++
  src/commands/task.mjs                              | 16 ++++++-
  tests/active-json-validation.test.mjs              | 54 ++++++++++++++++++++++
  12 files changed, 213 insertions(+), 7 deletions(-)
+
+## 2026-09-25T12:36:15.547Z — dffedc6 chore(active-json-validation): 리뷰 판별 반영 — 경고 문구 치환 제거·README 순서, artifact 결과
+README.md                                          |  2 +-
+ .../active-json-validation-artifact.md             | 38 ++++++++++++++++++++++
+ .../active-json-validation-handoff.md              | 15 +++++++++
+ .../active-json-validation-meta.json               | 12 ++++++-
+ .../active-json-validation-plan.md                 |  2 +-
+ docs/hslee/hslee-handoff.md                        |  9 +++--
+ src/commands/task.mjs                              |  5 ++-
+ 7 files changed, 72 insertions(+), 11 deletions(-)
