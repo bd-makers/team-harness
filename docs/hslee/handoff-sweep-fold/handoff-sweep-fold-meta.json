@@ -3,8 +3,8 @@
   "task": "handoff-sweep-fold",
   "created": "2026-09-25",
   "firstActivatedAt": "2026-09-25T15:03:13.018Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-09-25T15:13:00.003Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [

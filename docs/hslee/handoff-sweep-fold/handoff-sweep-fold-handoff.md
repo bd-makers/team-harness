@@ -15,3 +15,11 @@ AGENTS.md                                          |  2 +-
  .../handoff-sweep-fold/handoff-sweep-fold-spec.md  | 62 ++++++++++++++++++++++
  templates/AGENTS.md.hbs                            |  2 +-
  11 files changed, 199 insertions(+), 5 deletions(-)
+
+## 2026-09-25T15:12:59.899Z — 9a3a9b0 docs(handoff-sweep-fold): plan 커밋·PR 단계 체크 (#105 머지)
+docs/hslee/handoff-sweep-fold/handoff-sweep-fold-plan.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+## 2026-09-25T15:13:00.003Z — 완료
+
+태스크 종료.
