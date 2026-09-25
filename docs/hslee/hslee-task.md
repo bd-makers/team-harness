@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ task-member-collision
 - ✅ task-reserved-names
 - ✅ artifact-template-eof
 - ✅ task-spec-marker
