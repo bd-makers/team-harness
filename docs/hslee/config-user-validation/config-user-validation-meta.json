@@ -3,8 +3,8 @@
   "task": "config-user-validation",
   "created": "2026-09-25",
   "firstActivatedAt": "2026-09-25T11:22:47.159Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-09-25T11:41:56.497Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [
