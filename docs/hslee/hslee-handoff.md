@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+handoff-sweep-fold
 
-## Last Completed Task (2026-09-25)
-`review-base-full-ref` — done
+## Last Commit (2026-09-25)
+685b744 docs(task): post-commit handoff 변경은 단독 커밋 말고 다음 커밋에 담는다
 
 ## Full Context
-→ docs/hslee/review-base-full-ref/review-base-full-ref-handoff.md
+→ docs/hslee/handoff-sweep-fold/handoff-sweep-fold-handoff.md
