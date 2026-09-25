@@ -36,3 +36,7 @@ src/commands/doctor.mjs | 4 ++--
 ## 2026-09-25T12:25:52.940Z — e9c0361 chore(agents-md-native): artifact 결과·리뷰 생략 사유 기록
 docs/hslee/agents-md-native/agents-md-native-artifact.md | 8 +++++++-
  1 file changed, 7 insertions(+), 1 deletion(-)
+
+## 2026-09-25T12:25:53.249Z — 완료
+
+태스크 종료.

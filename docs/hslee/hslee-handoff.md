@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-agents-md-native
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-25)
-e9c0361 chore(agents-md-native): artifact 결과·리뷰 생략 사유 기록
+## Last Completed Task (2026-09-25)
+`agents-md-native` — done
 
 ## Full Context
 → docs/hslee/agents-md-native/agents-md-native-handoff.md
