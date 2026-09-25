@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-list-remote-branches
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-25)
-d676de7 Merge remote-tracking branch 'origin/main' into worktree-agent-a02f2a924d97e63a6
+## Last Completed Task (2026-09-25)
+`active-json-validation` — done
 
 ## Full Context
-→ docs/hslee/list-remote-branches/list-remote-branches-handoff.md
+→ docs/hslee/active-json-validation/active-json-validation-handoff.md
