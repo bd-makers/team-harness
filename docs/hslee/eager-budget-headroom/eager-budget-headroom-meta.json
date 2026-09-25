@@ -1,0 +1,30 @@
+{
+  "user": "hslee",
+  "task": "eager-budget-headroom",
+  "created": "2026-09-25",
+  "firstActivatedAt": "2026-09-25T23:19:51.211Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "claude",
+      "engine": "claude",
+      "scope": "worktree",
+      "tip": "7330b01041b35dd68107ab48cd54c93bd9e0dd96",
+      "at": "2026-09-25T23:26:17.042Z",
+      "exitCode": 0,
+      "outputBytes": 4406
+    },
+    {
+      "kind": "claude",
+      "engine": "claude",
+      "scope": "worktree",
+      "tip": "7330b01041b35dd68107ab48cd54c93bd9e0dd96",
+      "at": "2026-09-25T23:32:34.140Z",
+      "exitCode": 0,
+      "outputBytes": 4278
+    }
+  ]
+}
