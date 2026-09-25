@@ -43,6 +43,8 @@ Raw slash-command 인수:
    clean이면 base 대비 브랜치 diff를 리뷰한다 — base는 `--base <ref>` 인수가 있으면 그 값,
    없으면 **원격 기본 브랜치**를 찾는다: `origin/HEAD`가 가리키는 것 → `origin/main` → `origin/master`,
    **실재하는 것만** 채택한다(`origin/HEAD`는 삭제된 브랜치를 가리킨 채 남아 있을 수 있다).
+   추론한 base는 `refs/remotes/origin/<branch>` 전체 이름으로 나온다 — 짧은 `origin/main`은 같은 이름의
+   로컬 브랜치로 먼저 풀리기 때문이다. 그 값을 그대로 쓴다(리뷰어의 `git diff`도 같은 base를 받는다).
 
    폴백 규칙이 두 갈래인 이유가 중요하다. **로컬 `main`은 origin이 아예 없을 때만 base가 된다.**
    origin이 있는데 기본 브랜치를 못 찾았다면 로컬 브랜치로 때우지 않고 **에러로 멈춘다** — 기본

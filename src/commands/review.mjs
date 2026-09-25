@@ -261,8 +261,10 @@ export async function resolveScope({ targetDir, scope, base }) {
     // 로컬 `main` 은 **origin 이 아예 없을 때만** 안전한 기준이다. origin 이 있는데 그 기본 브랜치를
     // 못 찾았다면 로컬 브랜치로 때우는 순간, 기본 브랜치가 develop 인 저장소에서 낡은 로컬 main 을
     // 상대로 조용히 엉뚱한 diff 를 리뷰한다 — 이 판정이 없애려던 바로 그 실패 모드다. 모르면 묻는다.
+    // origin 후보는 전체 ref 로 쓴다 — 짧은 `origin/main` 은 같은 이름의 로컬 브랜치로 먼저 풀리고, 이 base 는
+    // 프롬프트로 리뷰어에게도 넘어가 그쪽 `git diff` 까지 엉뚱한 트리를 본다.
     const candidates = hasOrigin
-      ? [await resolveDefaultRef(targetDir), 'origin/main', 'origin/master']
+      ? [await resolveDefaultRef(targetDir), 'origin/main', 'origin/master'].map(ref => ref && `refs/remotes/${ref}`)
       : ['main'];
     for (const candidate of candidates) {
       if (!candidate) continue;

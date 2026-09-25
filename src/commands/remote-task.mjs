@@ -34,7 +34,8 @@ export async function resolveDefaultRef(targetDir, { git: run = git } = {}) {
   const name = await readOriginHead(args => run(targetDir, args));
   if (name) return `origin/${name}`;
   try {
-    await run(targetDir, ['rev-parse', '--verify', '--quiet', 'origin/main']);
+    // 원격 추적 ref 만 본다 — 로컬 브랜치 `origin/main` 이 있으면 짧은 이름 검증이 그쪽으로 통과한다.
+    await run(targetDir, ['rev-parse', '--verify', '--quiet', 'refs/remotes/origin/main']);
     return 'origin/main';
   } catch { return null; }
 }

@@ -18,6 +18,12 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Fixed
+- **`review`·`scope` 의 추론 base 가 같은 이름의 로컬 브랜치로 풀릴 수 있던 결함.** 기본 브랜치 후보를 짧은 `origin/main`
+  으로 검증·사용해, `refs/heads/origin/main` 이 있으면 그 트리를 base 로 잡았다 — 이 base 는 프롬프트로 리뷰어에게도 넘어가
+  리뷰어의 `git diff` 까지 엉뚱한 범위를 봤다. 이제 추론한 base 는 `refs/remotes/origin/<branch>` 전체 이름이다(출력에도
+  그대로 나온다). `resolveDefaultRef` 의 `origin/main` 폴백 검증도 전체 ref 로 한다. 명시한 `--base` 는 그대로다.
+
 ## [0.42.0] - 2026-09-25
 
 ### Changed
