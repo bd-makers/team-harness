@@ -11,7 +11,7 @@ modified: 2026-05-15
 ---
 
 `$ARGUMENTS`의 **첫 토큰**으로 분기한다. `list`·`done`·`handoff`는 `task`의 인자가 아니라 **별개 하위명령**이다 —
-`task done`으로 넘기면 이름 규칙(`^[\w.-]+$`)을 통과해 "done"이라는 task가 생성·활성화된다.
+`task done`처럼 넘기면 CLI가 명령 이름이라며 거부한다(exit 1, 아무것도 쓰지 않음) — 그 이름의 task가 이미 있을 때만 활성화된다.
 
 ```bash
 # 첫 토큰이 list | done | handoff → task 없이 그 하위명령을 그대로 실행
