@@ -32,3 +32,18 @@ commands/harness-task.md                           |  3 +-
  .../list-remote-branches-meta.json                 | 12 ++++++-
  .../list-remote-branches-plan.md                   |  2 +-
  4 files changed, 55 insertions(+), 3 deletions(-)
+
+## 2026-09-25T12:42:39.917Z — d676de7 Merge remote-tracking branch 'origin/main' into worktree-agent-a02f2a924d97e63a6
+CHANGELOG.md                                       |  6 +++
+ README.md                                          |  1 +
+ docs/harness-overview.html                         |  5 ++
+ .../active-json-validation-artifact.md             | 51 ++++++++++++++++++++
+ .../active-json-validation-context.md              | 27 +++++++++++
+ .../active-json-validation-handoff.md              | 28 +++++++++++
+ .../active-json-validation-meta.json               | 21 +++++++++
+ .../active-json-validation-plan.md                 | 23 +++++++++
+ .../active-json-validation-spec.md                 | 52 +++++++++++++++++++++
+ src/commands/doctor.mjs                            |  9 ++--
+ src/commands/task.mjs                              | 15 +++++-
+ tests/active-json-validation.test.mjs              | 54 ++++++++++++++++++++++
+ 12 files changed, 285 insertions(+), 7 deletions(-)
