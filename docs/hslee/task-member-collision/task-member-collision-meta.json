@@ -7,5 +7,15 @@
   "closedAt": null,
   "forcedAt": null,
   "forcedIssues": null,
-  "reviews": []
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "040d13445153481291b0ee3d16f77a926cdb4eec",
+      "at": "2026-09-25T09:43:25.577Z",
+      "exitCode": 0,
+      "outputBytes": 1413
+    }
+  ]
 }

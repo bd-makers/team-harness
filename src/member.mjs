@@ -15,6 +15,6 @@ export async function detectMember(cwd, flags = {}) {
   return 'unknown';
 }
 
-function sanitize(name) {
+export function sanitize(name) {
   return name.trim().replace(/\s+/g, '-').replace(/[^\w.-]/g, '');
 }

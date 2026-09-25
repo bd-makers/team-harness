@@ -2,7 +2,7 @@ import { join } from 'node:path';
 import { readFile, writeFile, mkdir, appendFile, readdir } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { detectMember } from '../member.mjs';
+import { detectMember, sanitize } from '../member.mjs';
 import { exists, writeText } from '../fsx.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 import { readTaskMeta, writeTaskMeta, taskMetaTemplate, inferLegacyMeta, readLedger } from './summary.mjs';
@@ -318,9 +318,13 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
   if (!isTask && !explicit && await exists(docsPath(ctx.targetDir))) {
     const owners = (await listTaskRefs(ctx.targetDir)).filter(r => r.task === name && r.user !== user).map(r => r.user);
     if (owners.length) {
+      // `--member` 는 sanitize 되고 config user 는 그대로 쓰인다 — `docs/Chad Lee/` 같은 디렉터리는 플래그로 닿지 않는다.
+      const reachable = owners.find(u => sanitize(u) === u);
       return emitTaskError(json, '다른 member 에 같은 이름의 task 가 있음', buildErrorPacket({
         cause: `${owners.map(u => taskDirRel(u, name)).join(', ')} 가 이미 있다 — 추론한 member(${user})로는 별개 task ${taskDirRel(user, name)} 가 새로 생긴다`,
-        retry: `그 task 를 이어서 하려면 \`harness-team task ${name} --member ${owners[0]}\` 실행`,
+        retry: reachable
+          ? `그 task 를 이어서 하려면 \`harness-team task ${name} --member ${reachable}\` 실행`
+          : `그 task 를 이어서 하려면 .harness/config.json 의 user 를 "${owners[0]}" 로 두고 \`harness-team task ${name}\` 실행 (공백·특수문자가 있는 member 는 --member 로 가리킬 수 없다)`,
         alternatives: [`같은 이름의 ${user} task 를 따로 만들려면 \`--member ${user}\` 를 명시해 재실행한다`],
         safeDefault: 'task 디렉터리도 meta 도 .harness/active.json 도 바뀌지 않는다',
         stop: 'member 를 명시하지 않은 채 다른 member 와 같은 이름의 task 를 만들지 말 것',

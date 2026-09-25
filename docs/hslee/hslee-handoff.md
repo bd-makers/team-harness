@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+task-member-collision
 
-## Last Completed Task (2026-09-25)
-`task-reserved-names` — done
+## Last Commit (2026-09-25)
+040d134 fix(task): --member 가 config user 를 이기고, 추론 member 로 다른 member 와 같은 이름의 task 를 만들지 않는다
 
 ## Full Context
-→ docs/hslee/task-reserved-names/task-reserved-names-handoff.md
+→ docs/hslee/task-member-collision/task-member-collision-handoff.md

@@ -509,7 +509,7 @@ task 디렉토리 구조와 파일 계약은 scaffold 되는 `AGENTS.md`의 **�
 member를 추론(2~5)했는데 다른 member에 같은 이름의 task가 있으면 `task <name>`은 새로 만들지 않고
 `--member <그 member>`를 안내한다. 같은 이름으로 따로 만들려면 `--member`를 명시한다.
 
-공백은 `-`로, 특수문자는 제거됩니다 (예: `Chad Lee` → `Chad-Lee`).
+1·3·4번 값은 공백을 `-`로, 특수문자는 제거합니다 (예: `Chad Lee` → `Chad-Lee`). 2번 config `user`는 기록된 그대로 씁니다.
 
 ### 명령어
 

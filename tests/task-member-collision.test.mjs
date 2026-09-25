@@ -77,6 +77,30 @@ test('--member 를 명시하면 같은 이름이 다른 member 에 있어도 새
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+test('docs/ 가 없는 첫 task 는 추론한 member 로 그대로 만든다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-member-collision-'));
+  try {
+    await mkdir(join(dir, '.harness'), { recursive: true });
+    await writeFile(join(dir, '.harness/config.json'), '{ "user": "chad" }\n');
+    const r = await task(dir, 'first');
+    assert.equal(r.exitCode, 0);
+    assert.equal(await exists(join(dir, 'docs/chad/first/first-spec.md')), true);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('--member 로 닿지 않는 member(공백 포함)면 config user 로 안내한다', async () => {
+  const dir = await fixture();
+  try {
+    await mkdir(join(dir, 'docs/Chad Lee/bar'), { recursive: true });
+    await writeFile(join(dir, 'docs/Chad Lee/bar/bar-spec.md'), '# bar — Spec\n');
+    const r = await task(dir, 'bar');
+    assert.equal(r.exitCode, 1);
+    const retry = r.logs.find(l => l.startsWith('retry:'));
+    assert.ok(!retry.includes('--member Chad Lee'), retry);
+    assert.match(retry, /config\.json 의 user 를 "Chad Lee"/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('추론한 member 에 이미 같은 이름의 task 가 있으면 종전대로 활성화한다', async () => {
   const dir = await fixture();
   try {
