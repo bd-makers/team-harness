@@ -18,6 +18,14 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Added
+- **`list --remote` — 머지되지 않은 원격 브랜치에만 있는 task 를 보여 준다.** `list` 는 체크아웃한 브랜치만 봐서
+  다른 세션이 올린 브랜치의 열린 task 가 보이지 않았다(2026-09-08, 그 브랜치가 "머지됨"으로 오인돼 지워질 뻔했다).
+  `--remote` 는 로컬 목록 뒤에 `branch-only (origin, 마지막 fetch 기준):` 절을 붙인다 — origin 기본 브랜치의 조상인
+  브랜치는 건너뛰고, 로컬·기본 브랜치에 이미 있는 task 는 뺀다. **fetch 하지 않는다**(로컬 `refs/remotes/origin/*`).
+  `--area` 는 그 브랜치의 meta 로 거른다. git·origin 이 없거나 git 오류면 건너뜀 한 줄이고 exit code 는 그대로다.
+  `--remote` 없는 `list` 의 출력·비용은 종전과 같다.
+
 ## [0.41.6] - 2026-09-25
 
 ### Fixed

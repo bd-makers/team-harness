@@ -525,6 +525,9 @@ member를 추론(2~5)했는데 다른 member에 같은 이름의 task가 있으�
 # 목록 (* = active)
 /harness-task list
 
+# + 머지되지 않은 origin 브랜치에만 있는 task (fetch 하지 않음 — 마지막 fetch 기준, 실패하면 건너뜀 한 줄)
+/harness-task list --remote
+
 # 활성 task 완료 — meta 상태를 done으로 (원장 갱신은 기본 브랜치에서 `harness-team summary --write`)
 /harness-task done
 

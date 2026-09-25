@@ -70,7 +70,9 @@ export const COMMANDS = [
   // used to describe in three different wordings. Probe/degrade (session-only judgment) stay in prose.
   { name: 'diagram', args: 'record [--skipped] [note ...]', summary: "Record the diagram outcome in the active task's artifact and close its plan step (--skipped needs a reason)", flags: ['skipped'] },
   { name: 'task', args: '<name> [--area <area>]', summary: 'Create or activate a task (--area records its monorepo app/service in meta)', flags: ['area'] },
-  { name: 'list', args: '[--area <area>]', summary: 'List all tasks (--area filters by meta.area)', flags: ['area'] },
+  // `--remote` reads local refs/remotes/origin/* only (no fetch): tasks on unmerged origin branches
+  // that the checked-out branch does not have. Opt-in so plain `list` stays filesystem-only.
+  { name: 'list', args: '[--area <area>] [--remote]', summary: 'List all tasks (--area filters by meta.area; --remote adds tasks only on unmerged origin branches, as of the last fetch)', flags: ['area', 'remote'] },
   { name: 'summary', args: '[--write|--check] [--force]',
     summary: 'Render the task ledger from task dirs (--write is default-branch only)',
     flags: ['write', 'check', 'force'] },

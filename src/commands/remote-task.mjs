@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { readTaskMeta } from './summary.mjs';
 import { readOriginHead } from '../git-default-branch.mjs';
-import { taskDirRel, taskFileRel, taskLabel } from '../task-paths.mjs';
+import { DOCS_DIR, taskDirRel, taskFileRel, taskLabel } from '../task-paths.mjs';
 
 const pexec = promisify(execFile);
 
@@ -71,6 +71,67 @@ export function renderDoneOnMainNudge({ user, task, ref, closedAt }) {
   return `[harness] ⚠ task ${taskLabel(user, task)} 는 ${ref} 에서 ${when} 에 이미 종결됨 — 재개할 것인지 확인. `
     + `이어가면 main과 구현이 갈릴 수 있다. 근거: git log ${ref} -- ${taskDirRel(user, task)} · `
     + `고의로 이어가려면 main을 가져온 뒤 harness-team task ${task} 로 다시 연다(reopened).`;
+}
+
+// `list --remote`: 머지되지 않은 원격 브랜치에만 있는 task.
+//
+// 배경(2026-09-08): 열린 task 가 `origin/claude/agent-harness-core-elements-fqankc` 에만 있었고, `list` 는 체크아웃한
+// 브랜치만 봐서 그 브랜치가 "머지된 브랜치"로 오인돼 지워질 뻔했다. 계약은 위와 같다 — fetch 하지 않고 로컬
+// `refs/remotes/origin/*`(마지막 fetch 기준)만 읽는다. default ref 의 조상인 브랜치는 머지된 것으로 보고 건너뛴다
+// (squash 머지는 조상이 아니라 남지만, 그 task 는 default ref 트리에 있어 걸러진다).
+// task 판정은 `listTaskRefs` 와 같다: `docs/<user>/<task>/<task>-spec.md` 마커.
+// 반환 `{ ok: true, tasks: [{ user, task, branches, meta }] }`(label 정렬) 또는 `{ ok: false }`. 절대 throw 하지 않는다.
+// `exclude`: 로컬에 이미 있는 task 의 label 집합. `withMeta`: 첫 브랜치의 `<task>-meta.json`(없거나 깨지면 null).
+export async function listBranchOnlyTasks(targetDir, { git: run = git, exclude = new Set(), withMeta = false } = {}) {
+  try {
+    const defaultRef = await resolveDefaultRef(targetDir, { git: run });
+    if (!defaultRef) return { ok: false };
+    const skip = new Set(['refs/remotes/origin/HEAD', `refs/remotes/${defaultRef}`]);
+    const refs = (await run(targetDir, ['for-each-ref', '--format=%(refname)', 'refs/remotes/origin/']))
+      .split('\n').filter(ref => ref && !skip.has(ref));
+    // `-z`: 비-ASCII 경로가 C-style 로 인용되지 않게 한다(parsePorcelainPaths 와 같은 이유).
+    const specMarkers = async (ref) => {
+      const out = [];
+      for (const path of (await run(targetDir, ['ls-tree', '-r', '-z', '--name-only', ref, '--', `${DOCS_DIR}/`])).split('\0')) {
+        const parts = path.split('/');
+        if (parts.length !== 4 || parts[0] !== DOCS_DIR) continue;
+        const [, user, task, file] = parts;
+        if (file === `${task}-spec.md`) out.push({ user, task, label: taskLabel(user, task) });
+      }
+      return out;
+    };
+    // default ref 에 이미 있는 task 도 "브랜치에만" 이 아니다 — 새 main 에서 딴 브랜치는 main 의 task 를 전부 싣고 있고,
+    // 로컬이 옛 브랜치면 `exclude` 만으로는 그것들이 branch-only 로 보인다.
+    const onDefault = new Set((await specMarkers(defaultRef)).map(({ label }) => label));
+    const found = new Map();
+    for (const ref of refs) {
+      try {
+        await run(targetDir, ['merge-base', '--is-ancestor', ref, defaultRef]);
+        continue; // exit 0 = 조상 = 머지됨
+      } catch (err) {
+        if (err?.code !== 1) throw err; // exit 1 = 조상 아님. 그 외는 git 오류
+      }
+      const branch = ref.slice('refs/remotes/'.length);
+      for (const { user, task, label } of await specMarkers(ref)) {
+        if (exclude.has(label) || onDefault.has(label)) continue;
+        if (!found.has(label)) found.set(label, { user, task, ref, branches: [] });
+        found.get(label).branches.push(branch);
+      }
+    }
+    const tasks = [];
+    for (const label of [...found.keys()].sort()) {
+      const { user, task, ref, branches } = found.get(label);
+      let meta = null;
+      if (withMeta) {
+        try {
+          const parsed = JSON.parse(await run(targetDir, ['show', `${ref}:${taskFileRel(user, task, 'meta.json')}`]));
+          if (parsed && typeof parsed === 'object') meta = parsed;
+        } catch { /* 없음·JSON 아님 — area 없음 */ }
+      }
+      tasks.push({ user, task, branches, meta });
+    }
+    return { ok: true, tasks };
+  } catch { return { ok: false }; }
 }
 
 // 세 소비자가 부르는 원콜. 절대 throw하지 않는다.
