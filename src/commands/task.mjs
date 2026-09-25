@@ -258,11 +258,14 @@ function emitTaskError(json, summary, packet) {
 export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
   const json = !!(ctx.flags && ctx.flags.json);
   const name = (ctx.taskArgs || [])[0];
-  if (!name || !/^[\w.-]+$/.test(name)) {
+  // `.`·`..` 은 문자 규칙을 통과하지만 경로 세그먼트로서 디렉터리 깊이를 바꾼다(`docs/<user>/..` = `docs/`).
+  if (!name || !/^[\w.-]+$/.test(name) || name === '.' || name === '..') {
     process.exitCode = 1;
-    const rootCause = name
-      ? `task 이름 "${name}"에 허용되지 않는 문자가 있음 (허용: 영숫자·_·.·-)`
-      : 'task 이름 인자가 없음';
+    const rootCause = !name
+      ? 'task 이름 인자가 없음'
+      : /^\.\.?$/.test(name)
+        ? `task 이름 "${name}"은 경로 세그먼트로 쓸 수 없음`
+        : `task 이름 "${name}"에 허용되지 않는 문자가 있음 (허용: 영숫자·_·.·-)`;
     const packet = buildErrorPacket({
       cause: rootCause,
       retry: '`harness-team task <name>` 형식으로 영숫자·_·.·- 만 사용한 이름을 주고 재실행',
