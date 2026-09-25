@@ -1,0 +1,30 @@
+{
+  "user": "hslee",
+  "task": "managed-section-refresh-path",
+  "created": "2026-09-25",
+  "firstActivatedAt": "2026-09-25T16:59:14.405Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "6e00506443899ba2314926eeb11dbd0ca90aacd8",
+      "at": "2026-09-25T17:09:28.503Z",
+      "exitCode": 0,
+      "outputBytes": 1754
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "6e00506443899ba2314926eeb11dbd0ca90aacd8",
+      "at": "2026-09-25T17:13:16.107Z",
+      "exitCode": 0,
+      "outputBytes": 575
+    }
+  ]
+}

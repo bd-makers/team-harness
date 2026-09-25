@@ -1,5 +1,5 @@
 ---
-description: 구버전 구조를 최신으로 마이그레이션 + 설치된 훅·스킬·규칙을 최신 템플릿으로 refresh — init은 기존 파일을 건너뛰므로 템플릿 수정이 도달하는 유일한 경로
+description: 구버전 구조를 최신으로 마이그레이션 + 설치된 훅·스킬·규칙을 최신 템플릿으로 refresh — init은 기존 파일을 건너뛰므로 이 파일들의 템플릿 수정이 도달하는 유일한 경로 (AGENTS.md·CLAUDE.md 관리 절은 init이 렌더한다)
 phase: Migration
 argument-hint: [--yes] [--adopt-reviews] [--target <dir>]
 tags:
@@ -17,6 +17,8 @@ modified: 2026-09-10
 2. **템플릿 refresh** — 설치된 `.claude/hooks`(6) · `.claude/skills`(3) · `.claude/rules`(4)를
    최신 템플릿으로 갱신한다. `init`은 이미 있는 파일을 건너뛰므로(`skipExisting`), **수정된
    템플릿이 기존 설치에 도달하는 경로는 이것뿐이다**(새로 추가된 파일은 `init`으로도 도달한다).
+   **`AGENTS.md`·`CLAUDE.md` 관리 절은 예외다** — migrate는 관리 절을 렌더하지 않는다. 그 변경은
+   `harness-team init`이 마커 병합으로 받으며, 미편집 관리 절이 낡았으면 `harness-team doctor`가 경고한다.
 
 refresh는 설치본의 바이트가 **하네스가 실제로 배포한 적 있는 버전**(sha256 테이블)과 일치할 때만
 갱신한다. 사용자가 편집한 파일은 "customized"로 보고 **절대 덮지 않고** 경고만 남긴다.
@@ -39,7 +41,7 @@ CLI 소유로 옮긴다 — 각 task마다 "채택하면 증거에서 빠지는 
 migrate의 정의는 "**구조를 최신으로 옮긴다**"이지 "설치를 템플릿과 동일하게 만든다"가 아니다.
 
 **관리 절 원본 백업.** `.harness/render-state.json`이 없는 설치본(= 이 기능 이전의 모든 설치)에서는
-다음 `init`이 관리 절을 한 번 교체한다. migrate는 원본과 템플릿 렌더 결과를 동시에 볼 수 있는 유일한
+다음 `init`이 관리 절을 한 번 교체한다. migrate는 그 교체 전에 원본을 남길 수 있는
 지점이므로, 그 1회를 복구 가능·가시로 만든다 — 관리 절이 렌더 결과와 다르면 원본 파일을
 `.harness/backup/managed-sections-<YYYYMMDD-HHmmss>/`에 **누적 백업**하고 diff를 경고로 출력한다.
 이후 실행부터는 `init`이 자동으로 보존한다.

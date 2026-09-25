@@ -1,10 +1,14 @@
 import { lstat, readFile, realpath } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { join, isAbsolute, resolve } from 'node:path';
+import { join, isAbsolute, resolve, basename } from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { exists } from '../fsx.mjs';
-import { loadBackupDir, settingsHasBoundaryCheckpoint, codexHooksHaveSessionContext, isHarnessCodexSessionCommand } from '../harness.mjs';
+import { exists, readTextSafe } from '../fsx.mjs';
+import { loadBackupDir, settingsHasBoundaryCheckpoint, codexHooksHaveSessionContext, isHarnessCodexSessionCommand, AGENT_FILE_TEMPLATES } from '../harness.mjs';
+import { render } from '../render.mjs';
+import { detectStack } from '../detect-stack.mjs';
+import { loadRenderState } from '../render-state.mjs';
+import { mergeMarkdown, extractSections } from '../merge.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation } from '../observation.mjs';
 import { settingsHasSessionGate } from './session-context.mjs';
 import { checkDoneOnMain } from './remote-task.mjs';
@@ -288,6 +292,38 @@ export async function checkSessionStartHook(targetDir) {
 }
 
 export { settingsHasBoundaryCheckpoint };
+
+// 관리 절(`<!-- harness:section=… -->`)은 migrate 가 아니라 init 이 다시 렌더한다. 낡았다는 신호가 없으면
+// 아무도 init 을 다시 돌리지 않는다 — 0.42.1 에서 protocol 절 변경이 소비자에게 그렇게 묻혔다.
+// init 이 **실제로 교체할** 절만 센다 — 판정을 복제하지 않고 init 과 같은 mergeMarkdown 을 돌려 결과를 비교한다.
+// 복제하면 마커가 깨진 파일(init 은 통째로 건너뛴다)에도 init 을 처방한다(codex P2). 기록이 없는 파일은
+// 부트스트랩이라 편집 여부를 알 수 없어 판정하지 않는다. 읽기 전용이다 — 병합 결과는 메모리에만 있다.
+export async function findStaleManagedSections(targetDir, root) {
+  const { sections } = await loadRenderState(targetDir);
+  const vars = { projectName: basename(targetDir), ...(await detectStack(targetDir)) };
+  const stale = [];
+  for (const [file, tplName] of AGENT_FILE_TEMPLATES) {
+    const recorded = sections[file];
+    if (!recorded) continue;
+    const st = await lstat(join(targetDir, file)).catch(() => null);
+    if (!st || st.isSymbolicLink()) continue; // 레거시 alias — init·migrate 와 같은 가드
+    const existing = await readTextSafe(join(targetDir, file));
+    const tpl = await readTextSafe(join(root, 'templates', tplName));
+    if (existing === null || !tpl) continue;
+    let merged;
+    try {
+      merged = mergeMarkdown(existing, render(tpl, vars), { lastRender: recorded });
+    } catch (err) {
+      if (err?.code === 'HARNESS_MARKER_MISMATCH') continue; // init 도 이 파일을 건너뛴다
+      throw err;
+    }
+    const before = extractSections(existing);
+    for (const [name, block] of Object.entries(extractSections(merged))) {
+      if (before[name] !== undefined && before[name] !== block) stale.push(`${file}#${name}`);
+    }
+  }
+  return stale;
+}
 
 // Absent `.codex/hooks.json` is fine (optional CHECKS entry reports it). A file that
 // exists but carries no harness SessionStart hook is the silent-drift case: valid JSON,
@@ -918,6 +954,13 @@ export async function runDoctor(ctx) {
     add('stale skill/rule templates', 'warning', detail, `\n⚠️ ${detail}`);
   }
 
+  // 관리 절은 위 경고와 경로가 다르다 — migrate 가 아니라 init 이 렌더한다.
+  const staleSections = pluginDev ? [] : await findStaleManagedSections(ctx.targetDir, ctx.root);
+  if (staleSections.length) {
+    const detail = `관리 절 ${staleSections.length}개가 최신 템플릿보다 낡음: ${staleSections.join(', ')} — \`harness-team init\`으로 갱신 (migrate는 관리 절을 렌더하지 않는다; 사용자가 편집한 절은 init도 건너뛴다)`;
+    add('stale managed sections', 'warning', detail, `\n⚠️ ${detail}`);
+  }
+
   // Not gated on pluginDev: a rule without provenance is drift wherever it lives —
   // and this repo ships no .claude/rules of its own, so the source tree stays silent.
   // stock 규칙은 제외한다 — 위 stale 경고가 올바른 처방(migrate)과 함께 이미 보고했고,
@@ -974,7 +1017,7 @@ export async function runDoctor(ctx) {
       && !(await exists(join(ctx.targetDir, DECISION_LOG_PATH)));
     if (legacyWarning) warnActions.push('harness-team migrate');
     if (specGateWarning) warnActions.push('harness-team task <name>');
-    if (hookWarning || boundaryHookWarning || decisionLogNeedsScaffold) warnActions.push('harness-team init');
+    if (hookWarning || boundaryHookWarning || decisionLogNeedsScaffold || staleSections.length) warnActions.push('harness-team init');
     // jq warning always carries its remedy; the fail-open branch additionally needs
     // migrate — installing jq alone leaves the stale hooks' precision degraded forever.
     if (jqGaps.length) warnActions.push('harness-team migrate');
