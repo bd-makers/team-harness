@@ -110,6 +110,18 @@ test('git: 원격 커밋의 meta 를 fetch 없이 읽고, 없는 task 경로는 
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 
+test('git: 로컬 브랜치 `origin/main` 이 있어도 원격 meta 는 refs/remotes/origin/main 에서 읽는다', async () => {
+  const { root, work } = await repoWithOrigin();
+  try {
+    // meta 가 없는 빈 트리 커밋을 가리키는 로컬 `refs/heads/origin/main`. 짧은 이름으로 풀면 그쪽을 읽어 null 이 된다.
+    const empty = (await git(work, ['commit-tree', '4b825dc642cb6eb9a060e54bf8d69288fbee4904', '-m', 'empty'])).trim();
+    await git(work, ['branch', 'origin/main', empty]);
+    const got = await readRemoteTaskMeta(work, 'chad', 'demo');
+    assert.equal(got?.meta.status, 'done');
+    assert.equal(got.ref, 'origin/main');
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
 test('git: 로컬 작업 트리에서 task 를 다시 열어도(로컬 open) 원격은 done → checkDoneOnMain 이 nudge', async () => {
   const { root, work } = await repoWithOrigin();
   try {

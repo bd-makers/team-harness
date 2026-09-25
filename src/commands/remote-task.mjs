@@ -44,7 +44,8 @@ export async function readRemoteTaskMeta(targetDir, user, task, { git: run = git
   const ref = await resolveDefaultRef(targetDir, { git: run });
   if (!ref) return null;
   try {
-    const raw = await run(targetDir, ['show', `${ref}:${taskFileRel(user, task, 'meta.json')}`]);
+    // 전체 ref 로 읽는다 — 짧은 `origin/main` 은 같은 이름의 로컬 브랜치(`refs/heads/origin/main`)로 먼저 풀린다(list --remote 와 같은 이유).
+    const raw = await run(targetDir, ['show', `refs/remotes/${ref}:${taskFileRel(user, task, 'meta.json')}`]);
     const meta = JSON.parse(raw);
     if (meta && typeof meta === 'object') return { ref, meta };
   } catch { /* 경로 없음(exit 128)·JSON 아님 — 모른다 */ }

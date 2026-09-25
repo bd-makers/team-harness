@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+path-edge-fixes
 
-## Last Completed Task (2026-09-25)
-`list-remote-branches` — done
+## Last Commit (2026-09-25)
+5350bcc chore(path-edge-fixes): 리뷰 판별 반영 — `.`·`..` 거부 안내 문구, artifact 결과·post-commit handoff
 
 ## Full Context
-→ docs/hslee/list-remote-branches/list-remote-branches-handoff.md
+→ docs/hslee/path-edge-fixes/path-edge-fixes-handoff.md

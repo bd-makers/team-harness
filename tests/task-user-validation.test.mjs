@@ -69,6 +69,19 @@ test('--member 가 sanitize 뒤에도 `..` 이면 거부한다', async () => {
   } finally { await rm(base, { recursive: true, force: true }); }
 });
 
+// task 이름 `.`·`..` 은 `^[\w.-]+$` 를 통과하지만 디렉터리 깊이를 바꾼다 — `docs/<user>/..` = `docs/` 에 스캐폴드했다(재현).
+for (const name of ['.', '..']) {
+  test(`task 이름 ${JSON.stringify(name)} 은 거부하고 아무것도 쓰지 않는다`, async () => {
+    const { base, dir } = await fixture('u');
+    try {
+      const { exitCode } = await task(dir, name);
+      assert.equal(exitCode, 1);
+      assert.equal(await exists(join(dir, 'docs')), false);
+      assert.equal(await exists(join(dir, '.harness/active.json')), false);
+    } finally { await rm(base, { recursive: true, force: true }); }
+  });
+}
+
 for (const user of ['이한상', 'Chad Lee', 'a..b']) {
   test(`config user ${JSON.stringify(user)} 는 종전대로 통과한다`, async () => {
     const { base, dir } = await fixture(user);

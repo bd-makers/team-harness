@@ -31,6 +31,10 @@ modified: 2026-09-13
   active 의 `user`·`task` 로 곧장 경로를 조립한다. 0.41.6 에서 `task` 는 검증된 값만 쓰게 됐지만 손으로 고친 포인터는
   그대로 통과했다. 이제 `user`·`task` 가 `docs/<user>/<task>/` 한 세그먼트가 아니면 "활성 task 없음" 으로 보고 stderr 에
   경고한다. doctor 의 active 판독 두 곳도 같은 판독을 쓴다.
+- **task 이름 `.`·`..` 이 `docs/` 바로 아래에 스캐폴드하던 결함.** 두 이름은 문자 규칙(`^[\w.-]+$`)을 통과하지만
+  `docs/<user>/..` = `docs/` 라, 빈 `docs/` 에서 `task ..` 이 `docs/..-spec.md` 등 6파일을 만들었다. 이제 쓰기 전에 거부한다.
+- **done-on-main 판정이 같은 이름의 로컬 브랜치를 읽을 수 있던 결함.** 원격 meta 를 `git show origin/main:…` 으로 읽어,
+  `refs/heads/origin/main` 이 있으면 그 트리를 봤다. 이제 `refs/remotes/origin/main` 전체 ref 로 읽는다(`list --remote` 와 같다).
 
 ## [0.41.6] - 2026-09-25
 
