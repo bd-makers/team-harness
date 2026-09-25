@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+managed-section-refresh-path
 
-## Last Completed Task (2026-09-25)
-`handoff-sweep-fold` — done
+## Last Commit (2026-09-25)
+e03660d feat(doctor): 템플릿보다 낡은 관리 절을 경고하고 init 을 처방한다
 
 ## Full Context
-→ docs/hslee/handoff-sweep-fold/handoff-sweep-fold-handoff.md
+→ docs/hslee/managed-section-refresh-path/managed-section-refresh-path-handoff.md

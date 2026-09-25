@@ -1,12 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { resolve, dirname, join, isAbsolute } from 'node:path';
+import { resolve, dirname, join, isAbsolute, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from 'node:fs/promises';
 import { tmpdir, homedir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { classifyHookCommand, collectHookCommands, redactCommand, checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, checkActiveDoneOnMain, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, DECISION_HEADINGS, checkObserveTripWires, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER } from '../src/commands/doctor.mjs';
+import { classifyHookCommand, collectHookCommands, redactCommand, checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, checkActiveDoneOnMain, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, DECISION_HEADINGS, checkObserveTripWires, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER, findStaleManagedSections } from '../src/commands/doctor.mjs';
+import { render } from '../src/render.mjs';
+import { detectStack } from '../src/detect-stack.mjs';
+import { sectionHashes } from '../src/render-state.mjs';
 import { POST_COMMIT_HOOK } from '../src/git-hooks.mjs';
 import { cloudSyncPathWarning } from '../src/harness.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
@@ -1138,5 +1141,59 @@ test('checkActiveDoneOnMain: 판정 null(비-git 디렉터리 기본 경로 포�
   try {
     assert.equal(await checkActiveDoneOnMain(dir, { doneOnMain: async () => null }), null);
     assert.equal(await checkActiveDoneOnMain(dir), null); // tmpdir 은 git 저장소가 아니다
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// ---- 관리 절이 템플릿보다 낡음 (managed-section-refresh-path) ----
+// 판정은 init 의 교체 조건(mergeMarkdown)과 같아야 한다: 미편집(현재 == 기록)인데 새 렌더와 다르면 stale.
+
+async function makeManagedFixture({ protocolEdit = null, record = 'current' } = {}) {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-managed-'));
+  const tpl = await readFile(join(ROOT, 'templates/AGENTS.md.hbs'), 'utf8');
+  const rendered = render(tpl, { projectName: basename(dir), ...(await detectStack(dir)) });
+  const current = protocolEdit ? rendered.replace('## 작업 프로토콜', `## 작업 프로토콜\n${protocolEdit}`) : rendered;
+  await writeFile(join(dir, 'AGENTS.md'), current);
+  if (record) {
+    const recorded = sectionHashes(record === 'current' ? current : rendered);
+    await mkdir(join(dir, '.harness'), { recursive: true });
+    await writeFile(join(dir, '.harness/render-state.json'), JSON.stringify({ version: 1, sections: { 'AGENTS.md': recorded } }));
+  }
+  return dir;
+}
+
+test('findStaleManagedSections: 미편집 절이 템플릿과 다르면 stale (init 이 교체할 절)', async () => {
+  const dir = await makeManagedFixture({ protocolEdit: '(옛 템플릿 문구)', record: 'current' });
+  try {
+    assert.deepEqual(await findStaleManagedSections(dir, ROOT), ['AGENTS.md#protocol']);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('findStaleManagedSections: 사용자가 편집한 절(현재 != 기록)은 init 이 건너뛰므로 보고하지 않는다', async () => {
+  const dir = await makeManagedFixture({ protocolEdit: '(사용자 편집)', record: 'rendered' });
+  try {
+    assert.deepEqual(await findStaleManagedSections(dir, ROOT), []);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('findStaleManagedSections: 템플릿과 같으면 빈 목록', async () => {
+  const dir = await makeManagedFixture({ record: 'current' });
+  try {
+    assert.deepEqual(await findStaleManagedSections(dir, ROOT), []);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('findStaleManagedSections: render-state 가 없으면(부트스트랩) 판정하지 않는다', async () => {
+  const dir = await makeManagedFixture({ protocolEdit: '(옛 템플릿 문구)', record: null });
+  try {
+    assert.deepEqual(await findStaleManagedSections(dir, ROOT), []);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('findStaleManagedSections: 마커가 깨진(중복 블록) 파일은 init 이 통째로 건너뛰므로 처방하지 않는다', async () => {
+  const dir = await makeManagedFixture({ protocolEdit: '(옛 템플릿 문구)', record: 'current' });
+  try {
+    const body = await readFile(join(dir, 'AGENTS.md'), 'utf8');
+    await writeFile(join(dir, 'AGENTS.md'), body + '\n<!-- harness:section="roles" begin -->\n중복\n<!-- harness:section="roles" end -->\n');
+    assert.deepEqual(await findStaleManagedSections(dir, ROOT), []);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

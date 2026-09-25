@@ -18,7 +18,15 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Added
+- **`doctor`가 템플릿보다 낡은 관리 절을 경고한다.** 사용자가 편집하지 않은(현재 블록 == `render-state.json` 기록) 관리 절이
+  현재 템플릿 렌더와 다르면 `관리 절 N개가 최신 템플릿보다 낡음: AGENTS.md#protocol …`을 내고 `harness-team init`을 처방한다.
+  판정은 `init`의 교체 조건과 같다 — 편집된 절(init도 건너뜀)과 기록이 없는 부트스트랩 설치본은 보고하지 않는다. 읽기 전용.
+  0.42.1의 `protocol` 절 변경이 소비자에게 아무 신호 없이 묻힌 것이 계기다.
+
 ### Fixed
+- **`migrate`·`init` 명령 문서가 관리 절 경로를 반대로 가리켰다.** `commands/harness-migrate.md`의 description·본문이 migrate를
+  "템플릿 수정이 도달하는 유일한 경로"라 적었다 — 파일 단위 설치본(훅·스킬·규칙)에만 참이다. 관리 절은 `init`만 갱신한다고 명시했다.
 - **0.42.1 릴리스 노트·CHANGELOG의 소비자 안내가 틀렸다 — `AGENTS.md` 관리 절 변경은 `migrate`가 아니라 `init --yes`로 받는다.**
   `migrate`는 훅·스킬·규칙과 구조만 갱신하고 관리 절(`protocol` 등)은 렌더하지 않는다(2026-09-26 소비자 3곳 실측: `migrate`는
   "Nothing to migrate", `init --yes` 뒤에 `commit 시` 줄이 바뀌었다). overview 배너는 고쳤고, 발행된 `what-changes-0.42.1.html`

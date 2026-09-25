@@ -17,7 +17,8 @@ deep-merge하며, hooks·rules·skills·`docs/` seed는 이미 있으면 건너�
 
 건너뛰기는 **파일 단위**라 비대칭이 생깁니다 — 템플릿에 *새로 추가된* 파일은 재실행으로 도달하지만,
 *수정된* 파일은 **영영 도달하지 않습니다**. 그래서 하네스가 스킬·규칙·훅에 실은 개선을 기존 설치에
-배달하는 경로는 `init`이 아니라 **`harness-team migrate`** 입니다. migrate는 설치본의 바이트가
+배달하는 경로는 `init`이 아니라 **`harness-team migrate`** 입니다(파일 단위 설치본 한정 — `AGENTS.md`·`CLAUDE.md`
+관리 절은 반대로 `init`만 갱신하며, 아래 절이 그 규칙입니다). migrate는 설치본의 바이트가
 하네스가 실제로 배포한 적 있는 버전일 때만 갱신하고, 사용자가 편집한 파일은 건드리지 않습니다.
 낡은 설치본이 있으면 `harness-team doctor`가 경고로 알려 줍니다. `docs/` seed(`README.md`·
 `decisions.md`)는 설치 후 팀이 저작하는 파일이라 **refresh 대상이 아닙니다**.
