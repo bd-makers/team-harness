@@ -3,8 +3,8 @@
   "task": "done-ritual-fold",
   "created": "2026-09-25",
   "firstActivatedAt": "2026-09-25T23:47:39.720Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-09-26T00:00:27.750Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [

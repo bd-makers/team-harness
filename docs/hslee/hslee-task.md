@@ -6,6 +6,7 @@
 - ✅ active-json-validation
 - ✅ agents-md-native
 - ✅ config-user-validation
+- ✅ done-ritual-fold
 - ✅ eager-budget-headroom
 - ✅ handoff-sweep-fold
 - ✅ list-remote-branches

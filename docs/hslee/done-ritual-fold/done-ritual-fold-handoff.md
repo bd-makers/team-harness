@@ -13,3 +13,7 @@ commands/harness-task.md                           | 11 +++
  src/commands/task.mjs                              | 37 ++++++++-
  tests/done-guard.test.mjs                          | 95 +++++++++++++++++++++-
  9 files changed, 326 insertions(+), 3 deletions(-)
+
+## 2026-09-26T00:00:27.750Z — 완료
+
+태스크 종료.
