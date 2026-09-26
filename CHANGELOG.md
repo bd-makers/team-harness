@@ -18,6 +18,8 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.44.2] - 2026-09-26
+
 ### Fixed
 - **git 워크트리 안에서 백업 경로가 워크트리 부모(`.claude/worktrees/harness-backup/<워크트리 이름>` 등)를 가리키던 결함.**
   커밋된 `.harness/backup.json`의 `{parent,name}`을 targetDir 기준 `..`로 풀어, 앱 워크트리(`<repo>/.claude/worktrees/<w>`)에서는

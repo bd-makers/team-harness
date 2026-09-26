@@ -203,7 +203,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.44.1</span>
+      <span class="tag tag-purple">v0.44.2</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -211,6 +211,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.44.2 — git 워크트리의 백업 경로 기준 수정:</strong>
+    <br>
+    <code>0.44.2</code> <strong>git 워크트리(앱 워크트리 <code>.claude/worktrees/&lt;w&gt;</code> 등)에서도 백업 경로가 메인 체크아웃 기준으로 풀린다.</strong> 커밋된 <code>backup.json</code>의 <code>{parent,name}</code>·자동 탐지·<code>init</code> 신규 설정이 워크트리 부모와 워크트리 이름을 쓰던 결함을 <code>git rev-parse --git-common-dir</code>의 부모 + <code>--show-prefix</code>로 고쳤다 — 메인 체크아웃·비-git은 결과 불변. <code>templates/</code>는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 된다.
+    <br><br>
     <strong>🆕 0.44.1 — 하위 디렉터리 설치본의 경로 기준 수정:</strong>
     <br>
     <code>0.44.1</code> <strong>하네스를 저장소 하위 디렉터리(모노레포 패키지 등)에 설치해도 <code>done</code> 가드의 handoff 제외·체크박스 면제와 post-commit sweep 판정이 루트 설치본과 같게 동작한다.</strong> git이 내는 루트 기준 경로와 targetDir 기준 비교 집합을 <code>git rev-parse --show-prefix</code>로 맞췄다 — dirty 범위는 좁히지 않아 설치 밖의 미커밋 변경도 종전대로 막는다. <code>templates/</code>는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 된다.
@@ -2891,7 +2895,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.44.1 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.44.2 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
