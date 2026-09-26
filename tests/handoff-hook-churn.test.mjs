@@ -20,11 +20,13 @@ const git = (dir, ...args) => pexec('git', ['-C', dir, ...args]);
 const USER = 'tester';
 const TASK = 'demo';
 
-async function makeRepo() {
-  const dir = await mkdtemp(join(tmpdir(), 'harness-churn-'));
-  await git(dir, 'init', '-q', '-b', 'main');
-  await git(dir, 'config', 'user.email', 't@e.com');
-  await git(dir, 'config', 'user.name', 't');
+// `subdir`: 하네스를 저장소 하위 디렉터리에 설치한 경우. 돌려주는 경로는 targetDir(설치 디렉터리)다.
+async function makeRepo({ subdir = '' } = {}) {
+  const root = await mkdtemp(join(tmpdir(), 'harness-churn-'));
+  const dir = join(root, subdir);
+  await git(root, 'init', '-q', '-b', 'main');
+  await git(root, 'config', 'user.email', 't@e.com');
+  await git(root, 'config', 'user.name', 't');
   await mkdir(join(dir, '.harness'), { recursive: true });
   await writeFile(join(dir, '.gitignore'), '.harness/\n');
   await writeFile(join(dir, '.harness/active.json'), JSON.stringify({ user: USER, task: TASK, path: `docs/${USER}/${TASK}` }));
@@ -66,6 +68,20 @@ test('핸드오프 파일만 바꾼 커밋(sweep) → 훅이 아무것도 쓰지
     const { stdout } = await git(dir, 'status', '--porcelain');
     assert.equal(stdout.trim(), '', 'sweep 커밋 뒤 트리가 깨끗하다');
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('하위 디렉터리 설치본의 sweep 커밋 → 훅이 아무것도 쓰지 않는다 (diff-tree 경로는 저장소 루트 기준)', async () => {
+  const dir = await makeRepo({ subdir: 'packages/app' });
+  try {
+    await writeFile(paths(dir).taskHandoff, `# ${TASK} — Handoff\n\n## 2026-09-11T00:00:00.000Z — abc1234 real work\n`);
+    await writeFile(paths(dir).userHandoff, '# Session Handoff\n\n## Active Task\ndemo\n');
+    await git(dir, 'add', '-A');
+    await git(dir, 'commit', '-qm', 'chore(docs): post-commit handoff 갱신');
+
+    const before = await snapshot(dir);
+    await runHandoffAuto({ targetDir: dir });
+    assert.deepEqual(await snapshot(dir), before, '하위 디렉터리에서도 sweep 을 알아본다');
+  } finally { await rm(join(dir, '..', '..'), { recursive: true, force: true }); }
 });
 
 test('소스가 함께 바뀐 커밋 → 종전대로 기록한다', async () => {

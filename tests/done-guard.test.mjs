@@ -15,8 +15,8 @@ const pexec = promisify(execFile);
 
 // Fixtures are plain tmpdirs (NOT git repos), so the git-based checks degrade and
 // are skipped — done-guard then judges on plan/artifact signals deterministically.
-async function makeFixture({ plan, artifact } = {}) {
-  const dir = await mkdtemp(join(tmpdir(), 'harness-done-'));
+async function makeFixture({ plan, artifact, dir: given } = {}) {
+  const dir = given ?? await mkdtemp(join(tmpdir(), 'harness-done-'));
   await mkdir(join(dir, '.harness'), { recursive: true });
   await writeFile(
     join(dir, '.harness/active.json'),
@@ -192,21 +192,25 @@ test('no active task → 기존 동작 유지 (조기 return, 차단 아님)', a
 
 // Set up a git repo fixture with one commit after switchedAt, so plan/artifact/zero-commit
 // signals all pass and only the porcelain dirty check remains under test.
-async function makeGitFixture() {
+// `subdir`: 하네스를 저장소 하위 디렉터리에 설치한 경우(모노레포 패키지). 저장소 루트는 `root`.
+async function makeGitFixture({ subdir } = {}) {
+  const root = subdir ? await mkdtemp(join(tmpdir(), 'harness-done-')) : undefined;
   const { dir, taskDir } = await makeFixture({
     plan: '# demo — Plan\n\n## 단계\n- [x] done\n',
     artifact: taskArtifactTemplate('demo') + '\n- 실제 결과\n',
+    dir: subdir ? join(root, subdir) : undefined,
   });
-  await pexec('git', ['-C', dir, 'init', '-q']);
-  await pexec('git', ['-C', dir, 'config', 'user.email', 'demo@test.io']);
-  await pexec('git', ['-C', dir, 'config', 'user.name', 'demo']);
+  const repo = root ?? dir;
+  await pexec('git', ['-C', repo, 'init', '-q']);
+  await pexec('git', ['-C', repo, 'config', 'user.email', 'demo@test.io']);
+  await pexec('git', ['-C', repo, 'config', 'user.name', 'demo']);
   const activePath = join(dir, '.harness/active.json');
   const active = JSON.parse(await readFile(activePath, 'utf8'));
   active.switchedAt = new Date(Date.now() - 60_000).toISOString();
   await writeFile(activePath, JSON.stringify(active));
-  await pexec('git', ['-C', dir, 'add', '-A']);
-  await pexec('git', ['-C', dir, 'commit', '-q', '-m', 'work']);
-  return { dir, taskDir };
+  await pexec('git', ['-C', repo, 'add', '-A']);
+  await pexec('git', ['-C', repo, 'commit', '-q', '-m', 'work']);
+  return { dir, taskDir, root: repo };
 }
 
 test('handoff 파일만 미커밋이면 가드 통과 (post-commit 훅 마찰 제거)', async () => {
@@ -323,6 +327,44 @@ test('plan.md의 mode 변경이 섞이면 체크박스만 켰어도 차단', asy
     restore();
     process.exitCode = prevExit;
     await rm(dir, { recursive: true, force: true });
+  }
+});
+
+// porcelain 경로는 저장소 루트 기준이고 제외·면제 대상은 targetDir 기준이다 — 하위 디렉터리 설치본에서도
+// 두 기준을 맞춰야 handoff 제외와 체크박스 면제가 작동한다.
+test('하위 디렉터리 설치본: handoff만 미커밋·plan 체크박스만 켰으면 가드 통과', async () => {
+  // 비ASCII·공백 접두 — `--show-prefix`와 porcelain `-z`가 같은 원문 바이트를 내는지까지 본다.
+  const { dir, taskDir, root } = await makeGitFixture({ subdir: 'packages/앱 a' });
+  await commitPlanWithOpenBox(root, taskDir);
+  await writeFile(join(taskDir, 'demo-handoff.md'), '# demo — Handoff\n\n## hook entry\n');
+  await writeFile(join(taskDir, 'demo-plan.md'), '# demo — Plan\n\n## 단계\n- [x] 구현\n- [x] 커밋·PR\n');
+  const prevExit = process.exitCode;
+  const { logs, restore } = captureLogs();
+  try {
+    await runDone({ targetDir: dir, flags: {} });
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds — subdir handoff/plan paths matched');
+    assert.ok(!logs.some(l => l.includes('커밋되지 않은 변경')), 'no uncommitted-change block');
+  } finally {
+    restore();
+    process.exitCode = prevExit;
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('하위 디렉터리 설치본: 설치 디렉터리 밖의 미커밋 변경은 여전히 차단', async () => {
+  const { dir, taskDir, root } = await makeGitFixture({ subdir: 'packages/app' });
+  await writeFile(join(taskDir, 'demo-handoff.md'), '# demo — Handoff\n\n## hook entry\n');
+  await writeFile(join(root, 'outside.txt'), 'real uncommitted work\n');
+  const prevExit = process.exitCode;
+  const { logs, restore } = captureLogs();
+  try {
+    await runDone({ targetDir: dir, flags: {} });
+    assert.equal(process.exitCode, 1, 'blocks on dirt outside targetDir');
+    assert.ok(logs.some(l => l.includes('커밋되지 않은 변경')), 'flags uncommitted change');
+  } finally {
+    restore();
+    process.exitCode = prevExit;
+    await rm(root, { recursive: true, force: true });
   }
 });
 

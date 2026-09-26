@@ -701,6 +701,18 @@ export function handoffRelPaths(user, task) {
   ]);
 }
 
+// git 이 내는 경로(`status --porcelain`·`diff-tree`)는 저장소 **루트** 기준이고 handoff·plan 경로는 targetDir
+// 기준이다. 하네스를 하위 디렉터리(모노레포 패키지)에 설치하면 둘이 영영 일치하지 않으므로, 비교 집합 쪽에
+// targetDir 의 루트 기준 접두를 붙인다(git 이 직접 계산 — realpath·symlink 차이를 타지 않는다).
+// dirty 범위를 targetDir 아래로 좁히지 않는다: 설치 밖의 미커밋 변경도 종전대로 가드가 본다.
+// 읽지 못하면 빈 접두 — 루트 설치본의 종전 동작이다.
+async function repoPrefix(targetDir) {
+  try {
+    const { stdout } = await pexec('git', ['-C', targetDir, 'rev-parse', '--show-prefix'], { maxBuffer: 1024 * 1024 });
+    return stdout.replace(/\n$/, '');
+  } catch { return ''; }
+}
+
 export function isVerifyKind(kind) {
   return VERIFY_KIND_RE.test(kind ?? '');
 }
@@ -842,12 +854,15 @@ async function collectDoneIssues(targetDir, active) {
       // The post-commit hook (`harness-team handoff`) regenerates these handoff files
       // after every commit, so they're ~always dirty at `done` time. Exclude them — the
       // guard should block on real uncommitted work, not the hook's own auto-output.
-      const handoffRels = handoffRelPaths(user, task);
+      const prefix = await repoPrefix(targetDir);
+      const handoffRels = new Set([...handoffRelPaths(user, task)].map(p => prefix + p));
       let realDirty = parsePorcelainPaths(stdout).filter(p => !handoffRels.has(p));
       // 체크박스만 켠 plan.md는 종결 커밋에 함께 담는다(isCheckboxOnlyChange). index와 작업 트리를
       // **둘 다** 본다 — 작업 트리만 보면 산문을 stage한 뒤 작업 트리를 되돌려 가드를 우회할 수 있다.
+      // `show`·`diff`의 `./<planRel>`은 cwd(targetDir) 기준이라 접두 없이 맞다.
       const planRel = taskFileRel(user, task, 'plan.md');
-      if (realDirty.includes(planRel)) {
+      const planRootRel = prefix + planRel;
+      if (realDirty.includes(planRootRel)) {
         try {
           const show = async rev => (await pexec('git', ['-C', targetDir, 'show', `${rev}:./${planRel}`], { maxBuffer: 1024 * 1024 })).stdout;
           const committed = await show('HEAD');
@@ -858,7 +873,7 @@ async function collectDoneIssues(targetDir, active) {
           const raw = async args => (await pexec('git', ['-C', targetDir, 'diff', ...args, '--raw', '--', `./${planRel}`], { maxBuffer: 1024 * 1024 })).stdout;
           const sameRegularMode = out => out.split('\n').filter(Boolean).every(l => /^:100644 100644 /.test(l));
           if (ok(staged) && ok(current) && sameRegularMode(await raw(['--cached'])) && sameRegularMode(await raw([]))) {
-            realDirty = realDirty.filter(p => p !== planRel);
+            realDirty = realDirty.filter(p => p !== planRootRel);
           }
         } catch { /* HEAD·index에 plan 없음(신규·미추적·삭제) → 면제하지 않는다 */ }
       }
@@ -1038,7 +1053,9 @@ async function commitTouchesOnlyHandoff(targetDir, handoffRels) {
     // 그러면 실제 작업 커밋을 sweep 으로 오인해 기록을 건너뛴다.
     const { stdout } = await pexec('git', ['-C', targetDir, 'diff-tree', '--no-commit-id', '--name-only', '--ignore-submodules=none', '-r', '-z', 'HEAD'], { maxBuffer: 8 * 1024 * 1024 });
     const paths = stdout.split('\0').filter(Boolean);
-    return paths.length > 0 && paths.every(p => handoffRels.has(p));
+    const prefix = await repoPrefix(targetDir);
+    const rootRels = new Set([...handoffRels].map(p => prefix + p));
+    return paths.length > 0 && paths.every(p => rootRels.has(p));
   } catch {
     return false;
   }
