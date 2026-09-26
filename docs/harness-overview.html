@@ -203,7 +203,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.44.0</span>
+      <span class="tag tag-purple">v0.44.1</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -211,6 +211,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.44.1 — 하위 디렉터리 설치본의 경로 기준 수정:</strong>
+    <br>
+    <code>0.44.1</code> <strong>하네스를 저장소 하위 디렉터리(모노레포 패키지 등)에 설치해도 <code>done</code> 가드의 handoff 제외·체크박스 면제와 post-commit sweep 판정이 루트 설치본과 같게 동작한다.</strong> git이 내는 루트 기준 경로와 targetDir 기준 비교 집합을 <code>git rev-parse --show-prefix</code>로 맞췄다 — dirty 범위는 좁히지 않아 설치 밖의 미커밋 변경도 종전대로 막는다. <code>templates/</code>는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 된다.
+    <br><br>
     <strong>🆕 0.44.0 — 머지 후 종결은 커밋 하나 · AGENTS protocol 절 압축:</strong>
     <br>
     <code>0.44.0</code> <strong><code>done</code> 가드가 plan.md의 줄머리 체크박스만 켠 변경을 미커밋 작업으로 세지 않는다</strong> — HEAD의 plan을 index·작업 트리 둘 다와 대조하고 mode가 같을 때만 면제하므로 끄기·산문 수정·stage한 산문·chmod·symlink 교체는 종전대로 막는다. 그래서 머지 후 종결은 체크 → <code>done</code> → <code>summary --write</code> → <strong>커밋 하나</strong>다(정본은 <code>commands/harness-task.md</code> "머지 후 종결"). 또 <code>AGENTS.md</code> <code>protocol</code> 관리 절에서 명령 문서와 겹치던 근거를 걷어 프로젝트 eager 여유를 5 B → 1,075 B로 되찾았다(규칙 문장은 유지, 다이어그램 건너뛰기는 <code>diagram record --skipped</code> 한 명령). 관리 절 변경이라 소비자는 플러그인 갱신 뒤 <strong><code>init --yes</code></strong>로 받는다 — <code>doctor</code>가 낡은 절을 알려 준다.
@@ -2887,7 +2891,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.44.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.44.1 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

@@ -18,6 +18,8 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.44.1] - 2026-09-26
+
 ### Fixed
 - **하네스를 저장소 하위 디렉터리(모노레포 패키지 등)에 설치하면 handoff 제외·체크박스 면제·sweep 판정이 작동하지 않던 결함.**
   git이 내는 경로(`status --porcelain`·`diff-tree`)는 저장소 루트 기준인데 비교 집합은 targetDir 기준이라 영영 일치하지 않았다 —
