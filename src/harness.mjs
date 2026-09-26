@@ -1,8 +1,9 @@
 // Shared harness ops used by init.
-import { join, basename, resolve } from 'node:path';
+import { join, basename } from 'node:path';
 import { lstat, unlink } from 'node:fs/promises';
 import { writeText, readTextSafe, copyTree, exists } from './fsx.mjs';
 import { render } from './render.mjs';
+import { backupDirFromConfig } from './backup-dir.mjs';
 import { mergeMarkdown, deepMergeJson, simpleDiff } from './merge.mjs';
 import { stackPermissions, RN_STACK_IDS } from './settings-permissions.mjs';
 import { loadRenderState, sectionHashes } from './render-state.mjs';
@@ -153,13 +154,7 @@ export function cloudSyncPathWarning(p) {
 export async function loadBackupDir(targetDir) {
   const cfg = await readTextSafe(join(targetDir, '.harness/backup.json'));
   if (!cfg) return null;
-  try {
-    const data = JSON.parse(cfg);
-    if (data.dir) return data.dir;
-    const { parent, name } = data;
-    if (!parent || !name) return null;
-    return resolve(join(targetDir, '..', parent, name));
-  } catch { return null; }
+  try { return await backupDirFromConfig(targetDir, JSON.parse(cfg)); } catch { return null; }
 }
 
 export async function saveBackupConfig(targetDir, config) {

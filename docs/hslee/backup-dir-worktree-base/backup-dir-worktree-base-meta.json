@@ -1,0 +1,30 @@
+{
+  "user": "hslee",
+  "task": "backup-dir-worktree-base",
+  "created": "2026-09-26",
+  "firstActivatedAt": "2026-09-26T05:17:34.551Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "e08b60300ffe4f71e0818b27df46481e094dc703",
+      "at": "2026-09-26T05:29:35.695Z",
+      "exitCode": 0,
+      "outputBytes": 1751
+    },
+    {
+      "kind": "claude",
+      "engine": "claude",
+      "scope": "worktree",
+      "tip": "e08b60300ffe4f71e0818b27df46481e094dc703",
+      "at": "2026-09-26T05:32:56.029Z",
+      "exitCode": 0,
+      "outputBytes": 3630
+    }
+  ]
+}

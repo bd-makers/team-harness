@@ -7,6 +7,7 @@ import {
   cloudSyncPathWarning,
 } from '../harness.mjs';
 import { saveRenderState } from '../render-state.mjs';
+import { backupAnchor } from '../backup-dir.mjs';
 import { confirm, ask } from '../prompt.mjs';
 import { resolveUsername, saveUsername } from '../user-config.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
@@ -33,7 +34,10 @@ export async function runInit(ctx) {
   // The 3 scripts (clone.sh, symlink.sh, delete.sh) are written INTO the project
   // root with BACKUP_DIR embedded at generation time, so running `./clone.sh`
   // from the project root syncs CWD into that backup clone directory.
-  const projectName = basename(ctx.targetDir);
+  // In a linked git worktree the sibling/name come from the main checkout (backupAnchor) —
+  // backup.json is committed, so a worktree name saved here would poison every checkout.
+  const anchor = await backupAnchor(ctx.targetDir);
+  const projectName = basename(anchor);
   let saveConfig = null;
 
   if (ctx.flags['no-backup']) {
@@ -54,7 +58,7 @@ export async function runInit(ctx) {
               `\nBackup clone parent folder (sibling of project, holds clone.sh/symlink.sh/delete.sh)?`,
               { defaultValue: parentFromFlag || DEFAULT_BACKUP_PARENT },
             );
-        backupDir = resolve(ctx.targetDir, '..', answered, projectName);
+        backupDir = resolve(anchor, '..', answered, projectName);
         saveConfig = { parent: answered, name: projectName };
       }
     }
