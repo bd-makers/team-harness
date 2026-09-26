@@ -1,0 +1,21 @@
+{
+  "user": "hslee",
+  "task": "done-guard-subdir-paths",
+  "created": "2026-09-26",
+  "firstActivatedAt": "2026-09-26T00:42:10.765Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "f0e5cbe75fda11ede7c9f9be3f31371b9c342be1",
+      "at": "2026-09-26T00:49:07.669Z",
+      "exitCode": 0,
+      "outputBytes": 1463
+    }
+  ]
+}

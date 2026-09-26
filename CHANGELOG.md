@@ -18,6 +18,13 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Fixed
+- **하네스를 저장소 하위 디렉터리(모노레포 패키지 등)에 설치하면 handoff 제외·체크박스 면제·sweep 판정이 작동하지 않던 결함.**
+  git이 내는 경로(`status --porcelain`·`diff-tree`)는 저장소 루트 기준인데 비교 집합은 targetDir 기준이라 영영 일치하지 않았다 —
+  `done`이 훅이 쓴 handoff만 dirty여도 막혔고, 0.44.0의 체크박스 면제가 듣지 않았고, post-commit 훅이 handoff만 담은 sweep 커밋에도
+  매번 항목을 기록했다(모두 막는·기록하는 쪽이라 손실은 없었다). 이제 `git rev-parse --show-prefix`로 비교 집합을 루트 기준으로 올린다.
+  가드가 보는 dirty 범위는 좁히지 않는다 — 설치 디렉터리 밖의 미커밋 변경도 종전대로 막는다. 루트 설치본은 동작 불변.
+
 ## [0.44.0] - 2026-09-26
 
 ### Changed
