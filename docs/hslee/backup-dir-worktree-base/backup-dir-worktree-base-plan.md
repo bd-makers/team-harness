@@ -9,7 +9,7 @@ git 워크트리에서도 백업 경로(`loadBackupDir`·`resolveBackupDir`·`in
 - [x] 문서 — CHANGELOG `[Unreleased]` Fixed
 - [x] 검증 — `npm test`(1047, fail 0), `npm run docs:check`, deep-math 워크트리 doctor 실측 ✓
 - [x] 리뷰(codex P2 2건 반영 → 재리뷰 claude P1·P2 없음, P3 2건 반영) → artifact Reviews 기록
-- [ ] 커밋·PR
+- [x] 커밋·PR
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

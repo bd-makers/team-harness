@@ -15,3 +15,7 @@ CHANGELOG.md                                       |   8 ++
  src/harness.mjs                                    |  11 +--
  tests/backup-dir.test.mjs                          | 110 +++++++++++++++++++++
  11 files changed, 381 insertions(+), 15 deletions(-)
+
+## 2026-09-26T05:48:15.569Z — 완료
+
+태스크 종료.

@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ backup-dir-worktree-base
 - ✅ done-guard-subdir-paths
 - ✅ active-json-validation
 - ✅ agents-md-native
