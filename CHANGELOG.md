@@ -18,6 +18,20 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.44.0] - 2026-09-26
+
+### Changed
+- **`done` 가드가 plan.md의 체크박스만 켠 변경을 미커밋 작업으로 세지 않는다 — 머지 후 종결이 커밋 하나가 된다.**
+  활성 task의 `<name>-plan.md` 변경이 줄머리 `- [ ]` → `- [x]`뿐이면 clean-tree 가드가 면제한다(`isCheckboxOnlyChange`).
+  HEAD의 plan을 index·작업 트리 **둘 다**와 줄 단위로 대조하고, 양쪽 mode가 `100644`로 같을 때만 면제한다 — 끄기·줄 추가·
+  산문 수정·stage한 산문·chmod·symlink 교체는 종전대로 막는다. CRLF plan도 면제된다. 그래서 종결 절차는 "마지막 단계 체크 →
+  `done` → `summary --write` → 커밋 하나"다(이전 관례는 커밋 셋, 정본은 `commands/harness-task.md` "머지 후 종결"). 한계: 경로 대조는
+  `targetDir`가 저장소 루트라고 가정한다(handoff 제외와 같은 기존 가정) — 하위 디렉터리 설치본은 면제가 안 될 뿐 막는 쪽이다. (#108)
+- **`AGENTS.md` `protocol` 관리 절을 압축했다 — 프로젝트 eager 여유 5 B → 1,075 B.** lazy 정본(명령 문서)과 겹치던 근거·상세를
+  걷어 내고 규칙 문장만 남겼다(Cursor는 `commands/`를 못 읽으므로 규칙 문장은 옮기지 않았다). 다이어그램을 건너뛸 때는 손으로 닫지
+  않고 `harness-team diagram record --skipped "<사유>"` 한 명령으로 plan 단계와 artifact 기록을 함께 남긴다고 바로잡았다.
+  관리 절 변경이므로 **소비자는 `init --yes`로 받는다**(0.43.0부터 `doctor`가 낡은 `protocol` 절을 경고한다). (#107)
+
 ## [0.43.0] - 2026-09-26
 
 ### Added
