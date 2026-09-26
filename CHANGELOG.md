@@ -18,6 +18,14 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Fixed
+- **git 워크트리 안에서 백업 경로가 워크트리 부모(`.claude/worktrees/harness-backup/<워크트리 이름>` 등)를 가리키던 결함.**
+  커밋된 `.harness/backup.json`의 `{parent,name}`을 targetDir 기준 `..`로 풀어, 앱 워크트리(`<repo>/.claude/worktrees/<w>`)에서는
+  `doctor`가 "configured but missing on disk"로 실패하고 `backup`·`clone`·`symlink`·`delete`·`upgrade`·`migrate`가 틀린 경로를 썼다.
+  자동 탐지(`../harness-backup/<이름>`)는 워크트리 이름을 썼고, `backup.json`이 없을 때 `init`은 워크트리 이름을 저장했다.
+  이제 셋 모두 메인 체크아웃 기준으로 푼다 — `git rev-parse --git-common-dir`의 부모에 `--show-prefix`를 붙인 경로다.
+  메인 체크아웃·비-git 디렉터리는 동작 불변, 설정 파일 형식도 그대로다.
+
 ## [0.44.1] - 2026-09-26
 
 ### Fixed
