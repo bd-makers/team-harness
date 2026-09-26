@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ done-guard-subdir-paths
 - ✅ active-json-validation
 - ✅ agents-md-native
 - ✅ config-user-validation

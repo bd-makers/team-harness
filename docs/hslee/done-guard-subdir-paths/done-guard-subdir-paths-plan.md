@@ -9,7 +9,7 @@
 - [x] 문서 — `commands/harness-task.md` 한계 문장 제거, CHANGELOG `[Unreleased]`
 - [x] 검증 — `npm test`(1041, fail 0), `npm run docs:check`
 - [x] 리뷰(codex, P1·P2 없음, P3 1건 반영) → artifact Reviews 기록
-- [ ] 커밋·PR
+- [x] 커밋·PR
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

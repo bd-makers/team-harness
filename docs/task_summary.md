@@ -126,3 +126,4 @@
 | hslee | review-base-full-ref | ✅ done | 2026-09-25 |
 | hslee | task-member-collision | ✅ done | 2026-09-25 |
 | hslee | task-reserved-names | ✅ done | 2026-09-25 |
+| hslee | done-guard-subdir-paths | ✅ done | 2026-09-26 |

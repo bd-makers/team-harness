@@ -1,10 +1,11 @@
 # Session Handoff
 
 ## Active Task
-done-guard-subdir-paths
+없음 — `.harness/active.json` 은 `null` 이다.
+새 작업은 `harness-team task <name>` 으로 시작한다.
 
-## Last Commit (2026-09-26)
-5ed2a7a fix(done-guard-subdir-paths): 하위 디렉터리 설치본에서 handoff 제외·체크박스 면제·sweep 판정이 듣지 않던 결함
+## Last Completed Task (2026-09-26)
+`done-guard-subdir-paths` — done
 
 ## Full Context
 → docs/hslee/done-guard-subdir-paths/done-guard-subdir-paths-handoff.md
