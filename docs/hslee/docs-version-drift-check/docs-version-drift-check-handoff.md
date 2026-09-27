@@ -26,3 +26,7 @@ CHANGELOG.md                                       |  8 ++
  scripts/docs-version-drift.mjs                       |  8 ++++++--
  tests/docs-version-drift.test.mjs                    |  6 ++++++
  5 files changed, 44 insertions(+), 4 deletions(-)
+
+## 2026-09-27T14:17:44.374Z — 완료
+
+태스크 종료.

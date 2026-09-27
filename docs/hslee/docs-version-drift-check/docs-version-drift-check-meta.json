@@ -3,8 +3,8 @@
   "task": "docs-version-drift-check",
   "created": "2026-09-27",
   "firstActivatedAt": "2026-09-27T13:43:25.278Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-09-27T14:17:44.374Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [

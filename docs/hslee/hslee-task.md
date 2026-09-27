@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ docs-version-drift-check
 - ✅ init-stack-stale-false-positive
 - ✅ stack-pin-display
 - ✅ backup-dir-worktree-base

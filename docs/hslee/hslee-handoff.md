@@ -5,7 +5,7 @@
 새 작업은 `harness-team task <name>` 으로 시작한다.
 
 ## Last Completed Task (2026-09-27)
-`stack-pin-display` — done
+`docs-version-drift-check` — done
 
 ## Full Context
-→ docs/hslee/stack-pin-display/stack-pin-display-handoff.md
+→ docs/hslee/docs-version-drift-check/docs-version-drift-check-handoff.md

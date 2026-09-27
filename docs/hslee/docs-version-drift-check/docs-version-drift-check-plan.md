@@ -10,8 +10,8 @@
 - [x] MAINTAINING·ao-worker-rules·followups(10번)·CHANGELOG [Unreleased] 갱신
 - [x] `npm test`·`npm run docs:check` green
 - [x] 커밋 + `harness-team review`(codex) + artifact 기록
-- [ ] push·PR·CI 확인
-- [ ] 머지 후 main에서 종결 (워커 몫 아님)
+- [x] push·PR·CI 확인
+- [x] 머지 후 main에서 종결 (워커 몫 아님)
 
 ## Ontology 변경 로그
 - 2026-09-27 현행 문서 / 기준 문서 / 표지 정의 신설
