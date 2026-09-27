@@ -11,9 +11,13 @@ import { rename, rm } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { readTextSafe, writeText } from './fsx.mjs';
 import { extractSections } from './merge.mjs';
+import { KNOWN_STACK_IDS } from './detect-stack.mjs';
 
 export const RENDER_STATE_REL = '.harness/render-state.json';
 
+// `stack`(선택): `init --stack X`로 감지와 다른 스택을 강제했을 때의 X. 관리 절 렌더 입력 중
+// 디스크에서 다시 얻을 수 없는 유일한 값이라 여기 남긴다 — 없으면 플래그 없는 init·doctor·migrate가
+// 감지 스택으로 렌더해 강제 선택을 되돌린다. 필드가 없으면(기존 설치본) 감지 스택을 쓴다.
 const EMPTY = () => ({ version: 1, sections: {} });
 
 // 마커를 포함한 블록 전체를 해싱한다 — mergeMarkdown이 교체하는 단위가 바로 그 블록이다.
@@ -31,7 +35,9 @@ export async function loadRenderState(targetDir) {
   try {
     const data = JSON.parse(raw);
     if (!data || typeof data !== 'object' || typeof data.sections !== 'object' || data.sections === null) return EMPTY();
-    return { version: data.version ?? 1, sections: data.sections };
+    // 모르는 id(손 편집·오타)는 버린다 — resolveStack은 모르는 id를 generic으로 렌더한다.
+    const stack = KNOWN_STACK_IDS.includes(data.stack) ? { stack: data.stack } : {};
+    return { version: data.version ?? 1, ...stack, sections: data.sections };
   } catch { return EMPTY(); }
 }
 

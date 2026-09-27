@@ -51,3 +51,11 @@ test('saveRenderState: 임시 파일을 남기지 않는다 (원자적 교체)',
   assert.deepEqual(files, ['render-state.json'], '.tmp 잔여물이 없다');
   assert.equal((await loadRenderState(dir)).sections['AGENTS.md'].stack, 'b');
 });
+
+test('loadRenderState: stack 은 알려진 id 만 남긴다 (모르는 id 는 generic 으로 렌더되므로 버린다)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-rs-stack-'));
+  await saveRenderState(dir, { version: 1, stack: 'next', sections: {} });
+  assert.equal((await loadRenderState(dir)).stack, 'next');
+  await saveRenderState(dir, { version: 1, stack: 'reakt', sections: {} });
+  assert.deepEqual(await loadRenderState(dir), { version: 1, sections: {} });
+});

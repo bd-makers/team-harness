@@ -162,7 +162,8 @@ export async function saveBackupConfig(targetDir, config) {
     JSON.stringify(config, null, 2) + '\n');
 }
 
-export async function planChanges(ctx, { stack }) {
+// stackPin: render-state에 남길 강제 스택 id(init이 정한다). 없으면 필드를 쓰지 않는다 = 자동 감지.
+export async function planChanges(ctx, { stack, stackPin }) {
   const { root, targetDir } = ctx;
   const tplDir = join(root, 'templates');
   const vars = {
@@ -178,7 +179,7 @@ export async function planChanges(ctx, { stack }) {
   // 이전 상태를 기본값으로 깔고 시작한다. 루프가 어떤 이유로든 파일을 건너뛰어도
   // (symlink 레거시 · 마커 깨짐 · 템플릿 없음 → continue) 그 파일의 해시가 통째로
   // 지워지지 않는다 — 지우면 다음 실행이 부트스트랩으로 판정해 덮는다.
-  const renderState = { version: 1, sections: { ...priorState.sections } };
+  const renderState = { version: 1, ...(stackPin ? { stack: stackPin } : {}), sections: { ...priorState.sections } };
 
   // Each agent file is marker-merged independently: managed sections updated,
   // user text preserved.

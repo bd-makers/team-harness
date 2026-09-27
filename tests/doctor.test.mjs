@@ -1197,3 +1197,14 @@ test('findStaleManagedSections: 마커가 깨진(중복 블록) 파일은 init �
     assert.deepEqual(await findStaleManagedSections(dir, ROOT), []);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+test('findStaleManagedSections: init --stack 으로 감지와 다른 스택을 강제한 직후 stack 절을 stale 로 보지 않는다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-forced-'));
+  try {
+    await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'a', scripts: { test: 'node --test' } }));
+    assert.equal((await detectStack(dir)).id, 'node', '전제: 감지 스택은 node');
+    await pexec('node', [join(ROOT, 'bin/harness-team.mjs'), 'init', '--yes', '--no-backup', '--stack', 'next'], { cwd: dir, timeout: 20000 });
+    assert.match(await readFile(join(dir, 'AGENTS.md'), 'utf8'), /Next\.js/, '전제: 강제 스택으로 렌더됨');
+    assert.deepEqual(await findStaleManagedSections(dir, ROOT), []);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

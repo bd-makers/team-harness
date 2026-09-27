@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
 import { unlink, rmdir, readdir, mkdir, lstat, stat, access } from 'node:fs/promises';
 import { readTextSafe, writeText, exists } from '../fsx.mjs';
 import { loadBackupDir, mergeClaudeSettings, settingsHasBoundaryCheckpoint, mirrorCursorRules, AGENT_FILE_TEMPLATES, isLegacyCodexSessionCommand, withCodexHookFlag } from '../harness.mjs';
-import { detectStack } from '../detect-stack.mjs';
+import { resolveStack } from '../detect-stack.mjs';
 import { loadRenderState } from '../render-state.mjs';
 import { extractSections, deepMergeJson, simpleDiff } from '../merge.mjs';
 import { render } from '../render.mjs';
@@ -708,7 +708,7 @@ export async function migrateToAgentsMd(ctx) {
 // migrate는 원본과 템플릿 렌더 결과를 동시에 볼 수 있는 유일한 지점이므로, 그 1회를
 // 복구 가능(백업)·가시(diff)로 만든다. 백업은 타임스탬프 디렉터리에 **누적**한다.
 //
-// 렌더에 쓰는 vars는 init이 --stack 없이 쓰는 것과 같다(detectStack + projectName).
+// 렌더에 쓰는 vars는 init이 --stack 없이 쓰는 것과 같다(render-state에 고정된 스택 ?? 감지 + projectName).
 // 사용자가 나중에 `init --stack X`를 주면 diff가 조금 달라질 수 있다 — 경고는 참고용이고
 // 실제 보존 판정은 init의 provenance 가드가 한다.
 export async function migrateManagedSectionBackup(ctx) {
@@ -719,7 +719,7 @@ export async function migrateManagedSectionBackup(ctx) {
   // (codex 리뷰 P1). 해시가 없는 파일이 하나라도 있으면 그 파일을 백업 대상으로 본다.
   const prior = await loadRenderState(targetDir);
 
-  const stack = await detectStack(targetDir);
+  const stack = await resolveStack(targetDir, prior.stack);
   const vars = { projectName: basename(targetDir), ...stack };
   // 백업은 **누적**이다 — 덮으면 복구 대상이 사라져 안전망의 의미가 없다. 같은 초에 두 번
   // 실행되면(init 사이에 migrate를 두 번) 같은 이름이 나오므로 비어 있는 이름을 찾을 때까지 센다.

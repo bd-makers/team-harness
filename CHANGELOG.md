@@ -18,6 +18,13 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Fixed
+- **`init --stack X`로 강제한 스택이 저장되지 않아 `doctor`가 `stack` 관리 절을 stale로 잘못 경고하던 결함.**
+  `doctor`의 관리 절 stale 검사·`migrate`의 관리 절 백업 diff·플래그 없는 `init`이 모두 감지 스택으로 다시 렌더해,
+  `doctor`의 처방(`harness-team init`)을 따르면 강제한 스택이 감지 스택으로 조용히 되돌아갔다.
+  이제 감지와 다른 `--stack`은 `.harness/render-state.json`의 `stack` 필드에 고정되고 세 경로가 같은 스택으로 렌더한다.
+  감지된 id를 다시 주면(`--stack node` 등) 고정이 풀린다. 필드가 없는 기존 설치본은 동작 불변이다.
+
 ## [0.44.2] - 2026-09-26
 
 ### Fixed

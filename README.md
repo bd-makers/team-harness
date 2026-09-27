@@ -298,6 +298,8 @@ harness-team --help
 ```
 
 스택 옵션: `react-native` | `react` | `next` | `node` | `python` | `go` | `generic` — 목록 밖의 값은 exit 2로 거부합니다.
+감지와 다른 스택은 `.harness/render-state.json`에 고정되어 이후 플래그 없는 `init`·`doctor`도 그 스택을 쓰며,
+감지된 id를 다시 주면 고정이 풀립니다.
 React Native/Expo 전용 rules 4종은 유효 stack이 RN 계열일 때만 설치됩니다.
 
 ### `/harness-sync` — 내부 정합성 동기화

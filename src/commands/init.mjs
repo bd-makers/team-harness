@@ -1,12 +1,12 @@
 import { basename, resolve } from 'node:path';
 import { mkdir } from 'node:fs/promises';
-import { resolveStack, KNOWN_STACK_IDS } from '../detect-stack.mjs';
+import { detectStack, resolveStack, KNOWN_STACK_IDS } from '../detect-stack.mjs';
 import {
   planChanges, applyChanges, copyStaticAssets, formatDiff,
   loadBackupDir, saveBackupConfig, DEFAULT_BACKUP_PARENT, AI_GITIGNORE_PREVIEW,
   cloudSyncPathWarning,
 } from '../harness.mjs';
-import { saveRenderState } from '../render-state.mjs';
+import { loadRenderState, saveRenderState } from '../render-state.mjs';
 import { backupAnchor } from '../backup-dir.mjs';
 import { confirm, ask } from '../prompt.mjs';
 import { resolveUsername, saveUsername } from '../user-config.mjs';
@@ -22,10 +22,16 @@ export async function runInit(ctx) {
     process.exitCode = 2;
     return;
   }
-  const stack = await resolveStack(ctx.targetDir, forced);
+  // 강제 스택은 render-state에 고정해 플래그 없는 다음 init·doctor·migrate가 같은 스택으로 렌더한다.
+  // 감지와 같은 id를 주면 고정을 푼다(자동 감지로 복귀). 저장은 render-state와 함께 Apply 뒤에 한다.
+  const detectedId = (await detectStack(ctx.targetDir)).id;
+  const { stack: priorPin } = await loadRenderState(ctx.targetDir);
+  const stackPin = forced === undefined ? priorPin : (forced === detectedId ? undefined : forced);
+  const stack = await resolveStack(ctx.targetDir, stackPin);
   // copyStaticAssets gates the RN-only rules on this, not just on an explicit --stack.
   ctx.stackId = stack.id;
-  console.log(`  stack: ${stack.stackLabel} (${stack.id})`);
+  const pinNote = forced === undefined && stackPin ? ` — pinned by an earlier --stack; --stack ${detectedId} to unpin` : '';
+  console.log(`  stack: ${stack.stackLabel} (${stack.id})${pinNote}`);
 
   // 결정만 — 저장은 최종 Apply 뒤(applyChanges 직후). 여기서 쓰면 취소해도 config가 남는다.
   const pendingUsername = await resolveUsername(ctx.targetDir, ctx.flags);
@@ -79,7 +85,7 @@ export async function runInit(ctx) {
     ctx.addAiGitignore = false;
   }
 
-  const { changes, legacyAgentFiles, brokenMarkerFiles, skippedSections, renderState } = await planChanges(ctx, { stack });
+  const { changes, legacyAgentFiles, brokenMarkerFiles, skippedSections, renderState } = await planChanges(ctx, { stack, stackPin });
 
   if (legacyAgentFiles && legacyAgentFiles.length) {
     console.log(`\n⚠️ 레거시 alias symlink 감지: ${legacyAgentFiles.join(', ')} → CLAUDE.md`);

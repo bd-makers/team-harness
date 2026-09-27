@@ -84,3 +84,31 @@ test('init --stack <unknown>은 아무것도 쓰지 않고 exit 2로 거부한�
     await assert.rejects(() => import('node:fs/promises').then(fs => fs.access(join(dir, 'AGENTS.md'))), 'AGENTS.md를 쓰기 전에 멈춰야 한다');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+// `init --stack X`는 render-state에 고정된다 — 플래그 없는 다음 init이 감지 스택으로 되돌리던 결함.
+// 감지와 같은 id를 주면 고정이 풀린다. 필드가 없는 설치본은 종전대로 감지를 쓴다.
+test('init --stack <감지와 다른 id>는 고정되어 플래그 없는 init이 유지하고, --stack <감지 id>로 푼다', async () => {
+  const dir = await project({ 'package.json': { name: 'a', scripts: { test: 'node --test' } } });
+  const init = (...args) => new Promise((res, rej) => {
+    const child = spawn(process.execPath, [BIN, 'init', '--yes', '--no-backup', ...args], { cwd: dir, stdio: ['pipe', 'pipe', 'pipe'] });
+    let out = '';
+    child.stdout.on('data', d => { out += d; });
+    child.stderr.on('data', d => { out += d; });
+    child.on('close', code => (code === 0 ? res(out) : rej(new Error(out))));
+    child.stdin.end();
+  });
+  const { readFile } = await import('node:fs/promises');
+  const runtime = async () => (await readFile(join(dir, 'AGENTS.md'), 'utf8')).match(/\*\*Runtime\*\*: (.+)/)[1];
+  const pin = async () => JSON.parse(await readFile(join(dir, '.harness/render-state.json'), 'utf8')).stack;
+  try {
+    await init('--stack', 'next');
+    assert.equal(await pin(), 'next');
+    const out = await init();
+    assert.equal(await runtime(), 'Next.js', '플래그 없는 init이 강제 스택을 되돌리지 않는다');
+    assert.equal(await pin(), 'next');
+    assert.match(out, /pinned by an earlier --stack; --stack node to unpin/);
+    await init('--stack', 'node');
+    assert.equal(await runtime(), 'Node.js');
+    assert.equal(await pin(), undefined, '감지와 같은 id는 고정을 푼다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
