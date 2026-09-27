@@ -17,7 +17,7 @@
 - [x] `npm test`·`npm run docs:check` 통과(golden fixture는 변경 불필요, `tests/summary.test.mjs` fixture에 무시 줄 추가)
 - [x] CHANGELOG `## [Unreleased]` 항목 추가
 - [x] 리뷰(read-only 외부 검증) → artifact `## Reviews` 기록 — codex P2 2건 조치
-- [ ] 커밋·PR — 이 레포 사본 추적 해제(`git rm --cached docs/chad/chad-handoff.md docs/hslee/hslee-handoff.md`)는 결정 [1]대로 이 PR에 포함
+- [x] 커밋·PR — 이 레포 사본 추적 해제(`git rm --cached docs/chad/chad-handoff.md docs/hslee/hslee-handoff.md`)는 결정 [1]대로 이 PR에 포함
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
