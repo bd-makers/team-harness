@@ -4,6 +4,7 @@
 
 ## Completed
 - ✅ init-stack-stale-false-positive
+- ✅ stack-pin-display
 - ✅ backup-dir-worktree-base
 - ✅ done-guard-subdir-paths
 - ✅ active-json-validation

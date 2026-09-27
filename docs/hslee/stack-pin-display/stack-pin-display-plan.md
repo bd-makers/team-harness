@@ -10,7 +10,7 @@
 - [x] `npm test`·`npm run docs:check` green
 - [x] 외부 리뷰(`harness-team review`) → artifact 기록
 - [x] PR 생성·CI 확인 (#113, test (24) pass)
-- [ ] 머지 후 종결(기본 브랜치)
+- [x] 머지 후 종결(기본 브랜치)
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
