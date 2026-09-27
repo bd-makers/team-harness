@@ -1,0 +1,21 @@
+{
+  "user": "hslee",
+  "task": "user-handoff-parallel-conflict",
+  "created": "2026-09-27",
+  "firstActivatedAt": "2026-09-27T13:43:11.726Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "fd37fa34b6ee510a077be456e2b3a297d02c1531",
+      "at": "2026-09-27T14:33:44.091Z",
+      "exitCode": 0,
+      "outputBytes": 1288
+    }
+  ]
+}

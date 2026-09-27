@@ -139,13 +139,20 @@ created: docs/<user>/<name>/
 ## post-commit handoff — sweep 커밋에서는 침묵한다
 
 `handoff`(post-commit 훅)는 커밋 **뒤에** `<name>-handoff.md`(항목 append)와 `<user>-handoff.md`(재작성)를
-쓴다. 그래서 커밋 직후 트리는 dirty다.
+쓴다. 커밋 대상은 **task handoff 하나**다 — `<user>-handoff.md`는 gitignore된 워크트리 로컬 파일이다
+(내용이 전부 `.harness/active.json`과 그 워크트리의 `git log -1`에서 나온다. 추적하던 시절엔 같은 user의 병렬 PR이
+머지마다 이 파일에서 충돌했다). 그래도 커밋 직후 트리는 task handoff 때문에 dirty다.
 
 **그 변경만 담는 커밋을 따로 만들지 않는다.** 다음 작업 커밋에 함께 stage한다(`git add` 대상에
-두 handoff 파일을 포함). 커밋마다 sweep을 붙이면 이력의 약 4분의 1이 "handoff 반영" 커밋이 된다
+task handoff를 포함). 커밋마다 sweep을 붙이면 이력의 약 4분의 1이 "handoff 반영" 커밋이 된다
 (2026-09-20~25 실측: 98커밋 중 23개). dirty handoff는 `done` 가드가 무시하므로 남겨 둬도 종결을 막지 않는다.
 **예외** — 푸시·브랜치 전환·워크트리 정리 직전에 남은 변경이 handoff뿐이면 그때 단독 sweep 커밋 하나를
 만든다. 보통 PR/MR당 한 번이지만 상한은 아니다 — 푸시 뒤 리뷰 대응 커밋이 생기면 다음 푸시 직전에 다시 한 번 쓴다.
+
+`<user>-handoff.md`는 `task <name>` 활성화 때도 한 번 쓴다 — 추적하지 않으므로 새 워크트리·clone에는 없고,
+첫 커밋까지 세션 진입점이 비지 않게 하기 위해서다. 아직 이 파일을 **추적 중인** 저장소(gitignore 줄 도입 전)는
+무시 줄만으로는 충돌이 남는다 — `doctor`가 경고하고 `migrate`가 `.gitignore` 줄을 보장한 뒤 `git rm --cached` 명령을
+**안내만** 한다(인덱스는 건드리지 않는다). 기본 브랜치에서 한 번 실행해 커밋한다.
 
 단독 sweep 커밋이 **핸드오프 파일만** 바꿨다면 훅은 아무것도 쓰지 않는다 — 기록할 작업이 없고, 쓰면
 churn이 자기 자신을 먹여 트리가 깨끗해지는 지점이 사라지기 때문이다(0.38.1). 판정은 보수적이다:

@@ -7,6 +7,7 @@ import { backupDirFromConfig } from './backup-dir.mjs';
 import { mergeMarkdown, deepMergeJson, simpleDiff } from './merge.mjs';
 import { stackPermissions, RN_STACK_IDS } from './settings-permissions.mjs';
 import { loadRenderState, sectionHashes } from './render-state.mjs';
+import { USER_HANDOFF_IGNORE } from './task-paths.mjs';
 
 export const DEFAULT_BACKUP_PARENT = 'harness-backup';
 
@@ -373,7 +374,7 @@ const AI_GITIGNORE_ENTRIES = [
   '*.log',
 ];
 
-async function appendGitignore(targetDir, { addAiEntries = false } = {}) {
+export async function appendGitignore(targetDir, { addAiEntries = false } = {}) {
   const { readTextSafe, writeText } = await import('./fsx.mjs');
   const path = join(targetDir, '.gitignore');
   const existing = (await readTextSafe(path)) ?? '';
@@ -385,13 +386,15 @@ async function appendGitignore(targetDir, { addAiEntries = false } = {}) {
   // per-user pointer/config, the observability logs and the local managed-section backups
   // are personal. `.harness/backup/` holds verbatim copies of the team's own AGENTS.md /
   // CLAUDE.md taken before a bootstrap overwrite — a local recovery aid, not a artifact to
-  // commit (codex review P2).
+  // commit (codex review P2). The user handoff is a worktree-local rendering of active.json — see
+  // USER_HANDOFF_IGNORE for why tracking it made every parallel PR conflict.
   const harnessNeeded = [
     '.claude/settings.local.json',
     '.harness/active.json',
     '.harness/config.json',
     '.harness/observability/',
     '.harness/backup/',
+    USER_HANDOFF_IGNORE,
   ];
   const harnessMissing = harnessNeeded.filter(line => !has(line));
 
@@ -407,7 +410,9 @@ async function appendGitignore(targetDir, { addAiEntries = false } = {}) {
     }
   }
 
-  if (out !== existing) await writeText(path, out);
+  if (out === existing) return false;
+  await writeText(path, out);
+  return true;
 }
 
 export const AI_GITIGNORE_PREVIEW = AI_GITIGNORE_ENTRIES.join('\n');

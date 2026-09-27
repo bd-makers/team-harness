@@ -12,8 +12,8 @@ import { mergeMarkdown, extractSections } from '../merge.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation } from '../observation.mjs';
 import { settingsHasSessionGate } from './session-context.mjs';
 import { checkDoneOnMain } from './remote-task.mjs';
-import { readActive } from './task.mjs';
-import { taskLabel, taskFilePath } from '../task-paths.mjs';
+import { readActive, trackedUserHandoffs, userHandoffIgnored } from './task.mjs';
+import { taskLabel, taskFilePath, USER_HANDOFF_IGNORE } from '../task-paths.mjs';
 import { checkRuleProvenance } from './rules.mjs';
 import { findStaleTemplates, isKnownStockTemplate } from './migrate.mjs';
 import { evaluateObserveVerdict, observeLoopbackNudge, tripWireDetail } from './observe.mjs';
@@ -496,6 +496,21 @@ export async function checkDecisionLog(targetDir, root) {
   return `${DECISION_LOG_PATH}에 ${missing.join(', ')} 절 없음 — 팀 결정 로그는 설치 후 팀이 저작하는 파일이라 init·migrate 어느 쪽도 덮어쓰지 않는다(D8: docs/ seed는 refresh 비목표). \`${source}\` 에서 해당 절을 복사해 ${DECISION_LOG_PATH} 끝에 덧붙여라 — 이미 있는 절은 건드리지 말 것`;
 }
 
+// user handoff 는 추적하지 않는 워크트리 로컬 파일이다(USER_HANDOFF_IGNORE). 두 전환 누락을 잡는다 —
+// ① 아직 추적 중(무시 줄만으로는 병렬 PR 충돌이 남는다) ② 무시 줄이 없음(다음 `git add -A` 가 다시 추적한다).
+// 인덱스 변경은 사용자 커밋 경계라 도구가 하지 않는다 — 명령만 알려 준다. warn-only(fail 에 세지 않는다).
+export async function checkTrackedUserHandoffs(targetDir) {
+  const tracked = await trackedUserHandoffs(targetDir);
+  if (tracked.length) {
+    return `user handoff 가 아직 git 에 추적됨(병렬 PR 충돌 원인): ${tracked.join(', ')} — `
+      + `기본 브랜치에서 \`git rm --cached ${tracked.join(' ')}\` 후 커밋 (.gitignore 줄은 \`harness-team migrate\`가 보장)`;
+  }
+  if ((await userHandoffIgnored(targetDir)) === false) {
+    return `.gitignore 에 \`${USER_HANDOFF_IGNORE}\` 줄이 없어 user handoff 가 다시 커밋될 수 있음 — \`harness-team migrate\` 로 추가`;
+  }
+  return null;
+}
+
 // observe-surfacing: the trip-wire verdict reaches doctor as ONE warn-level line built from the
 // same evaluateObserveVerdict the observe CLI uses, so the two cannot disagree. Silent unless
 // tripped — not-installed (no hook log; this plugin-dev repo, by D7) / no-data / ok all return
@@ -934,6 +949,10 @@ export async function runDoctor(ctx) {
   // in the source repo too, so its absence is real drift on either side.
   const decisionLogWarning = await checkDecisionLog(ctx.targetDir, ctx.root);
   if (decisionLogWarning) add('decision log', 'warning', decisionLogWarning, `\n⚠️ ${decisionLogWarning}`);
+
+  // Not gated on pluginDev: this repo tracked its own user handoffs too.
+  const trackedHandoffWarning = await checkTrackedUserHandoffs(ctx.targetDir);
+  if (trackedHandoffWarning) add('tracked user handoff', 'warning', trackedHandoffWarning, `\n⚠️ ${trackedHandoffWarning}`);
 
   // Not gated on pluginDev: a repo without the hook's log is `not-installed`, which is
   // silent on its own (observe-surfacing spec, 설계 절).

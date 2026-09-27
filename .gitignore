@@ -9,3 +9,4 @@ node_modules/
 .claude/handoffs/
 .superpowers/
 tests/fixtures/**/actual/
+docs/*/*-handoff.md

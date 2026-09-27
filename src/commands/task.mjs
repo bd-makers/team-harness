@@ -11,7 +11,7 @@ import { checkDoneOnMain, renderDoneOnMainNudge, listBranchOnlyTasks } from './r
 import { findCommand } from '../cli-args.mjs';
 import { userNameError } from '../user-config.mjs';
 import {
-  taskDirRel, taskFileRel, userHandoffRel, taskLabel, docsPath, taskDirPath, taskFilePath, userHandoffPath, listTaskRefs,
+  taskDirRel, taskFileRel, userHandoffRel, USER_HANDOFF_IGNORE, taskLabel, docsPath, taskDirPath, taskFilePath, userHandoffPath, listTaskRefs,
 } from '../task-paths.mjs';
 
 const pexec = promisify(execFile);
@@ -156,8 +156,8 @@ export function taskPlanTemplate(name) {
 `;
 }
 
-// `docs/<user>/<user>-handoff.md` 의 유일한 렌더러. 두 지점이 이 파일을 쓴다 —
-// 커밋마다 도는 `runHandoffAuto`(활성 형태)와 종결 시점의 `runDone`(종결 형태). 두 곳이 각자
+// `docs/<user>/<user>-handoff.md` 의 유일한 렌더러. 세 지점이 이 파일을 쓴다 — 커밋마다 도는
+// `runHandoffAuto`(활성 형태), task 활성화(`writeActivationHandoff`, 활성 형태), 종결 시점의 `runDone`(종결 형태). 각자
 // 문자열을 조립하면 형식이 반드시 어긋나므로 여기 하나로 모은다.
 //
 // 종결 형태에는 커밋 sha 를 담지 않는다. 종결 후에는 훅이 이 파일을 더는 갱신하지 않으므로
@@ -185,6 +185,14 @@ ${head}
 ## Full Context
 → ${taskFileRel(user, task, 'handoff.md')}
 `;
+}
+
+// user handoff 는 추적하지 않는 워크트리 로컬 파일이라(USER_HANDOFF_IGNORE) 새 워크트리·clone 에는 없다.
+// 첫 커밋까지 기다리면 세션 진입점이 비므로, 포인터가 옮겨지는 활성화 시점에 활성 형태를 한 번 쓴다.
+async function writeActivationHandoff(targetDir, user, task, date) {
+  await writeFile(userHandoffPath(targetDir, user), renderUserHandoff({
+    user, task, date, commitMsg: '(task 활성화 — 다음 커밋에서 갱신)', closed: false,
+  }));
 }
 
 function taskHandoffTemplate(name) {
@@ -436,6 +444,7 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
       path: taskDirRel(user, name),
       switchedAt,
     });
+    await writeActivationHandoff(ctx.targetDir, user, name, date);
 
     if (json) {
       emitObservation(buildEnvelope({
@@ -472,6 +481,7 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
     path: taskDirRel(user, name),
     switchedAt: firstActivatedAt,
   });
+  await writeActivationHandoff(ctx.targetDir, user, name, date);
 
   // Per-task state only. The shared ledger (docs/task_summary.md and the user index)
   // is rendered by `harness-team summary`; writing it here is what made every parallel
@@ -694,6 +704,34 @@ const VERIFY_KIND_RE = new RegExp(`-(?:${VERIFY_KIND_SUFFIXES.join('|')})$`);
 // 셀 때 이 함수를 쓴다. 정규식을 복제하면 접미사 열거가 바뀔 때 사용자가 보는 수와 가드가 세는 수가 갈라진다.
 // 훅(`runHandoffAuto`)이 **쓰는** 파일이자 `done` 가드가 **무시하는** 파일. 두 곳이 같은 집합을 봐야
 // 한다 — 갈라지면 가드는 무시하는데 훅은 계속 써서 churn 이 조용히 되살아난다.
+// 아직 **추적 중인** user handoff(전환 전 저장소). 무시 목록에 올려도 git 은 추적 중인 파일을 계속 추적하므로
+// `git rm --cached` 전까지 병렬 PR 충돌은 그대로다 — doctor 가 경고하고 migrate 가 안내하는 근거다.
+// 경로는 targetDir 기준이다(`-C targetDir` 의 pathspec·출력 모두 cwd 기준). git 이 없거나 저장소가 아니면 [].
+// glob 은 같은 깊이의 다른 `*-handoff.md` 도 맞으므로 파일명이 정확히 `<user>-handoff.md` 인 것만 남긴다 —
+// 무관한 추적 파일을 `git rm --cached` 하라고 안내하면 안 된다(2026-09-27 codex P2).
+export async function trackedUserHandoffs(targetDir) {
+  try {
+    const { stdout } = await pexec('git', ['-C', targetDir, 'ls-files', '-z', '--', `:(glob)${USER_HANDOFF_IGNORE}`], { maxBuffer: 1024 * 1024 });
+    return stdout.split('\0').filter(Boolean)
+      .filter(p => { const [, user, file] = p.split('/'); return file === `${user}-handoff.md`; })
+      .sort();
+  } catch {
+    return [];
+  }
+}
+
+// user handoff 가 이 설치의 무시 규칙에 걸리는가. 추적 해제만 하고 무시 줄이 없으면 다음 `git add -A` 가 다시
+// 추적한다(2026-09-27 codex P2). 실제 user 이름과 무관하게 깊이 2 probe 경로로 판정한다. 저장소가 아니면(128) null.
+export async function userHandoffIgnored(targetDir) {
+  const probe = userHandoffRel('harness-probe');
+  try {
+    await pexec('git', ['-C', targetDir, 'check-ignore', '-q', '--no-index', probe]);
+    return true;
+  } catch (err) {
+    return err && err.code === 1 ? false : null;
+  }
+}
+
 export function handoffRelPaths(user, task) {
   return new Set([
     taskFileRel(user, task, 'handoff.md'),

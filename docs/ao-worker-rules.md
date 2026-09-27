@@ -24,8 +24,8 @@ gh api "repos/bd-makers/team-harness/check-runs/<ID>/annotations" --jq '.[] | "\
 `docs/task_summary.md` 와 `docs/<user>/<user>-task.md` 는 **생성물**이고 기본 브랜치에서 `harness-team summary --write` 로만 갱신된다 —
 PR 브랜치에서 절대 건드리지 않는다. AO 는 워커마다 별도 워크트리를 띄우므로, PR 브랜치에서 수정하면 **여러 워커가 같은 줄을
 동시에 고쳐 충돌한다.** task SSOT 4파일(`spec`·`plan`·`handoff`·`artifact`)은 task 디렉터리에 격리되어 있으니 자유롭게 수정해도 된다.
-단, `docs/<user>/<user>-handoff.md` 는 task 디렉터리 밖에 있고 post-commit 훅이 커밋마다 통째로 다시 쓴다 — 병렬 PR 끼리 반드시
-충돌한다. 충돌하면 손으로 병합하지 말고 기본 브랜치 쪽을 취한다(다음 커밋에서 훅이 다시 쓴다).
+`docs/<user>/<user>-handoff.md` 는 워크트리 로컬 파일이라 **추적하지 않는다**(gitignore) — 훅이 다시 써도 커밋·충돌 대상이 아니다.
+`git add -f` 로 억지로 담지 마라.
 
 ## 3. 설치 단계는 없다
 
@@ -71,8 +71,8 @@ task 다이어그램은 **옵트인 단계**이지 상시 의무가 아니다. �
 PR 단위 슬라이드 덱이며, 오케스트레이터가 지정한 상시 단계다.
 - **호출은 PR 이 생긴 뒤, 번호를 명시해서:** `/mr-change-diagram <PR번호>`. 스킬은 번호가 없으면 멈추고 되묻는다 — 현재 브랜치로 추측하게 두지 않는다.
 - **저장 경로: `docs/diagrams/pr/pr-<번호>-<슬러그>.html`.** 스킬은 폴더를 스스로 정하지 않으므로, 경로를 주지 않으면 되묻고 멈춘다.
-- **이 산출물에 한해 커밋이 선승인되어 있다.** opt-in 을 다시 묻지 말고 덱 HTML 과, 트리에 남아 있는 handoff 2파일
-  (`<name>-handoff.md`·`<user>-handoff.md`) 변경만 함께 스테이징한다 — 그 밖의 변경은 담지 않는다(`commands/harness-task.md`
+- **이 산출물에 한해 커밋이 선승인되어 있다.** opt-in 을 다시 묻지 말고 덱 HTML 과, 트리에 남아 있는 task handoff
+  (`<name>-handoff.md`) 변경만 함께 스테이징한다 — 그 밖의 변경은 담지 않는다(`commands/harness-task.md`
   post-commit handoff 절). PR 소스 브랜치에 푸시한다(`docs(diagram): PR <번호> 변경 슬라이드 추가`). `--amend`·`--force` 는 쓰지 않는다.
 - **건너뛰어도 되는 경우**: 문서·설정만 바뀌어 제품 동작 변화가 없는 PR. 근거를 한 줄 남긴다.
 - **스킬이 없는 머신**이면 실패로 처리하지 말고 건너뛰되, 보고에 `리뷰 덱 미실행(스킬 없음)` 이라고 남긴다.
