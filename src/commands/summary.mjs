@@ -224,7 +224,7 @@ export function renderAll(tasks) {
   return files;
 }
 
-// Three outcomes, not two. "not a git repository" is safe to write in — there are no
+// Four outcomes: branch, detached, error, none. "not a git repository" is safe to write in — there are no
 // branches to collide across. Any other git failure (git missing, repo unreadable) must
 // NOT be read as "no branches": that silently turns the guard off exactly when we cannot
 // tell where we are.

@@ -8,7 +8,7 @@
 - [x] `branchState`에 `detached` 분리 + 가드를 `isSyncedWithDefault`로 라우팅
 - [x] `npm test`·`npm run docs:check` green
 - [x] CHANGELOG [Unreleased]
-- [ ] codex 리뷰 기록
+- [x] codex 리뷰 기록
 - [ ] PR·CI green
 - [ ] 머지 후 종결 — detached HEAD에서 `summary --write` 실측
 
