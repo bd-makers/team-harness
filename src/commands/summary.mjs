@@ -232,7 +232,8 @@ export function renderAll(tasks) {
 // `branch --show-current` rather than `rev-parse --abbrev-ref HEAD`: the latter fails on
 // an unborn HEAD (a fresh repo with no commits), which is a perfectly ordinary place to
 // render the ledger. `--show-current` names the branch there, and prints nothing when
-// HEAD is detached — which stays refused.
+// HEAD is detached. Detached is its own outcome, not an error: it has no name to match,
+// so it is treated like a non-default branch — refused unless `isSyncedWithDefault`.
 //
 // Repo-ness is decided on the filesystem, not by a second git call, so that a missing or
 // broken git binary cannot masquerade as "no repository here".
@@ -240,7 +241,7 @@ async function branchState(targetDir) {
   try {
     const { stdout } = await pexec('git', ['-C', targetDir, 'branch', '--show-current']);
     const name = stdout.trim();
-    return name ? { kind: 'branch', name } : { kind: 'error' };
+    return name ? { kind: 'branch', name } : { kind: 'detached' };
   } catch {
     return (await findGitDir(targetDir)) ? { kind: 'error' } : { kind: 'none' };
   }
@@ -388,10 +389,12 @@ export async function runSummary(ctx) {
     });
   }
   const bases = await defaultBranchCandidates(ctx.targetDir);
-  const offDefault = state.kind === 'branch' && !bases.includes(state.name) && !force;
+  const offDefault = !force
+    && (state.kind === 'detached' || (state.kind === 'branch' && !bases.includes(state.name)));
   if (offDefault && !(await isSyncedWithDefault(ctx.targetDir))) {
     process.exitCode = 1;
-    return fail(json, 'summary', `기본 브랜치가 아니라 원장을 쓰지 않음 (현재: ${state.name})`, {
+    const current = state.kind === 'detached' ? 'detached HEAD' : state.name;
+    return fail(json, 'summary', `기본 브랜치가 아니라 원장을 쓰지 않음 (현재: ${current})`, {
       cause: `공유 원장을 feature 브랜치에서 갱신하면 병렬 브랜치끼리 다시 충돌함 (기본 브랜치: ${bases.join(' 또는 ')})`,
       retry: `\`${bases[0]}\` 로 전환한 뒤 \`harness-team summary --write\` 실행`,
       // 우회 경로는 이 명령의 escape hatch(--force)까지만 안내한다 — 어떻게 반영할지(직접 push냐
