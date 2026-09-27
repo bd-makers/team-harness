@@ -18,6 +18,14 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Fixed
+- **`summary --write`가 detached HEAD에서 "브랜치 조회 실패"로 거부되던 결함** (task `summary-detached-head`).
+  `branch --show-current`의 빈 출력(detached)을 git 오류와 같은 `error`로 분류해, 워커 워크트리가 `origin/main`에
+  detach해서 머지 후 종결할 때마다 같은 커밋의 임시 브랜치를 만들어 우회해야 했다(#114·#115 종결). 이제 detached는
+  별도 상태이고 비-기본 브랜치와 같은 판정(`isSyncedWithDefault`)을 받는다 — `origin/HEAD`가 가리키는 브랜치와 정확히
+  같은 커밋이면 통과, 다른 커밋·`origin/HEAD` 없음은 종전처럼 거부한다. git 실패는 계속 fail-closed이고 `done` 가드는
+  브랜치를 조회하지 않아 영향이 없다.
+
 ## [0.44.4] - 2026-09-27
 
 ### Fixed

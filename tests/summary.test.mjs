@@ -519,6 +519,60 @@ test('--write: origin/main보다 뒤진(behind) 브랜치도 거부한다', asyn
   }
 });
 
+// 워커 워크트리의 머지 후 종결은 `git checkout --detach origin/main` 위에서 한다 — 브랜치 이름이
+// 없을 뿐 동기화된 브랜치와 같은 커밋이라, 같은 근거(로컬 커밋 0개)로 허용한다.
+test('--write: origin/main과 같은 커밋의 detached HEAD에서도 원장을 쓴다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-summary-detached-'));
+  const exitCode = process.exitCode;
+  try {
+    const repo = await cloneWithOrigin(dir);
+    await git(repo, 'checkout', '-q', '--detach', 'refs/remotes/origin/main');
+    await runTask({ targetDir: repo, flags: { member: 'chad' }, taskArgs: ['demo'] });
+
+    await runSummary({ targetDir: repo, flags: { write: true } });
+    assert.notEqual(process.exitCode, 1, 'origin/main 과 같은 커밋이면 detached 라도 거부되면 안 된다');
+    const summary = await readFile(join(repo, 'docs', 'task_summary.md'), 'utf8');
+    assert.match(summary, /\| chad \| demo \| 🔄 open \|/);
+  } finally {
+    process.exitCode = exitCode;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('--write: origin/main과 다른 커밋의 detached HEAD는 거부한다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-summary-detached-behind-'));
+  const exitCode = process.exitCode;
+  try {
+    const repo = await cloneWithOrigin(dir);
+    await git(repo, 'checkout', '-q', '--detach', 'HEAD~1');
+    await runTask({ targetDir: repo, flags: { member: 'chad' }, taskArgs: ['demo'] });
+
+    await runSummary({ targetDir: repo, flags: { write: true } });
+    assert.equal(process.exitCode, 1, '동기화되지 않은 detached HEAD 는 이름이 없을 뿐 feature 커밋일 수 있다');
+    await assert.rejects(() => readFile(join(repo, 'docs', 'task_summary.md'), 'utf8'));
+  } finally {
+    process.exitCode = exitCode;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('--write: origin/HEAD가 없는 저장소의 detached HEAD는 거부한다 (fail-closed)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-summary-detached-local-'));
+  const exitCode = process.exitCode;
+  try {
+    await initRepo(dir);
+    await git(dir, 'checkout', '-q', '--detach');
+    await runTask({ targetDir: dir, flags: { member: 'chad' }, taskArgs: ['demo'] });
+
+    await runSummary({ targetDir: dir, flags: { write: true } });
+    assert.equal(process.exitCode, 1, '기본 브랜치를 특정할 수 없으면 detached 는 계속 거부한다');
+    await assert.rejects(() => readFile(join(dir, 'docs', 'task_summary.md'), 'utf8'));
+  } finally {
+    process.exitCode = exitCode;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('--write: 커밋이 하나도 없는 저장소의 비-기본 브랜치는 거부한다 (HEAD 조회 실패는 fail-closed)', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'harness-summary-unborn-'));
   const exitCode = process.exitCode;
