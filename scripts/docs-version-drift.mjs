@@ -37,14 +37,11 @@ export const currentVersionDocuments = [
     path: 'docs/index.html',
     markers: [{ name: 'newest what-changes entry', pattern: /href="what-changes-(\d+\.\d+\.\d+)\.html"/ }],
   },
+  // 표지 셋이 overview와 같은 모양이다(hero 배지·🆕 배너·footer의 `v<버전>`). 본문은 사람이 현행화한다.
+  { path: 'docs/harness-workflow-simulation.html', markers: overviewMarkers },
 ];
 
-export const excludedCurrentDocuments = [
-  {
-    path: 'docs/harness-workflow-simulation.html',
-    reason: '본문 시나리오가 0.40.0 기준이라 표지만 고칠 수 없다 — 본문 현행화 후 documents로 옮긴다 (docs/followups.md)',
-  },
-];
+export const excludedCurrentDocuments = [];
 
 function versionSurfaces(html) {
   const tags = [...html.matchAll(/<span\b[^>]*\bclass="tag\b[^"]*"[^>]*>([^<]*)<\/span>/g)].map((match) => match[1]);

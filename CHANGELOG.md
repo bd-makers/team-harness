@@ -26,6 +26,17 @@ modified: 2026-09-13
   같은 커밋이면 통과, 다른 커밋·`origin/HEAD` 없음은 종전처럼 거부한다. git 실패는 계속 fail-closed이고 `done` 가드는
   브랜치를 조회하지 않아 영향이 없다.
 
+### Docs
+- **`docs/harness-workflow-simulation.html` 본문을 현행 동작에 맞추고 `docs:check` 현행 문서로 등록했다** (task `simulation-doc-refresh`).
+  0.40.1~0.44.4 CHANGELOG를 시나리오별로 대조해(대조표는 task artifact) 워크스루 단계를 고쳤다 — user handoff는 gitignore된
+  워크트리 로컬이고 `task` 활성화가 쓴다(구조·S2·S5·S6), handoff 갱신분은 다음 작업 커밋에 담고 단독 sweep은 푸시 직전만(S3),
+  머지 후 종결은 기본 브랜치에서 체크→`done`→`summary --write`→커밋 하나(S4), `--member` 우선·거부되는 이름(S2),
+  관리 절은 `init`이 렌더하고 `doctor`가 낡은 절을 경고(S1), `init --stack` 고정과 `harness-team stack`의 `pin:` 줄(S1·명령 카드),
+  `list --remote`·`--area`(명령 카드). handoff 항목·user handoff 예시도 실제 렌더 형식으로 바로잡았다.
+  표지 셋(hero·🆕 배너·footer)을 package.json 버전에 맞추고 `excludedCurrentDocuments`에서 `currentVersionDocuments`로 옮겼다 —
+  이제 표지가 밀리면 `npm run docs:check`가 실패한다 — `MAINTAINING.md` 릴리스 5단계에 이 문서의 표지 3곳 갱신을 추가했다.
+  `docs/followups.md` 10번을 지웠다.
+
 ## [0.44.4] - 2026-09-27
 
 ### Fixed
