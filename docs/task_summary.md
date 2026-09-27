@@ -131,4 +131,5 @@
 | hslee | docs-version-drift-check | ✅ done | 2026-09-27 |
 | hslee | init-stack-stale-false-positive | ✅ done | 2026-09-27 |
 | hslee | stack-pin-display | ✅ done | 2026-09-27 |
+| hslee | summary-detached-head | ✅ done | 2026-09-27 |
 | hslee | user-handoff-parallel-conflict | ✅ done | 2026-09-27 |

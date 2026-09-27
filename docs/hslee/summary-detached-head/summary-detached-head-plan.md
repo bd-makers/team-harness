@@ -9,8 +9,8 @@
 - [x] `npm test`·`npm run docs:check` green
 - [x] CHANGELOG [Unreleased]
 - [x] codex 리뷰 기록
-- [ ] PR·CI green
-- [ ] 머지 후 종결 — detached HEAD에서 `summary --write` 실측
+- [x] PR·CI green
+- [x] 머지 후 종결 — detached HEAD에서 `summary --write` 실측
 
 ## Ontology 변경 로그
 - `branchState` 결과에 `detached` 추가 (종전엔 `error`에 흡수)

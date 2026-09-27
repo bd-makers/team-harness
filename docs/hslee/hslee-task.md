@@ -6,6 +6,7 @@
 - ✅ docs-version-drift-check
 - ✅ init-stack-stale-false-positive
 - ✅ stack-pin-display
+- ✅ summary-detached-head
 - ✅ user-handoff-parallel-conflict
 - ✅ backup-dir-worktree-base
 - ✅ done-guard-subdir-paths
