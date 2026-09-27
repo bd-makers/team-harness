@@ -18,3 +18,11 @@ CHANGELOG.md                                       |  8 ++
  scripts/generate-harness-overview.mjs              | 10 +++
  tests/docs-version-drift.test.mjs                  | 87 +++++++++++++++++++
  14 files changed, 349 insertions(+), 8 deletions(-)
+
+## 2026-09-27T13:52:45.351Z — 9d29e26 fix(docs): 버전 표지 검사가 속성 붙은 태그를 인식하고 HTML 주석을 무시한다
+.../docs-version-drift-check-artifact.md             | 20 ++++++++++++++++++++
+ .../docs-version-drift-check-meta.json               | 12 +++++++++++-
+ .../docs-version-drift-check-plan.md                 |  2 +-
+ scripts/docs-version-drift.mjs                       |  8 ++++++--
+ tests/docs-version-drift.test.mjs                    |  6 ++++++
+ 5 files changed, 44 insertions(+), 4 deletions(-)
