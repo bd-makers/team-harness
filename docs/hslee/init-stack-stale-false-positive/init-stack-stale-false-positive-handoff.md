@@ -22,3 +22,7 @@ CHANGELOG.md                                       |  7 ++
  tests/migrate-managed-backup.test.mjs              | 14 ++++
  tests/render-state.test.mjs                        |  8 +++
  18 files changed, 288 insertions(+), 14 deletions(-)
+
+## 2026-09-27T02:50:43.037Z — 완료
+
+태스크 종료.

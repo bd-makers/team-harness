@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ init-stack-stale-false-positive
 - ✅ backup-dir-worktree-base
 - ✅ done-guard-subdir-paths
 - ✅ active-json-validation
