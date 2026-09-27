@@ -18,6 +18,8 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.44.4] - 2026-09-27
+
 ### Fixed
 - **같은 user의 병렬 PR이 머지마다 `docs/<user>/<user>-handoff.md`에서 충돌하던 결함** (task `user-handoff-parallel-conflict`).
   이 파일의 내용은 전부 gitignore된 `.harness/active.json`과 그 워크트리의 `git log -1`에서 나오는 워크트리 로컬 렌더링인데
@@ -27,6 +29,11 @@ modified: 2026-09-13
   - 아직 추적 중인 저장소: `doctor`가 경고하고 `migrate`는 `.gitignore` 줄을 보장한 뒤 `git rm --cached` 명령을 **안내만** 한다(인덱스 무변경).
   - "handoff 2파일을 다음 커밋에 담는다" 규범을 task handoff 1파일로 정정(AGENTS.md 관리 절은 `init --yes`로 도달).
   - 전환기 1회: 아직 이 파일을 수정한 구 브랜치를 머지하면 modify/delete 충돌이 한 번 난다 — 삭제 쪽을 취한다.
+  - 소비자 1회 조치: 플러그인 갱신 → 프로젝트마다 `harness-team init --yes`(관리 절·`.gitignore`) → 기본 브랜치에서
+    `git rm --cached docs/<user>/<user>-handoff.md` 후 커밋. `.gitignore` 줄만이면 `migrate`로도 된다.
+
+### Docs
+- README: 자동 `.gitignore` 항목 목록에 user handoff 줄과 전환 절차, `init --stack` 고정 여부를 `harness-team stack`으로 확인하는 방법.
 
 ## [0.44.3] - 2026-09-27
 

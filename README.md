@@ -762,6 +762,9 @@ cd ~/work/project-a
 - `.harness/active.json` (개인 활성 task 상태)
 - `.harness/config.json` (개인 docs 사용자명)
 - `.harness/observability/` (로컬 도구 관측 로그와 HMAC 키)
+- `docs/*/*-handoff.md` (사용자 세션 진입점 `docs/<user>/<user>-handoff.md` — `active.json`을 렌더링한 워크트리 로컬 파일이라
+  추적하면 병렬 PR끼리 충돌한다. task handoff `docs/<user>/<task>/<task>-handoff.md`는 깊이가 달라 계속 추적된다.
+  0.44.4 이전 설치본은 이미 추적 중이므로 기본 브랜치에서 `git rm --cached docs/<user>/<user>-handoff.md` 후 커밋 1회 — `doctor`가 경고로 알린다)
 
 Claude Code 도구 관측은 원문을 보존하지 않는 로컬 JSONL만 `.harness/observability/`에 기록합니다. 이 로그의 소비자는 `harness-team observe`(스코어카드·트립와이어)입니다.
 보존 데이터·권한·회전·정리 정책은 [Hooks 레퍼런스](docs/harness-overview.html#hooks)를 참조하세요.

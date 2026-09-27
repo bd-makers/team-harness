@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.44.3</span>
+      <span class="tag tag-purple">v0.44.4</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.44.4 — user handoff 추적 해제 (병렬 PR 충돌 제거):</strong>
+    <br>
+    <code>0.44.4</code> <strong><code>docs/&lt;user&gt;/&lt;user&gt;-handoff.md</code>를 더 이상 커밋하지 않는다.</strong> 내용이 전부 gitignore된 <code>active.json</code>과 그 워크트리의 <code>git log -1</code>에서 나오는 워크트리 로컬 렌더링이라, 추적하면 같은 사람의 병렬 PR이 머지마다 충돌했다. 하네스 관리 <code>.gitignore</code>에 <code>docs/*/*-handoff.md</code>(깊이 2 — task handoff는 계속 추적)가 들어가고, <code>task</code> 활성화가 진입점을 바로 쓰며, 아직 추적 중이면 <code>doctor</code>가 경고한다. 소비자는 플러그인 갱신 뒤 <strong><code>init --yes</code></strong>(AGENTS.md 관리 절 — <code>migrate</code>는 렌더하지 않음)와 기본 브랜치에서 <code>git rm --cached docs/&lt;user&gt;/&lt;user&gt;-handoff.md</code> 커밋 1회가 필요하다.
+    <br><br>
     <strong>🆕 0.44.3 — 강제 스택 고정 + 문서 버전 가드:</strong>
     <br>
     <code>0.44.3</code> <strong><code>init --stack X</code>로 감지와 다른 스택을 강제하면 <code>.harness/render-state.json</code>에 고정되어, 플래그 없는 <code>init</code>·<code>doctor</code>·<code>migrate</code>가 같은 스택으로 렌더한다.</strong> <code>doctor</code>의 <code>stack</code> 관리 절 stale 오탐과, 그 처방을 따르면 강제 스택이 감지 스택으로 되돌아가던 결함을 고쳤다. <code>harness-team stack</code>은 고정이 있으면 <code>pin:</code> 줄(<code>--json</code>은 <code>stackPin</code>)로 감지·고정·유효 스택과 해제 명령을 보여 준다. 메인테이너 쪽으로 <code>npm run docs:check</code>가 현행 문서의 버전 표지를 <code>package.json</code>과 대조한다. <code>templates/</code>는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 된다 — 예전에 <code>--stack</code>을 강제한 프로젝트는 <code>init --stack &lt;그 스택&gt;</code>을 한 번 다시 실행해 고정을 기록한다.
@@ -950,7 +954,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.44.3 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.44.4 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
