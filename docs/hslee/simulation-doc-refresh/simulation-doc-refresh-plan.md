@@ -10,8 +10,8 @@
 - [x] CHANGELOG [Unreleased] 항목
 - [x] `npm test`·`npm run docs:check` green
 - [x] codex 리뷰 기록
-- [ ] 커밋·PR·CI green
-- [ ] 머지
+- [x] 커밋·PR·CI green
+- [x] 머지
 
 ## Ontology 변경 로그
 - (none)
