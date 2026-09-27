@@ -45,5 +45,30 @@
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
 
+### 2026-09-27T16:07:20.493Z — codex (harness-team review)
+
+- engine: codex · scope: worktree · tip: c210a38764dcb2b019bf241f090be78a207b0fb5 · exit 0 · 2264 B
+
+```text
+전하, **P1은 없습니다. 문서의 동작 주장 두 곳은 수정이 필요합니다.** Working tree에는 post-commit이 갱신한 task handoff만 미커밋 상태였고, 요청하신 HTML·레지스트리·MAINTAINING 변경은 `main` 대비 커밋 `c210a38`에서 검토했습니다. 파일은 수정하지 않았습니다.
+
+- **P2** [docs/harness-workflow-simulation.html:730](/Users/hsonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-12/docs/harness-workflow-simulation.html:730) — `summary --write`가 `origin/HEAD`와 같은 커밋에서만 허용된다는 주장은 과장입니다. 실제 가드는 기본 브랜치 **이름**이면 커밋 동일성 검사를 건너뛰므로, ahead·behind 상태에서도 실행될 수 있습니다.
+- **P2** [docs/harness-workflow-simulation.html:721](/Users/hsonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-12/docs/harness-workflow-simulation.html:721) — 직접 실행한 `harness-team done`까지 `AskUserQuestion`을 거친다는 기존 본문 주장은 실제 CLI와 다릅니다. `runDone`은 가드 통과 후 확인 질문 없이 완료 상태를 씁니다.
+- **P3** [docs/harness-workflow-simulation.html:1123](/Users/hsonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-12/docs/harness-workflow-simulation.html:1123) — 훅 위치를 `.git/hooks/post-commit`으로 고정해 적었습니다. 설치 코드는 `core.hooksPath`와 Git worktree의 실제 hooks 경로를 따릅니다.
+- **P3** [MAINTAINING.md:202](/Users/hsonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-12/MAINTAINING.md:202) — 시뮬레이션 문서 갱신 항목을 추가했지만 설명은 여전히 “이 두 줄”이라고 합니다.
+
+**검토 결과:** `docs-version-drift.mjs`의 레지스트리 이동과 MAINTAINING의 표지 갱신 절차는 일치합니다. 표지 검사 결과는 `[]`이고 `docs:check`도 통과했습니다. 작성된 버전 주장에서 **0.44.4 이후의 미래 버전 번호는 발견하지 못했습니다.** 다만 표지 검사는 본문 사실관계를 검증하지 않으므로, 위 P2를 고친 뒤 문서 현행화를 승인하는 것이 적절합니다.
+```
+
+<!-- harness:review kind=codex scope=worktree tip=c210a38764dcb2b019bf241f090be78a207b0fb5 at=2026-09-27T16:07:20.493Z -->
+
+**판별·조치 (2026-09-28):** 4건 모두 소스로 재현해 진짜 결함으로 판별, 전부 반영했다.
+- P2 `summary --write` 조건 — `runSummary`는 현재 브랜치가 기본 브랜치 이름이면 통과하고, 아니면 `isSyncedWithDefault`(같은 커밋)를
+  본다(`src/commands/summary.mjs:390-392`). S4 infobox를 "기본 브랜치이거나 같은 커밋"으로 고쳤고, 같은 과장이 있던 기존 summary
+  명령 카드(0.30.0 문장)도 함께 고쳤다.
+- P2 `done`의 AskUserQuestion — `runDone`은 묻지 않는다. 확인은 Claude가 (1)·(2) 트리거에서 실행 전에 하는 것이라고 S4 infobox와
+  done 명령 카드를 고쳤다(기존 본문 오류).
+- P3 훅 경로 — handoff 카드를 `git rev-parse --git-path hooks`(core.hooksPath·워크트리 반영) 기준 서술로 고쳤다.
+- P3 MAINTAINING "이 두 줄" → "이 줄들".
 
 ## Learnings

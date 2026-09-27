@@ -718,7 +718,7 @@
       <strong>트리거 3가지:</strong> (1) post-commit hook이 plan 전체 완료 감지,
       (2) 사용자가 "다 됐어", "완료했어", "PR 올릴게" 등 완료 신호 발화,
       (3) 사용자가 직접 <code>harness-team done</code> 실행.
-      셋 모두 <strong>종결 가드</strong>를 통과한 뒤 AskUserQuestion을 거쳐 실수 완료를 방지합니다 (P0 — 선언이 아니라 강제).
+      셋 모두 <strong>종결 가드</strong>를 통과해야 합니다 (P0 — 선언이 아니라 강제). (1)·(2)는 Claude가 <code>done</code>을 실행하기 전에 AskUserQuestion으로 확인합니다 — CLI 자체는 묻지 않으므로 (3) 직접 실행은 가드만 거칩니다.
     </div>
 
     <div class="infobox" style="border-left-color:var(--accent3)">
@@ -727,7 +727,7 @@
       → <strong>커밋 하나</strong>(<code>chore(task): &lt;name&gt; 종결</code>)에 plan·meta·task handoff·원장을 함께 담는다.
       <code>done</code> 가드는 활성 task의 plan.md 변경이 <strong>줄머리 체크박스를 켠 것뿐</strong>이면 미커밋 작업으로 세지 않는다(끄기·줄 추가·산문 수정은 종전대로 막는다) — 그래서 체크·종결·원장을 커밋 셋으로 나눌 이유가 없다.
       단계를 켜는 판단은 여전히 에이전트 몫이다 — 머지를 확인하기 전에 켜지 않는다.
-      <code>summary --write</code>는 HEAD가 <code>origin/HEAD</code>의 기본 브랜치와 같은 커밋일 때만 허용되므로 종결은 PR 브랜치가 아니라 기본 브랜치에서 한다.
+      <code>summary --write</code>는 기본 브랜치이거나 HEAD가 <code>origin/HEAD</code>의 기본 브랜치와 같은 커밋일 때만 허용되고 피처 브랜치에서는 거부되므로, 종결은 PR 브랜치가 아니라 기본 브랜치에서 한다.
     </div>
 
     <div class="steps">
@@ -1116,15 +1116,15 @@ login-bug
       </div>
       <div class="card card-accent-green">
         <h3>harness-team done</h3>
-        <p>수동 완료 트리거. <strong>종결 가드 7종</strong>(plan·artifact·미커밋·커밋 0개·테스트·리뷰 증거·검증 증거) 통과 후 AskUserQuestion 확인 → 완료 처리. plan 완료 감지나 발화로도 트리거됨. 리뷰·검증 증거는 <code>meta.reviews[]</code>가 정본이고, 그 키가 없는 구 task만 artifact 마커로 판정한다(0.37.0). <code>--force</code>는 경고만 하고 통과시키되 <strong>무시된 issue가 1개 이상이면</strong> meta에 <code>forcedAt</code>·<code>forcedIssues</code>를 남긴다(0.34.0).</p>
+        <p>수동 완료 트리거. <strong>종결 가드 7종</strong>(plan·artifact·미커밋·커밋 0개·테스트·리뷰 증거·검증 증거) 통과 후 완료 처리 — CLI는 묻지 않으며, plan 완료 감지나 발화로 트리거될 때 Claude가 실행 전에 AskUserQuestion으로 확인한다. 리뷰·검증 증거는 <code>meta.reviews[]</code>가 정본이고, 그 키가 없는 구 task만 artifact 마커로 판정한다(0.37.0). <code>--force</code>는 경고만 하고 통과시키되 <strong>무시된 issue가 1개 이상이면</strong> meta에 <code>forcedAt</code>·<code>forcedIssues</code>를 남긴다(0.34.0).</p>
       </div>
       <div class="card card-accent-orange">
         <h3>harness-team handoff</h3>
-        <p>post-commit hook 전용 (<code>.git/hooks/post-commit</code>에서 자동 실행). git log/diff 기반으로 <code>&lt;name&gt;-handoff.md</code>와 <code>&lt;user&gt;-handoff.md</code>를 갱신. <strong>활성 포인터가 없으면 조용히 no-op</strong>이다. 커밋 대상은 <code>&lt;name&gt;-handoff.md</code> 하나이고 다음 작업 커밋에 함께 담는다(0.42.1·0.44.4).</p>
+        <p>post-commit hook 전용 (git이 실제로 읽는 hooks 디렉터리 — <code>core.hooksPath</code>·워크트리 반영 — 의 <code>post-commit</code>에서 자동 실행). git log/diff 기반으로 <code>&lt;name&gt;-handoff.md</code>와 <code>&lt;user&gt;-handoff.md</code>를 갱신. <strong>활성 포인터가 없으면 조용히 no-op</strong>이다. 커밋 대상은 <code>&lt;name&gt;-handoff.md</code> 하나이고 다음 작업 커밋에 함께 담는다(0.42.1·0.44.4).</p>
       </div>
       <div class="card card-accent-green">
         <h3>harness-team summary [--write|--check] <span style="font-size:0.68rem;color:var(--muted);font-weight:400">0.16.0</span></h3>
-        <p>task 디렉터리를 스캔해 원장(<code>docs/task_summary.md</code>·<code>docs/&lt;user&gt;/&lt;user&gt;-task.md</code>)을 렌더한다. 인자 없이 실행하면 stdout으로만 낸다. <code>--write</code>는 HEAD가 <code>origin/HEAD</code>의 기본 브랜치와 <strong>정확히 같은 커밋</strong>일 때만 허용된다(0.30.0 — 브랜치 이름이 아니라 커밋 기준이라 워크트리에서도 통과한다). ahead·behind는 fail-closed 거부 — 피처 브랜치에서 원장을 쓰면 병렬 충돌이 돌아온다. 머지 후 종결 커밋 하나에 함께 담는다(S4).</p>
+        <p>task 디렉터리를 스캔해 원장(<code>docs/task_summary.md</code>·<code>docs/&lt;user&gt;/&lt;user&gt;-task.md</code>)을 렌더한다. 인자 없이 실행하면 stdout으로만 낸다. <code>--write</code>는 기본 브랜치에서, 또는 HEAD가 <code>origin/HEAD</code>의 기본 브랜치와 <strong>정확히 같은 커밋</strong>일 때만 허용된다(0.30.0 — 커밋 기준 경로 덕분에 기본 브랜치를 체크아웃할 수 없는 워크트리에서도 통과한다). 피처 브랜치가 ahead·behind면 fail-closed 거부 — 피처 브랜치에서 원장을 쓰면 병렬 충돌이 돌아온다. 머지 후 종결 커밋 하나에 함께 담는다(S4).</p>
       </div>
       <div class="card card-accent-blue">
         <h3>harness-team stack <span style="font-size:0.68rem;color:var(--muted);font-weight:400">0.40.0</span></h3>

@@ -9,7 +9,7 @@
 - [x] `docs-version-drift.mjs` 레지스트리 이동 + followups 10번 삭제
 - [x] CHANGELOG [Unreleased] 항목
 - [x] `npm test`·`npm run docs:check` green
-- [ ] codex 리뷰 기록
+- [x] codex 리뷰 기록
 - [ ] 커밋·PR·CI green
 - [ ] 머지
 
