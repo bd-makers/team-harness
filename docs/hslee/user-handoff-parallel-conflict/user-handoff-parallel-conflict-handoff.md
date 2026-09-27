@@ -39,3 +39,39 @@
  tests/summary.test.mjs                             |   7 +-
  tests/user-handoff-untracked.test.mjs              | 209 +++++++++++++++++++++
  26 files changed, 420 insertions(+), 72 deletions(-)
+
+## 2026-09-27T14:36:23.763Z — 593d31b Merge refs/remotes/origin/main (0.44.3) into user-handoff-parallel-conflict
+.claude-plugin/marketplace.json                    |   2 +-
+ .claude-plugin/plugin.json                         |   2 +-
+ .codex-plugin/plugin.json                          |   2 +-
+ CHANGELOG.md                                       |  16 +
+ MAINTAINING.md                                     |  13 +-
+ commands/harness-init.md                           |   1 +
+ docs/ao-worker-rules.md                            |   2 +-
+ docs/followups.md                                  |  13 +-
+ docs/harness-overview.html                         |  18 +-
+ docs/harness-overview.template.html                |   8 +-
+ .../docs-version-drift-check-artifact.md           |  33 +++
+ .../docs-version-drift-check-context.md            |  27 ++
+ .../docs-version-drift-check-handoff.md            |  32 ++
+ .../docs-version-drift-check-meta.json             |  21 ++
+ .../docs-version-drift-check-plan.md               |  20 ++
+ .../docs-version-drift-check-spec.md               |  42 +++
+ docs/hslee/hslee-task.md                           |   2 +
+ .../stack-pin-display-artifact.md                  |  30 ++
+ .../stack-pin-display/stack-pin-display-context.md |  27 ++
+ .../stack-pin-display/stack-pin-display-handoff.md |  30 ++
+ .../stack-pin-display/stack-pin-display-meta.json  |  21 ++
+ .../stack-pin-display/stack-pin-display-plan.md    |  21 ++
+ .../stack-pin-display/stack-pin-display-spec.md    |  52 ++++
+ docs/index.html                                    |   1 +
+ docs/task_summary.md                               |   2 +
+ docs/what-changes-0.44.3.html                      | 322 +++++++++++++++++++++
+ docs/what-changes-latest-version.html              |  76 +++--
+ package.json                                       |   2 +-
+ scripts/docs-version-drift.mjs                     | 102 +++++++
+ scripts/generate-harness-overview.mjs              |  10 +
+ src/commands/stack.mjs                             |  22 +-
+ tests/detect-testing.test.mjs                      |  23 ++
+ tests/docs-version-drift.test.mjs                  |  93 ++++++
+ 33 files changed, 1040 insertions(+), 48 deletions(-)
