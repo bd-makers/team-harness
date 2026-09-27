@@ -129,3 +129,4 @@
 | hslee | backup-dir-worktree-base | ✅ done | 2026-09-26 |
 | hslee | done-guard-subdir-paths | ✅ done | 2026-09-26 |
 | hslee | init-stack-stale-false-positive | ✅ done | 2026-09-27 |
+| hslee | stack-pin-display | ✅ done | 2026-09-27 |

@@ -24,3 +24,7 @@ CHANGELOG.md                                            |  5 +++--
  src/commands/stack.mjs                                  |  8 +++++---
  tests/detect-testing.test.mjs                           |  4 ++--
  7 files changed, 41 insertions(+), 11 deletions(-)
+
+## 2026-09-27T13:58:42.717Z — 완료
+
+태스크 종료.
