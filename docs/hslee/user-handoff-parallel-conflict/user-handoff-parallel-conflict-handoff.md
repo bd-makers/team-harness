@@ -75,3 +75,7 @@
  tests/detect-testing.test.mjs                      |  23 ++
  tests/docs-version-drift.test.mjs                  |  93 ++++++
  33 files changed, 1040 insertions(+), 48 deletions(-)
+
+## 2026-09-27T14:43:10.068Z — e0f0810 docs(readme): init --stack 고정 여부를 harness-team stack으로 확인한다
+README.md | 1 +
+ 1 file changed, 1 insertion(+)
