@@ -9,7 +9,7 @@
 - [x] 검사 구현 + `docs:check` 합류, overview 인벤토리 재생성
 - [x] MAINTAINING·ao-worker-rules·followups(10번)·CHANGELOG [Unreleased] 갱신
 - [x] `npm test`·`npm run docs:check` green
-- [ ] 커밋 + `harness-team review`(codex) + artifact 기록
+- [x] 커밋 + `harness-team review`(codex) + artifact 기록
 - [ ] push·PR·CI 확인
 - [ ] 머지 후 main에서 종결 (워커 몫 아님)
 

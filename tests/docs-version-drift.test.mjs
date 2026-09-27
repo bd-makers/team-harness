@@ -39,6 +39,11 @@ test('a removed marker fails instead of silently disabling the guard', () => {
   assert.deepEqual(findMarkerDrift(html, overviewMarkers, '1.2.3'), [{ marker: 'footer', found: null }]);
 });
 
+test('a current-looking marker inside an HTML comment does not mask a stale one', () => {
+  const html = `<!-- <span class="tag tag-purple">v1.2.3</span> -->\n${overviewFixture({ hero: '1.1.0' })}`;
+  assert.deepEqual(findMarkerDrift(html, overviewMarkers, '1.2.3'), [{ marker: 'hero badge', found: '1.1.0' }]);
+});
+
 test('a grouped banner is judged by its upper bound', () => {
   assert.deepEqual(findMarkerDrift(overviewFixture({ banner: '1.0.0–1.2.3' }), overviewMarkers, '1.2.3'), []);
   assert.deepEqual(
@@ -52,6 +57,7 @@ test('classification separates snapshots, baseline-labelled, current and unversi
   assert.equal(classifyDocument('docs/x-1.2.3.html', bareHero), 'snapshot');
   assert.equal(classifyDocument('docs/x.html', bareHero), 'current');
   assert.equal(classifyDocument('docs/x.html', '<footer>plugin v1.2.3 · 소스에서 생성됨</footer>'), 'current');
+  assert.equal(classifyDocument('docs/x.html', '<span aria-label="version" class="tag tag-purple">v1.2.3</span>'), 'current');
   // 한 표면이라도 "기준"을 달면 문서 전체가 기준 버전을 선언한 것이다 — 다른 표면의 맨 버전은 그 기준의 반복이다.
   assert.equal(
     classifyDocument('docs/x.html', '<span class="tag tag-purple">1.0.0 기준</span><footer>plugin · 1.0.0 · 가이드</footer>'),

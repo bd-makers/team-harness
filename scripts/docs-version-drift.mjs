@@ -11,9 +11,12 @@ import { join } from 'node:path';
 //   3. current    — 버전을 담은 hero 태그나 footer가 있고 "기준"이 없다. documents에 표지를 등록하거나,
 //                   exclusions에 사유와 함께 올려야 한다. 어느 쪽에도 없으면 검사가 실패한다.
 //   4. unversioned — 그 밖. <title> 속 버전은 분류에 쓰지 않는다.
+// HTML 주석은 분류·표지 판정 전에 지운다. footer 속 다른 제품의 버전(예: 의존성 버전)도 3으로 분류되는데,
+// 이 오탐은 의도다 — 실패가 시끄러운 쪽이라 등록·제외·"기준" 라벨 중 하나를 사람이 고르게 된다.
 
 const versionPattern = /\d+\.\d+\.\d+/;
 const snapshotPattern = /-\d+\.\d+(?:\.\d+)?\.html$/;
+const stripComments = (html) => html.replace(/<!--[\s\S]*?-->/g, '');
 
 export const overviewMarkers = [
   { name: 'hero badge', pattern: /<span class="tag tag-purple">v(\d+\.\d+\.\d+)<\/span>/ },
@@ -44,7 +47,7 @@ export const excludedCurrentDocuments = [
 ];
 
 function versionSurfaces(html) {
-  const tags = [...html.matchAll(/<span class="tag[^"]*">([^<]*)<\/span>/g)].map((match) => match[1]);
+  const tags = [...html.matchAll(/<span\b[^>]*\bclass="tag\b[^"]*"[^>]*>([^<]*)<\/span>/g)].map((match) => match[1]);
   const footers = [...html.matchAll(/<footer[^>]*>([\s\S]*?)<\/footer>|<div class="footer">([\s\S]*?)<\/div>/g)]
     .map((match) => match[1] ?? match[2]);
   return [...tags, ...footers].filter((text) => versionPattern.test(text));
@@ -52,12 +55,13 @@ function versionSurfaces(html) {
 
 export function classifyDocument(path, html) {
   if (snapshotPattern.test(path)) return 'snapshot';
-  const surfaces = versionSurfaces(html);
+  const surfaces = versionSurfaces(stripComments(html));
   if (surfaces.some((text) => text.includes('기준'))) return 'baseline';
   return surfaces.length > 0 ? 'current' : 'unversioned';
 }
 
 export function findMarkerDrift(html, markers, version) {
+  html = stripComments(html);
   return markers.flatMap(({ name, pattern }) => {
     const found = html.match(pattern)?.[1] ?? null;
     return found === version ? [] : [{ marker: name, found }];
