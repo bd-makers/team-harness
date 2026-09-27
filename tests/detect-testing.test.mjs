@@ -319,10 +319,10 @@ test('CLI: render-state 고정은 감지·고정·유효 스택과 해제 방법
     await writeFile(join(dir, '.harness', 'render-state.json'), JSON.stringify({ version: 1, stack: 'next', sections: {} }));
     const env = JSON.parse((await cli(['stack', '--json', '--target', dir])).stdout);
     assert.deepEqual(env.stackPin, {
-      pinned: 'next', detected: 'node', effective: 'next', unpin: 'harness-team init --stack node',
+      pinned: 'next', detected: 'node', effective: 'next', unpin: `harness-team init --stack node --target '${dir}'`,
     });
     assert.equal(env.stack.id, 'node', '기존 필드는 불변');
     const { stdout } = await cli(['stack', '--target', dir]);
-    assert.match(stdout, /pin: next \(detected: node → effective: next\) — init --stack node to unpin/);
+    assert.ok(stdout.includes(`pin: next (detected: node → effective: next) — unpin: ${env.stackPin.unpin}`), stdout);
   });
 });

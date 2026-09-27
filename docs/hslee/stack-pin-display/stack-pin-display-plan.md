@@ -8,7 +8,7 @@
 - [x] `src/commands/stack.mjs` 구현
 - [x] 문서(`commands/harness-init.md`)·CHANGELOG [Unreleased]
 - [x] `npm test`·`npm run docs:check` green
-- [ ] 외부 리뷰(`harness-team review`) → artifact 기록
+- [x] 외부 리뷰(`harness-team review`) → artifact 기록
 - [ ] PR 생성·CI 확인
 - [ ] 머지 후 종결(기본 브랜치)
 

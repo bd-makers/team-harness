@@ -12,8 +12,8 @@
 ## 설계 / 접근
 - `runStack`이 `loadRenderState(targetDir).stack`을 읽는다(로더가 모르는 id는 이미 버린다).
 - JSON: 새 필드 `stackPin` — 고정 없으면 `null`, 있으면 `{ pinned, detected, effective, unpin }`.
-  `effective`는 관리 절 렌더에 쓰이는 스택(= pinned). `unpin`은 `harness-team init --stack <detected>`.
-- text: 5줄 요약 밖에 한 줄 `pin: <pinned> (detected: <detected> → effective: <pinned>) — init --stack <detected> to unpin`.
+  `effective`는 관리 절 렌더에 쓰이는 스택(= pinned). `unpin`은 `harness-team init --stack <detected> --target '<조회 경로>'`(셸 인용) — `stack --target`으로 다른 디렉터리를 본 경우에도 그대로 실행 가능해야 한다.
+- text: 5줄 요약 밖에 한 줄 `pin: <pinned> (detected: <detected> → effective: <pinned>) — unpin: <unpin>`.
 - 기존 `stack` 필드는 그대로 감지(또는 명령의 `--stack`) 결과 — testing 소비자(unittest·comptest·inttest 0단계)를 흔들지 않는다.
 
 ## Ontology

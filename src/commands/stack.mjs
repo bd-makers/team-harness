@@ -84,7 +84,9 @@ async function readStackPin(targetDir) {
   const { stack: pinned } = await loadRenderState(targetDir);
   if (!pinned) return null;
   const { id: detected } = await detectStack(targetDir);
-  return { pinned, detected, effective: pinned, unpin: `harness-team init --stack ${detected}` };
+  // `stack --target`은 다른 디렉터리를 볼 수 있다 — 경로 없는 안내를 따르면 cwd에 적용된다(codex P2).
+  const target = `'${targetDir.replaceAll("'", `'\\''`)}'`;
+  return { pinned, detected, effective: pinned, unpin: `harness-team init --stack ${detected} --target ${target}` };
 }
 
 export async function runStack(ctx) {
@@ -120,8 +122,8 @@ export async function runStack(ctx) {
   for (const line of packSummary(summary)) console.log(`  ${line}`);
   // 5줄 요약 계약 밖에 둔다 — 고정은 테스트 프로필이 아니라 관리 절 렌더에 관한 사실이다.
   if (stackPin) {
-    const { pinned, detected, effective } = stackPin;
-    console.log(`  pin: ${pinned} (detected: ${detected} → effective: ${effective}) — init --stack ${detected} to unpin`);
+    const { pinned, detected, effective, unpin } = stackPin;
+    console.log(`  pin: ${pinned} (detected: ${detected} → effective: ${effective}) — unpin: ${unpin}`);
   }
   console.log('');
   for (const action of nextActions(testing)) console.log(`next: ${action}`);
