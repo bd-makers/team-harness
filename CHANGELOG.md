@@ -27,11 +27,27 @@ modified: 2026-09-13
   - 아직 추적 중인 저장소: `doctor`가 경고하고 `migrate`는 `.gitignore` 줄을 보장한 뒤 `git rm --cached` 명령을 **안내만** 한다(인덱스 무변경).
   - "handoff 2파일을 다음 커밋에 담는다" 규범을 task handoff 1파일로 정정(AGENTS.md 관리 절은 `init --yes`로 도달).
   - 전환기 1회: 아직 이 파일을 수정한 구 브랜치를 머지하면 modify/delete 충돌이 한 번 난다 — 삭제 쪽을 취한다.
+
+## [0.44.3] - 2026-09-27
+
+### Added
+- **`npm run docs:check`가 현행 문서의 버전 표지를 `package.json` 버전과 대조한다** — `docs/harness-overview.template.html`·
+  생성본의 hero 배지·최신 🆕 배너·footer, `docs/what-changes-latest-version.html`의 footer, `docs/index.html` what-changes
+  목록의 첫 항목. 지금까지는 이 표면들에 가드가 없어 overview 배지가 두 세대, 시뮬레이션 footer가 17릴리스 밀린 채 발행됐다.
+  `docs/` 최상위 HTML은 결정론적으로 분류된다(스냅샷 `-<버전>.html` / "기준" 라벨 문서 / 현행 / 무버전 —
+  `scripts/docs-version-drift.mjs` 머리 주석) — 현행으로 분류됐는데 등록도 명시 제외도 없는 새 문서는 검사가 실패한다.
+  `docs/harness-workflow-simulation.html`은 본문 현행화가 먼저라 사유와 함께 명시 제외했다(`docs/followups.md` 10번).
+
+### Fixed
 - **`init --stack X`로 강제한 스택이 저장되지 않아 `doctor`가 `stack` 관리 절을 stale로 잘못 경고하던 결함.**
   `doctor`의 관리 절 stale 검사·`migrate`의 관리 절 백업 diff·플래그 없는 `init`이 모두 감지 스택으로 다시 렌더해,
   `doctor`의 처방(`harness-team init`)을 따르면 강제한 스택이 감지 스택으로 조용히 되돌아갔다.
   이제 감지와 다른 `--stack`은 `.harness/render-state.json`의 `stack` 필드에 고정되고 세 경로가 같은 스택으로 렌더한다.
   감지된 id를 다시 주면(`--stack node` 등) 고정이 풀린다. 필드가 없는 기존 설치본은 동작 불변이다.
+- **`harness-team stack`이 render-state의 고정 스택을 보여 주지 않던 문제.** 관리 절은 고정 스택으로 렌더되는데
+  `stack` 출력은 감지 스택만 말했다. 이제 고정이 있으면 text에 `pin: <고정> (detected: <감지> → effective: <고정>) — unpin: <해제 명령>`
+  줄이, `--json`에 새 필드 `stackPin`(`{ pinned, detected, effective, unpin }`, 고정 없으면 `null`)이 나온다.
+  해제 명령은 `harness-team init --stack <감지> --target '<조회 경로>'`다. 기존 필드는 불변이다.
 
 ## [0.44.2] - 2026-09-26
 

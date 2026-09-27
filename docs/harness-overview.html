@@ -203,7 +203,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.44.2</span>
+      <span class="tag tag-purple">v0.44.3</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -211,6 +211,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.44.3 — 강제 스택 고정 + 문서 버전 가드:</strong>
+    <br>
+    <code>0.44.3</code> <strong><code>init --stack X</code>로 감지와 다른 스택을 강제하면 <code>.harness/render-state.json</code>에 고정되어, 플래그 없는 <code>init</code>·<code>doctor</code>·<code>migrate</code>가 같은 스택으로 렌더한다.</strong> <code>doctor</code>의 <code>stack</code> 관리 절 stale 오탐과, 그 처방을 따르면 강제 스택이 감지 스택으로 되돌아가던 결함을 고쳤다. <code>harness-team stack</code>은 고정이 있으면 <code>pin:</code> 줄(<code>--json</code>은 <code>stackPin</code>)로 감지·고정·유효 스택과 해제 명령을 보여 준다. 메인테이너 쪽으로 <code>npm run docs:check</code>가 현행 문서의 버전 표지를 <code>package.json</code>과 대조한다. <code>templates/</code>는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 된다 — 예전에 <code>--stack</code>을 강제한 프로젝트는 <code>init --stack &lt;그 스택&gt;</code>을 한 번 다시 실행해 고정을 기록한다.
+    <br><br>
     <strong>🆕 0.44.2 — git 워크트리의 백업 경로 기준 수정:</strong>
     <br>
     <code>0.44.2</code> <strong>git 워크트리(앱 워크트리 <code>.claude/worktrees/&lt;w&gt;</code> 등)에서도 백업 경로가 메인 체크아웃 기준으로 풀린다.</strong> 커밋된 <code>backup.json</code>의 <code>{parent,name}</code>·자동 탐지·<code>init</code> 신규 설정이 워크트리 부모와 워크트리 이름을 쓰던 결함을 <code>git rev-parse --git-common-dir</code>의 부모 + <code>--show-prefix</code>로 고쳤다 — 메인 체크아웃·비-git은 결과 불변. <code>templates/</code>는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 된다.
@@ -1659,6 +1663,11 @@
             <td>프로젝트 소스 파일</td>
           </tr>
           <tr>
+            <td><code>scripts/docs-version-drift.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>현행 문서의 버전 표지를 package.json과 대조 (docs:check)</td>
+          </tr>
+          <tr>
             <td><code>scripts/generate-harness-overview.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
             <td>다이어그램과 인벤토리를 한 번에 생성</td>
@@ -2369,6 +2378,11 @@
             <td>자동 회귀 검증</td>
           </tr>
           <tr>
+            <td><code>tests/docs-version-drift.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
             <td><code>tests/doctor.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
@@ -2900,7 +2914,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.44.2 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.44.3 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

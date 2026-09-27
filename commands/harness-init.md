@@ -39,6 +39,7 @@ Claude의 Bash는 TTY가 아니라 CLI의 readline 프롬프트(사용자명·�
 `--stack`을 주지 않으면 자동 감지하며, React Native/Expo 전용 rules 4종은 유효 stack이 RN 계열일 때만 설치됩니다.
 감지와 다른 `--stack`은 `.harness/render-state.json`에 고정되어 이후 플래그 없는 `init`·`doctor`·`migrate`도
 그 스택을 씁니다 — 감지된 id를 다시 주면(`--stack node` 등) 고정이 풀립니다.
+고정 여부는 `harness-team stack`으로 확인합니다 — text는 `pin:` 줄, `--json`은 `stackPin`(고정 없으면 `null`) 필드에 감지·고정·유효 스택과 해제 명령이 나옵니다.
 
 **Step 0 — 기존 CLAUDE.md 커스텀 내용 확인**
 
