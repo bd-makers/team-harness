@@ -1,0 +1,21 @@
+{
+  "user": "hslee",
+  "task": "stack-pin-display",
+  "created": "2026-09-27",
+  "firstActivatedAt": "2026-09-27T13:43:16.924Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "5b574d721de61609e3c4efdae959bdc49ca5ee47",
+      "at": "2026-09-27T13:47:29.920Z",
+      "exitCode": 0,
+      "outputBytes": 753
+    }
+  ]
+}

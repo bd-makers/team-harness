@@ -5,8 +5,9 @@
 // 넘겨받았다. 설치하지 않고, 러너를 추천하지 않고, 묻지 않는다 — 러너 부재 분기는 AskUserQuestion과
 // 웹 검색이 필요해 CLI가 볼 수 없는 입력에 의존하고, 그래서 산문(커맨드 문서)에 남아 있다.
 // 여기서 할 수 있는 최선은 "러너가 없다"는 관측을 warning으로 올려 그 분기를 에이전트에게 넘기는 것이다.
-import { resolveStack, KNOWN_STACK_IDS } from '../detect-stack.mjs';
+import { detectStack, resolveStack, KNOWN_STACK_IDS } from '../detect-stack.mjs';
 import { detectTesting } from '../detect-testing.mjs';
+import { loadRenderState } from '../render-state.mjs';
 import { buildEnvelope, emitObservation } from '../observation.mjs';
 
 const NO_RUNNER_SUMMARY = '테스트 러너를 찾지 못했습니다 — 러너 부재 분기(문서 0단계)를 수행하세요';
@@ -77,6 +78,17 @@ function nextActions(testing) {
   return actions;
 }
 
+// `init --stack X`가 render-state에 남긴 고정(#111). 관리 절은 X로 렌더되는데 `stack` 필드는 감지값이라,
+// 고정 사실과 해제 방법을 따로 드러낸다. 기존 필드는 건드리지 않는다 — 소비자는 JSON 계약에 기대고 있다.
+async function readStackPin(targetDir) {
+  const { stack: pinned } = await loadRenderState(targetDir);
+  if (!pinned) return null;
+  const { id: detected } = await detectStack(targetDir);
+  // `stack --target`은 다른 디렉터리를 볼 수 있다 — 경로 없는 안내를 따르면 cwd에 적용된다(codex P2).
+  const target = `'${targetDir.replaceAll("'", `'\\''`)}'`;
+  return { pinned, detected, effective: pinned, unpin: `harness-team init --stack ${detected} --target ${target}` };
+}
+
 export async function runStack(ctx) {
   const json = !!(ctx.flags && ctx.flags.json);
   const forced = ctx.flags.stack;
@@ -89,6 +101,7 @@ export async function runStack(ctx) {
   }
   const stack = await resolveStack(ctx.targetDir, forced);
   const testing = await detectTesting(ctx.targetDir);
+  const stackPin = await readStackPin(ctx.targetDir);
   const summary = renderSummary(stack, testing);
   const unreadable = testing.manifest === 'unreadable';
   const runnerMissing = isJsProject(testing) && !unreadable && !testing.runner;
@@ -100,13 +113,18 @@ export async function runStack(ctx) {
       status,
       summary: unreadable ? UNREADABLE_SUMMARY : runnerMissing ? NO_RUNNER_SUMMARY : summary.join(' · '),
       nextActions: nextActions(testing),
-      extra: { stack, testing },
+      extra: { stack, testing, stackPin },
     }));
     return;
   }
 
   console.log(`harness-team stack → ${ctx.targetDir}\n`);
   for (const line of packSummary(summary)) console.log(`  ${line}`);
+  // 5줄 요약 계약 밖에 둔다 — 고정은 테스트 프로필이 아니라 관리 절 렌더에 관한 사실이다.
+  if (stackPin) {
+    const { pinned, detected, effective, unpin } = stackPin;
+    console.log(`  pin: ${pinned} (detected: ${detected} → effective: ${effective}) — unpin: ${unpin}`);
+  }
   console.log('');
   for (const action of nextActions(testing)) console.log(`next: ${action}`);
 }

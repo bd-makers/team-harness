@@ -24,6 +24,10 @@ modified: 2026-09-13
   `doctor`의 처방(`harness-team init`)을 따르면 강제한 스택이 감지 스택으로 조용히 되돌아갔다.
   이제 감지와 다른 `--stack`은 `.harness/render-state.json`의 `stack` 필드에 고정되고 세 경로가 같은 스택으로 렌더한다.
   감지된 id를 다시 주면(`--stack node` 등) 고정이 풀린다. 필드가 없는 기존 설치본은 동작 불변이다.
+- **`harness-team stack`이 render-state의 고정 스택을 보여 주지 않던 문제.** 관리 절은 고정 스택으로 렌더되는데
+  `stack` 출력은 감지 스택만 말했다. 이제 고정이 있으면 text에 `pin: <고정> (detected: <감지> → effective: <고정>) — unpin: <해제 명령>`
+  줄이, `--json`에 새 필드 `stackPin`(`{ pinned, detected, effective, unpin }`, 고정 없으면 `null`)이 나온다.
+  해제 명령은 `harness-team init --stack <감지> --target '<조회 경로>'`다. 기존 필드는 불변이다.
 
 ## [0.44.2] - 2026-09-26
 

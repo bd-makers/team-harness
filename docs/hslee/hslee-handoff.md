@@ -1,11 +1,10 @@
 # Session Handoff
 
 ## Active Task
-없음 — `.harness/active.json` 은 `null` 이다.
-새 작업은 `harness-team task <name>` 으로 시작한다.
+stack-pin-display
 
-## Last Completed Task (2026-09-27)
-`init-stack-stale-false-positive` — done
+## Last Commit (2026-09-27)
+156f80c fix(stack): unpin 안내에 조회 대상 경로를 넣는다 (codex P2)
 
 ## Full Context
-→ docs/hslee/init-stack-stale-false-positive/init-stack-stale-false-positive-handoff.md
+→ docs/hslee/stack-pin-display/stack-pin-display-handoff.md
