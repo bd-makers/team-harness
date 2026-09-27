@@ -82,3 +82,17 @@ test('부분 render-state — 해시가 없는 파일은 여전히 백업한다'
     assert.equal(saved, EDITED);
   } finally { cap.restore(); await rm(dir, { recursive: true, force: true }); }
 });
+
+test('render-state 에 고정된 스택(init --stack)으로 렌더해 비교한다 — 그 스택으로 렌더된 절은 drift 가 아니다', async () => {
+  const { render } = await import('../src/render.mjs');
+  const { resolveStack } = await import('../src/detect-stack.mjs');
+  const { basename } = await import('node:path');
+  const dir = await mkdtemp(join(tmpdir(), 'harness-mig-backup-'));
+  try {
+    await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'a' }));
+    const tpl = await readFile(join(ROOT, 'templates/AGENTS.md.hbs'), 'utf8');
+    await writeFile(join(dir, 'AGENTS.md'), render(tpl, { projectName: basename(dir), ...(await resolveStack(dir, 'next')) }));
+    await saveRenderState(dir, { version: 1, stack: 'next', sections: { 'CLAUDE.md': { workflow: 'abc' } } });
+    assert.equal(await migrateManagedSectionBackup(ctxYes(dir)), false, '감지(node)로 렌더했다면 stack 절이 drift 로 보였다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

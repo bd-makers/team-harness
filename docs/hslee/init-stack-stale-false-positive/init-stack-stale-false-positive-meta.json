@@ -1,0 +1,21 @@
+{
+  "user": "hslee",
+  "task": "init-stack-stale-false-positive",
+  "created": "2026-09-27",
+  "firstActivatedAt": "2026-09-27T00:58:13.939Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "0cfdc57986dcb6e2ab2d37a79859bc84d2516bd6",
+      "at": "2026-09-27T01:38:56.495Z",
+      "exitCode": 0,
+      "outputBytes": 635
+    }
+  ]
+}

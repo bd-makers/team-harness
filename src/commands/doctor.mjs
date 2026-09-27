@@ -6,7 +6,7 @@ import { promisify } from 'node:util';
 import { exists, readTextSafe } from '../fsx.mjs';
 import { loadBackupDir, settingsHasBoundaryCheckpoint, codexHooksHaveSessionContext, isHarnessCodexSessionCommand, AGENT_FILE_TEMPLATES } from '../harness.mjs';
 import { render } from '../render.mjs';
-import { detectStack } from '../detect-stack.mjs';
+import { resolveStack } from '../detect-stack.mjs';
 import { loadRenderState } from '../render-state.mjs';
 import { mergeMarkdown, extractSections } from '../merge.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation } from '../observation.mjs';
@@ -299,8 +299,9 @@ export { settingsHasBoundaryCheckpoint };
 // 복제하면 마커가 깨진 파일(init 은 통째로 건너뛴다)에도 init 을 처방한다(codex P2). 기록이 없는 파일은
 // 부트스트랩이라 편집 여부를 알 수 없어 판정하지 않는다. 읽기 전용이다 — 병합 결과는 메모리에만 있다.
 export async function findStaleManagedSections(targetDir, root) {
-  const { sections } = await loadRenderState(targetDir);
-  const vars = { projectName: basename(targetDir), ...(await detectStack(targetDir)) };
+  const { sections, stack } = await loadRenderState(targetDir);
+  // init 과 같은 유효 스택 — `init --stack X`로 고정한 X, 없으면 감지.
+  const vars = { projectName: basename(targetDir), ...(await resolveStack(targetDir, stack)) };
   const stale = [];
   for (const [file, tplName] of AGENT_FILE_TEMPLATES) {
     const recorded = sections[file];
