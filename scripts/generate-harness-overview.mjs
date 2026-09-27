@@ -4,6 +4,8 @@ import { basename, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
+import { checkDocsVersionDrift } from './docs-version-drift.mjs';
+
 const repositoryRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const templatePath = 'docs/harness-overview.template.html';
 const outputPath = 'docs/harness-overview.html';
@@ -135,6 +137,7 @@ function fileRole(path, commandDescriptions) {
   if (path.endsWith('.mmd')) return 'harness overview 아키텍처 다이어그램 원본';
   if (path === templatePath) return 'harness overview HTML 템플릿';
   if (path === 'scripts/generate-harness-overview.mjs') return '다이어그램과 인벤토리를 한 번에 생성';
+  if (path === 'scripts/docs-version-drift.mjs') return '현행 문서의 버전 표지를 package.json과 대조 (docs:check)';
   return '프로젝트 소스 파일';
 }
 
@@ -209,6 +212,13 @@ async function main() {
     const current = await readFile(outputFile, 'utf8');
     if (current !== output) {
       console.error('docs/harness-overview.html이 소스와 다릅니다. npm run docs:generate를 실행하세요.');
+      process.exitCode = 1;
+      return;
+    }
+    const drift = await checkDocsVersionDrift(repositoryRoot);
+    if (drift.length > 0) {
+      for (const { path, message } of drift) console.error(`${path}: ${message}`);
+      console.error('현행 문서의 버전 표지가 package.json과 다릅니다. scripts/docs-version-drift.mjs 머리 주석을 보세요.');
       process.exitCode = 1;
       return;
     }
