@@ -284,7 +284,7 @@
     <h1>Task Workflow Simulation</h1>
     <p>새로운 harness task 시스템의 전체 흐름 — init부터 완료, 세션 재개, task 전환까지의 시나리오별 시뮬레이션</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.40.0</span>
+      <span class="tag tag-purple">v0.44.4</span>
       <span class="tag tag-blue">post-commit 자동화</span>
       <span class="tag tag-green">증거 기반 종결 가드 7종</span>
       <span class="tag tag-orange">원장은 생성물</span>
@@ -293,6 +293,18 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #a78bfa;background:rgba(167,139,250,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.40.1–0.44.4 — user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정:</strong>
+    <br>
+    <code>0.44.4</code> <strong><code>docs/&lt;user&gt;/&lt;user&gt;-handoff.md</code>를 추적하지 않는다</strong> — 내용이 전부 gitignore된 <code>active.json</code>과 그 워크트리의 <code>git log -1</code>에서 나오는 렌더링이라, 같은 user의 병렬 PR이 머지마다 이 파일에서 충돌했다. 하네스 관리 <code>.gitignore</code>에 <code>docs/*/*-handoff.md</code>(깊이 2 — task handoff는 계속 추적)가 들어가고, <code>task</code> 활성화가 이 파일을 곧바로 쓴다. 커밋 대상 handoff는 <strong>task handoff 1파일</strong>이다(아래 <strong>S3</strong>). 아직 추적 중인 저장소는 <code>doctor</code>가 경고하고 <code>migrate</code>가 <code>git rm --cached</code>를 안내만 한다.
+    <br>
+    <code>0.44.0</code> <strong>머지 후 종결이 커밋 하나다</strong> — <code>done</code> 가드가 plan.md의 체크박스만 켠 변경을 미커밋 작업으로 세지 않아, 기본 브랜치에서 마지막 단계 체크 → <code>done</code> → <code>summary --write</code> → 커밋 하나로 끝난다(아래 <strong>S4</strong>). <code>0.44.1</code>은 하위 디렉터리 설치본에서 이 면제·handoff 제외가 듣지 않던 것을 고쳤다.
+    <br>
+    <code>0.42.1</code> post-commit 훅이 갱신한 handoff만 담는 커밋을 <strong>따로 만들지 않는다</strong> — 다음 작업 커밋에 함께 담고, 단독 sweep은 푸시·브랜치 전환·워크트리 정리 직전에 남은 변경이 handoff뿐일 때만 만든다. 훅 동작은 그대로이고 규범만 바뀌었다.
+    <br>
+    <code>0.43.0</code> <code>doctor</code>가 템플릿보다 낡은 관리 절(<code>AGENTS.md#protocol</code> 등)을 경고하고 <strong><code>init</code></strong>을 처방한다 — 관리 절은 <code>migrate</code>가 아니라 <code>init</code>이 렌더한다(아래 <strong>S1</strong>). <code>0.44.3</code> <code>init --stack X</code>로 강제한 스택이 <code>.harness/render-state.json</code>에 고정되고 <code>harness-team stack</code>이 <code>pin:</code> 줄로 보여 준다.
+    <br>
+    <code>0.41.0</code>–<code>0.42.0</code> task 경로·이름 판정: <code>task --area</code>·<code>list --area</code>(모노레포), <strong><code>--member</code>가 config user보다 우선</strong>(0.41.5), 명령 이름·<code>.</code>·<code>..</code>·spec 없는 디렉터리·한 세그먼트가 아닌 user는 아무것도 쓰지 않고 거부, <code>list --remote</code>로 원격 브랜치에만 있는 task 조회, 결정 <strong>D10</strong>(CLAUDE.md의 <code>@AGENTS.md</code> import 유지). <code>0.40.2</code> <code>.git/hooks</code>가 없어 post-commit 훅이 조용히 안 깔리던 것 수정 · <code>0.40.3</code> protect-files 비밀 3종.
+    <br><br>
     <strong>🆕 0.40.0 — 산문으로 세 벌 들고 있던 절차가 명령 네 개가 된다:</strong>
     <br>
     <code>0.40.0</code> <strong>슬래시 커맨드 문서가 에이전트에게 손으로 시키던 절차 네 가지를 <code>harness-team</code> 하위 명령이 소유한다</strong> — 스택 감지(<code>stack</code>), 리뷰/ship 범위·base 판정(<code>scope</code>), <code>.harness/config.json</code> 저장(<code>config get/set</code>), 다이어그램 기록(<code>diagram record</code>). 같은 절차가 세 문서에 세 벌로 복제돼 이미 드리프트가 나 있었다(테스트 3형제 0단계 29/42/36줄, 다이어그램 기록 한 줄이 세 문구). 판정이 없는 부분만 CLI가 가져가고 판단이 남는 부분(기존 테스트 샘플링·러너 부재·Docker 분기, probe·degrade)은 산문에 남는다. 함께 <strong><code>review</code>가 base를 <code>origin/main</code>으로 하드코딩하던 결함</strong>을 고쳤다 — 기본 브랜치가 <code>master</code>면 죽고, 동명의 낡은 로컬 브랜치가 있으면 엉뚱한 diff를 조용히 리뷰했다. <code>templates/</code>는 불변이라 소비자는 플러그인 갱신만 하면 되고 <code>migrate</code>는 필요 없다.
@@ -404,7 +416,7 @@
 │
 <span class="tree-dir">docs/chad/</span>                   <span style="color:var(--border)"># 사용자별 영역</span>
 ├── <span class="tree-new">chad-task.md</span>             <span style="color:var(--border)"># 원장 — summary --write가 렌더</span>
-├── <span class="tree-new">chad-handoff.md</span>          <span style="color:var(--border)"># 세션 포인터</span>
+├── <span class="tree-new">chad-handoff.md</span>          <span style="color:var(--border)"># 세션 포인터 — 워크트리 로컬, gitignore (0.44.4)</span>
 │
 <span class="tree-dir">docs/chad/auth-redesign/</span>     <span style="color:var(--border)"># task 디렉토리</span>
 ├── <span class="tree-file">auth-redesign-spec.md</span>
@@ -419,11 +431,11 @@
         <div style="font-size:0.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem">파일별 역할</div>
         <div class="card" style="margin-bottom:0.5rem">
           <h3 style="color:var(--accent2)">chad-handoff.md — 세션 포인터</h3>
-          <p>어떤 task가 활성인지 + 마지막 작업 메모. 상세 내용은 task별 handoff에 위임. post-commit hook이 자동 갱신.</p>
+          <p>어떤 task가 활성인지 + 마지막 커밋 한 줄. 상세 내용은 task별 handoff에 위임. <code>task</code> 활성화·post-commit hook·<code>done</code>이 다시 쓴다. <strong>추적하지 않는다</strong>(0.44.4) — 내용이 전부 gitignore된 <code>active.json</code>과 그 워크트리의 마지막 커밋에서 나오므로 워크트리마다 다르고, 추적하면 같은 user의 병렬 PR이 머지마다 충돌한다.</p>
         </div>
         <div class="card" style="margin-bottom:0.5rem">
           <h3 style="color:var(--accent3)">[task]-handoff.md — task 컨텍스트</h3>
-          <p>해당 task의 누적 작업 기록. commit마다 git diff 기반으로 자동 append. task 전환 후 재개 시 이 파일로 컨텍스트 복원.</p>
+          <p>해당 task의 누적 작업 기록. commit마다 git diff 기반으로 자동 append — 커밋되는 handoff는 이 파일 하나다. task 전환 후 재개 시 이 파일로 컨텍스트 복원.</p>
         </div>
         <div class="card" style="margin-bottom:0.5rem">
           <h3 style="color:var(--accent)">[task]-plan.md — 체크리스트</h3>
@@ -476,7 +488,7 @@
           <div class="step-actor actor-claude">Claude</div>
           <div class="step-content">
             <p><code>.git/config</code>에서 <code>user.name</code> 탐색</p>
-            <div class="step-detail">발견: "chad" → AskUserQuestion으로 확인</div>
+            <div class="step-detail">발견: "chad" → AskUserQuestion으로 확인. 이름은 <code>docs/&lt;user&gt;/</code> 한 세그먼트여야 한다 — 빈 값·<code>/</code>·<code>\</code>·선행 <code>.</code>·제어문자면 저장 전에 멈춘다(0.41.6). 한글·공백은 통과한다.</div>
           </div>
           <div class="ask-badge">❓ AskUserQuestion — docs/ 경로에 "chad"를 사용합니다. 맞나요?</div>
         </div>
@@ -488,6 +500,7 @@
           <div class="step-content">
             <p>스택 자동 감지 + 설정 저장</p>
             <div class="step-file">.harness/config.json → { "user": "chad" }</div>
+            <div class="step-detail">감지와 다른 스택을 <code>init --stack X</code>로 강제하면 <code>.harness/render-state.json</code>의 <code>stack</code>에 고정되어 <code>doctor</code>·<code>migrate</code>·플래그 없는 <code>init</code>이 같은 스택으로 렌더한다(0.44.3). 고정 여부는 <code>harness-team stack</code>의 <code>pin:</code> 줄로 확인하고, 감지된 id를 다시 주면 풀린다.</div>
           </div>
         </div>
       </div>
@@ -499,6 +512,7 @@
             <p><span class="hook-badge hook-post">post-commit</span> hook 설치</p>
             <div class="step-file">.git/hooks/post-commit → harness-team handoff 2&gt;/dev/null || true</div>
           </div>
+          <div class="step-detail"><code>core.hooksPath</code>가 설정돼 있으면(husky·lefthook) 그 디렉터리에 설치하고, 그 디렉터리가 없으면 안내만 한다. <code>core.hooksPath</code>가 없는데 <code>.git/hooks</code>가 없으면 만들고 설치한다(0.40.2 — 전에는 조용히 건너뛰었다).</div>
           <div class="auto-badge">⚡ 이후 모든 git commit에서 자동 실행</div>
         </div>
       </div>
@@ -507,6 +521,7 @@
         <div class="step-body">
           <div class="step-actor actor-system">System</div>
           <div class="step-content">AGENTS.md 코어 + CLAUDE.md(@AGENTS.md import) 렌더, hooks/skills 배포 완료 (rules는 RN 계열 stack만)</div>
+          <div class="step-detail">하네스 관리 <code>.gitignore</code> 줄도 보장한다 — <code>.harness/active.json</code>·<code>.harness/config.json</code> 등 개인 상태와 <code>docs/*/*-handoff.md</code>(user handoff, 0.44.4).</div>
         </div>
       </div>
     </div>
@@ -514,6 +529,12 @@
     <div class="infobox">
       <strong>migrate/sync도 동일:</strong> <code>.harness/config.json</code>이 없으면 동일하게 사용자 이름을 확인하고,
       post-commit hook이 없으면 설치합니다. 이미 있으면 skip.
+    </div>
+
+    <div class="infobox" style="border-left-color:#f5a623">
+      <strong>갱신 경로는 둘이다 (0.43.0):</strong> <code>AGENTS.md</code>·<code>CLAUDE.md</code>의 <strong>관리 절</strong>(<code>&lt;!-- harness:section=… --&gt;</code>)은
+      <code>init</code>만 다시 렌더한다 — 재실행은 <code>init --yes</code>이고, 사용자가 편집한 절은 건너뛴다. 설치된 훅·스킬·규칙 파일은 <code>migrate</code>가 갱신한다.
+      <code>doctor</code>는 편집되지 않았는데 템플릿보다 낡은 관리 절을 <code>관리 절 N개가 최신 템플릿보다 낡음</code>으로 경고하고 <code>harness-team init</code>을 처방한다.
     </div>
   </section>
 
@@ -536,6 +557,7 @@
           <div class="step-actor actor-user">사용자</div>
           <div class="step-content">
             <p>"로그인 버그 고쳐줘" <span style="color:var(--muted)">또는</span> <code>harness-team task login-bug</code></p>
+            <div class="step-detail">member는 <code>--member</code> → <code>.harness/config.json</code>의 <code>user</code> → 폴백 순으로 정해진다 — 다른 member의 task를 이어 하려면 <code>task &lt;name&gt; --member &lt;그 member&gt;</code>(0.41.5 — 전에는 config user가 이겨 엉뚱한 <code>docs/&lt;config user&gt;/&lt;name&gt;/</code>을 새로 만들었다). 모노레포면 <code>--area &lt;area&gt;</code>로 meta에 area를 기록한다(0.41.0 — 경로는 바뀌지 않는다).</div>
           </div>
         </div>
       </div>
@@ -563,8 +585,10 @@
 └── <span class="tree-new">login-bug-meta.json</span>    <span style="color:var(--border)"># created·firstActivatedAt·status·closedAt (기계 상태)</span>
 
 <span class="tree-new">.harness/active.json</span> → { "user": "chad", "task": "login-bug", "path": "docs/chad/login-bug", "switchedAt": "2026-08-22T03:41:52.000Z" }
+<span class="tree-new">docs/chad/chad-handoff.md</span> → Active Task: login-bug   <span style="color:var(--border)"># 활성화 즉시 씀 — 워크트리 로컬 (0.44.4)</span>
 <span style="color:var(--muted)">docs/chad/chad-task.md · docs/task_summary.md</span> <span style="color:var(--border)"># 건드리지 않음 (0.16.0) — summary --write가 렌더</span>
             </div>
+            <div class="step-detail"><strong>아무것도 쓰지 않고 거부(exit 1)하는 이름:</strong> <code>harness-team</code> 명령 이름(<code>list</code>·<code>done</code> 등, 0.41.4) · <code>.</code>·<code>..</code>(0.42.0) · spec 마커 없이 내용물이 있는 디렉터리(0.41.1) · 한 세그먼트가 아닌 user(0.41.6) · <code>--member</code> 없이 추론한 member로 <strong>다른 member에 이미 있는 이름</strong>을 새로 만드는 경우(0.41.5 — <code>--member &lt;그 member&gt;</code>를 안내한다). 명령 이름이라도 그 이름의 task가 이미 있으면(spec 마커) 종전대로 활성화한다.</div>
           </div>
         </div>
       </div>
@@ -583,7 +607,7 @@
           <div class="step-actor actor-claude">Claude</div>
           <div class="step-content">
             <p><code>/harness-spec</code>으로 <code>login-bug-spec.md</code> 초안 생성 <span style="color:var(--muted)">(0.18.0 — Confluence·Figma·인터뷰 3소스, 또는 직접 작성)</span> → <code>/harness-interview</code>로 Ambiguity 자가진단 검증 → <code>login-bug-plan.md</code> 확정 후 작업 시작</p>
-            <div class="step-detail">CLI가 그대로 안내한다: <code>next: /harness-spec으로 …-spec.md 초안 생성 (또는 직접 작성, Ambiguity 자가진단 포함)</code> · <code>next: /harness-interview → 구현 → 테스트 (/harness-unittest 계열) → 리뷰 → /harness-retro → done</code></div>
+            <div class="step-detail">CLI가 그대로 안내한다: <code>next: /harness-spec으로 …-spec.md 초안 생성 (또는 직접 작성, Ambiguity 자가진단 포함)</code> · <code>next: /harness-interview → plan.md 작성 → 구현 → 테스트 (/harness-unittest 계열) → 리뷰 → /harness-retro → done</code></div>
           </div>
         </div>
       </div>
@@ -603,7 +627,7 @@
       <div class="scenario-num">3</div>
       <div>
         <div class="scenario-title">작업 중 → Commit</div>
-        <div class="scenario-desc">코드 수정 후 commit 시 post-commit hook이 자동으로 handoff 갱신</div>
+        <div class="scenario-desc">코드 수정 후 commit 시 post-commit hook이 자동으로 handoff 갱신 — 갱신분은 다음 작업 커밋에 담는다</div>
       </div>
     </div>
 
@@ -630,18 +654,22 @@
           <div class="step-actor actor-hook">post-commit hook 자동 실행</div>
           <div class="step-content">
             <p><code>harness-team handoff</code></p>
-            <div class="step-detail">git log -1, git diff HEAD~1 읽기 → handoff 갱신</div>
+            <div class="step-detail">git log -1 --oneline, git diff HEAD~1 --stat 읽기 → handoff 갱신</div>
             <div class="tree" style="margin-top:0.5rem">
-<span class="tree-new">docs/chad/login-bug/login-bug-handoff.md</span> — append
-  ## 2026-05-15 commit: fix: 로그인 토큰 검증 로직 수정
-  변경: src/auth/token.ts, src/auth/validate.ts
-  다음: 엣지 케이스 처리
+<span class="tree-new">docs/chad/login-bug/login-bug-handoff.md</span> — append   <span style="color:var(--border)"># 추적 — 다음 커밋에 담긴다</span>
+  ## 2026-05-15T06:12:03.481Z — 3f2a9c1 fix: 로그인 토큰 검증 로직 수정
+   src/auth/token.ts    | 12 ++++++------
+   src/auth/validate.ts |  8 +++++---
 
-<span class="tree-new">docs/chad/chad-handoff.md</span> — 갱신
-  Active: login-bug
-  Last commit: 로그인 토큰 검증 로직 수정
+<span class="tree-new">docs/chad/chad-handoff.md</span> — 재작성   <span style="color:var(--border)"># gitignore — 커밋 대상 아님 (0.44.4)</span>
+  ## Active Task
+  login-bug
+  ## Last Commit (2026-05-15)
+  3f2a9c1 fix: 로그인 토큰 검증 로직 수정
+  ## Full Context
   → docs/chad/login-bug/login-bug-handoff.md
             </div>
+            <div class="step-detail">커밋이 handoff 파일만 바꾼 sweep 커밋이면 훅은 아무것도 쓰지 않는다(0.38.1 — 자기 출력을 먹는 churn 차단). 병합·빈 커밋은 기록한다. <code>--amend</code>는 마지막 항목을 교체한다(0.38.2).</div>
           </div>
           <div class="auto-badge">⚡ 사용자 개입 없이 자동 완료</div>
         </div>
@@ -652,6 +680,17 @@
           <div class="step-actor actor-hook">hook — plan 완료 여부 확인</div>
           <div class="step-content">
             <p><code>login-bug-plan.md</code> 미완료 항목 존재 → 아무 동작 없음, 작업 계속</p>
+            <div class="step-detail">모든 체크박스가 <code>- [x]</code>면 훅이 <code>PLAN_COMPLETE</code>를 출력한다 — S4의 트리거 (1)이다.</div>
+          </div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num step-num-blue">5</div>
+        <div class="step-body">
+          <div class="step-actor actor-claude">Claude — 다음 커밋</div>
+          <div class="step-content">
+            <p>커밋 직후 트리는 <code>login-bug-handoff.md</code> 때문에 dirty다. <strong>그 변경만 담는 커밋을 따로 만들지 않고</strong> 다음 작업 커밋에 함께 stage한다(0.42.1).</p>
+            <div class="step-detail">단독 sweep 커밋은 푸시·브랜치 전환·워크트리 정리 직전에 남은 변경이 handoff뿐일 때만 만든다 — 보통 PR/MR당 한 번이다. dirty handoff는 <code>done</code> 가드가 무시하므로 남겨 둬도 종결을 막지 않는다. <code>chad-handoff.md</code>는 gitignore라 stage 대상이 아니다 — <code>git add -f</code>로 억지로 담지 않는다.</div>
           </div>
         </div>
       </div>
@@ -679,7 +718,16 @@
       <strong>트리거 3가지:</strong> (1) post-commit hook이 plan 전체 완료 감지,
       (2) 사용자가 "다 됐어", "완료했어", "PR 올릴게" 등 완료 신호 발화,
       (3) 사용자가 직접 <code>harness-team done</code> 실행.
-      셋 모두 <strong>종결 가드</strong>를 통과한 뒤 AskUserQuestion을 거쳐 실수 완료를 방지합니다 (P0 — 선언이 아니라 강제).
+      셋 모두 <strong>종결 가드</strong>를 통과해야 합니다 (P0 — 선언이 아니라 강제). (1)·(2)는 Claude가 <code>done</code>을 실행하기 전에 AskUserQuestion으로 확인합니다 — CLI 자체는 묻지 않으므로 (3) 직접 실행은 가드만 거칩니다.
+    </div>
+
+    <div class="infobox" style="border-left-color:var(--accent3)">
+      <strong>PR/MR로 일하면 종결은 머지 후 기본 브랜치에서 커밋 하나다 (0.44.0):</strong>
+      plan의 마지막 단계(보통 "커밋·PR")를 <code>- [x]</code>로 켠다 → <code>harness-team done</code> → <code>harness-team summary --write</code>
+      → <strong>커밋 하나</strong>(<code>chore(task): &lt;name&gt; 종결</code>)에 plan·meta·task handoff·원장을 함께 담는다.
+      <code>done</code> 가드는 활성 task의 plan.md 변경이 <strong>줄머리 체크박스를 켠 것뿐</strong>이면 미커밋 작업으로 세지 않는다(끄기·줄 추가·산문 수정은 종전대로 막는다) — 그래서 체크·종결·원장을 커밋 셋으로 나눌 이유가 없다.
+      단계를 켜는 판단은 여전히 에이전트 몫이다 — 머지를 확인하기 전에 켜지 않는다.
+      <code>summary --write</code>는 기본 브랜치이거나 HEAD가 <code>origin/HEAD</code>의 기본 브랜치와 같은 커밋일 때만 허용되고 피처 브랜치에서는 거부되므로, 종결은 PR 브랜치가 아니라 기본 브랜치에서 한다.
     </div>
 
     <div class="steps">
@@ -716,7 +764,7 @@ stop: 가드가 지적한 증거가 실제로 없으면 종결하지 말 것
 <span class="tree-dir">가드 7종 + 선언 유효성 (구성은 0.21.0 이후 불변 — 증거 출처만 0.37.0에서 바뀜)</span>
 1. plan.md에 미완 체크박스(- [ ])                 <span style="color:var(--border)"># 0.7~</span>
 2. artifact.md 미작성 / 템플릿 그대로              <span style="color:var(--border)"># 0.7~</span>
-3. 미커밋 변경 존재                                <span style="color:var(--border)"># handoff 2개는 제외 (0.9.5)</span>
+3. 미커밋 변경 존재                                <span style="color:var(--border)"># handoff 제외 (0.9.5) · plan 체크박스만 켠 변경 제외 (0.44.0)</span>
 4. task 시작 이후 커밋 0개                         <span style="color:var(--border)"># 0.7~</span>
 5. 소스 변경 O + 테스트 변경 X                    <span style="color:var(--border)"># 0.18.1 · 기본 ON — 0.19.0에서 실제 발동</span>
 6. spec이 review: required인데 리뷰 증거 없음      <span style="color:var(--border)"># 0.18.1 · spec opt-in · 0.37.0부터 meta.reviews[]</span>
@@ -760,6 +808,12 @@ stop: 가드가 지적한 증거가 실제로 없으면 종결하지 말 것
 
 <span class="tree-new">docs/chad/login-bug/login-bug-meta.json</span>
   { "status": "done", "closedAt": "2026-08-22T04:11:07.914Z" }
+
+<span class="tree-new">docs/chad/chad-handoff.md</span> — 종결 형태로 재작성   <span style="color:var(--border)"># gitignore (0.44.4)</span>
+  ## Active Task
+  없음 — `.harness/active.json` 은 `null` 이다.
+  ## Last Completed Task (2026-08-22)
+  `login-bug` — done
 
 <span style="color:var(--muted)">docs/chad/chad-task.md · docs/task_summary.md</span> <span style="color:var(--border)"># 건드리지 않음 (0.16.0)</span>
   기본 브랜치에서 <span style="color:var(--accent3)">harness-team summary --write</span> 로 렌더
@@ -805,11 +859,14 @@ stop: 가드가 지적한 증거가 실제로 없으면 종결하지 말 것
           <div class="step-content">
             <p><code>docs/chad/chad-handoff.md</code> 읽기</p>
             <div class="step-file">
-Active: login-bug
-Last commit: 로그인 토큰 검증 수정 (2026-05-15)
-다음: 엣지 케이스 처리
+## Active Task
+login-bug
+## Last Commit (2026-05-15)
+3f2a9c1 fix: 로그인 토큰 검증 로직 수정
+## Full Context
 → docs/chad/login-bug/login-bug-handoff.md
             </div>
+            <div class="step-detail">이 파일은 워크트리 로컬이다(0.44.4) — 새 워크트리·clone에는 없고, <code>task &lt;name&gt;</code> 활성화 때 곧바로 쓰인다. "다음에 할 일"은 여기가 아니라 plan·Context Card에 있다.</div>
           </div>
         </div>
       </div>
@@ -872,8 +929,10 @@ Last commit: 로그인 토큰 검증 수정 (2026-05-15)
 <span class="tree-dir">있으면</span> → active 전환
 
 <span class="tree-new">.harness/active.json</span> → { "user": "chad", "task": "auth-redesign", "path": "docs/chad/auth-redesign", "switchedAt": "2026-08-23T09:12:30.000Z" }
-<span class="tree-new">docs/chad/chad-handoff.md</span>
-  Active: auth-redesign  ← 갱신
+<span class="tree-new">docs/chad/chad-handoff.md</span>   <span style="color:var(--border)"># 활성화가 곧바로 씀 — 워크트리 로컬 (0.44.4)</span>
+  ## Active Task
+  auth-redesign  ← 갱신
+  ## Full Context
   → docs/chad/auth-redesign/auth-redesign-handoff.md
 
 <span class="tree-file">docs/chad/login-bug/</span> <span style="color:var(--accent)">← 그대로 보존</span>
@@ -1049,23 +1108,27 @@ Last commit: 로그인 토큰 검증 수정 (2026-05-15)
     <div class="card-grid">
       <div class="card card-accent-purple">
         <h3>harness-team task &lt;name&gt;</h3>
-        <p>task 생성 + 활성화. feature/fix 구분 없이 이름으로 식별. 이미 존재하면 활성화만.</p>
+        <p>task 생성 + 활성화. feature/fix 구분 없이 이름으로 식별. 이미 존재하면(spec 마커) 활성화만. <code>--member &lt;x&gt;</code>는 config user보다 우선한다(0.41.5). <code>--area &lt;area&gt;</code>는 meta에 area를 기록한다(0.41.0). 활성화는 워크트리 로컬 <code>&lt;user&gt;-handoff.md</code>도 쓴다(0.44.4).</p>
       </div>
       <div class="card card-accent-blue">
         <h3>harness-team list</h3>
-        <p>전체 task 목록 + 현재 active task(<code>*</code>) 표시. <strong>원장이 아니라 <code>docs/&lt;user&gt;/&lt;name&gt;/&lt;name&gt;-spec.md</code>가 있는 디렉터리를 스캔</strong>한다 (0.16.0).</p>
+        <p>전체 task 목록 + 현재 active task(<code>*</code>) 표시. <strong>원장이 아니라 <code>docs/&lt;user&gt;/&lt;name&gt;/&lt;name&gt;-spec.md</code>가 있는 디렉터리를 스캔</strong>한다 (0.16.0). <code>--area</code>로 거르고(0.41.0), <code>--remote</code>는 머지되지 않은 origin 브랜치에만 있는 task를 덧붙인다 — fetch하지 않고 로컬 <code>refs/remotes/origin/*</code> 기준이다(0.42.0).</p>
       </div>
       <div class="card card-accent-green">
         <h3>harness-team done</h3>
-        <p>수동 완료 트리거. <strong>종결 가드 7종</strong>(plan·artifact·미커밋·커밋 0개·테스트·리뷰 증거·검증 증거) 통과 후 AskUserQuestion 확인 → 완료 처리. plan 완료 감지나 발화로도 트리거됨. 리뷰·검증 증거는 <code>meta.reviews[]</code>가 정본이고, 그 키가 없는 구 task만 artifact 마커로 판정한다(0.37.0). <code>--force</code>는 경고만 하고 통과시키되 <strong>무시된 issue가 1개 이상이면</strong> meta에 <code>forcedAt</code>·<code>forcedIssues</code>를 남긴다(0.34.0).</p>
+        <p>수동 완료 트리거. <strong>종결 가드 7종</strong>(plan·artifact·미커밋·커밋 0개·테스트·리뷰 증거·검증 증거) 통과 후 완료 처리 — CLI는 묻지 않으며, plan 완료 감지나 발화로 트리거될 때 Claude가 실행 전에 AskUserQuestion으로 확인한다. 리뷰·검증 증거는 <code>meta.reviews[]</code>가 정본이고, 그 키가 없는 구 task만 artifact 마커로 판정한다(0.37.0). <code>--force</code>는 경고만 하고 통과시키되 <strong>무시된 issue가 1개 이상이면</strong> meta에 <code>forcedAt</code>·<code>forcedIssues</code>를 남긴다(0.34.0).</p>
       </div>
       <div class="card card-accent-orange">
         <h3>harness-team handoff</h3>
-        <p>post-commit hook 전용 (<code>.git/hooks/post-commit</code>에서 자동 실행). git log/diff 기반으로 <code>&lt;name&gt;-handoff.md</code>와 <code>&lt;user&gt;-handoff.md</code>를 갱신. <strong>활성 포인터가 없으면 조용히 no-op</strong>이다.</p>
+        <p>post-commit hook 전용 (git이 실제로 읽는 hooks 디렉터리 — <code>core.hooksPath</code>·워크트리 반영 — 의 <code>post-commit</code>에서 자동 실행). git log/diff 기반으로 <code>&lt;name&gt;-handoff.md</code>와 <code>&lt;user&gt;-handoff.md</code>를 갱신. <strong>활성 포인터가 없으면 조용히 no-op</strong>이다. 커밋 대상은 <code>&lt;name&gt;-handoff.md</code> 하나이고 다음 작업 커밋에 함께 담는다(0.42.1·0.44.4).</p>
       </div>
       <div class="card card-accent-green">
         <h3>harness-team summary [--write|--check] <span style="font-size:0.68rem;color:var(--muted);font-weight:400">0.16.0</span></h3>
-        <p>task 디렉터리를 스캔해 원장(<code>docs/task_summary.md</code>·<code>docs/&lt;user&gt;/&lt;user&gt;-task.md</code>)을 렌더한다. 인자 없이 실행하면 stdout으로만 낸다. <code>--write</code>는 HEAD가 <code>origin/HEAD</code>의 기본 브랜치와 <strong>정확히 같은 커밋</strong>일 때만 허용된다(0.30.0 — 브랜치 이름이 아니라 커밋 기준이라 워크트리에서도 통과한다). ahead·behind는 fail-closed 거부 — 피처 브랜치에서 원장을 쓰면 병렬 충돌이 돌아온다.</p>
+        <p>task 디렉터리를 스캔해 원장(<code>docs/task_summary.md</code>·<code>docs/&lt;user&gt;/&lt;user&gt;-task.md</code>)을 렌더한다. 인자 없이 실행하면 stdout으로만 낸다. <code>--write</code>는 기본 브랜치에서, 또는 HEAD가 <code>origin/HEAD</code>의 기본 브랜치와 <strong>정확히 같은 커밋</strong>일 때만 허용된다(0.30.0 — 커밋 기준 경로 덕분에 기본 브랜치를 체크아웃할 수 없는 워크트리에서도 통과한다). 피처 브랜치가 ahead·behind면 fail-closed 거부 — 피처 브랜치에서 원장을 쓰면 병렬 충돌이 돌아온다. 머지 후 종결 커밋 하나에 함께 담는다(S4).</p>
+      </div>
+      <div class="card card-accent-blue">
+        <h3>harness-team stack <span style="font-size:0.68rem;color:var(--muted);font-weight:400">0.40.0</span></h3>
+        <p>스택 감지 결과를 보여 준다. <code>init --stack X</code>로 고정한 스택이 있으면 <code>pin: &lt;고정&gt; (detected: &lt;감지&gt; → effective: &lt;고정&gt;) — unpin: &lt;해제 명령&gt;</code> 줄이 붙고, <code>--json</code>에는 <code>stackPin</code> 필드가 나온다(0.44.3).</p>
       </div>
       <div class="card card-accent-purple">
         <h3>harness-team context init|check <span style="font-size:0.68rem;color:var(--muted);font-weight:400">0.12.0</span></h3>
@@ -1102,7 +1165,7 @@ Last commit: 로그인 토큰 검증 수정 (2026-05-15)
 </main>
 
 <footer>
-  harness-aijient-team-plugin v0.40.0 — Task Workflow Simulation &nbsp;·&nbsp; 2026-09-19
+  harness-aijient-team-plugin v0.44.4 — Task Workflow Simulation &nbsp;·&nbsp; 2026-09-28
 </footer>
 
 

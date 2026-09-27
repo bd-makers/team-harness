@@ -1,0 +1,21 @@
+{
+  "user": "hslee",
+  "task": "simulation-doc-refresh",
+  "created": "2026-09-27",
+  "firstActivatedAt": "2026-09-27T15:57:43.726Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "c210a38764dcb2b019bf241f090be78a207b0fb5",
+      "at": "2026-09-27T16:07:20.493Z",
+      "exitCode": 0,
+      "outputBytes": 2264
+    }
+  ]
+}
