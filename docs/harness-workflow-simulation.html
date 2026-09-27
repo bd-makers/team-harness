@@ -284,7 +284,7 @@
     <h1>Task Workflow Simulation</h1>
     <p>새로운 harness task 시스템의 전체 흐름 — init부터 완료, 세션 재개, task 전환까지의 시나리오별 시뮬레이션</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.44.4</span>
+      <span class="tag tag-purple">v0.44.5</span>
       <span class="tag tag-blue">post-commit 자동화</span>
       <span class="tag tag-green">증거 기반 종결 가드 7종</span>
       <span class="tag tag-orange">원장은 생성물</span>
@@ -293,7 +293,9 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #a78bfa;background:rgba(167,139,250,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
-    <strong>🆕 0.40.1–0.44.4 — user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정:</strong>
+    <strong>🆕 0.40.1–0.44.5 — user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정:</strong>
+    <br>
+    <code>0.44.5</code> 머지 후 종결의 <code>summary --write</code>가 <strong><code>origin/main</code>과 같은 커밋에 detach한 워크트리에서도 통과한다</strong> — 전에는 detached HEAD를 git 오류로 보고 거부해, 같은 커밋에 임시 브랜치를 만들어 우회했다(아래 <strong>S4</strong>).
     <br>
     <code>0.44.4</code> <strong><code>docs/&lt;user&gt;/&lt;user&gt;-handoff.md</code>를 추적하지 않는다</strong> — 내용이 전부 gitignore된 <code>active.json</code>과 그 워크트리의 <code>git log -1</code>에서 나오는 렌더링이라, 같은 user의 병렬 PR이 머지마다 이 파일에서 충돌했다. 하네스 관리 <code>.gitignore</code>에 <code>docs/*/*-handoff.md</code>(깊이 2 — task handoff는 계속 추적)가 들어가고, <code>task</code> 활성화가 이 파일을 곧바로 쓴다. 커밋 대상 handoff는 <strong>task handoff 1파일</strong>이다(아래 <strong>S3</strong>). 아직 추적 중인 저장소는 <code>doctor</code>가 경고하고 <code>migrate</code>가 <code>git rm --cached</code>를 안내만 한다.
     <br>
@@ -727,7 +729,7 @@
       → <strong>커밋 하나</strong>(<code>chore(task): &lt;name&gt; 종결</code>)에 plan·meta·task handoff·원장을 함께 담는다.
       <code>done</code> 가드는 활성 task의 plan.md 변경이 <strong>줄머리 체크박스를 켠 것뿐</strong>이면 미커밋 작업으로 세지 않는다(끄기·줄 추가·산문 수정은 종전대로 막는다) — 그래서 체크·종결·원장을 커밋 셋으로 나눌 이유가 없다.
       단계를 켜는 판단은 여전히 에이전트 몫이다 — 머지를 확인하기 전에 켜지 않는다.
-      <code>summary --write</code>는 기본 브랜치이거나 HEAD가 <code>origin/HEAD</code>의 기본 브랜치와 같은 커밋일 때만 허용되고 피처 브랜치에서는 거부되므로, 종결은 PR 브랜치가 아니라 기본 브랜치에서 한다.
+      <code>summary --write</code>는 기본 브랜치이거나 HEAD가 <code>origin/HEAD</code>의 기본 브랜치와 같은 커밋일 때만(detached HEAD 포함, 0.44.5) 허용되고 피처 브랜치에서는 거부되므로, 종결은 PR 브랜치가 아니라 기본 브랜치에서 한다.
     </div>
 
     <div class="steps">
@@ -1165,7 +1167,7 @@ login-bug
 </main>
 
 <footer>
-  harness-aijient-team-plugin v0.44.4 — Task Workflow Simulation &nbsp;·&nbsp; 2026-09-28
+  harness-aijient-team-plugin v0.44.5 — Task Workflow Simulation &nbsp;·&nbsp; 2026-09-28
 </footer>
 
 

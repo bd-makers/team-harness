@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.44.4</span>
+      <span class="tag tag-purple">v0.44.5</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.44.5 — detached HEAD에서 summary --write 허용:</strong>
+    <br>
+    <code>0.44.5</code> <strong><code>origin/main</code>과 같은 커밋에 detach한 워크트리에서 <code>summary --write</code>가 통과한다.</strong> <code>branch --show-current</code>의 빈 출력(detached)을 git 오류로 분류해 "브랜치 조회 실패"로 거부하던 결함을 고쳤다 — 이제 detached는 비-기본 브랜치와 같은 판정을 받아 <code>origin/HEAD</code>의 기본 브랜치와 정확히 같은 커밋이면 통과하고, 다른 커밋·<code>origin/HEAD</code> 없음은 종전처럼 거부한다. 함께 <code>docs/harness-workflow-simulation.html</code> 본문을 현행 동작에 맞추고 <code>docs:check</code>의 버전 표지 대조에 올렸다. <code>templates/</code>는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 된다.
+    <br><br>
     <strong>🆕 0.44.4 — user handoff 추적 해제 (병렬 PR 충돌 제거):</strong>
     <br>
     <code>0.44.4</code> <strong><code>docs/&lt;user&gt;/&lt;user&gt;-handoff.md</code>를 더 이상 커밋하지 않는다.</strong> 내용이 전부 gitignore된 <code>active.json</code>과 그 워크트리의 <code>git log -1</code>에서 나오는 워크트리 로컬 렌더링이라, 추적하면 같은 사람의 병렬 PR이 머지마다 충돌했다. 하네스 관리 <code>.gitignore</code>에 <code>docs/*/*-handoff.md</code>(깊이 2 — task handoff는 계속 추적)가 들어가고, <code>task</code> 활성화가 진입점을 바로 쓰며, 아직 추적 중이면 <code>doctor</code>가 경고한다. 소비자는 플러그인 갱신 뒤 <strong><code>init --yes</code></strong>(AGENTS.md 관리 절 — <code>migrate</code>는 렌더하지 않음)와 기본 브랜치에서 <code>git rm --cached docs/&lt;user&gt;/&lt;user&gt;-handoff.md</code> 커밋 1회가 필요하다.
@@ -954,7 +958,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.44.4 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.44.5 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

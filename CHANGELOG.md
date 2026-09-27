@@ -18,6 +18,8 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.44.5] - 2026-09-28
+
 ### Fixed
 - **`summary --write`가 detached HEAD에서 "브랜치 조회 실패"로 거부되던 결함** (task `summary-detached-head`).
   `branch --show-current`의 빈 출력(detached)을 git 오류와 같은 `error`로 분류해, 워커 워크트리가 `origin/main`에
