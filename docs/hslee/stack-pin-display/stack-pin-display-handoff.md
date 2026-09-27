@@ -14,3 +14,13 @@ CHANGELOG.md                                       |  3 ++
  src/commands/stack.mjs                             | 20 ++++++++-
  tests/detect-testing.test.mjs                      | 23 ++++++++++
  10 files changed, 172 insertions(+), 2 deletions(-)
+
+## 2026-09-27T13:48:43.566Z — 156f80c fix(stack): unpin 안내에 조회 대상 경로를 넣는다 (codex P2)
+CHANGELOG.md                                            |  5 +++--
+ .../stack-pin-display/stack-pin-display-artifact.md     | 17 +++++++++++++++++
+ .../hslee/stack-pin-display/stack-pin-display-meta.json | 12 +++++++++++-
+ docs/hslee/stack-pin-display/stack-pin-display-plan.md  |  2 +-
+ docs/hslee/stack-pin-display/stack-pin-display-spec.md  |  4 ++--
+ src/commands/stack.mjs                                  |  8 +++++---
+ tests/detect-testing.test.mjs                           |  4 ++--
+ 7 files changed, 41 insertions(+), 11 deletions(-)

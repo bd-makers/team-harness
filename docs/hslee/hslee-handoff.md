@@ -4,7 +4,7 @@
 stack-pin-display
 
 ## Last Commit (2026-09-27)
-56c858a fix(stack): render-state 고정 스택을 stack 출력에 드러낸다
+156f80c fix(stack): unpin 안내에 조회 대상 경로를 넣는다 (codex P2)
 
 ## Full Context
 → docs/hslee/stack-pin-display/stack-pin-display-handoff.md
