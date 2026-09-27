@@ -303,3 +303,26 @@ test('CLI: --stack 오버라이드는 stack profile 에만 적용되고 testing 
     assert.equal(env.testing.rnPreset, null, '--stack 은 설비를 지어내지 않는다');
   });
 });
+
+// #111이 `init --stack X`를 render-state에 고정했지만 `stack`은 감지값만 보여 줬다 — 관리 절은 X로
+// 렌더되는데 고정 사실도 해제 방법도 드러나지 않았다. 기존 `stack` 필드는 그대로 두고 필드만 더한다.
+test('CLI: render-state 고정이 없으면 stackPin 은 null 이다', async () => {
+  await withProject({ 'package.json': { name: 'web', scripts: { test: 'node --test' } } }, async (dir) => {
+    const env = JSON.parse((await cli(['stack', '--json', '--target', dir])).stdout);
+    assert.equal(env.stackPin, null);
+  });
+});
+
+test('CLI: render-state 고정은 감지·고정·유효 스택과 해제 방법으로 드러나고 stack 필드는 감지값 그대로다', async () => {
+  await withProject({ 'package.json': { name: 'web', scripts: { test: 'node --test' } } }, async (dir) => {
+    await mkdir(join(dir, '.harness'));
+    await writeFile(join(dir, '.harness', 'render-state.json'), JSON.stringify({ version: 1, stack: 'next', sections: {} }));
+    const env = JSON.parse((await cli(['stack', '--json', '--target', dir])).stdout);
+    assert.deepEqual(env.stackPin, {
+      pinned: 'next', detected: 'node', effective: 'next', unpin: 'harness-team init --stack node',
+    });
+    assert.equal(env.stack.id, 'node', '기존 필드는 불변');
+    const { stdout } = await cli(['stack', '--target', dir]);
+    assert.match(stdout, /pin: next \(detected: node → effective: next\) — init --stack node to unpin/);
+  });
+});
