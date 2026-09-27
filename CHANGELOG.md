@@ -18,6 +18,14 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Added
+- **`npm run docs:check`가 현행 문서의 버전 표지를 `package.json` 버전과 대조한다** — `docs/harness-overview.template.html`·
+  생성본의 hero 배지·최신 🆕 배너·footer, `docs/what-changes-latest-version.html`의 footer, `docs/index.html` what-changes
+  목록의 첫 항목. 지금까지는 이 표면들에 가드가 없어 overview 배지가 두 세대, 시뮬레이션 footer가 17릴리스 밀린 채 발행됐다.
+  `docs/` 최상위 HTML은 결정론적으로 분류된다(스냅샷 `-<버전>.html` / "기준" 라벨 문서 / 현행 / 무버전 —
+  `scripts/docs-version-drift.mjs` 머리 주석) — 현행으로 분류됐는데 등록도 명시 제외도 없는 새 문서는 검사가 실패한다.
+  `docs/harness-workflow-simulation.html`은 본문 현행화가 먼저라 사유와 함께 명시 제외했다(`docs/followups.md` 10번).
+
 ### Fixed
 - **`init --stack X`로 강제한 스택이 저장되지 않아 `doctor`가 `stack` 관리 절을 stale로 잘못 경고하던 결함.**
   `doctor`의 관리 절 stale 검사·`migrate`의 관리 절 백업 diff·플래그 없는 `init`이 모두 감지 스택으로 다시 렌더해,

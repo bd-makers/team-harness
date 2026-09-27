@@ -191,15 +191,16 @@ grep -rn 'origin/main' commands/ skills/ templates/
    - **`docs/harness-overview.template.html`의 버전 표기 3곳을 손으로 갱신한 뒤 재생성합니다** —
      hero 배지(`<span class="tag tag-purple">vX.Y.Z</span>`), 최신 그룹 배너 산문(`🆕 …` 블록),
      footer. `docs/harness-overview.html`은 생성물이지만 **자동 갱신되는 것은 커맨드·파일 인벤토리뿐**
-     이고 이 셋은 템플릿에 하드코딩돼 있습니다. 그래서 `docs:check`가 green이어도 낡습니다 —
-     **`docs:check`를 세대 확인 근거로 쓰지 마세요.** 확인은 `grep -n 'v\?0\.[0-9.]*' docs/harness-overview.template.html`로 합니다.
-     생성물을 직접 고치면 다음 `docs:generate`가 되돌립니다. 템플릿을 고치고 재생성하세요.
+     이고 이 셋은 템플릿에 하드코딩돼 있습니다. `docs:check`는 이 셋의 **버전 번호**가 `package.json`과
+     같은지만 대조합니다(`scripts/docs-version-drift.mjs`) — 배너 **산문**이 이번 릴리스를 제대로 설명하는지는
+     사람이 봐야 합니다. 생성물을 직접 고치면 다음 `docs:generate`가 되돌립니다. 템플릿을 고치고 재생성하세요.
    - **`docs/index.html`의 what-changes 목록에 새 버전을 등재합니다** — 등재하지 않으면 방금 쓴
-     릴리스 노트가 문서 허브에서 도달 불가입니다. 이 목록에는 가드가 없어 빠뜨려도 아무것도 빨개지지 않습니다.
+     릴리스 노트가 문서 허브에서 도달 불가입니다. `docs:check`가 목록의 첫 항목이 현행 버전인지 대조합니다.
    - **왜 이 두 줄이 절차에 있나:** 0.22.0과 0.23.0이 **연속으로** overview 템플릿을 놓쳐 배지가
      두 세대(v0.21.0) 밀린 채 발행됐습니다. 가드 없는 표면은 절차에 적히지 않으면 반드시 밀립니다.
-     결합 강도 순서를 기억하세요: `what-changes-*`(3방향 강제) > `harness-overview`(생성+pin, **산문은 무방비**)
-     > `prerequisites.md`(doctor 양방향) > `index.html`·simulation·guide류(**가드 0**).
+     결합 강도 순서를 기억하세요: `what-changes-*`(3방향 강제) > `harness-overview`·`index.html`(생성+pin·버전 표지 대조,
+     **산문은 무방비**) > `prerequisites.md`(doctor 양방향) > simulation·guide류(**가드 0** — "X 기준" 라벨 문서와
+     명시 제외 문서는 표지 대조 대상이 아닙니다. 분류 규칙은 `scripts/docs-version-drift.mjs` 머리 주석).
 6. `CHANGELOG.md`의 `## [Unreleased]`를 새 버전 헤딩(`## [X.Y.Z] - YYYY-MM-DD`)으로 이동
 7. main에서 4~6단계의 결과를 **한 커밋**으로 만들어 push합니다. 기능 변경은 PR로 들어오지만, 릴리스 준비 커밋 자체는 그 PR들이 이미 병합된 main 위에 얹는 범프·문서 커밋입니다.
    ```bash

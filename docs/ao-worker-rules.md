@@ -31,7 +31,7 @@ PR 브랜치에서 절대 건드리지 않는다. AO 는 워커마다 별도 워
 
 런타임 의존성 0개, lockfile 없음. `npm install` 을 실행하지 마라. lockfile 을 만들지 마라. `package.json` 에 의존성을 추가하지 마라.
 - 테스트는 바로 돌린다: `npm test` (unit + e2e, 이어서 perf 를 `--test-concurrency=1` 로). 좁히려면 `npm run test:unit` / `npm run test:e2e`.
-- CI 는 `npm test` 다음에 `npm run docs:check`(생성 문서 `docs/harness-overview.html` 바이트 대조)도 돈다. 로컬 검증도 둘 다
+- CI 는 `npm test` 다음에 `npm run docs:check`(생성 문서 `docs/harness-overview.html` 바이트 대조 + 현행 문서 버전 표지 대조)도 돈다. 로컬 검증도 둘 다
   돌린다. docs:check 실패는 annotation 이 없으니 로컬에서 재현하고 `npm run docs:generate` 로 다시 만든다.
 - Node `>=24` 필수. CI 매트릭스도 `24` 단일 항목이며, 이유는 `test.yml` 주석에 있다 — "LTS 커버리지" 명목으로 18/20/22 를 되살리지 마라.
 

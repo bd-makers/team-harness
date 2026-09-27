@@ -7,7 +7,18 @@
 
 ## 우선순위
 
-**남은 것: 없음.**
+**남은 것: 10번 하나.**
+
+10. **`docs/harness-workflow-simulation.html` 본문 현행화 → 버전 드리프트 검사 등록** (2026-09-27, task `docs-version-drift-check`)
+    - 문제: hero 배지·🆕 배너·footer가 v0.40.0에 머물러 있다(현행과 16릴리스 차이). 그러나 본문 시나리오가
+      0.40.0 기준이라 표지만 고치면 틀린 문서에 현행 도장을 찍는다 — 적어도 0.42.1(handoff 단독 커밋 중단)·
+      0.44.0(머지 후 종결은 커밋 하나)이 워크스루 단계에 걸린다. 0.40.1–0.44.2 CHANGELOG 전체를 대조해야 한다.
+    - 현재 상태: `scripts/docs-version-drift.mjs`의 `excludedCurrentDocuments`에 사유와 함께 올라 있다 —
+      조용히 빠진 것이 아니라 **명시 제외**다. 분류가 `current`인 한 제외 항목은 유지되고, "기준" 라벨을 달아
+      `baseline`이 되면 검사가 낡은 제외 항목이라며 실패한다.
+    - 완료 조건: 본문을 현행화하고 표지 셋을 package.json 버전에 맞춘 뒤, 항목을 `excludedCurrentDocuments`에서
+      `currentVersionDocuments`로 옮긴다(표지는 `overviewMarkers`와 같은 hero·🆕·footer, footer 정규식만 확인).
+      `npm run docs:check` green.
 (4번은 2026-09-12에 **B(src 상수 + 문서 블록 + pin)로 결정**해 task `framing-prompts-in-src`로 올려 여기서 지웠다.
 testcritic은 `--rubric` 선택자로 3 루브릭 모두 src에 둔다.)
 (6번은 2026-09-12에 처리했다. 다만 **전제가 반쯤 뒤집혔다** — 실측 결과 이 머신(데스크톱 앱 세션)에서는
