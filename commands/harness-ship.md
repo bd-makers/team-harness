@@ -52,7 +52,7 @@ Raw slash-command 인수:
 
 5. **artifact 갱신** — `<name>-artifact.md`에 결과·검증 증거(실제 테스트 출력)·남은 리스크·
    후속 작업을 기록한다. 리뷰를 돌렸다면 `## Reviews`에 날짜와 함께 남긴다 — 기록 없는 리뷰는
-   안 한 것이다. 이 문서 갱신을 커밋할 때 트리에 남은 handoff 2파일 변경도 **같은 커밋에** 담는다 —
+   안 한 것이다. 이 문서 갱신을 커밋할 때 트리에 남은 task handoff 변경도 **같은 커밋에** 담는다 —
    handoff만의 커밋을 따로 만들지 않는다(`commands/harness-task.md` post-commit handoff 절).
 
 6. **다이어그램 (옵트인)** — `--no-diagram`이 없으면 `AskUserQuestion`으로 **한 번만** 묻는다:

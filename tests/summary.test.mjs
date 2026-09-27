@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { runTask, runDone } from '../src/commands/task.mjs';
+import { USER_HANDOFF_IGNORE } from '../src/task-paths.mjs';
 import {
   collectTasks, renderTaskSummary, renderUserIndex, runSummary, readTaskMeta, defaultBranchCandidates,
   readLedger, taskMetaTemplate, writeTaskMeta as writeTaskMetaForTest,
@@ -21,9 +22,9 @@ async function initRepo(dir) {
   await git(dir, 'init', '-q', '-b', 'main');
   await git(dir, 'config', 'user.email', 'test@example.com');
   await git(dir, 'config', 'user.name', 'test');
-  // Real installs gitignore .harness/; without it the active-task pointer would be
-  // committed and would itself collide across branches.
-  await writeFile(join(dir, '.gitignore'), '.harness/\n');
+  // Real installs gitignore .harness/ and the worktree-local user handoff; without them the
+  // active-task pointer (and its rendering) would be committed and collide across branches.
+  await writeFile(join(dir, '.gitignore'), `.harness/\n${USER_HANDOFF_IGNORE}\n`);
   await writeFile(join(dir, 'README.md'), '# seed\n');
   await git(dir, 'add', '-A');
   await git(dir, 'commit', '-qm', 'seed');

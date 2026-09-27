@@ -21,6 +21,13 @@ export const taskDirRel = (user, task) => `${DOCS_DIR}/${user}/${task}`;
 // kind: 'spec.md' | 'plan.md' | 'handoff.md' | 'artifact.md' | 'context.md' | 'meta.json' | 'diagram.html'
 export const taskFileRel = (user, task, kind) => `${taskDirRel(user, task)}/${task}-${kind}`;
 export const userHandoffRel = (user) => `${DOCS_DIR}/${user}/${user}-handoff.md`;
+// user handoff 는 워크트리 로컬 렌더링이라 추적하지 않는다 — 내용이 전부 gitignore 된 active.json 과 그 워크트리의
+// `git log -1` 에서 나오므로, 추적하면 같은 user 의 병렬 PR 이 머지마다 이 파일에서 충돌했다(3323c6f·fdcffbc·a7c8354).
+// 슬래시가 중간에 있어 .gitignore 위치에 고정되고 `*` 는 `/` 를 넘지 않는다 — 깊이 2 만 맞고 task handoff
+// (`docs/<u>/<t>/<t>-handoff.md`, SSOT)는 맞지 않는다. gitignore 는 "파일명 = 디렉터리명-handoff.md" 를 표현할 수 없어
+// 같은 깊이의 다른 `*-handoff.md`(예: `docs/<dir>/<x>-handoff.md`)도 새로 만들면 무시된다 — 이미 추적 중인 파일은 영향 없다.
+// 추적 해제 **안내**는 정확한 `<u>/<u>-handoff.md` 만 대상으로 한다(`trackedUserHandoffs`).
+export const USER_HANDOFF_IGNORE = `${DOCS_DIR}/*/*-handoff.md`;
 
 // 출력·원장 키·규칙 유래 마커가 쓰는 task 식별자. user/task 모두 ^[\w.-]+$ 라 `/` 가 들어갈 수 없어 모호하지 않다.
 export const taskLabel = (user, task) => `${user}/${task}`;

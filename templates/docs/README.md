@@ -17,7 +17,7 @@ task별 디렉토리 하나에 SSOT 4개 파일과 비-SSOT Context Card 1개가
 docs/
 ├── task_summary.md                   # 전체 task 요약 표 — 생성물 (harness-team summary)
 └── <user>/                           # git config user.name 또는 $USER
-    ├── <user>-handoff.md             # 세션 시작 진입점 (현재 active task)
+    ├── <user>-handoff.md             # 세션 시작 진입점 (현재 active task) — 워크트리 로컬, gitignore
     ├── <user>-task.md                # 이 사용자의 task 인덱스 — 생성물 (harness-team summary)
     └── <name>/                       # task 디렉토리
         ├── <name>-spec.md            # 요구사항 / 설계 (사람이 먼저 작성)

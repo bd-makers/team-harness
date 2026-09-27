@@ -19,6 +19,14 @@ modified: 2026-09-13
 ## [Unreleased]
 
 ### Fixed
+- **같은 user의 병렬 PR이 머지마다 `docs/<user>/<user>-handoff.md`에서 충돌하던 결함** (task `user-handoff-parallel-conflict`).
+  이 파일의 내용은 전부 gitignore된 `.harness/active.json`과 그 워크트리의 `git log -1`에서 나오는 워크트리 로컬 렌더링인데
+  추적 파일이라, post-commit 훅이 커밋마다 재작성한 값이 브랜치끼리 반드시 부딪혔다(실측 3회). 이제 추적하지 않는다.
+  - 하네스 관리 `.gitignore`에 `docs/*/*-handoff.md`(깊이 2만 — task handoff는 계속 추적) 추가. 소비자 도달은 `init`·`migrate`.
+  - `task <name>` 활성화(생성·재활성)가 user handoff를 곧바로 쓴다 — 새 워크트리·clone에서 첫 커밋 전 진입점 공백 해소.
+  - 아직 추적 중인 저장소: `doctor`가 경고하고 `migrate`는 `.gitignore` 줄을 보장한 뒤 `git rm --cached` 명령을 **안내만** 한다(인덱스 무변경).
+  - "handoff 2파일을 다음 커밋에 담는다" 규범을 task handoff 1파일로 정정(AGENTS.md 관리 절은 `init --yes`로 도달).
+  - 전환기 1회: 아직 이 파일을 수정한 구 브랜치를 머지하면 modify/delete 충돌이 한 번 난다 — 삭제 쪽을 취한다.
 - **`init --stack X`로 강제한 스택이 저장되지 않아 `doctor`가 `stack` 관리 절을 stale로 잘못 경고하던 결함.**
   `doctor`의 관리 절 stale 검사·`migrate`의 관리 절 백업 diff·플래그 없는 `init`이 모두 감지 스택으로 다시 렌더해,
   `doctor`의 처방(`harness-team init`)을 따르면 강제한 스택이 감지 스택으로 조용히 되돌아갔다.

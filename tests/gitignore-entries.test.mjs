@@ -17,7 +17,7 @@ test('.gitignore: .harness/를 통째로 무시하지 않고 개인 상태 파�
   try {
     await copyStaticAssets({ root: ROOT, targetDir: dir, flags: {}, stackId: 'node', addAiGitignore: true });
     const lines = (await readFile(join(dir, '.gitignore'), 'utf8')).split('\n').map(l => l.trim());
-    for (const wanted of ['.claude/settings.local.json', '.harness/active.json', '.harness/config.json', '.harness/observability/']) {
+    for (const wanted of ['.claude/settings.local.json', '.harness/active.json', '.harness/config.json', '.harness/observability/', 'docs/*/*-handoff.md']) {
       assert.ok(lines.includes(wanted), `${wanted} 는 무시돼야 한다`);
     }
     assert.ok(!lines.includes('.harness/'), '.harness/ 전체를 무시하면 backup.json을 커밋할 수 없다');

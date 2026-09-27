@@ -122,7 +122,7 @@ D는 개념적으로 더 깨끗하지만 규범·Cursor 경로를 깨므로, A �
 1. `appendGitignore`의 `harnessNeeded`에 `docs/*/*-handoff.md` 추가. `DOCS_DIR` 상수에서 조립한다(하드코딩 복제 금지).
 2. `task <name>` 활성화(생성·재활성) 시 활성 형태를 1회 쓴다(`commitMsg` 빈 값 허용 — 렌더러 기존 인자). 새 워크트리 공백 해소.
 3. 추적 해제: 이 레포는 기본 브랜치에서 `git rm --cached docs/chad/chad-handoff.md docs/hslee/hslee-handoff.md` 커밋 1개.
-   소비자는 `migrate`가 추적 중인 user handoff를 감지해 처리(open 참고).
+   소비자는 `migrate`가 gitignore 줄을 보장하고(파일 편집만), 추적 중인 user handoff가 있으면 `git rm --cached` 명령을 **안내만** 한다.
 4. `doctor`: 추적 중인 user handoff가 남아 있으면 경고 1줄(전환 누락 탐지).
 5. 규범 문구: AGENTS.md(·템플릿) "commit 시 handoff 2파일" → task handoff 1파일 + user handoff는 로컬, harness-task.md
    post-commit 절, harness-ship.md·ao-worker-rules §2·§7의 "2파일" 문구, templates/docs/README.md 주석, docs/index.html 링크 제거.
@@ -137,17 +137,17 @@ D는 개념적으로 더 깨끗하지만 규범·Cursor 경로를 깨므로, A �
 - **task handoff**: `docs/<user>/<task>/<task>-handoff.md`. task별 커밋 로그(append). task 디렉터리에 격리되어 병렬 충돌 없음.
 - **워크트리 로컬 상태**: 워크트리·clone마다 달라야 정상인 값. gitignore 대상(`active.json`, `config.json`, 그리고 A 채택 시 user handoff).
 - **생성물(기본 브랜치 전용)**: 공유되지만 기본 브랜치에서만 갱신하는 추적 파일(`task_summary.md`, `<user>-task.md`). 선택지 B가 user handoff를 여기 넣는 안.
-- **게이트 근거**: 문제·원인·소비자·선택지가 코드·커밋으로 확정됐고, 남은 모호성은 선택지 결정 1건과 migrate 수행 방식 1건뿐이다.
+- **게이트 근거**: 문제·원인·소비자·선택지가 코드·커밋으로 확정됐고, 남은 두 결정(선택지 A, migrate 안내만)을 2026-09-27 사용자가 내렸다.
 
 ## Ambiguity 자가진단
 *각 항목이 명확하면 체크. 3개 이상 미체크면 구현 진입 금지 — 인터뷰/브레인스토밍으로 복귀해
 모호성을 제거한다. 게이트를 통과하면 그 근거를 위 Ontology 섹션에 한 줄로 남긴다.*
 
 - [x] **Goal 명확도** (40%) — 병렬 PR 사이 user handoff 충돌을 구조적으로 0으로, 진입점 기능은 유지.
-- [ ] **Constraint 명확도** (30%) — 선택지(A/B/C/D)와 소비자 마이그레이션 방식이 사용자 결정 대기.
+- [x] **Constraint 명확도** (30%) — 2026-09-27 사용자 결정: 선택지 A, 소비자 저장소는 migrate가 인덱스를 건드리지 않고 안내 + doctor 경고.
 - [x] **Success 기준** (30%) — 같은 user의 두 브랜치가 각자 커밋 후 머지해도 user handoff 충돌이 없다(e2e 재현 테스트), `npm test`·`docs:check` 통과.
 - [x] **Context 명확도** (brownfield 한정) — 쓰기 5곳·읽기 코드 0곳·규범 문서·테스트 4파일 식별(위 전수 조사).
-- [ ] **Ambiguity ≤ 0.2** — Constraint 미결로 가중합 0.7. **결정 전 구현 진입 금지.**
+- [x] **Ambiguity ≤ 0.2** — 가중합 1.0. 게이트 통과(2026-09-27).
 
 <!-- 선택 선언. 아래 주석을 벗기면 done 가드가 검사한다.
      미선언 기본값: "tests": "required" (소스가 바뀌면 테스트 파일 변경을 요구), "review": "optional",
@@ -163,5 +163,5 @@ D는 개념적으로 더 깨끗하지만 규범·Cursor 경로를 깨므로, A �
 - 정본: `commands/harness-task.md` post-commit handoff 절 · `src/commands/task.mjs` `renderUserHandoff`·`runHandoffAuto`·`runDone`·`handoffRelPaths` · `src/harness.mjs` `appendGitignore` · `AGENTS.md` D4·D5 · `docs/decisions.md` D5·D8
 - 충돌 실측: `3323c6f`·`fdcffbc`·`a7c8354` (병합 메시지의 `Conflicts:`)
 - 선행 task: `docs/chad/done-user-handoff-freeze`(종결 형태 도입), `docs/chad/handoff-hook-churn`(sweep 침묵), `docs/hslee/handoff-sweep-fold`(#105 다음 커밋 동봉), `docs/chad/d5-parallel-pr-scope`
-- (open) 소비자 저장소의 추적 해제를 `migrate`가 **직접 수행**(`git rm --cached`, 인덱스 변경)할지 **안내만** 할지. 권장: 안내 + doctor 경고(인덱스 변경은 사용자 커밋 경계와 겹친다).
-- (open) 선택지 결정 — A 권장.
+- (결정 2026-09-27) 선택지 **A** 채택. 소비자 저장소 추적 해제는 `migrate`가 **안내만**(인덱스 무변경) + `doctor` 경고.
+- (결정 2026-09-27, 오케스트레이터 범위 지시) #105 계열 "handoff 2파일을 다음 커밋에 담는다" 문구를 1파일(task handoff)로 정정 — harness-task.md·AGENTS.md(+templates, 소비자 도달은 `init --yes`)·ao-worker-rules §2·§7. 테스트: 새 워크트리 공백 해소, done 가드·sweep 판정이 무시 파일을 올바로 다룸.

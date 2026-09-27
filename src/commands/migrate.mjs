@@ -3,7 +3,7 @@ import { constants } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { unlink, rmdir, readdir, mkdir, lstat, stat, access } from 'node:fs/promises';
 import { readTextSafe, writeText, exists } from '../fsx.mjs';
-import { loadBackupDir, mergeClaudeSettings, settingsHasBoundaryCheckpoint, mirrorCursorRules, AGENT_FILE_TEMPLATES, isLegacyCodexSessionCommand, withCodexHookFlag } from '../harness.mjs';
+import { appendGitignore, loadBackupDir, mergeClaudeSettings, settingsHasBoundaryCheckpoint, mirrorCursorRules, AGENT_FILE_TEMPLATES, isLegacyCodexSessionCommand, withCodexHookFlag } from '../harness.mjs';
 import { resolveStack } from '../detect-stack.mjs';
 import { loadRenderState } from '../render-state.mjs';
 import { extractSections, deepMergeJson, simpleDiff } from '../merge.mjs';
@@ -12,7 +12,7 @@ import { confirm } from '../prompt.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
 import {
   taskArtifactTemplate, parseReviewMarkers, evidenceWindowStart, isVerifyKind,
-  parseDoneEvidenceDeclaration, VERIFY_KIND_SUFFIXES,
+  parseDoneEvidenceDeclaration, VERIFY_KIND_SUFFIXES, trackedUserHandoffs,
 } from './task.mjs';
 import { collectTasks, readTaskMeta, writeTaskMeta, metaRel } from './summary.mjs';
 import { settingsHasSessionGate } from './session-context.mjs';
@@ -1080,6 +1080,21 @@ export async function adoptTaskReviews(ctx) {
   return true;
 }
 
+// user handoff 추적 해제(USER_HANDOFF_IGNORE). .gitignore 줄은 **항상** 보장하지만(파일 편집) 인덱스는 건드리지 않는다 —
+// `git rm --cached` 는 사용자의 커밋 경계와 겹치므로 명령만 안내한다(2026-09-27 결정). 추적 중인 사본이 없어도 줄은 넣는다 —
+// 추적 해제만 된 저장소에서 다음 `git add -A` 가 파일을 다시 추적하기 때문이다(codex P2). 둘 다 할 일이 없으면 false.
+export async function migrateUserHandoffUntrack(ctx) {
+  const ignoreAdded = await appendGitignore(ctx.targetDir);
+  if (ignoreAdded) console.log('  ✓ .gitignore: 하네스 관리 무시 줄 보강 (user handoff 는 워크트리 로컬 파일)');
+  const tracked = await trackedUserHandoffs(ctx.targetDir);
+  if (tracked.length) {
+    console.log(`  ⚠ user handoff 가 아직 git 에 추적됨: ${tracked.join(', ')}`);
+    console.log('    워크트리 로컬 파일이라 추적하면 병렬 PR 끼리 충돌한다. 인덱스는 건드리지 않았다.');
+    console.log(`    기본 브랜치에서 실행 후 커밋: git rm --cached ${tracked.join(' ')}`);
+  }
+  return ignoreAdded || tracked.length > 0;
+}
+
 export async function runMigrate(ctx) {
   console.log(`harness-team migrate → ${ctx.targetDir}`);
 
@@ -1099,13 +1114,14 @@ export async function runMigrate(ctx) {
   const metaBackfilled = await backfillTaskMeta(ctx);
   // backfill 뒤에 둔다 — 방금 만들어진 meta 도 같은 실행에서 후보가 되게 한다.
   const reviewsAdopted = await adoptTaskReviews(ctx);
+  const userHandoffUntrack = await migrateUserHandoffUntrack(ctx);
 
   if (boundaryHookMigrated === null) {
     console.log('\nMigration incomplete — resolve the PreToolUse boundary checkpoint issue and rerun.');
     return;
   }
 
-  if (!managedBackedUp && !agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !claudeHooksRefreshed && !claudeTemplatesRefreshed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated && !metaBackfilled && !reviewsAdopted && !codexFlagMigrated) {
+  if (!managedBackedUp && !agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !claudeHooksRefreshed && !claudeTemplatesRefreshed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated && !metaBackfilled && !reviewsAdopted && !codexFlagMigrated && !userHandoffUntrack) {
     console.log('\nNothing to migrate — project is already up to date.');
     return;
   }
