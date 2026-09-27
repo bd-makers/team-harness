@@ -18,6 +18,8 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.44.3] - 2026-09-27
+
 ### Added
 - **`npm run docs:check`가 현행 문서의 버전 표지를 `package.json` 버전과 대조한다** — `docs/harness-overview.template.html`·
   생성본의 hero 배지·최신 🆕 배너·footer, `docs/what-changes-latest-version.html`의 footer, `docs/index.html` what-changes
