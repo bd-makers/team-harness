@@ -7,7 +7,7 @@ import { exists, readTextSafe } from '../fsx.mjs';
 import { loadBackupDir, settingsHasBoundaryCheckpoint, codexHooksHaveSessionContext, isHarnessCodexSessionCommand, AGENT_FILE_TEMPLATES } from '../harness.mjs';
 import { render } from '../render.mjs';
 import { resolveStack } from '../detect-stack.mjs';
-import { loadRenderState } from '../render-state.mjs';
+import { loadRenderState, readHarnessVersion } from '../render-state.mjs';
 import { mergeMarkdown, extractSections } from '../merge.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation } from '../observation.mjs';
 import { settingsHasSessionGate } from './session-context.mjs';
@@ -137,6 +137,38 @@ function isAtLeast(version, floor) {
   return true;
 }
 
+// 3-way major.minor.patch comparison (-1 / 0 / 1), null when either side is not
+// semver-shaped. Prerelease is ignored for the same reason as isAtLeast: the
+// question is which release line applied the project, not rc ordering.
+export function compareVersions(a, b) {
+  const pa = String(a ?? '').match(/^(\d+)\.(\d+)\.(\d+)/);
+  const pb = String(b ?? '').match(/^(\d+)\.(\d+)\.(\d+)/);
+  if (!pa || !pb) return null;
+  for (let i = 1; i <= 3; i++) {
+    const d = Number(pa[i]) - Number(pb[i]);
+    if (d) return d > 0 ? 1 : -1;
+  }
+  return 0;
+}
+
+// The project's applied harness (render-state `harnessVersion`, stamped by init)
+// against the CLI running this doctor. The plugin record is shown for context
+// only — PATH-vs-plugin disagreement is cliDriftWarning's job. Unknown (an install
+// that predates the stamp) is reported but not warned: nothing to compare.
+// plugin-dev is the source, not an install, so it has no applied version.
+export function harnessVersionReport({ applied, cli, plugin, pluginDev = false }) {
+  const project = pluginDev ? 'n/a (plugin-dev repo)' : (applied ?? 'unknown (기록 이전 설치)');
+  const line = `project applied ${project} · CLI ${cli ?? 'unknown'} · plugin ${plugin ?? 'unknown'}`;
+  const order = pluginDev ? null : compareVersions(applied, cli);
+  if (order === -1) {
+    return { line, kind: 'behind', warning: `프로젝트에 적용된 하네스 ${applied}가 실행 중인 CLI ${cli}보다 낡음 — \`harness-team init --yes\`로 관리 절·스캐폴드를 갱신` };
+  }
+  if (order === 1) {
+    return { line, kind: 'ahead', warning: `프로젝트에 적용된 하네스 ${applied}가 실행 중인 CLI ${cli}보다 새것 — 이 CLI로 init 하면 관리 절이 구버전으로 퇴행할 수 있다; init 전에 CLI를 갱신` };
+  }
+  return { line, kind: null, warning: null };
+}
+
 // Four outcomes. `missing` and `legacy` need different fixes — install the CLI
 // vs refresh the source it points at — and `unknown` exists so a CLI that never
 // got to answer is not dated by its silence. A timeout, a missing interpreter
@@ -210,14 +242,16 @@ export function cliDriftAction(env = process.env) {
   return `git -C "${join(pluginsRoot, 'marketplaces', HOOK_CLI_MARKETPLACE_DIR)}" pull`;
 }
 
-export async function checkCliDrift(env = process.env) {
+export async function readInstalledHarnessVersion(env = process.env) {
   const pluginsRoot = env.CLAUDE_PLUGINS_ROOT ?? join(homedir(), '.claude/plugins');
   const installedPath = join(pluginsRoot, 'installed_plugins.json');
   const raw = await readFile(installedPath, 'utf8').catch(() => null);
   if (!raw) return null;
-  let installed;
-  try { installed = JSON.parse(raw); } catch { return null; }
-  const installedVersion = installedHarnessVersion(installed);
+  try { return installedHarnessVersion(JSON.parse(raw)); } catch { return null; }
+}
+
+export async function checkCliDrift(env = process.env) {
+  const installedVersion = await readInstalledHarnessVersion(env);
   if (!installedVersion) return null;
   return cliDriftWarning({
     pathCli: await readPathCliVersion(env),
@@ -1016,6 +1050,19 @@ export async function runDoctor(ctx) {
     add('global CLI version drift', 'warning', driftWarning, `\n⚠️ ${driftWarning}`);
   }
 
+  const versions = {
+    project: pluginDev ? null : ((await loadRenderState(ctx.targetDir)).harnessVersion ?? null),
+    cli: await readHarnessVersion(ctx.root),
+    plugin: await readInstalledHarnessVersion(),
+  };
+  const versionReport = harnessVersionReport({ applied: versions.project, cli: versions.cli, plugin: versions.plugin, pluginDev });
+  if (versionReport.warning) {
+    add('harness version', 'warning', `${versionReport.line}; ${versionReport.warning}`,
+      `\nharness version: ${versionReport.line}\n⚠️ ${versionReport.warning}`);
+  } else {
+    add('harness version', 'pass', versionReport.line, `\nharness version: ${versionReport.line}`);
+  }
+
   if (json) {
     const warnCount = warnings;
     const skipCount = checks.filter(c => c.status === 'skip').length;
@@ -1044,7 +1091,8 @@ export async function runDoctor(ctx) {
     if (staleTemplates.length) warnActions.push('harness-team migrate');
     if (jqMissing) warnActions.push(jqInstallAction());
     if (!pluginDev && !hookCliOk) warnActions.push(hookCliInstall);
-    if (driftWarning) warnActions.push(cliDriftAction());
+    if (versionReport.kind === 'behind') warnActions.push('harness-team init --yes');
+    if (driftWarning || versionReport.kind === 'ahead') warnActions.push(cliDriftAction());
     emitObservation(buildEnvelope({
       command: 'doctor',
       status,
@@ -1060,7 +1108,7 @@ export async function runDoctor(ctx) {
         safeDefault: 'doctor는 읽기 전용이다 — 아무것도 고치지 않고 실패 목록만 남긴다',
         stop: '필수 파일/스크립트 누락이면 harness-team init 또는 migrate로 복구',
       }) : null,
-      extra: { checks, mode: pluginDev ? 'plugin-dev' : 'project' },
+      extra: { checks, mode: pluginDev ? 'plugin-dev' : 'project', versions },
     }));
   } else {
     // "All checks passed" after a printed ⚠️ contradicts the lines above it —

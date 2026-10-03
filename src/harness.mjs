@@ -6,7 +6,7 @@ import { render } from './render.mjs';
 import { backupDirFromConfig } from './backup-dir.mjs';
 import { mergeMarkdown, deepMergeJson, simpleDiff } from './merge.mjs';
 import { stackPermissions, RN_STACK_IDS } from './settings-permissions.mjs';
-import { loadRenderState, sectionHashes } from './render-state.mjs';
+import { loadRenderState, sectionHashes, readHarnessVersion } from './render-state.mjs';
 import { USER_HANDOFF_IGNORE } from './task-paths.mjs';
 
 export const DEFAULT_BACKUP_PARENT = 'harness-backup';
@@ -180,7 +180,14 @@ export async function planChanges(ctx, { stack, stackPin }) {
   // 이전 상태를 기본값으로 깔고 시작한다. 루프가 어떤 이유로든 파일을 건너뛰어도
   // (symlink 레거시 · 마커 깨짐 · 템플릿 없음 → continue) 그 파일의 해시가 통째로
   // 지워지지 않는다 — 지우면 다음 실행이 부트스트랩으로 판정해 덮는다.
-  const renderState = { version: 1, ...(stackPin ? { stack: stackPin } : {}), sections: { ...priorState.sections } };
+  // harnessVersion은 이번 실행의 버전으로 갈아끼운다 — "마지막으로 Apply한 하네스"가 그 뜻이다.
+  const harnessVersion = await readHarnessVersion(root);
+  const renderState = {
+    version: 1,
+    ...(stackPin ? { stack: stackPin } : {}),
+    ...(harnessVersion ? { harnessVersion } : {}),
+    sections: { ...priorState.sections },
+  };
 
   // Each agent file is marker-merged independently: managed sections updated,
   // user text preserved.

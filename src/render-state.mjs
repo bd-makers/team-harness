@@ -18,6 +18,9 @@ export const RENDER_STATE_REL = '.harness/render-state.json';
 // `stack`(선택): `init --stack X`로 감지와 다른 스택을 강제했을 때의 X. 관리 절 렌더 입력 중
 // 디스크에서 다시 얻을 수 없는 유일한 값이라 여기 남긴다 — 없으면 플래그 없는 init·doctor·migrate가
 // 감지 스택으로 렌더해 강제 선택을 되돌린다. 필드가 없으면(기존 설치본) 감지 스택을 쓴다.
+// `harnessVersion`(선택): 마지막으로 init을 Apply한 하네스의 package.json version. `version`은 이 파일의
+// 스키마 버전이라 별개다. doctor가 실행 중인 CLI와 비교한다. 필드가 없으면 기록 이전 설치본이다.
+// 타임스탬프는 두지 않는다 — 같은 버전으로 init을 다시 돌려도 diff가 생기지 않아야 한다.
 const EMPTY = () => ({ version: 1, sections: {} });
 
 // 마커를 포함한 블록 전체를 해싱한다 — mergeMarkdown이 교체하는 단위가 바로 그 블록이다.
@@ -37,8 +40,21 @@ export async function loadRenderState(targetDir) {
     if (!data || typeof data !== 'object' || typeof data.sections !== 'object' || data.sections === null) return EMPTY();
     // 모르는 id(손 편집·오타)는 버린다 — resolveStack은 모르는 id를 generic으로 렌더한다.
     const stack = KNOWN_STACK_IDS.includes(data.stack) ? { stack: data.stack } : {};
-    return { version: data.version ?? 1, ...stack, sections: data.sections };
+    // 형식이 아닌 값(손 편집)도 버린다 — 비교할 수 없는 값은 기록 없음과 같다.
+    const harnessVersion = isSemver(data.harnessVersion) ? { harnessVersion: data.harnessVersion } : {};
+    return { version: data.version ?? 1, ...stack, ...harnessVersion, sections: data.sections };
   } catch { return EMPTY(); }
+}
+
+const SEMVER = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
+const isSemver = (v) => typeof v === 'string' && SEMVER.test(v);
+
+// 실행 중인 하네스(root = 플러그인 루트)의 package.json version. 읽을 수 없거나 형식이 아니면 null.
+export async function readHarnessVersion(root) {
+  try {
+    const { version } = JSON.parse(await readTextSafe(join(root, 'package.json')));
+    return isSemver(version) ? version : null;
+  } catch { return null; }
 }
 
 // 원자적으로 쓴다. 중간에 끊기면 깨진 JSON이 남고, loadRenderState는 그것을 빈 부트스트랩
