@@ -18,6 +18,8 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+## [0.45.0] - 2026-10-03
+
 ### Added
 - **프로젝트에 적용된 하네스 버전 기록·표시** (task `harness-version-stamp`). `init`이 `.harness/render-state.json`에
   실행 중인 하네스의 `package.json` version을 `harnessVersion`으로 남기고(타임스탬프 없음 — 같은 버전 재실행은 diff 없음),

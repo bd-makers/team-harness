@@ -203,7 +203,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.44.5</span>
+      <span class="tag tag-purple">v0.45.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -211,6 +211,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.45.0 — 프로젝트에 적용된 하네스 버전을 doctor가 보여 준다:</strong>
+    <br>
+    <code>0.45.0</code> <strong><code>init</code>이 적용한 하네스 버전을 <code>.harness/render-state.json</code>의 <code>harnessVersion</code>으로 남기고, <code>doctor</code>가 <code>harness version: project applied X · CLI Y · plugin Z</code> 한 줄(<code>--json</code>은 <code>versions</code>)을 보여 준다.</strong> 적용 버전이 실행 중인 CLI보다 낮으면 <code>harness-team init --yes</code>를 처방하는 경고, 높으면 구버전 CLI로 <code>init</code>하면 관리 절이 퇴행할 수 있다는 경고를 낸다(차단 없음). 기록이 없는 기존 설치본은 <code>unknown (기록 이전 설치)</code>로 보이고 경고하지 않는다. 타임스탬프는 없어 같은 버전 재실행은 diff가 없다. <code>templates/</code>는 불변 — 소비자는 플러그인 갱신 뒤 기록을 남기려면 <strong><code>init --yes</code></strong>를 한 번 돌린다(<code>migrate</code>는 render-state를 쓰지 않음).
+    <br><br>
     <strong>🆕 0.44.5 — detached HEAD에서 summary --write 허용:</strong>
     <br>
     <code>0.44.5</code> <strong><code>origin/main</code>과 같은 커밋에 detach한 워크트리에서 <code>summary --write</code>가 통과한다.</strong> <code>branch --show-current</code>의 빈 출력(detached)을 git 오류로 분류해 "브랜치 조회 실패"로 거부하던 결함을 고쳤다 — 이제 detached는 비-기본 브랜치와 같은 판정을 받아 <code>origin/HEAD</code>의 기본 브랜치와 정확히 같은 커밋이면 통과하고, 다른 커밋·<code>origin/HEAD</code> 없음은 종전처럼 거부한다. 함께 <code>docs/harness-workflow-simulation.html</code> 본문을 현행 동작에 맞추고 <code>docs:check</code>의 버전 표지 대조에 올렸다. <code>templates/</code>는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 된다.
@@ -2922,7 +2926,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.44.5 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.45.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

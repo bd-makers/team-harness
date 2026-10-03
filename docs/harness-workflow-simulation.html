@@ -284,7 +284,7 @@
     <h1>Task Workflow Simulation</h1>
     <p>새로운 harness task 시스템의 전체 흐름 — init부터 완료, 세션 재개, task 전환까지의 시나리오별 시뮬레이션</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.44.5</span>
+      <span class="tag tag-purple">v0.45.0</span>
       <span class="tag tag-blue">post-commit 자동화</span>
       <span class="tag tag-green">증거 기반 종결 가드 7종</span>
       <span class="tag tag-orange">원장은 생성물</span>
@@ -293,7 +293,9 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #a78bfa;background:rgba(167,139,250,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
-    <strong>🆕 0.40.1–0.44.5 — user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정:</strong>
+    <strong>🆕 0.40.1–0.45.0 — user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시:</strong>
+    <br>
+    <code>0.45.0</code> <code>init</code>이 적용한 하네스 버전을 <code>.harness/render-state.json</code>의 <code>harnessVersion</code>으로 남기고, <code>doctor</code>가 <code>project applied X · CLI Y · plugin Z</code> 한 줄로 보여 준다 — 적용 버전이 CLI보다 낮으면 <code>init --yes</code>를 처방한다(아래 <strong>S1</strong>).
     <br>
     <code>0.44.5</code> 머지 후 종결의 <code>summary --write</code>가 <strong><code>origin/main</code>과 같은 커밋에 detach한 워크트리에서도 통과한다</strong> — 전에는 detached HEAD를 git 오류로 보고 거부해, 같은 커밋에 임시 브랜치를 만들어 우회했다(아래 <strong>S4</strong>).
     <br>
@@ -537,6 +539,7 @@
       <strong>갱신 경로는 둘이다 (0.43.0):</strong> <code>AGENTS.md</code>·<code>CLAUDE.md</code>의 <strong>관리 절</strong>(<code>&lt;!-- harness:section=… --&gt;</code>)은
       <code>init</code>만 다시 렌더한다 — 재실행은 <code>init --yes</code>이고, 사용자가 편집한 절은 건너뛴다. 설치된 훅·스킬·규칙 파일은 <code>migrate</code>가 갱신한다.
       <code>doctor</code>는 편집되지 않았는데 템플릿보다 낡은 관리 절을 <code>관리 절 N개가 최신 템플릿보다 낡음</code>으로 경고하고 <code>harness-team init</code>을 처방한다.
+      0.45.0부터 <code>init</code>은 적용한 하네스 버전(<code>harnessVersion</code>)도 render-state에 남기고, <code>doctor</code>의 <code>harness version</code> 줄이 그 값을 실행 중인 CLI와 비교한다 — 낮으면 <code>init --yes</code>, 높으면 구버전 CLI로 <code>init</code>하지 말라는 경고다.
     </div>
   </section>
 
@@ -1167,7 +1170,7 @@ login-bug
 </main>
 
 <footer>
-  harness-aijient-team-plugin v0.44.5 — Task Workflow Simulation &nbsp;·&nbsp; 2026-09-28
+  harness-aijient-team-plugin v0.45.0 — Task Workflow Simulation &nbsp;·&nbsp; 2026-10-03
 </footer>
 
 
