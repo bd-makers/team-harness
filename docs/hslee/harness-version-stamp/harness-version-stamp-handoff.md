@@ -26,3 +26,10 @@ CHANGELOG.md                                       |  7 ++
  src/render-state.mjs                               |  2 +-
  tests/render-state.test.mjs                        |  2 ++
  6 files changed, 48 insertions(+), 17 deletions(-)
+
+## 2026-10-03T04:58:59.467Z — 26595f5 chore(task): harness-version-stamp ship — plan·artifact·handoff 갱신 (PR #118)
+.../harness-version-stamp/harness-version-stamp-artifact.md      | 1 +
+ .../hslee/harness-version-stamp/harness-version-stamp-context.md | 2 +-
+ .../hslee/harness-version-stamp/harness-version-stamp-handoff.md | 9 +++++++++
+ docs/hslee/harness-version-stamp/harness-version-stamp-plan.md   | 2 +-
+ 4 files changed, 12 insertions(+), 2 deletions(-)
