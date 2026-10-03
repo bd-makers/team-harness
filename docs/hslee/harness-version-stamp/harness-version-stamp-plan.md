@@ -12,7 +12,7 @@ init이 render-state에 적용 하네스 버전(`harnessVersion`)을 기록하�
 - [x] 테스트: init 후 기록 / 필드 없음 unknown / 경고 작음·같음·큼 / 잘못된 형식 폐기
 - [x] README: render-state 설명·doctor 절 갱신, `npm run docs:check`
 - [x] `npm run test` 통과
-- [ ] codex read-only 리뷰 → artifact ## Reviews 기록·반영
+- [x] codex read-only 리뷰 → artifact ## Reviews 기록·반영
 - [ ] ship: spec·plan·artifact 최종 갱신, push, PR 생성
 
 ## Ontology 변경 로그

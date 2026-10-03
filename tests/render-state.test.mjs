@@ -64,6 +64,8 @@ test('loadRenderState: harnessVersion 은 semver 형식만 남긴다 (없거나 
   const dir = await mkdtemp(join(tmpdir(), 'harness-rs-hv-'));
   await saveRenderState(dir, { version: 1, harnessVersion: '0.44.5', sections: {} });
   assert.equal((await loadRenderState(dir)).harnessVersion, '0.44.5');
+  await saveRenderState(dir, { version: 1, harnessVersion: '0.44.5-rc.1+build.7', sections: {} });
+  assert.equal((await loadRenderState(dir)).harnessVersion, '0.44.5-rc.1+build.7', 'prerelease+build 동시 사용도 유효한 semver');
   await saveRenderState(dir, { version: 1, harnessVersion: 'latest', sections: {} });
   assert.deepEqual(await loadRenderState(dir), { version: 1, sections: {} });
   await saveRenderState(dir, { version: 1, harnessVersion: 44, sections: {} });

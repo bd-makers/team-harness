@@ -46,7 +46,7 @@ export async function loadRenderState(targetDir) {
   } catch { return EMPTY(); }
 }
 
-const SEMVER = /^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/;
+const SEMVER = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 const isSemver = (v) => typeof v === 'string' && SEMVER.test(v);
 
 // 실행 중인 하네스(root = 플러그인 루트)의 package.json version. 읽을 수 없거나 형식이 아니면 null.
