@@ -342,6 +342,7 @@ All checks passed.
 
 심볼: `✓` 정상, `✗` 실패(exit 1), `-` 선택 항목 없음(정상).
 소비자 프로젝트에서는 PATH의 `harness-team`이 `session-context`·`handoff`·`boundary`를 지원하는지도 경고로 점검합니다. 플러그인 소스 저장소는 소비자 훅을 설치하지 않으므로 이 항목이 n/a로 건너뛰어집니다.
+마지막 줄 근처의 `harness version: project applied … · CLI … · plugin …`은 이 프로젝트에 마지막으로 `init`을 적용한 하네스 버전(`.harness/render-state.json`의 `harnessVersion`), doctor를 실행 중인 CLI 버전, 설치된 플러그인 버전을 나란히 보여 줍니다(`--json`은 `versions` 필드). 기록이 없는 설치본은 `unknown (기록 이전 설치)`로 표시되고 경고하지 않습니다 — 다음 `init`부터 기록됩니다. 적용 버전이 실행 중인 CLI보다 낮으면 `harness-team init --yes`를 처방하는 경고를, 높으면 구버전 CLI로 `init`하면 관리 절이 퇴행할 수 있다는 경고를 냅니다(경고만 — `init`을 막지는 않습니다).
 관측 로그의 트립와이어가 발화한 상태면 `observe trip wires` 경고 1건(wire id·수치·`harness-team observe` 안내·루프백 nudge)을 냅니다 — warn 수준이라 exit code는 그대로이고, 로그가 없거나 발화가 없으면 항목 자체가 없습니다.
 
 ### `/harness-observe` — 관측 로그 스코어카드 · 트립와이어
@@ -755,7 +756,7 @@ cd ~/work/project-a
 
 ## 설치 결과물
 
-설치되는 파일과 task 계약은 scaffold 되는 `AGENTS.md`의 **작업 프로토콜** 및 `templates/`를 확인합니다. 개인 상태 파일은 `.harness/active.json`에 보관됩니다. 반면 백업 클론 폴더 경로를 기억하는 `.harness/backup.json`은 팀이 공유하는 설정이므로 commit을 권장합니다. 관리 절의 마지막 렌더 해시를 담는 `.harness/render-state.json`도 **팀 상태이므로 반드시 commit 합니다** — 커밋하지 않으면 팀원이 clone한 뒤 첫 `init`에서 판정 근거가 없어 관리 절의 사용자 편집을 한 번 덮어씁니다.
+설치되는 파일과 task 계약은 scaffold 되는 `AGENTS.md`의 **작업 프로토콜** 및 `templates/`를 확인합니다. 개인 상태 파일은 `.harness/active.json`에 보관됩니다. 반면 백업 클론 폴더 경로를 기억하는 `.harness/backup.json`은 팀이 공유하는 설정이므로 commit을 권장합니다. 관리 절의 마지막 렌더 해시를 담는 `.harness/render-state.json`도 **팀 상태이므로 반드시 commit 합니다** — 커밋하지 않으면 팀원이 clone한 뒤 첫 `init`에서 판정 근거가 없어 관리 절의 사용자 편집을 한 번 덮어씁니다. 이 파일의 `harnessVersion`은 마지막으로 `init`을 적용한 하네스 버전이고(`version`은 파일 스키마 버전), `doctor`가 실행 중인 CLI와 비교합니다. 타임스탬프는 남기지 않으므로 같은 버전으로 `init`을 다시 돌려도 diff가 생기지 않습니다.
 
 자동으로 `.gitignore`에 추가되는 항목(`.harness/`를 통째로 무시하지 않습니다 — `backup.json`·`cursor-mirror.json`·`render-state.json`은 팀 상태):
 - `.claude/settings.local.json` (개인 권한 오버라이드)

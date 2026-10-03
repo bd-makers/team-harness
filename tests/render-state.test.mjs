@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, writeFile, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createHash } from 'node:crypto';
-import { sectionHashes, loadRenderState, saveRenderState, RENDER_STATE_REL } from '../src/render-state.mjs';
+import { sectionHashes, loadRenderState, saveRenderState, readHarnessVersion, RENDER_STATE_REL } from '../src/render-state.mjs';
 
 const BLOCK = '<!-- harness:section="stack" begin -->\n- npm\n<!-- harness:section="stack" end -->';
 const DOC = `# T\n\n${BLOCK}\n\ntail\n`;
@@ -58,4 +58,23 @@ test('loadRenderState: stack 은 알려진 id 만 남긴다 (모르는 id 는 ge
   assert.equal((await loadRenderState(dir)).stack, 'next');
   await saveRenderState(dir, { version: 1, stack: 'reakt', sections: {} });
   assert.deepEqual(await loadRenderState(dir), { version: 1, sections: {} });
+});
+
+test('loadRenderState: harnessVersion 은 semver 형식만 남긴다 (없거나 틀리면 기록 이전 설치본)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-rs-hv-'));
+  await saveRenderState(dir, { version: 1, harnessVersion: '0.44.5', sections: {} });
+  assert.equal((await loadRenderState(dir)).harnessVersion, '0.44.5');
+  await saveRenderState(dir, { version: 1, harnessVersion: '0.44.5-rc.1+build.7', sections: {} });
+  assert.equal((await loadRenderState(dir)).harnessVersion, '0.44.5-rc.1+build.7', 'prerelease+build 동시 사용도 유효한 semver');
+  await saveRenderState(dir, { version: 1, harnessVersion: 'latest', sections: {} });
+  assert.deepEqual(await loadRenderState(dir), { version: 1, sections: {} });
+  await saveRenderState(dir, { version: 1, harnessVersion: 44, sections: {} });
+  assert.deepEqual(await loadRenderState(dir), { version: 1, sections: {} });
+});
+
+test('readHarnessVersion: 플러그인 루트 package.json 의 version, 없으면 null', async () => {
+  const root = join(import.meta.dirname, '..');
+  const pkg = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'));
+  assert.equal(await readHarnessVersion(root), pkg.version);
+  assert.equal(await readHarnessVersion(await mkdtemp(join(tmpdir(), 'harness-rs-nopkg-'))), null);
 });

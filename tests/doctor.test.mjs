@@ -6,7 +6,7 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from 'node:fs
 import { tmpdir, homedir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { classifyHookCommand, collectHookCommands, redactCommand, checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, checkActiveDoneOnMain, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, DECISION_HEADINGS, checkObserveTripWires, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER, findStaleManagedSections } from '../src/commands/doctor.mjs';
+import { classifyHookCommand, collectHookCommands, redactCommand, checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, checkActiveDoneOnMain, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, DECISION_HEADINGS, checkObserveTripWires, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER, findStaleManagedSections, compareVersions, harnessVersionReport } from '../src/commands/doctor.mjs';
 import { render } from '../src/render.mjs';
 import { detectStack } from '../src/detect-stack.mjs';
 import { sectionHashes } from '../src/render-state.mjs';
@@ -1207,4 +1207,59 @@ test('findStaleManagedSections: init --stack 으로 감지와 다른 스택을 �
     assert.match(await readFile(join(dir, 'AGENTS.md'), 'utf8'), /Next\.js/, '전제: 강제 스택으로 렌더됨');
     assert.deepEqual(await findStaleManagedSections(dir, ROOT), []);
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('compareVersions: major.minor.patch 3-way, 형식이 아니면 null', () => {
+  assert.equal(compareVersions('0.44.4', '0.44.5'), -1);
+  assert.equal(compareVersions('0.44.5', '0.44.5'), 0);
+  assert.equal(compareVersions('0.45.0', '0.44.10'), 1);
+  assert.equal(compareVersions('0.44.5-rc.1', '0.44.5'), 0, 'prerelease 는 무시한다');
+  assert.equal(compareVersions(undefined, '0.44.5'), null);
+  assert.equal(compareVersions('latest', '0.44.5'), null);
+});
+
+test('harnessVersionReport: 기록 < CLI 는 init 경고, 같으면 침묵, 기록 > CLI 는 퇴행 경고', () => {
+  const behind = harnessVersionReport({ applied: '0.44.0', cli: '0.44.5', plugin: '0.44.5' });
+  assert.equal(behind.line, 'project applied 0.44.0 · CLI 0.44.5 · plugin 0.44.5');
+  assert.equal(behind.kind, 'behind');
+  assert.match(behind.warning, /harness-team init --yes/);
+  const same = harnessVersionReport({ applied: '0.44.5', cli: '0.44.5', plugin: null });
+  assert.equal(same.warning, null);
+  assert.match(same.line, /plugin unknown$/);
+  const ahead = harnessVersionReport({ applied: '0.45.0', cli: '0.44.5', plugin: '0.45.0' });
+  assert.equal(ahead.kind, 'ahead');
+  assert.match(ahead.warning, /퇴행/);
+});
+
+test('harnessVersionReport: 기록 없는 설치본은 unknown 으로 보이고 경고하지 않는다 (plugin-dev 는 n/a)', () => {
+  const legacy = harnessVersionReport({ applied: null, cli: '0.44.5', plugin: '0.44.5' });
+  assert.match(legacy.line, /^project applied unknown \(기록 이전 설치\) · /);
+  assert.equal(legacy.warning, null);
+  const dev = harnessVersionReport({ applied: '0.1.0', cli: '0.44.5', plugin: null, pluginDev: true });
+  assert.match(dev.line, /^project applied n\/a \(plugin-dev repo\)/);
+  assert.equal(dev.warning, null);
+});
+
+test('init 이 harnessVersion 을 기록하고 doctor 가 CLI 보다 낡은 기록을 init --yes 로 처방한다', async () => {
+  const base = await mkdtemp(join(tmpdir(), 'harness-doctor-hv-'));
+  const dir = join(base, 'p');
+  try {
+    await mkdir(dir);
+    await pexec('node', [join(ROOT, 'bin/harness-team.mjs'), 'init', '--yes', '--backup-dir', join(base, 'bk')], { cwd: dir, timeout: 20000 });
+    const { version } = JSON.parse(await readFile(join(ROOT, 'package.json'), 'utf8'));
+    const statePath = join(dir, '.harness/render-state.json');
+    const state = JSON.parse(await readFile(statePath, 'utf8'));
+    assert.equal(state.harnessVersion, version);
+
+    // 플러그인 레코드는 머신 상태라 빈 루트로 고정한다.
+    const env = { ...process.env, CLAUDE_PLUGINS_ROOT: base };
+    const same = await doctorJson(dir, env);
+    assert.deepEqual(same.versions, { project: version, cli: version, plugin: null });
+    assert.equal(checkOf(same, 'harness version').status, 'pass');
+
+    await writeFile(statePath, JSON.stringify({ ...state, harnessVersion: '0.0.1' }));
+    const behind = await doctorJson(dir, env);
+    assert.equal(checkOf(behind, 'harness version').status, 'warning');
+    assert.ok(behind.next_actions.includes('harness-team init --yes'), JSON.stringify(behind.next_actions));
+  } finally { await rm(base, { recursive: true, force: true }); }
 });

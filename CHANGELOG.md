@@ -18,6 +18,13 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Added
+- **프로젝트에 적용된 하네스 버전 기록·표시** (task `harness-version-stamp`). `init`이 `.harness/render-state.json`에
+  실행 중인 하네스의 `package.json` version을 `harnessVersion`으로 남기고(타임스탬프 없음 — 같은 버전 재실행은 diff 없음),
+  `doctor`가 `harness version: project applied X · CLI Y · plugin Z` 한 줄과 `--json` `versions` 필드로 보여 준다.
+  적용 버전 < 실행 중 CLI면 `harness-team init --yes`를 처방하는 경고, 적용 버전 > CLI면 관리 절 퇴행 위험 경고를 낸다(차단 없음).
+  필드가 없거나 형식이 틀린 기존 설치본은 `unknown (기록 이전 설치)`로 보고 경고하지 않는다.
+
 ## [0.44.5] - 2026-09-28
 
 ### Fixed
