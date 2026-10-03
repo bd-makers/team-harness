@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ harness-version-stamp
 - ✅ docs-version-drift-check
 - ✅ init-stack-stale-false-positive
 - ✅ simulation-doc-refresh

@@ -134,3 +134,4 @@
 | hslee | stack-pin-display | ✅ done | 2026-09-27 |
 | hslee | summary-detached-head | ✅ done | 2026-09-27 |
 | hslee | user-handoff-parallel-conflict | ✅ done | 2026-09-27 |
+| hslee | harness-version-stamp | ✅ done | 2026-10-03 |
