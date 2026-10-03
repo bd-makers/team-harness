@@ -13,7 +13,7 @@ init이 render-state에 적용 하네스 버전(`harnessVersion`)을 기록하�
 - [x] README: render-state 설명·doctor 절 갱신, `npm run docs:check`
 - [x] `npm run test` 통과
 - [x] codex read-only 리뷰 → artifact ## Reviews 기록·반영
-- [ ] ship: spec·plan·artifact 최종 갱신, push, PR 생성
+- [x] ship: spec·plan·artifact 최종 갱신, push, PR 생성
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

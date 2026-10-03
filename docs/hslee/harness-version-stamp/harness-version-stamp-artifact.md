@@ -14,6 +14,7 @@
 - 검증: `npm run test` 1078 pass / 0 fail / 1 skip (+perf 1 pass), `npm run docs:check` 최신,
   임시 소비자 프로젝트에서 init→doctor 실측(일치 pass, 0.40.0으로 낮추면 warning + `init --yes`).
 - 후속 후보: SessionStart 훅 nudge(적용 < CLI일 때 한 줄) — 이번 범위 밖.
+- PR: https://github.com/bd-makers/team-harness/pull/118 (2026-10-03, 머지 전)
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*

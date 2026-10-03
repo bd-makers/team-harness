@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: init이 render-state에 harnessVersion을 기록하고 doctor가 project·CLI·plugin 버전을 보여 주며 방향별 경고.
-- Current atomic step: ship — push 후 PR 생성(base main). 머지·release·done·summary --write는 하지 않는다.
+- Current atomic step: PR #118 생성 완료 — 리뷰·CI 대기. 머지·release·done·summary --write는 하지 않는다.
 - Stop / human-decision condition: src 수정 파일 5개 초과 또는 설계 변경 필요 시.
 
 ## Constraints and settled decisions

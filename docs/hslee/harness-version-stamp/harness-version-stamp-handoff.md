@@ -17,3 +17,12 @@ CHANGELOG.md                                       |  7 ++
  tests/doctor.test.mjs                              | 57 ++++++++++++++++-
  tests/render-state.test.mjs                        | 19 +++++-
  13 files changed, 317 insertions(+), 13 deletions(-)
+
+## 2026-10-03T04:58:30.448Z — 72dab4b fix(render-state): prerelease와 build metadata를 함께 쓴 semver도 harnessVersion으로 인정한다
+.../harness-version-stamp-artifact.md              | 17 ++++++++++++++
+ .../harness-version-stamp-context.md               | 26 +++++++++-------------
+ .../harness-version-stamp-handoff.md               | 16 +++++++++++++
+ .../harness-version-stamp-plan.md                  |  2 +-
+ src/render-state.mjs                               |  2 +-
+ tests/render-state.test.mjs                        |  2 ++
+ 6 files changed, 48 insertions(+), 17 deletions(-)
