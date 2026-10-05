@@ -39,3 +39,11 @@ docs/hslee/pr-check/pr-check-context.md | 2 +-
 ## 2026-10-05T16:29:39.780Z — c06e8f2 docs(task): pr-check 작업 카드 — 최종 훅 설계 반영
 docs/hslee/pr-check/pr-check-context.md | 4 ++--
  1 file changed, 2 insertions(+), 2 deletions(-)
+
+## 2026-10-05T16:35:42.222Z — 4c15c36 docs(task): pr-check 다이어그램 추가 · 남은 리스크를 followups 11–16으로 정리
+docs/followups.md                         |  38 +++-
+ docs/hslee/pr-check/pr-check-artifact.md  |   2 +
+ docs/hslee/pr-check/pr-check-diagram.html | 301 ++++++++++++++++++++++++++++++
+ docs/hslee/pr-check/pr-check-handoff.md   |   4 +
+ docs/hslee/pr-check/pr-check-plan.md      |   1 +
+ 5 files changed, 345 insertions(+), 1 deletion(-)
