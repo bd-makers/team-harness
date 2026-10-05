@@ -22,3 +22,12 @@ docs/harness-overview.html                         | 10 +++
  templates/presets/node.json                        |  6 ++
  tests/repo-shape.test.mjs                          | 85 ++++++++++++++++++++
  8 files changed, 216 insertions(+), 3 deletions(-)
+
+## 2026-10-05T15:32:36.062Z — cf6a3bb feat(presets): workspace 모양 제안 — turbo·nx 위임 또는 workspace별 목록
+.../preset-repo-shape-artifact.md                  |   4 +
+ .../preset-repo-shape/preset-repo-shape-handoff.md |  11 ++
+ .../preset-repo-shape/preset-repo-shape-plan.md    |   2 +-
+ src/presets.mjs                                    | 123 +++++++++++++++++----
+ templates/presets/node.json                        |  14 +++
+ tests/presets.test.mjs                             |  81 +++++++++++++-
+ 6 files changed, 213 insertions(+), 22 deletions(-)
