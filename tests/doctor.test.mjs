@@ -642,6 +642,19 @@ test('runDoctor: 플러그인 소스 레포 → plugin-dev 모드, fail 0', asyn
   // hooks, so a PATH miss here would be a false alarm rather than a real breakage.
   assert.equal(checkOf(env, 'SessionStart/post-commit hook CLI')?.status, 'skip',
     'hook CLI PATH check must be skipped in plugin-dev, not evaluated');
+  assert.equal(checkOf(env, 'pre-push hook (pr-check)')?.status, 'skip',
+    'consumer pre-push hook check must be skipped in plugin-dev');
+});
+
+// followups 11: 훅 관리자가 pre-push 를 다시 써 블록이 사라지면 doctor 가 알아야 한다(판정 갈래는 git-hooks.test.mjs).
+test('runDoctor: 소비자 git 저장소에 pre-push 블록이 없으면 sync 처방 경고를 JSON 에 싣는다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-prepush-'));
+  try {
+    await pexec('git', ['-C', dir, 'init', '-q']);
+    const c = checkOf(await doctorJson(dir), 'pre-push hook (pr-check)');
+    assert.equal(c?.status, 'warning');
+    assert.match(c.detail, /run: harness-team sync/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
 test('runDoctor: 깨진(dangling) symlink → "broken symlink"로 구분 fail', async () => {

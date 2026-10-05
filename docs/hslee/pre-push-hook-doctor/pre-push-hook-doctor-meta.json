@@ -1,0 +1,30 @@
+{
+  "user": "hslee",
+  "task": "pre-push-hook-doctor",
+  "created": "2026-10-05",
+  "firstActivatedAt": "2026-10-05T16:44:50.379Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "476b59f09e8bebb25094fe49fe0963f409450fa2",
+      "at": "2026-10-05T23:34:15.454Z",
+      "exitCode": 0,
+      "outputBytes": 767
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "476b59f09e8bebb25094fe49fe0963f409450fa2",
+      "at": "2026-10-05T23:37:31.055Z",
+      "exitCode": 0,
+      "outputBytes": 489
+    }
+  ]
+}
