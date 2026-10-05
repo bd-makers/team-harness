@@ -9,6 +9,8 @@ import { loadRenderState } from '../render-state.mjs';
 import { extractSections, deepMergeJson, simpleDiff } from '../merge.mjs';
 import { render } from '../render.mjs';
 import { confirm } from '../prompt.mjs';
+import { readConfigStrict } from '../user-config.mjs';
+import { applyProposal, buildProposal, describeProposal } from '../presets.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
 import {
   taskArtifactTemplate, parseReviewMarkers, evidenceWindowStart, isVerifyKind,
@@ -1004,6 +1006,27 @@ export async function migrateUserHandoffUntrack(ctx) {
   return ignoreAdded || tracked.length > 0;
 }
 
+// The current pre-commit-check.sh only runs what config declares, so an install that has it
+// but no `gates` silently lost the typecheck/test gate it used to have — propose one to close
+// that gap. A prior-stock or customized hook keeps its own logic and is left alone (D8).
+export async function migrateGates(ctx) {
+  const rel = '.claude/hooks/pre-commit-check.sh';
+  const installed = await readTextSafe(join(ctx.targetDir, rel));
+  const template = await readTextSafe(join(ctx.root, 'templates', rel));
+  if (installed === null || installed !== template) return false;
+  let config;
+  try { config = await readConfigStrict(ctx.targetDir); }
+  catch (e) { console.log(`  gates: ${e.message} — 건너뜀`); return false; }
+  if (config.gates !== undefined) return false;
+  const { stack: pin } = await loadRenderState(ctx.targetDir);
+  const proposal = await buildProposal(ctx.targetDir, await resolveStack(ctx.targetDir, pin));
+  console.log(`\n커밋 게이트가 설정되지 않았습니다 — 새 pre-commit-check.sh 는 config 의 목록만 실행합니다.\n${describeProposal(proposal)}`);
+  const ok = ctx.flags.yes || await confirm('이 제안을 .harness/config.json 에 기록할까요?', { defaultYes: true });
+  if (!ok) { console.log('Skipped gates.'); return false; }
+  await applyProposal(ctx.targetDir, proposal);
+  return true;
+}
+
 export async function runMigrate(ctx) {
   console.log(`harness-team migrate → ${ctx.targetDir}`);
 
@@ -1014,6 +1037,8 @@ export async function runMigrate(ctx) {
   const taskUpgraded = await migrateTaskTo07(ctx);
   const claudeHooksRefreshed = await refreshClaudeHooks(ctx);
   const claudeTemplatesRefreshed = await refreshClaudeTemplates(ctx);
+  // 훅 refresh 뒤 — 같은 실행에서 방금 받은 래퍼 훅도 대상이 된다.
+  const gatesProposed = await migrateGates(ctx);
   const taskLabelsRenamed = await migrateTaskIndexLabels(ctx);
   const hookMigrated = await migrateSessionStartHook(ctx);
   const boundaryHookMigrated = await migrateBoundaryCheckpointHook(ctx);
@@ -1028,7 +1053,7 @@ export async function runMigrate(ctx) {
     return;
   }
 
-  if (!managedBackedUp && !agentsMigrated && !taskMigrated && !taskUpgraded && !claudeHooksRefreshed && !claudeTemplatesRefreshed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated && !metaBackfilled && !reviewsAdopted && !codexFlagMigrated && !userHandoffUntrack) {
+  if (!managedBackedUp && !agentsMigrated && !taskMigrated && !taskUpgraded && !claudeHooksRefreshed && !claudeTemplatesRefreshed && !gatesProposed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated && !metaBackfilled && !reviewsAdopted && !codexFlagMigrated && !userHandoffUntrack) {
     console.log('\nNothing to migrate — project is already up to date.');
     return;
   }

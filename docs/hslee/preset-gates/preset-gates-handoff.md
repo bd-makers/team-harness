@@ -49,3 +49,10 @@ docs/harness-overview.html                         |  10 ++
  tests/hooks-jq-fallback.test.mjs                   |  85 +++++++++----
  tests/migrate-hooks.test.mjs                       |   2 +-
  10 files changed, 289 insertions(+), 106 deletions(-)
+
+## 2026-10-05T12:24:30.621Z — fbd91b0 feat(init): 스택 프리셋으로 커밋 게이트 제안·확정
+docs/harness-overview.html                      |  5 ++
+ docs/hslee/preset-gates/preset-gates-handoff.md | 13 +++++
+ src/commands/init.mjs                           | 17 +++++-
+ tests/init-gates.test.mjs                       | 72 +++++++++++++++++++++++++
+ 4 files changed, 106 insertions(+), 1 deletion(-)
