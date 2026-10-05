@@ -25,6 +25,15 @@
       "at": "2026-10-05T13:02:20.213Z",
       "exitCode": 0,
       "outputBytes": 2544
+    },
+    {
+      "kind": "codex-shipcheck",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "a30154f508a19831df07e67fb3cdb158d8d677b1",
+      "at": "2026-10-05T13:08:23.683Z",
+      "exitCode": 0,
+      "outputBytes": 2891
     }
   ]
 }

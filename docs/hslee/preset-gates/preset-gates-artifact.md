@@ -17,11 +17,31 @@
   $ npm run docs:check
   harness overview 생성 상태가 최신입니다.
   docs:check exit=0
-  $ grep -cE 'pnpm|yarn|bunx|npx|prettier|tsc' templates/.claude/hooks/{pre-commit-check,auto-format}.sh   # spec 완료 기준 1
-  hook-grep lines=0
+  $ grep -cE 'pnpm|yarn|bunx|npx|prettier|tsc' templates/.claude/hooks/pre-commit-check.sh templates/.claude/hooks/auto-format.sh; echo "exit=$?"   # spec 완료 기준 1
+  templates/.claude/hooks/pre-commit-check.sh:0
+  templates/.claude/hooks/auto-format.sh:0
+  exit=1
   ```
+  (grep은 일치가 0건이면 exit 1 — 두 훅 모두 0건이 기대값이다.)
 - 소비자 실측 (2026-10-05, 읽기 전용 — `resolveStack`+`buildProposal`만 호출하는 일회성 스크립트, config·훅·gates.json 무변경).
-  스크립트는 세 경로에 대해 `buildProposal(dir, stack, { unattended: true })`(= init·migrate `--yes`)와 대화형 전체 제안을 출력했다:
+  저장소 루트 아래 `.superpowers/tmp/consumers.mjs`(gitignore 경로, 실행 후 삭제)로 두고 `node .superpowers/tmp/consumers.mjs; echo "exit=$?"`로
+  실행했다 — 같은 본문을 그 경로에 다시 쓰면 재현된다. `--yes=`는 `buildProposal(…, { unattended: true })`(= init·migrate `--yes`), `full=`은 대화형 전체 제안:
+
+  ```js
+  import { homedir } from 'node:os';
+  import { resolveStack } from '../../src/detect-stack.mjs';
+  import { loadRenderState } from '../../src/render-state.mjs';
+  import { buildProposal } from '../../src/presets.mjs';
+  const H = homedir();
+  for (const dir of [`${H}/projects/workspace/deep-math`, `${H}/projects/workspace/job-scraper`, `${H}/projects/heliosent/heliosent-profile`]) {
+    const stack = await resolveStack(dir, (await loadRenderState(dir)).stack);
+    const yes = await buildProposal(dir, stack, { unattended: true });
+    const full = await buildProposal(dir, stack);
+    console.log(`${dir.replace(H, '~')} ${stack.id}/${stack.packageManager} --yes=${JSON.stringify(yes.commit)} deferred=${JSON.stringify(yes.deferred)} full=${JSON.stringify(full.commit)} format=${JSON.stringify(full.format)}`);
+  }
+  ```
+
+  출력 원문:
 
   ```text
   ~/projects/workspace/deep-math react-native/npm --yes=["npx tsc --noEmit","npm run test"] deferred=["npm run lint"] full=["npx tsc --noEmit","npm run lint","npm run test"] format={}
@@ -113,6 +133,31 @@ D11 언어 분기 잔존과 공백·프로젝트 밖 경로 처리에서는 추�
 - **deep-math**: `--yes` 경로는 lint를 빼므로 막히지 않지만, `gate suggest`로 lint를 받으면 eslint 미설치(127) → 설정 오류로 막힌다. 수락 전 eslint 설치가 필요.
 - 미룬 Minor 6건은 `## Reviews` 최종 리뷰 절 참조(M1 dotfile glob, M2 `{var}` 잔존, M3 지문 signal 형식, M4 거절 문구, M5 timeout, M6 테스트 공백).
 - 다음 task: 저장소 모양 판별·모노레포(turbo·nx 위임, 경로별 목록)·RN rules 프리셋(spec `(open →)` 이월). git pre-commit 연결은 4번 `pr-check` task.
+
+### 2026-10-05T13:08:23.683Z — codex-shipcheck (harness-team review)
+
+- engine: codex · scope: diff · tip: a30154f508a19831df07e67fb3cdb158d8d677b1 · exit 0 · 2891 B
+
+```text
+전하, **S4는 해소됐지만 S5는 부분 보완에 그쳐 Request changes입니다.** `git status`는 clean이며, `refs/remotes/origin/main` 대비 35개 파일의 diff와 커밋 이력을 직접 확인했습니다. 파일 변경과 전체 테스트 재실행은 하지 않았습니다.
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| S1 | spec 요구사항 대응 구현 | BLOCKER | pass | R1–R9에 대응합니다. diff의 프리셋 3종, `GATES_REL = '.harness/gates.json'`, `buildProposal(... { unattended: Boolean(ctx.flags.yes) })`, `if (r.status === 127) return block(...)`, 훅의 `"$bin" gate commit`, format의 `${cmd} "$@"`, `checkGateFingerprint`, `migrateGates`, `gateSuggest`가 각각 데이터·확정·실행·래퍼·포맷·지문·이행·재제안을 구현합니다. |
+| S2 | plan 완료 체크의 실재 | MAJOR | pass | 다이어그램과 1–10 단계의 변경·커밋이 존재합니다: `e82118d` 문서·다이어그램, `59ed6d6` 프리셋, `009b6a5`·`9f3fc02` 실행기·suggest, `9d1b904` 훅, `2e02bc8` init, `4d7e61b` migrate, `2995a0a` doctor, `fdde1c7` 문서, `7b56ac9` 검증 기록, `34dc6e2`·`114289b` 리뷰 반영·기록. 검증 인용의 적합성은 S5에서 판정합니다. |
+| S3 | 문서에 없는 스코프 밖 변경 | MAJOR | pass | 변경은 프리셋·gate·연결 코드·관련 테스트·문서에 한정됩니다. `harness-cycle.md`의 추가 수정도 diff에 “처음엔 `.harness/config.json`이었으나 그 파일은 사용자별 gitignore라 팀원마다 게이트가 꺼진다 — task `preset-gates` 리뷰”라고 사유가 기록돼 있습니다. |
+| S4 | 실행된 리뷰의 마커 기록 | MAJOR | pass | artifact `## Reviews`에 `kind=codex`(:63), 새로 추가된 `kind=claude-code-reviewer`(:81), `kind=codex-shipcheck`(:102)가 있습니다. Opus 마커의 시각은 :82에서 “at은 근사값”이라고 명시했습니다. 직전 누락은 해소됐습니다. |
+| S5 | 실제 검증 명령·출력 인용 | BLOCKER | **fail** | artifact:11–19의 테스트·docs 출력은 보강됐습니다. 그러나 :20의 `grep -cE …`에 대응하는 :21의 `hook-grep lines=0`은 해당 명령의 실제 출력이 아닙니다. 직접 실행한 출력은 `templates/.claude/hooks/pre-commit-check.sh:0`과 `templates/.claude/hooks/auto-format.sh:0`입니다. 또한 :23–30은 “일회성 스크립트” 설명과 결과만 있고, 실제 실행 명령·스크립트 본문 또는 재확인 가능한 위치가 없습니다. |
+
+S5를 닫으려면 grep 출력 원문을 맞추고, 소비자 실측에 사용한 실제 호출 명령과 스크립트 본문 또는 위치를 추가해야 합니다. 현재 기록만으로 전체 테스트 통과를 독립적으로 보증하지는 않습니다.
+
+**최종 verdict: Request changes — fail 전부: S5(BLOCKER). S4 해소, S5 미해소.**
+```
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=a30154f508a19831df07e67fb3cdb158d8d677b1 at=2026-10-05T13:08:23.683Z -->
+
+- 판별·조치 (2026-10-05): **S5 진짜** — grep 줄이 합산값이었다 → 명령 원문과 실제 출력(`…:0` 두 줄, `exit=1`)으로 교체. 소비자 실측에 실행 명령과
+  스크립트 본문(재현 경로)을 추가. 문서만 변경.
 
 ## Learnings
 - **sha 완결성 테스트와 훅 커밋**: `KNOWN_STOCK_HOOK_SHA256` 완결성 테스트는 `--first-parent` 이력 기준이라, 브랜치에서 훅을 두 번 커밋하면
