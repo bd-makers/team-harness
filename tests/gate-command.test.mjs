@@ -277,8 +277,8 @@ test('gate suggest --yes: workspace 저장소는 확정 모양으로 workspace�
   try {
     for (const [name, body] of Object.entries({
       'package.json': { name: 'root', workspaces: ['apps/*'] },
-      'apps/a/package.json': { name: 'a', scripts: { start: 'node .', test: 'node --test' } },
-      'apps/b/package.json': { name: 'b', scripts: { dev: 'vite', lint: 'eslint .' } },
+      'apps/a/package.json': { name: 'a', scripts: { start: 'node .', test: 'node --test' }, dependencies: { next: '15' } },
+      'apps/b/package.json': { name: 'b', scripts: { dev: 'vite', lint: 'eslint .' }, dependencies: { 'react-dom': '19' } },
     })) {
       await mkdir(dirname(join(dir, name)), { recursive: true });
       await writeFile(join(dir, name), JSON.stringify(body));
@@ -289,5 +289,15 @@ test('gate suggest --yes: workspace 저장소는 확정 모양으로 workspace�
     const gates = JSON.parse(await readFile(join(dir, '.harness/gates.json'), 'utf8'));
     assert.deepEqual(gates.commit, { 'apps/a': ['cd apps/a && npm run test'], 'apps/b': ['cd apps/b && npm run lint'] });
     assert.equal(gates.fingerprint.shape, 'monorepo');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('codex P2: workspace 사이로 파일을 옮기면(rename) 원본 workspace도 검사한다', async () => {
+  const dir = await gitFixture(WS_GATES);
+  try {
+    git(dir, 'mv', 'packages/ui/src/b.ts', 'apps/web/src/b.ts');
+    const r = await capture(() => gate(dir, ['commit']));
+    assert.equal(r.exitCode, undefined, r.errs);
+    assert.deepEqual(await ran(dir), ['web', 'pkg']);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

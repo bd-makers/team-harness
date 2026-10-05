@@ -4,8 +4,8 @@
   "match": { "stackIds": ["node", "react", "next", "react-native", "expo"] },
   "workspace": {
     "app": [
-      { "script": "dev" }, { "script": "start" },
-      { "runtimeDependency": "next" }, { "runtimeDependency": "expo" }, { "runtimeDependency": "react-native" }
+      { "runtimeDependency": "next" }, { "runtimeDependency": "expo" }, { "runtimeDependency": "react-native" },
+      { "runtimeDependency": "react-dom" }
     ]
   },
   "pm": {

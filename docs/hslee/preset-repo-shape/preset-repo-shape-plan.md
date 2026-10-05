@@ -23,13 +23,14 @@ RN rules는 앱 경로로 스코프한 rules 프리셋으로 제안한다. works
       빈 `.claude/rules` 생성·`Copied N` 집계 유지, mirror 전에 설치. 테스트: `tests/stack-conditional-rules.test.mjs` 재작성, `migrate-templates` 전제 테스트 확인
 - [x] 7. 문서 — `docs:generate`(overview), spec·artifact 갱신, 주석(`harness.mjs:211`·`init.mjs:27`·`settings-permissions.mjs:21,39`)
 - [x] 8. 검증 — `npm run test`·`npm run docs:check` PASS, 픽스처 실측(npm·pnpm·turbo·nx 임시 디렉터리 init `--yes` 출력) artifact 기록
-- [ ] 9. 리뷰 — codex(`review --scope diff --base origin/main`) + 새 컨텍스트 리뷰, 결과 artifact `## Reviews`
+- [x] 9. 리뷰 — codex(`review --scope diff --base origin/main`) + 새 컨텍스트 리뷰, 결과 artifact `## Reviews`
 - [ ] 10. 커밋·PR
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
 
 - 2026-10-06: 패키지 신호(`main`·`exports`)를 데이터로 두지 않는다 — kind는 "앱 조건 참 → 앱, 아니면 패키지"라 패키지 조건이 판정에 쓰이지 않는다(spec R2 갱신).
+- 2026-10-06: 앱 = 프레임워크 런타임 의존성만(dev·start 스크립트 제외, 리뷰 P2-3). init 재실행 시 shape 없는 기존 gates.json은 확정 single로 본다.
 - 2026-10-06: `--shape single`(init) — 감지된 workspace 모양의 비대화식 거절. 모양 자체를 지정하는 플래그가 아니다.
 - 2026-10-06: 위임 도구(turbo·nx) 판정도 프리셋 데이터(`delegate`)다 — `repo-shape`는 도구를 모른다.
 

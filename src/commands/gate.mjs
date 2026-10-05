@@ -71,7 +71,8 @@ function isCommandList(list) {
 function changedFiles(dir) {
   const git = args => spawnSync('git', args, { cwd: dir, encoding: 'utf8' });
   if (git(['rev-parse', '--verify', '-q', 'HEAD']).status !== 0) return null;
-  const diff = git(['diff', '-z', '--name-only', '--relative', 'HEAD']);
+  // --no-renames: a move between workspaces must count against both sides, not just the destination.
+  const diff = git(['diff', '-z', '--name-only', '--no-renames', '--relative', 'HEAD']);
   const others = git(['ls-files', '-z', '--others', '--exclude-standard']);
   if (diff.status !== 0 || others.status !== 0) return null;
   return `${diff.stdout}${others.stdout}`.split('\0').filter(Boolean);

@@ -23,8 +23,9 @@ workspace·turbo·nx를 모른다. 그래서 모노레포에서는 ① 커밋 �
   **앱 + 내부 패키지**(workspace 있음, 앱 ≤ 1) / **모노레포**(workspace 있음, 앱 ≥ 2).
   workspace 원천: 루트 `package.json`의 `workspaces`(배열 또는 `{packages}`)·`pnpm-workspace.yaml`의 `packages`. 각 패턴을 펼쳐
   `package.json`이 있는 디렉터리만 workspace로 센다. turbo·nx는 workspace 원천이 아니라 위임 신호다(R3).
-- **R2 앱 구분은 데이터** (cycle §4-2b · D11) — 앱 신호(dev·start 스크립트, next·expo·react-native 같은 프레임워크 의존성)는 프리셋 JSON의
-  조건으로 둔다. 앱 조건이 거짓이면 패키지다 — 그래서 패키지 신호(`main`·`exports`)는 판정에 쓰이지 않아 데이터로 두지 않는다(plan Ontology 로그 2026-10-06).
+- **R2 앱 구분은 데이터** (cycle §4-2b · D11) — 앱 신호(next·expo·react-native·react-dom을 `dependencies`에 가진 것)는 프리셋 JSON의
+  조건으로 둔다. cycle 표의 dev·start 스크립트는 쓰지 않는다 — RN UI 라이브러리(`dev: tsup --watch`)와 오케스트레이터 루트(`dev: pnpm -r dev`)를
+  앱으로 만들어 G4·설계 6을 무너뜨렸다(리뷰 P2-3, 2026-10-06). 앱 조건이 거짓이면 패키지다 — 그래서 패키지 신호(`main`·`exports`)는 판정에 쓰이지 않아 데이터로 두지 않는다(plan Ontology 로그 2026-10-06).
   코드에는 조건 해석만 있다(preset-gates `holds`와 같은 방식).
 - **R3 판별 결과 확인** (cycle §4-2b · gate interview 2026-10-06 G1) — **workspace가 감지됐을 때만** init이 모양과 workspace 목록(앱/패키지 표시)을
   보여 주고 확인받는다. workspace가 없으면 묻지 않는다(확인할 목록이 없다 — 단일 앱 init 출력 바이트 동일 유지). 거절하면 **단일 앱**으로

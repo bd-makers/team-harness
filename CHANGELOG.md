@@ -16,9 +16,13 @@
   workspace 저장소의 커밋 게이트는 turbo(`turbo run … --filter=...[HEAD]`, turbo.json에 정의된 task만)·nx(`nx affected -t … --base=HEAD`)가 있으면
   그 도구에 위임하고, 없으면 `.harness/gates.json`의 `commit`이 **객체** `{"<디렉터리>": [cd <디렉터리> && …], ".": 루트 앱}`가 된다 —
   `gate commit`은 HEAD 대비 바뀐 파일(스테이징·작업 트리·untracked)이 속한 키의 목록만 실행하고, `"."`는 어느 키에도 안 걸린 변경이 있을 때만,
-  첫 커밋이면 전부 실행한다. 배열 형식은 그대로다. 위임 명령은 예전 훅에 없던 명령이라 `--yes`에서는 추가 제안으로만 보인다.
+  첫 커밋이면 전부 실행한다(파일 이동은 양쪽 workspace를 모두 센다). 배열 형식은 그대로다. 위임 명령은 예전 훅에 없던 명령이라 `--yes`에서는 추가 제안으로만 보이고,
+  확인 전까지는 예전 훅이 돌리던 루트 목록(tsc·test)을 유지한다.
   doctor는 확정된 모양 기준으로 지문을 비교한다 — workspace 추가·삭제만 알리고, single로 확정한 저장소와 앱 수만 바뀐 경우는 조용하다.
-  앱 판정 조건은 프리셋 데이터(`workspace.app`, 새 조건 `runtimeDependency`)다.
+  앱 판정은 프리셋 데이터(`workspace.app`)다 — `next`·`expo`·`react-native`·`react-dom`을 `dependencies`(새 조건 `runtimeDependency`)에 가진 workspace가 앱이고,
+  dev·start 스크립트는 라이브러리·오케스트레이터 루트에도 있어 신호로 쓰지 않는다.
+  **이미 workspace를 쓰던 기존 설치본**은 업그레이드 후 첫 doctor에서 `모양 single → …` drift가 뜬다 — `harness-team gate suggest`로 모양을 확정한다
+  (init 재실행은 기존 `gates.json`을 단일로 보고 묻지 않는다).
 
 ### Changed
 - **RN rules를 rules 프리셋으로** (task `preset-repo-shape`). `copyStaticAssets`의 고정 RN 게이트를 지우고

@@ -43,7 +43,7 @@ test('pnpm-workspace.yaml 앱 둘 → monorepo, 따옴표·주석·부정 패턴
     'package.json': { name: 'root', private: true },
     'pnpm-workspace.yaml': "packages:\n  - 'apps/*'   # apps\n  - \"packages/*\"\n  - '!packages/legacy'\ncatalog:\n  react: ^19\n",
     'apps/mobile/package.json': { name: 'mobile', dependencies: { expo: '52', 'react-native': '0.76' } },
-    'apps/web/package.json': { name: 'web', scripts: { start: 'node server.js' } },
+    'apps/web/package.json': { name: 'web', scripts: { start: 'node server.js' }, dependencies: { 'react-dom': '19' } },
     'packages/ui/package.json': { name: 'ui', exports: './index.js', devDependencies: { 'react-native': '0.76' } },
     'packages/legacy/package.json': { name: 'legacy' },
   });
@@ -63,8 +63,8 @@ test('workspaces 객체 형식({packages}) + 루트 앱 → 루트는 "." 앱 wo
 
 test('루트 앱 + apps/web 앱 → monorepo', async () => {
   const s = await shapeOf({
-    'package.json': { name: 'app', workspaces: ['apps/*'], scripts: { start: 'expo start' } },
-    'apps/web/package.json': { name: 'web', scripts: { dev: 'vite' } },
+    'package.json': { name: 'app', workspaces: ['apps/*'], scripts: { start: 'expo start' }, dependencies: { expo: '52' } },
+    'apps/web/package.json': { name: 'web', scripts: { dev: 'vite' }, dependencies: { 'react-dom': '19' } },
   });
   assert.equal(s.shape, 'monorepo');
 });
@@ -89,7 +89,7 @@ import { resolveShape, describeShape } from '../src/repo-shape.mjs';
 
 const MONO = {
   'package.json': { name: 'root', workspaces: ['apps/*'] },
-  'apps/web/package.json': { name: 'web', scripts: { dev: 'vite' } },
+  'apps/web/package.json': { name: 'web', scripts: { dev: 'vite' }, dependencies: { 'react-dom': '19' } },
   'apps/mobile/package.json': { name: 'mobile', dependencies: { expo: '52' } },
 };
 
@@ -133,4 +133,41 @@ test('describeShape: 모양과 workspace별 앱/패키지·스택을 한 줄씩 
   assert.match(text, /저장소 모양: monorepo \(workspace 3개, 앱 2개\)/);
   assert.match(text, /\(루트\)\s+앱\s+node/);
   assert.match(text, /packages\/ui\s+패키지\s+node/);
+});
+
+// --- codex 리뷰(2026-10-06) 재현 ---
+import { parsePnpmWorkspace } from '../src/repo-shape.mjs';
+
+test('codex P2: 들여쓰지 않은 YAML 블록 목록(packages:\\n- apps/*)도 읽는다', () => {
+  assert.deepEqual(parsePnpmWorkspace('packages:\n- apps/*\n- "packages/*"\n# c\ncatalog:\n  a: 1\n'), ['apps/*', 'packages/*']);
+});
+
+test('codex P2: 패턴이 깊으면 그 깊이까지 훑는다(명시 5단계 workspace)', async () => {
+  const s = await shapeOf({
+    'package.json': { name: 'r', workspaces: ['packages/group/domain/apps/*'] },
+    'packages/group/domain/apps/mobile/package.json': { name: 'm', dependencies: { expo: '52' } },
+  });
+  assert.deepEqual(brief(s), { shape: 'app-packages', workspaces: ['packages/group/domain/apps/mobile:app:react-native'] });
+});
+
+// --- 리뷰 P2-3: 앱 조건은 런타임 프레임워크 의존성뿐 — dev·start 스크립트는 라이브러리·오케스트레이터에도 있다 ---
+test('리뷰 P2-3: dev 스크립트가 있는 RN UI 라이브러리는 패키지다(RN rules 대상 아님)', async () => {
+  const s = await shapeOf({
+    'package.json': { name: 'r', workspaces: ['packages/*'] },
+    'packages/ui/package.json': { name: 'ui', scripts: { dev: 'tsup --watch' }, devDependencies: { 'react-native': '0.76' } },
+  });
+  assert.deepEqual(brief(s).workspaces, ['packages/ui:package:react-native']);
+});
+
+test('리뷰 P2-3: dev·test를 위임만 하는 오케스트레이터 루트는 "." 앱이 아니다', async () => {
+  const s = await shapeOf({
+    'package.json': { name: 'r', private: true, workspaces: ['apps/*'], scripts: { dev: 'pnpm -r --parallel dev', test: 'pnpm -r test' }, devDependencies: { turbo: '2' } },
+    'apps/web/package.json': { name: 'web', dependencies: { react: '19', 'react-dom': '19' } },
+  });
+  assert.deepEqual(brief(s), { shape: 'app-packages', workspaces: ['apps/web:app:react'] });
+});
+
+test('리뷰 P3: 따옴표 키와 여러 줄 flow 목록도 읽는다', () => {
+  assert.deepEqual(parsePnpmWorkspace('"packages":\n  - apps/*\n'), ['apps/*']);
+  assert.deepEqual(parsePnpmWorkspace("packages: [\n  \"apps/*\",\n  'packages/*'\n]\ncatalog: {}\n"), ['apps/*', 'packages/*']);
 });

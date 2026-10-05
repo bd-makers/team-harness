@@ -1308,7 +1308,7 @@ async function writeTree(dir, files) {
 
 const WS_TREE = {
   'package.json': { name: 'root', private: true, workspaces: ['apps/*', 'packages/*'] },
-  'apps/web/package.json': { name: 'web', scripts: { dev: 'vite', test: 'vitest' } },
+  'apps/web/package.json': { name: 'web', scripts: { dev: 'vite', test: 'vitest' }, dependencies: { 'react-dom': '19' } },
   'packages/ui/package.json': { name: 'ui', scripts: { test: 'node --test' } },
 };
 
@@ -1326,7 +1326,7 @@ test('checkGateFingerprint 모양: workspace가 늘면 알리고, 앱 수만 바
   const dir = await wsGatesFixture('detect');
   try {
     assert.equal(await checkGateFingerprint(dir), null);
-    await writeTree(dir, { 'packages/ui/package.json': { name: 'ui', scripts: { test: 'node --test', start: 'node .' } } });
+    await writeTree(dir, { 'packages/ui/package.json': { name: 'ui', scripts: { test: 'node --test' }, dependencies: { 'react-dom': '19' } } });
     assert.equal(await checkGateFingerprint(dir), null, 'app-packages → monorepo는 drift가 아니다');
     await writeTree(dir, { 'apps/admin/package.json': { name: 'admin' } });
     assert.match(await checkGateFingerprint(dir), /\+workspace apps\/admin/);

@@ -8,9 +8,10 @@ import { detectStack } from './detect-stack.mjs';
 import { holds, loadPresets, selectPreset } from './presets.mjs';
 import { confirm } from './prompt.mjs';
 
-// Deep enough for `apps/*` and `packages/group/*`; a pattern reaching further is unusual
-// enough to be configured by hand in gates.json.
-const MAX_DEPTH = 4;
+// How far to walk: as deep as the deepest pattern spells out, and a fixed bound for `**`
+// (node_modules and dot directories are never entered, so the bound is about cost, not noise).
+const GLOBSTAR_DEPTH = 8;
+const walkDepth = patterns => Math.max(...patterns.map(p => (p.includes('**') ? GLOBSTAR_DEPTH : p.split('/').length)));
 
 async function readText(p) { try { return await readFile(p, 'utf8'); } catch { return null; } }
 function parseJson(text) { try { return text ? JSON.parse(text) : null; } catch { return null; } }
@@ -20,13 +21,19 @@ function parseJson(text) { try { return text ? JSON.parse(text) : null; } catch 
 export function parsePnpmWorkspace(text) {
   const unquote = s => s.replace(/\s+#.*$/, '').trim().replace(/^(['"])(.*)\1$/, '$2');
   const lines = text.split(/\r?\n/);
-  const at = lines.findIndex(l => /^packages\s*:/.test(l));
+  const key = /^(['"]?)packages\1\s*:/;
+  const at = lines.findIndex(l => key.test(l));
   if (at < 0) return [];
-  const inline = lines[at].replace(/^packages\s*:/, '').trim();
-  if (inline.startsWith('[')) return inline.replace(/^\[|\].*$/g, '').split(',').map(unquote).filter(Boolean);
+  const inline = lines[at].replace(key, '').trim();
+  if (inline.startsWith('[')) {
+    // Flow sequence, possibly spanning lines until the closing bracket.
+    let flow = inline;
+    for (let i = at + 1; !flow.includes(']') && i < lines.length; i++) flow += ` ${lines[i]}`;
+    return flow.replace(/^\[|\].*$/g, '').split(',').map(unquote).filter(Boolean);
+  }
   const out = [];
   for (const line of lines.slice(at + 1)) {
-    if (/^\S/.test(line)) break;               // next top-level key
+    if (/^[^\s#-]/.test(line)) break;          // next top-level key (a `- item` may sit at column 0)
     const m = line.match(/^\s*-\s*(.+)$/);
     if (m) out.push(unquote(m[1]));
   }
@@ -43,15 +50,15 @@ async function workspacePatterns(dir, rootPkg) {
     .filter(Boolean);
 }
 
-async function* walk(dir, rel = '', depth = 0) {
-  if (depth >= MAX_DEPTH) return;
+async function* walk(dir, maxDepth, rel = '', depth = 0) {
+  if (depth >= maxDepth) return;
   let entries;
   try { entries = await readdir(join(dir, rel), { withFileTypes: true }); } catch { return; }
   for (const e of entries) {
     if (!e.isDirectory() || e.name === 'node_modules' || e.name.startsWith('.')) continue;
     const child = rel ? `${rel}/${e.name}` : e.name;
     yield child;
-    yield* walk(dir, child, depth + 1);
+    yield* walk(dir, maxDepth, child, depth + 1);
   }
 }
 
@@ -72,7 +79,7 @@ export async function detectRepoShape(dir) {
 
   const presets = await loadPresets();
   const workspaces = [];
-  for await (const rel of walk(dir)) {
+  for await (const rel of walk(dir, walkDepth(include))) {
     if (!include.some(g => matchesGlob(rel, g)) || exclude.some(g => matchesGlob(rel, g))) continue;
     const abs = join(dir, rel);
     const pkg = parseJson(await readText(join(abs, 'package.json')));

@@ -171,7 +171,14 @@ export async function buildProposal(dir, stack, { unattended = false, shape = nu
     workspaces: workspaces.map(w => w.dir).sort(), signals: [...signals].sort(),
   });
   const delegated = await delegateCommand(preset, dir, vars, opts);
-  if (delegated) return { commit: delegated.commit, format: {}, fingerprint: fingerprint(), deferred: delegated.deferred };
+  if (delegated?.commit.length) return { commit: delegated.commit, format: {}, fingerprint: fingerprint(), deferred: delegated.deferred };
+  if (delegated) {
+    // Unattended and the delegate needs a human: keep what the old hook ran (the root list)
+    // instead of leaving the repo ungated. The delegate's conditions are not in the
+    // fingerprint, so doctor raises it again until `gate suggest` confirms it.
+    const root = await evaluate(preset, dir, vars, opts);
+    return { commit: root.commit, format: root.format, fingerprint: fingerprint(), deferred: [...delegated.deferred, ...root.deferred] };
+  }
 
   // No tool: one list per workspace, run from inside it so every package manager works
   // without its own workspace flag. The root app is the "." key (spec R6·G3).

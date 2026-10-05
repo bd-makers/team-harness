@@ -79,7 +79,7 @@ test('init --yes: 감지할 스택이 없으면 빈 목록으로 기록한다', 
 test('init --yes: workspace 저장소는 모양·목록을 보여 주고 workspace별 객체와 확정 모양을 기록한다', async () => {
   const dir = await project({
     'package.json': { name: 'root', private: true, workspaces: ['apps/*', 'packages/*'] },
-    'apps/web/package.json': { name: 'web', scripts: { dev: 'vite', test: 'vitest' } },
+    'apps/web/package.json': { name: 'web', scripts: { dev: 'vite', test: 'vitest' }, dependencies: { 'react-dom': '19' } },
     'packages/ui/package.json': { name: 'ui', scripts: { test: 'node --test' } },
   });
   try {
@@ -173,5 +173,19 @@ test('stack --json: repoShape로 init 전에 감지된 모양을 미리 보여 �
     assert.equal(env.repoShape.shape, 'app-packages');
     assert.deepEqual(env.repoShape.workspaces.map(w => w.dir), ['apps/web']);
     await assert.rejects(readFile(join(dir, '.harness/gates.json'), 'utf8'), '쓰지 않는다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('리뷰 P3: shape 없는 기존 gates.json이 있는 저장소에 init을 다시 돌리면 모양을 묻지 않고 단일로 둔다', async () => {
+  const dir = await project({
+    'package.json': { name: 'root', private: true, workspaces: ['apps/*'] },
+    'apps/web/package.json': { name: 'web', dependencies: { 'react-dom': '19' } },
+    '.harness/gates.json': { commit: ['custom'], fingerprint: { preset: 'node', pm: 'npm', signals: [] } },
+  });
+  try {
+    const r = await initYes(dir);
+    assert.equal(r.code, 0, r.out);
+    assert.doesNotMatch(r.out, /저장소 모양/);
+    assert.deepEqual((await gatesOf(dir)).commit, ['custom']);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

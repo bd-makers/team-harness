@@ -51,7 +51,9 @@ export async function runInit(ctx) {
   const shape = await resolveShape(ctx.targetDir, {
     yes: Boolean(ctx.flags.yes),
     reject: ctx.flags.shape === 'single',
-    stored: existingGates?.fingerprint,
+    // gates.json이 이미 있으면(팀이 확정한 게이트) 모양도 확정된 것으로 본다 — shape가 없는 이전 판은 single이다.
+    // 다시 정하려면 `gate suggest`. 깨진 파일은 확정으로 보지 않는다.
+    stored: existingGates && existingGates !== 'malformed' ? { shape: existingGates.fingerprint?.shape ?? 'single' } : null,
     describeExtra: async detected => describeRuleInstalls(await planRuleInstalls(detected, effectiveStackId)),
   });
   ctx.ruleInstalls = await planRuleInstalls(shape, effectiveStackId);

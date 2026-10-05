@@ -122,8 +122,8 @@ async function wsProposal(files, opts = {}) {
 }
 
 const WS_FILES = {
-  'package.json': { name: 'root', private: true, workspaces: ['apps/*', 'packages/*'], scripts: { start: 'node server.js', test: 'node --test' } },
-  'apps/web/package.json': { name: 'web', scripts: { dev: 'vite', test: 'vitest' } },
+  'package.json': { name: 'root', private: true, workspaces: ['apps/*', 'packages/*'], scripts: { start: 'node server.js', test: 'node --test' }, dependencies: { 'react-dom': '19' } },
+  'apps/web/package.json': { name: 'web', scripts: { dev: 'vite', test: 'vitest' }, dependencies: { 'react-dom': '19' } },
   'apps/web/tsconfig.json': '{}',
   'packages/ui/package.json': { name: 'ui', scripts: { lint: 'eslint .' } },
   'packages/empty/package.json': { name: 'empty' },
@@ -152,9 +152,13 @@ test('turbo.json이 있으면 정의된 task만 위임 명령 하나로 제안�
   const files = { ...WS_FILES, 'turbo.json': JSON.stringify({ tasks: { lint: {}, test: { dependsOn: ['^build'] }, build: {} } }) };
   const p = await wsProposal(files);
   assert.deepEqual(p.commit, ['npx turbo run lint test --filter=...[HEAD]']);
-  const yes = await wsProposal(files, { unattended: true });
-  assert.deepEqual(yes.commit, []);
+  // --yes(사람이 보지 않음): 위임 명령은 추가 제안으로만, 게이트는 예전 훅이 돌리던 루트 목록을 유지한다(리뷰 P2-2).
+  const yes = await wsProposal({ ...files, 'tsconfig.json': '{}' }, { unattended: true });
+  assert.deepEqual(yes.commit, ['npx tsc --noEmit', 'npm run test']);
   assert.deepEqual(yes.deferred, ['npx turbo run lint test --filter=...[HEAD]']);
+  assert.equal(yes.fingerprint.shape, 'monorepo');
+  assert.match(fingerprintDrift(yes.fingerprint, (await wsProposal({ ...files, 'tsconfig.json': '{}' })).fingerprint), /\+\{"file":"turbo\.json"\}/,
+    '확정 전 위임은 doctor 지문 비교에서 다시 드러난다');
 });
 
 test('nx.json이 있으면 nx affected --base=HEAD로 위임한다(target 없는 프로젝트는 nx가 건너뛴다)', async () => {
