@@ -7,5 +7,15 @@
   "closedAt": null,
   "forcedAt": null,
   "forcedIssues": null,
-  "reviews": []
+  "reviews": [
+    {
+      "kind": "codex-shipcheck",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "732beb4b2caee20938ce0cc9ed8519f1f162fabf",
+      "at": "2026-10-05T04:06:41.520Z",
+      "exitCode": 0,
+      "outputBytes": 2658
+    }
+  ]
 }

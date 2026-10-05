@@ -19,3 +19,10 @@ docs/diagrams/harness-overview/hooks.mmd           |   5 +-
  tests/hooks-jq-fallback.test.mjs                   |  56 +++++++++
  tests/migrate-hooks.test.mjs                       |  12 +-
  15 files changed, 420 insertions(+), 14 deletions(-)
+
+## 2026-10-05T02:57:56.841Z — 732beb4 chore(task): commit-gate-lint 검증·Codex 리뷰 기록
+.../commit-gate-lint/commit-gate-lint-artifact.md      |  8 ++++++++
+ .../hslee/commit-gate-lint/commit-gate-lint-context.md |  2 +-
+ .../hslee/commit-gate-lint/commit-gate-lint-handoff.md | 18 ++++++++++++++++++
+ docs/hslee/commit-gate-lint/commit-gate-lint-plan.md   |  4 ++--
+ 4 files changed, 29 insertions(+), 3 deletions(-)
