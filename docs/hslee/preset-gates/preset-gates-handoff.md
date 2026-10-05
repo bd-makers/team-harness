@@ -36,3 +36,16 @@ docs/hslee/preset-gates/preset-gates-handoff.md |  9 +++++++
  src/commands/gate.mjs                           | 24 ++++++++++++++++-
  tests/gate-command.test.mjs                     | 36 +++++++++++++++++++++++++
  3 files changed, 68 insertions(+), 1 deletion(-)
+
+## 2026-10-05T12:23:41.622Z — 828f6cb refactor(hooks): 커밋·포맷 훅을 gate CLI 래퍼로 — 언어 분기 제거
+docs/harness-overview.html                         |  10 ++
+ docs/hslee/preset-gates/preset-gates-handoff.md    |   6 +
+ src/commands/migrate.mjs                           |   2 +
+ templates/.claude/hooks/auto-format.sh             |  18 ++-
+ templates/.claude/hooks/pre-commit-check.sh        |  83 ++-----------
+ tests/fixtures/stock-hooks/README.md               |   4 +
+ .../stock-hooks/pre-preset-gates/auto-format.sh    |  52 ++++++++
+ .../pre-preset-gates/pre-commit-check.sh           | 133 +++++++++++++++++++++
+ tests/hooks-jq-fallback.test.mjs                   |  85 +++++++++----
+ tests/migrate-hooks.test.mjs                       |   2 +-
+ 10 files changed, 289 insertions(+), 106 deletions(-)

@@ -4,7 +4,8 @@ import {
 } from '../harness.mjs';
 import { loadRenderState, saveRenderState } from '../render-state.mjs';
 import { confirm } from '../prompt.mjs';
-import { resolveUsername, saveUsername } from '../user-config.mjs';
+import { resolveUsername, saveUsername, readConfigStrict } from '../user-config.mjs';
+import { applyProposal, buildProposal, describeProposal } from '../presets.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
 
 export async function runInit(ctx) {
@@ -30,6 +31,16 @@ export async function runInit(ctx) {
 
   // 결정만 — 저장은 최종 Apply 뒤(applyChanges 직후). 여기서 쓰면 취소해도 config가 남는다.
   const pendingUsername = await resolveUsername(ctx.targetDir, ctx.flags);
+
+  // 커밋 게이트도 결정만 여기서 — 이미 확정된 gates는 다시 묻지 않는다(D8, 갱신은 `gate suggest`).
+  let pendingGates = null;
+  const existingConfig = await readConfigStrict(ctx.targetDir).catch(() => ({}));
+  if (existingConfig.gates === undefined) {
+    const proposal = await buildProposal(ctx.targetDir, stack);
+    console.log(`\n${describeProposal(proposal)}`);
+    const ok = ctx.flags.yes || await confirm('이 커밋 게이트를 .harness/config.json 에 기록할까요?', { defaultYes: true });
+    if (ok) pendingGates = proposal;
+  }
 
   const { changes, legacyAgentFiles, brokenMarkerFiles, skippedSections, renderState } = await planChanges(ctx, { stack, stackPin });
 
@@ -66,6 +77,10 @@ export async function runInit(ctx) {
 
   await applyChanges(changes);
   if (pendingUsername) await saveUsername(ctx.targetDir, pendingUsername);
+  if (pendingGates) {
+    await applyProposal(ctx.targetDir, pendingGates)
+      .catch(e => console.warn(`  gates: 기록하지 못했습니다 — ${e.message}`));
+  }
   await saveRenderState(ctx.targetDir, renderState);
   const copied = await copyStaticAssets(ctx);
   await installPostCommitHook(ctx.targetDir);
