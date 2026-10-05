@@ -359,6 +359,62 @@ for (const mode of MODES) {
   });
 }
 
+// lint 단계는 종료 코드로 판정하므로 실제로 스크립트를 실행하는 npm 스텁이 필요하다.
+// 스텁은 받은 인자를 NPM_LOG에 남기고 package.json 스크립트를 sh로 실행해 종료 코드를 그대로 돌려준다 —
+// PATH에 없는 명령은 sh가 127을 낸다(실측: npm·pnpm·yarn·bun 모두 127을 그대로 전파).
+const NPM_LOG = 'npm-args.log';
+const NPM_STUB = join(BINS.dir, 'npm-stub');
+await mkdir(NPM_STUB);
+await writeFile(join(NPM_STUB, 'npm'), '#!/bin/sh\necho "$@" >> "$NPM_LOG"\n[ "$1" = run ] && shift\n'
+  + 'exec /bin/sh -c "$(node -e \'process.stdout.write((require("./package.json").scripts||{})[process.argv[1]]||"")\' "$1")"\n');
+await chmod(join(NPM_STUB, 'npm'), 0o755);
+
+async function runCommitWithNpm(mode, scripts) {
+  const dir = await jsProject({ name: 'x', scripts });
+  try {
+    const r = await runHook('pre-commit-check.sh', bash('git commit -m "wip"'),
+      { mode, cwd: dir, env: { PATH: `${NPM_STUB}:${BINS[mode]}`, NPM_LOG: join(dir, NPM_LOG) } });
+    const log = await readFile(join(dir, NPM_LOG), 'utf8').catch(() => '');
+    return { ...r, log };
+  } finally { await rm(dir, { recursive: true, force: true }); }
+}
+
+for (const mode of MODES) {
+  test(`pre-commit-check [${mode}]: lint 위반은 test 전에 커밋을 막는다`, async () => {
+    const r = await runCommitWithNpm(mode, { lint: 'exit 1', test: 'true' });
+    assert.equal(r.code, 2, `stderr: ${r.stderr}`);
+    assert.match(r.stderr, /❌ lint 실패/);
+    assert.match(r.stderr, /→ npm run lint/);
+    assert.equal(r.log, 'run lint\n', 'lint에서 막히면 test는 돌지 않는다');
+  });
+
+  test(`pre-commit-check [${mode}]: lint가 통과하면 test로 넘어가 커밋을 통과시킨다`, async () => {
+    const r = await runCommitWithNpm(mode, { lint: 'true', test: 'true' });
+    assert.equal(r.code, 0, `stderr: ${r.stderr}`);
+    assert.equal(r.log, 'run lint\ntest\n', '순서: lint → test');
+    assert.match(r.stderr, /검증 통과/);
+  });
+
+  test(`pre-commit-check [${mode}]: lint 스크립트가 없으면 lint를 건너뛴다`, async () => {
+    const r = await runCommitWithNpm(mode, { test: 'true' });
+    assert.equal(r.code, 0, `stderr: ${r.stderr}`);
+    assert.equal(r.log, 'test\n');
+    assert.doesNotMatch(r.stderr, /lint/);
+  });
+
+  test(`pre-commit-check [${mode}]: lint 실행 불가(127)는 경고 후 통과 — test 127은 여전히 차단`, async () => {
+    const lintOnly = await runCommitWithNpm(mode, { lint: 'eslint-not-installed .' });
+    assert.equal(lintOnly.code, 0, `stderr: ${lintOnly.stderr}`);
+    assert.match(lintOnly.stderr, /⚠ lint를 실행할 수 없습니다 \(exit 127/);
+    assert.match(lintOnly.stderr, /검증 통과/);
+
+    const both = await runCommitWithNpm(mode, { lint: 'eslint-not-installed .', test: 'jest-not-installed' });
+    assert.equal(both.code, 2, '의도된 비대칭: test 게이트는 127도 차단한다');
+    assert.match(both.stderr, /⚠ lint를 실행할 수 없습니다/);
+    assert.match(both.stderr, /테스트 실패/);
+  });
+}
+
 test('pre-commit-check: jq 없이도 게이트가 돌고 저정밀 모드를 알린다', async () => {
   const dir = await jsProject({ name: 'x', scripts: { test: 'node --test' } });
   try {

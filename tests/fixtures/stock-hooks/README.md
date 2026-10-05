@@ -31,3 +31,6 @@
 | `pre-rn-ios-secrets/protect-files.sh` | `804e3181` | `58b2284` audit-cleanup판 (`Fastfile`·`figma-export.y(a)ml`·`*.xcconfig` 보호 이전) |
 
 `pre-rn-ios-secrets`는 `c46ea0d`(2026-09-22, RN·iOS 빌드 비밀 3종 추가) 직전 판이다 — v0.24.0~v0.40.2가 이 바이트를 배포했다.
+| `pre-lint/pre-commit-check.sh` | `ed90db5b` | `631f2fd` 토큰 경계판 (package.json `lint` 게이트 이전) |
+
+`pre-lint`는 commit-gate-lint(커밋 게이트에 lint 단계 추가) 직전 판이다.

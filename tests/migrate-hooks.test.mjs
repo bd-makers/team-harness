@@ -78,7 +78,7 @@ test('KNOWN_STOCK_HOOK_SHA256는 fixture의 실제 바이트와 일치한다 (�
       checked++;
     }
   }
-  assert.equal(checked, 17, `알려진 stock 버전 17개를 기대 — 실제: ${checked}`);
+  assert.equal(checked, 18, `알려진 stock 버전 18개를 기대 — 실제: ${checked}`);
 });
 
 // audit-cleanup (2026-09-03) — observe-tools.mjs와 boundary-checkpoint.sh는 refresh 목록에 없어
@@ -168,6 +168,16 @@ test('PR #29 판(jq-fallback v1)도 stock이면 최신 템플릿으로 갱신된
       assert.equal(await readFile(join(dir, '.claude/hooks', name), 'utf8'), tpl);
       assert.match(tpl, /json_input_field/, 'v1 → 현재 템플릿 갱신이 스코프 수정을 배달한다');
     }
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('lint 게이트 이전 판(pre-lint)도 stock이면 갱신된다 (lint 게이트 배달)', async () => {
+  const dir = await plantHooks(join(FIXTURES, 'pre-lint'), ['pre-commit-check.sh']);
+  try {
+    assert.equal(await refreshClaudeHooks(ctxFor(dir)), true);
+    const installed = await readFile(join(dir, '.claude/hooks/pre-commit-check.sh'), 'utf8');
+    assert.equal(installed, await readFile(join(TEMPLATES, 'pre-commit-check.sh'), 'utf8'));
+    assert.match(installed, /has_script lint/, 'pre-lint → 현재 템플릿 갱신이 lint 게이트를 배달한다');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

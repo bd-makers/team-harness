@@ -27,8 +27,9 @@ sequenceDiagram
     rect rgb(40, 26, 26)
         Note over Claude,Tool: PreToolUse — Bash git commit 실행 전
         Claude->>Hook: pre-commit-check.sh (명령어 전달)
-        Hook->>Hook: pnpm tsc --noEmit
-        Hook->>Hook: pnpm test
+        Hook->>Hook: $PM tsc --noEmit (tsconfig.json 있을 때)
+        Hook->>Hook: $PM run lint (127이면 경고 후 통과)
+        Hook->>Hook: $PM test
         alt 실패
             Hook-->>Claude: exit 2 (커밋 차단)
         else 통과

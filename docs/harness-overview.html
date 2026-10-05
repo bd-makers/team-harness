@@ -847,8 +847,9 @@
     rect rgb(40, 26, 26)
         Note over Claude,Tool: PreToolUse — Bash git commit 실행 전
         Claude->>Hook: pre-commit-check.sh (명령어 전달)
-        Hook->>Hook: pnpm tsc --noEmit
-        Hook->>Hook: pnpm test
+        Hook->>Hook: $PM tsc --noEmit (tsconfig.json 있을 때)
+        Hook->>Hook: $PM run lint (127이면 경고 후 통과)
+        Hook->>Hook: $PM test
         alt 실패
             Hook-->>Claude: exit 2 (커밋 차단)
         else 통과
@@ -882,7 +883,8 @@
         <p>Bash 도구에서 <code>git commit</code> 명령 감지 시 검증 실행.</p>
         <ul style="margin-top:0.6rem">
           <li>lockfile로 pnpm/yarn/bun/npm을 감지해 <code>&lt;pm&gt; tsc --noEmit</code> — 타입 에러 시 차단</li>
-          <li><code>&lt;pm&gt; test</code> — 테스트 실패 시 차단 (package.json에 test 스크립트가 없으면 통과)</li>
+          <li><code>&lt;pm&gt; run lint</code> — lint 위반 시 차단 (package.json에 lint 스크립트가 없으면 건너뜀). 린터를 실행할 수 없으면(exit 127, 린터 미설치) ⚠ 경고만 내고 통과</li>
+          <li><code>&lt;pm&gt; test</code> — 테스트 실패 시 차단 (package.json에 test 스크립트가 없으면 통과). lint와 달리 exit 127도 차단한다</li>
           <li>timeout: 120초</li>
         </ul>
       </div>
@@ -2526,6 +2528,11 @@
           </tr>
           <tr>
             <td><code>tests/fixtures/stock-hooks/pre-jq-fallback/protect-files.sh</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-hooks/pre-lint/pre-commit-check.sh</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>

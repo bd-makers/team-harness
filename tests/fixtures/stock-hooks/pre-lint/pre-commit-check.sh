@@ -1,5 +1,5 @@
 #!/bin/bash
-# PreToolUse hook: git commit 실행 전 typecheck → lint → test 통과 여부 확인.
+# PreToolUse hook: git commit 실행 전 typecheck + test 통과 여부 확인.
 # Bash 도구에서 git commit 명령 감지 시 동작한다.
 # 패키지 매니저는 lockfile로 감지한다 (src/detect-stack.mjs와 동일 우선순위):
 #   pnpm-lock.yaml → pnpm, yarn.lock → yarn, bun.lockb → bun, 없으면 npm.
@@ -94,14 +94,14 @@ pm_run_test() {
   esac
 }
 
-# package.json에 $1 스크립트(test·lint)가 있는지 — jq가 없으면 node로 판정한다.
+# package.json에 test 스크립트가 있는지 — jq가 없으면 node로 판정한다.
 # node는 이 하네스의 기존 하드 의존(settings.json이 매 도구 호출마다 observe-tools.mjs를 돌린다)이라
-# jq보다 안전한 폴백이다. 둘 다 없으면 스크립트를 실행할 수단 자체가 없으므로 판정 불가로 둔다.
-has_script() {
+# jq보다 안전한 폴백이다. 둘 다 없으면 테스트를 실행할 수단 자체가 없으므로 판정 불가로 둔다.
+has_test_script() {
   if [[ $jq_missing -eq 0 ]]; then
-    jq -e --arg s "$1" '.scripts[$s] // empty' package.json >/dev/null 2>&1
+    jq -e '.scripts.test // empty' package.json >/dev/null 2>&1
   elif command -v node >/dev/null 2>&1; then
-    node -e 'const s=(require("./package.json").scripts||{})[process.argv[1]]; process.exit(s?0:1)' "$1" >/dev/null 2>&1
+    node -e 'const s=(require("./package.json").scripts||{}).test; process.exit(s?0:1)' >/dev/null 2>&1
   else
     return 1
   fi
@@ -120,24 +120,8 @@ if [[ -f tsconfig.json ]]; then
   fi
 fi
 
-# 린트 — package.json에 lint 스크립트가 있을 때만. 린터·규칙은 프로젝트 것을 그대로 쓴다.
-# 127(command not found — 린터 미설치, 스크립트만 남은 경우)은 위반이 아니라 실행 불가라 경고 후 통과한다.
-# 테스트 게이트는 127이어도 막는다 — 의도된 비대칭이다(죽은 lint 스크립트로 모든 커밋이 막히는 회귀 방지).
-if has_script lint; then
-  lint_rc=0
-  "$PM" run lint 2>/dev/null || lint_rc=$?
-  if [[ $lint_rc -eq 127 ]]; then
-    echo "⚠ lint를 실행할 수 없습니다 (exit 127: 린터 미설치?). lint 없이 진행합니다." >&2
-    echo "   → $PM run lint 로 원인을 확인하세요." >&2
-  elif [[ $lint_rc -ne 0 ]]; then
-    echo "❌ lint 실패. 커밋을 중단합니다." >&2
-    echo "   → $PM run lint 로 위반을 확인하세요." >&2
-    exit 2
-  fi
-fi
-
 # 테스트 — package.json에 test 스크립트가 있을 때만.
-if has_script test; then
+if has_test_script; then
   if ! pm_run_test 2>/dev/null; then
     echo "❌ 테스트 실패. 커밋을 중단합니다." >&2
     echo "   → $PM test 로 실패한 테스트를 확인하세요." >&2
