@@ -23,7 +23,7 @@ modified: 2026-09-10
 refresh는 설치본의 바이트가 **하네스가 실제로 배포한 적 있는 버전**(sha256 테이블)과 일치할 때만
 갱신한다. 사용자가 편집한 파일은 "customized"로 보고 **절대 덮지 않고** 경고만 남긴다.
 `docs/` seed(`README.md`·`decisions.md`)는 설치 후 팀 저작물이라 refresh 대상이 아니다.
-낡은 설치본이 있으면 `harness-team doctor`가 경고로 알려 준다 — 근거는 `docs/decisions.md` D8.
+낡은 설치본이 있으면 `harness-team doctor`가 경고로 알려 준다 — 근거는 플러그인 저장소 `docs/decisions.md` D8.
 
 **리뷰 증거 채택은 옵트인이다(`--adopt-reviews`).** 0.37.0 이후 `verify: required`의 정본은 meta의
 `reviews[]`이고, 그 키가 없는 구 task는 종전대로 artifact 마커로 판정한다. 이 플래그는 열린 구 task를

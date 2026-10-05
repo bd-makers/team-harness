@@ -74,7 +74,7 @@ test('AGENTS.md(core) roles 표는 D2 반영 — Claude=drive, Codex=리뷰어, 
   assert.ok(rows.some((l) => l.includes('**Claude Code**') && l.includes('drive')), 'Claude drive 행');
   assert.ok(rows.some((l) => l.includes('**Codex**') && l.includes('리뷰어')), 'Codex 리뷰어 행');
   assert.ok(!rows.some((l) => /OpenCode|Gemini/.test(l)), '역할표에 OpenCode·Gemini 행이 없어야 한다 (D7)');
-  assert.match(out, /\*\*D7\*\*/, 'D7 요약이 코어에 있어야 한다');
+  assert.doesNotMatch(out, /\*\*D7\*\*/, 'D7은 플러그인 결정이라 소비자 코어에 요약하지 않는다 (D11)');
 });
 
 // D4 (2026-07-28) — 쓰기는 단일 스레드. scaffold 되는 AGENTS.md/CLAUDE.md 쌍이
@@ -99,9 +99,24 @@ test('templates/docs/decisions.md는 D2/D4/D5 전문(날짜 포함)을 보존한
   assert.match(log, /## D4 \(2026-07-28\)/, 'D4 전문 보존');
   assert.match(log, /## D5 \(2026-08-20\)/, 'D5 전문 보존');
   assert.match(log, /12-Factor Agents #8/, 'D4 근거(1차 소스) 보존');
-  // 레포도 자기 하네스를 쓴다 — 스캐폴드본과 레포본이 어긋나면 드리프트다.
-  assert.equal(await readFile(join(ROOT, 'docs', 'decisions.md'), 'utf8'), log,
-    '레포 docs/decisions.md는 템플릿과 동일해야 함');
+});
+
+// D11 (2026-10-05) — 결정 로그 분리. 소비자 템플릿에는 팀 운영 결정(D2·D4·D5·D6)만 가고, D7 이후는
+// 플러그인 결정이라 레포 로그에만 있다. 두 로그가 공유하는 절은 한 글자도 달라지면 안 된다 — 같은 결정의
+// 두 사본이 갈라지면 소비자와 메인테이너가 다른 규범을 읽는다.
+const dlogSections = (log) => {
+  const out = new Map();
+  const parts = log.split(/^(?=## D\d+ )/m).slice(1);
+  for (const p of parts) out.set(p.match(/^## (D\d+)/)[1], p.trimEnd());
+  return out;
+};
+
+test('결정 로그 분리: 템플릿은 팀 운영 결정만, 공유 절은 레포 로그와 글자 그대로 같다', async () => {
+  const tplLog = dlogSections(await readFile(join(ROOT, 'templates', 'docs', 'decisions.md'), 'utf8'));
+  const repoLog = dlogSections(await readFile(join(ROOT, 'docs', 'decisions.md'), 'utf8'));
+  assert.deepEqual([...tplLog.keys()], ['D2', 'D4', 'D5', 'D6'], '템플릿에는 팀 운영 결정만');
+  for (const [id, body] of tplLog) assert.equal(repoLog.get(id), body, `${id} 절이 레포 로그와 다르다`);
+  for (const id of ['D7', 'D8', 'D9', 'D10', 'D11']) assert.ok(repoLog.has(id), `레포 로그에 ${id}가 있어야 한다`);
 });
 
 // D6 (2026-08-26) — 적대적 검증. 규범(decisions 전문 + AGENTS 요약)과 소비 표면(리뷰 마커

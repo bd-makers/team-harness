@@ -36,7 +36,7 @@ Raw slash-command 인수:
      탐지해 첫 가용 엔진을 쓴다. claude는 Claude Code 환경에서 항상 존재하므로
      이 체인은 어느 머신에서든 리뷰어를 보장한다. vendor 분리 리뷰어(codex)를
      우선하고, 컨텍스트 분리만 제공하는 claude가 마지막이다(엔진 표의 한계 참조).
-     Gemini는 하네스 멤버가 아니다(`docs/decisions.md` D7) — 필요하면 `custom`으로 등록한다.
+     Gemini는 하네스 멤버가 아니다(플러그인 저장소 `docs/decisions.md` D7) — 필요하면 `custom`으로 등록한다.
      `custom`은 체인에 포함되지 않는다 — 명시 호출 전용이다.
 
 2. **Scope 결정** — `git status --short`가 dirty면 working tree 전체가 리뷰 대상이다.

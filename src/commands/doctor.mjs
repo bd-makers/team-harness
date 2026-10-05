@@ -467,9 +467,10 @@ export async function checkCodexHookTrust(targetDir, env = process.env) {
 // upstream D-log sections (DECISION_HEADINGS) — and init cannot deliver them without
 // clobbering the team's own log. Warn-level: a missing file is fixable by init (scaffold
 // copies it); missing sections need a manual merge from the plugin's
-// templates/docs/decisions.md.
+// templates/docs/decisions.md. Only the team-operating decisions ship (D11): D7 onward are
+// plugin decisions kept in the plugin repo's own log, so they are not checked here.
 export const DECISION_LOG_PATH = 'docs/decisions.md';
-export const DECISION_HEADINGS = ['## D2', '## D4', '## D5', '## D6', '## D7', '## D8', '## D9', '## D10'];
+export const DECISION_HEADINGS = ['## D2', '## D4', '## D5', '## D6'];
 // Derived so the absence message cannot drift from the list it describes.
 const DECISION_IDS = DECISION_HEADINGS.map(h => h.replace(/^## /, '')).join('/');
 
