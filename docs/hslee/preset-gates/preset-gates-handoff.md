@@ -89,3 +89,8 @@ docs/hslee/preset-gates/preset-gates-artifact.md | 22 +++++++++++++++++++---
  docs/hslee/preset-gates/preset-gates-context.md  |  9 +++++----
  docs/hslee/preset-gates/preset-gates-plan.md     | 20 ++++++++++----------
  3 files changed, 34 insertions(+), 17 deletions(-)
+
+## 2026-10-05T12:54:19.342Z — fb6d632 docs(task): preset-gates 작업 카드 정정
+docs/hslee/preset-gates/preset-gates-context.md | 4 ++--
+ docs/hslee/preset-gates/preset-gates-handoff.md | 6 ++++++
+ 2 files changed, 8 insertions(+), 2 deletions(-)

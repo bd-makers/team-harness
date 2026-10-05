@@ -59,4 +59,18 @@ D11 언어 분기 잔존과 공백·프로젝트 밖 경로 처리에서는 추�
 - 미룬 Minor: M1 dotfile glob, M2 미해결 `{var}` 플레이스홀더, M3 지문 signal이 프리셋 when 직렬화(raw JSON 메시지), M4 migrate 거절 문구,
   M5 훅 timeout 120s·고아 프로세스, M6 일부 테스트 공백.
 
+## 남은 리스크 · 후속
+- **소비자 배포 후 행동 필요**: 새 CLI로 `migrate`를 받으면 stock 훅이 래퍼로 바뀌고 `.harness/gates.json`이 제안된다 — **그 파일을 커밋해야** 팀 전체에 게이트가 걸린다.
+  커밋 전까지 다른 팀원은 매 커밋 "커밋 게이트 미설정" systemMessage를 본다(차단은 아님).
+- **구버전 CLI 팀원은 커밋이 막힌다**: 래퍼 훅은 CLI가 있는데 `gate`를 모르면(exit 1) 차단한다. CHANGELOG·doctor(`checkHookCli`)가 업데이트를 안내한다.
+- **deep-math**: `--yes` 경로는 lint를 빼므로 막히지 않지만, `gate suggest`로 lint를 받으면 eslint 미설치(127) → 설정 오류로 막힌다. 수락 전 eslint 설치가 필요.
+- 미룬 Minor 6건은 `## Reviews` 최종 리뷰 절 참조(M1 dotfile glob, M2 `{var}` 잔존, M3 지문 signal 형식, M4 거절 문구, M5 timeout, M6 테스트 공백).
+- 다음 task: 저장소 모양 판별·모노레포(turbo·nx 위임, 경로별 목록)·RN rules 프리셋(spec `(open →)` 이월). git pre-commit 연결은 4번 `pr-check` task.
+
 ## Learnings
+- **sha 완결성 테스트와 훅 커밋**: `KNOWN_STOCK_HOOK_SHA256` 완결성 테스트는 `--first-parent` 이력 기준이라, 브랜치에서 훅을 두 번 커밋하면
+  중간 판이 브랜치에선 "필수", main merge 뒤엔 "여분"이 되어 어느 쪽이든 실패한다. 훅 변경은 한 커밋에 모으고, 후속 수정은 fixup + autosquash
+  (`core.hooksPath=/dev/null`로 post-commit 재생성을 막고)로 합친다.
+- **`.harness/config.json`은 사용자별 gitignore다**: 팀이 공유해야 하는 확정값을 넣으면 확정한 한 사람 외에는 소리 없이 빠진다. 팀 상태는 커밋되는 파일에 둔다.
+- **훅 exit 0의 stderr는 사용자에게 보이지 않는다**: "경고 후 통과"는 stdout JSON `systemMessage`로 내야 실제로 경고가 된다.
+- **설계 결함은 리뷰가 잡았다**: 위 두 항목(C1·I1)은 spec 단계 인터뷰·자가진단을 모두 통과했지만 새 컨텍스트 리뷰어가 찾았다 — D6 검증자의 값.
