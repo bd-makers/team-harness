@@ -11,7 +11,7 @@
 - [x] 소비자 쪽 D7·D8 참조 정리(AGENTS 템플릿·루트, migrate·review 명령)
 - [x] `docs/harness-cycle.md` 정식화 + 구현 순서
 - [x] 검증: `npm run test` · `npm run docs:check`
-- [ ] 외부 리뷰(R3) 기록
+- [x] 외부 리뷰(R3) 기록 — codex PASS, P3 1건 반영
 - [ ] 커밋 · PR
 
 ## Ontology 변경 로그
