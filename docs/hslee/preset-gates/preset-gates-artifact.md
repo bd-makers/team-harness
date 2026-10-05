@@ -159,6 +159,28 @@ S5를 닫으려면 grep 출력 원문을 맞추고, 소비자 실측에 사용�
 - 판별·조치 (2026-10-05): **S5 진짜** — grep 줄이 합산값이었다 → 명령 원문과 실제 출력(`…:0` 두 줄, `exit=1`)으로 교체. 소비자 실측에 실행 명령과
   스크립트 본문(재현 경로)을 추가. 문서만 변경.
 
+### 2026-10-05T13:10:49.762Z — codex-shipcheck (harness-team review)
+
+- engine: codex · scope: diff · tip: 18b386ec7252675bd66c3aa358576668982a4a84 · exit 0 · 2381 B
+
+```text
+전하, **S5는 해소됐습니다.** `git status`는 clean이며, `refs/remotes/origin/main` 대비 35개 파일의 diff와 커밋 이력을 직접 확인했습니다. 파일은 변경하지 않았습니다.
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| S1 | spec 요구사항 대응 구현 | BLOCKER | pass | R1–R9에 대응하는 diff가 있습니다: 프리셋 3종, `GATES_REL = '.harness/gates.json'`, `buildProposal`, `gateCommit`, 훅의 `"$bin" gate commit`, format의 `${cmd} "$@"`, `checkGateFingerprint`, `migrateGates`, `gateSuggest`. R7의 `confirm` 제외는 `unattended && item.confirm`으로 구현됐습니다. |
+| S2 | plan 완료 체크의 실재 | MAJOR | pass | 다이어그램·1–10 단계에 대응하는 변경과 커밋이 존재합니다: `e82118d`, `59ed6d6`, `009b6a5`, `9f3fc02`, `9d1b904`, `2e02bc8`, `4d7e61b`, `2995a0a`, `fdde1c7`, `7b56ac9`, `34dc6e2`, `114289b`. 검증 증거 보완도 `a30154f`·`18b386e`에 실재합니다. |
+| S3 | 문서에 없는 스코프 밖 변경 | MAJOR | pass | diff는 프리셋·실행기·훅·init/migrate/doctor·관련 테스트와 문서입니다. `harness-cycle.md`의 저장 위치 변경도 “사용자별 gitignore라 팀원마다 게이트가 꺼진다 — task `preset-gates` 리뷰”라고 사유가 기록됐습니다. |
+| S4 | 실행된 리뷰의 마커 기록 | MAJOR | pass | artifact `## Reviews`에 `kind=codex`, `kind=claude-code-reviewer`, 두 차례의 `kind=codex-shipcheck` 마커가 있습니다. Opus 리뷰 시각은 “at은 근사값”이라고 명시했습니다. |
+| S5 | 실제 검증 명령·출력 인용 | BLOCKER | pass | artifact에 `npm run test exit=0`, `ℹ tests 1094 / pass 1093 / fail 0 / skipped 1`과 docs 출력이 인용됐습니다. grep은 실제 원문인 두 파일의 `:0`·`exit=1`로 교체됐습니다. 소비자 실측에는 실행 명령·스크립트 본문·출력 원문이 모두 있습니다. 직접 재현한 소비자 3곳의 출력이 기록과 일치했고(exit 0), grep과 `npm run docs:check`도 기록과 일치했습니다. |
+
+전체 테스트는 이번 재검에서 재실행하지 않았습니다. S5의 pass는 **검증 증거 형식과 실측 재현성의 해소**를 뜻하며, 전체 테스트 통과를 독립적으로 재보증하지는 않습니다.
+
+**최종 verdict: PASS — fail 없음. S5 해소.**
+```
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=18b386ec7252675bd66c3aa358576668982a4a84 at=2026-10-05T13:10:49.762Z -->
+
 ## Learnings
 - **sha 완결성 테스트와 훅 커밋**: `KNOWN_STOCK_HOOK_SHA256` 완결성 테스트는 `--first-parent` 이력 기준이라, 브랜치에서 훅을 두 번 커밋하면
   중간 판이 브랜치에선 "필수", main merge 뒤엔 "여분"이 되어 어느 쪽이든 실패한다. 훅 변경은 한 커밋에 모으고, 후속 수정은 fixup + autosquash
