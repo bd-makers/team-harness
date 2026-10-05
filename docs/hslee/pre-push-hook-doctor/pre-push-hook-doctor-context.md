@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: pre-push 훅에 pr-check 실행 줄이 없으면 doctor가 알리고 상황별 처방을 낸다 (followups 11번).
-- Current atomic step: plan 8단계 — 커밋·PR (1–7 완료, codex 재검토 승인).
+- Current atomic step: PR #126 리뷰·머지 대기 → 머지 후 기본 브랜치에서 done.
 - Stop / human-decision condition: 리뷰에서 설계 재론급 지적이 나오면 사용자에게.
 
 ## Constraints and settled decisions

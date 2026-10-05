@@ -11,7 +11,7 @@ pre-push 훅에 pr-check 실행 줄이 없으면 doctor가 알리고 상황별 �
 - [x] 5. husky 실측(S2) — 임시 저장소: husky 설치 → init/sync → doctor → `npm install`(prepare) → doctor. 결과를 artifact에 기록. 전제가 틀리면 멈추고 보고.
 - [x] 6. 검증 — `npm run test`·`npm run docs:check` PASS.
 - [x] 7. 리뷰 — codex(`review --scope worktree`) + 결과 artifact `## Reviews`.
-- [ ] 8. 커밋·PR.
+- [x] 8. 커밋·PR — #126
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
