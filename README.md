@@ -1,12 +1,3 @@
----
-tags:
-  - project
-  - ai
-  - obsidian
-created: 2026-06-02
-modified: 2026-09-10
----
-
 # harness-aijient-team
 
 > **Claude 메인 + Codex · Cursor** — 세 AI 에이전트의 설정과 상태를 하나의 프로젝트에서 통일하는 멀티에이전트 **설정·상태 하네스** 플러그인.
@@ -809,7 +800,6 @@ Claude Code 도구 관측은 원문을 보존하지 않는 로컬 JSONL만 `.har
 | [index.html](docs/index.html) | docs 전체 색인 — 가이드·릴리스 노트·버전별 스냅샷 |
 | [harness-overview.html](docs/harness-overview.html) | 플러그인 전체 아키텍처 다이어그램 — 에이전트 연결, symlink 구조, 명령 흐름. 소스 변경 뒤 `npm run docs:generate`로 갱신하는 생성 산출물 |
 | [harness-task-guide.html](docs/harness-task-guide.html) | init 이후 개발자용 — 첫 task를 만들어 닫을 때까지의 실제 절차 |
-| [harness-fleet-guide.html](docs/harness-fleet-guide.html) | 여러 명·여러 워크트리로 나눠 쓰는 상황(D5 격리 병렬) 가이드 |
 | [harness-rubric-guide.html](docs/harness-rubric-guide.html) | 루브릭 평가(D6) 가이드 — finding 스키마, 5개 검증 프레이밍, 마커 계약과 `verify` 증거 게이트 |
 | [harness-workflow-simulation.html](docs/harness-workflow-simulation.html) | task 워크플로우 시나리오 시뮬레이션 — new → done 흐름 단계별 인터랙티브 |
 | [harness-workflow-diagrams.html](docs/harness-workflow-diagrams.html) | 워크플로우 전체를 5가지 mermaid 관점으로 — 플로우차트·역할 스윔레인·시퀀스·상태·gitGraph(D5 병렬). 렌더에 JS가 필요해 브라우저에서 연다 |

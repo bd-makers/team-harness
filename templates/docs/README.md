@@ -1,12 +1,3 @@
----
-tags:
-  - project
-  - ai
-  - obsidian
-created: 2026-04-14
-modified: 2026-09-06
----
-
 # docs/ — 팀원·task별 작업 문서
 
 모든 작업 문서는 `docs/<user>/<name>/` 구조로 관리됩니다.

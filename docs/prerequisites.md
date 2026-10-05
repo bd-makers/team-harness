@@ -1,12 +1,3 @@
----
-tags:
-  - project
-  - ai
-  - obsidian
-created: 2026-08-21
-modified: 2026-08-29
----
-
 # 사전 준비 (Prerequisites)
 
 이 하네스는 **설치 목록이 아니라 능력 매트릭스**로 읽어야 합니다.
@@ -26,8 +17,7 @@ modified: 2026-08-29
 | Node.js ≥ 24 | `node --version` | `harness-team` CLI가 실행되지 않음. 이것 하나뿐입니다. |
 
 런타임 의존성이 0개이고 devDependencies도 없으므로 `npm install`이 필요 없습니다 — 이 저장소를
-**개발**할 때도 테스트는 Node 내장 `node:test`로 `npm test`만 실행합니다(`docs/ao-worker-rules.md`는
-`npm install`과 lockfile 생성을 금지합니다).
+**개발**할 때도 테스트는 Node 내장 `node:test`로 `npm test`만 실행합니다. `npm install`과 lockfile 생성은 하지 않습니다.
 
 ---
 

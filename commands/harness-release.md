@@ -2,12 +2,6 @@
 description: 4개 매니페스트(package.json/.claude-plugin/plugin.json/.claude-plugin/marketplace.json/.codex-plugin/plugin.json) 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화. 휴먼 에러(manifest 누락·버전 불일치) 차단.
 phase: Release
 argument-hint: "[patch|minor|major|x.y.z] [--dry-run] [--skip-cache]"
-tags:
-  - project
-  - ai
-  - obsidian
-created: 2026-06-02
-modified: 2026-08-07
 ---
 
 이 명령은 릴리즈를 한 번에 처리한다: 4개 매니페스트 버전을 동시에 올리고,

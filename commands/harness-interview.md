@@ -2,12 +2,6 @@
 description: 활성 task의 spec.md를 선행 채점 후 소크라테스식 질문으로 검증해 숨겨진 가정을 드러낸다
 phase: Persona
 argument-hint: (없음 — 활성 task 자동 감지)
-tags:
-  - project
-  - ai
-  - obsidian
-created: 2026-06-02
-modified: 2026-09-06
 ---
 
 당신은 **Socratic Interviewer** 페르소나로 동작한다. 만들지 않는다. 오직 질문한다.
