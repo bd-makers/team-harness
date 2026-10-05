@@ -24,6 +24,8 @@
 - 6단계: 접두 사본 파일명은 앱 경로 slug(`apps/mobile` → `apps-mobile-navigation.md`) — basename만 쓰면 `apps/mobile`·`packages/mobile`이 충돌한다.
   접두 사본은 migrate refresh 고정 목록 밖이라 refresh·stale 경고 대상이 아니다(spec open 항목 확인 — 설계대로).
 - 6단계: `copyStaticAssets`에 `ruleInstalls`가 없으면 유효 stack id로 단일 판정 — init 밖의 직접 호출도 종전 RN 게이트와 같은 결과(stack 정보가 전혀 없을 때만 달라짐, R11).
+- 7단계: `/harness-init`은 항상 `init --yes`라 R3 확인이 에이전트 경로에서 빠진다 → `stack --json`에 `repoShape` 미리보기, init에 `--shape single`,
+  명령 문서 Step 0.5(AskUserQuestion)를 더했다. 틀렸을 때 비용: 플래그 하나·문서 한 절(spec R3에 반영).
 - 조사: 실제 turbo·nx 실행과 "대상 0개일 때 exit 0"은 미검증이다.
 
 ## Reviews

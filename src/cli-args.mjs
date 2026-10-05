@@ -15,14 +15,14 @@
 
 import { KNOWN_STACK_IDS } from './detect-stack.mjs';
 
-export const VALUE_FLAGS = new Set(['stack', 'member', 'target', 'days', 'name', 'paths', 'framing', 'rubric', 'prompt-file', 'scope', 'base', 'area']);
+export const VALUE_FLAGS = new Set(['stack', 'shape', 'member', 'target', 'days', 'name', 'paths', 'framing', 'rubric', 'prompt-file', 'scope', 'base', 'area']);
 
 // Accepted on every command: they change where the harness looks or how it
 // reports, not what it does. Keeping them global means a hook can pass --target
 // to any subcommand without the registry having to enumerate it per command.
 export const GLOBAL_FLAGS = ['target', 'member', 'yes', 'json'];
 
-const INIT_FLAGS = ['stack'];
+const INIT_FLAGS = ['stack', 'shape'];
 
 // Single source for the command table: `--help` renders from `summary`, flag
 // validation reads `flags`. A flag that is not listed here cannot be passed,
@@ -98,6 +98,7 @@ const OPTIONS_HELP = `Options:
   --help, -h           Show usage for the CLI or a command — never runs the command
   --version, -v        Print the installed harness-team version
   --stack <name>       Force stack (${KNOWN_STACK_IDS.join('|')})
+  --shape single       init: treat a detected workspace repo as a single app (reject the detected shape)
   --yes                Non-interactive
   --member <name>      Override member (default: git config user.name, else $USER)
   --target <dir>       Target directory (default: cwd)

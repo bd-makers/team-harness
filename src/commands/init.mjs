@@ -19,6 +19,12 @@ export async function runInit(ctx) {
     process.exitCode = 2;
     return;
   }
+  if (ctx.flags.shape !== undefined && ctx.flags.shape !== 'single') {
+    // 모양은 감지가 정한다 — 플래그는 감지된 workspace 모양을 거절하는 용도뿐이다.
+    console.error(`init: --shape 는 single 만 받습니다 (감지된 workspace 모양을 거절할 때) — 받은 값: "${ctx.flags.shape}"`);
+    process.exitCode = 2;
+    return;
+  }
   // 강제 스택은 render-state에 고정해 플래그 없는 다음 init·doctor·migrate가 같은 스택으로 렌더한다.
   // 감지와 같은 id를 주면 고정을 푼다(자동 감지로 복귀). 저장은 render-state와 함께 Apply 뒤에 한다.
   const detectedId = (await detectStack(ctx.targetDir)).id;
@@ -44,6 +50,7 @@ export async function runInit(ctx) {
   const effectiveStackId = ctx.flags.stack ?? ctx.stackId;
   const shape = await resolveShape(ctx.targetDir, {
     yes: Boolean(ctx.flags.yes),
+    reject: ctx.flags.shape === 'single',
     stored: existingGates?.fingerprint,
     describeExtra: async detected => describeRuleInstalls(await planRuleInstalls(detected, effectiveStackId)),
   });

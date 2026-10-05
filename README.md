@@ -53,8 +53,9 @@
 > 보지 않으므로, 이들에게도 적용돼야 하는 규칙은 `AGENTS.md`(전역) 또는 하위 디렉터리
 > `AGENTS.md`(경로별)에 둬야 합니다. 특히 Codex는 리뷰어 역할이라 — 작성자만 아는 기준으로
 > 리뷰하는 상황을 만들지 않으려면 리뷰에 쓰일 기준은 `AGENTS.md`에 있어야 합니다.
-> 설치되는 rules 4종은 React Native/Expo 전용이라 유효 stack이 RN 계열일 때만 복사됩니다 — 다른 stack은
-> `.claude/rules`가 비어 있고 Cursor 미러도 생기지 않습니다.
+> 설치되는 rules 4종은 React Native/Expo 전용 **rules 프리셋**입니다 — 단일 앱은 유효 stack이 RN 계열일 때만,
+> workspace 저장소는 RN 앱마다 `paths:`를 그 앱 경로로 스코프한 사본(`<앱 경로>-<이름>.md`)으로 설치됩니다.
+> 그 밖에는 `.claude/rules`가 비어 있고 Cursor 미러도 생기지 않습니다.
 
 **설계 스코프: 설정·상태 하네스이지 런타임 오케스트레이션이 아닙니다.** 지휘자·공유 작업큐·
 팬아웃/팬인 같은 런타임 협업 계층은 두지 않습니다 — 이는 누락이 아니라 의도된 설계입니다.
@@ -292,7 +293,9 @@ harness-team --help
 감지와 다른 스택은 `.harness/render-state.json`에 고정되어 이후 플래그 없는 `init`·`doctor`도 그 스택을 쓰며,
 감지된 id를 다시 주면 고정이 풀립니다.
 고정 여부는 `harness-team stack`으로 확인합니다 — text는 `pin:` 줄, `--json`은 `stackPin`(고정 없으면 `null`) 필드에 감지·고정·유효 스택과 해제 명령이 나옵니다.
-React Native/Expo 전용 rules 4종은 유효 stack이 RN 계열일 때만 설치됩니다.
+React Native/Expo 전용 rules 4종은 유효 stack이 RN 계열일 때만 설치됩니다(workspace 저장소는 RN 앱 경로로 스코프).
+workspace 저장소(`workspaces`·`pnpm-workspace.yaml`)면 init이 모양(앱 + 내부 패키지 / 모노레포)과 workspace 목록을 보여 주고 확인받으며,
+커밋 게이트는 turbo·nx가 있으면 그 도구에 위임하고 없으면 바뀐 workspace의 목록만 실행합니다. 거절하면(`--shape single`) 단일 앱으로 처리합니다.
 
 ### `/harness-sync` — 내부 정합성 동기화
 

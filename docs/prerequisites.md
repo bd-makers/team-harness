@@ -126,9 +126,9 @@ Codex 플러그인은 Claude의 `commands[]`를 가져오지 않으므로 **따�
 
 ### Cursor — 파일만
 
-`init`이 `.cursor/rules/*.mdc`를 **쓰기만** 합니다 — 그것도 유효 stack이 React Native 계열일 때만.
-설치되는 rules 4종이 전부 RN/Expo 전용이라 다른 stack에서는 `.claude/rules`가 비어 있고 미러할 것이
-없습니다. Cursor CLI를 하네스가 호출하지는 않습니다.
+`init`이 `.cursor/rules/*.mdc`를 **쓰기만** 합니다 — 그것도 React Native 앱이 있을 때만(단일 앱은 유효 stack,
+workspace 저장소는 RN 앱마다 그 경로로 스코프). 설치되는 rules 4종이 전부 RN/Expo 전용이라 그 밖에는 `.claude/rules`가
+비어 있고 미러할 것이 없습니다. Cursor CLI를 하네스가 호출하지는 않습니다.
 
 > OpenCode·Gemini는 하네스 멤버가 아닙니다(`docs/decisions.md` D7) — 스캐폴드·doctor 검사·리뷰 엔진 체인
 > 어디에도 없습니다. Gemini로 리뷰하고 싶으면 `/harness-review custom`으로 등록합니다.

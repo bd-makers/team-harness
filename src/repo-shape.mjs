@@ -105,10 +105,16 @@ export function describeShape({ shape, workspaces }) {
 // never prompted — spec G1), { shape: 'single' } when the developer rejected the detection,
 // otherwise the detection. A shape already confirmed in gates.json (`stored`, its fingerprint)
 // is honoured without asking again; `gate suggest` omits it to re-confirm on purpose.
-export async function resolveShape(dir, { yes = false, stored = null, confirmFn = confirm, describeExtra = null } = {}) {
+// `reject` is the non-interactive "no" (init --shape single): agents drive init with --yes and
+// cannot answer the prompt, so they ask the developer first and pass the answer as a flag.
+export async function resolveShape(dir, { yes = false, stored = null, reject = false, confirmFn = confirm, describeExtra = null } = {}) {
   const detected = await detectRepoShape(dir);
   if (detected.shape === 'single') return null;
   const rejected = { shape: 'single', workspaces: [] };
+  if (reject) {
+    console.log(`\n${describeShape(detected)}\n  → --shape single: 단일 앱으로 처리합니다`);
+    return rejected;
+  }
   if (stored?.shape) return stored.shape === 'single' ? rejected : detected;
   const extra = describeExtra ? await describeExtra(detected) : '';
   console.log(`\n${describeShape(detected)}${extra ? `\n${extra}` : ''}`);

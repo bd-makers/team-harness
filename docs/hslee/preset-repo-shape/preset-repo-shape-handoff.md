@@ -59,3 +59,20 @@ docs/harness-overview.html                         | 10 +++
  src/commands/doctor.mjs                            | 12 ++++-
  tests/doctor.test.mjs                              | 53 ++++++++++++++++++++++
  4 files changed, 78 insertions(+), 2 deletions(-)
+
+## 2026-10-05T15:37:51.759Z — 8e29054 feat(rules): RN rules를 rules 프리셋으로 — 앱 workspace 경로로 스코프
+docs/harness-overview.html                         |  5 ++
+ .../preset-repo-shape-artifact.md                  |  3 +
+ .../preset-repo-shape/preset-repo-shape-handoff.md |  7 ++
+ .../preset-repo-shape/preset-repo-shape-plan.md    |  2 +-
+ src/commands/init.mjs                              | 13 ++-
+ src/harness.mjs                                    | 50 +++++++-----
+ src/presets.mjs                                    | 30 +++++++
+ src/repo-shape.mjs                                 |  3 +-
+ src/settings-permissions.mjs                       |  4 +-
+ templates/presets/rules/react-native.json          |  6 ++
+ tests/init-gates.test.mjs                          | 16 ++++
+ tests/migrate-templates.test.mjs                   |  2 +-
+ tests/settings-permissions.test.mjs                |  6 +-
+ tests/stack-conditional-rules.test.mjs             | 94 ++++++++++++++++++++--
+ 14 files changed, 202 insertions(+), 39 deletions(-)

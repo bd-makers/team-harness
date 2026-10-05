@@ -28,7 +28,8 @@ workspace·turbo·nx를 모른다. 그래서 모노레포에서는 ① 커밋 �
   코드에는 조건 해석만 있다(preset-gates `holds`와 같은 방식).
 - **R3 판별 결과 확인** (cycle §4-2b · gate interview 2026-10-06 G1) — **workspace가 감지됐을 때만** init이 모양과 workspace 목록(앱/패키지 표시)을
   보여 주고 확인받는다. workspace가 없으면 묻지 않는다(확인할 목록이 없다 — 단일 앱 init 출력 바이트 동일 유지). 거절하면 **단일 앱**으로
-  진행한다(오늘 동작). `--yes`면 판별을 그대로 받는다. Node 밖(Cargo·Gradle·Swift)은 판별하지 않고 단일로 둔다 — 경로별 게이트가
+  진행한다(오늘 동작). `--yes`면 판별을 그대로 받는다. 에이전트 경로(`/harness-init`은 항상 `--yes`)는 `stack --json`의 `repoShape` 미리보기로
+  먼저 묻고, 거절이면 `init --shape single`을 넘긴다(구현 중 보완 2026-10-06 — 그렇지 않으면 대부분의 사용자 경로에서 확인이 일어나지 않는다). Node 밖(Cargo·Gradle·Swift)은 판별하지 않고 단일로 둔다 — 경로별 게이트가
   필요하면 `gates.json` 객체 형식을 직접 편집한다(이것이 cycle의 "수동 지정").
 - **R4 게이트 생성 규칙은 둘** (interview 2026-10-06 Q3) — **단일 앱**: 오늘과 같은 배열 제안. **workspace 있음**(앱 + 내부 패키지와
   모노레포 공통): turbo·nx가 있으면 그 도구의 영향 범위 명령 하나를 담은 배열(R5), 없으면 workspace별 목록 객체(R6).

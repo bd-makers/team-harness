@@ -118,3 +118,60 @@ test('init --yes: RN 앱이 있는 workspace 저장소는 확인 화면에 rules
     await assert.rejects(readFile(join(dir, '.claude/rules/navigation.md'), 'utf8'), '루트에는 접두 없는 사본이 없다');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+function initArgs(dir, args) {
+  return new Promise((res, rej) => {
+    const child = spawn(process.execPath, [BIN, 'init', ...args], { cwd: dir, stdio: ['pipe', 'pipe', 'pipe'] });
+    let out = '';
+    child.stdout.on('data', d => { out += d; });
+    child.stderr.on('data', d => { out += d; });
+    child.on('error', rej);
+    child.on('close', code => res({ code, out }));
+    child.stdin.end();
+  });
+}
+
+test('init --yes --shape single: 감지된 workspace 모양을 거절해 단일 배열과 확정 single을 기록한다', async () => {
+  const dir = await project({
+    'package.json': { name: 'root', private: true, workspaces: ['apps/*'], scripts: { test: 'node --test' } },
+    'apps/web/package.json': { name: 'web', scripts: { dev: 'vite', test: 'vitest' } },
+  });
+  try {
+    const r = await initArgs(dir, ['--yes', '--shape', 'single']);
+    assert.equal(r.code, 0, r.out);
+    assert.match(r.out, /--shape single: 단일 앱으로 처리/);
+    const gates = await gatesOf(dir);
+    assert.deepEqual(gates.commit, ['npm run test']);
+    assert.equal(gates.fingerprint.shape, 'single');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('init --shape 에 single 외의 값은 exit 2로 거부하고 아무것도 쓰지 않는다', async () => {
+  const dir = await project({ 'package.json': { name: 'x' } });
+  try {
+    const r = await initArgs(dir, ['--yes', '--shape', 'monorepo']);
+    assert.equal(r.code, 2, r.out);
+    assert.match(r.out, /--shape 는 single 만/);
+    await assert.rejects(readFile(join(dir, '.harness/gates.json'), 'utf8'));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('stack --json: repoShape로 init 전에 감지된 모양을 미리 보여 준다(읽기 전용)', async () => {
+  const dir = await project({
+    'package.json': { name: 'root', private: true, workspaces: ['apps/*'] },
+    'apps/web/package.json': { name: 'web', scripts: { dev: 'vite' } },
+  });
+  try {
+    const out = await new Promise((res, rej) => {
+      const child = spawn(process.execPath, [BIN, 'stack', '--json'], { cwd: dir, stdio: ['ignore', 'pipe', 'pipe'] });
+      let o = '';
+      child.stdout.on('data', d => { o += d; });
+      child.on('error', rej);
+      child.on('close', () => res(o));
+    });
+    const env = JSON.parse(out);
+    assert.equal(env.repoShape.shape, 'app-packages');
+    assert.deepEqual(env.repoShape.workspaces.map(w => w.dir), ['apps/web']);
+    await assert.rejects(readFile(join(dir, '.harness/gates.json'), 'utf8'), '쓰지 않는다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
