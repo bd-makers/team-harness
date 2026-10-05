@@ -9,7 +9,7 @@ RN rules는 앱 경로로 스코프한 rules 프리셋으로 제안한다. works
 - [x] 1. 모양 판별 — `src/repo-shape.mjs` `detectRepoShape(dir, preset)`: `workspaces`(배열·`{packages}`)·`pnpm-workspace.yaml` 패턴을 펼쳐
       `package.json` 있는 디렉터리만(node_modules·점 디렉터리 제외, `!` 부정 패턴), kind는 `node.json` `workspace.app` 조건(앱 우선),
       루트가 앱이면 `"."`(workspace 원천 있을 때만), shape = 0 → single / 앱 ≥ 2 → monorepo / 그 외 app-packages. 테스트: `tests/repo-shape.test.mjs` 픽스처 5종+루트 앱
-- [ ] 2. 제안 — `buildProposal(dir, stack, { unattended, shape })`: single은 지금 그대로(기존 presets 테스트 무변경), workspace는
+- [x] 2. 제안 — `buildProposal(dir, stack, { unattended, shape })`: single은 지금 그대로(기존 presets 테스트 무변경), workspace는
       `delegate`(turbo·nx, 데이터) 우선, 없으면 workspace별 `cd <dir> && …` 객체(`"."`=루트 앱), 지문 `{preset, pm, shape, workspaces, signals}`
       (signals는 `<dir>:` 접두), `describeProposal` 객체 표시. turbo·nx 명령 형태는 공식 문서 조사 결과로 확정. 테스트: `tests/presets.test.mjs` 추가
 - [ ] 3. 실행 — `gate commit` 객체 형식: 형태 검증 확장, 바뀐 파일 = `git diff --name-only --relative HEAD` + `ls-files --others --exclude-standard`,

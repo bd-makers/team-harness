@@ -13,6 +13,10 @@
 - 조사(2026-10-06, 소스 기준·docs 미명시): turbo `--filter=...[HEAD]`·nx `affected --base=HEAD` 모두 HEAD 대비 staged·unstaged·untracked를 포함한다.
   turbo는 turbo.json에 없는 task를 넘기면 에러 → 정의된 task만 제안. nx는 target 없는 프로젝트를 조용히 건너뛴다. `NX_HEAD` 환경변수가 있으면 working tree가 빠지는 함정은
   로컬 커밋 훅에서 드물어 명령에 넣지 않는다(틀렸을 때 비용: CI 같은 환경에서 게이트가 커밋 전 변경을 못 봄).
+- 2단계: 위임 명령은 예전 훅에 없던 차단 명령이라 `confirm: true` — `--yes`면 commit은 빈 배열이고 위임 명령은 추가 제안으로만 남는다(경로별 목록으로 폴백하지 않는다:
+  폴백하면 사람이 보지 않은 경로에서 다른 모양의 게이트가 확정된다). 틀렸을 때 비용: turbo 저장소의 `--yes` init이 게이트 없이 끝남(`gate suggest`로 복구).
+- 2단계: workspace별 format 제안은 glob이 같으면 먼저 나온 것을 쓴다 — format은 루트 cwd에서 파일 경로를 붙여 실행되므로 workspace마다 나눌 실익이 없다.
+- 2단계: 위임 entry의 task가 하나도 정의돼 있지 않으면 그 도구를 건너뛰고 다음 도구·경로별 목록으로 간다.
 - 조사: 실제 turbo·nx 실행과 "대상 0개일 때 exit 0"은 미검증이다.
 
 ## Reviews
