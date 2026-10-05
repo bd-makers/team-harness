@@ -14,7 +14,7 @@ RN rules는 앱 경로로 스코프한 rules 프리셋으로 제안한다. works
       (signals는 `<dir>:` 접두), `describeProposal` 객체 표시. turbo·nx 명령 형태는 공식 문서 조사 결과로 확정. 테스트: `tests/presets.test.mjs` 추가
 - [x] 3. 실행 — `gate commit` 객체 형식: 형태 검증 확장, 바뀐 파일 = `git diff --name-only --relative HEAD` + `ls-files --others --exclude-standard`,
       HEAD 없으면 전 키, 키 매칭은 상위 디렉터리 `matchesGlob`, `"."`는 안 걸린 변경에만, 같은 명령은 한 번. 테스트: `tests/gate-command.test.mjs` 추가(배열 기존 테스트 무변경)
-- [ ] 4. 확인 흐름 — 공용 `resolveShape`(workspace 없음 → 묻지 않음, 있음 → 목록·RN rules 표시 후 확인, 거절 → single, `--yes` → 감지 채택,
+- [x] 4. 확인 흐름 — 공용 `resolveShape`(workspace 없음 → 묻지 않음, 있음 → 목록·RN rules 표시 후 확인, 거절 → single, `--yes` → 감지 채택,
       기존 gates의 확정 shape가 있으면 재사용): init·`gate suggest`·migrate(`migrateGates`)가 사용. 테스트: `tests/init-gates.test.mjs`·`migrate-gates` 추가
 - [ ] 5. doctor drift — 확정 shape 기준 비교: `single` 확정이면 workspace 무시, workspace 집합 변화만 drift, 앱 수 변화 무시, shape 키 없는 기존 지문은
       workspace가 새로 생겼을 때만 알림. 테스트: `tests/doctor.test.mjs` 추가

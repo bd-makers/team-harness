@@ -6,6 +6,7 @@ import { readFile, readdir } from 'node:fs/promises';
 import { join, matchesGlob } from 'node:path';
 import { detectStack } from './detect-stack.mjs';
 import { holds, loadPresets, selectPreset } from './presets.mjs';
+import { confirm } from './prompt.mjs';
 
 // Deep enough for `apps/*` and `packages/group/*`; a pattern reaching further is unusual
 // enough to be configured by hand in gates.json.
@@ -88,4 +89,28 @@ export async function detectRepoShape(dir) {
   workspaces.sort((a, b) => (a.dir === '.' ? -1 : b.dir === '.' ? 1 : a.dir.localeCompare(b.dir)));
   const apps = workspaces.filter(w => w.kind === 'app').length;
   return { shape: apps >= 2 ? 'monorepo' : 'app-packages', workspaces };
+}
+
+export function describeShape({ shape, workspaces }) {
+  const apps = workspaces.filter(w => w.kind === 'app').length;
+  const width = Math.max(...workspaces.map(w => (w.dir === '.' ? '(루트)' : w.dir).length));
+  const lines = [`저장소 모양: ${shape} (workspace ${workspaces.length}개, 앱 ${apps}개)`];
+  for (const w of workspaces) {
+    lines.push(`  ${(w.dir === '.' ? '(루트)' : w.dir).padEnd(width)}  ${w.kind === 'app' ? '앱' : '패키지'}  ${w.stackId}`);
+  }
+  return lines.join('\n');
+}
+
+// The confirmed shape for a proposal: null when no workspace exists (the single-app path,
+// never prompted — spec G1), { shape: 'single' } when the developer rejected the detection,
+// otherwise the detection. A shape already confirmed in gates.json (`stored`, its fingerprint)
+// is honoured without asking again; `gate suggest` omits it to re-confirm on purpose.
+export async function resolveShape(dir, { yes = false, stored = null, confirmFn = confirm, extra = '' } = {}) {
+  const detected = await detectRepoShape(dir);
+  if (detected.shape === 'single') return null;
+  const rejected = { shape: 'single', workspaces: [] };
+  if (stored?.shape) return stored.shape === 'single' ? rejected : detected;
+  console.log(`\n${describeShape(detected)}${extra ? `\n${extra}` : ''}`);
+  if (yes) return detected;
+  return (await confirmFn('이 저장소 모양으로 진행할까요? (아니오 → 단일 앱으로 처리)', { defaultYes: true })) ? detected : rejected;
 }

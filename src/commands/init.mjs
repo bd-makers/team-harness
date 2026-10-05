@@ -7,6 +7,7 @@ import { confirm } from '../prompt.mjs';
 import { resolveUsername, saveUsername } from '../user-config.mjs';
 import { applyProposal, buildProposal, describeProposal, readGates } from '../presets.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
+import { resolveShape } from '../repo-shape.mjs';
 
 export async function runInit(ctx) {
   console.log(`harness-team init → ${ctx.targetDir}`);
@@ -37,8 +38,11 @@ export async function runInit(ctx) {
   // --yes는 사람이 제안을 보지 않으므로 예전 훅에 없던 명령(confirm)을 빼고 추가 제안으로만 보인다.
   let pendingGates = null;
   const existingGates = await readGates(ctx.targetDir).catch(() => 'malformed');
+  // 저장소 모양: workspace가 없으면 null이고 아무것도 묻거나 출력하지 않는다(단일 앱은 종전 그대로).
+  // gates.json에 이미 확정된 모양이 있으면 다시 묻지 않는다.
+  const shape = await resolveShape(ctx.targetDir, { yes: Boolean(ctx.flags.yes), stored: existingGates?.fingerprint });
   if (existingGates === null) {
-    const proposal = await buildProposal(ctx.targetDir, stack, { unattended: Boolean(ctx.flags.yes) });
+    const proposal = await buildProposal(ctx.targetDir, stack, { unattended: Boolean(ctx.flags.yes), shape });
     console.log(`\n${describeProposal(proposal)}`);
     const ok = ctx.flags.yes || await confirm('이 커밋 게이트를 .harness/gates.json 에 기록할까요? (팀과 공유하려면 커밋)', { defaultYes: true });
     if (ok) pendingGates = proposal;

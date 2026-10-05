@@ -83,3 +83,54 @@ test('패턴이 있어도 package.json 가진 디렉터리가 없으면 single',
   const s = await shapeOf({ 'package.json': { name: 'root', workspaces: ['apps/*'] }, 'apps/README.md': '#' });
   assert.deepEqual(brief(s), { shape: 'single', workspaces: [] });
 });
+
+// --- 확인 흐름(resolveShape) ---
+import { resolveShape, describeShape } from '../src/repo-shape.mjs';
+
+const MONO = {
+  'package.json': { name: 'root', workspaces: ['apps/*'] },
+  'apps/web/package.json': { name: 'web', scripts: { dev: 'vite' } },
+  'apps/mobile/package.json': { name: 'mobile', dependencies: { expo: '52' } },
+};
+
+async function resolved(files, opts) {
+  const dir = await repo(files);
+  const asked = [];
+  try {
+    const shape = await resolveShape(dir, { ...opts, confirmFn: async q => { asked.push(q); return opts.answer; } });
+    return { shape, asked };
+  } finally { await rm(dir, { recursive: true, force: true }); }
+}
+
+test('resolveShape: workspace가 없으면 묻지 않고 null(단일 — 종전 경로)', async () => {
+  const r = await resolved({ 'package.json': { name: 'x' } }, { answer: true });
+  assert.equal(r.shape, null);
+  assert.deepEqual(r.asked, []);
+});
+
+test('resolveShape: 수락하면 감지 결과, 거절하면 확정 single, --yes면 묻지 않고 감지 결과', async () => {
+  const yes = await resolved(MONO, { answer: true });
+  assert.equal(yes.shape.shape, 'monorepo');
+  assert.equal(yes.asked.length, 1);
+  const no = await resolved(MONO, { answer: false });
+  assert.deepEqual(no.shape, { shape: 'single', workspaces: [] });
+  const auto = await resolved(MONO, { yes: true, answer: false });
+  assert.equal(auto.shape.shape, 'monorepo');
+  assert.deepEqual(auto.asked, []);
+});
+
+test('resolveShape: 이미 확정된 모양(stored)이 있으면 다시 묻지 않는다 — single 확정은 single로 남는다', async () => {
+  const kept = await resolved(MONO, { stored: { shape: 'single' }, answer: true });
+  assert.deepEqual(kept.shape, { shape: 'single', workspaces: [] });
+  assert.deepEqual(kept.asked, []);
+  const ws = await resolved(MONO, { stored: { shape: 'app-packages' }, answer: false });
+  assert.equal(ws.shape.shape, 'monorepo', '확정된 workspace 모양이면 현재 목록으로 다시 판별한다');
+  assert.deepEqual(ws.asked, []);
+});
+
+test('describeShape: 모양과 workspace별 앱/패키지·스택을 한 줄씩 보여 준다', () => {
+  const text = describeShape({ shape: 'monorepo', workspaces: [{ dir: '.', kind: 'app', stackId: 'node' }, { dir: 'apps/web', kind: 'app', stackId: 'react' }, { dir: 'packages/ui', kind: 'package', stackId: 'node' }] });
+  assert.match(text, /저장소 모양: monorepo \(workspace 3개, 앱 2개\)/);
+  assert.match(text, /\(루트\)\s+앱\s+node/);
+  assert.match(text, /packages\/ui\s+패키지\s+node/);
+});

@@ -271,3 +271,23 @@ test('gate commit 객체: 값이 비어 있지 않은 문자열 배열이 아니
     } finally { await rm(dir, { recursive: true, force: true }); }
   }
 });
+
+test('gate suggest --yes: workspace 저장소는 확정 모양으로 workspace별 객체를 기록한다', async () => {
+  const dir = await fixture();
+  try {
+    for (const [name, body] of Object.entries({
+      'package.json': { name: 'root', workspaces: ['apps/*'] },
+      'apps/a/package.json': { name: 'a', scripts: { start: 'node .', test: 'node --test' } },
+      'apps/b/package.json': { name: 'b', scripts: { dev: 'vite', lint: 'eslint .' } },
+    })) {
+      await mkdir(dirname(join(dir, name)), { recursive: true });
+      await writeFile(join(dir, name), JSON.stringify(body));
+    }
+    const r = await capture(() => gate(dir, ['suggest'], { yes: true }));
+    assert.equal(r.exitCode, undefined, r.errs);
+    assert.match(r.logs.join('\n'), /저장소 모양: monorepo/);
+    const gates = JSON.parse(await readFile(join(dir, '.harness/gates.json'), 'utf8'));
+    assert.deepEqual(gates.commit, { 'apps/a': ['cd apps/a && npm run test'], 'apps/b': ['cd apps/b && npm run lint'] });
+    assert.equal(gates.fingerprint.shape, 'monorepo');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

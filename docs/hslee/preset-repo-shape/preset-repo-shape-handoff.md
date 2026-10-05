@@ -31,3 +31,11 @@ docs/harness-overview.html                         | 10 +++
  templates/presets/node.json                        |  14 +++
  tests/presets.test.mjs                             |  81 +++++++++++++-
  6 files changed, 213 insertions(+), 22 deletions(-)
+
+## 2026-10-05T15:33:41.268Z — 35e931e feat(gate): commit 객체 형식 — HEAD 대비 바뀐 파일로 workspace 목록을 고른다
+.../preset-repo-shape-artifact.md                  |  2 +
+ .../preset-repo-shape/preset-repo-shape-handoff.md |  9 +++
+ .../preset-repo-shape/preset-repo-shape-plan.md    |  2 +-
+ src/commands/gate.mjs                              | 57 +++++++++++++-
+ tests/gate-command.test.mjs                        | 87 ++++++++++++++++++++++
+ 5 files changed, 152 insertions(+), 5 deletions(-)

@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { realpath } from 'node:fs/promises';
 import { basename, isAbsolute, join, matchesGlob, posix, relative, sep } from 'node:path';
 import { resolveStack } from '../detect-stack.mjs';
+import { resolveShape } from '../repo-shape.mjs';
 import { loadRenderState } from '../render-state.mjs';
 import { confirm } from '../prompt.mjs';
 import { applyProposal, buildProposal, describeProposal, readGates, GATES_REL } from '../presets.mjs';
@@ -131,7 +132,9 @@ async function gateSuggest(ctx) {
   try { existing = await readGates(ctx.targetDir); }
   catch (e) { console.error(`gate suggest: ${e.message}`); process.exitCode = 1; return; }
   const { stack: pin } = await loadRenderState(ctx.targetDir);   // same stack resolution as init
-  const proposal = await buildProposal(ctx.targetDir, await resolveStack(ctx.targetDir, pin));
+  // No `stored` here: suggest is where a confirmed shape is deliberately re-confirmed.
+  const shape = await resolveShape(ctx.targetDir, { yes: Boolean(ctx.flags.yes) });
+  const proposal = await buildProposal(ctx.targetDir, await resolveStack(ctx.targetDir, pin), { shape });
   console.log(describeProposal(proposal));
   const overwriting = existing !== null;
   if (overwriting) console.log(`  현재 commit: ${JSON.stringify(existing.commit ?? null)} — 기록하면 ${GATES_REL} 전체(commit·format·fingerprint)를 덮어씁니다.`);

@@ -75,3 +75,30 @@ test('init --yes: 감지할 스택이 없으면 빈 목록으로 기록한다', 
     assert.deepEqual((await gatesOf(dir)).commit, []);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+test('init --yes: workspace 저장소는 모양·목록을 보여 주고 workspace별 객체와 확정 모양을 기록한다', async () => {
+  const dir = await project({
+    'package.json': { name: 'root', private: true, workspaces: ['apps/*', 'packages/*'] },
+    'apps/web/package.json': { name: 'web', scripts: { dev: 'vite', test: 'vitest' } },
+    'packages/ui/package.json': { name: 'ui', scripts: { test: 'node --test' } },
+  });
+  try {
+    const r = await initYes(dir);
+    assert.equal(r.code, 0, r.out);
+    assert.match(r.out, /저장소 모양: app-packages \(workspace 2개, 앱 1개\)/);
+    const gates = await gatesOf(dir);
+    assert.deepEqual(gates.commit, { 'apps/web': ['cd apps/web && npm run test'], 'packages/ui': ['cd packages/ui && npm run test'] });
+    assert.equal(gates.fingerprint.shape, 'app-packages');
+    assert.deepEqual(gates.fingerprint.workspaces, ['apps/web', 'packages/ui']);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('init --yes: workspace 없는 단일 앱은 모양을 출력하지 않고 지문에 shape가 없다', async () => {
+  const dir = await project({ 'package.json': { name: 'x', scripts: { test: 'node --test' } } });
+  try {
+    const r = await initYes(dir);
+    assert.equal(r.code, 0, r.out);
+    assert.doesNotMatch(r.out, /저장소 모양/);
+    assert.equal((await gatesOf(dir)).fingerprint.shape, undefined);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
