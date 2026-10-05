@@ -18,7 +18,7 @@ RN rules는 앱 경로로 스코프한 rules 프리셋으로 제안한다. works
       기존 gates의 확정 shape가 있으면 재사용): init·`gate suggest`·migrate(`migrateGates`)가 사용. 테스트: `tests/init-gates.test.mjs`·`migrate-gates` 추가
 - [x] 5. doctor drift — 확정 shape 기준 비교: `single` 확정이면 workspace 무시, workspace 집합 변화만 drift, 앱 수 변화 무시, shape 키 없는 기존 지문은
       workspace가 새로 생겼을 때만 알림. 테스트: `tests/doctor.test.mjs` 추가
-- [ ] 6. RN rules 프리셋 — `templates/presets/rules/react-native.json`(match stackIds, files), `planRuleInstalls`(single = 유효 stack id, workspace = 앱 workspace별
+- [x] 6. RN rules 프리셋 — `templates/presets/rules/react-native.json`(match stackIds, files), `planRuleInstalls`(single = 유효 stack id, workspace = 앱 workspace별
       stack id), `copyStaticAssets`의 rules 일괄 복사 단계·`excludesRnRules`·`RN_ONLY_RULE_FILES` 제거, 접두 설치(`paths:`만 치환, 파일명 `<dir slug>-<name>.md`),
       빈 `.claude/rules` 생성·`Copied N` 집계 유지, mirror 전에 설치. 테스트: `tests/stack-conditional-rules.test.mjs` 재작성, `migrate-templates` 전제 테스트 확인
 - [ ] 7. 문서 — `docs:generate`(overview), spec·artifact 갱신, 주석(`harness.mjs:211`·`init.mjs:27`·`settings-permissions.mjs:21,39`)

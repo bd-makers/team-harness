@@ -102,3 +102,19 @@ test('init --yes: workspace 없는 단일 앱은 모양을 출력하지 않고 �
     assert.equal((await gatesOf(dir)).fingerprint.shape, undefined);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+test('init --yes: RN 앱이 있는 workspace 저장소는 확인 화면에 rules 대상을 보이고 앱 경로로 스코프해 설치한다', async () => {
+  const dir = await project({
+    'package.json': { name: 'root', private: true, workspaces: ['apps/*'] },
+    'apps/mobile/package.json': { name: 'mobile', dependencies: { expo: '52' } },
+    'apps/web/package.json': { name: 'web', scripts: { dev: 'vite' } },
+  });
+  try {
+    const r = await initYes(dir);
+    assert.equal(r.code, 0, r.out);
+    assert.match(r.out, /rules 프리셋:\n  apps\/mobile → react-native rules 4종 \(paths: apps\/mobile\/…\)/);
+    const nav = await readFile(join(dir, '.claude/rules/apps-mobile-navigation.md'), 'utf8');
+    assert.match(nav, /"apps\/mobile\/app\/\*\*\/\*\.tsx"/);
+    await assert.rejects(readFile(join(dir, '.claude/rules/navigation.md'), 'utf8'), '루트에는 접두 없는 사본이 없다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

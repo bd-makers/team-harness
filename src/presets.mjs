@@ -18,6 +18,36 @@ export async function loadPresets() {
   return Promise.all(names.map(async n => JSON.parse(await readFile(new URL(n, PRESET_DIR), 'utf8'))));
 }
 
+// Rules presets: which shipped `.claude/rules` files suit which stack. The files themselves stay
+// in templates/.claude/rules — moving them would break the stock-sha history migrate relies on.
+const RULE_PRESET_DIR = new URL('rules/', PRESET_DIR);
+
+export async function loadRulePresets() {
+  const names = (await readdir(RULE_PRESET_DIR)).filter(n => n.endsWith('.json')).sort();
+  return Promise.all(names.map(async n => JSON.parse(await readFile(new URL(n, RULE_PRESET_DIR), 'utf8'))));
+}
+
+// → [{ dir, preset, files }]. Without a workspace shape the one target is the project root,
+// judged by the effective stack id (explicit --stack, else detection) exactly as the old fixed
+// RN gate did. With one, each *app* workspace is judged by its own stack id — a package that
+// merely depends on react-native gets nothing (spec G4) — and the root app by the effective id.
+export async function planRuleInstalls(shape, effectiveStackId) {
+  const targets = shape && shape.shape !== 'single'
+    ? shape.workspaces.filter(w => w.kind === 'app').map(w => ({ dir: w.dir, stackId: w.dir === '.' ? effectiveStackId : w.stackId }))
+    : [{ dir: '.', stackId: effectiveStackId }];
+  const presets = await loadRulePresets();
+  const out = [];
+  for (const t of targets) {
+    for (const p of presets) if (t.stackId && p.match?.stackIds?.includes(t.stackId)) out.push({ dir: t.dir, preset: p.id, files: p.files });
+  }
+  return out;
+}
+
+export function describeRuleInstalls(installs) {
+  if (!installs.length) return '';
+  return ['rules 프리셋:', ...installs.map(i => `  ${i.dir === '.' ? '(루트)' : i.dir} → ${i.preset} rules ${i.files.length}종${i.dir === '.' ? '' : ` (paths: ${i.dir}/…)`}`)].join('\n');
+}
+
 export function selectPreset(presets, stackId) {
   return presets.find(p => p.match?.stackIds?.includes(stackId)) ?? presets.find(p => p.id === 'generic');
 }

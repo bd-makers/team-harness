@@ -105,11 +105,12 @@ export function describeShape({ shape, workspaces }) {
 // never prompted — spec G1), { shape: 'single' } when the developer rejected the detection,
 // otherwise the detection. A shape already confirmed in gates.json (`stored`, its fingerprint)
 // is honoured without asking again; `gate suggest` omits it to re-confirm on purpose.
-export async function resolveShape(dir, { yes = false, stored = null, confirmFn = confirm, extra = '' } = {}) {
+export async function resolveShape(dir, { yes = false, stored = null, confirmFn = confirm, describeExtra = null } = {}) {
   const detected = await detectRepoShape(dir);
   if (detected.shape === 'single') return null;
   const rejected = { shape: 'single', workspaces: [] };
   if (stored?.shape) return stored.shape === 'single' ? rejected : detected;
+  const extra = describeExtra ? await describeExtra(detected) : '';
   console.log(`\n${describeShape(detected)}${extra ? `\n${extra}` : ''}`);
   if (yes) return detected;
   return (await confirmFn('이 저장소 모양으로 진행할까요? (아니오 → 단일 앱으로 처리)', { defaultYes: true })) ? detected : rejected;

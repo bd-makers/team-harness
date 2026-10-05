@@ -21,6 +21,9 @@
   키가 하나도 걸리지 않으면 아무것도 실행하지 않고 통과하며 stderr에 한 줄 남긴다(차단 대상이 아니다).
 - 4단계: `gate suggest`는 gates.json의 확정 모양을 재사용하지 않고 다시 묻는다 — single로 거절했던 저장소가 workspace 모양으로 돌아오는 유일한 경로다.
   init은 확정 모양을 재사용한다(재 init마다 묻지 않기 위해). 거절 경로는 프롬프트 여러 개를 파이프로 흉내 내는 대신 `resolveShape`에 확인 함수를 주입해 단위 테스트했다.
+- 6단계: 접두 사본 파일명은 앱 경로 slug(`apps/mobile` → `apps-mobile-navigation.md`) — basename만 쓰면 `apps/mobile`·`packages/mobile`이 충돌한다.
+  접두 사본은 migrate refresh 고정 목록 밖이라 refresh·stale 경고 대상이 아니다(spec open 항목 확인 — 설계대로).
+- 6단계: `copyStaticAssets`에 `ruleInstalls`가 없으면 유효 stack id로 단일 판정 — init 밖의 직접 호출도 종전 RN 게이트와 같은 결과(stack 정보가 전혀 없을 때만 달라짐, R11).
 - 조사: 실제 turbo·nx 실행과 "대상 0개일 때 exit 0"은 미검증이다.
 
 ## Reviews

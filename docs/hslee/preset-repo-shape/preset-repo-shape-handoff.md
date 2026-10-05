@@ -52,3 +52,10 @@ docs/harness-overview.html                         | 10 +++
  tests/init-gates.test.mjs                          | 27 ++++++++++++
  tests/repo-shape.test.mjs                          | 51 ++++++++++++++++++++++
  10 files changed, 146 insertions(+), 4 deletions(-)
+
+## 2026-10-05T15:35:31.957Z — 45835eb feat(doctor): 게이트 지문 drift를 확정 모양 기준으로 비교
+.../preset-repo-shape/preset-repo-shape-handoff.md | 13 ++++++
+ .../preset-repo-shape/preset-repo-shape-plan.md    |  2 +-
+ src/commands/doctor.mjs                            | 12 ++++-
+ tests/doctor.test.mjs                              | 53 ++++++++++++++++++++++
+ 4 files changed, 78 insertions(+), 2 deletions(-)

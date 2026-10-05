@@ -133,7 +133,7 @@ test('미설치 프로젝트 → false (설치 없는 곳에 새로 깔지 않�
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-// RN 전용 규칙 4종은 비-RN 프로젝트에 일부러 깔리지 않는다(copyStaticAssets의 stack 게이트).
+// RN 전용 규칙 4종은 비-RN 프로젝트에 일부러 깔리지 않는다(rules 프리셋의 stack 판정).
 // refresh가 "미설치는 건너뛴다"를 지키지 않으면 refresh가 그 게이트를 무력화한다.
 test('refresh는 stack 게이트를 무력화하지 않는다 — 비-RN 프로젝트에 RN 규칙을 깔지 않는다', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'harness-tplrefresh-'));

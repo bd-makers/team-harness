@@ -5,7 +5,7 @@ import {
 import { loadRenderState, saveRenderState } from '../render-state.mjs';
 import { confirm } from '../prompt.mjs';
 import { resolveUsername, saveUsername } from '../user-config.mjs';
-import { applyProposal, buildProposal, describeProposal, readGates } from '../presets.mjs';
+import { applyProposal, buildProposal, describeProposal, describeRuleInstalls, planRuleInstalls, readGates } from '../presets.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
 import { resolveShape } from '../repo-shape.mjs';
 
@@ -25,7 +25,7 @@ export async function runInit(ctx) {
   const { stack: priorPin } = await loadRenderState(ctx.targetDir);
   const stackPin = forced === undefined ? priorPin : (forced === detectedId ? undefined : forced);
   const stack = await resolveStack(ctx.targetDir, stackPin);
-  // copyStaticAssets gates the RN-only rules on this, not just on an explicit --stack.
+  // The single-app rules preset (RN rules) is judged on this, not just on an explicit --stack.
   ctx.stackId = stack.id;
   const pinNote = forced === undefined && stackPin ? ` — pinned by an earlier --stack; --stack ${detectedId} to unpin` : '';
   console.log(`  stack: ${stack.stackLabel} (${stack.id})${pinNote}`);
@@ -40,7 +40,14 @@ export async function runInit(ctx) {
   const existingGates = await readGates(ctx.targetDir).catch(() => 'malformed');
   // 저장소 모양: workspace가 없으면 null이고 아무것도 묻거나 출력하지 않는다(단일 앱은 종전 그대로).
   // gates.json에 이미 확정된 모양이 있으면 다시 묻지 않는다.
-  const shape = await resolveShape(ctx.targetDir, { yes: Boolean(ctx.flags.yes), stored: existingGates?.fingerprint });
+  // RN rules 같은 rules 프리셋도 이 모양으로 정한다 — 확인 화면에 대상을 함께 보여 준다.
+  const effectiveStackId = ctx.flags.stack ?? ctx.stackId;
+  const shape = await resolveShape(ctx.targetDir, {
+    yes: Boolean(ctx.flags.yes),
+    stored: existingGates?.fingerprint,
+    describeExtra: async detected => describeRuleInstalls(await planRuleInstalls(detected, effectiveStackId)),
+  });
+  ctx.ruleInstalls = await planRuleInstalls(shape, effectiveStackId);
   if (existingGates === null) {
     const proposal = await buildProposal(ctx.targetDir, stack, { unattended: Boolean(ctx.flags.yes), shape });
     console.log(`\n${describeProposal(proposal)}`);
