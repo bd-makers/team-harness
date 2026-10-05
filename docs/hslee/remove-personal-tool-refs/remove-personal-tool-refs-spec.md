@@ -51,7 +51,7 @@
 
 성공 기준(재현 명령):
 - `git grep -n -i "ao-worker\|fleet-guide\|oh-my-openagent\|codex-shipcheck\|delegation-router" -- . ':!docs/*/*/*' ':!CHANGELOG.md' ':!docs/what-changes-*'` → 0건
-- `git grep -l -E '^  - obsidian$'` → 0건
+- `git grep -l -E '^(tags|created|modified):' -- . ':!docs/*/*/*'` → 본문 예시(README·harness-task의 `created:` 출력 예, 테스트 fixture)만 남음
 - `npm run test`, `npm run docs:check` 통과
 
 ## 참고

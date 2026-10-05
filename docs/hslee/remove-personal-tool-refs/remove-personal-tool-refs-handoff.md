@@ -54,3 +54,12 @@ CHANGELOG.md                                       |  16 +-
 .../remove-personal-tool-refs-handoff.md           | 48 ++++++++++++++++++++++
  .../remove-personal-tool-refs-plan.md              |  2 +-
  2 files changed, 49 insertions(+), 1 deletion(-)
+
+## 2026-10-05T08:24:05.752Z — 3aa41f4 chore: harness-init 명령의 Obsidian frontmatter도 제거한다
+CHANGELOG.md                                                        | 2 +-
+ commands/harness-init.md                                            | 6 ------
+ .../remove-personal-tool-refs/remove-personal-tool-refs-artifact.md | 2 ++
+ .../remove-personal-tool-refs/remove-personal-tool-refs-handoff.md  | 5 +++++
+ .../remove-personal-tool-refs/remove-personal-tool-refs-plan.md     | 2 +-
+ .../remove-personal-tool-refs/remove-personal-tool-refs-spec.md     | 2 +-
+ 6 files changed, 10 insertions(+), 9 deletions(-)
