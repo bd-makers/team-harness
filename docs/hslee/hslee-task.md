@@ -5,6 +5,7 @@
 ## Completed
 - ✅ decision-log-split
 - ✅ preset-gates
+- ✅ preset-repo-shape
 - ✅ remove-backup-cluster
 - ✅ remove-personal-tool-refs
 - ✅ harness-version-stamp

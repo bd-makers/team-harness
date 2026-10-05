@@ -24,7 +24,7 @@ RN rules는 앱 경로로 스코프한 rules 프리셋으로 제안한다. works
 - [x] 7. 문서 — `docs:generate`(overview), spec·artifact 갱신, 주석(`harness.mjs:211`·`init.mjs:27`·`settings-permissions.mjs:21,39`)
 - [x] 8. 검증 — `npm run test`·`npm run docs:check` PASS, 픽스처 실측(npm·pnpm·turbo·nx 임시 디렉터리 init `--yes` 출력) artifact 기록
 - [x] 9. 리뷰 — codex(`review --scope diff --base origin/main`) + 새 컨텍스트 리뷰, 결과 artifact `## Reviews`
-- [ ] 10. 커밋·PR
+- [x] 10. 커밋·PR
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
