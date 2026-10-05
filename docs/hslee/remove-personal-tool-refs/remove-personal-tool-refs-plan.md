@@ -11,7 +11,7 @@
 - [x] `codex-shipcheck` 예시 줄 제거
 - [x] followups의 개인 스킬 경로 문단 제거
 - [x] 검증: grep 0건 · `npm run test` · `npm run docs:check`
-- [ ] 커밋 · PR
+- [x] 커밋 · PR (#120)
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
