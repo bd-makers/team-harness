@@ -116,3 +116,8 @@ CHANGELOG.md                                       |  8 +++-
  tests/presets.test.mjs                             | 12 +++--
  tests/repo-shape.test.mjs                          | 45 +++++++++++++++--
  15 files changed, 179 insertions(+), 45 deletions(-)
+
+## 2026-10-05T15:50:36.946Z — a0471f7 docs(task): preset-repo-shape 작업 카드 — push·PR 대기
+.../preset-repo-shape/preset-repo-shape-context.md     |  6 +++---
+ .../preset-repo-shape/preset-repo-shape-handoff.md     | 18 ++++++++++++++++++
+ 2 files changed, 21 insertions(+), 3 deletions(-)
