@@ -92,3 +92,9 @@ CHANGELOG.md                                       | 15 ++++++
  src/repo-shape.mjs                                 |  8 ++-
  tests/init-gates.test.mjs                          | 57 ++++++++++++++++++++++
  13 files changed, 143 insertions(+), 14 deletions(-)
+
+## 2026-10-05T15:41:26.099Z — 97d1d7c docs(task): preset-repo-shape 검증 기록 — 스위트·픽스처 실측·소비자 읽기 전용 감지
+.../preset-repo-shape/preset-repo-shape-artifact.md      | 10 ++++++++++
+ .../hslee/preset-repo-shape/preset-repo-shape-handoff.md | 16 ++++++++++++++++
+ docs/hslee/preset-repo-shape/preset-repo-shape-plan.md   |  2 +-
+ 3 files changed, 27 insertions(+), 1 deletion(-)
