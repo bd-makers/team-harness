@@ -3,8 +3,8 @@
   "task": "remove-personal-tool-refs",
   "created": "2026-10-05",
   "firstActivatedAt": "2026-10-05T07:13:17.749Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-10-05T11:02:10.528Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": []
