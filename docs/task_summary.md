@@ -136,5 +136,6 @@
 | hslee | user-handoff-parallel-conflict | ✅ done | 2026-09-27 |
 | hslee | harness-version-stamp | ✅ done | 2026-10-03 |
 | hslee | decision-log-split | ✅ done | 2026-10-05 |
+| hslee | preset-gates | ✅ done | 2026-10-05 |
 | hslee | remove-backup-cluster | ✅ done | 2026-10-05 |
 | hslee | remove-personal-tool-refs | ✅ done | 2026-10-05 |
