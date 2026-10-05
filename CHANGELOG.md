@@ -9,6 +9,13 @@
 
 ## [Unreleased]
 
+### Changed
+- **결정 로그 분리 + D11 범위 헌장** (task `decision-log-split`). 소비자에게 배포하는 `templates/docs/decisions.md`에는
+  팀 운영 결정(D2·D4·D5·D6)만 남기고, 플러그인 결정(D7–D10)과 새 **D11**(강제는 PR의 task 문서뿐, 사이클은 제공)은
+  이 저장소의 `docs/decisions.md`에만 둔다. `doctor`의 결정 로그 확인 헤딩도 D2·D4·D5·D6으로 줄였다 — 확인 대상이 줄어드는
+  방향이라 소비자에게 새 경고는 없다. 소비자 `AGENTS.md` 결정 규범에서 D7 줄을 뺐다(관리 절 변경이라 원할 때 `init --yes`로 받는다).
+  사이클 정의·결정 전문은 `docs/harness-cycle.md`.
+
 ### Removed
 - **개인 도구 흔적 정리** (task `remove-personal-tool-refs`). 메인테이너 개인 도구의 문서를 팀 하네스에서 뺐다:
   `docs/ao-worker-rules.md`(AO 워커 규칙)와 `docs/harness-fleet-guide.html`(Orca·firstmate 크루 가이드), 그리고 이를 가리키던

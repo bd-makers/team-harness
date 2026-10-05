@@ -1,0 +1,21 @@
+{
+  "user": "hslee",
+  "task": "decision-log-split",
+  "created": "2026-10-05",
+  "firstActivatedAt": "2026-10-05T08:50:02.444Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "2724ff7ea93c5228cab520b90ebd3ebd1d684107",
+      "at": "2026-10-05T08:55:21.574Z",
+      "exitCode": 0,
+      "outputBytes": 876
+    }
+  ]
+}
