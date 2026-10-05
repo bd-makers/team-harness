@@ -26,3 +26,10 @@ docs/diagrams/harness-overview/hooks.mmd           |   5 +-
  .../hslee/commit-gate-lint/commit-gate-lint-handoff.md | 18 ++++++++++++++++++
  docs/hslee/commit-gate-lint/commit-gate-lint-plan.md   |  4 ++--
  4 files changed, 29 insertions(+), 3 deletions(-)
+
+## 2026-10-05T04:06:53.880Z — fe3e7fe chore(task): commit-gate-lint ship
+.../commit-gate-lint/commit-gate-lint-artifact.md  | 35 ++++++++++++++++++++++
+ .../commit-gate-lint/commit-gate-lint-context.md   |  2 +-
+ .../commit-gate-lint/commit-gate-lint-handoff.md   |  7 +++++
+ .../commit-gate-lint/commit-gate-lint-meta.json    | 12 +++++++-
+ 4 files changed, 54 insertions(+), 2 deletions(-)
