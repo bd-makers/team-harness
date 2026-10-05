@@ -30,3 +30,8 @@ README.md                                |  22 ++-
  tests/pr-check.test.mjs                  | 317 +++++++++++++++++++++++++++++++
  tests/ship-command.test.mjs              |  11 ++
  26 files changed, 1041 insertions(+), 37 deletions(-)
+
+## 2026-10-05T16:29:29.247Z — e852bde docs(task): pr-check plan 9 체크 — PR #125
+docs/hslee/pr-check/pr-check-context.md | 2 +-
+ docs/hslee/pr-check/pr-check-plan.md    | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
