@@ -502,6 +502,22 @@ harness-team pr-check --base origin/main --json
 - **pre-push 훅**: init·sync가 설치합니다. 기존 pre-push 훅(git-lfs 등)이 있으면 그 맨 위에 넣고 ref 목록(stdin)을 그대로 넘겨 주며,
   셸 스크립트가 아닌 훅은 건드리지 않고 안내합니다. 기본 브랜치 push·태그·삭제·빈 원격으로의 첫 push는 검사하지 않고,
   PATH의 `harness-team`이 없거나 `pr-check`를 모르는 구버전이면 건너뜁니다(doctor가 경고). 우회는 `git push --no-verify`.
+- **훅 관리자(husky·lefthook 등)를 쓰면**: 관리자가 install 때 훅 파일을 다시 써서 위 블록이 지워집니다(husky는 `npm install`의
+  prepare마다). 관리자 설정의 pre-push(husky라면 `.husky/pre-push`) **맨 위**에 init이 넣는 것과 같은 아래 블록을 직접 넣으세요.
+  맨 `harness-team pr-check --pre-push` 한 줄은 CLI가 없거나 구버전인 팀원의 push를 전부 막고, ref 목록(stdin)을 소비해
+  뒤의 명령(git-lfs 등)이 빈 입력을 받습니다. 블록은 두 경우를 모두 막습니다.
+  ```sh
+  # harness: PR 필수 task 문서 검사 (D11) — 우회: git push --no-verify
+  if command -v harness-team >/dev/null 2>&1 && harness-team --help </dev/null 2>/dev/null | grep -q '^ *pr-check' \
+    && harness_in=$(mktemp "${TMPDIR:-/tmp}/harness-pre-push.XXXXXX"); then
+    cat > "$harness_in"
+    harness-team pr-check --pre-push < "$harness_in" || { rm -f "$harness_in"; exit 1; }
+    exec < "$harness_in"
+    rm -f "$harness_in"
+  fi
+  ```
+  doctor는 git이 읽는 pre-push 훅에 이 검사가 있는지 봅니다. 없으면 `harness-team sync`를 처방하고, `core.hooksPath`(husky 등)라면
+  관리자 설정을 판정하지 않고 위 블록을 넣으라고만 안내합니다.
 - **ship**: 준비 완료 보고 전에 같은 검사를 돌리고, 실패면 준비 완료를 선언하지 않습니다.
 - **CI (선택)**: 같은 명령을 부릅니다. base 계산에 이력이 필요하므로 전체 fetch로 체크아웃합니다(GitHub Actions라면
   `actions/checkout`의 `fetch-depth: 0`). 하네스는 CI 설정 파일을 만들지 않습니다.

@@ -7,15 +7,8 @@
 
 ## 우선순위
 
-**남은 것: 11–16번** (출처: task `pr-check`, PR #125 — 2026-10-06 리뷰 두 번과 실측에서 남은 리스크).
-위험도 순서다. 11·12번은 강제 장치(D11)가 조용히 꺼지는 경로라 먼저 본다.
-
-### 11. pre-push 블록이 훅 관리자 재생성으로 사라진다 — doctor가 모른다
-- **맥락**: init·sync가 `.git/hooks/pre-push`(또는 `core.hooksPath`)에 블록을 넣는다. husky·lefthook은 install 때 훅 파일을 다시 쓰므로 블록이 지워지고,
-  그 뒤로는 pr-check가 push에서 돌지 않는다. 사용자는 알 길이 없다 — doctor는 PATH CLI 지원(`checkHookCli`)만 보고 훅 파일 자체는 보지 않는다.
-- **정본**: `src/git-hooks.mjs` `installGitHook`·`PRE_PUSH_MARKER`, `src/commands/doctor.mjs` `checkHookCli`(:92).
-- **제안**: doctor에 "pre-push 훅에 실행 줄(`PRE_PUSH_MARKER`, 주석 제외)이 있는가" 검사 + 처방 `harness-team sync`. 2차 장치 규칙 검토 대상(D11) —
-  훅 관리자 설정에 직접 넣는 안내로 대신할 수 있는지 먼저 본다.
+**남은 것: 12–16번** (출처: task `pr-check`, PR #125 — 2026-10-06 리뷰 두 번과 실측에서 남은 리스크).
+위험도 순서다. 12번은 강제 장치(D11)가 조용히 꺼지는 경로라 먼저 본다.
 
 ### 12. 기존 설치본은 init·sync를 다시 돌려야 pre-push를 받는다
 - **맥락**: migrate는 pre-push를 설치하지 않는다(post-commit도 migrate 일반 경로에서는 설치하지 않음). 0.45.x 이전 소비자는 릴리스 후에도 강제가 없다.
@@ -58,6 +51,8 @@ task `codex-project-hooks-probe`·`codex-hook-injection-fix`(0.38.3)로 끝냈�
 (1·5번은 2026-09-11 task `review-codex-live-check`·`done-on-main-nudge`로, 3·8번은 같은 날 task
 `review-adopt-record-quality`로, 9번은 2026-09-12 task `handoff-amend-dedup`으로 올려 여기서 지웠다.
 2번은 결정이 끝나 D9로 옮겼다 — 번호는 참조 안정을 위해 유지.)
+(11번은 2026-10-06 task `pre-push-hook-doctor`로 올려 여기서 지웠다 — doctor `pre-push hook (pr-check)` 검사와 훅 관리자용 가드 줄.
+그 검사는 pre-push가 없는 기존 설치본도 "sync" 처방으로 잡으므로 12번을 줄일 수 있다.)
 
 ---
 

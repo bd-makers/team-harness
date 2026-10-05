@@ -9,7 +9,7 @@ import { mkdtemp, mkdir, readFile, writeFile, rm, stat, access, realpath } from 
 import { constants } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { installPostCommitHook, installPrePushHook, resolveHooksDir, POST_COMMIT_MARKER, POST_COMMIT_HOOK, PRE_PUSH_HOOK, PRE_PUSH_MARKER } from '../src/git-hooks.mjs';
+import { installPostCommitHook, installPrePushHook, checkPrePushHook, resolveHooksDir, POST_COMMIT_MARKER, POST_COMMIT_HOOK, PRE_PUSH_HOOK, PRE_PUSH_MARKER, PRE_PUSH_BLOCK } from '../src/git-hooks.mjs';
 
 const pexec = promisify(execFile);
 const git = (cwd, ...args) => pexec('git', ['-C', cwd, ...args]);
@@ -177,4 +177,97 @@ test('pre-push: 기존 훅이 셸 스크립트가 아니면 건너뛰고 파일�
     assert.equal(await readFile(hook, 'utf8'), original);
     assert.ok(logs.some(l => /셸 스크립트가 아님/.test(l)));
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// doctor 용 판정(followups 11) — 훅 관리자가 훅 파일을 다시 써 블록이 사라져도 알 수 있어야 한다.
+// 처방은 sync 가 실제로 고치는 경우에만 sync 다.
+test('checkPrePushHook: 설치 직후 pass, 훅 파일이 다시 쓰이면 warning + sync 처방', async () => {
+  const dir = await repo();
+  try {
+    await installPrePushHook(dir);
+    assert.equal((await checkPrePushHook(dir)).status, 'pass');
+    // 관리자 재생성 흉내: 블록 없이 덮어쓴다(주석에 명령 이름만 남은 경우도 설치가 아니다).
+    await writeFile(join(dir, '.git/hooks/pre-push'), '#!/bin/sh\n# harness-team pr-check\nexit 0\n');
+    const r = await checkPrePushHook(dir);
+    assert.equal(r.status, 'warning');
+    assert.match(r.detail, /run: harness-team sync/);
+    // 관리자 사용자에게는 블록을 처방한다 — 맨 명령 한 줄은 구버전 팀원의 push 를 막고 stdin 을 소비한다.
+    assert.match(r.detail, /pre-push 블록/, '관리자 사용자에게는 stdin 을 보존하는 블록을 처방한다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkPrePushHook: 훅 파일이 없으면 warning + sync 처방', async () => {
+  const dir = await repo();
+  try {
+    const r = await checkPrePushHook(dir);
+    assert.equal(r.status, 'warning');
+    assert.match(r.detail, /pre-push 훅 없음/);
+    assert.match(r.detail, /run: harness-team sync/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkPrePushHook: 셸이 아닌 훅은 sync 대신 직접 호출을 처방한다 — 설치기가 다시 건너뛰므로', async () => {
+  const dir = await repo();
+  try {
+    await writeFile(join(dir, '.git/hooks/pre-push'), '#!/usr/bin/env python3\nimport sys\n', { mode: 0o755 });
+    const r = await checkPrePushHook(dir);
+    assert.equal(r.status, 'warning');
+    assert.match(r.detail, /셸 스크립트가 아님/);
+    assert.doesNotMatch(r.detail, /run: harness-team sync/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkPrePushHook: core.hooksPath 는 관리자 소유 — 마커가 없으면 경고 대신 skip 안내, 있으면 pass', async () => {
+  const dir = await repo();
+  try {
+    await mkdir(join(dir, '.husky/_'), { recursive: true });
+    await git(dir, 'config', 'core.hooksPath', '.husky/_');
+    // husky v9 모양: 생성 파일은 사용자 설정(.husky/pre-push)을 부를 뿐이라 마커가 없다.
+    await writeFile(join(dir, '.husky/_/pre-push'), '#!/usr/bin/env sh\n. "$(dirname "$0")/h"\n', { mode: 0o755 });
+    const r = await checkPrePushHook(dir);
+    assert.equal(r.status, 'skip');
+    assert.match(r.detail, /core\.hooksPath/);
+    assert.match(r.detail, /pre-push 블록/);
+    await installPrePushHook(dir);
+    assert.equal((await checkPrePushHook(dir)).status, 'pass');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkPrePushHook: git 저장소가 아니면 null', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-githooks-nogit-'));
+  try {
+    assert.equal(await checkPrePushHook(dir), null);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 관리자 설정(husky 는 `sh -e`)에도 이 블록을 그대로 넣으라고 처방한다. 맨 명령 한 줄은 CLI 부재·구버전 팀원의 push 를 막고
+// stdin 을 소비해 뒤 명령(git-lfs 등)이 EOF 를 받았다(2026-10-06 실측·codex P2).
+test('PRE_PUSH_BLOCK: sh -e 에서 CLI 없음·구버전은 통과, 지원 CLI 의 실패는 막고, 뒤 명령은 같은 stdin 을 읽는다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-githooks-block-'));
+  try {
+    const hook = join(dir, 'pre-push');
+    const input = join(dir, 'refs.txt');
+    const downstream = join(dir, 'downstream.txt');
+    await writeFile(hook, `${PRE_PUSH_BLOCK}cat > "${downstream}"\n`);
+    await writeFile(input, 'refs/heads/a 111 refs/heads/a 000\n');
+    const run = (bin) => pexec('sh', ['-c', `sh -e "${hook}" < "${input}"`], { env: { PATH: `${bin}:/usr/bin:/bin` } })
+      .then(() => 0, err => err.code);
+    const shim = async (name, body) => {
+      await mkdir(join(dir, name), { recursive: true });
+      await writeFile(join(dir, name, 'harness-team'), `#!/bin/sh\n${body}\n`, { mode: 0o755 });
+      return join(dir, name);
+    };
+    const help = 'if [ "$1" = --help ]; then echo "  pr-check [dir]"; exit 0; fi';
+    assert.equal(await run(join(dir, 'none')), 0, 'CLI 없음');
+    assert.equal(await run(await shim('old', 'if [ "$1" = --help ]; then echo "  handoff"; exit 0; fi\nexit 1')), 0, 'pr-check 모르는 구버전');
+    assert.equal(await run(await shim('pass', `${help}\ncat > /dev/null`)), 0);
+    assert.equal(await readFile(downstream, 'utf8'), 'refs/heads/a 111 refs/heads/a 000\n', '검사 뒤 명령도 같은 ref 목록을 읽는다');
+    assert.equal(await run(await shim('fail', `${help}\ncat > /dev/null\nexit 1`)), 1, '검사 실패는 push 를 막는다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('README 의 훅 관리자용 블록이 PRE_PUSH_BLOCK 과 같다 — 처방 원문이 갈라지지 않게', async () => {
+  const readme = await readFile(new URL('../README.md', import.meta.url), 'utf8');
+  const indented = PRE_PUSH_BLOCK.trimEnd().split('\n').map(line => `  ${line}`).join('\n');
+  assert.ok(readme.includes(indented), 'README pr-check 절의 블록을 PRE_PUSH_BLOCK 으로 갱신하세요');
 });

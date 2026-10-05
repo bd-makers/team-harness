@@ -19,6 +19,7 @@ import { findStaleTemplates, isKnownStockTemplate } from './migrate.mjs';
 import { evaluateObserveVerdict, observeLoopbackNudge, tripWireDetail } from './observe.mjs';
 import { buildProposal, fingerprintDrift, readGates } from '../presets.mjs';
 import { detectRepoShape } from '../repo-shape.mjs';
+import { checkPrePushHook } from '../git-hooks.mjs';
 
 const pexec = promisify(execFile);
 
@@ -1016,6 +1017,17 @@ export async function runDoctor(ctx) {
     }
   } else {
     add('SessionStart/post-commit hook CLI', 'skip', 'plugin-dev repo — consumer hook PATH check n/a', '- SessionStart/post-commit hook CLI  (plugin-dev repo — n/a)');
+  }
+
+  // 위 검사는 CLI 가 pr-check 를 아는지만 본다 — 훅 관리자가 훅 파일을 다시 써 블록이 사라진 경우는 여기서 잡는다.
+  const prePush = pluginDev
+    ? { status: 'skip', detail: 'plugin-dev repo — consumer git hook n/a' }
+    : await checkPrePushHook(ctx.targetDir);
+  if (prePush) {
+    const human = prePush.status === 'warning'
+      ? `\n⚠️ ${prePush.detail}`
+      : `${prePush.status === 'pass' ? '✓' : '-'} pre-push hook (pr-check)  (${prePush.detail})`;
+    add('pre-push hook (pr-check)', prePush.status, prePush.detail, human);
   }
 
   // Deliberately NOT gated on plugin-dev, unlike every check above. Those skip
