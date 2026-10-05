@@ -49,6 +49,8 @@ modified: 2026-08-28
 | `README.md` | 명령어 레퍼런스 섹션 (전체 목록이 아니라 부분 안내) | — |
 | `bin/harness-team.mjs` | **CLI를 감싸는 커맨드만.** 에이전트 판단만 하는 커맨드는 CLI 서브커맨드가 없다 | `manifest-sync` |
 
+**메인테이너 전용 표면은 배포하지 않습니다.** `/harness-sim`·`/harness-release`는 `.claude/commands/`(이 레포 전용 Claude 커맨드), 대응 스킬(`harness-sim`·`harness-codex-sim`·`harness-release`)은 `scripts/maintainer-skills/`에 둡니다 — Codex 플러그인은 `./skills/` 전체를 싣고 `scripts/`는 싣지 않기 때문입니다. `release` CLI 서브커맨드(`src/commands/release.mjs`)는 그대로입니다.
+
 `bin` 등록은 선택이 아니라 **조건부**입니다: `commands/*.md`가 언급하는 모든
 `harness-team <sub>`는 router에 case가 있어야 하고(`manifest-sync`), 반대로 CLI 없는 커맨드는
 그런 표기를 문서에 쓰지 않으면 됩니다. `harness-interview`·`harness-ship`처럼 절차가 전부

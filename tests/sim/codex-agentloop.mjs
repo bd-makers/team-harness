@@ -424,7 +424,7 @@ async function sc5Packaging() {
       sig('.codex-plugin/plugin.json parseable', Boolean(manifest.name)),
       sig('codex manifest points at ./skills/', manifest.skills === './skills/'),
       sig('harness-team skill shipped', await fileHas(join(ROOT, 'skills', 'harness-team', 'SKILL.md'), 'name: harness-team')),
-      sig('harness-codex-sim skill shipped', await fileHas(join(ROOT, 'skills', 'harness-codex-sim', 'SKILL.md'), 'name: harness-codex-sim')),
+      sig('harness-codex-sim skill shipped', await fileHas(join(ROOT, 'scripts', 'maintainer-skills', 'harness-codex-sim', 'SKILL.md'), 'name: harness-codex-sim')),
     ],
   };
 }

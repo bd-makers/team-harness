@@ -4,7 +4,6 @@ import { readFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { resolveInvocation } from '../src/cli-args.mjs';
 import { runInit } from '../src/commands/init.mjs';
-import { runBackup } from '../src/commands/backup.mjs';
 import { runSync } from '../src/commands/sync.mjs';
 import { runDoctor } from '../src/commands/doctor.mjs';
 import { runStack } from '../src/commands/stack.mjs';
@@ -12,11 +11,7 @@ import { runScope } from '../src/commands/scope.mjs';
 import { runConfig } from '../src/commands/config.mjs';
 import { runDiagram } from '../src/commands/diagram.mjs';
 import { runTask, runList, runDone, runHandoffAuto, runRetro } from '../src/commands/task.mjs';
-import { runClone } from '../src/commands/clone.mjs';
-import { runSymlink } from '../src/commands/symlink.mjs';
-import { runDelete } from '../src/commands/delete.mjs';
 import { runMigrate } from '../src/commands/migrate.mjs';
-import { runUpgrade } from '../src/commands/upgrade.mjs';
 import { runRelease } from '../src/commands/release.mjs';
 import { runSessionContext } from '../src/commands/session-context.mjs';
 import { runContext } from '../src/commands/context.mjs';
@@ -65,12 +60,7 @@ async function main() {
 
   switch (cmd) {
     case 'init': return runInit(ctx);
-    case 'backup': return runBackup(ctx);
-    case 'clone': return runClone(ctx);
-    case 'symlink': return runSymlink(ctx);
-    case 'delete': return runDelete(ctx);
     case 'migrate': return runMigrate(ctx);
-    case 'upgrade': return runUpgrade(ctx);
     case 'sync': return runSync(ctx);
     case 'doctor': return runDoctor(ctx);
     case 'stack': return runStack(ctx);

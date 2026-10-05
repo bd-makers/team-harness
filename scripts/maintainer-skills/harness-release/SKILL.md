@@ -9,7 +9,7 @@ Use this skill as the Codex equivalent of Claude Code `/harness-release`.
 
 ## Source of Truth
 
-- Read `../../commands/harness-release.md` before acting.
+- Read `../../../.claude/commands/harness-release.md` before acting.
 - Follow that command contract, plus `AGENTS.md` and active task docs when present.
 - Prefer the shared CLI instead of reimplementing behavior:
   - In this plugin source repo, run: `node bin/harness-team.mjs release ...`

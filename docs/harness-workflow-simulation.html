@@ -1087,11 +1087,7 @@ login-bug
           <tr><td>/harness-doctor</td><td>무결성 점검 — 파일·훅·CLI PATH·외부 도구</td><td><span class="badge badge-maint">상황별</span> 설치 직후·뭔가 이상할 때</td></tr>
           <tr><td>/harness-observe</td><td>관측 로그(<code>.harness/observability</code>) 스코어카드·트립와이어 판정 — read-only, 발화 시 exit 1 (0.26.0)</td><td><span class="badge badge-maint">상황별</span> 관측 로그가 쌓인 소비자 프로젝트에서</td></tr>
           <tr><td>/harness-sync</td><td>symlink 재생성 + <code>.cursor/rules</code> ↔ <code>.claude/rules</code> 동기화</td><td><span class="badge badge-maint">상황별</span></td></tr>
-          <tr><td>/harness-clone</td><td>project → backup dir 동기화 (merge, newer-wins)</td><td><span class="badge badge-maint">상황별</span> backup dir 운용 시</td></tr>
-          <tr><td>/harness-symlink</td><td>backup dir → project symlink 생성·교체</td><td><span class="badge badge-maint">상황별</span> backup dir 운용 시</td></tr>
-          <tr><td>/harness-delete</td><td>project에서 harness symlink 제거</td><td><span class="badge badge-maint">상황별</span></td></tr>
           <tr><td>/harness-migrate</td><td>구버전 구조 마이그레이션 (task 구조·artifact 분리)</td><td><span class="badge badge-maint">상황별</span> 버전 업 직후</td></tr>
-          <tr><td>/harness-upgrade</td><td>구버전(실제 파일) → 신버전(symlink) 원스텝 마이그레이션</td><td><span class="badge badge-maint">상황별</span> 버전 업 직후</td></tr>
           <tr><td>/harness-release</td><td>4개 매니페스트 동시 bump + 캐시·마켓플레이스 동기화</td><td><span class="badge badge-maint">메인테이너</span> 이 저장소 릴리스 시</td></tr>
           <tr><td>/harness-sim</td><td>실제 <code>claude -p</code> 세션으로 하네스·스킬 동작 검증 (L5 agent-in-the-loop) + 날짜 리포트</td><td><span class="badge badge-maint">상황별</span> <code>claude</code> CLI 필요</td></tr>
           <tr class="skills-group"><td colspan="3">커맨드 없는 스킬 (Codex 전용)</td></tr>

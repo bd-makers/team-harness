@@ -18,6 +18,17 @@ modified: 2026-09-13
 
 ## [Unreleased]
 
+### Removed
+- **백업 클론과 AI 파일 gitignore 옵션** (task `remove-backup-cluster`, D11). 저장소 밖 `../harness-backup/<project>/` 백업 클론
+  (`clone.sh`·`symlink.sh`·`delete.sh`, `harness-team backup|clone|symlink|delete|upgrade`와 같은 이름의 슬래시 명령·Codex 스킬,
+  `.harness/backup.json`)과 init의 백업 위치·"AI 설정 파일 gitignore" 질문(`--no-backup`·`--backup-dir`·`--backup-parent`·`--gitignore-ai`)을 뺐다.
+  doctor는 더 이상 `backup.json`을 요구하지 않는다. 기존 백업 폴더와 `backup.json`은 건드리지 않는다. AI 설정을 gitignore한 프로젝트는
+  백업이 저장소 밖 유일 사본일 수 있으니, 원할 때 gitignore를 풀고 커밋하라. migrate의 관리 절 백업(`.harness/backup/`)은 그대로다.
+
+### Changed
+- `/harness-sim`·`/harness-release`와 Codex 스킬 `harness-sim`·`harness-codex-sim`·`harness-release`는 이 저장소에서만 동작하므로
+  소비자 배포에서 뺐다 — 메인테이너는 `.claude/commands/`와 `scripts/maintainer-skills/`에서 쓴다.
+
 ## [0.45.0] - 2026-10-03
 
 ### Added

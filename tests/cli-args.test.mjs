@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { COMMANDS, GLOBAL_FLAGS, FLAG_ALIASES, resolveInvocation, parseArgs } from '../src/cli-args.mjs';
+import { COMMANDS, GLOBAL_FLAGS, resolveInvocation, parseArgs } from '../src/cli-args.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const pexec = promisify(execFile);
@@ -33,13 +33,13 @@ test('cli-args: every command answers --help instead of running', () => {
 // invocation would otherwise run the remembered command.
 test('cli-args: --help wins over the rest of the argv', () => {
   assert.equal(resolveInvocation(['release', 'major', '--help']).kind, 'help');
-  assert.equal(resolveInvocation(['delete', '--include-real', '--help']).kind, 'help');
+  assert.equal(resolveInvocation(['migrate', '--adopt-reviews', '--help']).kind, 'help');
 });
 
 // A typo in a flag used to be accepted as `true` and the command ran with its
-// defaults — on `release` that is a live version bump, on `delete` a removal.
+// defaults — on `release` that is a live version bump, on `migrate` an unintended rewrite.
 test('cli-args: an unknown flag is a usage error, not a default run', () => {
-  for (const argv of [['release', '--dryrun'], ['release', '--dry_run'], ['delete', '--include-reals']]) {
+  for (const argv of [['release', '--dryrun'], ['release', '--dry_run'], ['migrate', '--adopt-reviewz'], ['init', '--no-backup'], ['init', '--gitignore-ai']]) {
     const invocation = resolveInvocation(argv);
     assert.equal(invocation.kind, 'error', `${argv.join(' ')} must not run`);
     assert.equal(invocation.code, 2);
@@ -114,12 +114,6 @@ test('cli-args: real invocations still resolve to a run', () => {
   assert.equal(resolveInvocation(['observe', '--days']).kind, 'error');
 });
 
-test('cli-args: --no-gitignore-ai normalizes to the key init reads', () => {
-  assert.equal(resolveInvocation(['init', '--no-gitignore-ai']).flags['gitignore-ai'], false);
-  assert.equal(resolveInvocation(['init', '--gitignore-ai']).flags['gitignore-ai'], true);
-  assert.equal(resolveInvocation(['init']).flags['gitignore-ai'], undefined);
-});
-
 test('cli-args: globals are accepted on every command', () => {
   for (const command of COMMANDS.filter(c => c.name !== 'help')) {
     for (const flag of GLOBAL_FLAGS) {
@@ -150,7 +144,7 @@ test('cli-args: the command table and the bin router agree', async () => {
 });
 
 // A flag that is accepted and documented but never read is the same silent
-// failure this module exists to remove: the caller passes `--backup-dir B`,
+// failure this module exists to remove: the caller passes `--stack B`,
 // nothing errors, and the command operates on A. Each declared flag must appear
 // in the module that actually handles the command.
 const HANDLER = { list: 'task', done: 'task', handoff: 'task', retro: 'task' };
@@ -160,9 +154,8 @@ test('cli-args: every declared flag is read by the command that declares it', as
     const module = HANDLER[command.name] ?? command.name;
     const source = await readFile(join(ROOT, 'src/commands', `${module}.mjs`), 'utf8');
     for (const declared of command.flags) {
-      const key = FLAG_ALIASES.get(declared) ?? declared;
-      const read = source.includes(`flags['${key}']`) || source.includes(`flags.${key}`);
-      assert.ok(read, `${command.name} accepts --${declared} but ${module}.mjs never reads flags['${key}']`);
+      const read = source.includes(`flags['${declared}']`) || source.includes(`flags.${declared}`);
+      assert.ok(read, `${command.name} accepts --${declared} but ${module}.mjs never reads flags['${declared}']`);
     }
   }
 });

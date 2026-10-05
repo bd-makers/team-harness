@@ -11,7 +11,6 @@ import { render } from '../src/render.mjs';
 import { detectStack } from '../src/detect-stack.mjs';
 import { sectionHashes } from '../src/render-state.mjs';
 import { POST_COMMIT_HOOK } from '../src/git-hooks.mjs';
-import { cloudSyncPathWarning } from '../src/harness.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
 import { observeToolEvent } from '../templates/.claude/hooks/observe-tools.mjs';
 import { OBSERVABILITY_BASE } from '../src/commands/observe.mjs';
@@ -617,30 +616,14 @@ test('isPluginDevRepo: 마커 하나라도 빠지면 false (소비자 프로젝�
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('cloudSyncPathWarning: iCloud/Dropbox/Google Drive/OneDrive 경로 → 경고', () => {
-  assert.match(cloudSyncPathWarning('/Users/x/Library/Mobile Documents/iCloud~md~obsidian/p'), /iCloud/);
-  assert.match(cloudSyncPathWarning('/Users/x/Dropbox/p'), /Dropbox/);
-  assert.match(cloudSyncPathWarning('/Users/x/Google Drive/p'), /Google Drive/);
-  assert.match(cloudSyncPathWarning('/Users/x/OneDrive-Corp/p'), /OneDrive/);
-});
-
-test('cloudSyncPathWarning: 로컬 경로/빈값 → null', () => {
-  assert.equal(cloudSyncPathWarning('/Users/x/projects/p'), null);
-  assert.equal(cloudSyncPathWarning(''), null);
-  assert.equal(cloudSyncPathWarning(null), null);
-});
-
 // --- runDoctor integration (real CLI) — guards item 5/6 branching that the pure
 //     helper tests don't reach. Mirrors the manual --json checks used in dev. ---
 
-test('runDoctor: 플러그인 소스 레포 → plugin-dev 모드, backup 체크 skip, fail 0', async () => {
+test('runDoctor: 플러그인 소스 레포 → plugin-dev 모드, fail 0', async () => {
   const env = await doctorJson(ROOT);
   assert.equal(env.mode, 'plugin-dev', 'top-level mode must flag plugin-dev');
   const failCount = (env.checks || []).filter(c => c.status === 'fail').length;
   assert.equal(failCount, 0, `plugin-dev repo must have 0 fails, got ${failCount}`);
-  const skipCount = (env.checks || []).filter(c => c.status === 'skip').length;
-  assert.ok(skipCount >= 5, `expected ≥5 skipped backup checks, got ${skipCount}`);
-  assert.equal(checkOf(env, '.harness/backup.json')?.status, 'skip', 'backup.json check must be skipped, not failed');
   // Consumer-only: plugin-dev runs `node bin/harness-team.mjs` and installs no consumer
   // hooks, so a PATH miss here would be a false alarm rather than a real breakage.
   assert.equal(checkOf(env, 'SessionStart/post-commit hook CLI')?.status, 'skip',
@@ -659,15 +642,12 @@ test('runDoctor: 깨진(dangling) symlink → "broken symlink"로 구분 fail', 
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('runDoctor: backup dir이 설정됐지만 디스크에 없으면 fail (iCloud eviction)', async () => {
-  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-nobackup-'));
+test('runDoctor: .harness/backup.json 이 없는 신규 설치도 fail·warning 없이 backup 검사를 하지 않는다', async () => {
+  const dir = await healthyConsumerFixture();
   try {
-    await mkdir(join(dir, '.harness'), { recursive: true });
-    await writeFile(join(dir, '.harness/backup.json'), JSON.stringify({ dir: '/tmp/harness-definitely-absent-xyz' }));
-    const env = await doctorJson(dir);
-    const c = checkOf(env, 'backup clone dir');
-    assert.equal(c?.status, 'fail');
-    assert.match(c.detail, /missing on disk/);
+    const env = await doctorJson(dir, noJqEnvFor(dir));
+    assert.equal((env.checks || []).filter(c => c.status === 'fail').length, 0);
+    assert.equal((env.checks || []).filter(c => /backup/i.test(c.label)).length, 0, 'backup 관련 검사 항목이 없어야 한다');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
@@ -733,13 +713,7 @@ async function healthyConsumerFixture(hooks = {}) {
   await writeFile(join(dir, 'CLAUDE.md'), '@AGENTS.md\n');
   await mkdir(join(dir, '.claude/hooks'), { recursive: true });
   await writeFile(join(dir, '.claude/settings.json'), '{}\n');
-  for (const name of ['clone.sh', 'symlink.sh', 'delete.sh']) {
-    await writeFile(join(dir, name), '#!/bin/sh\n', { mode: 0o755 });
-  }
-  const backup = join(dir, 'backup-clone');
-  await mkdir(backup, { recursive: true });
   await mkdir(join(dir, '.harness'), { recursive: true });
-  await writeFile(join(dir, '.harness/backup.json'), JSON.stringify({ dir: backup }));
   for (const [name, body] of Object.entries(hooks)) {
     await writeFile(join(dir, '.claude/hooks', name), body, { mode: 0o755 });
   }
@@ -1203,7 +1177,7 @@ test('findStaleManagedSections: init --stack 으로 감지와 다른 스택을 �
   try {
     await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'a', scripts: { test: 'node --test' } }));
     assert.equal((await detectStack(dir)).id, 'node', '전제: 감지 스택은 node');
-    await pexec('node', [join(ROOT, 'bin/harness-team.mjs'), 'init', '--yes', '--no-backup', '--stack', 'next'], { cwd: dir, timeout: 20000 });
+    await pexec('node', [join(ROOT, 'bin/harness-team.mjs'), 'init', '--yes', '--stack', 'next'], { cwd: dir, timeout: 20000 });
     assert.match(await readFile(join(dir, 'AGENTS.md'), 'utf8'), /Next\.js/, '전제: 강제 스택으로 렌더됨');
     assert.deepEqual(await findStaleManagedSections(dir, ROOT), []);
   } finally { await rm(dir, { recursive: true, force: true }); }
@@ -1245,7 +1219,7 @@ test('init 이 harnessVersion 을 기록하고 doctor 가 CLI 보다 낡은 기�
   const dir = join(base, 'p');
   try {
     await mkdir(dir);
-    await pexec('node', [join(ROOT, 'bin/harness-team.mjs'), 'init', '--yes', '--backup-dir', join(base, 'bk')], { cwd: dir, timeout: 20000 });
+    await pexec('node', [join(ROOT, 'bin/harness-team.mjs'), 'init', '--yes'], { cwd: dir, timeout: 20000 });
     const { version } = JSON.parse(await readFile(join(ROOT, 'package.json'), 'utf8'));
     const statePath = join(dir, '.harness/render-state.json');
     const state = JSON.parse(await readFile(statePath, 'utf8'));

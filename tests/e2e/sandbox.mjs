@@ -79,12 +79,9 @@ export async function createSandbox(stack) {
   return { dir, env, cli, gitCommit, cleanup };
 }
 
-// Sandbox with the harness already installed non-interactively. backup-dir is kept
-// inside the sandbox so doctor's required `.harness/backup.json` check passes.
+// Sandbox with the harness already installed non-interactively.
 export async function appliedSandbox(stack) {
   const sb = await createSandbox(stack);
-  const initResult = await sb.cli([
-    'init', '--yes', '--backup-dir', join(sb.dir, '.hbackup'),
-  ]);
+  const initResult = await sb.cli(['init', '--yes']);
   return { ...sb, initResult };
 }

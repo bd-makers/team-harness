@@ -35,10 +35,9 @@ test('README points to SSOTs while overview exposes generated inventories', asyn
   assert.doesNotMatch(readme, /Claude의 17개/);
   assert.ok(manifest.commands.every((entry) => commandFiles.includes(entry.replace('./commands/', ''))));
 
-  assert.match(readme, /\.harness\/backup\.json`은 팀이 공유하는 설정이므로 commit을 권장합니다/);
   assert.match(readme, /harness-team release <minor\|patch\|major>/);
   assert.match(readme, /수동 절차/);
-  assert.match(readme, /각 wrapper는 `commands\/harness-\*\.md`를 SSOT로 읽습니다\. 단, `harness-sim`은 방향이 반대로/);
+  assert.match(readme, /각 wrapper는 `commands\/harness-\*\.md`를 SSOT로 읽습니다\./);
 
   const commands = section(overview, 'commands');
   const task = section(overview, 'task');

@@ -3,13 +3,10 @@ import { join, basename } from 'node:path';
 import { lstat, unlink } from 'node:fs/promises';
 import { writeText, readTextSafe, copyTree, exists } from './fsx.mjs';
 import { render } from './render.mjs';
-import { backupDirFromConfig } from './backup-dir.mjs';
 import { mergeMarkdown, deepMergeJson, simpleDiff } from './merge.mjs';
 import { stackPermissions, RN_STACK_IDS } from './settings-permissions.mjs';
 import { loadRenderState, sectionHashes, readHarnessVersion } from './render-state.mjs';
 import { USER_HANDOFF_IGNORE } from './task-paths.mjs';
-
-export const DEFAULT_BACKUP_PARENT = 'harness-backup';
 
 // AGENTS.md (shared core) + CLAUDE.md (thin, @AGENTS.md import).
 // Exported so drift checks stay in step with what init actually renders.
@@ -135,34 +132,6 @@ export function mergeClaudeSettings(existing, incoming) {
   return merged;
 }
 
-// The symlink-backup architecture breaks when a cloud sync service evicts files
-// (offloads to cloud-only). Warn when a target/backup path lives under a known
-// sync folder. Returns a warning string, or null. Best-effort by path substring.
-export function cloudSyncPathWarning(p) {
-  if (!p) return null;
-  const markers = [
-    { re: /\/Library\/Mobile Documents\//, name: 'iCloud Drive' },
-    { re: /\/Dropbox(\/|$)/, name: 'Dropbox' },
-    { re: /\/Google ?Drive(\/|$)/, name: 'Google Drive' },
-    { re: /\/OneDrive[^/]*(\/|$)/, name: 'OneDrive' },
-  ];
-  const hit = markers.find(m => m.re.test(p));
-  if (!hit) return null;
-  return `경로가 ${hit.name} 동기화 폴더 안에 있습니다 — 클라우드가 파일을 evict하면 symlink/백업이 깨질 수 있습니다. 로컬 경로 사용을 권장합니다.`;
-}
-
-// Resolve the backup directory from a stored config, else null.
-export async function loadBackupDir(targetDir) {
-  const cfg = await readTextSafe(join(targetDir, '.harness/backup.json'));
-  if (!cfg) return null;
-  try { return await backupDirFromConfig(targetDir, JSON.parse(cfg)); } catch { return null; }
-}
-
-export async function saveBackupConfig(targetDir, config) {
-  await writeText(join(targetDir, '.harness/backup.json'),
-    JSON.stringify(config, null, 2) + '\n');
-}
-
 // stackPin: render-state에 남길 강제 스택 id(init이 정한다). 없으면 필드를 쓰지 않는다 = 자동 감지.
 export async function planChanges(ctx, { stack, stackPin }) {
   const { root, targetDir } = ctx;
@@ -234,18 +203,6 @@ export async function planChanges(ctx, { stack, stackPin }) {
     }
     const carried = { ...(priorState.sections[file] ?? {}), ...owned };
     if (Object.keys(carried).length) renderState.sections[file] = carried;
-  }
-
-  // Scripts live in the project root with the backup dir path embedded at generation time.
-  const backupDir = ctx.backupDir;
-  if (backupDir) {
-    for (const f of ['clone.sh', 'symlink.sh', 'delete.sh']) {
-      const tpl = await readTextSafe(join(tplDir, f));
-      if (!tpl) continue;
-      const rendered = tpl.replace(/\{\{BACKUP_DIR\}\}/g, backupDir);
-      const existing = await readTextSafe(join(targetDir, f));
-      if (existing !== rendered) changes.push({ kind: 'script', path: join(targetDir, f), after: rendered });
-    }
   }
 
   // .claude/settings.json — JSON deep-merge
@@ -341,54 +298,20 @@ export async function copyStaticAssets(ctx) {
     out.push({ path: activePath, action: 'write' });
   }
   // .gitignore tweaks
-  await appendGitignore(ctx.targetDir, { addAiEntries: !!ctx.addAiGitignore });
+  await appendGitignore(ctx.targetDir);
   // cursor rules — mirrored from .claude/rules
   await mirrorCursorRules(ctx);
   return out;
 }
 
-const AI_GITIGNORE_ENTRIES = [
-  '# AI',
-  'CLAUDE.md',
-  'AGENTS.md',
-  '',
-  'oh-my-openagent.json',
-  '',
-  'handoff.md',
-  'plan.md',
-  '',
-  '.claude',
-  '.claude/',
-  '.cursor',
-  '.cursor/',
-  '.omc',
-  '.omc/',
-  '.omx',
-  '.omx/',
-  '.ai',
-  '.ai/',
-  '.sisyphus',
-  '.sisyphus/',
-  '.agents',
-  '.agents/',
-  '.cursorrules',
-  '.codex',
-  '.codex/',
-  '',
-  '# build',
-  'output/',
-  '',
-  '*.log',
-];
-
-export async function appendGitignore(targetDir, { addAiEntries = false } = {}) {
+export async function appendGitignore(targetDir) {
   const { readTextSafe, writeText } = await import('./fsx.mjs');
   const path = join(targetDir, '.gitignore');
   const existing = (await readTextSafe(path)) ?? '';
   const lines = existing.split('\n');
   const has = (line) => lines.some(l => l.trim() === line);
 
-  // Not `.harness/` wholesale: backup.json (the shared backup path), the cursor mirror
+  // Not `.harness/` wholesale: the cursor mirror
   // manifest and render-state.json are team state the README asks teams to commit. Only the
   // per-user pointer/config, the observability logs and the local managed-section backups
   // are personal. `.harness/backup/` holds verbatim copies of the team's own AGENTS.md /
@@ -410,19 +333,10 @@ export async function appendGitignore(targetDir, { addAiEntries = false } = {}) 
     out += `\n# harness-aijient-team\n${harnessMissing.join('\n')}\n`;
   }
 
-  if (addAiEntries) {
-    const aiMissing = AI_GITIGNORE_ENTRIES.filter(line => line === '' || !has(line));
-    if (aiMissing.length > 0) {
-      out += `\n${aiMissing.join('\n')}\n`;
-    }
-  }
-
   if (out === existing) return false;
   await writeText(path, out);
   return true;
 }
-
-export const AI_GITIGNORE_PREVIEW = AI_GITIGNORE_ENTRIES.join('\n');
 
 // `.claude/rules/*.md` scopes a rule with a `paths:` glob list; Claude Code then
 // loads it only while working with matching files. Cursor expresses the same
