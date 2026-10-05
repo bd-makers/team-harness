@@ -98,3 +98,21 @@ CHANGELOG.md                                       | 15 ++++++
  .../hslee/preset-repo-shape/preset-repo-shape-handoff.md | 16 ++++++++++++++++
  docs/hslee/preset-repo-shape/preset-repo-shape-plan.md   |  2 +-
  3 files changed, 27 insertions(+), 1 deletion(-)
+
+## 2026-10-05T15:50:24.000Z — 8fc5f03 fix(shape): 리뷰 반영 — rename 양쪽 집계·turbo --yes 루트 목록 유지·앱 조건 축소
+CHANGELOG.md                                       |  8 +++-
+ .../preset-repo-shape-artifact.md                  | 56 ++++++++++++++++++----
+ .../preset-repo-shape/preset-repo-shape-meta.json  | 12 ++++-
+ .../preset-repo-shape/preset-repo-shape-plan.md    |  3 +-
+ .../preset-repo-shape/preset-repo-shape-spec.md    |  5 +-
+ src/commands/gate.mjs                              |  3 +-
+ src/commands/init.mjs                              |  4 +-
+ src/presets.mjs                                    |  9 +++-
+ src/repo-shape.mjs                                 | 29 ++++++-----
+ templates/presets/node.json                        |  4 +-
+ tests/doctor.test.mjs                              |  4 +-
+ tests/gate-command.test.mjs                        | 14 +++++-
+ tests/init-gates.test.mjs                          | 16 ++++++-
+ tests/presets.test.mjs                             | 12 +++--
+ tests/repo-shape.test.mjs                          | 45 +++++++++++++++--
+ 15 files changed, 179 insertions(+), 45 deletions(-)
