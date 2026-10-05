@@ -5,6 +5,7 @@
 ## Completed
 - ✅ decision-log-split
 - ✅ pr-check
+- ✅ pre-push-hook-doctor
 - ✅ preset-gates
 - ✅ preset-repo-shape
 - ✅ remove-backup-cluster

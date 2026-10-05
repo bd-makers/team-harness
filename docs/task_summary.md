@@ -137,6 +137,7 @@
 | hslee | harness-version-stamp | ✅ done | 2026-10-03 |
 | hslee | decision-log-split | ✅ done | 2026-10-05 |
 | hslee | pr-check | ✅ done | 2026-10-05 |
+| hslee | pre-push-hook-doctor | ✅ done | 2026-10-05 |
 | hslee | preset-gates | ✅ done | 2026-10-05 |
 | hslee | preset-repo-shape | ✅ done | 2026-10-05 |
 | hslee | remove-backup-cluster | ✅ done | 2026-10-05 |

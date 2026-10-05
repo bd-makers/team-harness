@@ -3,8 +3,8 @@
   "task": "pre-push-hook-doctor",
   "created": "2026-10-05",
   "firstActivatedAt": "2026-10-05T16:44:50.379Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-10-05T23:49:19.072Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [
