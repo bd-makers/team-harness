@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>pr-check — PR 필수 task 문서 검사</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #eb6c36;
+      --font-sans:     system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      --font-serif:    'Iowan Old Style', Georgia, 'Apple SD Gothic Neo', serif;
+      --font-mono:     ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    body { font-family: var(--font-sans); background: var(--color-paper); color: var(--color-ink); padding: 3rem 2rem; }
+    .frame { max-width: 1100px; margin: 0 auto; }
+    .eyebrow { font-family: var(--font-mono); font-size: 0.66rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: var(--color-muted); margin-bottom: 0.5rem; }
+    h1 { font-family: var(--font-serif); font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem); font-weight: 400; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 0.5rem; }
+    h2 { font-family: var(--font-serif); font-size: 1.25rem; font-weight: 400; margin: 2.5rem 0 1rem; }
+    .lede { color: var(--color-muted); font-size: 0.9rem; margin-bottom: 1.5rem; max-width: 60rem; line-height: 1.5; }
+    .scroll { overflow-x: auto; }
+    svg { width: 100%; min-width: 900px; display: block; }
+    .cards { display: grid; grid-template-columns: 1.1fr 1fr 0.9fr; gap: 1rem; margin-top: 2.5rem; }
+    .card { background: #ffffff; border: 1px solid rgba(45,49,66,0.12); border-radius: 6px; padding: 1.25rem; }
+    .card .eyebrow { margin-bottom: 0.4rem; }
+    .card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem; }
+    .card-header h3 { font-size: 0.95rem; font-weight: 600; }
+    .card-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .card-dot.coral { background: var(--color-accent); }
+    .card-dot.ink { background: var(--color-ink); }
+    .card-dot.muted { background: var(--color-muted); }
+    .card ul { list-style: none; font-size: 0.82rem; line-height: 1.55; color: var(--color-ink); }
+    .card li { padding-left: 0.9rem; position: relative; margin-bottom: 0.35rem; }
+    .card li::before { content: '·'; position: absolute; left: 0.2rem; color: var(--color-muted); }
+    code { font-family: var(--font-mono); font-size: 0.78rem; }
+    footer { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid rgba(45,49,66,0.10); font-family: var(--font-mono); font-size: 0.68rem; color: var(--color-muted); }
+    @media (max-width: 800px) { .cards { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div class="frame">
+  <p class="eyebrow">TASK · PR-CHECK · PR #125 · 2026-10-06</p>
+  <h1>pr-check — 하네스가 강제하는 유일한 검사</h1>
+  <p class="lede">세 호출처가 같은 결정론적 검사를 부른다. 대상은 active.json이 아니라 base 대비 diff가 건드린 task이고, 내용은 작업 트리가 아니라 커밋에서 읽는다. 다이어그램은 권장이라 막지 않는다.</p>
+
+  <!-- ============ A. 판정 흐름 ============ -->
+  <div class="scroll">
+    <svg viewBox="0 0 1000 680" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="pr-check-flow-title pr-check-flow-desc">
+      <title id="pr-check-flow-title">pr-check 판정 흐름</title>
+      <desc id="pr-check-flow-desc">ship, git pre-push 훅, 팀 CI가 같은 pr-check를 부르고, base 판정 후 diff가 건드린 task마다 네 문서가 커밋돼 있고 템플릿이 아닌지 판정해 통과 또는 차단하는 흐름.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+        <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+      </defs>
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- arrows first -->
+      <path d="M200,88 L200,104 Q200,112 208,112 L382,112 Q390,112 390,120 L390,136" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+      <path d="M440,88 L440,136" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+      <path d="M680,88 L680,104 Q680,112 672,112 L498,112 Q490,112 490,120 L490,136" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#arrow)"/>
+      <path d="M440,192 L440,224" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+      <path d="M540,268 L744,268 Q752,268 752,276 L752,348" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+      <path d="M440,312 L440,344" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+      <path d="M440,408 L440,432" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+      <path d="M540,476 L760,476 Q768,476 768,468 L768,404" fill="none" stroke="#eb6c36" stroke-width="1" marker-end="url(#arrow-accent)"/>
+      <path d="M440,520 L440,552" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#arrow)"/>
+
+      <!-- arrow labels -->
+      <rect x="606" y="248" width="48" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="630" y="257" fill="#7a8399" font-size="8" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">아니오</text>
+      <rect x="448" y="322" width="20" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="458" y="331" fill="#7a8399" font-size="8" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">예</text>
+      <rect x="592" y="456" width="88" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="636" y="465" fill="#eb6c36" font-size="8" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">없음·템플릿</text>
+      <rect x="448" y="530" width="20" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="458" y="539" fill="#7a8399" font-size="8" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">예</text>
+
+      <!-- callers -->
+      <rect x="120" y="40" width="160" height="48" rx="6" fill="#f5f5f5"/>
+      <rect x="120" y="40" width="160" height="48" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+      <text x="200" y="61" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">ship 8번</text>
+      <text x="200" y="77" fill="#4f5d75" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">문서 커밋 후</text>
+
+      <rect x="360" y="40" width="160" height="48" rx="6" fill="#f5f5f5"/>
+      <rect x="360" y="40" width="160" height="48" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+      <text x="440" y="61" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">git pre-push 훅</text>
+      <text x="440" y="77" fill="#4f5d75" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">init·sync 설치 → B</text>
+
+      <rect x="600" y="40" width="160" height="48" rx="6" fill="#f5f5f5"/>
+      <rect x="600" y="40" width="160" height="48" rx="6" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="680" y="61" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">팀 CI (선택)</text>
+      <text x="680" y="77" fill="#4f5d75" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">fetch-depth: 0</text>
+
+      <!-- base step -->
+      <rect x="340" y="136" width="200" height="56" rx="6" fill="#f5f5f5"/>
+      <rect x="340" y="136" width="200" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="440" y="160" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">base 판정</text>
+      <text x="440" y="177" fill="#4f5d75" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">origin/HEAD → main → master</text>
+
+      <!-- decision 1 -->
+      <polygon points="440,224 540,268 440,312 340,268" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="440" y="265" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">base 판정됨?</text>
+      <text x="440" y="280" fill="#4f5d75" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">resolveScope</text>
+
+      <!-- annotation: empty origin -->
+      <text x="320" y="300" fill="#4f5d75" font-size="13" font-style="italic" font-family="'Iowan Old Style', Georgia, 'Apple SD Gothic Neo', serif" text-anchor="end">빈 원격으로의 첫 push는</text>
+      <text x="320" y="318" fill="#4f5d75" font-size="13" font-style="italic" font-family="'Iowan Old Style', Georgia, 'Apple SD Gothic Neo', serif" text-anchor="end">판정 없이 통과</text>
+
+      <!-- task step -->
+      <rect x="340" y="344" width="200" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="340" y="344" width="200" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="440" y="368" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">diff가 건드린 task</text>
+      <text x="440" y="385" fill="#4f5d75" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">base...rev</text>
+      <text x="440" y="398" fill="#4f5d75" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">&lt;task&gt;-* 문서가 있는 dir</text>
+
+      <!-- decision 2 (focal) -->
+      <polygon points="440,432 540,476 440,520 340,476" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="440" y="473" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">4문서 채워짐?</text>
+      <text x="440" y="488" fill="#4f5d75" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">rev 커밋 기준</text>
+
+      <!-- block end -->
+      <rect x="680" y="348" width="160" height="56" rx="20" fill="#f5f5f5"/>
+      <rect x="680" y="348" width="160" height="56" rx="20" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="760" y="372" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">차단 · exit 1</text>
+      <text x="760" y="389" fill="#4f5d75" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">우회 --no-verify</text>
+
+      <!-- pass end -->
+      <rect x="340" y="552" width="200" height="56" rx="20" fill="#f5f5f5"/>
+      <rect x="340" y="552" width="200" height="56" rx="20" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="440" y="576" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">통과 · exit 0</text>
+      <text x="440" y="593" fill="#4f5d75" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">다이어그램 없음 → 권장 안내만</text>
+
+      <!-- legend -->
+      <line x1="30" y1="632" x2="970" y2="632" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="30" y="656" fill="#4f5d75" font-size="8" font-family="ui-monospace, 'SF Mono', Menlo, monospace" letter-spacing="0.14em">LEGEND</text>
+      <rect x="110" y="646" width="24" height="14" rx="7" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="142" y="656" fill="#4f5d75" font-size="9" font-family="system-ui, -apple-system, sans-serif">끝</text>
+      <rect x="190" y="646" width="24" height="14" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="222" y="656" fill="#4f5d75" font-size="9" font-family="system-ui, -apple-system, sans-serif">단계</text>
+      <polygon points="282,646 294,653 282,660 270,653" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="302" y="656" fill="#4f5d75" font-size="9" font-family="system-ui, -apple-system, sans-serif">판정</text>
+      <rect x="350" y="646" width="24" height="14" rx="3" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+      <text x="382" y="656" fill="#4f5d75" font-size="9" font-family="system-ui, -apple-system, sans-serif">호출처</text>
+      <rect x="440" y="646" width="24" height="14" rx="3" fill="none" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="472" y="656" fill="#4f5d75" font-size="9" font-family="system-ui, -apple-system, sans-serif">선택</text>
+      <rect x="520" y="646" width="24" height="14" rx="3" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="552" y="656" fill="#4f5d75" font-size="9" font-family="system-ui, -apple-system, sans-serif">강제 지점 (D11)</text>
+    </svg>
+  </div>
+
+  <!-- ============ B. pre-push 훅 블록 ============ -->
+  <h2>B. pre-push 훅 블록 — 기존 훅 맨 위에 들어간다</h2>
+  <div class="scroll">
+    <svg viewBox="0 0 1000 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="pr-check-hook-title pr-check-hook-desc">
+      <title id="pr-check-hook-title">pre-push 훅 블록의 실행 흐름</title>
+      <desc id="pr-check-hook-desc">git push 때 훅 블록이 CLI 지원을 확인하고 stdin의 ref 목록을 임시 파일로 받아 pr-check를 돌린 뒤, 통과하면 같은 입력을 기존 훅 줄에 되돌려 주고 실패하면 push를 중단하는 흐름.</desc>
+      <defs>
+        <marker id="b-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="b-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+        <marker id="b-arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+      </defs>
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- arrows first -->
+      <path d="M400,80 L400,104" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#b-arrow)"/>
+      <path d="M400,200 L400,232" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#b-arrow)"/>
+      <path d="M520,152 L852,152 Q860,152 860,160 L860,636 Q860,644 852,644 L500,644" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4" marker-end="url(#b-arrow)"/>
+      <path d="M400,288 L400,320" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#b-arrow)"/>
+      <path d="M400,384 L400,416" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#b-arrow)"/>
+      <path d="M500,456 L600,456" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#b-arrow)"/>
+      <path d="M400,496 L400,528" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#b-arrow)"/>
+      <path d="M400,584 L400,616" fill="none" stroke="#eb6c36" stroke-width="1" marker-end="url(#b-arrow-accent)"/>
+      <path d="M400,672 L400,704" fill="none" stroke="#4f5d75" stroke-width="1" marker-end="url(#b-arrow)"/>
+
+      <!-- arrow labels -->
+      <rect x="408" y="210" width="20" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="418" y="219" fill="#7a8399" font-size="8" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">예</text>
+      <rect x="640" y="132" width="104" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="692" y="141" fill="#7a8399" font-size="8" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">아니오 · 건너뜀</text>
+      <rect x="530" y="436" width="40" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="550" y="445" fill="#7a8399" font-size="8" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">실패</text>
+      <rect x="408" y="506" width="28" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="422" y="515" fill="#7a8399" font-size="8" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">통과</text>
+
+      <!-- 1 start -->
+      <rect x="320" y="32" width="160" height="48" rx="20" fill="#f5f5f5"/>
+      <rect x="320" y="32" width="160" height="48" rx="20" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="400" y="53" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">git push</text>
+      <text x="400" y="69" fill="#4f5d75" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">stdin = ref 목록</text>
+
+      <!-- 2 decision -->
+      <polygon points="400,104 520,152 400,200 280,152" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="400" y="149" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">CLI 있고</text>
+      <text x="400" y="165" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">pr-check 지원?</text>
+
+      <!-- 3 buffer stdin (focal) -->
+      <rect x="300" y="232" width="200" height="56" rx="6" fill="#f5f5f5"/>
+      <rect x="300" y="232" width="200" height="56" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="400" y="256" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">stdin 받아 두기</text>
+      <text x="400" y="273" fill="#4f5d75" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">mktemp · cat &gt; 임시 파일</text>
+
+      <!-- annotation: change vs plan -->
+      <text x="272" y="252" fill="#4f5d75" font-size="13" font-style="italic" font-family="'Iowan Old Style', Georgia, 'Apple SD Gothic Neo', serif" text-anchor="end">plan: 기존 훅 끝에 append</text>
+      <text x="272" y="270" fill="#4f5d75" font-size="13" font-style="italic" font-family="'Iowan Old Style', Georgia, 'Apple SD Gothic Neo', serif" text-anchor="end">최종: 맨 위 + stdin 되돌림</text>
+
+      <!-- 4 pr-check -->
+      <rect x="300" y="320" width="200" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="300" y="320" width="200" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="400" y="344" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">문서 검사 (A)</text>
+      <text x="400" y="361" fill="#4f5d75" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">pr-check --pre-push</text>
+      <text x="400" y="374" fill="#4f5d75" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">삭제·태그·기본 브랜치 제외</text>
+
+      <!-- 5 decision -->
+      <polygon points="400,416 500,456 400,496 300,456" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="400" y="460" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">exit 0?</text>
+
+      <!-- block end -->
+      <rect x="600" y="428" width="180" height="56" rx="20" fill="#f5f5f5"/>
+      <rect x="600" y="428" width="180" height="56" rx="20" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="690" y="452" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">push 중단</text>
+      <text x="690" y="469" fill="#4f5d75" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">exit 1 · 임시 파일 삭제</text>
+
+      <!-- 6 restore stdin (focal) -->
+      <rect x="300" y="528" width="200" height="56" rx="6" fill="#f5f5f5"/>
+      <rect x="300" y="528" width="200" height="56" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="400" y="552" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">stdin 되돌림</text>
+      <text x="400" y="569" fill="#4f5d75" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">exec &lt; 임시 파일</text>
+
+      <!-- 7 existing hook lines -->
+      <rect x="300" y="616" width="200" height="56" rx="6" fill="#f5f5f5"/>
+      <rect x="300" y="616" width="200" height="56" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <text x="400" y="640" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">기존 훅 줄</text>
+      <text x="400" y="657" fill="#4f5d75" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">git-lfs 등 · 같은 ref 목록</text>
+
+      <!-- annotation: non-shell -->
+      <text x="272" y="640" fill="#4f5d75" font-size="13" font-style="italic" font-family="'Iowan Old Style', Georgia, 'Apple SD Gothic Neo', serif" text-anchor="end">python·node 훅에는</text>
+      <text x="272" y="658" fill="#4f5d75" font-size="13" font-style="italic" font-family="'Iowan Old Style', Georgia, 'Apple SD Gothic Neo', serif" text-anchor="end">설치하지 않고 안내만</text>
+
+      <!-- 8 end -->
+      <rect x="320" y="704" width="160" height="48" rx="20" fill="#f5f5f5"/>
+      <rect x="320" y="704" width="160" height="48" rx="20" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="400" y="725" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, -apple-system, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">push 진행</text>
+      <text x="400" y="741" fill="#4f5d75" font-size="9" font-family="ui-monospace, 'SF Mono', Menlo, monospace" text-anchor="middle">기존 훅 판정에 따름</text>
+
+      <!-- legend -->
+      <line x1="30" y1="772" x2="970" y2="772" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="30" y="796" fill="#4f5d75" font-size="8" font-family="ui-monospace, 'SF Mono', Menlo, monospace" letter-spacing="0.14em">LEGEND</text>
+      <rect x="110" y="786" width="24" height="14" rx="7" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="142" y="796" fill="#4f5d75" font-size="9" font-family="system-ui, -apple-system, sans-serif">시작·끝</text>
+      <rect x="200" y="786" width="24" height="14" rx="3" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="232" y="796" fill="#4f5d75" font-size="9" font-family="system-ui, -apple-system, sans-serif">단계</text>
+      <polygon points="292,786 304,793 292,800 280,793" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="312" y="796" fill="#4f5d75" font-size="9" font-family="system-ui, -apple-system, sans-serif">판정</text>
+      <rect x="360" y="786" width="24" height="14" rx="3" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <text x="392" y="796" fill="#4f5d75" font-size="9" font-family="system-ui, -apple-system, sans-serif">사용자 기존 훅</text>
+      <rect x="480" y="786" width="24" height="14" rx="3" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="512" y="796" fill="#4f5d75" font-size="9" font-family="system-ui, -apple-system, sans-serif">plan 대비 바뀐 부분</text>
+      <line x1="630" y1="793" x2="660" y2="793" stroke="#4f5d75" stroke-width="1" stroke-dasharray="5,4"/>
+      <text x="668" y="796" fill="#4f5d75" font-size="9" font-family="system-ui, -apple-system, sans-serif">fail-open 건너뜀</text>
+    </svg>
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <p class="eyebrow">PLAN 대비 변화</p>
+      <div class="card-header"><span class="card-dot coral"></span><h3>리뷰 두 번이 바꾼 것</h3></div>
+      <ul>
+        <li>훅 블록: 기존 훅 끝에 append → <strong>맨 위 삽입 + stdin 되돌림</strong> (git-lfs의 stdin 소비·<code>exit 0</code>·rc 덮어쓰기)</li>
+        <li>PR 다이어그램: 필수 + 생략 기록 → <strong>권장</strong> (생략 기록은 plan 옵트인 없으면 거부됨)</li>
+        <li>task 식별: spec 마커만 → <code>&lt;task&gt;-*</code> 문서 아무거나 (spec 빠진 task 누락 방지)</li>
+        <li>빈 원격 첫 push: 차단 → 통과</li>
+      </ul>
+    </div>
+    <div class="card">
+      <p class="eyebrow">강제 범위 · D11</p>
+      <div class="card-header"><span class="card-dot ink"></span><h3>막는 것은 4문서뿐</h3></div>
+      <ul>
+        <li>spec · plan · handoff · artifact가 rev에 있고 템플릿 그대로가 아님</li>
+        <li>다이어그램은 안내만 (exit 0)</li>
+        <li>lint·tsc·리뷰는 "제공" — git pre-commit에 걸지 않음</li>
+      </ul>
+    </div>
+    <div class="card">
+      <p class="eyebrow">남은 리스크</p>
+      <div class="card-header"><span class="card-dot muted"></span><h3>docs/followups.md 11–16</h3></div>
+      <ul>
+        <li>훅 관리자 재생성 시 블록 소실 — doctor 미감지</li>
+        <li>기존 설치본은 sync 재실행 필요</li>
+        <li>post-commit은 아직 append</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer>docs/hslee/pr-check/pr-check-diagram.html · 자립형 inline SVG · src/commands/pr-check.mjs · src/git-hooks.mjs · PR #125</footer>
+</div>
+</body>
+</html>

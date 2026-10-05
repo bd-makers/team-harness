@@ -21,12 +21,14 @@
   5건이 처음 설계에서 실패했고, 이것이 권장 정정의 실측 근거다.
 
 ### 남은 리스크·후속
+*정리본(새 세션이 바로 spec을 쓸 수 있는 형식): `docs/followups.md` 11–16번. 아래는 요약.*
 - 훅 관리자(husky·lefthook)가 pre-push 파일을 다시 생성하면 블록이 사라진다 — init·sync 재실행으로 복구(post-commit과 같음).
 - origin이 아닌 원격으로 push해도 base는 origin 기준이다.
 - 구버전 템플릿으로 만들어 손대지 않은 문서는 현재 템플릿과 달라 통과할 수 있다.
 - PR이 옛 task 문서를 부수적으로 건드리면 그 task도 검사된다(4문서는 대개 채워져 있어 실영향은 작을 것으로 추정 — 미검증).
 - 기존 설치본은 사용자가 init·sync를 다시 돌릴 때 pre-push를 받는다(migrate는 설치하지 않음).
 
+- 다이어그램: docs/hslee/pr-check/pr-check-diagram.html 생성 — 판정 흐름(A) + pre-push 훅 블록(B), plan 대비 변화 표시 (2026-10-05)
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*

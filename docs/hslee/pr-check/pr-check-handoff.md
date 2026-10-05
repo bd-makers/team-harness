@@ -35,3 +35,7 @@ README.md                                |  22 ++-
 docs/hslee/pr-check/pr-check-context.md | 2 +-
  docs/hslee/pr-check/pr-check-plan.md    | 2 +-
  2 files changed, 2 insertions(+), 2 deletions(-)
+
+## 2026-10-05T16:29:39.780Z — c06e8f2 docs(task): pr-check 작업 카드 — 최종 훅 설계 반영
+docs/hslee/pr-check/pr-check-context.md | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)

@@ -16,6 +16,7 @@ init·sync가 설치하는 git pre-push 훅과 ship 준비 보고가 같은 명�
 - [x] 7. 검증 — `npm run test`·`npm run docs:check` PASS, 임시 저장소 실측(차단·`--no-verify`·기본 브랜치 push 통과) artifact 기록
 - [x] 8. 리뷰 — codex(`review --scope worktree`, 미커밋 상태) + 새 컨텍스트 리뷰, 결과 artifact `## Reviews`
 - [x] 9. 커밋·PR — #125
+- [x] spec/plan 다이어그램 작성 → docs/hslee/pr-check/pr-check-diagram.html
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
