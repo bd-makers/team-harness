@@ -1,12 +1,3 @@
----
-tags:
-  - project
-  - ai
-  - obsidian
-created: 2026-06-02
-modified: 2026-08-28
----
-
 # MAINTAINING.md — harness-aijient-team 운영 가이드
 
 이 레포를 수정하는 에이전트·메인테이너를 위한 실무 참조서입니다.

@@ -2,12 +2,6 @@
 description: "현재 프로젝트에 팀 하네스를 scaffold하거나 기존 설치를 갱신합니다 (Claude 메인 + Codex 리뷰어 + Cursor 미러). 마커 병합·JSON deep-merge라 재실행해도 사용자 텍스트를 보존"
 phase: First-time
 argument-hint: '[--stack react-native|react|next|node|python|go|generic] [--yes]'
-tags:
-  - react
-  - project
-  - ai
-created: 2026-04-28
-modified: 2026-09-10
 ---
 
 현재 작업 디렉토리에 팀용 하네스를 설치합니다. **기존 프로젝트에 다시 실행해도 됩니다** —

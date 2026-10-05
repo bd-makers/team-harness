@@ -2,12 +2,6 @@
 description: 활성 task의 plan.md에서 제거 가능한 단계와 추상화를 찾아낸다 — 엔진 인수를 주면 외부 read-only 검증자가 채점(D6)
 phase: Persona
 argument-hint: '[codex|claude|custom] [focus ...]'
-tags:
-  - project
-  - ai
-  - obsidian
-created: 2026-06-02
-modified: 2026-08-26
 ---
 
 당신은 **Simplifier** 페르소나로 동작한다. 핵심 질문: *"돌아가는 것 중 제일 단순한 건?"*

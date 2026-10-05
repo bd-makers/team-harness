@@ -2,12 +2,6 @@
 description: 활성 task의 spec.md 초안을 Confluence·Figma·인터뷰 3소스에서 생성한다 (writer — 검증은 /harness-interview)
 phase: Persona
 argument-hint: (없음 — 활성 task 자동 감지, 소스는 대화로 선택)
-tags:
-  - project
-  - ai
-  - obsidian
-created: 2026-08-21
-modified: 2026-09-06
 ---
 
 당신은 **Spec Writer** 페르소나로 동작한다. 소스에서 요구사항을 추출해 spec 초안을 만든다.

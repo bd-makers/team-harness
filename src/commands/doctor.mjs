@@ -467,9 +467,10 @@ export async function checkCodexHookTrust(targetDir, env = process.env) {
 // upstream D-log sections (DECISION_HEADINGS) — and init cannot deliver them without
 // clobbering the team's own log. Warn-level: a missing file is fixable by init (scaffold
 // copies it); missing sections need a manual merge from the plugin's
-// templates/docs/decisions.md.
+// templates/docs/decisions.md. Only the team-operating decisions ship (D11): D7 onward are
+// plugin decisions kept in the plugin repo's own log, so they are not checked here.
 export const DECISION_LOG_PATH = 'docs/decisions.md';
-export const DECISION_HEADINGS = ['## D2', '## D4', '## D5', '## D6', '## D7', '## D8', '## D9', '## D10'];
+export const DECISION_HEADINGS = ['## D2', '## D4', '## D5', '## D6'];
 // Derived so the absence message cannot drift from the list it describes.
 const DECISION_IDS = DECISION_HEADINGS.map(h => h.replace(/^## /, '')).join('/');
 
@@ -527,7 +528,7 @@ export async function checkDecisionLog(targetDir, root) {
   const missing = DECISION_HEADINGS.filter(h => !new RegExp(`^${h}\\b`, 'm').test(prose));
   if (missing.length === 0) return null;
   const source = root ? join(root, 'templates/docs/decisions.md') : '플러그인 templates/docs/decisions.md';
-  return `${DECISION_LOG_PATH}에 ${missing.join(', ')} 절 없음 — 팀 결정 로그는 설치 후 팀이 저작하는 파일이라 init·migrate 어느 쪽도 덮어쓰지 않는다(D8: docs/ seed는 refresh 비목표). \`${source}\` 에서 해당 절을 복사해 ${DECISION_LOG_PATH} 끝에 덧붙여라 — 이미 있는 절은 건드리지 말 것`;
+  return `${DECISION_LOG_PATH}에 ${missing.join(', ')} 절 없음 — 팀 결정 로그는 설치 후 팀이 저작하는 파일이라 init·migrate 어느 쪽도 덮어쓰지 않는다(플러그인 저장소 decisions D8: docs/ seed는 refresh 비목표). \`${source}\` 에서 해당 절을 복사해 ${DECISION_LOG_PATH} 끝에 덧붙여라 — 이미 있는 절은 건드리지 말 것`;
 }
 
 // user handoff 는 추적하지 않는 워크트리 로컬 파일이다(USER_HANDOFF_IGNORE). 두 전환 누락을 잡는다 —

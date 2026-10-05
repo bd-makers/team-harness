@@ -1,12 +1,6 @@
 ---
 description: 하네스 무결성 점검 (파일, hooks, CLI PATH)
 phase: Validation
-tags:
-  - project
-  - ai
-  - obsidian
-created: 2026-04-28
-modified: 2026-09-10
 ---
 
 ```bash

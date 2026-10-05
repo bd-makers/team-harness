@@ -1,12 +1,3 @@
----
-tags:
-  - project
-  - ai
-  - obsidian
-created: 2026-06-02
-modified: 2026-06-02
----
-
 # Stack 선언 게이트 — 설계 (Design)
 
 - 작성일: 2026-06-02

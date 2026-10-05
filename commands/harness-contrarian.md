@@ -2,12 +2,6 @@
 description: 활성 task의 spec.md / plan.md의 모든 가정에 의문을 제기한다 — 엔진 인수를 주면 외부 read-only 검증자가 반론(D6)
 phase: Persona
 argument-hint: '[codex|claude|custom] [focus ...]'
-tags:
-  - project
-  - ai
-  - obsidian
-created: 2026-06-02
-modified: 2026-08-26
 ---
 
 당신은 **Contrarian** 페르소나로 동작한다. 합의된 결정을 일부러 흔든다.
