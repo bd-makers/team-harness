@@ -5,11 +5,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { runGate } from '../src/commands/gate.mjs';
 
-async function fixture(config) {
+// gates는 팀이 커밋하는 .harness/gates.json 에 산다(config.json은 사용자별 gitignore).
+async function fixture(gates) {
   const dir = await mkdtemp(join(tmpdir(), 'harness-gate-'));
   await mkdir(join(dir, '.harness'));
-  if (config !== undefined) {
-    await writeFile(join(dir, '.harness/config.json'), typeof config === 'string' ? config : JSON.stringify(config));
+  if (gates !== undefined) {
+    await writeFile(join(dir, '.harness/gates.json'), typeof gates === 'string' ? gates : JSON.stringify(gates));
   }
   return dir;
 }
@@ -32,7 +33,7 @@ const gate = (dir, args, flags = {}) => runGate({ targetDir: dir, flags, taskArg
 const exists = p => access(p).then(() => true, () => false);
 
 test('gate commit: 모든 명령이 통과하면 exit 0과 통과 문구', async () => {
-  const dir = await fixture({ gates: { commit: ['node -e ""'] } });
+  const dir = await fixture({ commit: ['node -e ""'] });
   try {
     const r = await capture(() => gate(dir, ['commit']));
     assert.equal(r.exitCode, undefined, r.errs);
@@ -42,7 +43,7 @@ test('gate commit: 모든 명령이 통과하면 exit 0과 통과 문구', async
 });
 
 test('gate commit: 첫 실패에서 차단하고 다음 명령은 실행하지 않는다', async () => {
-  const dir = await fixture({ gates: { commit: ['node -e "process.exit(3)"', 'node -e "require(\'fs\').writeFileSync(\'ran\', \'\')"'] } });
+  const dir = await fixture({ commit: ['node -e "process.exit(3)"', 'node -e "require(\'fs\').writeFileSync(\'ran\', \'\')"'] });
   try {
     const r = await capture(() => gate(dir, ['commit']));
     assert.equal(r.exitCode, 2);
@@ -52,7 +53,7 @@ test('gate commit: 첫 실패에서 차단하고 다음 명령은 실행하지 �
 });
 
 test('gate commit: 명령을 찾을 수 없으면(127) 설정 오류로 차단한다', async () => {
-  const dir = await fixture({ gates: { commit: ['definitely-not-a-cmd-xyz'] } });
+  const dir = await fixture({ commit: ['definitely-not-a-cmd-xyz'] });
   try {
     const r = await capture(() => gate(dir, ['commit']));
     assert.equal(r.exitCode, 2);
@@ -61,23 +62,24 @@ test('gate commit: 명령을 찾을 수 없으면(127) 설정 오류로 차단�
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('gate commit: gates가 없으면 통과시키고 미설정을 알린다', async () => {
-  for (const config of [undefined, { user: 'x' }]) {
-    const dir = await fixture(config);
-    try {
-      const r = await capture(() => gate(dir, ['commit']));
-      assert.equal(r.exitCode, undefined, r.errs);
-      assert.match(r.errs, /커밋 게이트 미설정/);
-    } finally { await rm(dir, { recursive: true, force: true }); }
-  }
+test('gate commit: gates.json이 없으면 통과시키고 화면에 보이는 systemMessage로 미설정을 알린다', async () => {
+  const dir = await fixture();
+  try {
+    const r = await capture(() => gate(dir, ['commit']));
+    assert.equal(r.exitCode, undefined, r.errs);
+    // 훅이 exit 0일 때 stderr는 사용자에게 보이지 않는다 — stdout JSON systemMessage가 보이는 채널이다.
+    const msg = JSON.parse(r.logs.join('\n'));
+    assert.match(msg.systemMessage, /커밋 게이트 미설정/);
+    assert.match(msg.systemMessage, /gate suggest/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('gate commit: gates.commit 타입이 틀리거나 config가 깨지면 설정 오류로 차단한다', async () => {
-  for (const config of [{ gates: { commit: 'npm test' } }, { gates: { commit: [''] } }, { gates: { commit: [1] } }, '{oops']) {
-    const dir = await fixture(config);
+test('gate commit: gates.json 형태가 틀리거나 깨지면 미설정이 아니라 설정 오류로 차단한다', async () => {
+  for (const gates of [{ commit: 'npm test' }, { commit: [''] }, { commit: [1] }, {}, { format: {} }, '["npm test"]', 'null', '{oops']) {
+    const dir = await fixture(gates);
     try {
       const r = await capture(() => gate(dir, ['commit']));
-      assert.equal(r.exitCode, 2, JSON.stringify(config));
+      assert.equal(r.exitCode, 2, JSON.stringify(gates));
       assert.match(r.errs, /설정 오류/);
       assert.doesNotMatch(r.errs, /\n\s+at /, '스택 트레이스를 노출하지 않는다');
     } finally { await rm(dir, { recursive: true, force: true }); }
@@ -87,8 +89,8 @@ test('gate commit: gates.commit 타입이 틀리거나 config가 깨지면 설�
 // 로그 명령: 받은 인수 하나를 한 줄로 append — 인수가 쪼개지면 줄이 늘어난다.
 const LOGGER = 'node -e "require(\'fs\').appendFileSync(\'fmt.log\', JSON.stringify(process.argv.slice(1)) + \'\\n\')"';
 
-test('gate format: glob이 맞는 파일에만 명령 끝에 경로를 인수 하나로 붙인다 (공백 경로 포함)', async () => {
-  const dir = await fixture({ format: { '*.txt': [LOGGER] } });
+test('gate format: glob이 맞는 파일에만 명령 끝에 경로를 인수 하나로 붙인다 (공백·따옴표 경로 포함)', async () => {
+  const dir = await fixture({ commit: [], format: { '*.txt': [LOGGER] } });
   try {
     const spaced = join(dir, 'my "odd" file.txt');
     await writeFile(spaced, 'x');
@@ -101,7 +103,7 @@ test('gate format: glob이 맞는 파일에만 명령 끝에 경로를 인수 �
 });
 
 test('gate format: 슬래시가 있는 glob은 프로젝트 상대 경로로 맞춘다', async () => {
-  const dir = await fixture({ format: { 'src/**/*.txt': [LOGGER] } });
+  const dir = await fixture({ commit: [], format: { 'src/**/*.txt': [LOGGER] } });
   try {
     await mkdir(join(dir, 'src/a'), { recursive: true });
     await writeFile(join(dir, 'src/a/x.txt'), 'x');
@@ -112,8 +114,8 @@ test('gate format: 슬래시가 있는 glob은 프로젝트 상대 경로로 맞
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('gate format: 프로젝트 밖 파일·없는 파일·깨진 config는 조용히 끝난다', async () => {
-  const dir = await fixture({ format: { '*.txt': [LOGGER] } });
+test('gate format: 프로젝트 밖 파일·없는 파일·깨진 gates.json은 조용히 끝난다', async () => {
+  const dir = await fixture({ commit: [], format: { '*.txt': [LOGGER] } });
   const outside = await mkdtemp(join(tmpdir(), 'harness-gate-out-'));
   try {
     await writeFile(join(outside, 'b.txt'), 'x');
@@ -124,7 +126,7 @@ test('gate format: 프로젝트 밖 파일·없는 파일·깨진 config는 조�
     assert.equal(r.exitCode, undefined);
     assert.equal(await exists(join(dir, 'fmt.log')), false);
 
-    await writeFile(join(dir, '.harness/config.json'), '{oops');
+    await writeFile(join(dir, '.harness/gates.json'), '{oops');
     await writeFile(join(dir, 'c.txt'), 'x');
     const broken = await capture(() => gate(dir, ['format', join(dir, 'c.txt')]));
     assert.equal(broken.exitCode, undefined);
@@ -146,38 +148,39 @@ test('gate: 알 수 없는 동사·인수 개수는 usage와 exit 2', async () =
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('gate suggest --yes: 현재 감지로 gates·format·fingerprint를 기록하고 다른 키는 보존한다', async () => {
-  const dir = await fixture({ user: 'hslee' });
+test('gate suggest --yes: 현재 감지 전체(confirm 항목 포함)를 gates.json에 기록한다', async () => {
+  const dir = await fixture();
+  try {
+    await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'x', scripts: { lint: 'eslint .', test: 'node --test' } }));
+    const r = await capture(() => gate(dir, ['suggest'], { yes: true }));
+    assert.equal(r.exitCode, undefined, r.errs);
+    assert.match(r.logs.join('\n'), /commit: npm run lint/);
+    const gates = JSON.parse(await readFile(join(dir, '.harness/gates.json'), 'utf8'));
+    assert.deepEqual(gates.commit, ['npm run lint', 'npm run test']);
+    assert.deepEqual(gates.format, {});
+    assert.equal(gates.fingerprint.preset, 'node');
+    assert.equal(await exists(join(dir, '.harness/config.json')), false, '개인 config는 건드리지 않는다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('gate suggest --yes: 기존 gates.json이 있으면 현재값을 알리고 덮어쓴다', async () => {
+  const dir = await fixture({ commit: ['custom'], format: { '*.md': ['x'] } });
   try {
     await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'x', scripts: { test: 'node --test' } }));
     const r = await capture(() => gate(dir, ['suggest'], { yes: true }));
-    assert.equal(r.exitCode, undefined, r.errs);
-    assert.match(r.logs.join('\n'), /commit: npm run test/);
-    const cfg = JSON.parse(await readFile(join(dir, '.harness/config.json'), 'utf8'));
-    assert.equal(cfg.user, 'hslee');
-    assert.deepEqual(cfg.gates, { commit: ['npm run test'] });
-    assert.deepEqual(cfg.format, {});
-    assert.equal(cfg.fingerprint.preset, 'node');
+    assert.match(r.logs.join('\n'), /현재 commit: \["custom"\]/);
+    const gates = JSON.parse(await readFile(join(dir, '.harness/gates.json'), 'utf8'));
+    assert.deepEqual(gates.commit, ['npm run test']);
+    assert.deepEqual(gates.format, {});
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('gate suggest --yes: 기존 gates가 있으면 알리고 덮어쓴다', async () => {
-  const dir = await fixture({ gates: { commit: ['custom'] } });
-  try {
-    await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'x', scripts: { lint: 'eslint .' } }));
-    const r = await capture(() => gate(dir, ['suggest'], { yes: true }));
-    assert.match(r.logs.join('\n'), /현재 gates\.commit: \["custom"\]/);
-    const cfg = JSON.parse(await readFile(join(dir, '.harness/config.json'), 'utf8'));
-    assert.deepEqual(cfg.gates, { commit: ['npm run lint'] });
-  } finally { await rm(dir, { recursive: true, force: true }); }
-});
-
-test('gate suggest: malformed config면 exit 1이고 파일을 건드리지 않는다', async () => {
+test('gate suggest: gates.json이 깨졌으면 exit 1이고 파일을 건드리지 않는다', async () => {
   const dir = await fixture('{oops');
   try {
     const r = await capture(() => gate(dir, ['suggest'], { yes: true }));
     assert.equal(r.exitCode, 1);
     assert.match(r.errs, /malformed/);
-    assert.equal(await readFile(join(dir, '.harness/config.json'), 'utf8'), '{oops');
+    assert.equal(await readFile(join(dir, '.harness/gates.json'), 'utf8'), '{oops');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

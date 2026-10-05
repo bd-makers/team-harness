@@ -9,8 +9,7 @@ import { loadRenderState } from '../render-state.mjs';
 import { extractSections, deepMergeJson, simpleDiff } from '../merge.mjs';
 import { render } from '../render.mjs';
 import { confirm } from '../prompt.mjs';
-import { readConfigStrict } from '../user-config.mjs';
-import { applyProposal, buildProposal, describeProposal } from '../presets.mjs';
+import { applyProposal, buildProposal, describeProposal, readGates, GATES_REL } from '../presets.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
 import {
   taskArtifactTemplate, parseReviewMarkers, evidenceWindowStart, isVerifyKind,
@@ -1006,22 +1005,23 @@ export async function migrateUserHandoffUntrack(ctx) {
   return ignoreAdded || tracked.length > 0;
 }
 
-// The current pre-commit-check.sh only runs what config declares, so an install that has it
-// but no `gates` silently lost the typecheck/test gate it used to have — propose one to close
-// that gap. A prior-stock or customized hook keeps its own logic and is left alone (D8).
+// The current pre-commit-check.sh only runs what .harness/gates.json declares, so an install that
+// has it but no gates file lost the typecheck/test gate it used to have — propose one to close
+// that gap. A prior-stock or customized hook keeps its own logic and is left alone (D8). Under
+// --yes only what the old hook ran is written; `confirm` entries are shown as further proposals.
 export async function migrateGates(ctx) {
   const rel = '.claude/hooks/pre-commit-check.sh';
   const installed = await readTextSafe(join(ctx.targetDir, rel));
   const template = await readTextSafe(join(ctx.root, 'templates', rel));
   if (installed === null || installed !== template) return false;
-  let config;
-  try { config = await readConfigStrict(ctx.targetDir); }
+  let existing;
+  try { existing = await readGates(ctx.targetDir); }
   catch (e) { console.log(`  gates: ${e.message} — 건너뜀`); return false; }
-  if (config.gates !== undefined) return false;
+  if (existing !== null) return false;
   const { stack: pin } = await loadRenderState(ctx.targetDir);
-  const proposal = await buildProposal(ctx.targetDir, await resolveStack(ctx.targetDir, pin));
-  console.log(`\n커밋 게이트가 설정되지 않았습니다 — 새 pre-commit-check.sh 는 config 의 목록만 실행합니다.\n${describeProposal(proposal)}`);
-  const ok = ctx.flags.yes || await confirm('이 제안을 .harness/config.json 에 기록할까요?', { defaultYes: true });
+  const proposal = await buildProposal(ctx.targetDir, await resolveStack(ctx.targetDir, pin), { unattended: Boolean(ctx.flags.yes) });
+  console.log(`\n커밋 게이트가 설정되지 않았습니다 — 새 pre-commit-check.sh 는 ${GATES_REL} 의 목록만 실행합니다.\n${describeProposal(proposal)}`);
+  const ok = ctx.flags.yes || await confirm(`이 제안을 ${GATES_REL} 에 기록할까요? (팀과 공유하려면 커밋)`, { defaultYes: true });
   if (!ok) { console.log('Skipped gates.'); return false; }
   await applyProposal(ctx.targetDir, proposal);
   return true;

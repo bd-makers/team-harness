@@ -20,14 +20,14 @@ sequenceDiagram
         Claude->>Tool: 파일 수정 완료
         Tool-->>Claude: 완료
         Claude->>Hook: auto-format.sh (파일 경로 전달)
-        Hook->>Hook: harness-team gate format (config format glob)
+        Hook->>Hook: harness-team gate format (gates.json format glob)
         Hook-->>Claude: exit 0
     end
 
     rect rgb(40, 26, 26)
         Note over Claude,Tool: PreToolUse — Bash git commit 실행 전
         Claude->>Hook: pre-commit-check.sh (명령어 전달)
-        Hook->>Hook: harness-team gate commit (config gates.commit)
+        Hook->>Hook: harness-team gate commit (gates.json commit)
         alt 실패
             Hook-->>Claude: exit 2 (커밋 차단)
         else 통과

@@ -10,7 +10,7 @@
   },
   "commit": [
     { "when": { "file": "tsconfig.json" }, "run": "{exec} tsc --noEmit" },
-    { "when": { "script": "lint" }, "run": "{run} lint" },
+    { "when": { "script": "lint" }, "run": "{run} lint", "confirm": true },
     { "when": { "script": "test" }, "run": "{run} test" }
   ],
   "format": [

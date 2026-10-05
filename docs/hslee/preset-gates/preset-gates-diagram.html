@@ -65,7 +65,7 @@
     <div class="scroll">
     <svg viewBox="0 0 960 624" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="preset-gates-title preset-gates-desc">
       <title id="preset-gates-title">preset-gates 구성요소 관계</title>
-      <desc id="preset-gates-desc">프리셋 데이터로 만든 제안을 init·migrate·gate suggest가 확인 후 .harness/config.json에 기록하고, 커밋·포맷 훅은 harness-team gate CLI를 통해 그 목록만 실행하며, doctor는 지문이 바뀌면 재제안을 안내한다.</desc>
+      <desc id="preset-gates-desc">프리셋 데이터로 만든 제안을 init·migrate·gate suggest가 확인 후 팀이 커밋하는 .harness/gates.json에 기록하고, 커밋·포맷 훅은 harness-team gate CLI를 통해 그 목록만 실행하며, doctor는 지문이 바뀌면 재제안을 안내한다.</desc>
       <defs>
         <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
         <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
@@ -150,8 +150,8 @@
       <rect x="724" y="96" width="200" height="64" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1.2"/>
       <rect x="732" y="102" width="36" height="12" rx="2" fill="transparent" stroke="rgba(235,108,54,0.50)" stroke-width="0.8"/>
       <text x="750" y="111" fill="rgba(235,108,54,0.9)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">STORE</text>
-      <text x="824" y="134" fill="#2d3142" font-size="12" font-weight="600" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">.harness/config.json</text>
-      <text x="824" y="150" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">gates · format · fingerprint</text>
+      <text x="824" y="134" fill="#2d3142" font-size="12" font-weight="600" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">.harness/gates.json</text>
+      <text x="824" y="150" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">commit · format · fingerprint (커밋)</text>
 
       <!-- 5. doctor -->
       <rect x="476" y="240" width="200" height="64" rx="6" fill="#f5f5f5"/>
@@ -224,15 +224,15 @@
         <div class="card-header"><span class="card-dot ink"></span><h3>실패 의미</h3></div>
         <ul>
           <li>명령 실패 → 차단(exit 2), 127 → 설정 오류로 차단</li>
-          <li><code>gates</code> 없음 → 통과 + 미설정 안내</li>
-          <li>CLI 없음 → commit은 경고 후 통과, format은 조용히 통과</li>
+          <li><code>gates.json</code> 없음 → 통과 + 화면 안내(systemMessage), 형태 오류 → 차단</li>
+          <li>CLI 없음 → commit은 경고 후 통과, 구버전·크래시 → 차단, format은 조용히 통과</li>
         </ul>
       </div>
       <div class="card">
         <p class="eyebrow">덮지 않는 것 (D8)</p>
         <div class="card-header"><span class="card-dot muted"></span><h3>확정값 보존</h3></div>
         <ul>
-          <li>이미 있는 <code>gates</code> — init·migrate는 건너뜀</li>
+          <li>이미 있는 <code>gates.json</code> — init·migrate는 건너뜀, <code>--yes</code>는 confirm 항목 제외</li>
           <li>커스터마이즈 훅 — migrate가 제안하지 않음</li>
           <li>덮어쓰기는 <code>gate suggest</code> 확인 후뿐</li>
         </ul>

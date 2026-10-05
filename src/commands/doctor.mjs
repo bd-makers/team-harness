@@ -17,8 +17,7 @@ import { taskLabel, taskFilePath, USER_HANDOFF_IGNORE } from '../task-paths.mjs'
 import { checkRuleProvenance } from './rules.mjs';
 import { findStaleTemplates, isKnownStockTemplate } from './migrate.mjs';
 import { evaluateObserveVerdict, observeLoopbackNudge, tripWireDetail } from './observe.mjs';
-import { readConfigStrict } from '../user-config.mjs';
-import { buildProposal, fingerprintDrift } from '../presets.mjs';
+import { buildProposal, fingerprintDrift, readGates } from '../presets.mjs';
 
 const pexec = promisify(execFile);
 
@@ -95,7 +94,7 @@ export async function checkHookCli(env = process.env) {
     // that is slow for one is slow for the other. A shorter budget here would report
     // "hooks can't run" for what is only a slow spawn.
     const { stdout } = await pexec('harness-team', ['--help'], { timeout: 5000, env });
-    return ['session-context', 'handoff', 'boundary'].every(command =>
+    return ['session-context', 'handoff', 'boundary', 'gate'].every(command =>
       new RegExp(`^\\s*${command}(?:\\s|$)`, 'm').test(stdout));
   } catch {
     return false;
@@ -322,12 +321,12 @@ export async function detectLegacyStructure(targetDir) {
 // Confirmed gates are never rewritten here (D8) — only a change that would alter the preset
 // proposal (a new lint script, a lockfile swap) is reported, with `gate suggest` as the remedy.
 export async function checkGateFingerprint(targetDir) {
-  let config;
-  try { config = await readConfigStrict(targetDir); } catch { return null; }
-  if (config.gates === undefined || !config.fingerprint) return null;
+  let gates;
+  try { gates = await readGates(targetDir); } catch { return null; }
+  if (!gates?.fingerprint) return null;
   const { stack: pin } = await loadRenderState(targetDir);
   const now = (await buildProposal(targetDir, await resolveStack(targetDir, pin))).fingerprint;
-  const drift = fingerprintDrift(config.fingerprint, now);
+  const drift = fingerprintDrift(gates.fingerprint, now);
   return drift ? `커밋 게이트 제안의 근거가 바뀌었습니다 (${drift}) — 갱신하려면: harness-team gate suggest` : null;
 }
 

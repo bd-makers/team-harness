@@ -30,9 +30,10 @@ function initYes(dir) {
   });
 }
 
+const gatesOf = async dir => JSON.parse(await readFile(join(dir, '.harness/gates.json'), 'utf8'));
 const config = async dir => JSON.parse(await readFile(join(dir, '.harness/config.json'), 'utf8'));
 
-test('init --yes: 스택 프리셋 제안을 보여 주고 gates·format·fingerprint를 기록한다', async () => {
+test('init --yes: 확인 필요 항목(lint)은 추가 제안으로 돌리고 나머지를 팀 파일 gates.json에 기록한다', async () => {
   const dir = await project({
     'package.json': { name: 'x', scripts: { lint: 'eslint .', test: 'node --test' } },
     'tsconfig.json': '{}',
@@ -41,24 +42,28 @@ test('init --yes: 스택 프리셋 제안을 보여 주고 gates·format·finger
     const r = await initYes(dir);
     assert.equal(r.code, 0, r.out);
     assert.match(r.out, /커밋 게이트 제안 \(프리셋: node/);
+    assert.match(r.out, /추가 제안[\s\S]*npm run lint/);
+    const gates = await gatesOf(dir);
+    assert.deepEqual(gates.commit, ['npx tsc --noEmit', 'npm run test']);
+    assert.deepEqual(gates.format, {});
+    assert.equal(gates.fingerprint.preset, 'node');
     const cfg = await config(dir);
-    assert.deepEqual(cfg.gates, { commit: ['npx tsc --noEmit', 'npm run lint', 'npm run test'] });
-    assert.deepEqual(cfg.format, {});
-    assert.equal(cfg.fingerprint.preset, 'node');
-    assert.ok(cfg.user, 'username 저장과 함께 기록된다');
+    assert.ok(cfg.user, 'username은 개인 config에');
+    assert.equal(cfg.gates, undefined, 'gates는 개인 config에 쓰지 않는다');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('init --yes: 이미 gates가 있으면 제안하지 않고 그대로 둔다', async () => {
+test('init --yes: 이미 gates.json이 있으면 제안하지 않고 그대로 둔다', async () => {
   const dir = await project({
     'package.json': { name: 'x', scripts: { test: 'node --test' } },
-    '.harness/config.json': { user: 'hslee', gates: { commit: ['custom'] } },
+    '.harness/config.json': { user: 'hslee' },
+    '.harness/gates.json': { commit: ['custom'] },
   });
   try {
     const r = await initYes(dir);
     assert.equal(r.code, 0, r.out);
     assert.doesNotMatch(r.out, /커밋 게이트 제안/);
-    assert.deepEqual((await config(dir)).gates, { commit: ['custom'] });
+    assert.deepEqual(await gatesOf(dir), { commit: ['custom'] });
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
@@ -67,6 +72,6 @@ test('init --yes: 감지할 스택이 없으면 빈 목록으로 기록한다', 
   try {
     const r = await initYes(dir);
     assert.equal(r.code, 0, r.out);
-    assert.deepEqual((await config(dir)).gates, { commit: [] });
+    assert.deepEqual((await gatesOf(dir)).commit, []);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

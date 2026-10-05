@@ -298,7 +298,7 @@ const FAILING = ['node -e "process.exit(1)"'];
 async function gateProject(commit) {
   const dir = await mkdtemp(join(tmpdir(), 'harness-precommit-'));
   await mkdir(join(dir, '.harness'));
-  if (commit !== undefined) await writeFile(join(dir, '.harness/config.json'), JSON.stringify({ gates: { commit } }));
+  if (commit !== undefined) await writeFile(join(dir, '.harness/gates.json'), JSON.stringify({ commit }));
   return dir;
 }
 
@@ -375,12 +375,13 @@ test('pre-commit-check: jq 없이도 게이트가 돌고 저정밀 모드를 알
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('pre-commit-check: gates 미설정이면 통과시키고 미설정을 알린다', async () => {
+// exit 0 훅의 stderr는 사용자에게 보이지 않는다 — 통과 경로의 경고는 stdout JSON systemMessage로 낸다.
+test('pre-commit-check: gates.json이 없으면 통과시키고 systemMessage로 미설정을 알린다', async () => {
   const dir = await gateProject(undefined);
   try {
     const r = await runHook('pre-commit-check.sh', bash('git commit -m "wip"'), { mode: 'nojq', cwd: dir });
     assert.equal(r.code, 0, `stderr: ${r.stderr}`);
-    assert.match(r.stderr, /커밋 게이트 미설정/);
+    assert.match(JSON.parse(r.stdout).systemMessage, /커밋 게이트 미설정/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
@@ -390,7 +391,21 @@ test('pre-commit-check: CLI를 찾지 못하면 경고하고 통과시킨다', a
     const r = await runHook('pre-commit-check.sh', bash('git commit -m "wip"'),
       { mode: 'nojq', cwd: dir, env: { HARNESS_TEAM_BIN: join(dir, 'no-such-cli') } });
     assert.equal(r.code, 0, `stderr: ${r.stderr}`);
-    assert.match(r.stderr, /harness-team CLI를 찾지 못해 커밋 게이트를 건너뜁니다/);
+    assert.match(JSON.parse(r.stdout).systemMessage, /harness-team CLI를 찾지 못해 커밋 게이트를 건너뜁니다/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// exec로 넘기면 CLI의 exit 1(구버전 CLI의 unknown command·크래시)이 그대로 나가 커밋이 통과했다(codex P2).
+test('pre-commit-check: CLI가 0·2 외의 코드로 끝나면 커밋을 막는다', async () => {
+  const dir = await gateProject(FAILING);
+  try {
+    const stub = join(dir, 'old-cli');
+    await writeFile(stub, '#!/bin/sh\necho "unknown command: gate" >&2\nexit 1\n');
+    await chmod(stub, 0o755);
+    const r = await runHook('pre-commit-check.sh', bash('git commit -m "wip"'),
+      { mode: 'nojq', cwd: dir, env: { HARNESS_TEAM_BIN: stub } });
+    assert.equal(r.code, 2, `stderr: ${r.stderr}`);
+    assert.match(r.stderr, /비정상 종료.*exit 1/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
@@ -400,7 +415,7 @@ test('pre-commit-check: CLI를 찾지 못하면 경고하고 통과시킨다', a
 async function formatProject() {
   const dir = await mkdtemp(join(tmpdir(), 'harness-autofmt-'));
   await mkdir(join(dir, '.harness'));
-  await writeFile(join(dir, '.harness/config.json'), JSON.stringify({ format: { '*.ts': ['npx prettier --write'] } }));
+  await writeFile(join(dir, '.harness/gates.json'), JSON.stringify({ commit: [], format: { '*.ts': ['npx prettier --write'] } }));
   return dir;
 }
 for (const mode of MODES) {

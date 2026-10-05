@@ -437,6 +437,9 @@ if (gateWarning) warnActions.push('harness-team gate suggest');
 - 2026-10-05 `gate format <file>` 동사 추가 — auto-format 래퍼의 glob 매칭을 JS로(spec R5 갱신).
 - 2026-10-05 지문 = `{preset, pm, signals}`(참이 된 프리셋 조건) — 제안에 무관한 변화는 무시(spec Ontology 갱신).
 - 2026-10-05 node format 제안은 `prettier` 의존성이 있을 때만(spec R8 갱신).
+- 2026-10-05 (리뷰 C1) 확정 게이트 저장소 = 팀이 커밋하는 `.harness/gates.json` `{commit, format, fingerprint}` — `config.json`은 사용자별 gitignore(spec R2·Ontology 갱신).
+- 2026-10-05 (리뷰 I4) 프리셋 항목 `"confirm": true` = init·migrate `--yes`에서 빼고 "추가 제안"으로 출력(spec R7 갱신).
+- 2026-10-05 (리뷰 I1·I2·I3) 미설정 = 파일 없음만(`systemMessage`), 형태 오류는 설정 오류, CLI가 0·2 외 종료면 차단(spec Ontology 갱신).
 
 ## 참고
 - spec: `docs/hslee/preset-gates/preset-gates-spec.md` · 결정 근거: `docs/harness-cycle.md` §4-2·§4-2b·§4-6, `docs/decisions.md` D8·D11.

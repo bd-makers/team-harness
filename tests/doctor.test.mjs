@@ -62,13 +62,16 @@ test('checkSelfCli: 실제 bin으로 실행 → true (harness-team 출력 포함
   assert.equal(result, true);
 });
 
-test('checkHookCli: PATH의 CLI가 세 hook 명령(session-context·handoff·boundary)을 광고할 때만 통과한다', async () => {
+test('checkHookCli: PATH의 CLI가 hook 명령 넷(session-context·handoff·boundary·gate)을 광고할 때만 통과한다', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-cli-'));
   try {
     const shim = join(dir, 'harness-team');
-    await writeFile(shim, '#!/bin/sh\nif [ "$1" != "--help" ]; then exit 1; fi\nprintf "%s\\n" "harness-team" "  handoff" "  session-context" "  boundary check"\n');
+    await writeFile(shim, '#!/bin/sh\nif [ "$1" != "--help" ]; then exit 1; fi\nprintf "%s\\n" "harness-team" "  handoff" "  session-context" "  boundary check" "  gate commit"\n');
     await chmod(shim, 0o755);
     assert.equal(await checkHookCli({ PATH: dir }), true);
+    // gate를 모르는 구버전 CLI — 커밋 훅이 비정상 종료로 막히므로 doctor가 먼저 알려야 한다.
+    await writeFile(shim, '#!/bin/sh\nprintf "%s\\n" "harness-team" "  handoff" "  session-context" "  boundary check"\n');
+    assert.equal(await checkHookCli({ PATH: dir }), false);
     await writeFile(shim, '#!/bin/sh\nprintf "%s\\n" "harness-team" "  session-context"\n');
     assert.equal(await checkHookCli({ PATH: dir }), false);
     assert.equal(await checkHookCli({ PATH: join(dir, 'missing') }), false);
@@ -1251,7 +1254,8 @@ async function gatesFixture(scripts) {
   const dir = await healthyConsumerFixture();
   await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'x', scripts: { test: 'node --test' } }));
   const proposal = await buildProposal(dir, await resolveStack(dir));
-  await writeFile(join(dir, '.harness/config.json'), JSON.stringify({ user: 'u', ...proposal }));
+  const { commit, format, fingerprint } = proposal;
+  await writeFile(join(dir, '.harness/gates.json'), JSON.stringify({ commit, format, fingerprint }));
   await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'x', scripts }));
   return dir;
 }
@@ -1265,20 +1269,20 @@ test('checkGateFingerprint: 제안에 무관한 변화면 조용하다', async (
 test('checkGateFingerprint: lint 스크립트가 생기면 변화와 gate suggest 처방을 알린다', async () => {
   const dir = await gatesFixture({ test: 'node --test', lint: 'eslint .' });
   try {
-    const before = await readFile(join(dir, '.harness/config.json'), 'utf8');
+    const before = await readFile(join(dir, '.harness/gates.json'), 'utf8');
     const w = await checkGateFingerprint(dir);
     assert.match(w, /\+\{"script":"lint"\}/);
     assert.match(w, /harness-team gate suggest/);
-    assert.equal(await readFile(join(dir, '.harness/config.json'), 'utf8'), before, 'config는 건드리지 않는다');
+    assert.equal(await readFile(join(dir, '.harness/gates.json'), 'utf8'), before, 'gates.json은 건드리지 않는다');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('checkGateFingerprint: gates·지문이 없거나 config가 깨졌으면 조용하다', async () => {
+test('checkGateFingerprint: gates.json이 없거나 깨졌으면 조용하다', async () => {
   const dir = await healthyConsumerFixture();
   try {
     await writeFile(join(dir, 'package.json'), JSON.stringify({ scripts: { lint: 'x' } }));
     assert.equal(await checkGateFingerprint(dir), null);
-    await writeFile(join(dir, '.harness/config.json'), '{oops');
+    await writeFile(join(dir, '.harness/gates.json'), '{oops');
     assert.equal(await checkGateFingerprint(dir), null);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

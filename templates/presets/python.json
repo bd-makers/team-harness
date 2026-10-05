@@ -3,10 +3,10 @@
   "label": "Python",
   "match": { "stackIds": ["python"] },
   "commit": [
-    { "when": [{ "file": "ruff.toml" }, { "fileContains": ["pyproject.toml", "[tool.ruff"] }], "run": "ruff check ." },
-    { "when": [{ "file": "pytest.ini" }, { "fileContains": ["pyproject.toml", "[tool.pytest"] }], "run": "pytest" }
+    { "when": [{ "file": "ruff.toml" }, { "fileContains": ["pyproject.toml", "[tool.ruff"] }], "run": "ruff check .", "confirm": true },
+    { "when": [{ "file": "pytest.ini" }, { "fileContains": ["pyproject.toml", "[tool.pytest"] }], "run": "pytest", "confirm": true }
   ],
   "format": [
-    { "when": [{ "file": "ruff.toml" }, { "fileContains": ["pyproject.toml", "[tool.ruff"] }], "glob": "*.py", "run": ["ruff format"] }
+    { "when": [{ "file": "ruff.toml" }, { "fileContains": ["pyproject.toml", "[tool.ruff"] }], "glob": "*.py", "run": ["ruff format"], "confirm": true }
   ]
 }

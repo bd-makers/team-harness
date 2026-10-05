@@ -78,3 +78,8 @@ CHANGELOG.md                                    |  8 ++++++++
  docs/hslee/preset-gates/preset-gates-handoff.md |  6 ++++++
  src/commands/task.mjs                           |  2 +-
  6 files changed, 33 insertions(+), 21 deletions(-)
+
+## 2026-10-05T12:27:53.228Z — b253f34 docs(task): preset-gates 검증·소비자 실측 기록
+docs/hslee/preset-gates/preset-gates-artifact.md | 13 +++++++++++++
+ docs/hslee/preset-gates/preset-gates-handoff.md  |  9 +++++++++
+ 2 files changed, 22 insertions(+)
