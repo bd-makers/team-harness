@@ -12,7 +12,7 @@
 - [x] `docs/harness-cycle.md` 정식화 + 구현 순서
 - [x] 검증: `npm run test` · `npm run docs:check`
 - [x] 외부 리뷰(R3) 기록 — codex PASS, P3 1건 반영
-- [ ] 커밋 · PR
+- [x] 커밋 · PR (#121)
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

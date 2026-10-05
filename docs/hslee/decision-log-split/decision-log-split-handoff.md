@@ -21,3 +21,11 @@ AGENTS.md                                          |   1 -
  tests/agent-files.test.mjs                         |  23 +-
  tests/doctor.test.mjs                              |  47 ++--
  17 files changed, 481 insertions(+), 169 deletions(-)
+
+## 2026-10-05T09:05:51.463Z — 5481e4c fix(doctor): 결정 로그 경고의 D8 참조를 플러그인 저장소로 명시한다 (codex P3)
+.../decision-log-split-artifact.md                 | 23 ++++++++++++++++++++++
+ .../decision-log-split-handoff.md                  | 20 +++++++++++++++++++
+ .../decision-log-split-meta.json                   | 12 ++++++++++-
+ .../decision-log-split/decision-log-split-plan.md  |  2 +-
+ src/commands/doctor.mjs                            |  2 +-
+ 5 files changed, 56 insertions(+), 3 deletions(-)
