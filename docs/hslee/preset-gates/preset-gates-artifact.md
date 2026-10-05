@@ -15,9 +15,9 @@
   | job-scraper | python · pip | 커스터마이즈 → migrate 무변경 | `ruff check .` · `pytest`, format `*.py → ruff format` |
   | heliosent-profile | next · bun | 커스터마이즈(bun.lock 감지 추가본) → migrate 무변경 | `bunx tsc --noEmit` · `bun run lint` · `bun run test` |
 
-  **주의 — deep-math**: `lint` 스크립트는 있으나 eslint 미설치(#119 실측 exit 127). `migrate --yes`로 제안을 그대로 받으면
-  `npm run lint`가 127 → "설정 오류"로 **모든 Claude 커밋이 막힌다**. 대화형 migrate는 제안을 먼저 보여 주므로 거절·수정할 수 있다.
-  spec 설계상 기대 동작(127 = 설정 오류)이지만, `--yes`가 "이전 typecheck·test 동작 유지"보다 넓다(lint 추가)는 점은 R7 문장과 어긋난다 — 리뷰에서 판정.
+  **deep-math 주의 → 해소**: `lint` 스크립트는 있으나 eslint 미설치(#119 실측 exit 127). 첫 구현에서는 `migrate --yes`가 `npm run lint`까지
+  기록해 모든 Claude 커밋이 "설정 오류"로 막힐 상태였다. 리뷰 I4 반영 후 `--yes`는 프리셋 `confirm` 항목(lint)을 빼고 `tsc`·`test`만 기록하며
+  lint는 "추가 제안"으로만 출력한다(이후 doctor 지문 경고가 `gate suggest`로 안내). 대화형은 전체를 보여 주고 확인받는다.
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
@@ -42,5 +42,21 @@ D11 언어 분기 잔존과 공백·프로젝트 밖 경로 처리에서는 추�
 ```
 
 <!-- harness:review kind=codex scope=diff tip=b253f34575badbc1bddc684868c2a4cd5b8a0a8a at=2026-10-05T12:30:44.454Z -->
+
+### 2026-10-05 — 최종 브랜치 리뷰 (opus code-reviewer, 새 컨텍스트) + 반영
+
+- 범위: 9329bd8..b253f34 (생성물 `docs/harness-overview.html` 제외). 판정: **Needs fixes** — Critical 1 · Important 5 · Minor 6. codex P2 3건을 독립 재현.
+- **C1** gates가 사용자별 gitignore인 `.harness/config.json`에 있어 확정한 사람 외 팀원은 게이트가 소리 없이 꺼짐 →
+  메인테이너 결정: 팀이 커밋하는 `.harness/gates.json`. (`gate-command`·`init-gates`·`migrate-gates`·`doctor` 테스트가 gates.json 경로를 고정)
+- **I1** exit 0 훅의 stderr는 사용자에게 안 보임 → 미설정·CLI 부재 안내를 hook `systemMessage`(stdout JSON)로. 테스트: hooks `gates.json이 없으면 … systemMessage`, `CLI를 찾지 못하면 …` RED→GREEN.
+- **I2**(=codex P2) `exec`가 CLI의 exit 1(구버전·크래시)을 통과시킴 → 0·2 외는 차단, doctor `checkHookCli`에 `gate` 추가.
+  테스트: `CLI가 0·2 외의 코드로 끝나면 커밋을 막는다`, `checkHookCli … gate` RED→GREEN.
+- **I3**(=codex P2) 형태가 틀린 gates를 미설정(exit 0)으로 처리 → 설정 오류 차단. 테스트: `gates.json 형태가 틀리거나 깨지면 …` RED→GREEN.
+- **I4** `migrate --yes`가 lint를 추가해 R7과 충돌 → 메인테이너 결정: 프리셋 `confirm` 항목은 `--yes`에서 제외·추가 제안. 테스트: presets `unattended`, init·migrate `--yes` RED→GREEN.
+- **I5**(=codex P2) format 덮어쓰기 → gates.json 통째 팀 파일화로 해소(init·migrate는 파일이 없을 때만 씀, `gate suggest`는 있으면 기본 No + 현재값 표시).
+- 반영 커밋 34dc6e2 + 훅 변경은 9d1b904에 fixup 병합(sha 완결성 테스트가 브랜치 중간 판을 배포판으로 세므로 훅 커밋은 하나여야 한다).
+  검증: `npm run test` → 1093 pass · 0 fail · skip 1, `npm run docs:check` → 최신.
+- 미룬 Minor: M1 dotfile glob, M2 미해결 `{var}` 플레이스홀더, M3 지문 signal이 프리셋 when 직렬화(raw JSON 메시지), M4 migrate 거절 문구,
+  M5 훅 timeout 120s·고아 프로세스, M6 일부 테스트 공백.
 
 ## Learnings

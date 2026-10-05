@@ -13,16 +13,16 @@ doctor는 지문이 바뀌면 제안만 한다. 정본 spec: `docs/hslee/preset-
 
 ## 단계
 - [x] spec/plan 다이어그램 작성 → docs/hslee/preset-gates/preset-gates-diagram.html
-- [ ] 1. 프리셋 데이터 3종 + `src/presets.mjs` 제안 엔진 (+ `tests/presets.test.mjs`)
-- [ ] 2. `harness-team gate commit|format` 실행기 + 라우터·명령표 등록 (+ `tests/gate-command.test.mjs`)
-- [ ] 3. `harness-team gate suggest` (+ 같은 테스트 파일)
-- [ ] 4. 훅 2개 래퍼화 + stock sha·fixture 등록 — **한 커밋** (+ `hooks-jq-fallback`·`migrate-hooks` 테스트 갱신)
-- [ ] 5. init 제안·확정 단계 (+ `tests/init-gates.test.mjs`)
-- [ ] 6. migrate 이행 단계 `migrateGates` (+ `tests/migrate-gates.test.mjs`)
-- [ ] 7. doctor 지문 비교 (+ `tests/doctor.test.mjs`)
-- [ ] 8. 문서: overview 카드·hooks.mmd 재생성, task.mjs 주석, CHANGELOG `[Unreleased]`
-- [ ] 9. 검증: `npm run test`·`npm run docs:check` PASS + 소비자 3곳 읽기 전용 제안 결과를 artifact에 기록
-- [ ] 10. codex 리뷰(`review --scope diff --base origin/main`) → 반영 → artifact `## Reviews` 기록
+- [x] 1. 프리셋 데이터 3종 + `src/presets.mjs` 제안 엔진 (+ `tests/presets.test.mjs`)
+- [x] 2. `harness-team gate commit|format` 실행기 + 라우터·명령표 등록 (+ `tests/gate-command.test.mjs`)
+- [x] 3. `harness-team gate suggest` (+ 같은 테스트 파일)
+- [x] 4. 훅 2개 래퍼화 + stock sha·fixture 등록 — **한 커밋** (+ `hooks-jq-fallback`·`migrate-hooks` 테스트 갱신)
+- [x] 5. init 제안·확정 단계 (+ `tests/init-gates.test.mjs`)
+- [x] 6. migrate 이행 단계 `migrateGates` (+ `tests/migrate-gates.test.mjs`)
+- [x] 7. doctor 지문 비교 (+ `tests/doctor.test.mjs`)
+- [x] 8. 문서: overview 카드·hooks.mmd 재생성, task.mjs 주석, CHANGELOG `[Unreleased]`
+- [x] 9. 검증: `npm run test`·`npm run docs:check` PASS + 소비자 3곳 읽기 전용 제안 결과를 artifact에 기록
+- [x] 10. codex 리뷰(`review --scope diff --base origin/main`) → 반영 → artifact `## Reviews` 기록
 
 ## Global Constraints
 - D8: 커스터마이즈된 훅·이미 있는 `gates`는 덮지 않는다(명시 확인한 `gate suggest`만 예외).
