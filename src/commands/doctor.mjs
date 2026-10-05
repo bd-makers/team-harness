@@ -18,6 +18,7 @@ import { checkRuleProvenance } from './rules.mjs';
 import { findStaleTemplates, isKnownStockTemplate } from './migrate.mjs';
 import { evaluateObserveVerdict, observeLoopbackNudge, tripWireDetail } from './observe.mjs';
 import { buildProposal, fingerprintDrift, readGates } from '../presets.mjs';
+import { detectRepoShape } from '../repo-shape.mjs';
 
 const pexec = promisify(execFile);
 
@@ -325,7 +326,16 @@ export async function checkGateFingerprint(targetDir) {
   try { gates = await readGates(targetDir); } catch { return null; }
   if (!gates?.fingerprint) return null;
   const { stack: pin } = await loadRenderState(targetDir);
-  const now = (await buildProposal(targetDir, await resolveStack(targetDir, pin))).fingerprint;
+  // Compare against the *confirmed* shape (spec G2): a repo whose developer rejected the
+  // detected workspaces stays single and never hears about them again. Anything else is
+  // re-detected, so a workspace appearing in a formerly single repo is reported.
+  let shape = null;
+  if (gates.fingerprint.shape === 'single') shape = { shape: 'single', workspaces: [] };
+  else {
+    const detected = await detectRepoShape(targetDir);
+    if (detected.shape !== 'single') shape = detected;
+  }
+  const now = (await buildProposal(targetDir, await resolveStack(targetDir, pin), { shape })).fingerprint;
   const drift = fingerprintDrift(gates.fingerprint, now);
   return drift ? `커밋 게이트 제안의 근거가 바뀌었습니다 (${drift}) — 갱신하려면: harness-team gate suggest` : null;
 }

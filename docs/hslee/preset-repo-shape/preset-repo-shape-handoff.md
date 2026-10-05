@@ -39,3 +39,16 @@ docs/harness-overview.html                         | 10 +++
  src/commands/gate.mjs                              | 57 +++++++++++++-
  tests/gate-command.test.mjs                        | 87 ++++++++++++++++++++++
  5 files changed, 152 insertions(+), 5 deletions(-)
+
+## 2026-10-05T15:34:55.992Z — d3d6dd6 feat(shape): 모양 확인 흐름 — init·gate suggest·migrate가 같은 resolveShape를 쓴다
+.../preset-repo-shape-artifact.md                  |  2 +
+ .../preset-repo-shape/preset-repo-shape-handoff.md |  8 ++++
+ .../preset-repo-shape/preset-repo-shape-plan.md    |  2 +-
+ src/commands/gate.mjs                              |  5 ++-
+ src/commands/init.mjs                              |  6 ++-
+ src/commands/migrate.mjs                           |  4 +-
+ src/repo-shape.mjs                                 | 25 +++++++++++
+ tests/gate-command.test.mjs                        | 20 +++++++++
+ tests/init-gates.test.mjs                          | 27 ++++++++++++
+ tests/repo-shape.test.mjs                          | 51 ++++++++++++++++++++++
+ 10 files changed, 146 insertions(+), 4 deletions(-)
