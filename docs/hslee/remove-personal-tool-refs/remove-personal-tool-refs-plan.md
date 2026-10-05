@@ -6,7 +6,7 @@
 ## 단계
 - [x] AO 규칙 파일을 `~/.ao/ao-worker-rules.md`로 옮기고 저장소에서 제거, 참조 정리(index·prerequisites)
 - [x] Orca fleet 가이드 제거, 참조 정리(README·index·task-guide)
-- [x] Obsidian frontmatter 키 제거(32파일)
+- [x] Obsidian frontmatter 키 제거(33파일)
 - [x] `oh-my-openagent.json` gitignore 항목 제거
 - [x] `codex-shipcheck` 예시 줄 제거
 - [x] followups의 개인 스킬 경로 문단 제거

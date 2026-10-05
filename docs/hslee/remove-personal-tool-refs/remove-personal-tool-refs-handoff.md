@@ -49,3 +49,8 @@ CHANGELOG.md                                       |  16 +-
  src/harness.mjs                                    |   2 -
  templates/docs/README.md                           |   9 -
  45 files changed, 150 insertions(+), 1050 deletions(-)
+
+## 2026-10-05T07:15:01.150Z — 44586c4 chore(task): remove-personal-tool-refs plan·handoff 갱신 (PR #120)
+.../remove-personal-tool-refs-handoff.md           | 48 ++++++++++++++++++++++
+ .../remove-personal-tool-refs-plan.md              |  2 +-
+ 2 files changed, 49 insertions(+), 1 deletion(-)

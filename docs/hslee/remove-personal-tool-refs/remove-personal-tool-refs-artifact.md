@@ -17,3 +17,5 @@
 
 ## Learnings
 - 개인 도구의 규칙 파일이 팀 저장소에 있으면, 저장소가 그 도구의 설정 저장소 역할까지 떠안는다. 개인 설정은 홈 디렉터리에 둔다.
+- 2026-10-05 보완: `commands/harness-init.md`는 태그에 `obsidian`이 없어(`react`·`project`·`ai`) 첫 검색(`^  - obsidian$`)에서 빠졌다.
+  같은 Obsidian 메타데이터라 함께 제거했다(총 33파일). 검색 기준은 태그 값이 아니라 `tags:`·`created:`·`modified:` 키여야 했다.

@@ -16,7 +16,7 @@
 2026-10-05 메인테이너 결정 6건을 그대로 적용한다.
 1. `docs/ao-worker-rules.md` → `~/.ao/ao-worker-rules.md`로 복사 후 저장소에서 제거. 참조(`docs/index.html` 2곳, `docs/prerequisites.md`) 정리.
 2. `docs/harness-fleet-guide.html`(Orca·firstmate 크루 가이드) 제거. 참조(README 문서 표, `docs/index.html` 크루 운용 경로·Guides, `docs/harness-task-guide.html`) 정리.
-3. Obsidian frontmatter 키 `tags`·`created`·`modified` 제거(32파일). 블록이 비면 블록째 제거.
+3. Obsidian frontmatter 키 `tags`·`created`·`modified` 제거(33파일). 블록이 비면 블록째 제거.
 4. `src/harness.mjs` `AI_GITIGNORE_ENTRIES`의 `oh-my-openagent.json` 제거(D7 잔재).
 5. `commands/harness-ship.md` 보고 예시의 `codex-shipcheck` 줄 제거.
 6. `docs/followups.md`의 개인 스킬(`delegation-router`) 경로 문단 제거.
