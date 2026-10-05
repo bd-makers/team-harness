@@ -31,3 +31,7 @@
 | `pre-rn-ios-secrets/protect-files.sh` | `804e3181` | `58b2284` audit-cleanup판 (`Fastfile`·`figma-export.y(a)ml`·`*.xcconfig` 보호 이전) |
 
 `pre-rn-ios-secrets`는 `c46ea0d`(2026-09-22, RN·iOS 빌드 비밀 3종 추가) 직전 판이다 — v0.24.0~v0.40.2가 이 바이트를 배포했다.
+| `pre-preset-gates/pre-commit-check.sh` | `ed90db5b` | `72e6642` PM 추론·tsc/test 내장판 |
+| `pre-preset-gates/auto-format.sh` | `463c0d18` | `aa9de65` 확장자 분기 + 하드코딩 `npx prettier`판 |
+
+`pre-preset-gates`는 2026-10-05 preset-gates(훅을 `harness-team gate` 래퍼로, 언어 지식은 `templates/presets/`로) 직전 판이다.

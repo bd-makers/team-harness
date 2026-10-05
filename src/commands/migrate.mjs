@@ -298,10 +298,12 @@ export const KNOWN_STOCK_HOOK_SHA256 = {
     '239cedf809c22cfcf09b07ac5f9d21a98da88bc85aaadd0cd577daadaf5de392', // d4662b9b detect_pm판
     'f5b79e0c0fd2cd54a284a7c4f3139681ad95b761cf45738282523f1c85bdcf0d', // d2132caf PR #29
     '524cf3b6cb5952a02c4464a3b46b47dbef8abb82388ea786d50ca8ca17ca24ef', // 757d115f tool_input 스코프판 (`git -C`·`--no-pager` 우회 이전)
+    '2d45fd26d6e68288c1ee6386b32d91190d8a5a0e13fd20e560c78f9d7820eab7', // ed90db5b PM 추론·tsc/test 내장판 (preset-gates 이전)
   ],
   'auto-format.sh': [
     'ba2ab843b6609543748e66d96ba26dbb2982444e8f24c4af10910ab8546e8327', // 58c4fe2e initial
     '11db4b4dc6f5a1f152d5bc7b7a9065c92ff07a7e4d30b06b549267e6363be019', // 775c0d56 PR #29
+    '667f3091b897616324c1eb84415ab3744e48f333d357472276113775adedddef', // 463c0d18 prettier 하드코딩판 (preset-gates 이전)
   ],
   'boundary-checkpoint.sh': [
     '452216fef5edb09a6fa6e14d6675222e06446c72c96abce0ff1d16156a545bc4', // 63c8862f 도입판 (CLI 부재 시 exit 127)
