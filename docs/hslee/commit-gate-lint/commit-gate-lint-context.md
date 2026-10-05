@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: 커밋 게이트에 package.json `lint` 단계 추가 — 위반 exit 2, 127 경고 후 통과
-- Current atomic step: 커밋 후 `npm run test` 전체 → Codex read-only 리뷰
+- Current atomic step: 구현·검증·리뷰 완료 — push·PR 지시 대기
 - Stop / human-decision condition: push·PR은 사용자 명시 지시 전 금지
 
 ## Constraints and settled decisions

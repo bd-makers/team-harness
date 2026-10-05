@@ -31,6 +31,14 @@
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
 
+### 2026-10-05 — Codex read-only (`codex exec --sandbox read-only`, model gpt-6.1-sol)
+<!-- harness:review kind=codex scope=commit tip=1f38b9c at=2026-10-05T02:57:42Z -->
+- **요약**: P0–P3 결함 없음. 종료 코드 캡처, 유효한 scripts 값의 jq/node 판정, npm 테스트 스텁,
+  migrate sha·fixture provenance, macOS bash 3.2 구문을 확인. lint/test 127 비대칭은 요구대로 유지.
+- **한계**: read-only 샌드박스라 테스트 스위트는 돌리지 않았다(작성 세션이 `npm run test` 1087 pass로 대신 입증).
+- **조치**: 없음. 작성 세션의 추가 관찰(기존 동작, 무변경): `"lint": ""`(빈 문자열)은 jq(`"" // empty`는 참)와
+  node(`""`는 거짓)의 판정이 갈린다 — jq 쪽은 빈 스크립트를 실행해 exit 0이라 결과는 같다. test도 동일한 기존 동작.
+
 
 ## Learnings
 

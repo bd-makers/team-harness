@@ -8,8 +8,8 @@
 - [x] 배달: 직전 판을 `KNOWN_STOCK_HOOK_SHA256`·`tests/fixtures/stock-hooks/pre-lint/`·fixture README에 추가
 - [x] 테스트: hooks-jq-fallback(위반·통과·없음·127, jq 매트릭스) + migrate-hooks(pre-lint 판 refresh)
 - [x] 문서: overview 카드·`hooks.mmd`(127 비대칭 명시), `npm run docs:check`
-- [ ] 검증: `npm run test` 전체 통과
-- [ ] Codex read-only 리뷰 → artifact `## Reviews`
+- [x] 검증: `npm run test` 전체 통과
+- [x] Codex read-only 리뷰 → artifact `## Reviews`
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
