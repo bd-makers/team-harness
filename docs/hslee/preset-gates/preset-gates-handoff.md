@@ -69,3 +69,12 @@ docs/hslee/preset-gates/preset-gates-handoff.md |  7 ++++
  src/commands/doctor.mjs                         | 18 +++++++++
  tests/doctor.test.mjs                           | 52 ++++++++++++++++++++++++-
  3 files changed, 76 insertions(+), 1 deletion(-)
+
+## 2026-10-05T12:26:45.204Z — d31d3bc docs: 커밋·포맷 훅 설명을 프리셋 게이트로 갱신
+CHANGELOG.md                                    |  8 ++++++++
+ docs/diagrams/harness-overview/hooks.mmd        |  5 ++---
+ docs/harness-overview.html                      | 19 +++++++++----------
+ docs/harness-overview.template.html             | 14 +++++++-------
+ docs/hslee/preset-gates/preset-gates-handoff.md |  6 ++++++
+ src/commands/task.mjs                           |  2 +-
+ 6 files changed, 33 insertions(+), 21 deletions(-)
