@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: `harness-team pr-check` + init·sync pre-push 훅 + ship 연동 (cycle §6-4)
-- Current atomic step: plan 8 리뷰 — codex P2 3건 조치 완료, 새 컨텍스트 리뷰 판별 → 9 커밋·PR(사용자 지시 후)
+- Current atomic step: PR #125 리뷰·머지 대기 → 머지 후 기본 브랜치에서 done
 - Stop / human-decision condition: 커밋·push·PR 생성은 사용자 지시 후
 
 ## Constraints and settled decisions
