@@ -2,12 +2,6 @@
 description: 구버전 구조를 최신으로 마이그레이션 + 설치된 훅·스킬·규칙을 최신 템플릿으로 refresh — init은 기존 파일을 건너뛰므로 이 파일들의 템플릿 수정이 도달하는 유일한 경로 (AGENTS.md·CLAUDE.md 관리 절은 init이 렌더한다)
 phase: Migration
 argument-hint: [--yes] [--adopt-reviews] [--target <dir>]
-tags:
-  - project
-  - ai
-  - obsidian
-created: 2026-06-02
-modified: 2026-09-10
 ---
 
 이 명령은 두 가지를 한다.

@@ -2,12 +2,6 @@
 description: "task 관리 (task/list/done/handoff) — docs/<user>/<name>/ 구조"
 phase: Workflow
 argument-hint: '<name> [--area <area>] | list [--area <area>] [--remote] | done [--force] | handoff'
-tags:
-  - project
-  - ai
-  - obsidian
-created: 2026-05-15
-modified: 2026-05-15
 ---
 
 `$ARGUMENTS`의 **첫 토큰**으로 분기한다. `list`·`done`·`handoff`는 `task`의 인자가 아니라 **별개 하위명령**이다 —

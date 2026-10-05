@@ -2,12 +2,6 @@
 description: 설치된 하네스와 에이전트 워크플로우 스킬이 진짜 작동하는지 실제 claude -p 세션으로 검증 (L5 agent-in-the-loop) + 날짜 리포트 (harness-sim 스킬 위임)
 phase: Simulation
 argument-hint: "[run|probe]"
-tags:
-  - project
-  - ai
-  - obsidian
-created: 2026-06-29
-modified: 2026-07-01
 ---
 
 이 커맨드는 **`harness-sim` 스킬**의 얇은 래퍼입니다 (프리픽스 슬래시 형태 제공).
