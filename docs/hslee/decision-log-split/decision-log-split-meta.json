@@ -3,8 +3,8 @@
   "task": "decision-log-split",
   "created": "2026-10-05",
   "firstActivatedAt": "2026-10-05T08:50:02.444Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-10-05T11:02:17.370Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [

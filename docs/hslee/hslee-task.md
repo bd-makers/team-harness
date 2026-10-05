@@ -1,10 +1,10 @@
 # hslee — Tasks
 
 ## Open
-- decision-log-split (created 2026-10-05)
 - remove-backup-cluster (created 2026-10-05)
 
 ## Completed
+- ✅ decision-log-split
 - ✅ remove-personal-tool-refs
 - ✅ harness-version-stamp
 - ✅ docs-version-drift-check
