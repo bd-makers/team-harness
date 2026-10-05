@@ -11,9 +11,6 @@ sequenceDiagram
         CLI->>Cmd: init.run(cwd, flags)
         Cmd->>H: detectStack(cwd)
         H-->>Cmd: stack, language, packageManager
-        Cmd->>User: 백업 폴더명 확인 (prompt)
-        User-->>Cmd: "harness-backup"
-        Cmd->>FS: mkdir(backupDir)
         Cmd->>H: planChanges(ctx)
         H->>H: render(AGENTS/CLAUDE.md.hbs)
         H-->>Cmd: changes[]
@@ -25,7 +22,6 @@ sequenceDiagram
         Cmd->>H: copyStaticAssets
         H->>FS: hooks · rules · skills · docs 복사
         H->>FS: .claude/rules → .cursor/rules 미러링
-        Cmd->>FS: clone.sh · symlink.sh · delete.sh 기록
         Cmd-->>User: ✅ 완료
     end
 

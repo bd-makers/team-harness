@@ -9,7 +9,7 @@ allowed-tools: Read, Write, Edit, Bash, Glob
 ## Codex command surface
 
 This skill also serves as the Codex `$harness-sim` entry corresponding to Claude
-Code `/harness-sim`. The Claude wrapper lives at `../../commands/harness-sim.md`;
+Code `/harness-sim`. The Claude wrapper lives at `../../../.claude/commands/harness-sim.md`;
 keep this SKILL.md as the SSOT for the simulation procedure.
 
 **측정 대상(2번):** `harness-init`/`task`로 소비자 프로젝트에 *설치된* 하네스가

@@ -9,7 +9,6 @@ import { STACKS, appliedSandbox } from './sandbox.mjs';
 
 const REQUIRED_PATHS = [
   'AGENTS.md', 'CLAUDE.md',
-  'clone.sh', 'symlink.sh', 'delete.sh',
   '.claude/settings.json',
   '.claude/hooks/protect-files.sh',
   '.claude/hooks/block-dangerous-git.sh',
@@ -18,7 +17,6 @@ const REQUIRED_PATHS = [
   '.claude/hooks/pre-commit-check.sh',
   '.claude/hooks/observe-tools.mjs',
   '.codex/hooks.json',
-  '.harness/backup.json',
   '.harness/active.json',
   'docs/README.md',
   '.git/hooks/post-commit',

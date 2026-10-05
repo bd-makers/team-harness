@@ -190,7 +190,6 @@
     <a href="#workflow">Workflow</a>
     <a href="#task">Task</a>
     <a href="#symlink">Core</a>
-    <a href="#backup">Backup</a>
     <a href="#template">Template</a>
     <a href="#files">파일 구조</a>
   </div>
@@ -476,15 +475,13 @@
     subgraph CMDS["Commands Layer"]
         direction LR
         INIT["init (신규·재실행)"] & SYNC["sync"]
-        CLONE["clone"] & SYM["symlink"] & DEL["delete"] & BACKUP["backup"]
         DOCTOR["doctor"] & TASK["task · list · done\nhandoff · retro"] & SESS["session-context"]
-        MIG["migrate"] & UPG["upgrade"] & REL["release"]
+        MIG["migrate"] & REL["release"]
     end
 
     subgraph ORCH["Orchestration"]
         direction LR
         HARNESS["harness.mjs\nplanChanges · applyChanges\ncopyStaticAssets (renders 2 agent files)"]
-        BACKUPDIR["backup-dir.mjs\nresolveBackupDir\n4-priority resolution"]
     end
 
     subgraph UTIL["Utilities"]
@@ -505,13 +502,10 @@
         HOOKS_T[".claude/hooks/"]
         RULES_T[".claude/rules/"]
         SKILLS_T[".claude/skills/"]
-        SCRIPTS["clone.sh\nsymlink.sh\ndelete.sh"]
     end
 
     BIN --> CMDS
     INIT & SYNC --> HARNESS
-    CLONE & SYM & DEL & BACKUP & MIG & UPG --> BACKUPDIR
-    DOCTOR --> BACKUPDIR
     TASK --> MEMBER
     DOCTOR & TASK & REL --> OBS
     DOCTOR --> SESS
@@ -654,34 +648,10 @@
             <td>활성 task의 spec/plan 다이어그램을 하네스 규약(경로·자립형 inline SVG·artifact 기록)대로 생성하거나 갱신</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
           </tr>
-          <tr data-command-source="commands/harness-clone.md">
-            <td><span class="cmd">/harness-clone</span></td>
-            <td><code>commands/harness-clone.md</code></td>
-            <td>project → backup dir 동기화 (merge, newer-wins)</td>
-            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Backup</span></td>
-          </tr>
-          <tr data-command-source="commands/harness-symlink.md">
-            <td><span class="cmd">/harness-symlink</span></td>
-            <td><code>commands/harness-symlink.md</code></td>
-            <td>backup dir → project symlink 생성/교체</td>
-            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Backup</span></td>
-          </tr>
-          <tr data-command-source="commands/harness-delete.md">
-            <td><span class="cmd">/harness-delete</span></td>
-            <td><code>commands/harness-delete.md</code></td>
-            <td>project에서 harness symlink 제거</td>
-            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Cleanup</span></td>
-          </tr>
           <tr data-command-source="commands/harness-migrate.md">
             <td><span class="cmd">/harness-migrate</span></td>
             <td><code>commands/harness-migrate.md</code></td>
             <td>구버전 구조를 최신으로 마이그레이션 + 설치된 훅·스킬·규칙을 최신 템플릿으로 refresh — init은 기존 파일을 건너뛰므로 이 파일들의 템플릿 수정이 도달하는 유일한 경로 (AGENTS.md·CLAUDE.md 관리 절은 init이 렌더한다)</td>
-            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Migration</span></td>
-          </tr>
-          <tr data-command-source="commands/harness-upgrade.md">
-            <td><span class="cmd">/harness-upgrade</span></td>
-            <td><code>commands/harness-upgrade.md</code></td>
-            <td>구버전 구조(실제 파일)를 신버전(symlink)으로 원스텝 마이그레이션</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Migration</span></td>
           </tr>
           <tr data-command-source="commands/harness-spec.md">
@@ -713,18 +683,6 @@
             <td><code>commands/harness-retro.md</code></td>
             <td>현재(또는 지정) task의 artifact.md에 학습/교정 내용을 append. CLAUDE.md 자기개선 루프 정책 실행.</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
-          </tr>
-          <tr data-command-source="commands/harness-release.md">
-            <td><span class="cmd">/harness-release</span></td>
-            <td><code>commands/harness-release.md</code></td>
-            <td>4개 매니페스트(package.json/.claude-plugin/plugin.json/.claude-plugin/marketplace.json/.codex-plugin/plugin.json) 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화. 휴먼 에러(manifest 누락·버전 불일치) 차단.</td>
-            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Release</span></td>
-          </tr>
-          <tr data-command-source="commands/harness-sim.md">
-            <td><span class="cmd">/harness-sim</span></td>
-            <td><code>commands/harness-sim.md</code></td>
-            <td>설치된 하네스와 에이전트 워크플로우 스킬이 진짜 작동하는지 실제 claude -p 세션으로 검증 (L5 agent-in-the-loop) + 날짜 리포트 (harness-sim 스킬 위임)</td>
-            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Simulation</span></td>
           </tr>
           <tr data-command-source="commands/harness-unittest.md">
             <td><span class="cmd">/harness-unittest</span></td>
@@ -1156,9 +1114,6 @@
         CLI->>Cmd: init.run(cwd, flags)
         Cmd->>H: detectStack(cwd)
         H-->>Cmd: stack, language, packageManager
-        Cmd->>User: 백업 폴더명 확인 (prompt)
-        User-->>Cmd: "harness-backup"
-        Cmd->>FS: mkdir(backupDir)
         Cmd->>H: planChanges(ctx)
         H->>H: render(AGENTS/CLAUDE.md.hbs)
         H-->>Cmd: changes[]
@@ -1170,7 +1125,6 @@
         Cmd->>H: copyStaticAssets
         H->>FS: hooks · rules · skills · docs 복사
         H->>FS: .claude/rules → .cursor/rules 미러링
-        Cmd->>FS: clone.sh · symlink.sh · delete.sh 기록
         Cmd-->>User: ✅ 완료
     end
 
@@ -1320,68 +1274,6 @@
     <p class="diagram-label">공유 코어 — AGENTS.md 수정 하나가 @import(Claude)와 네이티브(Codex·Cursor)로 전파</p>
   </section>
 
-  <!-- BACKUP -->
-  <section id="backup">
-    <div class="section-title">Backup 디렉토리 구조</div>
-    <p class="section-sub"><code>resolveBackupDir</code> 우선순위 플로우 및 clone/symlink 흐름</p>
-    <div class="diagram-wrap">
-      <div class="mermaid">
-      flowchart TD
-    S([resolveBackupDir 호출]) --> F1{"--backup-dir\n플래그?"}
-    F1 -- Yes --> R1[/"CLI 플래그 경로"/]
-    F1 -- No --> F2{".harness/backup.json\n존재?"}
-    F2 -- Yes --> F2a{"dir 필드\n있음?"}
-    F2a -- Yes --> R2[/"backup.json dir 경로"/]
-    F2a -- No --> F2b{"parent + name\n있음?"}
-    F2b -- Yes --> R3[/"path.join(parent, name)"/]
-    F2b -- No --> F3
-    F2 -- No --> F3{"기존 symlink\n역추적?"}
-    F3 -- Yes --> R4[/"symlink target 경로"/]
-    F3 -- No --> F4{"../harness-backup/\nprojectName/?"}
-    F4 -- Yes --> R5[/"자동 탐지 경로"/]
-    F4 -- No --> R6[/"null 반환"/]
-
-    style R1 fill:#0e3d30,stroke:#4df0aa
-    style R2 fill:#0e3d30,stroke:#4df0aa
-    style R3 fill:#0e3d30,stroke:#4df0aa
-    style R4 fill:#0e3d30,stroke:#4df0aa
-    style R5 fill:#0e3d30,stroke:#4df0aa
-    style R6 fill:#3d1a1a,stroke:#f05050
-      </div>
-    </div>
-    <p class="diagram-label">resolveBackupDir 4단계 우선순위 — CLI 플래그 → config 파일 → symlink 역추적 → 자동 탐지</p>
-
-    <div style="margin-top:1.5rem">
-      <div class="diagram-wrap">
-        <div class="mermaid">
-        graph LR
-    subgraph W["~/work/"]
-        subgraph P["my-project/  (프로젝트)"]
-            CM["CLAUDE.md"]
-            CL[".claude/"]
-            HA[".harness/\nbackup.json"]
-            SCR["clone.sh\nsymlink.sh\ndelete.sh"]
-        end
-        subgraph B["harness-backup/my-project/  (백업)"]
-            B_CM["CLAUDE.md"]
-            B_CL[".claude/"]
-            B_DOCS["docs/"]
-            B_SCR["clone.sh\nsymlink.sh\ndelete.sh"]
-        end
-    end
-
-    SCR -. "clone.sh\nnewer-wins rsync" .-> B_CM & B_CL & B_DOCS
-    B_SCR -. "symlink.sh\nbackup→project" .-> CM
-
-    style P fill:#1a2035,stroke:#2e3350
-    style B fill:#231a10,stroke:#2e3350
-    style W fill:#1a1d27,stroke:#2e3350
-        </div>
-      </div>
-      <p class="diagram-label">백업 디렉토리 위치 및 clone/symlink 방향</p>
-    </div>
-  </section>
-
   <!-- TEMPLATE -->
   <section id="template">
     <div class="section-title">AGENTS.md 코어 + thin 템플릿 구조</div>
@@ -1485,11 +1377,6 @@
             <td>설계 결정과 가정에 반박을 시도하는 적대적 read-only 외부 리뷰 — 절차·엔진 표는 harness-review와 동일, 리뷰 프롬프트만 교체</td>
           </tr>
           <tr>
-            <td><code>commands/harness-clone.md</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
-            <td>project → backup dir 동기화 (merge, newer-wins)</td>
-          </tr>
-          <tr>
             <td><code>commands/harness-comptest.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
             <td>React/React Native 컴포넌트·화면·UI 플로우에 Testing Trophy 통합 층 테스트를 작성한다 (스택 감지 → 사용자 관점 검증 강제 → 커버리지 → 검증)</td>
@@ -1498,11 +1385,6 @@
             <td><code>commands/harness-contrarian.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
             <td>활성 task의 spec.md / plan.md의 모든 가정에 의문을 제기한다 — 엔진 인수를 주면 외부 read-only 검증자가 반론(D6)</td>
-          </tr>
-          <tr>
-            <td><code>commands/harness-delete.md</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
-            <td>project에서 harness symlink 제거</td>
           </tr>
           <tr>
             <td><code>commands/harness-diagram.md</code></td>
@@ -1545,11 +1427,6 @@
             <td>활성 task artifact의 Learnings 항목을 사용자 승인 후 .claude/rules/&lt;slug&gt;.md로 승격 — 유래 마커 부착·cursor 미러 재생성</td>
           </tr>
           <tr>
-            <td><code>commands/harness-release.md</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
-            <td>4개 매니페스트(package.json/.claude-plugin/plugin.json/.claude-plugin/marketplace.json/.codex-plugin/plugin.json) 동시 bump + 캐시/마켓플레이스/installed_plugins.json 동기화. 휴먼 에러(manifest 누락·버전 불일치) 차단.</td>
-          </tr>
-          <tr>
             <td><code>commands/harness-retro.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
             <td>현재(또는 지정) task의 artifact.md에 학습/교정 내용을 append. CLAUDE.md 자기개선 루프 정책 실행.</td>
@@ -1565,11 +1442,6 @@
             <td>PR/MR 직전 spec·plan·artifact를 최종 갱신하고 다이어그램(옵트인)까지 정리한 뒤 준비 완료 상태를 보고</td>
           </tr>
           <tr>
-            <td><code>commands/harness-sim.md</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
-            <td>설치된 하네스와 에이전트 워크플로우 스킬이 진짜 작동하는지 실제 claude -p 세션으로 검증 (L5 agent-in-the-loop) + 날짜 리포트 (harness-sim 스킬 위임)</td>
-          </tr>
-          <tr>
             <td><code>commands/harness-simplifier.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
             <td>활성 task의 plan.md에서 제거 가능한 단계와 추상화를 찾아낸다 — 엔진 인수를 주면 외부 read-only 검증자가 채점(D6)</td>
@@ -1578,11 +1450,6 @@
             <td><code>commands/harness-spec.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
             <td>활성 task의 spec.md 초안을 Confluence·Figma·인터뷰 3소스에서 생성한다 (writer — 검증은 /harness-interview)</td>
-          </tr>
-          <tr>
-            <td><code>commands/harness-symlink.md</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
-            <td>backup dir → project symlink 생성/교체</td>
           </tr>
           <tr>
             <td><code>commands/harness-sync.md</code></td>
@@ -1600,22 +1467,7 @@
             <td>JS/TS/React/RN 프로젝트에 Khorikov 원칙 기반 단위테스트를 작성한다 (스택 자동 감지 → GWT 강제 → 커버리지 → 검증)</td>
           </tr>
           <tr>
-            <td><code>commands/harness-upgrade.md</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
-            <td>구버전 구조(실제 파일)를 신버전(symlink)으로 원스텝 마이그레이션</td>
-          </tr>
-          <tr>
             <td><code>docs/diagrams/harness-overview/architecture.mmd</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Mermaid</span></td>
-            <td>harness overview 아키텍처 다이어그램 원본</td>
-          </tr>
-          <tr>
-            <td><code>docs/diagrams/harness-overview/backup-layout.mmd</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Mermaid</span></td>
-            <td>harness overview 아키텍처 다이어그램 원본</td>
-          </tr>
-          <tr>
-            <td><code>docs/diagrams/harness-overview/backup-resolution.mmd</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Mermaid</span></td>
             <td>harness overview 아키텍처 다이어그램 원본</td>
           </tr>
@@ -1685,32 +1537,42 @@
             <td>다이어그램과 인벤토리를 한 번에 생성</td>
           </tr>
           <tr>
+            <td><code>scripts/maintainer-skills/harness-codex-sim/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>scripts/maintainer-skills/harness-codex-sim/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>scripts/maintainer-skills/harness-release/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>scripts/maintainer-skills/harness-release/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>scripts/maintainer-skills/harness-sim/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>scripts/maintainer-skills/harness-sim/agents/openai.yaml</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
+            <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
             <td><code>skills/harness-adversarial-review/SKILL.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
             <td>Codex용 harness workflow 지침</td>
           </tr>
           <tr>
             <td><code>skills/harness-adversarial-review/agents/openai.yaml</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
-            <td>Codex skill 표시 메타데이터</td>
-          </tr>
-          <tr>
-            <td><code>skills/harness-clone/SKILL.md</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
-            <td>Codex용 harness workflow 지침</td>
-          </tr>
-          <tr>
-            <td><code>skills/harness-clone/agents/openai.yaml</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
-            <td>Codex skill 표시 메타데이터</td>
-          </tr>
-          <tr>
-            <td><code>skills/harness-codex-sim/SKILL.md</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
-            <td>Codex용 harness workflow 지침</td>
-          </tr>
-          <tr>
-            <td><code>skills/harness-codex-sim/agents/openai.yaml</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
             <td>Codex skill 표시 메타데이터</td>
           </tr>
@@ -1731,16 +1593,6 @@
           </tr>
           <tr>
             <td><code>skills/harness-contrarian/agents/openai.yaml</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
-            <td>Codex skill 표시 메타데이터</td>
-          </tr>
-          <tr>
-            <td><code>skills/harness-delete/SKILL.md</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
-            <td>Codex용 harness workflow 지침</td>
-          </tr>
-          <tr>
-            <td><code>skills/harness-delete/agents/openai.yaml</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
             <td>Codex skill 표시 메타데이터</td>
           </tr>
@@ -1825,16 +1677,6 @@
             <td>Codex skill 표시 메타데이터</td>
           </tr>
           <tr>
-            <td><code>skills/harness-release/SKILL.md</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
-            <td>Codex용 harness workflow 지침</td>
-          </tr>
-          <tr>
-            <td><code>skills/harness-release/agents/openai.yaml</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
-            <td>Codex skill 표시 메타데이터</td>
-          </tr>
-          <tr>
             <td><code>skills/harness-retro/SKILL.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
             <td>Codex용 harness workflow 지침</td>
@@ -1865,16 +1707,6 @@
             <td>Codex skill 표시 메타데이터</td>
           </tr>
           <tr>
-            <td><code>skills/harness-sim/SKILL.md</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
-            <td>Codex용 harness workflow 지침</td>
-          </tr>
-          <tr>
-            <td><code>skills/harness-sim/agents/openai.yaml</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
-            <td>Codex skill 표시 메타데이터</td>
-          </tr>
-          <tr>
             <td><code>skills/harness-simplifier/SKILL.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
             <td>Codex용 harness workflow 지침</td>
@@ -1891,16 +1723,6 @@
           </tr>
           <tr>
             <td><code>skills/harness-spec/agents/openai.yaml</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
-            <td>Codex skill 표시 메타데이터</td>
-          </tr>
-          <tr>
-            <td><code>skills/harness-symlink/SKILL.md</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
-            <td>Codex용 harness workflow 지침</td>
-          </tr>
-          <tr>
-            <td><code>skills/harness-symlink/agents/openai.yaml</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
             <td>Codex skill 표시 메타데이터</td>
           </tr>
@@ -1945,39 +1767,14 @@
             <td>Codex skill 표시 메타데이터</td>
           </tr>
           <tr>
-            <td><code>skills/harness-upgrade/SKILL.md</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
-            <td>Codex용 harness workflow 지침</td>
-          </tr>
-          <tr>
-            <td><code>skills/harness-upgrade/agents/openai.yaml</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
-            <td>Codex skill 표시 메타데이터</td>
-          </tr>
-          <tr>
-            <td><code>src/backup-dir.mjs</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
-            <td>CLI가 공유하는 핵심 모듈</td>
-          </tr>
-          <tr>
             <td><code>src/cli-args.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
             <td>CLI가 공유하는 핵심 모듈</td>
           </tr>
           <tr>
-            <td><code>src/commands/backup.mjs</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
-            <td>harness-team backup CLI 구현</td>
-          </tr>
-          <tr>
             <td><code>src/commands/boundary.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
             <td>harness-team boundary CLI 구현</td>
-          </tr>
-          <tr>
-            <td><code>src/commands/clone.mjs</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
-            <td>harness-team clone CLI 구현</td>
           </tr>
           <tr>
             <td><code>src/commands/config.mjs</code></td>
@@ -1988,11 +1785,6 @@
             <td><code>src/commands/context.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
             <td>harness-team context CLI 구현</td>
-          </tr>
-          <tr>
-            <td><code>src/commands/delete.mjs</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
-            <td>harness-team delete CLI 구현</td>
           </tr>
           <tr>
             <td><code>src/commands/diagram.mjs</code></td>
@@ -2065,11 +1857,6 @@
             <td>harness-team summary CLI 구현</td>
           </tr>
           <tr>
-            <td><code>src/commands/symlink.mjs</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
-            <td>harness-team symlink CLI 구현</td>
-          </tr>
-          <tr>
             <td><code>src/commands/sync.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
             <td>harness-team sync CLI 구현</td>
@@ -2078,11 +1865,6 @@
             <td><code>src/commands/task.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
             <td>harness-team task CLI 구현</td>
-          </tr>
-          <tr>
-            <td><code>src/commands/upgrade.mjs</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
-            <td>harness-team upgrade CLI 구현</td>
           </tr>
           <tr>
             <td><code>src/detect-stack.mjs</code></td>
@@ -2250,16 +2032,6 @@
             <td>소비자 프로젝트 scaffold 템플릿</td>
           </tr>
           <tr>
-            <td><code>templates/clone.sh</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
-            <td>소비자 프로젝트 scaffold 템플릿</td>
-          </tr>
-          <tr>
-            <td><code>templates/delete.sh</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
-            <td>소비자 프로젝트 scaffold 템플릿</td>
-          </tr>
-          <tr>
             <td><code>templates/docs/.gitkeep</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
             <td>소비자 프로젝트 scaffold 템플릿</td>
@@ -2275,11 +2047,6 @@
             <td>소비자 프로젝트 scaffold 템플릿</td>
           </tr>
           <tr>
-            <td><code>templates/symlink.sh</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Template</span></td>
-            <td>소비자 프로젝트 scaffold 템플릿</td>
-          </tr>
-          <tr>
             <td><code>tests/active-json-validation.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
@@ -2291,11 +2058,6 @@
           </tr>
           <tr>
             <td><code>tests/agentloop-spec-signals.test.mjs</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
-            <td>자동 회귀 검증</td>
-          </tr>
-          <tr>
-            <td><code>tests/backup-dir.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>
@@ -2351,11 +2113,6 @@
           </tr>
           <tr>
             <td><code>tests/cursor-rules-mirror.test.mjs</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
-            <td>자동 회귀 검증</td>
-          </tr>
-          <tr>
-            <td><code>tests/delete.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>
@@ -2851,11 +2608,6 @@
           </tr>
           <tr>
             <td><code>tests/summary.test.mjs</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
-            <td>자동 회귀 검증</td>
-          </tr>
-          <tr>
-            <td><code>tests/symlink.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>

@@ -1,14 +1,9 @@
-import { basename, resolve } from 'node:path';
-import { mkdir } from 'node:fs/promises';
 import { detectStack, resolveStack, KNOWN_STACK_IDS } from '../detect-stack.mjs';
 import {
   planChanges, applyChanges, copyStaticAssets, formatDiff,
-  loadBackupDir, saveBackupConfig, DEFAULT_BACKUP_PARENT, AI_GITIGNORE_PREVIEW,
-  cloudSyncPathWarning,
 } from '../harness.mjs';
 import { loadRenderState, saveRenderState } from '../render-state.mjs';
-import { backupAnchor } from '../backup-dir.mjs';
-import { confirm, ask } from '../prompt.mjs';
+import { confirm } from '../prompt.mjs';
 import { resolveUsername, saveUsername } from '../user-config.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
 
@@ -35,55 +30,6 @@ export async function runInit(ctx) {
 
   // 결정만 — 저장은 최종 Apply 뒤(applyChanges 직후). 여기서 쓰면 취소해도 config가 남는다.
   const pendingUsername = await resolveUsername(ctx.targetDir, ctx.flags);
-
-  // Resolve the sibling backup directory: ../<parent>/<projectName>.
-  // The 3 scripts (clone.sh, symlink.sh, delete.sh) are written INTO the project
-  // root with BACKUP_DIR embedded at generation time, so running `./clone.sh`
-  // from the project root syncs CWD into that backup clone directory.
-  // In a linked git worktree the sibling/name come from the main checkout (backupAnchor) —
-  // backup.json is committed, so a worktree name saved here would poison every checkout.
-  const anchor = await backupAnchor(ctx.targetDir);
-  const projectName = basename(anchor);
-  let saveConfig = null;
-
-  if (ctx.flags['no-backup']) {
-    ctx.backupDir = null;
-    console.log('  backup: disabled');
-  } else {
-    let backupDir = await loadBackupDir(ctx.targetDir);
-    if (!backupDir) {
-      const dirFromFlag = ctx.flags['backup-dir'];
-      const parentFromFlag = ctx.flags['backup-parent'];
-      if (dirFromFlag) {
-        backupDir = resolve(dirFromFlag.replace(/^~/, process.env.HOME || '~'));
-        saveConfig = { dir: backupDir };
-      } else {
-        const answered = ctx.flags.yes
-          ? (parentFromFlag || DEFAULT_BACKUP_PARENT)
-          : await ask(
-              `\nBackup clone parent folder (sibling of project, holds clone.sh/symlink.sh/delete.sh)?`,
-              { defaultValue: parentFromFlag || DEFAULT_BACKUP_PARENT },
-            );
-        backupDir = resolve(anchor, '..', answered, projectName);
-        saveConfig = { parent: answered, name: projectName };
-      }
-    }
-    ctx.backupDir = backupDir;
-    console.log(`  backup clone dir: ${backupDir}`);
-    const cloudWarn = cloudSyncPathWarning(ctx.targetDir) || cloudSyncPathWarning(backupDir);
-    if (cloudWarn) console.log(`  ⚠️ ${cloudWarn}`);
-  }
-
-  // Ask whether to add AI-tool gitignore entries.
-  if (ctx.flags['gitignore-ai'] !== undefined) {
-    ctx.addAiGitignore = ctx.flags['gitignore-ai'] === true || ctx.flags['gitignore-ai'] === 'true';
-  } else if (!ctx.flags.yes) {
-    console.log(`\nAI tool .gitignore entries to add:\n`);
-    console.log(AI_GITIGNORE_PREVIEW.split('\n').map(l => `  ${l}`).join('\n'));
-    ctx.addAiGitignore = await confirm('\nAdd these AI tool entries to .gitignore?', { defaultYes: false });
-  } else {
-    ctx.addAiGitignore = false;
-  }
 
   const { changes, legacyAgentFiles, brokenMarkerFiles, skippedSections, renderState } = await planChanges(ctx, { stack, stackPin });
 
@@ -118,22 +64,13 @@ export async function runInit(ctx) {
   // 쓰지도 않은 내용을 "우리 렌더"로 믿는다.
   if (!ok) { console.log('Aborted.'); return; }
 
-  if (ctx.backupDir) await mkdir(ctx.backupDir, { recursive: true });
   await applyChanges(changes);
   if (pendingUsername) await saveUsername(ctx.targetDir, pendingUsername);
   await saveRenderState(ctx.targetDir, renderState);
-  if (saveConfig) await saveBackupConfig(ctx.targetDir, saveConfig);
   const copied = await copyStaticAssets(ctx);
   await installPostCommitHook(ctx.targetDir);
 
   console.log(`\n✓ Wrote ${changes.length} merged file(s)`);
-  if (ctx.backupDir) {
-    console.log(`✓ Backup clone dir ready: ${ctx.backupDir}`);
-    console.log(`\nDone. From the project root, run the backup scripts:`);
-    console.log(`  ./clone.sh   # sync this project into the backup dir`);
-    console.log(`  ./symlink.sh # create backup → project symlinks`);
-    console.log(`  ./delete.sh  # tear down symlinks`);
-  }
   console.log(`✓ Copied ${copied.filter(c => c.action === 'write').length} asset(s) (${copied.filter(c => c.action === 'skip').length} skipped as existing)`);
   console.log(`✓ Agent files: AGENTS.md (core) + CLAUDE.md (@AGENTS.md import)`);
 }

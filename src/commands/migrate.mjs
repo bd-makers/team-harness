@@ -3,7 +3,7 @@ import { constants } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { unlink, rmdir, readdir, mkdir, lstat, stat, access } from 'node:fs/promises';
 import { readTextSafe, writeText, exists } from '../fsx.mjs';
-import { appendGitignore, loadBackupDir, mergeClaudeSettings, settingsHasBoundaryCheckpoint, mirrorCursorRules, AGENT_FILE_TEMPLATES, isLegacyCodexSessionCommand, withCodexHookFlag } from '../harness.mjs';
+import { appendGitignore, mergeClaudeSettings, settingsHasBoundaryCheckpoint, mirrorCursorRules, AGENT_FILE_TEMPLATES, isLegacyCodexSessionCommand, withCodexHookFlag } from '../harness.mjs';
 import { resolveStack } from '../detect-stack.mjs';
 import { loadRenderState } from '../render-state.mjs';
 import { extractSections, deepMergeJson, simpleDiff } from '../merge.mjs';
@@ -21,14 +21,13 @@ import { SUMMARY_REL, userIndexRel, docsPath, taskDirRel, taskFilePath } from '.
 const USER_REGION_RE = /<!--\s*harness:user:begin\s*-->[\s\S]*?<!--\s*harness:user:end\s*-->/;
 const EMPTY_USER_REGION = '<!-- harness:user:begin -->\n<!-- 이 마커 아래 작성한 내용은 harness가 절대 수정하지 않습니다. -->\n<!-- harness:user:end -->';
 
-const SCRIPT_FILES = ['clone.sh', 'symlink.sh', 'delete.sh'];
 const OLD_CATEGORIES = ['feature', 'fix'];
 
 // --- Task structure migration (pre-0.6.0 → 0.6.0) ---
 //
 // 여기부터 migrateTaskTo07 까지는 **옛 구조를 서술하는** 코드라 src/task-paths.mjs 를 경유하지 않는다 —
 // 입력이 헬퍼가 모르는 모양(`docs/<u>/{feature,fix}/<n>`, 0.6 handoff)이다. 이 구간은 동결돼 있고,
-// tests/task-paths-single-source.test.mjs 가 이 표지부터 아래 Backup 표지까지를 허용 구간으로 본다.
+// tests/task-paths-single-source.test.mjs 가 이 표지부터 아래 Refresh 표지까지를 허용 구간으로 본다.
 
 async function findOldTasks(targetDir) {
   const docs = join(targetDir, 'docs');
@@ -245,98 +244,6 @@ export async function migrateTaskTo07(ctx) {
     console.log(`  ✓ upgraded: docs/${user}/${name}/`);
   }
 
-  return true;
-}
-
-// --- Backup dir script migration (pre-v0.3 → v0.3+) ---
-
-async function migrateBackupScripts(ctx) {
-  const { root, targetDir } = ctx;
-
-  const backupDir = await loadBackupDir(targetDir);
-  if (!backupDir) {
-    console.log('  backup scripts: no backup dir configured — skipping');
-    return false;
-  }
-
-  const toMigrate = [];
-  for (const f of SCRIPT_FILES) {
-    const content = await readTextSafe(join(backupDir, f));
-    if (content !== null) {
-      toMigrate.push({ f, inBackup: join(backupDir, f), inProject: join(targetDir, f) });
-    }
-  }
-
-  if (toMigrate.length === 0) {
-    console.log('  backup scripts: up to date (no scripts in backup dir)');
-    return false;
-  }
-
-  console.log(`\nFound ${toMigrate.length} script(s) in backup dir to move to project root:`);
-  for (const { f } of toMigrate) console.log(`  ${f}`);
-  console.log(`  backup: ${backupDir}`);
-  console.log(`  project: ${targetDir}`);
-
-  const ok = ctx.flags.yes || await confirm('\nMove scripts to project root?', { defaultYes: true });
-  if (!ok) { console.log('Skipped script migration.'); return false; }
-
-  const tplDir = join(root, 'templates');
-  for (const { f, inBackup, inProject } of toMigrate) {
-    const tpl = await readTextSafe(join(tplDir, f));
-    if (!tpl) {
-      console.warn(`  warn: template not found for ${f}, skipping`);
-      continue;
-    }
-    const rendered = tpl.replace(/\{\{BACKUP_DIR\}\}/g, backupDir);
-    await writeText(inProject, rendered, { mode: 0o755 });
-    await unlink(inBackup);
-    console.log(`  ✓ ${f}: moved to project root`);
-  }
-
-  return true;
-}
-
-// --- Refresh stale project-root scripts (any → current template) ---
-
-async function refreshProjectScripts(ctx) {
-  const { root, targetDir } = ctx;
-
-  const backupDir = await loadBackupDir(targetDir);
-  if (!backupDir) {
-    console.log('  script refresh: no backup dir configured — skipping');
-    return false;
-  }
-
-  const tplDir = join(root, 'templates');
-  const stale = [];
-  for (const f of SCRIPT_FILES) {
-    const existing = await readTextSafe(join(targetDir, f));
-    if (existing === null) continue;
-    const tpl = await readTextSafe(join(tplDir, f));
-    if (!tpl) continue;
-    const rendered = tpl.replace(/\{\{BACKUP_DIR\}\}/g, backupDir);
-    if (existing !== rendered) stale.push({ f, rendered });
-  }
-
-  if (stale.length === 0) {
-    console.log('  script refresh: scripts are up to date');
-    return false;
-  }
-
-  console.log(`\nFound ${stale.length} stale script(s) in project root (old destructive 'rm -rf' versions):`);
-  for (const { f } of stale) console.log(`  ${f}`);
-  console.log('\nRefresh will replace them with the current safe templates:');
-  console.log('  - delete.sh: backup symlink만 제거, 실파일은 skip');
-  console.log('  - symlink.sh: 실파일이 백업과 동일할 때만 교체, 다르면 skip');
-  console.log('  - clone.sh: rsync --update (백업 파일 삭제 없음)');
-
-  const ok = ctx.flags.yes || await confirm('\nRefresh scripts to current safe templates?', { defaultYes: true });
-  if (!ok) { console.log('Skipped script refresh.'); return false; }
-
-  for (const { f, rendered } of stale) {
-    await writeText(join(targetDir, f), rendered, { mode: 0o755 });
-    console.log(`  ✓ refreshed: ${f}`);
-  }
   return true;
 }
 
@@ -1103,8 +1010,6 @@ export async function runMigrate(ctx) {
 
   const taskMigrated = await migrateTaskStructure(ctx);
   const taskUpgraded = await migrateTaskTo07(ctx);
-  const scriptMoved = await migrateBackupScripts(ctx);
-  const scriptRefreshed = await refreshProjectScripts(ctx);
   const claudeHooksRefreshed = await refreshClaudeHooks(ctx);
   const claudeTemplatesRefreshed = await refreshClaudeTemplates(ctx);
   const taskLabelsRenamed = await migrateTaskIndexLabels(ctx);
@@ -1121,13 +1026,10 @@ export async function runMigrate(ctx) {
     return;
   }
 
-  if (!managedBackedUp && !agentsMigrated && !taskMigrated && !taskUpgraded && !scriptMoved && !scriptRefreshed && !claudeHooksRefreshed && !claudeTemplatesRefreshed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated && !metaBackfilled && !reviewsAdopted && !codexFlagMigrated && !userHandoffUntrack) {
+  if (!managedBackedUp && !agentsMigrated && !taskMigrated && !taskUpgraded && !claudeHooksRefreshed && !claudeTemplatesRefreshed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated && !metaBackfilled && !reviewsAdopted && !codexFlagMigrated && !userHandoffUntrack) {
     console.log('\nNothing to migrate — project is already up to date.');
     return;
   }
 
   console.log('\n✓ Migration complete.');
-  if (scriptMoved || scriptRefreshed) {
-    console.log('  Run ./clone.sh, ./symlink.sh, ./delete.sh from the project root.');
-  }
 }

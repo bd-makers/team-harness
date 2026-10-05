@@ -18,7 +18,7 @@ const ALLOWED_LINES = new Map([
 ]);
 // 허용: migrate 의 동결된 레거시 구간 — 옛 구조를 서술하므로 헬퍼 모양과 달라야 한다.
 const LEGACY_START = '// --- Task structure migration (pre-0.6.0 → 0.6.0) ---';
-const LEGACY_END = '// --- Backup dir script migration';
+const LEGACY_END = '// --- Refresh installed .claude assets';
 
 async function sourceFiles(dir) {
   const out = [];

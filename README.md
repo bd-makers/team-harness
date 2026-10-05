@@ -19,7 +19,6 @@
 - [동반 플러그인 (선택)](#동반-플러그인-선택)
 - [명령어 레퍼런스](#명령어-레퍼런스)
 - [task 관리 (팀원·기능별)](#task-관리-팀원기능별)
-- [스크립트 3종 사용법](#스크립트-3종-사용법)
 - [설치 결과물](#설치-결과물)
 - [CLAUDE.md 섹션 마커](#claudemd-섹션-마커)
 - [문서 (HTML)](#문서-html)
@@ -103,7 +102,7 @@ harness-team doctor
 
 | 에이전트 | hooks | 커맨드/적용 표면 | 경로 스코프 규칙 |
 |---|---|---|---|
-| Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 25개 슬래시 커맨드 | `.claude/rules` `paths:` — 매칭 파일 **Read 시** 로드 |
+| Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 19개 슬래시 커맨드 | `.claude/rules` `paths:` — 매칭 파일 **Read 시** 로드 |
 | Codex | SessionStart 1종 — **신뢰 2겹이 모두 있어야 실행**(아래) | 슬래시 커맨드는 없고 별도 `.codex-plugin` 설치 시 동명의 스킬 | 없음 — 하위 디렉터리 `AGENTS.md`로 대체 |
 | Cursor | 0 | `.cursor/rules/*.mdc` 규칙만 (RN 계열 stack) | `.mdc` `globs:` — `.claude/rules`에서 미러 |
 
@@ -201,11 +200,10 @@ cd my-project
 
 - `.codex-plugin/plugin.json` — Codex 플러그인 메타데이터
 - `skills/harness-team/SKILL.md` — Codex에서 `harness-team` CLI와 task workflow를 사용하는 진입점
-- `skills/harness-codex-sim/SKILL.md` — `codex exec --json` 기반 Codex L5 시뮬레이션 운용 가이드
 
 Codex 쪽 marketplace/설치 위치는 개인·팀 환경에 따라 다릅니다. 로컬 개발 중에는 이 레포를 Codex local plugin source로 등록한 뒤, 새 Codex thread에서 `harness-team` 및 `harness-*` command-equivalent skills가 노출되는지 확인하세요.
 
-주의: Codex 플러그인은 Claude Code의 `.claude-plugin/plugin.json` `commands[]`를 같은 slash command 목록으로 가져오지 않습니다. Codex의 플러그인 표면은 `skills`, apps, MCP 서버이며, 명시 호출은 `/harness-*`가 아니라 `$harness-aijient-team:harness-init`처럼 `$` skill invocation을 사용합니다. 이 레포는 Claude의 `/harness-*` 명령에 대응하는 `skills/harness-*` 래퍼를 제공하고, 각 wrapper는 `commands/harness-*.md`를 SSOT로 읽습니다. 단, `harness-sim`은 방향이 반대로 — 커맨드가 얇은 래퍼이고 절차 SSOT는 스킬 본문입니다.
+주의: Codex 플러그인은 Claude Code의 `.claude-plugin/plugin.json` `commands[]`를 같은 slash command 목록으로 가져오지 않습니다. Codex의 플러그인 표면은 `skills`, apps, MCP 서버이며, 명시 호출은 `/harness-*`가 아니라 `$harness-aijient-team:harness-init`처럼 `$` skill invocation을 사용합니다. 이 레포는 Claude의 `/harness-*` 명령에 대응하는 `skills/harness-*` 래퍼를 제공하고, 각 wrapper는 `commands/harness-*.md`를 SSOT로 읽습니다.
 
 Codex headless L5 검증은 먼저 probe로 auth/JSONL 계약을 확인한 뒤 full run을 실행합니다:
 
@@ -215,6 +213,8 @@ node tests/sim/codex-agentloop.mjs run
 ```
 
 full run은 throwaway `../harness-playground/.sim-tmp/<TS>/` 안에서 `.git/hooks/post-commit` 설치까지 검증하므로 Codex sandbox를 `danger-full-access`로 올립니다. 실제 프로젝트 디렉토리에는 실행하지 말고, 결과는 `../harness-playground/sim-reports/codex-agentloop-<TS>.md`에서 확인하세요.
+
+메인테이너 전용 `/harness-sim`·`/harness-release`는 배포 표면이 아니라 이 레포의 `.claude/commands/`에 있고, 대응 스킬(`harness-sim`·`harness-codex-sim`·`harness-release`)은 `scripts/maintainer-skills/`에 있습니다 — 플러그인에 번들되지 않습니다.
 
 ### 방법 C: 독립 CLI
 
@@ -305,8 +305,6 @@ React Native/Expo 전용 rules 4종은 유효 stack이 RN 계열일 때만 설�
 수행:
 - `.claude/rules/*.md` → `.cursor/rules/*.mdc` 미러링 갱신 (단방향; 원본이 사라진 미러는 정리)
 - git post-commit 훅 재설치 (`core.hooksPath`·worktree는 `git rev-parse --git-path hooks`로 따라감)
-
-> ⚠️ `symlink.sh` 와는 **다른 기능**입니다. 아래 [스크립트 3종](#스크립트-3종-사용법) 참조.
 
 ### `/harness-doctor` — 무결성 점검
 
@@ -413,40 +411,9 @@ contrarian·simplifier)은 이 명령의 절차·엔진 표를 재사용하며 `
 구분됩니다 — 루브릭·마커 계약·증거 게이트의 전체 그림은
 [docs/harness-rubric-guide.html](docs/harness-rubric-guide.html)에 있습니다.
 
-### `/harness-clone` — project → backup dir 동기화
+### `/harness-migrate` — 구조 마이그레이션 + 설치본 refresh
 
-프로젝트 파일을 백업 디렉토리로 복사(merge, newer-wins). 이미 harness symlink인 항목은 건너뜁니다.
-
-```bash
-/harness-clone
-/harness-clone --backup-dir ~/my-backups/project-a
-```
-
-### `/harness-symlink` — backup dir → project symlink 생성
-
-백업 디렉토리의 harness 아티팩트를 프로젝트 루트로 symlink합니다.
-
-```bash
-/harness-symlink
-/harness-symlink --backup-dir ~/my-backups/project-a
-```
-
-### `/harness-delete` — harness symlink/파일 제거
-
-프로젝트 루트에서 harness 항목을 제거합니다.
-
-```bash
-/harness-delete                      # symlink만 제거 (기본)
-/harness-delete --include-real       # 실제 파일/디렉토리도 삭제 (구버전 마이그레이션용)
-/harness-delete --yes                # 비대화식
-```
-
-`--include-real`은 구버전(파일이 symlink가 아닌 실제 파일로 존재)에서 신버전으로 전환할 때 사용합니다.
-`--yes`는 `--include-real`의 "PERMANENTLY delete" 확인까지 건너뛰므로 둘을 함께 쓰기 전에 삭제 대상을 확인하세요.
-
-### `/harness-migrate` — v0.2.x → v0.3+ 스크립트 위치 이전
-
-v0.2.x에서 backup dir에 있던 `clone.sh`, `symlink.sh`, `delete.sh`를 프로젝트 루트로 이전합니다.
+구버전 구조를 최신으로 옮기고, 설치된 훅·스킬·규칙을 현재 템플릿으로 갱신합니다.
 
 ```bash
 /harness-migrate
@@ -464,24 +431,6 @@ v0.2.x에서 backup dir에 있던 `clone.sh`, `symlink.sh`, `delete.sh`를 프�
 > 옮기는 유일한 인가 경로이며, 채택하면 그 task의 손으로 쓴 검증 마커는 `verify: required`에서 빠집니다.
 > 그래서 플래그 없이는 안내 한 줄만 내고, `--yes` 단독으로도 채택하지 않습니다 — 잃는 마커 수와
 > 그 결과를 먼저 보여주고 확인을 받습니다.
-
-### `/harness-upgrade` — v0.3.x → v0.4+ 원스텝 전환
-
-실제 파일로 존재하는 harness 아티팩트를 symlink 구조로 일괄 전환합니다.
-
-```bash
-/harness-upgrade                            # backup dir 자동 탐지
-/harness-upgrade --backup-dir ~/backups/p   # 경로 명시 (tilde 지원)
-/harness-upgrade --yes                      # 비대화식
-```
-
-내부 동작 순서:
-1. backup dir 확인 (없으면 clone 먼저 실행)
-2. project → backup 동기화 (`/harness-clone`)
-3. 실제 파일/디렉토리 목록 표시 + 확인
-4. 실제 항목 삭제 (`.harness/backup.json` 내용 보존)
-5. `.harness/backup.json` 복원
-6. symlink 생성 (`/harness-symlink`)
 
 ---
 
@@ -616,140 +565,11 @@ $ /harness-task list
 
 ---
 
-## 스크립트 3종 사용법
-
-`harness-team init` 실행 시 **프로젝트 루트에** 설치되는 세 스크립트입니다. 백업 클론 폴더(`BACKUP_DIR`)는 프로젝트와 같은 레벨의 형제 폴더 아래에 위치하며, 그 경로는 생성 시점에 각 스크립트에 박혀 들어갑니다.
-
-### 설치 구조
-
-```
-~/work/
-  ├── project-a/                  ← 실제 작업 디렉토리 (CWD)
-  │   ├── CLAUDE.md
-  │   ├── .claude/
-  │   ├── clone.sh                ← 스크립트는 프로젝트 루트에 위치
-  │   ├── symlink.sh
-  │   ├── delete.sh
-  │   └── .harness/backup.json    ← 백업 경로 기억
-  │
-  └── harness-backup/             ← 형제 레벨 상위 폴더 (이름 사용자 지정)
-      └── project-a/              ← BACKUP_DIR (clone.sh가 여기에 복사)
-```
-
-실제 사용 방식 (프로젝트 루트에서 실행):
-
-```bash
-cd ~/work/project-a
-./clone.sh     # project-a → BACKUP_DIR 로 병합 복사 (newer-wins, 백업 파일 삭제 없음)
-./symlink.sh   # BACKUP_DIR 의 자산을 project-a 로 symlink
-./delete.sh    # BACKUP_DIR 을 가리키는 symlink만 제거
-```
-
-### 안전 원칙 — 어느 스크립트도 파괴적이지 않음
-
-- **백업 디렉토리는 어떤 스크립트도 삭제하지 않습니다.** 원본 파일들(CLAUDE.md, docs 등)은 항상 보존됩니다.
-- **프로젝트 쪽 실파일도 함부로 지우지 않습니다.** symlink만 다룹니다.
-- 실파일을 정말 제거하려면 인터랙티브 CLI(`harness-team delete --include-real`)를 사용하세요.
-
-### init 시 설정
-
-`harness-team init` 실행 시 상위 폴더명을 입력받습니다(기본값: `harness-backup`):
-
-```
-$ harness-team init
-harness-team init → /Users/chad/work/project-a
-  stack: react-native (rn)
-
-Backup clone parent folder (sibling of project, holds clone.sh/symlink.sh/delete.sh)? [harness-backup] my-backups
-  backup clone dir: /Users/chad/work/my-backups/project-a
-...
-```
-
-- 입력한 이름대로 `../<입력값>/<프로젝트명>/` 디렉토리가 자동 생성됩니다.
-- 경로는 `.harness/backup.json` 에 저장되어 이후 `doctor` 등에서 재사용됩니다.
-- 비대화(`--yes`) 실행 시 `--backup-parent=<name>` 으로 지정할 수 있습니다.
-
-### 언제 쓰나?
-
-플러그인만 쓰는 경우 이 스크립트는 **불필요**합니다. 다음과 같은 경우에만 유용:
-
-- 같은 팀이 여러 관련 프로젝트(예: `web-app`, `mobile-app`, `admin`)를 운영
-- 프로젝트 스냅샷/백업을 별도 디렉토리로 주기적으로 떠두고 싶음
-- 여러 프로젝트가 공통 harness 내용을 공유하고 한쪽의 개선을 다른 쪽으로 역동기화
-
-### `symlink.sh` — BACKUP_DIR → 프로젝트로 심볼릭 링크
-
-**용도**: BACKUP_DIR의 자산을 프로젝트 루트에 symlink로 연결.
-
-링크 대상(ITEMS):
-`CLAUDE.md`, `AGENTS.md`, `.claude`, `.cursor`, `.codex`, `docs`, `.harness`
-
-**사용 예**:
-```bash
-cd ~/work/project-a
-./symlink.sh
-# 출력:
-#   linked: CLAUDE.md -> /Users/chad/work/harness-backup/project-a/CLAUDE.md
-#   linked: .claude -> /Users/chad/work/harness-backup/project-a/.claude
-#   ...
-```
-
-**안전장치**:
-- 이미 BACKUP_DIR로 링크된 항목은 건너뜀
-- 다른 곳을 가리키는 symlink는 즉시 교체 (실파일 손실 없음)
-- 프로젝트 쪽 실파일이 있을 때:
-  - 백업본과 **byte-identical** 이면 symlink로 교체
-  - **다르면 건드리지 않고 skip** — `./clone.sh`로 백업에 병합 후 재실행하라고 안내
-
-### `clone.sh` — 프로젝트 → BACKUP_DIR 병합 복사
-
-**용도**: 프로젝트 현재 내용을 BACKUP_DIR에 **병합 복사**. `rsync -a --update` 기반(newer-wins, **`--delete` 없음**), 백업에만 있는 파일은 보존됩니다.
-
-**사용 예**:
-```bash
-cd ~/work/project-a
-./clone.sh
-# 출력:
-#   merged dir: .claude -> /Users/chad/work/harness-backup/project-a/.claude
-#   copied (newer): CLAUDE.md -> /Users/chad/work/harness-backup/project-a/CLAUDE.md
-#   ...
-```
-
-### `delete.sh` — 링크 제거 (init의 정반대)
-
-**용도**: `symlink.sh`가 만든 링크만 제거. 백업 디렉토리와 프로젝트의 실파일은 모두 보존합니다.
-
-**사용 예**:
-```bash
-cd ~/work/project-a
-./delete.sh
-# 출력:
-#   removed: CLAUDE.md (backup symlink)
-#   removed: .claude (backup symlink)
-#   skip: docs (real file/dir — use 'harness-team delete --include-real' to remove)
-```
-
-**안전장치**:
-- BACKUP_DIR을 가리키는 symlink만 제거 (`"$target" == "$BACKUP_DIR" || "$target" == "$BACKUP_DIR"/*` 체크 — 경로 경계까지 봐서 `project-a`가 `project-ab`를 잡지 않음)
-- 다른 곳을 가리키는 symlink는 건드리지 않음
-- 실파일/디렉터리는 skip + 안내. 실제로 지우려면 인터랙티브 CLI(`harness-team delete --include-real`) 사용
-
-### `/harness-sync` vs `./symlink.sh` — 한 줄 요약
-
-| | `/harness-sync` | `./symlink.sh` |
-|---|---|---|
-| 대상 | 같은 프로젝트 내부 (`.cursor/rules` 미러) | 외부 중앙 harness repo |
-| 목적 | 플러그인이 설치한 구조의 무결성 유지 | 여러 프로젝트가 하나의 harness를 공유 |
-| 주요 작업 | `.cursor/rules` 미러링 + post-commit 훅 재설치 (에이전트 파일 갱신은 `init` 재실행) | 중앙의 `AGENTS.md`, `CLAUDE.md`, `.claude`, `docs` 등을 현재 프로젝트로 심볼릭 링크 |
-| 언제 | rules 수정 후 | 중앙 harness를 새 프로젝트에 적용할 때 |
-
----
-
 ## 설치 결과물
 
-설치되는 파일과 task 계약은 scaffold 되는 `AGENTS.md`의 **작업 프로토콜** 및 `templates/`를 확인합니다. 개인 상태 파일은 `.harness/active.json`에 보관됩니다. 반면 백업 클론 폴더 경로를 기억하는 `.harness/backup.json`은 팀이 공유하는 설정이므로 commit을 권장합니다. 관리 절의 마지막 렌더 해시를 담는 `.harness/render-state.json`도 **팀 상태이므로 반드시 commit 합니다** — 커밋하지 않으면 팀원이 clone한 뒤 첫 `init`에서 판정 근거가 없어 관리 절의 사용자 편집을 한 번 덮어씁니다. 이 파일의 `harnessVersion`은 마지막으로 `init`을 적용한 하네스 버전이고(`version`은 파일 스키마 버전), `doctor`가 실행 중인 CLI와 비교합니다. 타임스탬프는 남기지 않으므로 같은 버전으로 `init`을 다시 돌려도 diff가 생기지 않습니다.
+설치되는 파일과 task 계약은 scaffold 되는 `AGENTS.md`의 **작업 프로토콜** 및 `templates/`를 확인합니다. 개인 상태 파일은 `.harness/active.json`에 보관됩니다. 관리 절의 마지막 렌더 해시를 담는 `.harness/render-state.json`도 **팀 상태이므로 반드시 commit 합니다** — 커밋하지 않으면 팀원이 clone한 뒤 첫 `init`에서 판정 근거가 없어 관리 절의 사용자 편집을 한 번 덮어씁니다. 이 파일의 `harnessVersion`은 마지막으로 `init`을 적용한 하네스 버전이고(`version`은 파일 스키마 버전), `doctor`가 실행 중인 CLI와 비교합니다. 타임스탬프는 남기지 않으므로 같은 버전으로 `init`을 다시 돌려도 diff가 생기지 않습니다.
 
-자동으로 `.gitignore`에 추가되는 항목(`.harness/`를 통째로 무시하지 않습니다 — `backup.json`·`cursor-mirror.json`·`render-state.json`은 팀 상태):
+자동으로 `.gitignore`에 추가되는 항목(`.harness/`를 통째로 무시하지 않습니다 — `cursor-mirror.json`·`render-state.json`은 팀 상태):
 - `.claude/settings.local.json` (개인 권한 오버라이드)
 - `.harness/active.json` (개인 활성 task 상태)
 - `.harness/config.json` (개인 docs 사용자명)
@@ -798,7 +618,7 @@ Claude Code 도구 관측은 원문을 보존하지 않는 로컬 JSONL만 `.har
 | 문서 | 설명 |
 |---|---|
 | [index.html](docs/index.html) | docs 전체 색인 — 가이드·릴리스 노트·버전별 스냅샷 |
-| [harness-overview.html](docs/harness-overview.html) | 플러그인 전체 아키텍처 다이어그램 — 에이전트 연결, symlink 구조, 명령 흐름. 소스 변경 뒤 `npm run docs:generate`로 갱신하는 생성 산출물 |
+| [harness-overview.html](docs/harness-overview.html) | 플러그인 전체 아키텍처 다이어그램 — 에이전트 연결, 명령 흐름. 소스 변경 뒤 `npm run docs:generate`로 갱신하는 생성 산출물 |
 | [harness-task-guide.html](docs/harness-task-guide.html) | init 이후 개발자용 — 첫 task를 만들어 닫을 때까지의 실제 절차 |
 | [harness-rubric-guide.html](docs/harness-rubric-guide.html) | 루브릭 평가(D6) 가이드 — finding 스키마, 5개 검증 프레이밍, 마커 계약과 `verify` 증거 게이트 |
 | [harness-workflow-simulation.html](docs/harness-workflow-simulation.html) | task 워크플로우 시나리오 시뮬레이션 — new → done 흐름 단계별 인터랙티브 |

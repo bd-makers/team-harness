@@ -1,0 +1,21 @@
+{
+  "user": "hslee",
+  "task": "remove-backup-cluster",
+  "created": "2026-10-05",
+  "firstActivatedAt": "2026-10-05T09:08:57.013Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "32ca082e1e68bc33edd3e07baa83ab56139893b1",
+      "at": "2026-10-05T09:18:29.594Z",
+      "exitCode": 0,
+      "outputBytes": 768
+    }
+  ]
+}

@@ -15,20 +15,14 @@
 
 import { KNOWN_STACK_IDS } from './detect-stack.mjs';
 
-export const VALUE_FLAGS = new Set(['stack', 'member', 'target', 'backup-dir', 'backup-parent', 'days', 'name', 'paths', 'framing', 'rubric', 'prompt-file', 'scope', 'base', 'area']);
+export const VALUE_FLAGS = new Set(['stack', 'member', 'target', 'days', 'name', 'paths', 'framing', 'rubric', 'prompt-file', 'scope', 'base', 'area']);
 
 // Accepted on every command: they change where the harness looks or how it
 // reports, not what it does. Keeping them global means a hook can pass --target
 // to any subcommand without the registry having to enumerate it per command.
 export const GLOBAL_FLAGS = ['target', 'member', 'yes', 'json'];
 
-// Only the commands that pass an override into `resolveBackupDir` list
-// `backup-dir`; `backup-parent` is read by init alone. `backup` and
-// `migrate` call `loadBackupDir` and ignore both, so they must not advertise
-// them — a flag that is accepted and then ignored is the same silent-default
-// failure this module exists to remove.
-const BACKUP_DIR_FLAG = ['backup-dir'];
-const INIT_FLAGS = ['backup-dir', 'backup-parent', 'stack', 'no-backup', 'gitignore-ai', 'no-gitignore-ai'];
+const INIT_FLAGS = ['stack'];
 
 // Single source for the command table: `--help` renders from `summary`, flag
 // validation reads `flags`. A flag that is not listed here cannot be passed,
@@ -38,22 +32,12 @@ export const COMMANDS = [
   // skip existing files, so applying it to a project that already has the harness
   // refreshes managed sections without touching user text.
   { name: 'init', args: '[dir]', summary: 'Scaffold the harness, or refresh an existing install (non-destructive)', flags: INIT_FLAGS },
-  { name: 'backup', args: '[dir]', summary: 'Move harness items to backup dir and replace with symlinks',
-    flags: [] },
-  { name: 'clone', args: '[dir]', summary: 'Sync project items to backup dir (merge, newer-wins)',
-    flags: BACKUP_DIR_FLAG },
-  { name: 'symlink', args: '[dir]', summary: 'Create backup→project symlinks',
-    flags: BACKUP_DIR_FLAG },
-  { name: 'delete', args: '[dir]', summary: 'Remove harness symlinks from project',
-    flags: [...BACKUP_DIR_FLAG, 'include-real'] },
   // `--adopt-reviews` is opt-in on purpose: it flips legacy tasks to CLI-owned review
   // evidence, which drops their hand-written verify markers from the guard's count.
   // Every other migrate step is a structure move that is safe unattended; this one is not,
   // so it never runs from a bare `migrate` (or from `--yes` alone).
-  { name: 'migrate', args: '[dir] [--adopt-reviews]', summary: 'Migrate to latest: backup scripts → root, task structure (→0.6, →0.7 artifact.md split); --adopt-reviews moves legacy tasks to CLI-owned review evidence',
+  { name: 'migrate', args: '[dir] [--adopt-reviews]', summary: 'Migrate to latest: task structure (→0.6, →0.7 artifact.md split); --adopt-reviews moves legacy tasks to CLI-owned review evidence',
     flags: ['adopt-reviews'] },
-  { name: 'upgrade', args: '[dir]', summary: 'Migrate real files → symlinks in one step (v0.3.x → v0.4+)',
-    flags: BACKUP_DIR_FLAG },
   { name: 'sync', args: '[dir]', summary: 'Mirror .claude/rules → .cursor/rules and reinstall the post-commit hook', flags: [] },
   { name: 'doctor', args: '[dir]', summary: 'Diagnose harness integrity', flags: [] },
   // Read-only. Owns the dependency lookup that the three test commands' 0단계 used to
@@ -113,10 +97,7 @@ const OPTIONS_HELP = `Options:
   --stack <name>       Force stack (${KNOWN_STACK_IDS.join('|')})
   --yes                Non-interactive
   --member <name>      Override member (default: git config user.name, else $USER)
-  --no-backup          Skip backup dir setup entirely (init only)
   --target <dir>       Target directory (default: cwd)
-  --gitignore-ai       Add AI tool entries to .gitignore without prompting
-  --no-gitignore-ai    Skip AI gitignore entries without prompting
   --json               Structured JSON envelope output for drive commands (task/retro/release/doctor/summary/observe/rules/stack/scope/config/diagram)`;
 
 // `doctor` proves the hook CLI is reachable by matching `session-context` and
@@ -189,23 +170,6 @@ export function parseArgs(argv) {
   return out;
 }
 
-// Negations the parser rewrites before dispatch: the command reads one key, so
-// it never sees the name the caller typed. Declared here so a test can tell
-// "this flag is deliberately renamed" apart from "this flag is ignored".
-export const FLAG_ALIASES = new Map([['no-gitignore-ai', 'gitignore-ai']]);
-
-// Normalization runs after validation so an error message names the flag the
-// caller actually typed.
-function normalize(flags) {
-  const out = { ...flags };
-  for (const [alias, target] of FLAG_ALIASES) {
-    if (out[alias] === undefined) continue;
-    out[target] = false;
-    delete out[alias];
-  }
-  return out;
-}
-
 export function unknownFlags(command, flags) {
   const accepted = new Set([...command.flags, ...GLOBAL_FLAGS]);
   return Object.keys(flags).filter(flag => !accepted.has(flag));
@@ -255,5 +219,5 @@ export function resolveInvocation(argv) {
     };
   }
 
-  return { kind: 'run', cmd: command.name, positional: parsed.positional, flags: normalize(parsed.flags) };
+  return { kind: 'run', cmd: command.name, positional: parsed.positional, flags: parsed.flags };
 }

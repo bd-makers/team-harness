@@ -189,7 +189,6 @@
     <a href="#workflow">Workflow</a>
     <a href="#task">Task</a>
     <a href="#symlink">Core</a>
-    <a href="#backup">Backup</a>
     <a href="#template">Template</a>
     <a href="#files">파일 구조</a>
   </div>
@@ -861,27 +860,6 @@
       </div>
     </div>
     <p class="diagram-label">공유 코어 — AGENTS.md 수정 하나가 @import(Claude)와 네이티브(Codex·Cursor)로 전파</p>
-  </section>
-
-  <!-- BACKUP -->
-  <section id="backup">
-    <div class="section-title">Backup 디렉토리 구조</div>
-    <p class="section-sub"><code>resolveBackupDir</code> 우선순위 플로우 및 clone/symlink 흐름</p>
-    <div class="diagram-wrap">
-      <div class="mermaid">
-      {{MERMAID:backup-resolution}}
-      </div>
-    </div>
-    <p class="diagram-label">resolveBackupDir 4단계 우선순위 — CLI 플래그 → config 파일 → symlink 역추적 → 자동 탐지</p>
-
-    <div style="margin-top:1.5rem">
-      <div class="diagram-wrap">
-        <div class="mermaid">
-        {{MERMAID:backup-layout}}
-        </div>
-      </div>
-      <p class="diagram-label">백업 디렉토리 위치 및 clone/symlink 방향</p>
-    </div>
   </section>
 
   <!-- TEMPLATE -->

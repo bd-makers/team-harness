@@ -71,7 +71,7 @@ test('init --stack <unknown>은 아무것도 쓰지 않고 exit 2로 거부한�
   const dir = await project({ 'package.json': { name: 'a' } });
   try {
     const r = await new Promise((res) => {
-      const child = spawn(process.execPath, [BIN, 'init', '--yes', '--no-backup', '--stack', 'reakt'], { cwd: dir, stdio: ['pipe', 'pipe', 'pipe'] });
+      const child = spawn(process.execPath, [BIN, 'init', '--yes', '--stack', 'reakt'], { cwd: dir, stdio: ['pipe', 'pipe', 'pipe'] });
       let stdout = '', stderr = '';
       child.stdout.on('data', d => { stdout += d; });
       child.stderr.on('data', d => { stderr += d; });
@@ -90,7 +90,7 @@ test('init --stack <unknown>은 아무것도 쓰지 않고 exit 2로 거부한�
 test('init --stack <감지와 다른 id>는 고정되어 플래그 없는 init이 유지하고, --stack <감지 id>로 푼다', async () => {
   const dir = await project({ 'package.json': { name: 'a', scripts: { test: 'node --test' } } });
   const init = (...args) => new Promise((res, rej) => {
-    const child = spawn(process.execPath, [BIN, 'init', '--yes', '--no-backup', ...args], { cwd: dir, stdio: ['pipe', 'pipe', 'pipe'] });
+    const child = spawn(process.execPath, [BIN, 'init', '--yes', ...args], { cwd: dir, stdio: ['pipe', 'pipe', 'pipe'] });
     let out = '';
     child.stdout.on('data', d => { out += d; });
     child.stderr.on('data', d => { out += d; });

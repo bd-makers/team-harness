@@ -15,6 +15,8 @@
   이 저장소의 `docs/decisions.md`에만 둔다. `doctor`의 결정 로그 확인 헤딩도 D2·D4·D5·D6으로 줄였다 — 확인 대상이 줄어드는
   방향이라 소비자에게 새 경고는 없다. 소비자 `AGENTS.md` 결정 규범에서 D7 줄을 뺐다(관리 절 변경이라 원할 때 `init --yes`로 받는다).
   사이클 정의·결정 전문은 `docs/harness-cycle.md`.
+- `/harness-sim`·`/harness-release`와 Codex 스킬 `harness-sim`·`harness-codex-sim`·`harness-release`는 이 저장소에서만 동작하므로
+  소비자 배포에서 뺐다 — 메인테이너는 `.claude/commands/`와 `scripts/maintainer-skills/`에서 쓴다.
 
 ### Removed
 - **개인 도구 흔적 정리** (task `remove-personal-tool-refs`). 메인테이너 개인 도구의 문서를 팀 하네스에서 뺐다:
@@ -22,6 +24,11 @@
   README·`docs/index.html`·`docs/harness-task-guide.html`·`docs/prerequisites.md`의 링크. 문서 33개의 Obsidian frontmatter
   (`tags`·`created`·`modified`, 소비자에게 가는 `templates/docs/README.md` 포함), `init`이 쓰는 gitignore의 `oh-my-openagent.json`
   (D7 잔재), `harness-ship` 보고 예시의 개인 스킬 줄, `docs/followups.md`의 개인 스킬 경로 문단도 지웠다.
+- **백업 클론과 AI 파일 gitignore 옵션** (task `remove-backup-cluster`, D11). 저장소 밖 `../harness-backup/<project>/` 백업 클론
+  (`clone.sh`·`symlink.sh`·`delete.sh`, `harness-team backup|clone|symlink|delete|upgrade`와 같은 이름의 슬래시 명령·Codex 스킬,
+  `.harness/backup.json`)과 init의 백업 위치·"AI 설정 파일 gitignore" 질문(`--no-backup`·`--backup-dir`·`--backup-parent`·`--gitignore-ai`)을 뺐다.
+  doctor는 더 이상 `backup.json`을 요구하지 않는다. 기존 백업 폴더와 `backup.json`은 건드리지 않는다. AI 설정을 gitignore한 프로젝트는
+  백업이 저장소 밖 유일 사본일 수 있으니, 원할 때 gitignore를 풀고 커밋하라. migrate의 관리 절 백업(`.harness/backup/`)은 그대로다.
 
 ## [0.45.0] - 2026-10-03
 

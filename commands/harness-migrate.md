@@ -6,7 +6,7 @@ argument-hint: [--yes] [--adopt-reviews] [--target <dir>]
 
 이 명령은 두 가지를 한다.
 
-1. **구조 마이그레이션** — backup dir 스크립트 → project root, task 구조(pre-0.6→0.6,
+1. **구조 마이그레이션** — task 구조(pre-0.6→0.6,
    0.6→0.7 artifact.md 분리), task 인덱스 라벨(active → open), SessionStart·boundary 훅 배선.
 2. **템플릿 refresh** — 설치된 `.claude/hooks`(6) · `.claude/skills`(3) · `.claude/rules`(4)를
    최신 템플릿으로 갱신한다. `init`은 이미 있는 파일을 건너뛰므로(`skipExisting`), **수정된
