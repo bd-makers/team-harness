@@ -3,8 +3,9 @@
 // lives in hook code (D11); what to run is the developer's confirmed preset proposal.
 import { spawnSync } from 'node:child_process';
 import { realpath } from 'node:fs/promises';
-import { basename, isAbsolute, join, matchesGlob, relative, sep } from 'node:path';
+import { basename, isAbsolute, join, matchesGlob, posix, relative, sep } from 'node:path';
 import { resolveStack } from '../detect-stack.mjs';
+import { resolveShape } from '../repo-shape.mjs';
 import { loadRenderState } from '../render-state.mjs';
 import { confirm } from '../prompt.mjs';
 import { applyProposal, buildProposal, describeProposal, readGates, GATES_REL } from '../presets.mjs';
@@ -37,9 +38,18 @@ async function gateCommit(ctx) {
   }
   // A present but wrong-shaped file is a config error, never "unconfigured": init/migrate treat
   // an existing file as confirmed, so failing open here would keep the gate off for good.
-  const list = gates.commit;
-  if (!Array.isArray(list) || list.some(c => typeof c !== 'string' || !c.trim())) {
-    return block(`설정 오류: ${GATES_REL} 의 commit 은 비어 있지 않은 문자열 배열이어야 합니다 — ${CONFIG_HINT}`);
+  const commit = gates.commit;
+  let list;
+  if (isCommandList(commit)) list = commit;
+  else if (commit && typeof commit === 'object' && !Array.isArray(commit)
+    && Object.entries(commit).every(([key, cmds]) => key.trim() && isCommandList(cmds))) {
+    list = selectByChange(ctx.targetDir, commit);
+    if (!list.length) {
+      console.error('ℹ️ 바뀐 workspace 없음 — 커밋 게이트에서 실행할 목록이 없습니다.');
+      return;
+    }
+  } else {
+    return block(`설정 오류: ${GATES_REL} 의 commit 은 비어 있지 않은 문자열 배열이거나 {"<디렉터리>": 그런 배열} 객체여야 합니다 — ${CONFIG_HINT}`);
   }
   console.error(`🔍 커밋 전 검증 실행 중... (${list.length}개)`);
   for (const cmd of list) {
@@ -49,6 +59,47 @@ async function gateCommit(ctx) {
     if (r.status !== 0) return block(`커밋 게이트 실패: ${cmd} (exit ${r.status ?? r.signal})`);
   }
   console.error('✅ 검증 통과. 커밋을 진행합니다.');
+}
+
+function isCommandList(list) {
+  return Array.isArray(list) && list.every(c => typeof c === 'string' && c.trim());
+}
+
+// Changed relative to HEAD: staged, unstaged and untracked. The hook fires before
+// `git add && git commit` has staged anything, so the index alone can be empty (spec R7).
+// null — no HEAD yet, or git unavailable — means "treat everything as changed".
+function changedFiles(dir) {
+  const git = args => spawnSync('git', args, { cwd: dir, encoding: 'utf8' });
+  if (git(['rev-parse', '--verify', '-q', 'HEAD']).status !== 0) return null;
+  // --no-renames: a move between workspaces must count against both sides, not just the destination.
+  const diff = git(['diff', '-z', '--name-only', '--no-renames', '--relative', 'HEAD']);
+  const others = git(['ls-files', '-z', '--others', '--exclude-standard']);
+  if (diff.status !== 0 || others.status !== 0) return null;
+  return `${diff.stdout}${others.stdout}`.split('\0').filter(Boolean);
+}
+
+// A key names a directory (glob allowed); a file belongs to it when any of its parent
+// directories matches. "." is the leftover bucket: it runs when some change matched no other key.
+function selectByChange(dir, commit) {
+  const keys = Object.keys(commit);
+  const files = changedFiles(dir);
+  let selected = keys;
+  if (files !== null) {
+    const norm = k => k.replace(/^\.\//, '').replace(/\/+$/, '');
+    const under = (key, file) => {
+      for (let d = posix.dirname(file); d !== '.'; d = posix.dirname(d)) if (matchesGlob(d, norm(key))) return true;
+      return false;
+    };
+    const hit = new Set();
+    let stray = false;
+    for (const file of files) {
+      const owners = keys.filter(k => k !== '.' && under(k, file));
+      owners.forEach(k => hit.add(k));
+      if (!owners.length) stray = true;
+    }
+    selected = keys.filter(k => (k === '.' ? stray : hit.has(k)));
+  }
+  return [...new Set(selected.flatMap(k => commit[k]))];
 }
 
 // A convenience, not a control: every failure ends quietly with exit 0.
@@ -82,7 +133,9 @@ async function gateSuggest(ctx) {
   try { existing = await readGates(ctx.targetDir); }
   catch (e) { console.error(`gate suggest: ${e.message}`); process.exitCode = 1; return; }
   const { stack: pin } = await loadRenderState(ctx.targetDir);   // same stack resolution as init
-  const proposal = await buildProposal(ctx.targetDir, await resolveStack(ctx.targetDir, pin));
+  // No `stored` here: suggest is where a confirmed shape is deliberately re-confirmed.
+  const shape = await resolveShape(ctx.targetDir, { yes: Boolean(ctx.flags.yes) });
+  const proposal = await buildProposal(ctx.targetDir, await resolveStack(ctx.targetDir, pin), { shape });
   console.log(describeProposal(proposal));
   const overwriting = existing !== null;
   if (overwriting) console.log(`  현재 commit: ${JSON.stringify(existing.commit ?? null)} — 기록하면 ${GATES_REL} 전체(commit·format·fingerprint)를 덮어씁니다.`);

@@ -5,6 +5,7 @@ import { unlink, rmdir, readdir, mkdir, lstat, stat, access } from 'node:fs/prom
 import { readTextSafe, writeText, exists } from '../fsx.mjs';
 import { appendGitignore, mergeClaudeSettings, settingsHasBoundaryCheckpoint, mirrorCursorRules, AGENT_FILE_TEMPLATES, isLegacyCodexSessionCommand, withCodexHookFlag } from '../harness.mjs';
 import { resolveStack } from '../detect-stack.mjs';
+import { resolveShape } from '../repo-shape.mjs';
 import { loadRenderState } from '../render-state.mjs';
 import { extractSections, deepMergeJson, simpleDiff } from '../merge.mjs';
 import { render } from '../render.mjs';
@@ -1019,7 +1020,8 @@ export async function migrateGates(ctx) {
   catch (e) { console.log(`  gates: ${e.message} — 건너뜀`); return false; }
   if (existing !== null) return false;
   const { stack: pin } = await loadRenderState(ctx.targetDir);
-  const proposal = await buildProposal(ctx.targetDir, await resolveStack(ctx.targetDir, pin), { unattended: Boolean(ctx.flags.yes) });
+  const shape = await resolveShape(ctx.targetDir, { yes: Boolean(ctx.flags.yes) });
+  const proposal = await buildProposal(ctx.targetDir, await resolveStack(ctx.targetDir, pin), { unattended: Boolean(ctx.flags.yes), shape });
   console.log(`\n커밋 게이트가 설정되지 않았습니다 — 새 pre-commit-check.sh 는 ${GATES_REL} 의 목록만 실행합니다.\n${describeProposal(proposal)}`);
   const ok = ctx.flags.yes || await confirm(`이 제안을 ${GATES_REL} 에 기록할까요? (팀과 공유하려면 커밋)`, { defaultYes: true });
   if (!ok) { console.log('Skipped gates.'); return false; }

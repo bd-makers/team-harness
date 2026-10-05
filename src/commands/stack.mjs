@@ -7,6 +7,7 @@
 // 여기서 할 수 있는 최선은 "러너가 없다"는 관측을 warning으로 올려 그 분기를 에이전트에게 넘기는 것이다.
 import { detectStack, resolveStack, KNOWN_STACK_IDS } from '../detect-stack.mjs';
 import { detectTesting } from '../detect-testing.mjs';
+import { detectRepoShape, describeShape } from '../repo-shape.mjs';
 import { loadRenderState } from '../render-state.mjs';
 import { buildEnvelope, emitObservation } from '../observation.mjs';
 
@@ -102,6 +103,8 @@ export async function runStack(ctx) {
   const stack = await resolveStack(ctx.targetDir, forced);
   const testing = await detectTesting(ctx.targetDir);
   const stackPin = await readStackPin(ctx.targetDir);
+  // 읽기 전용 미리보기 — 에이전트가 init --yes 전에 감지된 모양을 사용자에게 확인받는 근거다.
+  const repoShape = await detectRepoShape(ctx.targetDir);
   const summary = renderSummary(stack, testing);
   const unreadable = testing.manifest === 'unreadable';
   const runnerMissing = isJsProject(testing) && !unreadable && !testing.runner;
@@ -113,7 +116,7 @@ export async function runStack(ctx) {
       status,
       summary: unreadable ? UNREADABLE_SUMMARY : runnerMissing ? NO_RUNNER_SUMMARY : summary.join(' · '),
       nextActions: nextActions(testing),
-      extra: { stack, testing, stackPin },
+      extra: { stack, testing, stackPin, repoShape },
     }));
     return;
   }
@@ -125,6 +128,7 @@ export async function runStack(ctx) {
     const { pinned, detected, effective, unpin } = stackPin;
     console.log(`  pin: ${pinned} (detected: ${detected} → effective: ${effective}) — unpin: ${unpin}`);
   }
+  if (repoShape.shape !== 'single') for (const line of describeShape(repoShape).split('\n')) console.log(`  ${line}`);
   console.log('');
   for (const action of nextActions(testing)) console.log(`next: ${action}`);
 }

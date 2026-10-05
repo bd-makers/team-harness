@@ -1,0 +1,21 @@
+{
+  "user": "hslee",
+  "task": "preset-repo-shape",
+  "created": "2026-10-05",
+  "firstActivatedAt": "2026-10-05T13:56:18.062Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "e7e95136f879984ca45d172622ce539db855ac95",
+      "at": "2026-10-05T15:44:04.893Z",
+      "exitCode": 0,
+      "outputBytes": 1579
+    }
+  ]
+}

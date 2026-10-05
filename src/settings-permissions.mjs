@@ -18,7 +18,7 @@ export function isRnStack(stackId) {
 const bash = (cmd) => `Bash(${cmd})`;
 const configured = (cmd) => typeof cmd === 'string' && cmd !== '' && cmd !== CONFIGURE;
 
-// stackId: 유효 stack id(명시 --stack > 감지값). 생략하면 프로필의 id를 쓴다 — excludesRnRules와 같은 입력.
+// stackId: 유효 stack id(명시 --stack > 감지값). 생략하면 프로필의 id를 쓴다 — 단일 앱 rules 프리셋 판정(planRuleInstalls)과 같은 입력.
 export function stackPermissions(profile, { stackId } = {}) {
   const allow = [];
   const deny = [];
@@ -36,7 +36,7 @@ export function stackPermissions(profile, { stackId } = {}) {
   }
 
   // RN 게이트 — pm 게이트와 독립이다(codex 리뷰 P2, 2026-09-04): package.json 없는 디렉터리에
-  // --stack expo를 강제해도 excludesRnRules가 RN rules를 넣는 것과 같이 네이티브 deny는 들어가야 한다.
+  // --stack expo를 강제해도 rules 프리셋이 RN rules를 넣는 것과 같이 네이티브 deny는 들어가야 한다.
   // pm을 모르면 exec 접두는 npx로 둔다.
   if (isRnStack(stackId ?? profile.id)) {
     const exec = EXEC_PREFIX[pm] ?? 'npx';

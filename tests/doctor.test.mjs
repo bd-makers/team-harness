@@ -15,6 +15,7 @@ import { taskSpecTemplate } from '../src/commands/task.mjs';
 import { observeToolEvent } from '../templates/.claude/hooks/observe-tools.mjs';
 import { OBSERVABILITY_BASE } from '../src/commands/observe.mjs';
 import { buildProposal } from '../src/presets.mjs';
+import { detectRepoShape } from '../src/repo-shape.mjs';
 import { resolveStack } from '../src/detect-stack.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -1294,5 +1295,57 @@ test('runDoctor: 지문 변화는 commit gates 경고와 gate suggest next_actio
     const c = checkOf(envelope, 'commit gates');
     assert.equal(c?.status, 'warning');
     assert.ok(envelope.next_actions.includes('harness-team gate suggest'), JSON.stringify(envelope.next_actions));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// ── 커밋 게이트 지문 — 확정 모양 기준 (preset-repo-shape G2) ────────────────────
+async function writeTree(dir, files) {
+  for (const [name, body] of Object.entries(files)) {
+    await mkdir(dirname(join(dir, name)), { recursive: true });
+    await writeFile(join(dir, name), typeof body === 'string' ? body : JSON.stringify(body));
+  }
+}
+
+const WS_TREE = {
+  'package.json': { name: 'root', private: true, workspaces: ['apps/*', 'packages/*'] },
+  'apps/web/package.json': { name: 'web', scripts: { dev: 'vite', test: 'vitest' }, dependencies: { 'react-dom': '19' } },
+  'packages/ui/package.json': { name: 'ui', scripts: { test: 'node --test' } },
+};
+
+// confirmed: 'detect' writes the detected workspace shape, 'single' the rejected one.
+async function wsGatesFixture(confirmed) {
+  const dir = await healthyConsumerFixture();
+  await writeTree(dir, WS_TREE);
+  const shape = confirmed === 'single' ? { shape: 'single', workspaces: [] } : await detectRepoShape(dir);
+  const { commit, format, fingerprint } = await buildProposal(dir, await resolveStack(dir), { shape });
+  await writeFile(join(dir, '.harness/gates.json'), JSON.stringify({ commit, format, fingerprint }));
+  return dir;
+}
+
+test('checkGateFingerprint 모양: workspace가 늘면 알리고, 앱 수만 바뀌어 모양 이름이 달라지는 것은 조용하다', async () => {
+  const dir = await wsGatesFixture('detect');
+  try {
+    assert.equal(await checkGateFingerprint(dir), null);
+    await writeTree(dir, { 'packages/ui/package.json': { name: 'ui', scripts: { test: 'node --test' }, dependencies: { 'react-dom': '19' } } });
+    assert.equal(await checkGateFingerprint(dir), null, 'app-packages → monorepo는 drift가 아니다');
+    await writeTree(dir, { 'apps/admin/package.json': { name: 'admin' } });
+    assert.match(await checkGateFingerprint(dir), /\+workspace apps\/admin/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkGateFingerprint 모양: single로 확정(거절)했으면 workspace 변화에 조용하다', async () => {
+  const dir = await wsGatesFixture('single');
+  try {
+    await writeTree(dir, { 'apps/admin/package.json': { name: 'admin', scripts: { dev: 'x' } } });
+    assert.equal(await checkGateFingerprint(dir), null);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkGateFingerprint 모양: shape 없는 기존 지문은 workspace가 새로 생겼을 때만 알린다', async () => {
+  const dir = await gatesFixture({ test: 'node --test' });
+  try {
+    assert.equal(await checkGateFingerprint(dir), null, '단일 앱 기존 gates.json에 새 경고가 없다');
+    await writeTree(dir, { 'package.json': { name: 'x', scripts: { test: 'node --test' }, workspaces: ['apps/*'] }, 'apps/web/package.json': { name: 'web' } });
+    assert.match(await checkGateFingerprint(dir), /모양 single → app-packages/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

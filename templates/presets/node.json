@@ -2,12 +2,32 @@
   "id": "node",
   "label": "Node.js (JS/TS)",
   "match": { "stackIds": ["node", "react", "next", "react-native", "expo"] },
+  "workspace": {
+    "app": [
+      { "runtimeDependency": "next" }, { "runtimeDependency": "expo" }, { "runtimeDependency": "react-native" },
+      { "runtimeDependency": "react-dom" }
+    ]
+  },
   "pm": {
     "npm":  { "exec": "npx",       "run": "npm run" },
     "pnpm": { "exec": "pnpm exec", "run": "pnpm run" },
     "yarn": { "exec": "yarn",      "run": "yarn run" },
     "bun":  { "exec": "bunx",      "run": "bun run" }
   },
+  "delegate": [
+    {
+      "when": { "file": "turbo.json" }, "run": "{exec} turbo run {tasks} --filter=...[HEAD]", "confirm": true,
+      "tasks": [
+        { "name": "lint", "when": { "fileContains": ["turbo.json", "\"lint\""] } },
+        { "name": "typecheck", "when": { "fileContains": ["turbo.json", "\"typecheck\""] } },
+        { "name": "test", "when": { "fileContains": ["turbo.json", "\"test\""] } }
+      ]
+    },
+    {
+      "when": { "file": "nx.json" }, "run": "{exec} nx affected -t {tasks} --base=HEAD", "confirm": true,
+      "tasks": [{ "name": "lint" }, { "name": "typecheck" }, { "name": "test" }]
+    }
+  ],
   "commit": [
     { "when": { "file": "tsconfig.json" }, "run": "{exec} tsc --noEmit" },
     { "when": { "script": "lint" }, "run": "{run} lint", "confirm": true },

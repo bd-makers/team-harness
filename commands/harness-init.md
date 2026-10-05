@@ -1,7 +1,7 @@
 ---
 description: "현재 프로젝트에 팀 하네스를 scaffold하거나 기존 설치를 갱신합니다 (Claude 메인 + Codex 리뷰어 + Cursor 미러). 마커 병합·JSON deep-merge라 재실행해도 사용자 텍스트를 보존"
 phase: First-time
-argument-hint: '[--stack react-native|react|next|node|python|go|generic] [--yes]'
+argument-hint: '[--stack react-native|react|next|node|python|go|generic] [--shape single] [--yes]'
 ---
 
 현재 작업 디렉토리에 팀용 하네스를 설치합니다. **기존 프로젝트에 다시 실행해도 됩니다** —
@@ -30,7 +30,8 @@ diff로 미리 알려 줍니다(아래 `harness-team migrate` 참고).
 
 Claude의 Bash는 TTY가 아니라 CLI의 readline 프롬프트(사용자명·적용 확인)에 답할 수
 없습니다. 그래서 아래 Step 0~1에서 답을 먼저 받아 **플래그로 넘깁니다** — 플래그 없이 `init`만 실행하지 마세요.
-`--stack`을 주지 않으면 자동 감지하며, React Native/Expo 전용 rules 4종은 유효 stack이 RN 계열일 때만 설치됩니다.
+`--stack`을 주지 않으면 자동 감지하며, React Native/Expo 전용 rules 4종은 유효 stack이 RN 계열일 때만 설치됩니다
+(workspace 저장소는 RN 앱마다 `paths:`를 그 앱 경로로 스코프한 사본).
 감지와 다른 `--stack`은 `.harness/render-state.json`에 고정되어 이후 플래그 없는 `init`·`doctor`·`migrate`도
 그 스택을 씁니다 — 감지된 id를 다시 주면(`--stack node` 등) 고정이 풀립니다.
 고정 여부는 `harness-team stack`으로 확인합니다 — text는 `pin:` 줄, `--json`은 `stackPin`(고정 없으면 `null`) 필드에 감지·고정·유효 스택과 해제 명령이 나옵니다.
@@ -48,6 +49,20 @@ Claude의 Bash는 TTY가 아니라 CLI의 readline 프롬프트(사용자명·�
 > **아니오** — 건너뜁니다
 
 **예** 선택 시: init 실행 완료 후, 기존 커스텀 내용을 생성된 `CLAUDE.md`의 `<!-- harness:user:begin -->` ~ `<!-- harness:user:end -->` 사이에 추가합니다.
+
+**Step 0.5 — 저장소 모양 확인 (workspace 저장소만)**
+
+`init --yes`는 감지된 모양을 그대로 받으므로, 실행 **전에** 미리보기로 확인받는다:
+
+```bash
+node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" stack --json
+```
+
+`repoShape.shape`가 `single`이면 이 단계를 건너뛴다(묻지 않는다). `app-packages`·`monorepo`면 workspace 목록
+(`repoShape.workspaces`의 `dir`·`kind`·`stackId`)을 보여 주고 `AskUserQuestion`으로 묻는다 — 이 모양으로 진행할지,
+단일 앱으로 처리할지. 커밋 게이트가 workspace별 목록(turbo·nx가 있으면 그 도구 위임)으로 제안되고 RN 앱이 있으면 rules가
+그 앱 경로로 스코프된다는 점을 함께 알린다. **단일 앱**을 고르면 Step 1의 인수에 `--shape single`을 더한다.
+이미 `.harness/gates.json`에 확정된 모양이 있으면 init은 그것을 따르므로 묻지 않는다(바꾸려면 `harness-team gate suggest`).
 
 **Step 1 — 실행**
 

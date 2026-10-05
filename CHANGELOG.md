@@ -9,7 +9,26 @@
 
 ## [Unreleased]
 
+### Added
+- **저장소 모양과 모노레포 커밋 게이트** (task `preset-repo-shape`, cycle §4-2b). init이 `workspaces`·`pnpm-workspace.yaml`로
+  저장소 모양(앱 + 내부 패키지 / 모노레포)과 workspace 목록을 판별해 보여 주고 확인받는다 — workspace가 없는 단일 앱은 묻지도 출력하지도
+  않고 종전과 같다. 거절하면(`init --shape single`) 단일로 처리하고, `/harness-init`은 `stack --json`의 `repoShape` 미리보기로 먼저 묻는다.
+  workspace 저장소의 커밋 게이트는 turbo(`turbo run … --filter=...[HEAD]`, turbo.json에 정의된 task만)·nx(`nx affected -t … --base=HEAD`)가 있으면
+  그 도구에 위임하고, 없으면 `.harness/gates.json`의 `commit`이 **객체** `{"<디렉터리>": [cd <디렉터리> && …], ".": 루트 앱}`가 된다 —
+  `gate commit`은 HEAD 대비 바뀐 파일(스테이징·작업 트리·untracked)이 속한 키의 목록만 실행하고, `"."`는 어느 키에도 안 걸린 변경이 있을 때만,
+  첫 커밋이면 전부 실행한다(파일 이동은 양쪽 workspace를 모두 센다). 배열 형식은 그대로다. 위임 명령은 예전 훅에 없던 명령이라 `--yes`에서는 추가 제안으로만 보이고,
+  확인 전까지는 예전 훅이 돌리던 루트 목록(tsc·test)을 유지한다.
+  doctor는 확정된 모양 기준으로 지문을 비교한다 — workspace 추가·삭제만 알리고, single로 확정한 저장소와 앱 수만 바뀐 경우는 조용하다.
+  앱 판정은 프리셋 데이터(`workspace.app`)다 — `next`·`expo`·`react-native`·`react-dom`을 `dependencies`(새 조건 `runtimeDependency`)에 가진 workspace가 앱이고,
+  dev·start 스크립트는 라이브러리·오케스트레이터 루트에도 있어 신호로 쓰지 않는다.
+  **이미 workspace를 쓰던 기존 설치본**은 업그레이드 후 첫 doctor에서 `모양 single → …` drift가 뜬다 — `harness-team gate suggest`로 모양을 확정한다
+  (init 재실행은 기존 `gates.json`을 단일로 보고 묻지 않는다).
+
 ### Changed
+- **RN rules를 rules 프리셋으로** (task `preset-repo-shape`). `copyStaticAssets`의 고정 RN 게이트를 지우고
+  `templates/presets/rules/react-native.json`이 대상을 정한다. 단일 앱은 종전과 같은 판정(유효 stack id)·같은 파일이고,
+  workspace 저장소는 RN **앱**마다 `<앱 경로>-<이름>.md`로 `paths:`를 그 앱 경로로 스코프해 설치한다(RN을 dev 의존성으로만 가진 패키지는 제외).
+  기존 설치본의 rules는 건드리지 않는다.
 - **커밋 게이트를 프리셋 데이터로** (task `preset-gates`, D11). `pre-commit-check.sh`·`auto-format.sh`는 이제 얇은 래퍼다 —
   `harness-team gate commit`이 팀이 커밋하는 `.harness/gates.json`의 `commit` 목록을, `gate format <file>`이 `format`(glob → 명령)을 실행한다
   (사용자별로 gitignore되는 `.harness/config.json`이 아니다 — 한 사람이 확정·커밋하면 팀 전체가 같은 게이트를 받는다).

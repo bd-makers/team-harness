@@ -1,10 +1,11 @@
 // Shared harness ops used by init.
 import { join, basename } from 'node:path';
-import { lstat, unlink } from 'node:fs/promises';
+import { lstat, unlink, mkdir } from 'node:fs/promises';
 import { writeText, readTextSafe, copyTree, exists } from './fsx.mjs';
 import { render } from './render.mjs';
 import { mergeMarkdown, deepMergeJson, simpleDiff } from './merge.mjs';
-import { stackPermissions, RN_STACK_IDS } from './settings-permissions.mjs';
+import { stackPermissions } from './settings-permissions.mjs';
+import { planRuleInstalls } from './presets.mjs';
 import { loadRenderState, sectionHashes, readHarnessVersion } from './render-state.mjs';
 import { USER_HANDOFF_IGNORE } from './task-paths.mjs';
 
@@ -208,7 +209,7 @@ export async function planChanges(ctx, { stack, stackPin }) {
   // .claude/settings.json — JSON deep-merge
   const tplSettings = JSON.parse(await readTextSafe(join(tplDir, '.claude/settings.json')));
   // permissions의 pm·RN 의존 항목은 템플릿에 없다 — 스택 프로필에서 생성해 합성한다.
-  // RN 판정 입력은 excludesRnRules와 같다(명시 --stack > 감지 stackId > 프로필 id).
+  // RN 판정 입력은 단일 앱 rules 프리셋 판정과 같다(명시 --stack > 감지 stackId > 프로필 id).
   const stackPerms = stackPermissions(stack, { stackId: ctx.flags?.stack ?? ctx.stackId });
   if (stackPerms.allow.length || stackPerms.deny.length) {
     tplSettings.permissions ??= {};
@@ -262,17 +263,26 @@ export async function applyChanges(changes) {
   return results;
 }
 
-// React Native 전용 rules(Expo Router 네비게이션 등). 유효 stack id — 명시 `--stack`, 없으면
-// init이 감지해 `ctx.stackId`로 넘긴 값 — 가 RN 계열이 아니면 제외한다. 예전에는 자동감지
-// 결과로 게이트하지 않아 순수 Node·Python 프로젝트에도 Expo 규칙 4종이 들어갔고, 이를 피하려고
-// `--stack node`를 주면 감지된 명령이 전부 (configure)로 지워졌다. stack 정보가 전혀 없는
-// 호출(직접 호출·테스트)은 종전대로 전부 복사한다.
-const RN_ONLY_RULE_FILES = new Set(['navigation.md', 'state-management.md', 'styling.md', 'testing.md']);
-// RN_STACK_IDS는 settings-permissions.mjs와 공유한다 — permissions의 RN 전용 항목도 같은 판정을 쓴다.
+// rules 프리셋 설치(preset-repo-shape R9). 접두가 없으면 템플릿 그대로(종전 RN 게이트와 바이트 동일),
+// workspace 앱이면 파일명에 앱 경로 slug를 붙이고 frontmatter 목록 항목(rules 템플릿에는 `paths:`뿐)에 앱 경로를 접두한다.
+export function scopeRulePaths(body, dir) {
+  const m = body.match(/^---\n([\s\S]*?)\n---\n/);
+  if (!m) return body;
+  const front = m[1].replace(/^(\s*-\s*)(["']?)(.+?)\2\s*$/gm, (_, lead, q, pat) => `${lead}${q}${dir}/${pat.replace(/^\.\//, '')}${q}`);
+  return `---\n${front}\n---\n${body.slice(m[0].length)}`;
+}
 
-export function excludesRnRules(ctx) {
-  const stackId = ctx.flags?.stack ?? ctx.stackId;
-  return !!stackId && !RN_STACK_IDS.has(stackId);
+async function installRules(tplRulesDir, dstDir, { dir, files }) {
+  const out = [];
+  for (const name of files) {
+    const dst = join(dstDir, dir === '.' ? name : `${dir.replace(/[^\w.-]+/g, '-')}-${name}`);
+    if (await exists(dst)) { out.push({ path: dst, action: 'skip' }); continue; }
+    const body = await readTextSafe(join(tplRulesDir, name));
+    if (body === null) continue;
+    await writeText(dst, dir === '.' ? body : scopeRulePaths(body, dir));
+    out.push({ path: dst, action: 'write' });
+  }
+  return out;
 }
 
 export async function copyStaticAssets(ctx) {
@@ -280,12 +290,12 @@ export async function copyStaticAssets(ctx) {
   const out = [];
   // hooks: copy, skip existing
   out.push(...await copyTree(join(tplDir, '.claude/hooks'), join(ctx.targetDir, '.claude/hooks'), { skipExisting: true }));
-  // rules: copy, skip existing. RN 전용 4종은 유효 stack이 비-RN이면 제외한다.
-  const excludeRnRules = excludesRnRules(ctx);
-  out.push(...await copyTree(join(tplDir, '.claude/rules'), join(ctx.targetDir, '.claude/rules'), {
-    skipExisting: true,
-    exclude: excludeRnRules ? RN_ONLY_RULE_FILES : undefined,
-  }));
+  // rules: 프리셋이 고른 것만, skip existing. init은 모양을 반영한 ctx.ruleInstalls를 넘기고, 그 밖의 호출은
+  // 유효 stack id(명시 --stack > 감지)로 단일 앱 판정을 한다. 디렉터리는 종전처럼 비어 있어도 만든다.
+  const rulesDst = join(ctx.targetDir, '.claude/rules');
+  await mkdir(rulesDst, { recursive: true });
+  const ruleInstalls = ctx.ruleInstalls ?? await planRuleInstalls(null, ctx.flags?.stack ?? ctx.stackId);
+  for (const inst of ruleInstalls) out.push(...await installRules(join(tplDir, '.claude/rules'), rulesDst, inst));
   // skills: copy, skip existing
   out.push(...await copyTree(join(tplDir, '.claude/skills'), join(ctx.targetDir, '.claude/skills'), { skipExisting: true }));
   // docs/: README + .gitkeep seed (skip existing to preserve team work)

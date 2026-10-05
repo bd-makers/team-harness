@@ -1,0 +1,6 @@
+{
+  "id": "react-native",
+  "label": "React Native (Expo) rules",
+  "match": { "stackIds": ["react-native", "expo"] },
+  "files": ["navigation.md", "state-management.md", "styling.md", "testing.md"]
+}

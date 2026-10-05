@@ -5,8 +5,9 @@ import {
 import { loadRenderState, saveRenderState } from '../render-state.mjs';
 import { confirm } from '../prompt.mjs';
 import { resolveUsername, saveUsername } from '../user-config.mjs';
-import { applyProposal, buildProposal, describeProposal, readGates } from '../presets.mjs';
+import { applyProposal, buildProposal, describeProposal, describeRuleInstalls, planRuleInstalls, readGates } from '../presets.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
+import { resolveShape } from '../repo-shape.mjs';
 
 export async function runInit(ctx) {
   console.log(`harness-team init → ${ctx.targetDir}`);
@@ -18,13 +19,19 @@ export async function runInit(ctx) {
     process.exitCode = 2;
     return;
   }
+  if (ctx.flags.shape !== undefined && ctx.flags.shape !== 'single') {
+    // 모양은 감지가 정한다 — 플래그는 감지된 workspace 모양을 거절하는 용도뿐이다.
+    console.error(`init: --shape 는 single 만 받습니다 (감지된 workspace 모양을 거절할 때) — 받은 값: "${ctx.flags.shape}"`);
+    process.exitCode = 2;
+    return;
+  }
   // 강제 스택은 render-state에 고정해 플래그 없는 다음 init·doctor·migrate가 같은 스택으로 렌더한다.
   // 감지와 같은 id를 주면 고정을 푼다(자동 감지로 복귀). 저장은 render-state와 함께 Apply 뒤에 한다.
   const detectedId = (await detectStack(ctx.targetDir)).id;
   const { stack: priorPin } = await loadRenderState(ctx.targetDir);
   const stackPin = forced === undefined ? priorPin : (forced === detectedId ? undefined : forced);
   const stack = await resolveStack(ctx.targetDir, stackPin);
-  // copyStaticAssets gates the RN-only rules on this, not just on an explicit --stack.
+  // The single-app rules preset (RN rules) is judged on this, not just on an explicit --stack.
   ctx.stackId = stack.id;
   const pinNote = forced === undefined && stackPin ? ` — pinned by an earlier --stack; --stack ${detectedId} to unpin` : '';
   console.log(`  stack: ${stack.stackLabel} (${stack.id})${pinNote}`);
@@ -37,8 +44,21 @@ export async function runInit(ctx) {
   // --yes는 사람이 제안을 보지 않으므로 예전 훅에 없던 명령(confirm)을 빼고 추가 제안으로만 보인다.
   let pendingGates = null;
   const existingGates = await readGates(ctx.targetDir).catch(() => 'malformed');
+  // 저장소 모양: workspace가 없으면 null이고 아무것도 묻거나 출력하지 않는다(단일 앱은 종전 그대로).
+  // gates.json에 이미 확정된 모양이 있으면 다시 묻지 않는다.
+  // RN rules 같은 rules 프리셋도 이 모양으로 정한다 — 확인 화면에 대상을 함께 보여 준다.
+  const effectiveStackId = ctx.flags.stack ?? ctx.stackId;
+  const shape = await resolveShape(ctx.targetDir, {
+    yes: Boolean(ctx.flags.yes),
+    reject: ctx.flags.shape === 'single',
+    // gates.json이 이미 있으면(팀이 확정한 게이트) 모양도 확정된 것으로 본다 — shape가 없는 이전 판은 single이다.
+    // 다시 정하려면 `gate suggest`. 깨진 파일은 확정으로 보지 않는다.
+    stored: existingGates && existingGates !== 'malformed' ? { shape: existingGates.fingerprint?.shape ?? 'single' } : null,
+    describeExtra: async detected => describeRuleInstalls(await planRuleInstalls(detected, effectiveStackId)),
+  });
+  ctx.ruleInstalls = await planRuleInstalls(shape, effectiveStackId);
   if (existingGates === null) {
-    const proposal = await buildProposal(ctx.targetDir, stack, { unattended: Boolean(ctx.flags.yes) });
+    const proposal = await buildProposal(ctx.targetDir, stack, { unattended: Boolean(ctx.flags.yes), shape });
     console.log(`\n${describeProposal(proposal)}`);
     const ok = ctx.flags.yes || await confirm('이 커밋 게이트를 .harness/gates.json 에 기록할까요? (팀과 공유하려면 커밋)', { defaultYes: true });
     if (ok) pendingGates = proposal;

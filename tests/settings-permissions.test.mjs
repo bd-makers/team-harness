@@ -81,7 +81,7 @@ test('패키지 매니저가 없는 스택(python·go·generic)은 아무 항목
   assert.deepEqual(generic, { allow: [], deny: [] });
 });
 
-test('RN 판정은 유효 stack id를 따른다 — 명시 --stack이 프로필 id보다 우선한다(excludesRnRules와 같은 입력)', () => {
+test('RN 판정은 유효 stack id를 따른다 — 명시 --stack이 프로필 id보다 우선한다(단일 앱 rules 프리셋 판정과 같은 입력)', () => {
   const forcedRn = stackPermissions(profile(), { stackId: 'expo' });
   assert.ok(forcedRn.allow.includes('Bash(npx expo start)'));
   assert.deepEqual(forcedRn.deny, ['Edit(./ios/**)', 'Edit(./android/**)']);
@@ -91,7 +91,7 @@ test('RN 판정은 유효 stack id를 따른다 — 명시 --stack이 프로필 
 });
 
 // codex 리뷰 P2 (2026-09-04) — pm 게이트가 RN 게이트보다 앞에 있어 package.json 없는 디렉터리에 --stack expo를
-// 강제하면 ios/android deny까지 사라졌다. RN rules 게이트(excludesRnRules)는 같은 입력에 RN rules를 포함한다.
+// 강제하면 ios/android deny까지 사라졌다. RN rules 프리셋(planRuleInstalls)은 같은 입력에 RN rules를 포함한다.
 test('pm이 없어도 유효 stack이 RN이면 ios/android deny와 Expo allow(exec 접두 기본 npx)를 낸다', () => {
   const out = stackPermissions({ id: 'expo', language: 'unknown', packageManager: '(none)', cmdInstall: '(configure)', cmdTest: '(configure)', cmdLint: '(configure)', cmdTypecheck: '(configure)' }, { stackId: 'expo' });
   assert.deepEqual(out.allow, ['Bash(npx expo start)', 'Bash(npx expo prebuild *)', 'Bash(npx expo install *)']);
@@ -168,7 +168,7 @@ test('planChanges: pnpm Expo 프로젝트는 Expo allow 3종과 ios/android deny
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('planChanges: Expo 프로젝트라도 --stack node를 주면 Expo·네이티브 항목을 빼고 pm 항목은 유지한다 (excludesRnRules와 같은 판정)', async () => {
+test('planChanges: Expo 프로젝트라도 --stack node를 주면 Expo·네이티브 항목을 빼고 pm 항목은 유지한다 (rules 프리셋과 같은 판정)', async () => {
   const dir = await fixture({
     'package.json': { name: 'app', dependencies: { expo: '52.0.0' }, scripts: { test: 'jest' } },
     'pnpm-lock.yaml': 'lockfileVersion: 9\n',
