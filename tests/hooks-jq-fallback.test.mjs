@@ -47,6 +47,10 @@ async function makeBins() {
     const stub = join(b, 'npx');
     await writeFile(stub, '#!/bin/sh\necho "$@" >> "$NPX_LOG"\n');
     await chmod(stub, 0o755);
+    // 래퍼 훅이 부르는 실제 CLI — 경로에 공백이 있어 인용한다.
+    const cli = join(b, 'harness-team');
+    await writeFile(cli, `#!/bin/sh\nexec "${process.execPath}" "${join(ROOT, 'bin/harness-team.mjs')}" "$@"\n`);
+    await chmod(cli, 0o755);
   }
   return { dir, nojq, withjq };
 }
@@ -288,27 +292,29 @@ test('protect-files: jq 없이도 .env 편집을 차단하고 저정밀 모드�
 });
 
 // ── pre-commit-check.sh ───────────────────────────────────────────────────────
-// 게이트가 실제로 막는 프로젝트 상태를 만들어 jq 있음/없음을 대조한다.
-// PATH에 npm/npx가 없으므로 test 스크립트 실행은 반드시 실패한다 — 게이트에 도달했는지가 관심사다.
-async function jsProject(pkg) {
+// 훅은 git commit을 감지해 `harness-team gate commit`에 넘기는 래퍼다 — 무엇을 돌릴지는 config가 정한다.
+// FAILING은 항상 실패하는 게이트라, 게이트에 도달했는지(exit 2)가 관심사다.
+const FAILING = ['node -e "process.exit(1)"'];
+async function gateProject(commit) {
   const dir = await mkdtemp(join(tmpdir(), 'harness-precommit-'));
-  await writeFile(join(dir, 'package.json'), JSON.stringify(pkg, null, 2));
+  await mkdir(join(dir, '.harness'));
+  if (commit !== undefined) await writeFile(join(dir, '.harness/gates.json'), JSON.stringify({ commit }));
   return dir;
 }
 
 for (const mode of MODES) {
-  test(`pre-commit-check [${mode}]: test 스크립트가 있으면 커밋 게이트가 돈다`, async () => {
-    const dir = await jsProject({ name: 'x', scripts: { test: 'node --test' } });
+  test(`pre-commit-check [${mode}]: 게이트 명령이 실패하면 커밋을 막는다`, async () => {
+    const dir = await gateProject(FAILING);
     try {
       const r = await runHook('pre-commit-check.sh', bash('git commit -m "wip"'), { mode, cwd: dir });
       assert.match(r.stderr, /커밋 전 검증 실행 중/, '게이트에 도달해야 한다');
-      assert.equal(r.code, 2, 'test 실행이 실패하면 커밋을 막는다');
-      assert.match(r.stderr, /테스트 실패/);
+      assert.equal(r.code, 2, '게이트 실패면 커밋을 막는다');
+      assert.match(r.stderr, /커밋 게이트 실패/);
     } finally { await rm(dir, { recursive: true, force: true }); }
   });
 
-  test(`pre-commit-check [${mode}]: test 스크립트가 없으면 통과시킨다`, async () => {
-    const dir = await jsProject({ name: 'x', scripts: { build: 'tsc' } });
+  test(`pre-commit-check [${mode}]: 게이트가 통과하면 커밋을 허용한다`, async () => {
+    const dir = await gateProject(['node -e ""']);
     try {
       const r = await runHook('pre-commit-check.sh', bash('git commit -m "wip"'), { mode, cwd: dir });
       assert.equal(r.code, 0, `stderr: ${r.stderr}`);
@@ -317,7 +323,7 @@ for (const mode of MODES) {
   });
 
   test(`pre-commit-check [${mode}]: commit이 아닌 명령·non-Bash는 관여하지 않는다`, async () => {
-    const dir = await jsProject({ name: 'x', scripts: { test: 'node --test' } });
+    const dir = await gateProject(FAILING);
     try {
       for (const payload of [bash('git status'), { tool_name: 'Read', tool_input: { file_path: '/x' } }]) {
         const r = await runHook('pre-commit-check.sh', payload, { mode, cwd: dir });
@@ -332,7 +338,7 @@ for (const mode of MODES) {
   // 2026-09-13 Codex 분석 P2: `git -C . commit`·`git --no-pager commit`이 `*"git commit"*` 부분 문자열
   // 검사를 비껴가 exit 0으로 통과했다. block-dangerous-git.sh와 같은 전역 옵션 규칙으로 잡는다.
   test(`pre-commit-check [${mode}]: git 전역 옵션이 끼어도 commit 게이트가 돈다`, async () => {
-    const dir = await jsProject({ name: 'x', scripts: { test: 'node --test' } });
+    const dir = await gateProject(FAILING);
     try {
       // 뒤 넷은 codex 리뷰 P2: 정규식 전환으로 셸 연산자 경계(`;`·`&&`·`|`·`)`)가 새지 않아야 한다.
       for (const cmd of ['git -C . commit -m "wip"', 'git --no-pager commit -m "wip"', 'git -c user.name=x commit', 'git commit -m "wip"',
@@ -340,13 +346,13 @@ for (const mode of MODES) {
         'git commit>/dev/null', "bash -c 'git commit'", 'git commit`echo`']) {
         const r = await runHook('pre-commit-check.sh', bash(cmd), { mode, cwd: dir });
         assert.match(r.stderr, /커밋 전 검증 실행 중/, `${cmd}: 게이트에 도달해야 한다`);
-        assert.equal(r.code, 2, `${cmd}: test 실행이 실패하면 커밋을 막는다`);
+        assert.equal(r.code, 2, `${cmd}: 게이트 실패면 커밋을 막는다`);
       }
     } finally { await rm(dir, { recursive: true, force: true }); }
   });
 
   test(`pre-commit-check [${mode}]: subcommand가 commit이 아니면 옵션·인용 안 'commit'에도 관여하지 않는다`, async () => {
-    const dir = await jsProject({ name: 'x', scripts: { test: 'node --test' } });
+    const dir = await gateProject(FAILING);
     try {
       // `grep "git commit"`처럼 인용 부호가 commit 바로 뒤에 오는 경우는 END가 `"`를 경계로 인정하므로
       // (저정밀 payload 스캔 계약) 게이트가 돈다 — block-dangerous-git.sh와 같은 fail-closed 오탐이며 여기서 다루지 않는다.
@@ -360,7 +366,7 @@ for (const mode of MODES) {
 }
 
 test('pre-commit-check: jq 없이도 게이트가 돌고 저정밀 모드를 알린다', async () => {
-  const dir = await jsProject({ name: 'x', scripts: { test: 'node --test' } });
+  const dir = await gateProject(FAILING);
   try {
     const r = await runHook('pre-commit-check.sh', bash('git commit -m "wip"'), { mode: 'nojq', cwd: dir });
     assert.equal(r.code, 2);
@@ -369,12 +375,52 @@ test('pre-commit-check: jq 없이도 게이트가 돌고 저정밀 모드를 알
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+// exit 0 훅의 stderr는 사용자에게 보이지 않는다 — 통과 경로의 경고는 stdout JSON systemMessage로 낸다.
+test('pre-commit-check: gates.json이 없으면 통과시키고 systemMessage로 미설정을 알린다', async () => {
+  const dir = await gateProject(undefined);
+  try {
+    const r = await runHook('pre-commit-check.sh', bash('git commit -m "wip"'), { mode: 'nojq', cwd: dir });
+    assert.equal(r.code, 0, `stderr: ${r.stderr}`);
+    assert.match(JSON.parse(r.stdout).systemMessage, /커밋 게이트 미설정/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('pre-commit-check: CLI를 찾지 못하면 경고하고 통과시킨다', async () => {
+  const dir = await gateProject(FAILING);
+  try {
+    const r = await runHook('pre-commit-check.sh', bash('git commit -m "wip"'),
+      { mode: 'nojq', cwd: dir, env: { HARNESS_TEAM_BIN: join(dir, 'no-such-cli') } });
+    assert.equal(r.code, 0, `stderr: ${r.stderr}`);
+    assert.match(JSON.parse(r.stdout).systemMessage, /harness-team CLI를 찾지 못해 커밋 게이트를 건너뜁니다/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// exec로 넘기면 CLI의 exit 1(구버전 CLI의 unknown command·크래시)이 그대로 나가 커밋이 통과했다(codex P2).
+test('pre-commit-check: CLI가 0·2 외의 코드로 끝나면 커밋을 막는다', async () => {
+  const dir = await gateProject(FAILING);
+  try {
+    const stub = join(dir, 'old-cli');
+    await writeFile(stub, '#!/bin/sh\necho "unknown command: gate" >&2\nexit 1\n');
+    await chmod(stub, 0o755);
+    const r = await runHook('pre-commit-check.sh', bash('git commit -m "wip"'),
+      { mode: 'nojq', cwd: dir, env: { HARNESS_TEAM_BIN: stub } });
+    assert.equal(r.code, 2, `stderr: ${r.stderr}`);
+    assert.match(r.stderr, /비정상 종료.*exit 1/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 // ── auto-format.sh ────────────────────────────────────────────────────────────
 // 보안 통제가 아니라 편의 기능 — 판정(항상 exit 0)은 그대로 두고 경로 추출만 폴백에 맡긴다.
-// npx 스텁이 받은 인자로 "경로를 제대로 뽑았는지"를 본다.
+// npx 스텁이 받은 인자로 "경로를 제대로 뽑았는지"를 본다. 포맷 명령은 config가 선언한다.
+async function formatProject() {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-autofmt-'));
+  await mkdir(join(dir, '.harness'));
+  await writeFile(join(dir, '.harness/gates.json'), JSON.stringify({ commit: [], format: { '*.ts': ['npx prettier --write'] } }));
+  return dir;
+}
 for (const mode of MODES) {
-  test(`auto-format [${mode}]: 포맷 대상 경로를 그대로 prettier에 넘긴다`, async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'harness-autofmt-'));
+  test(`auto-format [${mode}]: config format의 glob이 맞으면 경로를 그대로 명령에 넘긴다`, async () => {
+    const dir = await formatProject();
     try {
       const file = join(dir, 'a.ts');
       await writeFile(file, 'export const a = 1\n');
@@ -385,8 +431,20 @@ for (const mode of MODES) {
     } finally { await rm(dir, { recursive: true, force: true }); }
   });
 
-  test(`auto-format [${mode}]: 대상 확장자가 아니거나 경로가 없으면 아무것도 안 한다`, async () => {
+  test(`auto-format [${mode}]: config에 format이 없으면 .ts도 포맷하지 않는다`, async () => {
     const dir = await mkdtemp(join(tmpdir(), 'harness-autofmt-'));
+    try {
+      const file = join(dir, 'a.ts');
+      await writeFile(file, 'export const a = 1\n');
+      const log = join(dir, NPX_LOG);
+      const r = await runHook('auto-format.sh', { tool_name: 'Write', tool_input: { file_path: file } }, { mode, cwd: dir, env: { NPX_LOG: log } });
+      assert.equal(r.code, 0);
+      await assert.rejects(() => readFile(log, 'utf8'), '선언이 없으면 아무 포맷터도 돌지 않는다');
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  });
+
+  test(`auto-format [${mode}]: glob이 맞지 않거나 경로가 없으면 아무것도 안 한다`, async () => {
+    const dir = await formatProject();
     try {
       const log = join(dir, NPX_LOG);
       for (const payload of [
@@ -424,7 +482,7 @@ test('block-dangerous-git [nojq]: command 추출 실패 시 payload 전체 스�
 });
 
 test('pre-commit-check [nojq]: 추출 실패에도 커밋 게이트를 건너뛰지 않는다', async () => {
-  const dir = await jsProject({ name: 'x', scripts: { test: 'node --test' } });
+  const dir = await gateProject(FAILING);
   try {
     for (const payload of [
       { tool_input: { command: 'git commit -m "wip"' } },               // tool_name 추출 실패
@@ -432,7 +490,7 @@ test('pre-commit-check [nojq]: 추출 실패에도 커밋 게이트를 건너뛰
     ]) {
       const r = await runHook('pre-commit-check.sh', payload, { mode: 'nojq', cwd: dir });
       assert.match(r.stderr, /커밋 전 검증 실행 중/, `게이트에 도달해야 한다: ${JSON.stringify(payload)}`);
-      assert.equal(r.code, 2, 'test 실행이 실패하면 커밋을 막는다');
+      assert.equal(r.code, 2, '게이트 실패면 커밋을 막는다');
     }
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

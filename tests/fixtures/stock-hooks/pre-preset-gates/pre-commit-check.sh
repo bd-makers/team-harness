@@ -1,7 +1,8 @@
 #!/bin/bash
-# PreToolUse hook: Bash 도구의 git commit 을 감지해 `harness-team gate commit` 에 넘긴다.
-# 무엇을 돌릴지는 팀이 커밋하는 .harness/gates.json 의 commit 이 정한다 — 언어·패키지 매니저 지식은
-# 프리셋 데이터(templates/presets)에만 있고 이 훅에는 없다(D11). 목록 제안·갱신: harness-team gate suggest.
+# PreToolUse hook: git commit 실행 전 typecheck + test 통과 여부 확인.
+# Bash 도구에서 git commit 명령 감지 시 동작한다.
+# 패키지 매니저는 lockfile로 감지한다 (src/detect-stack.mjs와 동일 우선순위):
+#   pnpm-lock.yaml → pnpm, yarn.lock → yarn, bun.lockb → bun, 없으면 npm.
 
 # --- harness:jq-fallback (훅 4개 공통 — 동일 블록 유지, tests/hooks-jq-fallback.test.mjs가 대조) ---
 # jq가 PATH에 없으면 이 훅들은 파싱 결과가 빈 문자열이 되어 조용히 통과(fail-open)했다.
@@ -59,22 +60,74 @@ if ! [[ "$COMMAND" =~ ${GIT}commit${END} ]]; then
   exit 0
 fi
 
-[[ $jq_missing -eq 1 ]] && echo "ℹ️ jq 없음 — 저정밀 모드로 git commit을 감지했습니다" >&2
-
-# CLI가 없으면 막지 않는다(게이트는 제공이지 강제가 아니다) — 다만 꺼졌다는 사실은 알린다.
-# exit 0 훅의 stderr는 사용자에게 보이지 않으므로 경고는 stdout JSON systemMessage로 낸다.
-bin="${HARNESS_TEAM_BIN:-harness-team}"
-if ! command -v "$bin" >/dev/null 2>&1; then
-  echo '{"systemMessage":"⚠️ harness-team CLI를 찾지 못해 커밋 게이트를 건너뜁니다 — PATH 또는 HARNESS_TEAM_BIN 을 확인하세요."}'
+# package.json이 없으면 JS 프로젝트가 아니다 — 검증할 게 없으니 통과.
+if [[ ! -f package.json ]]; then
   exit 0
 fi
 
-# exec로 넘기지 않는다: CLI가 0(통과)·2(차단) 외로 끝나면(gate를 모르는 구버전 CLI의 exit 1, 크래시 등)
-# 그 코드가 그대로 나가 커밋이 통과해 버린다 — 존재하는 CLI의 실패는 차단으로 바꾼다.
-"$bin" gate commit
-status=$?
-if [[ $status -eq 0 || $status -eq 2 ]]; then
-  exit $status
+# lockfile 기반 패키지 매니저 감지.
+detect_pm() {
+  if [[ -f pnpm-lock.yaml ]]; then echo pnpm
+  elif [[ -f yarn.lock ]]; then echo yarn
+  elif [[ -f bun.lockb ]]; then echo bun
+  else echo npm
+  fi
+}
+PM=$(detect_pm)
+
+# 로컬 바이너리 실행 형태 (tsc 등) — npm은 npx, bun은 bunx, 그 외는 매니저 직접.
+pm_exec() {
+  case "$PM" in
+    pnpm) pnpm exec "$@" ;;
+    yarn) yarn "$@" ;;
+    bun)  bunx "$@" ;;
+    *)    npx "$@" ;;
+  esac
+}
+
+# package.json test 스크립트 실행 — bun은 `bun run`이라야 스크립트를 탄다
+# (`bun test`는 스크립트를 무시하고 bun 자체 러너를 돌린다).
+pm_run_test() {
+  case "$PM" in
+    bun) bun run test ;;
+    *)   "$PM" test ;;
+  esac
+}
+
+# package.json에 test 스크립트가 있는지 — jq가 없으면 node로 판정한다.
+# node는 이 하네스의 기존 하드 의존(settings.json이 매 도구 호출마다 observe-tools.mjs를 돌린다)이라
+# jq보다 안전한 폴백이다. 둘 다 없으면 테스트를 실행할 수단 자체가 없으므로 판정 불가로 둔다.
+has_test_script() {
+  if [[ $jq_missing -eq 0 ]]; then
+    jq -e '.scripts.test // empty' package.json >/dev/null 2>&1
+  elif command -v node >/dev/null 2>&1; then
+    node -e 'const s=(require("./package.json").scripts||{}).test; process.exit(s?0:1)' >/dev/null 2>&1
+  else
+    return 1
+  fi
+}
+
+DEGRADED_NOTE=""
+[[ $jq_missing -eq 1 ]] && DEGRADED_NOTE=" — jq 없음(저정밀 모드)"
+echo "🔍 커밋 전 검증 실행 중... (패키지 매니저: $PM)$DEGRADED_NOTE" >&2
+
+# TypeScript 타입 체크 — tsconfig.json이 있을 때만.
+if [[ -f tsconfig.json ]]; then
+  if ! pm_exec tsc --noEmit 2>/dev/null; then
+    echo "❌ TypeScript 타입 에러가 있습니다. 커밋을 중단합니다." >&2
+    echo "   → $PM 로 tsc --noEmit 를 실행해 에러를 확인하세요." >&2
+    exit 2
+  fi
 fi
-echo "❌ harness-team gate commit 이 비정상 종료했습니다(exit $status) — CLI가 gate 명령을 모르는 구버전이면 업데이트하세요. 커밋을 중단합니다." >&2
-exit 2
+
+# 테스트 — package.json에 test 스크립트가 있을 때만.
+if has_test_script; then
+  if ! pm_run_test 2>/dev/null; then
+    echo "❌ 테스트 실패. 커밋을 중단합니다." >&2
+    echo "   → $PM test 로 실패한 테스트를 확인하세요." >&2
+    exit 2
+  fi
+fi
+
+echo "✅ 검증 통과. 커밋을 진행합니다." >&2
+exit 0

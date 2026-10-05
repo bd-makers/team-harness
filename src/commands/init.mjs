@@ -5,6 +5,7 @@ import {
 import { loadRenderState, saveRenderState } from '../render-state.mjs';
 import { confirm } from '../prompt.mjs';
 import { resolveUsername, saveUsername } from '../user-config.mjs';
+import { applyProposal, buildProposal, describeProposal, readGates } from '../presets.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
 
 export async function runInit(ctx) {
@@ -30,6 +31,18 @@ export async function runInit(ctx) {
 
   // 결정만 — 저장은 최종 Apply 뒤(applyChanges 직후). 여기서 쓰면 취소해도 config가 남는다.
   const pendingUsername = await resolveUsername(ctx.targetDir, ctx.flags);
+
+  // 커밋 게이트도 결정만 여기서 — 이미 있는 .harness/gates.json(팀 파일)은 다시 묻지 않는다
+  // (D8, 갱신은 `gate suggest`). 깨진 파일도 건드리지 않는다 — gate commit이 설정 오류로 알린다.
+  // --yes는 사람이 제안을 보지 않으므로 예전 훅에 없던 명령(confirm)을 빼고 추가 제안으로만 보인다.
+  let pendingGates = null;
+  const existingGates = await readGates(ctx.targetDir).catch(() => 'malformed');
+  if (existingGates === null) {
+    const proposal = await buildProposal(ctx.targetDir, stack, { unattended: Boolean(ctx.flags.yes) });
+    console.log(`\n${describeProposal(proposal)}`);
+    const ok = ctx.flags.yes || await confirm('이 커밋 게이트를 .harness/gates.json 에 기록할까요? (팀과 공유하려면 커밋)', { defaultYes: true });
+    if (ok) pendingGates = proposal;
+  }
 
   const { changes, legacyAgentFiles, brokenMarkerFiles, skippedSections, renderState } = await planChanges(ctx, { stack, stackPin });
 
@@ -66,6 +79,10 @@ export async function runInit(ctx) {
 
   await applyChanges(changes);
   if (pendingUsername) await saveUsername(ctx.targetDir, pendingUsername);
+  if (pendingGates) {
+    await applyProposal(ctx.targetDir, pendingGates)
+      .catch(e => console.warn(`  gates: 기록하지 못했습니다 — ${e.message}`));
+  }
   await saveRenderState(ctx.targetDir, renderState);
   const copied = await copyStaticAssets(ctx);
   await installPostCommitHook(ctx.targetDir);

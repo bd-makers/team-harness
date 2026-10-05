@@ -1,0 +1,48 @@
+{
+  "user": "hslee",
+  "task": "preset-gates",
+  "created": "2026-10-05",
+  "firstActivatedAt": "2026-10-05T11:34:31.576Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "b253f34575badbc1bddc684868c2a4cd5b8a0a8a",
+      "at": "2026-10-05T12:30:44.454Z",
+      "exitCode": 0,
+      "outputBytes": 1468
+    },
+    {
+      "kind": "codex-shipcheck",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "6b112b8600d5cc58aff3ab5157c1c2f371d9cead",
+      "at": "2026-10-05T13:02:20.213Z",
+      "exitCode": 0,
+      "outputBytes": 2544
+    },
+    {
+      "kind": "codex-shipcheck",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "a30154f508a19831df07e67fb3cdb158d8d677b1",
+      "at": "2026-10-05T13:08:23.683Z",
+      "exitCode": 0,
+      "outputBytes": 2891
+    },
+    {
+      "kind": "codex-shipcheck",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "18b386ec7252675bd66c3aa358576668982a4a84",
+      "at": "2026-10-05T13:10:49.762Z",
+      "exitCode": 0,
+      "outputBytes": 2381
+    }
+  ]
+}

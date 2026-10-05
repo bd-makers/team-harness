@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>preset-gates — 프리셋 게이트 구조</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #eb6c36;
+      --font-sans:     system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      --font-serif:    'Iowan Old Style', Georgia, 'Apple SD Gothic Neo', serif;
+      --font-mono:     ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1100px; margin: 0 auto; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 1.5rem;
+    }
+    .scroll { overflow-x: auto; }
+    svg { width: 100%; min-width: 900px; display: block; }
+    .cards { display: grid; grid-template-columns: 1.1fr 1fr 0.9fr; gap: 1rem; margin-top: 1.5rem; }
+    .card { background: #ffffff; border: 1px solid rgba(45,49,66,0.12); border-radius: 6px; padding: 1.25rem; }
+    .card .eyebrow { margin-bottom: 0.4rem; }
+    .card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem; }
+    .card-header h3 { font-size: 0.95rem; font-weight: 600; }
+    .card-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .card-dot.coral { background: var(--color-accent); }
+    .card-dot.muted { background: var(--color-muted); }
+    .card-dot.ink { background: var(--color-ink); }
+    .card ul { padding-left: 1.1rem; font-size: 0.85rem; line-height: 1.55; color: var(--color-muted); }
+    code { font-family: var(--font-mono); font-size: 0.8em; }
+    footer { margin-top: 1.5rem; padding-top: 0.75rem; border-top: 1px solid rgba(45,49,66,0.10);
+      font-family: var(--font-mono); font-size: 0.65rem; color: var(--color-muted); letter-spacing: 0.06em; }
+    @media (max-width: 760px) { .cards { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Architecture · preset-gates plan</p>
+    <h1>언어 지식은 프리셋에, 훅은 확정된 목록만 실행한다</h1>
+
+    <div class="scroll">
+    <svg viewBox="0 0 960 624" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="preset-gates-title preset-gates-desc">
+      <title id="preset-gates-title">preset-gates 구성요소 관계</title>
+      <desc id="preset-gates-desc">프리셋 데이터로 만든 제안을 init·migrate·gate suggest가 확인 후 팀이 커밋하는 .harness/gates.json에 기록하고, 커밋·포맷 훅은 harness-team gate CLI를 통해 그 목록만 실행하며, doctor는 지문이 바뀌면 재제안을 안내한다.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+        <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- Zones -->
+      <rect x="24" y="64" width="668" height="112" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="36" y="68" width="108" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="90" y="77" fill="rgba(45,49,66,0.40)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.14em">PROPOSE · CONFIRM</text>
+
+      <rect x="24" y="352" width="460" height="208" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="36" y="356" width="132" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="102" y="365" fill="rgba(45,49,66,0.40)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.14em">RUNTIME · CLAUDE HOOKS</text>
+
+      <!-- Arrows (before nodes) -->
+      <line x1="200" y1="128" x2="248" y2="128" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="210" y="108" width="28" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="224" y="117" fill="#7a8399" font-size="8" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">LOAD</text>
+
+      <line x1="428" y1="128" x2="476" y2="128" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="432" y="108" width="40" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="452" y="117" fill="#7a8399" font-size="8" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">PROPOSE</text>
+
+      <line x1="676" y1="128" x2="724" y2="128" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+      <rect x="684" y="108" width="32" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="700" y="117" fill="#eb6c36" font-size="8" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">WRITE</text>
+
+      <path d="M476,272 H346 Q338,272 338,264 V160" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="385" y="252" width="52" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="411" y="261" fill="#7a8399" font-size="8" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">RECOMPUTE</text>
+
+      <path d="M676,272 H766 Q774,272 774,264 V160" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="691" y="252" width="60" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="721" y="261" fill="#7a8399" font-size="8" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">FINGERPRINT</text>
+
+      <line x1="240" y1="416" x2="288" y2="416" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="250" y="396" width="28" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="264" y="405" fill="#7a8399" font-size="8" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">EXEC</text>
+
+      <path d="M468,416 H816 Q824,416 824,408 V160" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="612" y="396" width="60" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="642" y="405" fill="#7a8399" font-size="8" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">READS GATES</text>
+
+      <line x1="240" y1="512" x2="288" y2="512" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="250" y="492" width="28" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="264" y="501" fill="#7a8399" font-size="8" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">EXEC</text>
+
+      <path d="M468,512 H866 Q874,512 874,504 V160" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="637" y="492" width="66" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="670" y="501" fill="#7a8399" font-size="8" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">READS FORMAT</text>
+
+      <!-- Nodes -->
+      <!-- 1. presets (store) -->
+      <rect x="40" y="96" width="160" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="40" y="96" width="160" height="64" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <rect x="48" y="102" width="32" height="12" rx="2" fill="transparent" stroke="rgba(79,93,117,0.40)" stroke-width="0.8"/>
+      <text x="64" y="111" fill="rgba(79,93,117,0.8)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">DATA</text>
+      <text x="120" y="134" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">프리셋</text>
+      <text x="120" y="150" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">templates/presets/*.json</text>
+
+      <!-- 2. proposal engine -->
+      <rect x="248" y="96" width="180" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="248" y="96" width="180" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="256" y="102" width="24" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="268" y="111" fill="rgba(45,49,66,0.8)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">FN</text>
+      <text x="338" y="134" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">제안 엔진</text>
+      <text x="338" y="150" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">src/presets.mjs</text>
+
+      <!-- 3. writers -->
+      <rect x="476" y="96" width="200" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="476" y="96" width="200" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="484" y="102" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="498" y="111" fill="rgba(45,49,66,0.8)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">CLI</text>
+      <text x="576" y="134" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">init · migrate · suggest</text>
+      <text x="576" y="150" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">확인 → applyProposal()</text>
+
+      <!-- 4. config (focal) -->
+      <rect x="724" y="96" width="200" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="724" y="96" width="200" height="64" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1.2"/>
+      <rect x="732" y="102" width="36" height="12" rx="2" fill="transparent" stroke="rgba(235,108,54,0.50)" stroke-width="0.8"/>
+      <text x="750" y="111" fill="rgba(235,108,54,0.9)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">STORE</text>
+      <text x="824" y="134" fill="#2d3142" font-size="12" font-weight="600" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">.harness/gates.json</text>
+      <text x="824" y="150" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">commit · format · fingerprint (커밋)</text>
+
+      <!-- 5. doctor -->
+      <rect x="476" y="240" width="200" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="476" y="240" width="200" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="484" y="246" width="36" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="502" y="255" fill="rgba(45,49,66,0.8)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">CHECK</text>
+      <text x="576" y="278" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">doctor</text>
+      <text x="576" y="294" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">지문 변화 → gate suggest 안내</text>
+
+      <!-- 6. pre-commit-check.sh (hook) -->
+      <rect x="40" y="384" width="200" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="40" y="384" width="200" height="64" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+      <rect x="48" y="390" width="32" height="12" rx="2" fill="transparent" stroke="rgba(122,131,153,0.50)" stroke-width="0.8"/>
+      <text x="64" y="399" fill="rgba(79,93,117,0.8)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">HOOK</text>
+      <text x="140" y="422" fill="#2d3142" font-size="12" font-weight="600" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">pre-commit-check.sh</text>
+      <text x="140" y="438" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">PreToolUse · git commit 감지</text>
+
+      <!-- 7. gate commit -->
+      <rect x="288" y="384" width="180" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="288" y="384" width="180" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="296" y="390" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="310" y="399" fill="rgba(45,49,66,0.8)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">CLI</text>
+      <text x="378" y="422" fill="#2d3142" font-size="12" font-weight="600" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">gate commit</text>
+      <text x="378" y="438" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">실패·127 차단 / 미설정 통과</text>
+
+      <!-- 8. auto-format.sh (hook) -->
+      <rect x="40" y="480" width="200" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="40" y="480" width="200" height="64" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+      <rect x="48" y="486" width="32" height="12" rx="2" fill="transparent" stroke="rgba(122,131,153,0.50)" stroke-width="0.8"/>
+      <text x="64" y="495" fill="rgba(79,93,117,0.8)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">HOOK</text>
+      <text x="140" y="518" fill="#2d3142" font-size="12" font-weight="600" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">auto-format.sh</text>
+      <text x="140" y="534" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">PostToolUse · Edit|Write</text>
+
+      <!-- 9. gate format -->
+      <rect x="288" y="480" width="180" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="288" y="480" width="180" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <rect x="296" y="486" width="28" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
+      <text x="310" y="495" fill="rgba(45,49,66,0.8)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">CLI</text>
+      <text x="378" y="518" fill="#2d3142" font-size="12" font-weight="600" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">gate format &lt;file&gt;</text>
+      <text x="378" y="534" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">glob 일치 시 명령 + 경로</text>
+
+      <!-- Legend -->
+      <line x1="30" y1="584" x2="930" y2="584" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="30" y="604" fill="#4f5d75" font-size="8" font-family="ui-monospace, Menlo, monospace" letter-spacing="0.14em">LEGEND</text>
+      <rect x="110" y="596" width="14" height="10" rx="2" fill="rgba(235,108,54,0.08)" stroke="#eb6c36"/>
+      <text x="130" y="604" fill="#4f5d75" font-size="8" font-family="ui-monospace, Menlo, monospace">확정 상태 (초점)</text>
+      <rect x="270" y="596" width="14" height="10" rx="2" fill="#ffffff" stroke="#2d3142"/>
+      <text x="290" y="604" fill="#4f5d75" font-size="8" font-family="ui-monospace, Menlo, monospace">CLI · 함수</text>
+      <rect x="400" y="596" width="14" height="10" rx="2" fill="rgba(45,49,66,0.05)" stroke="#4f5d75"/>
+      <text x="420" y="604" fill="#4f5d75" font-size="8" font-family="ui-monospace, Menlo, monospace">데이터</text>
+      <rect x="500" y="596" width="14" height="10" rx="2" fill="rgba(79,93,117,0.10)" stroke="#7a8399"/>
+      <text x="520" y="604" fill="#4f5d75" font-size="8" font-family="ui-monospace, Menlo, monospace">Claude 훅 (얇은 래퍼)</text>
+      <line x1="660" y1="601" x2="684" y2="601" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="692" y="604" fill="#4f5d75" font-size="8" font-family="ui-monospace, Menlo, monospace">읽기 전용 비교</text>
+    </svg>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <p class="eyebrow">사라지는 것 (D11)</p>
+        <div class="card-header"><span class="card-dot coral"></span><h3>훅 안의 언어 지식</h3></div>
+        <ul>
+          <li><code>pre-commit-check.sh</code>의 lockfile → PM 추론(pnpm·yarn·bun·npm)과 tsc·test 분기</li>
+          <li><code>auto-format.sh</code>의 확장자 분기 + 하드코딩 <code>npx prettier --write</code></li>
+          <li>PM별 실행 형태는 프리셋 JSON의 <code>pm</code> 표로 이동</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="eyebrow">경계 동작</p>
+        <div class="card-header"><span class="card-dot ink"></span><h3>실패 의미</h3></div>
+        <ul>
+          <li>명령 실패 → 차단(exit 2), 127 → 설정 오류로 차단</li>
+          <li><code>gates.json</code> 없음 → 통과 + 화면 안내(systemMessage), 형태 오류 → 차단</li>
+          <li>CLI 없음 → commit은 경고 후 통과, 구버전·크래시 → 차단, format은 조용히 통과</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="eyebrow">덮지 않는 것 (D8)</p>
+        <div class="card-header"><span class="card-dot muted"></span><h3>확정값 보존</h3></div>
+        <ul>
+          <li>이미 있는 <code>gates.json</code> — init·migrate는 건너뜀, <code>--yes</code>는 confirm 항목 제외</li>
+          <li>커스터마이즈 훅 — migrate가 제안하지 않음</li>
+          <li>덮어쓰기는 <code>gate suggest</code> 확인 후뿐</li>
+        </ul>
+      </div>
+    </div>
+
+    <footer>docs/hslee/preset-gates · spec/plan 다이어그램 · 2026-10-05 · 범위 밖: 저장소 모양·모노레포·RN rules(다음 task), git pre-commit(4번 task)</footer>
+  </div>
+</body>
+</html>

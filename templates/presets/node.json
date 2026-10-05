@@ -1,0 +1,19 @@
+{
+  "id": "node",
+  "label": "Node.js (JS/TS)",
+  "match": { "stackIds": ["node", "react", "next", "react-native", "expo"] },
+  "pm": {
+    "npm":  { "exec": "npx",       "run": "npm run" },
+    "pnpm": { "exec": "pnpm exec", "run": "pnpm run" },
+    "yarn": { "exec": "yarn",      "run": "yarn run" },
+    "bun":  { "exec": "bunx",      "run": "bun run" }
+  },
+  "commit": [
+    { "when": { "file": "tsconfig.json" }, "run": "{exec} tsc --noEmit" },
+    { "when": { "script": "lint" }, "run": "{run} lint", "confirm": true },
+    { "when": { "script": "test" }, "run": "{run} test" }
+  ],
+  "format": [
+    { "when": { "dependency": "prettier" }, "glob": "*.{ts,tsx,js,jsx,json}", "run": ["{exec} prettier --write"] }
+  ]
+}

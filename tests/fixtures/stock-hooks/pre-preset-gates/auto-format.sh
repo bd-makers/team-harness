@@ -1,8 +1,8 @@
 #!/bin/bash
-# PostToolUse hook: Edit/Write 후 `harness-team gate format <file>` — .harness/gates.json 의
-# format(glob → 명령 목록)이 정한 포맷터만 돈다. 언어별 분기는 이 훅에 없다(D11).
+# PostToolUse hook: Edit/Write 후 Prettier 자동 포맷
+# .ts, .tsx, .js, .jsx, .json 파일만 대상
 #
-# 보안 통제가 아니라 편의 기능이다 — 경로를 못 읽거나 CLI가 없으면 조용히 스킵한다(판정 변경 없음).
+# 보안 통제가 아니라 편의 기능이다 — 경로를 못 읽으면 예전처럼 조용히 스킵한다(판정 변경 없음).
 # 폴백 파서만 다른 훅과 공유해 jq 없는 환경에서도 포맷이 계속 돌게 한다.
 
 # --- harness:jq-fallback (훅 4개 공통 — 동일 블록 유지, tests/hooks-jq-fallback.test.mjs가 대조) ---
@@ -36,13 +36,17 @@ else
   FILE_PATH=$(json_input_field file_path "$INPUT") || FILE_PATH=""
 fi
 
-# 파일 경로가 없으면 스킵
+# 파일 경로가 없거나 포맷 대상이 아니면 스킵
 if [[ -z "$FILE_PATH" ]]; then
   exit 0
 fi
 
-bin="${HARNESS_TEAM_BIN:-harness-team}"
-command -v "$bin" >/dev/null 2>&1 || exit 0
-"$bin" gate format "$FILE_PATH" >/dev/null 2>&1
+case "$FILE_PATH" in
+  *.ts|*.tsx|*.js|*.jsx|*.json)
+    if [[ -f "$FILE_PATH" ]]; then
+      npx prettier --write "$FILE_PATH" 2>/dev/null
+    fi
+    ;;
+esac
 
 exit 0

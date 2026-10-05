@@ -90,7 +90,8 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 
 ### 4-2. 언어별 템플릿을 하네스가 제공할 것인가
 - **권장**: 제공하되 **코드가 아니라 데이터(프리셋)로** 제공한다.
-  - `.harness/config.json`에 `gates.commit: ["npm run lint", "npx tsc --noEmit", ...]`처럼 **명령 목록**을 둔다.
+  - 팀이 커밋하는 `.harness/gates.json`에 `commit: ["npm run lint", "npx tsc --noEmit", ...]`처럼 **명령 목록**을 둔다
+    (구현 시 정정: 처음엔 `.harness/config.json`이었으나 그 파일은 사용자별 gitignore라 팀원마다 게이트가 꺼진다 — task `preset-gates` 리뷰).
   - init이 스택 감지 결과로 프리셋(node-ts, react-native, swift, python …)을 **제안**하고, 개발자가 확정한다.
   - 훅은 목록만 실행한다. 언어 분기가 훅 코드에 들어가지 않는다. 언어 추가는 프리셋 JSON 하나다.
   - RN rules도 같은 방식의 **rules 프리셋**으로 옮긴다(RN 감지 시 제안, 고정 배포 아님).
@@ -114,7 +115,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 
 **package.json 등이 바뀌면 — 자동 갱신이 아니라 감지·제안**
 - 프리셋은 개발자가 확정·수정한 값이라, 자동으로 덮으면 수정이 조용히 사라진다(D8 "커스터마이즈는 덮지 않는다").
-- init 때 감지 결과의 **지문**(스크립트 이름 목록, workspace 목록)을 config에 함께 저장한다.
+- init 때 감지 결과의 **지문**(스크립트 이름 목록, workspace 목록)을 `gates.json`에 함께 저장한다.
 - doctor 또는 커밋 훅이 현재 상태와 지문을 비교해 달라지면 알린다(예: "lint 스크립트가 추가됐습니다. gates를 갱신할까요?"). 갱신은 개발자가 확정한다.
 
 **모노레포의 커밋 게이트 — 두 갈래**

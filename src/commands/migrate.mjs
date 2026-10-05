@@ -9,6 +9,7 @@ import { loadRenderState } from '../render-state.mjs';
 import { extractSections, deepMergeJson, simpleDiff } from '../merge.mjs';
 import { render } from '../render.mjs';
 import { confirm } from '../prompt.mjs';
+import { applyProposal, buildProposal, describeProposal, readGates, GATES_REL } from '../presets.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
 import {
   taskArtifactTemplate, parseReviewMarkers, evidenceWindowStart, isVerifyKind,
@@ -298,10 +299,12 @@ export const KNOWN_STOCK_HOOK_SHA256 = {
     '239cedf809c22cfcf09b07ac5f9d21a98da88bc85aaadd0cd577daadaf5de392', // d4662b9b detect_pm판
     'f5b79e0c0fd2cd54a284a7c4f3139681ad95b761cf45738282523f1c85bdcf0d', // d2132caf PR #29
     '524cf3b6cb5952a02c4464a3b46b47dbef8abb82388ea786d50ca8ca17ca24ef', // 757d115f tool_input 스코프판 (`git -C`·`--no-pager` 우회 이전)
+    '2d45fd26d6e68288c1ee6386b32d91190d8a5a0e13fd20e560c78f9d7820eab7', // ed90db5b PM 추론·tsc/test 내장판 (preset-gates 이전)
   ],
   'auto-format.sh': [
     'ba2ab843b6609543748e66d96ba26dbb2982444e8f24c4af10910ab8546e8327', // 58c4fe2e initial
     '11db4b4dc6f5a1f152d5bc7b7a9065c92ff07a7e4d30b06b549267e6363be019', // 775c0d56 PR #29
+    '667f3091b897616324c1eb84415ab3744e48f333d357472276113775adedddef', // 463c0d18 prettier 하드코딩판 (preset-gates 이전)
   ],
   'boundary-checkpoint.sh': [
     '452216fef5edb09a6fa6e14d6675222e06446c72c96abce0ff1d16156a545bc4', // 63c8862f 도입판 (CLI 부재 시 exit 127)
@@ -1002,6 +1005,28 @@ export async function migrateUserHandoffUntrack(ctx) {
   return ignoreAdded || tracked.length > 0;
 }
 
+// The current pre-commit-check.sh only runs what .harness/gates.json declares, so an install that
+// has it but no gates file lost the typecheck/test gate it used to have — propose one to close
+// that gap. A prior-stock or customized hook keeps its own logic and is left alone (D8). Under
+// --yes only what the old hook ran is written; `confirm` entries are shown as further proposals.
+export async function migrateGates(ctx) {
+  const rel = '.claude/hooks/pre-commit-check.sh';
+  const installed = await readTextSafe(join(ctx.targetDir, rel));
+  const template = await readTextSafe(join(ctx.root, 'templates', rel));
+  if (installed === null || installed !== template) return false;
+  let existing;
+  try { existing = await readGates(ctx.targetDir); }
+  catch (e) { console.log(`  gates: ${e.message} — 건너뜀`); return false; }
+  if (existing !== null) return false;
+  const { stack: pin } = await loadRenderState(ctx.targetDir);
+  const proposal = await buildProposal(ctx.targetDir, await resolveStack(ctx.targetDir, pin), { unattended: Boolean(ctx.flags.yes) });
+  console.log(`\n커밋 게이트가 설정되지 않았습니다 — 새 pre-commit-check.sh 는 ${GATES_REL} 의 목록만 실행합니다.\n${describeProposal(proposal)}`);
+  const ok = ctx.flags.yes || await confirm(`이 제안을 ${GATES_REL} 에 기록할까요? (팀과 공유하려면 커밋)`, { defaultYes: true });
+  if (!ok) { console.log('Skipped gates.'); return false; }
+  await applyProposal(ctx.targetDir, proposal);
+  return true;
+}
+
 export async function runMigrate(ctx) {
   console.log(`harness-team migrate → ${ctx.targetDir}`);
 
@@ -1012,6 +1037,8 @@ export async function runMigrate(ctx) {
   const taskUpgraded = await migrateTaskTo07(ctx);
   const claudeHooksRefreshed = await refreshClaudeHooks(ctx);
   const claudeTemplatesRefreshed = await refreshClaudeTemplates(ctx);
+  // 훅 refresh 뒤 — 같은 실행에서 방금 받은 래퍼 훅도 대상이 된다.
+  const gatesProposed = await migrateGates(ctx);
   const taskLabelsRenamed = await migrateTaskIndexLabels(ctx);
   const hookMigrated = await migrateSessionStartHook(ctx);
   const boundaryHookMigrated = await migrateBoundaryCheckpointHook(ctx);
@@ -1026,7 +1053,7 @@ export async function runMigrate(ctx) {
     return;
   }
 
-  if (!managedBackedUp && !agentsMigrated && !taskMigrated && !taskUpgraded && !claudeHooksRefreshed && !claudeTemplatesRefreshed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated && !metaBackfilled && !reviewsAdopted && !codexFlagMigrated && !userHandoffUntrack) {
+  if (!managedBackedUp && !agentsMigrated && !taskMigrated && !taskUpgraded && !claudeHooksRefreshed && !claudeTemplatesRefreshed && !gatesProposed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated && !metaBackfilled && !reviewsAdopted && !codexFlagMigrated && !userHandoffUntrack) {
     console.log('\nNothing to migrate — project is already up to date.');
     return;
   }

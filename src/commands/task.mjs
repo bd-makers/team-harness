@@ -930,7 +930,7 @@ async function collectDoneIssues(targetDir, active) {
         issues.push('task 시작 이후 커밋이 0개임');
       }
 
-      // 테스트 작성 체크 — 커밋 훅(pre-commit-check.sh)은 테스트를 *실행*하지만
+      // 테스트 작성 체크 — 커밋 훅(pre-commit-check.sh)은 config 게이트를 *실행*하지만
       // *작성*은 강제하지 못하고, Claude Code 세션 밖(다른 에이전트 등)에서는 아예 걸리지 않는다.
       // 여기서는 git 이력만으로 판정하므로 어떤 드라이버가 커밋했든 동일하게 적용된다.
       if (evidence.tests === 'required') {
