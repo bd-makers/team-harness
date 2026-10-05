@@ -71,3 +71,11 @@
  tests/symlink.test.mjs                             |  87 -------
  tests/task-paths-single-source.test.mjs            |   2 +-
  67 files changed, 224 insertions(+), 2209 deletions(-)
+
+## 2026-10-05T09:19:02.248Z — e853b1f docs(migrate): 제거된 백업 스크립트 변환 설명을 지운다 (codex P3)
+commands/harness-migrate.md                        |  2 +-
+ .../remove-backup-cluster-artifact.md              | 19 ++++++
+ .../remove-backup-cluster-handoff.md               | 70 ++++++++++++++++++++++
+ .../remove-backup-cluster-meta.json                | 12 +++-
+ .../remove-backup-cluster-plan.md                  |  2 +-
+ 5 files changed, 102 insertions(+), 3 deletions(-)
