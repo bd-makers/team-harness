@@ -16,3 +16,8 @@ README.md                                          |  16 ++++
  tests/doctor.test.mjs                              |  13 +++
  tests/git-hooks.test.mjs                           |  95 +++++++++++++++++++-
  12 files changed, 422 insertions(+), 16 deletions(-)
+
+## 2026-10-05T23:38:33.286Z — 9fbaf29 docs(task): pre-push-hook-doctor plan 8 체크 — PR #126
+docs/hslee/pre-push-hook-doctor/pre-push-hook-doctor-context.md | 2 +-
+ docs/hslee/pre-push-hook-doctor/pre-push-hook-doctor-plan.md    | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
