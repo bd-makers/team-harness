@@ -1,0 +1,7 @@
+{
+  "id": "generic",
+  "label": "Generic",
+  "match": { "stackIds": ["generic", "go"] },
+  "commit": [],
+  "format": []
+}
