@@ -9,7 +9,7 @@
 ## 1. 정체성
 
 **하나의 프로젝트에서 여러 팀원에게 같은 개발 사이클을 제공하는 하네스.**
-**강제하는 것은 하나뿐이다**: PR을 올릴 때 그 task의 문서 — spec·plan·handoff·artifact·다이어그램 — 를 담는다. 다이어그램은 로직·구조 변화가 없으면 생략 사유를 남기고 뺄 수 있다.
+**강제하는 것은 하나뿐이다**: PR을 올릴 때 그 task의 문서 — spec·plan·handoff·artifact — 를 담는다. 다이어그램은 권장이다 — 로직·구조 변화가 있으면 담는다(2026-10-06 정정, §4-6).
 R1부터 PR 승인까지의 사이클(단계·산출물·게이트)은 기본으로 **제공**하지만, 개발 방식은 개발자마다 완전히 자유다(2026-10-05 메인테이너 설명).
 
 - 사람은 루프 **안**에 있다(in the loop). spec과 plan 단계에 개발자가 직접 참여해 무엇을, 어떻게 만들지 먼저 인지한다.
@@ -38,7 +38,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 | **S4 구현 검증** | spec 시나리오(Given/When/Then) ↔ 증거 | **R2 시나리오 대조**(기계 2 + 루브릭 2, §4-1b) | △ done 가드가 체크박스·evidence만 확인 |
 | **S5 커밋** | — | **검증 프리셋 실행**(lint·tsc·test) | △ pre-commit-check (typecheck·test, node 전용) |
 | **S6 코드 리뷰** | 리뷰 기록(`## Reviews`·meta.reviews) | **R3 로컬 리뷰** (PR 전 필수) | △ spec이 required 선언할 때만 강제 |
-| **S7 PR** | **PR 다이어그램**(실제 구조 + plan 대비 변화), spec·plan·handoff 커밋 | — | ✓ 문서 커밋 · △ ship의 다이어그램 갱신은 옵트인 |
+| **S7 PR** | spec·plan·handoff·artifact 커밋, **PR 다이어그램**(권장 — 실제 구조 + plan 대비 변화) | **`pr-check`**(4문서 차단, 다이어그램은 안내) | ✓ pr-check · pre-push 훅 · ship 연동 |
 | **S8 지식화** | 최상위 **`wiki/`** 항목(기능·모듈 단위), task 폴더 삭제 | — | ✗ 없음 (task 단위로만 쌓임) |
 
 **가로축** (모든 단계에 걸침)
@@ -187,14 +187,15 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 ### 4-6. 남은 확인 (2026-10-05 전부 결정)
 - **강제 범위 (2026-10-05 확정)**: 순서는 기존대로 PR → 머지 → (기본 브랜치에서) `done`. `done` → PR로 바꾸는 안은 손볼 장치
   (머지 후 종결 절차·`remote-task.mjs`·done-on-main 안내)가 많아 기각. task 시작도 강제하지 않는다(지금의 SessionStart nudge 유지).
-  lint·tsc·PR 전 로컬 리뷰는 '제공'이다. **PR에 spec·plan·handoff·artifact·다이어그램을 담는 것만 필수**이며
-  (handoff는 커밋 훅이 자동 갱신하고, artifact는 머지 후 위키 컴파일(§4-4)의 재료다), 다이어그램은 기존
-  `harness-team diagram record --skipped "<사유>"`로 생략을 기록할 수 있다.
-- **PR 필수 문서 확인 (결정)**: 결정론적 CLI 검사 하나(`harness-team pr-check`, 가칭)를 두고 호출처를 셋으로 한다.
-  검사: spec·plan·handoff·artifact가 있고 템플릿 그대로가 아님 + 다이어그램 파일 또는 생략 기록이 있음.
+  lint·tsc·PR 전 로컬 리뷰는 '제공'이다. **PR에 spec·plan·handoff·artifact를 담는 것만 필수**이며
+  (handoff는 커밋 훅이 자동 갱신하고, artifact는 머지 후 위키 컴파일(§4-4)의 재료다). 다이어그램은 권장이다(아래 다이어그램 결정).
+- **PR 필수 문서 확인 (결정)**: 결정론적 CLI 검사 하나(`harness-team pr-check`)를 두고 호출처를 셋으로 한다.
+  검사: spec·plan·handoff·artifact가 있고 템플릿 그대로가 아님. 다이어그램 파일도 생략 기록도 없으면 막지 않고 권장 안내만 낸다.
   호출처: ① ship 준비 보고 ② init이 설치하는 git pre-push 훅(post-commit 훅과 같은 방식) ③ 원하는 팀의 CI(같은 명령).
   하네스가 강제하는 유일한 것이라 확인 장치를 하나로 모은다.
-- **다이어그램 (결정)**: PR에는 필수(로직·구조 변화가 없으면 생략 사유로 대신), plan 단계 다이어그램은 선택(이해용).
+- **다이어그램 (결정, 2026-10-06 정정)**: PR 다이어그램은 **권장**이다 — plan 단계에서 옵트인하지 않았어도 최종 변경이 로직·구조를 바꾸면 담는다.
+  처음엔 "필수 + 생략 기록"이었으나 생략 기록 명령(`diagram record --skipped`)은 plan 옵트인이 없으면 거부해, 옵트인하지 않은 task는 통과할 길이 없었다.
+  plan 단계 다이어그램은 선택(이해용) 그대로.
 - **Cursor (결정)**: 쓰는 팀원이 있으므로 멤버와 cursor 미러를 **유지**한다. 앞선 기능 인터뷰의 "제외" 답은 무효.
 - **auto-format (결정)**: 훅에 하드코딩된 `*.ts|*.tsx|*.js|*.jsx|*.json → npx prettier`는 4-2(언어 로직은 프리셋 데이터로)에 어긋난다.
   프리셋의 선택 항목 `format` 명령 목록으로 옮기고, 훅에서는 언어 분기를 뺀다.
@@ -210,7 +211,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 
 **D11 — 사이클에 봉사하는 것만 소유한다**
 
-- **강제한다**: PR에 담기는 task 문서 — spec·plan·handoff·artifact, 다이어그램(또는 생략 사유). 이것만 막는다.
+- **강제한다**: PR에 담기는 task 문서 — spec·plan·handoff·artifact. 이것만 막는다. 다이어그램은 권장(로직·구조 변화가 있으면 담는다).
 - **제공한다**: 사이클 S0–S8의 산출물·게이트, 그리고 가로축(인계·팀 가시성·안전 가드·루프 건강·갱신 경로). 쓰든 말든 자유다.
 - **소유하지 않는다**
   - **언어별 로직을 코드에**: 언어·도구 지식은 프리셋 데이터로만 둔다. 훅·CLI에 언어 분기를 넣지 않는다.

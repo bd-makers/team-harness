@@ -9,7 +9,7 @@ import { mkdtemp, mkdir, readFile, writeFile, rm, stat, access, realpath } from 
 import { constants } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { installPostCommitHook, resolveHooksDir, POST_COMMIT_MARKER, POST_COMMIT_HOOK } from '../src/git-hooks.mjs';
+import { installPostCommitHook, installPrePushHook, resolveHooksDir, POST_COMMIT_MARKER, POST_COMMIT_HOOK, PRE_PUSH_HOOK, PRE_PUSH_MARKER } from '../src/git-hooks.mjs';
 
 const pexec = promisify(execFile);
 const git = (cwd, ...args) => pexec('git', ['-C', cwd, ...args]);
@@ -123,5 +123,58 @@ test('git 저장소가 아니면 아무것도 만들지 않는다', async () => 
     await installPostCommitHook(dir);
     const made = await access(join(dir, '.git')).then(() => true, () => false);
     assert.equal(made, false);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// pre-push 는 post-commit 과 같은 설치기를 쓰되, 기존 훅에는 **맨 위**(shebang 다음)에 넣는다 — 뒤에 붙이면 앞선 줄이
+// stdin 을 소비하거나 `exit 0` 으로 끝나 검사가 사라졌다(리뷰 2026-10-06).
+test('pre-push: 새로 설치하고, 기존 sh 훅에는 shebang 다음에 넣으며, 다시 실행해도 한 번만 있다', async () => {
+  const dir = await repo();
+  try {
+    await installPrePushHook(dir);
+    const hook = join(dir, '.git/hooks/pre-push');
+    assert.equal(await readFile(hook, 'utf8'), PRE_PUSH_HOOK);
+    await access(hook, constants.X_OK);
+
+    await writeFile(hook, '#!/bin/sh\n# harness-team pr-check (disabled)\necho other\nexit 0\n', { mode: 0o644 });
+    await installPrePushHook(dir);
+    await installPrePushHook(dir);
+    const body = await readFile(hook, 'utf8');
+    assert.ok(body.startsWith('#!/bin/sh\n# harness: PR 필수'), 'shebang 바로 다음에 들어간다');
+    assert.ok(body.indexOf(PRE_PUSH_MARKER) < body.indexOf('echo other'), '기존 줄보다 앞');
+    assert.match(body, /echo other\nexit 0\n$/, '기존 내용 보존');
+    const live = body.split('\n').filter(l => !/^\s*#/.test(l) && l.includes(PRE_PUSH_MARKER));
+    assert.equal(live.length, 1, '실행 줄은 정확히 하나');
+    await access(hook, constants.X_OK);
+    // post-commit 은 따로 설치된다 — 서로의 마커로 오판하지 않는다.
+    await installPostCommitHook(dir);
+    assert.equal(await readFile(join(dir, '.git/hooks/post-commit'), 'utf8'), POST_COMMIT_HOOK);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('pre-push: 기존 훅의 실패는 그대로 실패로 끝나고, 기존 줄은 같은 stdin 을 읽는다', async () => {
+  const dir = await repo();
+  try {
+    const hook = join(dir, '.git/hooks/pre-push');
+    await writeFile(hook, '#!/bin/sh\nfalse\n', { mode: 0o755 });
+    await installPrePushHook(dir);
+    const env = { ...process.env, PATH: '/usr/bin:/bin' }; // harness-team 없음 — 블록 본문은 건너뛴다
+    assert.equal(await pexec('sh', [hook], { env }).then(() => 0, err => err.code), 1);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 셸 줄을 python·node 훅에 넣으면 문법 오류로 모든 push 가 막힌다(리뷰 2026-10-06 재현) — 건드리지 않고 안내한다.
+test('pre-push: 기존 훅이 셸 스크립트가 아니면 건너뛰고 파일을 바꾸지 않는다', async () => {
+  const dir = await repo();
+  try {
+    const hook = join(dir, '.git/hooks/pre-push');
+    const original = '#!/usr/bin/env python3\nimport sys\nsys.exit(0)\n';
+    await writeFile(hook, original, { mode: 0o755 });
+    const logs = [];
+    const orig = console.log;
+    console.log = (...a) => logs.push(a.join(' '));
+    try { await installPrePushHook(dir); } finally { console.log = orig; }
+    assert.equal(await readFile(hook, 'utf8'), original);
+    assert.ok(logs.some(l => /셸 스크립트가 아님/.test(l)));
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

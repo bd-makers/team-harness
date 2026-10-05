@@ -299,7 +299,7 @@ workspace 저장소(`workspaces`·`pnpm-workspace.yaml`)면 init이 모양(앱 +
 
 ### `/harness-sync` — 내부 정합성 동기화
 
-`.cursor/rules` 미러를 재생성하고 post-commit 훅을 재설치. rules를 수정했을 때 실행. (에이전트 파일은 실파일이라 symlink 재생성 없음 — `AGENTS.md`/`CLAUDE.md` 갱신은 `/harness-init` 재실행.)
+`.cursor/rules` 미러를 재생성하고 post-commit·pre-push 훅을 재설치. rules를 수정했을 때 실행. (에이전트 파일은 실파일이라 symlink 재생성 없음 — `AGENTS.md`/`CLAUDE.md` 갱신은 `/harness-init` 재실행.)
 
 ```bash
 /harness-sync
@@ -307,7 +307,7 @@ workspace 저장소(`workspaces`·`pnpm-workspace.yaml`)면 init이 모양(앱 +
 
 수행:
 - `.claude/rules/*.md` → `.cursor/rules/*.mdc` 미러링 갱신 (단방향; 원본이 사라진 미러는 정리)
-- git post-commit 훅 재설치 (`core.hooksPath`·worktree는 `git rev-parse --git-path hooks`로 따라감)
+- git post-commit·pre-push 훅 재설치 (`core.hooksPath`·worktree는 `git rev-parse --git-path hooks`로 따라감)
 
 ### `/harness-doctor` — 무결성 점검
 
@@ -487,6 +487,24 @@ member를 추론(2~5)했는데 다른 member에 같은 이름의 task가 있으�
 # spec에 선언한 JSON Schema producer/consumer boundary 대조
 harness-team boundary check
 ```
+
+### PR 필수 문서 검사 — `harness-team pr-check`
+
+하네스가 강제하는 유일한 것(D11)은 PR에 그 task의 spec·plan·handoff·artifact를 담는 것입니다.
+`pr-check`는 base 대비 diff가 건드린 task(`docs/<user>/<task>/`)마다 네 문서가 **커밋에** 있고 템플릿 그대로가
+아닌지 판정합니다(없거나 템플릿이면 exit 1). 다이어그램은 권장이라 없으면 막지 않고 안내만 냅니다.
+
+```bash
+harness-team pr-check                      # base = origin 기본 브랜치 (review·scope와 같은 판정)
+harness-team pr-check --base origin/main --json
+```
+
+- **pre-push 훅**: init·sync가 설치합니다. 기존 pre-push 훅(git-lfs 등)이 있으면 그 맨 위에 넣고 ref 목록(stdin)을 그대로 넘겨 주며,
+  셸 스크립트가 아닌 훅은 건드리지 않고 안내합니다. 기본 브랜치 push·태그·삭제·빈 원격으로의 첫 push는 검사하지 않고,
+  PATH의 `harness-team`이 없거나 `pr-check`를 모르는 구버전이면 건너뜁니다(doctor가 경고). 우회는 `git push --no-verify`.
+- **ship**: 준비 완료 보고 전에 같은 검사를 돌리고, 실패면 준비 완료를 선언하지 않습니다.
+- **CI (선택)**: 같은 명령을 부릅니다. base 계산에 이력이 필요하므로 전체 fetch로 체크아웃합니다(GitHub Actions라면
+  `actions/checkout`의 `fetch-depth: 0`). 하네스는 CI 설정 파일을 만들지 않습니다.
 
 > `feature/` · `fix/` 같은 중간 카테고리는 사용하지 않는다 — 모든 task는 `docs/<member>/<name>/` 평탄 구조로 관리한다.
 

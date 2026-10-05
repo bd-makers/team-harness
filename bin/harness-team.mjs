@@ -8,6 +8,7 @@ import { runSync } from '../src/commands/sync.mjs';
 import { runDoctor } from '../src/commands/doctor.mjs';
 import { runStack } from '../src/commands/stack.mjs';
 import { runScope } from '../src/commands/scope.mjs';
+import { runPrCheck } from '../src/commands/pr-check.mjs';
 import { runConfig } from '../src/commands/config.mjs';
 import { runGate } from '../src/commands/gate.mjs';
 import { runDiagram } from '../src/commands/diagram.mjs';
@@ -66,6 +67,7 @@ async function main() {
     case 'doctor': return runDoctor(ctx);
     case 'stack': return runStack(ctx);
     case 'scope': return runScope(ctx);
+    case 'pr-check': return runPrCheck(ctx);
     case 'config': return runConfig(ctx);
     case 'gate': return runGate(ctx);
     case 'diagram': return runDiagram(ctx);

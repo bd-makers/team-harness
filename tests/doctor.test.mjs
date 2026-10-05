@@ -63,13 +63,16 @@ test('checkSelfCli: 실제 bin으로 실행 → true (harness-team 출력 포함
   assert.equal(result, true);
 });
 
-test('checkHookCli: PATH의 CLI가 hook 명령 넷(session-context·handoff·boundary·gate)을 광고할 때만 통과한다', async () => {
+test('checkHookCli: PATH의 CLI가 hook 명령 다섯(session-context·handoff·boundary·gate·pr-check)을 광고할 때만 통과한다', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-cli-'));
   try {
     const shim = join(dir, 'harness-team');
-    await writeFile(shim, '#!/bin/sh\nif [ "$1" != "--help" ]; then exit 1; fi\nprintf "%s\\n" "harness-team" "  handoff" "  session-context" "  boundary check" "  gate commit"\n');
+    await writeFile(shim, '#!/bin/sh\nif [ "$1" != "--help" ]; then exit 1; fi\nprintf "%s\\n" "harness-team" "  handoff" "  session-context" "  boundary check" "  gate commit" "  pr-check [dir]"\n');
     await chmod(shim, 0o755);
     assert.equal(await checkHookCli({ PATH: dir }), true);
+    // pr-check를 모르는 구버전 CLI — pre-push 훅이 검사를 건너뛰므로(fail-open) doctor가 알려야 한다.
+    await writeFile(shim, '#!/bin/sh\nprintf "%s\\n" "harness-team" "  handoff" "  session-context" "  boundary check" "  gate commit"\n');
+    assert.equal(await checkHookCli({ PATH: dir }), false);
     // gate를 모르는 구버전 CLI — 커밋 훅이 비정상 종료로 막히므로 doctor가 먼저 알려야 한다.
     await writeFile(shim, '#!/bin/sh\nprintf "%s\\n" "harness-team" "  handoff" "  session-context" "  boundary check"\n');
     assert.equal(await checkHookCli({ PATH: dir }), false);

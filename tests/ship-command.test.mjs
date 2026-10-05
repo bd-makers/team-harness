@@ -68,3 +68,14 @@ test('ship: no command or skill invents a harness-team ship subcommand', async (
   assert.ok(bodies.length > 0, '스캔 대상이 비어 있으면 안 됨');
   for (const body of bodies) assert.doesNotMatch(body, /harness-team\s+ship\b/);
 });
+
+// ship 은 pr-check 의 세 호출처 중 하나다(D11). 실패면 준비 완료를 선언하지 않고, 다이어그램 안내는 막지 않는다.
+test('ship: 준비 보고 전에 pr-check 를 돌리고, 실패면 준비 완료를 선언하지 않는다 (command·skill 둘 다)', async () => {
+  const command = await read('commands/harness-ship.md');
+  assert.match(command, /harness-team pr-check --base "\$BASE"/);
+  assert.match(command, /exit 1[^\n]*"준비 완료"를 선언하지 않는다/);
+  assert.match(command, /다이어그램은 권장/);
+  const skill = await read('skills/harness-ship/SKILL.md');
+  assert.match(skill, /harness-team pr-check/);
+  assert.match(skill, /do not declare the PR ready/);
+});

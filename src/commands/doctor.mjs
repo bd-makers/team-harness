@@ -95,7 +95,7 @@ export async function checkHookCli(env = process.env) {
     // that is slow for one is slow for the other. A shorter budget here would report
     // "hooks can't run" for what is only a slow spawn.
     const { stdout } = await pexec('harness-team', ['--help'], { timeout: 5000, env });
-    return ['session-context', 'handoff', 'boundary', 'gate'].every(command =>
+    return ['session-context', 'handoff', 'boundary', 'gate', 'pr-check'].every(command =>
       new RegExp(`^\\s*${command}(?:\\s|$)`, 'm').test(stdout));
   } catch {
     return false;
@@ -1009,7 +1009,7 @@ export async function runDoctor(ctx) {
   if (!pluginDev) {
     hookCliOk = await checkHookCli();
     if (!hookCliOk) {
-      const detail = `PATH의 harness-team이 실행되지 않거나 session-context/handoff/boundary를 지원하지 않음 — SessionStart/post-commit/boundary 훅이 실행되지 않음; ${hookCliInstall}로 전역 CLI를 링크하거나 Claude Code 플러그인 경로를 PATH에 추가`;
+      const detail = `PATH의 harness-team이 실행되지 않거나 session-context/handoff/boundary/gate/pr-check 중 일부를 지원하지 않음 — 그 명령을 쓰는 훅(SessionStart·post-commit·boundary·커밋 게이트)이 실패하거나 pre-push 문서 검사를 건너뛴다; ${hookCliInstall}로 전역 CLI를 링크하거나 Claude Code 플러그인 경로를 PATH에 추가`;
       add('SessionStart/post-commit hook CLI', 'warning', detail, `\n⚠️ ${detail}`);
     } else {
       add('SessionStart/post-commit hook CLI', 'pass', 'session-context/handoff supported', '✓ SessionStart/post-commit hook CLI  (session-context/handoff supported)');

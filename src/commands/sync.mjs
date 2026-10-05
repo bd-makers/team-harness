@@ -1,12 +1,13 @@
 import { mirrorCursorRules } from '../harness.mjs';
 import { ensureUsername } from '../user-config.mjs';
-import { installPostCommitHook } from '../git-hooks.mjs';
+import { installPostCommitHook, installPrePushHook } from '../git-hooks.mjs';
 
 export async function runSync(ctx) {
   console.log(`harness-team sync → ${ctx.targetDir}`);
   await ensureUsername(ctx.targetDir, ctx.flags);
   const results = await mirrorCursorRules(ctx);
   await installPostCommitHook(ctx.targetDir);
+  await installPrePushHook(ctx.targetDir);
   const mirrored = results.filter(r => r.action === 'mirror');
   const pruned = results.filter(r => r.action === 'prune');
   console.log(`✓ Mirrored ${mirrored.length} cursor rule(s)`);
