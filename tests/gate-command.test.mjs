@@ -145,3 +145,39 @@ test('gate: 알 수 없는 동사·인수 개수는 usage와 exit 2', async () =
     }
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+test('gate suggest --yes: 현재 감지로 gates·format·fingerprint를 기록하고 다른 키는 보존한다', async () => {
+  const dir = await fixture({ user: 'hslee' });
+  try {
+    await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'x', scripts: { test: 'node --test' } }));
+    const r = await capture(() => gate(dir, ['suggest'], { yes: true }));
+    assert.equal(r.exitCode, undefined, r.errs);
+    assert.match(r.logs.join('\n'), /commit: npm run test/);
+    const cfg = JSON.parse(await readFile(join(dir, '.harness/config.json'), 'utf8'));
+    assert.equal(cfg.user, 'hslee');
+    assert.deepEqual(cfg.gates, { commit: ['npm run test'] });
+    assert.deepEqual(cfg.format, {});
+    assert.equal(cfg.fingerprint.preset, 'node');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('gate suggest --yes: 기존 gates가 있으면 알리고 덮어쓴다', async () => {
+  const dir = await fixture({ gates: { commit: ['custom'] } });
+  try {
+    await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'x', scripts: { lint: 'eslint .' } }));
+    const r = await capture(() => gate(dir, ['suggest'], { yes: true }));
+    assert.match(r.logs.join('\n'), /현재 gates\.commit: \["custom"\]/);
+    const cfg = JSON.parse(await readFile(join(dir, '.harness/config.json'), 'utf8'));
+    assert.deepEqual(cfg.gates, { commit: ['npm run lint'] });
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('gate suggest: malformed config면 exit 1이고 파일을 건드리지 않는다', async () => {
+  const dir = await fixture('{oops');
+  try {
+    const r = await capture(() => gate(dir, ['suggest'], { yes: true }));
+    assert.equal(r.exitCode, 1);
+    assert.match(r.errs, /malformed/);
+    assert.equal(await readFile(join(dir, '.harness/config.json'), 'utf8'), '{oops');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

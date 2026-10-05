@@ -21,3 +21,12 @@ docs/harness-overview.html                      | 25 +++++++
  templates/presets/python.json                   | 12 ++++
  tests/presets.test.mjs                          | 84 +++++++++++++++++++++++
  7 files changed, 247 insertions(+)
+
+## 2026-10-05T12:21:37.808Z — 009b6a5 feat(gate): config 선언 커밋 게이트·포맷 실행기
+bin/harness-team.mjs                            |   6 +-
+ docs/harness-overview.html                      |  10 ++
+ docs/hslee/preset-gates/preset-gates-handoff.md |  10 ++
+ src/cli-args.mjs                                |   3 +
+ src/commands/gate.mjs                           |  68 +++++++++++
+ tests/gate-command.test.mjs                     | 147 ++++++++++++++++++++++++
+ 6 files changed, 242 insertions(+), 2 deletions(-)

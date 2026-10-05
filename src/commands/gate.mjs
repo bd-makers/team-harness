@@ -1,10 +1,14 @@
-// `harness-team gate commit|format` — runs only what .harness/config.json declares.
+// `harness-team gate commit|format|suggest` — runs only what .harness/config.json declares.
 // The hooks are thin wrappers around these verbs, so no language or package-manager branch
 // lives in hook code (D11); what to run is the developer's confirmed preset proposal.
 import { spawnSync } from 'node:child_process';
 import { realpath } from 'node:fs/promises';
 import { basename, isAbsolute, join, matchesGlob, relative, sep } from 'node:path';
 import { readConfigStrict } from '../user-config.mjs';
+import { resolveStack } from '../detect-stack.mjs';
+import { loadRenderState } from '../render-state.mjs';
+import { confirm } from '../prompt.mjs';
+import { applyProposal, buildProposal, describeProposal } from '../presets.mjs';
 
 const CONFIG_HINT = '.harness/config.json 의 gates.commit 을 고치거나 `harness-team gate suggest` 를 실행하세요.';
 
@@ -12,6 +16,7 @@ export async function runGate(ctx) {
   const [verb, ...rest] = ctx.taskArgs || [];
   if (verb === 'commit' && rest.length === 0) return gateCommit(ctx);
   if (verb === 'format' && rest.length === 1) return gateFormat(ctx, rest[0]);
+  if (verb === 'suggest' && rest.length === 0) return gateSuggest(ctx);
   console.error('usage: harness-team gate commit | format <file> | suggest');
   process.exitCode = 2;
 }
@@ -65,4 +70,21 @@ async function gateFormat(ctx, file) {
       spawnSync('/bin/sh', ['-c', `${cmd} "$@"`, 'sh', file], { cwd: ctx.targetDir, stdio: 'ignore' });
     }
   }
+}
+
+// Re-applies the current detection as a proposal. The one place that may replace confirmed
+// gates — and only after an explicit yes (the default flips to "no" when it would overwrite).
+async function gateSuggest(ctx) {
+  let config;
+  try { config = await readConfigStrict(ctx.targetDir); }
+  catch (e) { console.error(`gate suggest: ${e.message}`); process.exitCode = 1; return; }
+  const { stack: pin } = await loadRenderState(ctx.targetDir);   // same stack resolution as init
+  const proposal = await buildProposal(ctx.targetDir, await resolveStack(ctx.targetDir, pin));
+  console.log(describeProposal(proposal));
+  const overwriting = config.gates !== undefined;
+  if (overwriting) console.log(`  현재 gates.commit: ${JSON.stringify(config.gates?.commit ?? null)} — 기록하면 gates·format·fingerprint를 덮어씁니다.`);
+  const ok = ctx.flags.yes || await confirm('이 제안을 .harness/config.json 에 기록할까요?', { defaultYes: !overwriting });
+  if (!ok) { console.log('기록하지 않았습니다.'); return; }
+  await applyProposal(ctx.targetDir, proposal);
+  console.log('✓ .harness/config.json 갱신');
 }
