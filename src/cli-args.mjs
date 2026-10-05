@@ -50,6 +50,9 @@ export const COMMANDS = [
   // Owns the read-modify-write that harness-spec.md 4단계 used to describe in prose (preserve `user`,
   // refuse malformed JSON). Values are always strings; the judgment of *what* to ask stays in the doc.
   { name: 'config', args: 'get [<key>] | set <key> <value>', summary: 'Read or set one dotted key in .harness/config.json (read-modify-write; refuses malformed JSON)', flags: [] },
+  // Runs only what .harness/config.json declares (the hooks are thin wrappers around it), and
+  // proposes those lists from templates/presets — language knowledge stays in preset data (D11).
+  { name: 'gate', args: 'commit | format <file> | suggest', summary: 'Run the commit gate / format commands declared in .harness/config.json, or propose them from a preset', flags: [] },
   // Owns the diagram opt-in's *record* step (artifact line + plan checkbox) that three command docs
   // used to describe in three different wordings. Probe/degrade (session-only judgment) stay in prose.
   { name: 'diagram', args: 'record [--skipped] [note ...]', summary: "Record the diagram outcome in the active task's artifact and close its plan step (--skipped needs a reason)", flags: ['skipped'] },
