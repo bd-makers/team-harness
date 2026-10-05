@@ -798,15 +798,14 @@
         Claude->>Tool: 파일 수정 완료
         Tool-->>Claude: 완료
         Claude->>Hook: auto-format.sh (파일 경로 전달)
-        Hook->>Hook: npx prettier --write (ts/tsx/js/jsx/json)
+        Hook->>Hook: harness-team gate format (config format glob)
         Hook-->>Claude: exit 0
     end
 
     rect rgb(40, 26, 26)
         Note over Claude,Tool: PreToolUse — Bash git commit 실행 전
         Claude->>Hook: pre-commit-check.sh (명령어 전달)
-        Hook->>Hook: pnpm tsc --noEmit
-        Hook->>Hook: pnpm test
+        Hook->>Hook: harness-team gate commit (config gates.commit)
         alt 실패
             Hook-->>Claude: exit 2 (커밋 차단)
         else 통과
@@ -829,19 +828,19 @@
       </div>
       <div class="card card-accent-green">
         <h3><span class="hook-badge hook-post">PostToolUse</span> auto-format.sh</h3>
-        <p>Edit · Write 완료 후 Prettier로 자동 포맷.</p>
+        <p>Edit · Write 완료 후 <code>harness-team gate format &lt;file&gt;</code> — config에 선언된 포맷터만 실행.</p>
         <ul style="margin-top:0.6rem">
-          <li>대상: <code>.ts</code>, <code>.tsx</code>, <code>.js</code>, <code>.jsx</code>, <code>.json</code></li>
-          <li><code>npx prettier --write</code> 실행 — 실패 시 무시(silent)</li>
+          <li>대상: <code>.harness/config.json</code>의 <code>format</code>(glob → 명령 목록), 파일 경로를 끝 인수로 붙인다</li>
+          <li>선언·CLI가 없거나 실패하면 무시(silent) — 편의 기능</li>
         </ul>
       </div>
       <div class="card card-accent-orange">
         <h3><span class="hook-badge hook-pre">PreToolUse</span> pre-commit-check.sh</h3>
-        <p>Bash 도구에서 <code>git commit</code> 명령 감지 시 검증 실행.</p>
+        <p>Bash 도구에서 <code>git commit</code> 명령 감지 시 <code>harness-team gate commit</code> 실행.</p>
         <ul style="margin-top:0.6rem">
-          <li>lockfile로 pnpm/yarn/bun/npm을 감지해 <code>&lt;pm&gt; tsc --noEmit</code> — 타입 에러 시 차단</li>
-          <li><code>&lt;pm&gt; test</code> — 테스트 실패 시 차단 (package.json에 test 스크립트가 없으면 통과)</li>
-          <li>timeout: 120초</li>
+          <li><code>.harness/config.json</code>의 <code>gates.commit</code> 목록을 순서대로 — 실패 시 차단, exit 127은 설정 오류로 차단</li>
+          <li>목록은 init·migrate·<code>gate suggest</code>가 스택 프리셋(<code>templates/presets</code>)으로 제안하고 개발자가 확정</li>
+          <li>gates 미설정이면 통과 + 안내, CLI가 없으면 경고 후 통과 · timeout: 120초</li>
         </ul>
       </div>
       <div class="card card-accent-orange">

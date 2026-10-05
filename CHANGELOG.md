@@ -10,6 +10,14 @@
 ## [Unreleased]
 
 ### Changed
+- **커밋 게이트를 프리셋 데이터로** (task `preset-gates`, D11). `pre-commit-check.sh`·`auto-format.sh`는 이제 얇은 래퍼다 —
+  `harness-team gate commit`이 `.harness/config.json`의 `gates.commit` 목록을, `gate format <file>`이 `format`(glob → 명령)을 실행한다.
+  훅의 PM 추론·tsc/test 분기·하드코딩 prettier는 지웠고, 언어 지식은 `templates/presets/`(node·python·generic)에만 있다.
+  init이 스택 프리셋으로 목록을 **제안**하고 확인받아 기록하며(node: tsconfig → `tsc --noEmit`, `lint`·`test` 스크립트, prettier 의존성이 있으면 format),
+  `gate suggest`로 다시 제안받는다. doctor는 확정 시점의 지문과 달라지면(예: `lint` 스크립트 추가) 제안만 한다.
+  명령 exit 127은 설정 오류로 차단, gates 미설정이면 통과 + 안내, CLI가 없으면 경고 후 통과.
+  **기존 설치본**: `migrate`가 stock 훅을 새 래퍼로 갱신하면서 gates가 없으면 같은 제안을 확인받아 기록한다(`--yes`면 그대로 — 이전 typecheck·test 동작 유지).
+  커스터마이즈한 훅과 이미 있는 gates는 건드리지 않는다. node 프로젝트에 prettier 의존성이 없으면 format은 제안되지 않는다(이전 훅은 무조건 `npx prettier`).
 - **결정 로그 분리 + D11 범위 헌장** (task `decision-log-split`). 소비자에게 배포하는 `templates/docs/decisions.md`에는
   팀 운영 결정(D2·D4·D5·D6)만 남기고, 플러그인 결정(D7–D10)과 새 **D11**(강제는 PR의 task 문서뿐, 사이클은 제공)은
   이 저장소의 `docs/decisions.md`에만 둔다. `doctor`의 결정 로그 확인 헤딩도 D2·D4·D5·D6으로 줄였다 — 확인 대상이 줄어드는

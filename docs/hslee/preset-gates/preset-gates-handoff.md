@@ -63,3 +63,9 @@ docs/harness-overview.html                      |  5 ++
  src/commands/migrate.mjs                        | 27 ++++++++-
  tests/migrate-gates.test.mjs                    | 75 +++++++++++++++++++++++++
  4 files changed, 113 insertions(+), 1 deletion(-)
+
+## 2026-10-05T12:26:05.066Z — 37410d1 feat(doctor): 커밋 게이트 지문 변화 감지
+docs/hslee/preset-gates/preset-gates-handoff.md |  7 ++++
+ src/commands/doctor.mjs                         | 18 +++++++++
+ tests/doctor.test.mjs                           | 52 ++++++++++++++++++++++++-
+ 3 files changed, 76 insertions(+), 1 deletion(-)
