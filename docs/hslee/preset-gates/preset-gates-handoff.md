@@ -56,3 +56,10 @@ docs/harness-overview.html                      |  5 ++
  src/commands/init.mjs                           | 17 +++++-
  tests/init-gates.test.mjs                       | 72 +++++++++++++++++++++++++
  4 files changed, 106 insertions(+), 1 deletion(-)
+
+## 2026-10-05T12:25:18.745Z — aa17c31 feat(migrate): 새 커밋 훅 설치본에 gates 제안
+docs/harness-overview.html                      |  5 ++
+ docs/hslee/preset-gates/preset-gates-handoff.md |  7 +++
+ src/commands/migrate.mjs                        | 27 ++++++++-
+ tests/migrate-gates.test.mjs                    | 75 +++++++++++++++++++++++++
+ 4 files changed, 113 insertions(+), 1 deletion(-)

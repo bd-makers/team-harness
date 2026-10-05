@@ -17,6 +17,8 @@ import { taskLabel, taskFilePath, USER_HANDOFF_IGNORE } from '../task-paths.mjs'
 import { checkRuleProvenance } from './rules.mjs';
 import { findStaleTemplates, isKnownStockTemplate } from './migrate.mjs';
 import { evaluateObserveVerdict, observeLoopbackNudge, tripWireDetail } from './observe.mjs';
+import { readConfigStrict } from '../user-config.mjs';
+import { buildProposal, fingerprintDrift } from '../presets.mjs';
 
 const pexec = promisify(execFile);
 
@@ -317,6 +319,18 @@ export async function detectLegacyStructure(targetDir) {
 // outdated. Soft warning steering to init — does NOT count toward fail (a pre-0.9
 // project is legitimate; a hard fail would break its CI). Missing/invalid
 // settings.json is already covered by CHECKS, so we stay silent there (no double-fail).
+// Confirmed gates are never rewritten here (D8) — only a change that would alter the preset
+// proposal (a new lint script, a lockfile swap) is reported, with `gate suggest` as the remedy.
+export async function checkGateFingerprint(targetDir) {
+  let config;
+  try { config = await readConfigStrict(targetDir); } catch { return null; }
+  if (config.gates === undefined || !config.fingerprint) return null;
+  const { stack: pin } = await loadRenderState(targetDir);
+  const now = (await buildProposal(targetDir, await resolveStack(targetDir, pin))).fingerprint;
+  const drift = fingerprintDrift(config.fingerprint, now);
+  return drift ? `커밋 게이트 제안의 근거가 바뀌었습니다 (${drift}) — 갱신하려면: harness-team gate suggest` : null;
+}
+
 export async function checkSessionStartHook(targetDir) {
   let settings;
   try { settings = JSON.parse(await readFile(join(targetDir, '.claude/settings.json'), 'utf8')); }
@@ -922,6 +936,9 @@ export async function runDoctor(ctx) {
   const hookWarning = pluginDev ? null : await checkSessionStartHook(ctx.targetDir);
   if (hookWarning) add('SessionStart task-gate', 'warning', hookWarning, `\n⚠️ ${hookWarning}`);
 
+  const gateWarning = pluginDev ? null : await checkGateFingerprint(ctx.targetDir);
+  if (gateWarning) add('commit gates', 'warning', gateWarning, `\n⚠️ ${gateWarning}`);
+
   const boundaryHookWarning = pluginDev ? null : await checkBoundaryCheckpointHook(ctx.targetDir);
   if (boundaryHookWarning) add('PreToolUse boundary checkpoint', 'warning', boundaryHookWarning, `\n⚠️ ${boundaryHookWarning}`);
 
@@ -1034,6 +1051,7 @@ export async function runDoctor(ctx) {
     if (legacyWarning) warnActions.push('harness-team migrate');
     if (specGateWarning) warnActions.push('harness-team task <name>');
     if (hookWarning || boundaryHookWarning || decisionLogNeedsScaffold || staleSections.length) warnActions.push('harness-team init');
+    if (gateWarning) warnActions.push('harness-team gate suggest');
     // jq warning always carries its remedy; the fail-open branch additionally needs
     // migrate — installing jq alone leaves the stale hooks' precision degraded forever.
     if (jqGaps.length) warnActions.push('harness-team migrate');

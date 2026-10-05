@@ -6,7 +6,7 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from 'node:fs
 import { tmpdir, homedir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { classifyHookCommand, collectHookCommands, redactCommand, checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, checkActiveDoneOnMain, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, DECISION_HEADINGS, checkObserveTripWires, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER, findStaleManagedSections, compareVersions, harnessVersionReport } from '../src/commands/doctor.mjs';
+import { classifyHookCommand, collectHookCommands, redactCommand, checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, checkActiveDoneOnMain, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, DECISION_HEADINGS, checkObserveTripWires, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER, findStaleManagedSections, compareVersions, harnessVersionReport, checkGateFingerprint } from '../src/commands/doctor.mjs';
 import { render } from '../src/render.mjs';
 import { detectStack } from '../src/detect-stack.mjs';
 import { sectionHashes } from '../src/render-state.mjs';
@@ -14,6 +14,8 @@ import { POST_COMMIT_HOOK } from '../src/git-hooks.mjs';
 import { taskSpecTemplate } from '../src/commands/task.mjs';
 import { observeToolEvent } from '../templates/.claude/hooks/observe-tools.mjs';
 import { OBSERVABILITY_BASE } from '../src/commands/observe.mjs';
+import { buildProposal } from '../src/presets.mjs';
+import { resolveStack } from '../src/detect-stack.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const pexec = promisify(execFile);
@@ -1241,4 +1243,52 @@ test('init 이 harnessVersion 을 기록하고 doctor 가 CLI 보다 낡은 기�
     assert.equal(checkOf(behind, 'harness version').status, 'warning');
     assert.ok(behind.next_actions.includes('harness-team init --yes'), JSON.stringify(behind.next_actions));
   } finally { await rm(base, { recursive: true, force: true }); }
+});
+
+// ── 커밋 게이트 지문 (preset-gates) ───────────────────────────────────────────
+// 확정 시점의 지문과 현재 감지가 다르면 제안만 한다 — config는 고치지 않는다(D8).
+async function gatesFixture(scripts) {
+  const dir = await healthyConsumerFixture();
+  await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'x', scripts: { test: 'node --test' } }));
+  const proposal = await buildProposal(dir, await resolveStack(dir));
+  await writeFile(join(dir, '.harness/config.json'), JSON.stringify({ user: 'u', ...proposal }));
+  await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'x', scripts }));
+  return dir;
+}
+
+test('checkGateFingerprint: 제안에 무관한 변화면 조용하다', async () => {
+  const dir = await gatesFixture({ test: 'node --test', build: 'tsc' });
+  try { assert.equal(await checkGateFingerprint(dir), null); }
+  finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkGateFingerprint: lint 스크립트가 생기면 변화와 gate suggest 처방을 알린다', async () => {
+  const dir = await gatesFixture({ test: 'node --test', lint: 'eslint .' });
+  try {
+    const before = await readFile(join(dir, '.harness/config.json'), 'utf8');
+    const w = await checkGateFingerprint(dir);
+    assert.match(w, /\+\{"script":"lint"\}/);
+    assert.match(w, /harness-team gate suggest/);
+    assert.equal(await readFile(join(dir, '.harness/config.json'), 'utf8'), before, 'config는 건드리지 않는다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('checkGateFingerprint: gates·지문이 없거나 config가 깨졌으면 조용하다', async () => {
+  const dir = await healthyConsumerFixture();
+  try {
+    await writeFile(join(dir, 'package.json'), JSON.stringify({ scripts: { lint: 'x' } }));
+    assert.equal(await checkGateFingerprint(dir), null);
+    await writeFile(join(dir, '.harness/config.json'), '{oops');
+    assert.equal(await checkGateFingerprint(dir), null);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('runDoctor: 지문 변화는 commit gates 경고와 gate suggest next_action', async () => {
+  const dir = await gatesFixture({ test: 'node --test', lint: 'eslint .' });
+  try {
+    const envelope = await doctorJson(dir);
+    const c = checkOf(envelope, 'commit gates');
+    assert.equal(c?.status, 'warning');
+    assert.ok(envelope.next_actions.includes('harness-team gate suggest'), JSON.stringify(envelope.next_actions));
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });
