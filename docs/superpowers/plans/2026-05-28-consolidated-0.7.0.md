@@ -1,12 +1,3 @@
----
-tags:
-  - project
-  - ai
-  - obsidian
-created: 2026-05-29
-modified: 2026-05-29
----
-
 # harness-aijient-team v0.7.0 통합 실행 플랜
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` (권장) 또는 `superpowers:executing-plans`. 모든 단계는 `- [ ]` 체크박스로 추적한다.

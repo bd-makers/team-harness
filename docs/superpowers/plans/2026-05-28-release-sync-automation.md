@@ -1,12 +1,3 @@
----
-tags:
-  - project
-  - ai
-  - obsidian
-created: 2026-05-28
-modified: 2026-05-28
----
-
 # Release Sync Automation Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

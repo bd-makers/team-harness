@@ -352,8 +352,6 @@ const AI_GITIGNORE_ENTRIES = [
   'CLAUDE.md',
   'AGENTS.md',
   '',
-  'oh-my-openagent.json',
-  '',
   'handoff.md',
   'plan.md',
   '',

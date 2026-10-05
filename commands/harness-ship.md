@@ -155,7 +155,6 @@ ship: chad/ship-command (base: origin/main)
 - 검증: npm run test → 통과 (출력 첨부)
 - 문서: spec 갱신 / plan 12항목 체크 / artifact 결과·리스크 기록
 - 다이어그램: 건너뜀 (사용자 선택)
-- 정합 검증: codex-shipcheck 통과 (BLOCKER 0 · MAJOR 1 → plan 사유 기록)
 - 남은 리스크: 없음
 → PR/MR 준비 완료. 생성은 지시 주시면 진행합니다.
 ```

@@ -1,12 +1,3 @@
----
-tags:
-  - project
-  - ai
-  - obsidian
-created: 2026-06-02
-modified: 2026-09-13
----
-
 # Changelog
 
 <!--
@@ -17,6 +8,13 @@ modified: 2026-09-13
 -->
 
 ## [Unreleased]
+
+### Removed
+- **개인 도구 흔적 정리** (task `remove-personal-tool-refs`). 메인테이너 개인 도구의 문서를 팀 하네스에서 뺐다:
+  `docs/ao-worker-rules.md`(AO 워커 규칙)와 `docs/harness-fleet-guide.html`(Orca·firstmate 크루 가이드), 그리고 이를 가리키던
+  README·`docs/index.html`·`docs/harness-task-guide.html`·`docs/prerequisites.md`의 링크. 문서 32개의 Obsidian frontmatter
+  (`tags`·`created`·`modified`, 소비자에게 가는 `templates/docs/README.md` 포함), `init`이 쓰는 gitignore의 `oh-my-openagent.json`
+  (D7 잔재), `harness-ship` 보고 예시의 개인 스킬 줄, `docs/followups.md`의 개인 스킬 경로 문단도 지웠다.
 
 ## [0.45.0] - 2026-10-03
 
