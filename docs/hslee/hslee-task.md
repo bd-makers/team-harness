@@ -4,6 +4,7 @@
 
 ## Completed
 - ✅ decision-log-split
+- ✅ pr-check
 - ✅ preset-gates
 - ✅ preset-repo-shape
 - ✅ remove-backup-cluster
