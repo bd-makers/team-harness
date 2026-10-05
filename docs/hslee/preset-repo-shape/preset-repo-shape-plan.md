@@ -6,7 +6,7 @@ RN rules는 앱 경로로 스코프한 rules 프리셋으로 제안한다. works
 
 ## 단계
 - [x] spec/plan 다이어그램 작성 → docs/hslee/preset-repo-shape/preset-repo-shape-diagram.html
-- [ ] 1. 모양 판별 — `src/repo-shape.mjs` `detectRepoShape(dir, preset)`: `workspaces`(배열·`{packages}`)·`pnpm-workspace.yaml` 패턴을 펼쳐
+- [x] 1. 모양 판별 — `src/repo-shape.mjs` `detectRepoShape(dir, preset)`: `workspaces`(배열·`{packages}`)·`pnpm-workspace.yaml` 패턴을 펼쳐
       `package.json` 있는 디렉터리만(node_modules·점 디렉터리 제외, `!` 부정 패턴), kind는 `node.json` `workspace.app` 조건(앱 우선),
       루트가 앱이면 `"."`(workspace 원천 있을 때만), shape = 0 → single / 앱 ≥ 2 → monorepo / 그 외 app-packages. 테스트: `tests/repo-shape.test.mjs` 픽스처 5종+루트 앱
 - [ ] 2. 제안 — `buildProposal(dir, stack, { unattended, shape })`: single은 지금 그대로(기존 presets 테스트 무변경), workspace는

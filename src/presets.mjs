@@ -25,9 +25,9 @@ export function selectPreset(presets, stackId) {
 async function readText(p) { try { return await readFile(p, 'utf8'); } catch { return null; } }
 async function exists(p) { try { await access(p); return true; } catch { return false; } }
 
-// The four condition kinds are generic data lookups; which file or script means what is known
+// The condition kinds are generic data lookups; which file or script means what is known
 // only to the preset JSON. An array is any-of.
-async function holds(dir, pkg, cond) {
+export async function holds(dir, pkg, cond) {
   if (Array.isArray(cond)) {
     for (const c of cond) if (await holds(dir, pkg, c)) return true;
     return false;
@@ -35,6 +35,8 @@ async function holds(dir, pkg, cond) {
   if (cond.file) return exists(join(dir, cond.file));
   if (cond.script) return Boolean(pkg?.scripts?.[cond.script]);
   if (cond.dependency) return Object.hasOwn({ ...pkg?.dependencies, ...pkg?.devDependencies }, cond.dependency);
+  // Apps ship their framework in `dependencies`; libraries keep it in peer/dev dependencies.
+  if (cond.runtimeDependency) return Object.hasOwn(pkg?.dependencies ?? {}, cond.runtimeDependency);
   if (cond.fileContains) return (await readText(join(dir, cond.fileContains[0])))?.includes(cond.fileContains[1]) ?? false;
   throw new Error(`unknown preset condition: ${JSON.stringify(cond)}`);
 }

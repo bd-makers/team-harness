@@ -2,6 +2,12 @@
   "id": "node",
   "label": "Node.js (JS/TS)",
   "match": { "stackIds": ["node", "react", "next", "react-native", "expo"] },
+  "workspace": {
+    "app": [
+      { "script": "dev" }, { "script": "start" },
+      { "runtimeDependency": "next" }, { "runtimeDependency": "expo" }, { "runtimeDependency": "react-native" }
+    ]
+  },
   "pm": {
     "npm":  { "exec": "npx",       "run": "npm run" },
     "pnpm": { "exec": "pnpm exec", "run": "pnpm run" },
