@@ -76,3 +76,19 @@ docs/harness-overview.html                         |  5 ++
  tests/settings-permissions.test.mjs                |  6 +-
  tests/stack-conditional-rules.test.mjs             | 94 ++++++++++++++++++++--
  14 files changed, 202 insertions(+), 39 deletions(-)
+
+## 2026-10-05T15:40:00.437Z — 0d05895 feat(init): --shape single·stack 모양 미리보기 + 문서
+CHANGELOG.md                                       | 15 ++++++
+ README.md                                          |  9 ++--
+ commands/harness-init.md                           | 19 +++++++-
+ .../preset-repo-shape-artifact.md                  |  2 +
+ .../preset-repo-shape/preset-repo-shape-handoff.md | 17 +++++++
+ .../preset-repo-shape/preset-repo-shape-plan.md    |  3 +-
+ .../preset-repo-shape/preset-repo-shape-spec.md    |  3 +-
+ docs/prerequisites.md                              |  6 +--
+ src/cli-args.mjs                                   |  5 +-
+ src/commands/init.mjs                              |  7 +++
+ src/commands/stack.mjs                             |  6 ++-
+ src/repo-shape.mjs                                 |  8 ++-
+ tests/init-gates.test.mjs                          | 57 ++++++++++++++++++++++
+ 13 files changed, 143 insertions(+), 14 deletions(-)

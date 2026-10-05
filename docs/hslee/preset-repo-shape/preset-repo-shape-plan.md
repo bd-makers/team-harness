@@ -22,7 +22,7 @@ RN rules는 앱 경로로 스코프한 rules 프리셋으로 제안한다. works
       stack id), `copyStaticAssets`의 rules 일괄 복사 단계·`excludesRnRules`·`RN_ONLY_RULE_FILES` 제거, 접두 설치(`paths:`만 치환, 파일명 `<dir slug>-<name>.md`),
       빈 `.claude/rules` 생성·`Copied N` 집계 유지, mirror 전에 설치. 테스트: `tests/stack-conditional-rules.test.mjs` 재작성, `migrate-templates` 전제 테스트 확인
 - [x] 7. 문서 — `docs:generate`(overview), spec·artifact 갱신, 주석(`harness.mjs:211`·`init.mjs:27`·`settings-permissions.mjs:21,39`)
-- [ ] 8. 검증 — `npm run test`·`npm run docs:check` PASS, 픽스처 실측(npm·pnpm·turbo·nx 임시 디렉터리 init `--yes` 출력) artifact 기록
+- [x] 8. 검증 — `npm run test`·`npm run docs:check` PASS, 픽스처 실측(npm·pnpm·turbo·nx 임시 디렉터리 init `--yes` 출력) artifact 기록
 - [ ] 9. 리뷰 — codex(`review --scope diff --base origin/main`) + 새 컨텍스트 리뷰, 결과 artifact `## Reviews`
 - [ ] 10. 커밋·PR
 

@@ -6,6 +6,16 @@
 
 - 다이어그램: docs/hslee/preset-repo-shape/preset-repo-shape-diagram.html 생성 (2026-10-05)
 
+### 검증 (2026-10-06)
+- `npm run test` → 1130 pass · 0 fail · skip 1(+perf 1 pass). `npm run docs:check` → 최신.
+- 픽스처 실측(임시 디렉터리, `init --yes`): npm workspaces·pnpm workspace·turbo·nx 모두 `monorepo`(앱 2·패키지 1)로 판별·표시,
+  RN 앱 `apps/mobile`만 `apps-mobile-*.md` 4종 설치. 도구 없음 → `{"apps/mobile": ["cd apps/mobile && npm run test"], "apps/web": [...]}`
+  (pnpm은 `pnpm run`), lint는 추가 제안. turbo → 추가 제안 `npx turbo run lint test --filter=...[HEAD]`, nx → `npx nx affected -t lint typecheck test --base=HEAD`,
+  `--yes`라 `commit: []`. npm 픽스처에서 git 커밋 후 `apps/web`만 수정 → 실제 `gate commit`이 web 목록 1개만 실행(exit 0).
+  `apps/admin` 추가 → doctor `commit gates: warning (+workspace apps/admin, …)`.
+- 소비자 3곳 읽기 전용 `stack --json`: deep-math(react-native)·job-scraper(python)·heliosent-profile(next) 모두 `repoShape: single` — 동작 변화 없음.
+- 미검증: 실제 turbo·nx 바이너리 실행(위임 명령은 문자열 테스트와 소스 조사뿐), 대상 0개일 때 두 도구의 exit code.
+
 ### 구현 중 판단 (Rulings)
 - 1단계: 앱 조건의 프레임워크 의존성은 `dependency`가 아니라 새 조건 `runtimeDependency`(dependencies만)로 본다 — `react-native`를 devDependency로 가진 UI 패키지가
   앱으로 분류됐다(테스트로 재현, spec G4가 막으려던 경우). 틀렸을 때 비용: 조건 종류 하나와 node.json 세 줄.
