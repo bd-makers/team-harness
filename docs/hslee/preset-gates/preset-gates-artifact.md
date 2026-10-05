@@ -5,19 +5,38 @@
 ## 결과
 
 - 다이어그램: docs/hslee/preset-gates/preset-gates-diagram.html 생성 (2026-10-05)
-- 검증 (2026-10-05): `npm run test` → 1090 pass · 0 fail · skip 1 (+ perf 1 pass), `npm run docs:check` → 최신.
-  완료 기준 1: `grep -nE 'pnpm|yarn|bunx|npx|prettier|tsc'` 두 훅 → 0줄.
-- 소비자 실측 (2026-10-05, 읽기 전용 — `resolveStack`+`buildProposal`만 호출, config·훅 무변경):
+- 검증 (2026-10-05, 최종 tip 기준 — 리뷰 반영·rebase 후 재실행). 명령과 실제 출력:
 
-  | 프로젝트 | 스택·PM | 설치 훅 | 제안 |
-  |---|---|---|---|
-  | deep-math | react-native · npm | 직전 stock → migrate가 래퍼로 갱신 + gates 제안 | `npx tsc --noEmit` · `npm run lint` · `npm run test` |
-  | job-scraper | python · pip | 커스터마이즈 → migrate 무변경 | `ruff check .` · `pytest`, format `*.py → ruff format` |
-  | heliosent-profile | next · bun | 커스터마이즈(bun.lock 감지 추가본) → migrate 무변경 | `bunx tsc --noEmit` · `bun run lint` · `bun run test` |
+  ```text
+  $ npm run test > log 2>&1; echo "npm run test exit=$?"; grep -E '^ℹ (tests|pass|fail|skipped)' log | head -4
+  npm run test exit=0
+  ℹ tests 1094
+  ℹ pass 1093
+  ℹ fail 0
+  ℹ skipped 1
+  $ npm run docs:check
+  harness overview 생성 상태가 최신입니다.
+  docs:check exit=0
+  $ grep -cE 'pnpm|yarn|bunx|npx|prettier|tsc' templates/.claude/hooks/{pre-commit-check,auto-format}.sh   # spec 완료 기준 1
+  hook-grep lines=0
+  ```
+- 소비자 실측 (2026-10-05, 읽기 전용 — `resolveStack`+`buildProposal`만 호출하는 일회성 스크립트, config·훅·gates.json 무변경).
+  스크립트는 세 경로에 대해 `buildProposal(dir, stack, { unattended: true })`(= init·migrate `--yes`)와 대화형 전체 제안을 출력했다:
+
+  ```text
+  ~/projects/workspace/deep-math react-native/npm --yes=["npx tsc --noEmit","npm run test"] deferred=["npm run lint"] full=["npx tsc --noEmit","npm run lint","npm run test"] format={}
+  ~/projects/workspace/job-scraper python/pip --yes=[] deferred=["ruff check .","pytest","format *.py → ruff format"] full=["ruff check .","pytest"] format={"*.py":["ruff format"]}
+  ~/projects/heliosent/heliosent-profile next/bun --yes=["bunx tsc --noEmit","bun run test"] deferred=["bun run lint"] full=["bunx tsc --noEmit","bun run lint","bun run test"] format={}
+  exit=0
+  ```
+  설치 훅 판정(`KNOWN_STOCK_HOOK_SHA256` 대조, 같은 날 첫 실측): deep-math = 직전 stock → migrate가 래퍼로 갱신하고 gates.json을 제안,
+  job-scraper·heliosent-profile = 커스터마이즈 → migrate 무변경.
 
   **deep-math 주의 → 해소**: `lint` 스크립트는 있으나 eslint 미설치(#119 실측 exit 127). 첫 구현에서는 `migrate --yes`가 `npm run lint`까지
-  기록해 모든 Claude 커밋이 "설정 오류"로 막힐 상태였다. 리뷰 I4 반영 후 `--yes`는 프리셋 `confirm` 항목(lint)을 빼고 `tsc`·`test`만 기록하며
-  lint는 "추가 제안"으로만 출력한다(이후 doctor 지문 경고가 `gate suggest`로 안내). 대화형은 전체를 보여 주고 확인받는다.
+  기록해 모든 Claude 커밋이 "설정 오류"로 막힐 상태였다. 리뷰 I4 반영 후 위 출력처럼 `--yes`는 lint를 `deferred`로 빼고 `tsc`·`test`만 기록한다
+  (이후 doctor 지문 경고가 `gate suggest`로 안내). 대화형은 전체를 보여 주고 확인받는다.
+
+- 다이어그램: 미실행 — ship: 리뷰 반영 때 라벨을 이미 갱신했고 구조는 그대로라 재생성 생략(사용자 선택) (2026-10-05)
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
@@ -58,6 +77,34 @@ D11 언어 분기 잔존과 공백·프로젝트 밖 경로 처리에서는 추�
   검증: `npm run test` → 1093 pass · 0 fail · skip 1, `npm run docs:check` → 최신.
 - 미룬 Minor: M1 dotfile glob, M2 미해결 `{var}` 플레이스홀더, M3 지문 signal이 프리셋 when 직렬화(raw JSON 메시지), M4 migrate 거절 문구,
   M5 훅 timeout 120s·고아 프로세스, M6 일부 테스트 공백.
+
+<!-- harness:review kind=claude-code-reviewer scope=diff tip=b253f34575badbc1bddc684868c2a4cd5b8a0a8a at=2026-10-05T12:40:00Z -->
+<!-- tip은 rebase 전 sha — 같은 내용이 rebase 후 7b56ac9(훅 fixup 병합으로 sha만 바뀜). at은 근사값: 서브에이전트 완료 시각이 기록되지 않아 codex 리뷰(12:30)와 shipcheck(13:02) 사이로 적었다 -->
+
+### 2026-10-05T13:02:20.213Z — codex-shipcheck (harness-team review)
+
+- engine: codex · scope: diff · tip: 6b112b8600d5cc58aff3ab5157c1c2f371d9cead · exit 0 · 2544 B
+
+```text
+전하, **판정은 Request changes입니다. fail은 S4·S5입니다.** `git status`는 clean이며, `refs/remotes/origin/main` 대비 35개 파일의 diff와 커밋 이력을 확인했습니다. 파일 변경과 테스트 재실행은 하지 않았습니다.
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| S1 | spec 요구사항 대응 | BLOCKER | pass | R1–R9에 대응 구현이 있습니다. diff의 `GATES_REL = '.harness/gates.json'`, `buildProposal(... { unattended: Boolean(ctx.flags.yes) })`, `if (r.status === 127) return block(...)`, `gateSuggest`, `checkGateFingerprint`와 프리셋 3종·훅 래퍼가 요구사항을 구현합니다. R2의 일반 `--yes` 설명은 R7의 명시적 `confirm` 제외 규칙으로 보완됩니다. |
+| S2 | 완료 체크 대응 변경·커밋 | MAJOR | pass | 다이어그램·1–10 단계의 대응 산출물과 커밋이 실재합니다: `e82118d`(문서·다이어그램), `59ed6d6`(프리셋), `009b6a5`·`9f3fc02`(실행·suggest), `9d1b904`(훅), `2e02bc8`(init), `4d7e61b`(migrate), `2995a0a`(doctor), `fdde1c7`(문서), `7b56ac9`(검증 기록), `34dc6e2`·`114289b`(리뷰 반영·기록). 검증 실행의 증거 품질은 S5에서 별도 판정합니다. |
+| S3 | 스코프 밖 변경 | MAJOR | pass | diff는 프리셋·gate·훅·init/migrate/doctor·관련 테스트와 문서에 한정됩니다. 추가 `harness-cycle.md` 수정도 “처음엔 `.harness/config.json`이었으나 … 팀원마다 게이트가 꺼진다 — task `preset-gates` 리뷰”라고 사유를 기록합니다. |
+| S4 | 모든 리뷰의 마커 기록 | MAJOR | **fail** | artifact:44에는 Codex 마커가 있으나, :46–60의 “최종 브랜치 리뷰 (opus code-reviewer, 새 컨텍스트)”에는 대응 `harness:review` 마커가 없습니다. 실행된 리뷰 하나가 마커 없이 기록됐습니다. |
+| S5 | 실제 검증 명령·출력 인용 | BLOCKER | **fail** | artifact:58의 “`npm run test` → 1093 pass · 0 fail · skip 1, `npm run docs:check` → 최신”은 요약 선언입니다. 실제 출력 발췌·종료 코드가 없고, :10–16 소비자 실측도 호출 명령과 출력 대신 정리된 표만 있습니다. :30–42의 코드 블록은 리뷰 응답이며 테스트 출력이 아닙니다. |
+
+**최종 verdict: fail = S4(MAJOR), S5(BLOCKER).** PR 전에 Opus 리뷰의 대응 마커와 검증 명령·실제 출력 발췌를 보완해야 합니다. 구현 대응 판정은 테스트 통과를 독립적으로 보증하지 않습니다.
+```
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=6b112b8600d5cc58aff3ab5157c1c2f371d9cead at=2026-10-05T13:02:20.213Z -->
+
+
+- 판별·조치 (2026-10-05): **S4 진짜** — opus 최종 리뷰는 CLI 밖(서브에이전트)에서 돌아 마커가 없었다 → 위 절에 `kind=claude-code-reviewer` 마커를 추가했다
+  (meta.reviews는 CLI 소유라 손대지 않음 — `review: required` 판정은 CLI가 기록한 codex 항목이 충족). **S5 진짜** — 검증이 요약 선언이었다 →
+  `## 결과`에 실제 명령·종료 코드·출력 발췌로 교체하고 소비자 실측도 호출과 출력 원문으로 바꿨다. 코드 변경 없음(문서만).
 
 ## 남은 리스크 · 후속
 - **소비자 배포 후 행동 필요**: 새 CLI로 `migrate`를 받으면 stock 훅이 래퍼로 바뀌고 `.harness/gates.json`이 제안된다 — **그 파일을 커밋해야** 팀 전체에 게이트가 걸린다.
