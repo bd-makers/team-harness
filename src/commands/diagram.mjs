@@ -40,9 +40,12 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// 생략 기록 줄의 머리. `pr-check` 가 다이어그램 권장 안내를 낼지 이 문자열로 판정한다.
+export const DIAGRAM_SKIPPED_PREFIX = '- 다이어그램: 미실행 — ';
+
 // 세 문서가 각자 들고 있던 형식의 유일한 출처.
 export function diagramRecordLine({ outcome, diagram, note = '', date, verb = '생성' }) {
-  if (outcome === 'skipped') return `- 다이어그램: 미실행 — ${note} (${date})`;
+  if (outcome === 'skipped') return `${DIAGRAM_SKIPPED_PREFIX}${note} (${date})`;
   return note ? `- 다이어그램: ${diagram} ${verb} — ${note} (${date})` : `- 다이어그램: ${diagram} ${verb} (${date})`;
 }
 

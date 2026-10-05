@@ -6,7 +6,7 @@ import { loadRenderState, saveRenderState } from '../render-state.mjs';
 import { confirm } from '../prompt.mjs';
 import { resolveUsername, saveUsername } from '../user-config.mjs';
 import { applyProposal, buildProposal, describeProposal, describeRuleInstalls, planRuleInstalls, readGates } from '../presets.mjs';
-import { installPostCommitHook } from '../git-hooks.mjs';
+import { installPostCommitHook, installPrePushHook } from '../git-hooks.mjs';
 import { resolveShape } from '../repo-shape.mjs';
 
 export async function runInit(ctx) {
@@ -106,6 +106,7 @@ export async function runInit(ctx) {
   await saveRenderState(ctx.targetDir, renderState);
   const copied = await copyStaticAssets(ctx);
   await installPostCommitHook(ctx.targetDir);
+  await installPrePushHook(ctx.targetDir);
 
   console.log(`\n✓ Wrote ${changes.length} merged file(s)`);
   console.log(`✓ Copied ${copied.filter(c => c.action === 'write').length} asset(s) (${copied.filter(c => c.action === 'skip').length} skipped as existing)`);

@@ -1,0 +1,21 @@
+{
+  "user": "hslee",
+  "task": "pr-check",
+  "created": "2026-10-05",
+  "firstActivatedAt": "2026-10-05T16:02:00.418Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "f7c6432425796c557a7ccfaf4ed0ab5912c93547",
+      "at": "2026-10-05T16:16:48.254Z",
+      "exitCode": 0,
+      "outputBytes": 1010
+    }
+  ]
+}

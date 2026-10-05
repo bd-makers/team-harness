@@ -27,5 +27,8 @@ Use this skill as the Codex equivalent of Claude Code `/harness-ship`.
 - The diagram output belongs at the active task directory and defaults to a self-contained
   inline-SVG HTML file: task documents are often read in viewers that strip script tags (Obsidian,
   for one), where a mermaid JS runtime never renders.
-- Finish by reporting PR/MR readiness: branch and base, changed files, verification output, which
+- Before reporting, run `harness-team pr-check` (the one check the harness enforces, D11) after the
+  document updates are committed; if it exits 1, do not declare the PR ready. Its diagram notice
+  is advisory and does not block.
+- Finish by reporting PR/MR readiness: branch and base, changed files, verification output, pr-check result, which
   documents were updated, diagram status, and remaining risks. Then stop.

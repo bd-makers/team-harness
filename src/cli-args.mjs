@@ -38,7 +38,7 @@ export const COMMANDS = [
   // so it never runs from a bare `migrate` (or from `--yes` alone).
   { name: 'migrate', args: '[dir] [--adopt-reviews]', summary: 'Migrate to latest: task structure (→0.6, →0.7 artifact.md split); --adopt-reviews moves legacy tasks to CLI-owned review evidence',
     flags: ['adopt-reviews'] },
-  { name: 'sync', args: '[dir]', summary: 'Mirror .claude/rules → .cursor/rules and reinstall the post-commit hook', flags: [] },
+  { name: 'sync', args: '[dir]', summary: 'Mirror .claude/rules → .cursor/rules and reinstall the post-commit and pre-push hooks', flags: [] },
   { name: 'doctor', args: '[dir]', summary: 'Diagnose harness integrity', flags: [] },
   // Read-only. Owns the dependency lookup that the three test commands' 0단계 used to
   // describe in prose three times over; the judgment steps (convention sampling, the
@@ -47,6 +47,9 @@ export const COMMANDS = [
   // Read-only. Owns the base/scope ladder that harness-ship.md used to make the agent run by
   // hand; the rule itself still lives in harness-review.md (doc is 정본, review.mjs mirrors it).
   { name: 'scope', args: '[dir]', summary: 'Resolve the review/ship scope and base ref (read-only)', flags: ['scope', 'base'] },
+  // Read-only. The one thing the harness enforces (D11): the task docs a PR carries. ship, the git
+  // pre-push hook (`--pre-push` reads git's ref lines from stdin) and a team's CI all call this.
+  { name: 'pr-check', args: '[dir] [--base <ref>] [--pre-push]', summary: 'Check that the branch carries its task docs (spec/plan/handoff/artifact; diagram is advisory) for a PR (read-only; exit 1 when missing)', flags: ['base', 'pre-push'] },
   // Owns the read-modify-write that harness-spec.md 4단계 used to describe in prose (preserve `user`,
   // refuse malformed JSON). Values are always strings; the judgment of *what* to ask stays in the doc.
   { name: 'config', args: 'get [<key>] | set <key> <value>', summary: 'Read or set one dotted key in .harness/config.json (read-modify-write; refuses malformed JSON)', flags: [] },
@@ -102,7 +105,7 @@ const OPTIONS_HELP = `Options:
   --yes                Non-interactive
   --member <name>      Override member (default: git config user.name, else $USER)
   --target <dir>       Target directory (default: cwd)
-  --json               Structured JSON envelope output for drive commands (task/retro/release/doctor/summary/observe/rules/stack/scope/config/diagram)`;
+  --json               Structured JSON envelope output for drive commands (task/retro/release/doctor/summary/observe/rules/stack/scope/pr-check/config/diagram)`;
 
 // `doctor` proves the hook CLI is reachable by matching `session-context` and
 // `handoff` at the start of a line in this output, so the two-space indent is a
