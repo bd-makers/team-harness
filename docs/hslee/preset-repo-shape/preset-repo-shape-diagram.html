@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>preset-repo-shape — 저장소 모양과 커밋 게이트</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --color-paper:   #f5f5f5;
+      --color-ink:     #2d3142;
+      --color-muted:   #4f5d75;
+      --color-accent:  #eb6c36;
+      --font-sans:     system-ui, -apple-system, 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
+      --font-serif:    'Iowan Old Style', Georgia, 'Apple SD Gothic Neo', serif;
+      --font-mono:     ui-monospace, 'SF Mono', Menlo, monospace;
+    }
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      padding: 3rem 2rem;
+    }
+    .frame { max-width: 1100px; margin: 0 auto; }
+    .eyebrow {
+      font-family: var(--font-mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--color-muted);
+      margin-bottom: 0.5rem;
+    }
+    h1 {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 2.4vw + 0.75rem, 2rem);
+      font-weight: 400;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      margin-bottom: 1.5rem;
+    }
+    .scroll { overflow-x: auto; }
+    svg { width: 100%; min-width: 900px; display: block; }
+    .cards { display: grid; grid-template-columns: 1.1fr 1fr 0.9fr; gap: 1rem; margin-top: 1.5rem; }
+    .card { background: #ffffff; border: 1px solid rgba(45,49,66,0.12); border-radius: 6px; padding: 1.25rem; }
+    .card .eyebrow { margin-bottom: 0.4rem; }
+    .card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.6rem; }
+    .card-header h3 { font-size: 0.95rem; font-weight: 600; }
+    .card-dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+    .card-dot.coral { background: var(--color-accent); }
+    .card-dot.muted { background: var(--color-muted); }
+    .card-dot.ink { background: var(--color-ink); }
+    .card ul { padding-left: 1.1rem; font-size: 0.85rem; line-height: 1.55; color: var(--color-muted); }
+    code { font-family: var(--font-mono); font-size: 0.8em; }
+    footer { margin-top: 1.5rem; padding-top: 0.75rem; border-top: 1px solid rgba(45,49,66,0.10);
+      font-family: var(--font-mono); font-size: 0.65rem; color: var(--color-muted); letter-spacing: 0.06em; }
+    @media (max-width: 760px) { .cards { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="frame">
+    <p class="eyebrow">Flowchart · preset-repo-shape plan</p>
+    <h1>모양을 확인한 뒤에만 갈래가 생기고, 단일 앱은 오늘과 같다</h1>
+
+    <div class="scroll">
+    <svg viewBox="0 0 960 640" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="preset-repo-shape-title preset-repo-shape-desc">
+      <title id="preset-repo-shape-title">preset-repo-shape 커밋 게이트 제안 흐름</title>
+      <desc id="preset-repo-shape-desc">저장소 모양을 판별해 workspace가 없으면 묻지 않고 기존 배열 게이트를 쓰고, 있으면 확인을 받아 turbo·nx 위임 명령 또는 workspace별 경로 목록을 gates.json에 기록하며, gate commit은 HEAD 대비 바뀐 파일로 실행할 목록을 고른다.</desc>
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+        <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+        <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#2e5aa8"/></marker>
+      </defs>
+
+      <rect width="100%" height="100%" fill="#f5f5f5"/>
+
+      <!-- Zone: proposal (init · gate suggest · migrate) -->
+      <rect x="24" y="56" width="912" height="248" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="36" y="60" width="176" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="124" y="69" fill="rgba(45,49,66,0.40)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.14em">PROPOSE · INIT · SUGGEST · MIGRATE</text>
+
+      <!-- Zone: runtime -->
+      <rect x="376" y="460" width="248" height="104" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <rect x="388" y="464" width="120" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="448" y="473" fill="rgba(45,49,66,0.40)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.14em">RUNTIME · PRETOOLUSE</text>
+
+      <!-- Arrows (before nodes) -->
+      <!-- start → D1 -->
+      <line x1="200" y1="112" x2="236" y2="112" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- D1 yes → confirm -->
+      <line x1="364" y1="112" x2="400" y2="112" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="370" y="92" width="24" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="382" y="101" fill="#7a8399" font-size="8" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">YES</text>
+
+      <!-- D1 no → single -->
+      <line x1="300" y1="152" x2="300" y2="216" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="308" y="178" width="20" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="318" y="187" fill="#7a8399" font-size="8" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">NO</text>
+
+      <!-- confirm reject → single (dashed) -->
+      <path d="M480,144 V240 Q480,248 472,248 H360" fill="none" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+      <rect x="392" y="228" width="40" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="412" y="237" fill="#7a8399" font-size="8" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">REJECT</text>
+
+      <!-- confirm accept → D2 -->
+      <line x1="560" y1="112" x2="596" y2="112" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="560" y="92" width="36" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="578" y="101" fill="#7a8399" font-size="8" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">ACCEPT</text>
+
+      <!-- D2 yes → delegate -->
+      <line x1="724" y1="112" x2="760" y2="112" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="730" y="92" width="24" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="742" y="101" fill="#7a8399" font-size="8" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">YES</text>
+
+      <!-- D2 no → path lists -->
+      <line x1="660" y1="152" x2="660" y2="216" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+      <rect x="668" y="178" width="20" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="678" y="187" fill="#eb6c36" font-size="8" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">NO</text>
+
+      <!-- single → gates.json (left edge) -->
+      <path d="M300,280 V376 Q300,384 308,384 H400" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="324" y="364" width="52" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="350" y="373" fill="#7a8399" font-size="8" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">ARRAY</text>
+
+      <!-- path lists → gates.json (right edge, upper attach) -->
+      <path d="M660,280 V364 Q660,372 652,372 H600" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+      <!-- delegate → gates.json (right edge, lower attach) -->
+      <path d="M840,144 V388 Q840,396 832,396 H600" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#arrow)"/>
+      <rect x="696" y="376" width="44" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="718" y="385" fill="#7a8399" font-size="8" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">1 CMD</text>
+
+      <!-- gates.json → gate commit -->
+      <line x1="500" y1="416" x2="500" y2="492" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+      <rect x="508" y="440" width="28" height="12" rx="2" fill="#f5f5f5"/>
+      <text x="522" y="449" fill="#eb6c36" font-size="8" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.06em">READ</text>
+
+      <!-- Nodes -->
+      <!-- N1 start (oval) -->
+      <rect x="40" y="88" width="160" height="48" rx="24" fill="#f5f5f5"/>
+      <rect x="40" y="88" width="160" height="48" rx="24" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+      <text x="120" y="110" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">모양 판별</text>
+      <text x="120" y="126" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">src/repo-shape.mjs</text>
+
+      <!-- D1 workspace? -->
+      <polygon points="300,72 364,112 300,152 236,112" fill="#f5f5f5"/>
+      <polygon points="300,72 364,112 300,152 236,112" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="300" y="110" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">workspace</text>
+      <text x="300" y="125" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">원천 있음?</text>
+
+      <!-- N2 single -->
+      <rect x="240" y="216" width="120" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="240" y="216" width="120" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="300" y="244" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">단일 · 묻지 않음</text>
+      <text x="300" y="262" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">오늘과 바이트 동일</text>
+
+      <!-- N3 confirm -->
+      <rect x="400" y="80" width="160" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="400" y="80" width="160" height="64" rx="6" fill="rgba(79,93,117,0.10)" stroke="#7a8399" stroke-width="1"/>
+      <text x="480" y="108" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">모양·목록 확인</text>
+      <text x="480" y="126" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">--yes → 감지 채택</text>
+
+      <!-- D2 turbo/nx? -->
+      <polygon points="660,72 724,112 660,152 596,112" fill="#f5f5f5"/>
+      <polygon points="660,72 724,112 660,152 596,112" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="660" y="110" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">turbo · nx</text>
+      <text x="660" y="125" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">있음?</text>
+
+      <!-- N4 delegate -->
+      <rect x="760" y="80" width="160" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="760" y="80" width="160" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+      <text x="840" y="108" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">도구에 위임</text>
+      <text x="840" y="126" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">영향 범위 = 도구 몫</text>
+
+      <!-- N5 path lists (focal) -->
+      <rect x="580" y="216" width="160" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="580" y="216" width="160" height="64" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="660" y="244" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">workspace별 목록</text>
+      <text x="660" y="262" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">{"apps/x": […], ".": …}</text>
+
+      <!-- N6 gates.json (store) -->
+      <rect x="400" y="352" width="200" height="64" rx="6" fill="#f5f5f5"/>
+      <rect x="400" y="352" width="200" height="64" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <rect x="408" y="358" width="32" height="12" rx="2" fill="transparent" stroke="rgba(79,93,117,0.40)" stroke-width="0.8"/>
+      <text x="424" y="367" fill="rgba(79,93,117,0.8)" font-size="7" font-family="ui-monospace, Menlo, monospace" text-anchor="middle" letter-spacing="0.08em">TEAM</text>
+      <text x="500" y="384" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">.harness/gates.json</text>
+      <text x="500" y="402" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">fingerprint.shape·workspaces</text>
+
+      <!-- N7 gate commit (focal) -->
+      <rect x="400" y="492" width="200" height="56" rx="6" fill="#f5f5f5"/>
+      <rect x="400" y="492" width="200" height="56" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="500" y="516" fill="#2d3142" font-size="12" font-weight="600" font-family="system-ui, 'Apple SD Gothic Neo', sans-serif" text-anchor="middle">gate commit</text>
+      <text x="500" y="534" fill="#4f5d75" font-size="9" font-family="ui-monospace, Menlo, monospace" text-anchor="middle">HEAD 대비 + untracked</text>
+
+      <!-- Legend -->
+      <line x1="30" y1="584" x2="930" y2="584" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+      <text x="30" y="608" fill="#4f5d75" font-size="8" font-family="ui-monospace, Menlo, monospace" letter-spacing="0.14em">LEGEND</text>
+      <rect x="110" y="598" width="20" height="14" rx="3" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+      <text x="138" y="608" fill="#4f5d75" font-size="9" font-family="system-ui, 'Apple SD Gothic Neo', sans-serif">이 task가 새로 만드는 것</text>
+      <rect x="300" y="598" width="20" height="14" rx="3" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+      <text x="328" y="608" fill="#4f5d75" font-size="9" font-family="system-ui, 'Apple SD Gothic Neo', sans-serif">팀이 커밋하는 파일</text>
+      <line x1="470" y1="605" x2="500" y2="605" stroke="#4f5d75" stroke-width="1" stroke-dasharray="4,3"/>
+      <text x="508" y="608" fill="#4f5d75" font-size="9" font-family="system-ui, 'Apple SD Gothic Neo', sans-serif">거절 → 단일로 진행</text>
+    </svg>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <p class="eyebrow">Runtime</p>
+        <div class="card-header"><span class="card-dot coral"></span><h3>gate commit 실행 규칙</h3></div>
+        <ul>
+          <li><code>commit</code> 배열 → 지금처럼 항상 실행</li>
+          <li>객체 → 바뀐 파일이 속한 디렉터리 키만</li>
+          <li><code>"."</code> → 어느 키에도 안 걸린 변경이 있을 때(루트 앱)</li>
+          <li>HEAD 없음(첫 커밋) → 모든 키</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Rules preset</p>
+        <div class="card-header"><span class="card-dot ink"></span><h3>RN rules 스코프</h3></div>
+        <ul>
+          <li>단일: 유효 stack id(<code>--stack</code> &gt; 감지), 묻지 않고 설치</li>
+          <li>workspace: 앱 workspace별로 <code>paths:</code> 앞에 앱 경로 접두</li>
+          <li>원천 4종은 <code>templates/.claude/rules/</code>에 그대로</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="eyebrow">Doctor</p>
+        <div class="card-header"><span class="card-dot muted"></span><h3>drift는 확정 모양 기준</h3></div>
+        <ul>
+          <li>확정 <code>single</code> → workspace 변화 무시</li>
+          <li>workspace 집합 변화 → <code>gate suggest</code> 처방</li>
+          <li>앱 수만 변화 → 조용</li>
+        </ul>
+      </div>
+    </div>
+
+    <footer>preset-repo-shape · spec G1–G4 · plan 2026-10-06 · inline SVG, no script</footer>
+  </div>
+</body>
+</html>
