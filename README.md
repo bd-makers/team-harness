@@ -57,11 +57,13 @@
 > workspace 저장소는 RN 앱마다 `paths:`를 그 앱 경로로 스코프한 사본(`<앱 경로>-<이름>.md`)으로 설치됩니다.
 > 그 밖에는 `.claude/rules`가 비어 있고 Cursor 미러도 생기지 않습니다.
 
-**설계 스코프: 설정·상태 하네스이지 런타임 오케스트레이션이 아닙니다.** 지휘자·공유 작업큐·
-팬아웃/팬인 같은 런타임 협업 계층은 두지 않습니다 — 이는 누락이 아니라 의도된 설계입니다.
+**설계 스코프: 설정·상태 하네스이며, 서비스형 런타임 오케스트레이터가 아닙니다.** 상주 지휘자·공유 작업큐·
+팬아웃/팬인 같은 서비스형 런타임 협업 계층은 두지 않습니다 — 이는 누락이 아니라 의도된 설계입니다.
 Anthropic·OpenAI·Cognition·12-Factor Agents 등 최근 1차 소스는 병렬로 "쓰는" 에이전트를
 상충·신뢰성 위험으로 보고, 단일 스레드 실행 + 얇고 직접 소유한 제어흐름을 권장합니다. 이 플러그인의
 드라이버(Claude) → 리뷰어(Codex, read-only) 순차 루프는 그 방향과 정합적입니다.
+대신 메인 세션이 오케스트레이터가 되어 plan 단계마다 Dev → QA → 커밋을 순차로 돌리는
+선택형 기본 루프 `/harness-loop`를 제공합니다 — 별도 런타임 없이 기존 CLI를 엮는 명령 문서이며, 쓰지 않아도 사이클은 성립합니다.
 단, 이 원칙이 금지하는 것은 **같은 워킹트리에 동시에 쓰는 것**입니다 — 각자 격리된 브랜치·git
 worktree에서 작업하고 PR/MR로 병합하는 병렬 경로는 허용되며 권장됩니다(`docs/decisions.md` D5).
 산출물의 품질 판정에는 **별도 컨텍스트의 read-only 검증자**(적대적 검증)를 붙일 수 있습니다 —
@@ -360,6 +362,18 @@ harness-team observe --days 14 --json   # 최대 창(훅 보존 기간) · 에�
 Figma(wireframe·design-spec), task 이름 기반 인터뷰. 프로젝트별 소스 기본 위치는 첫 실행 시
 입력받아 `.harness/config.json`의 `specSources`에 저장하며, MCP 미연결 환경에서는 본문
 붙여넣기 폴백으로 동작합니다. 검증(validator)은 `/harness-interview`가 담당합니다.
+
+### `/harness-loop` — 선택형 기본 루프 (Dev → QA → 커밋)
+
+spec·plan을 개발자가 확정한 뒤 쓰는 선택형 루프입니다. 메인 세션이 오케스트레이터가 되어 plan 단계마다
+Dev 구현 → QA 판정 → 로컬 커밋을 순차로 돌리고(쓰기는 Dev 하나, D4), 네 멈춤 조건 — **성공**·**spec 공백**·
+**진전 없음**·**승인 필요** — 에서 사람에게 넘깁니다. push·PR은 하지 않습니다(성공 시 `/harness-ship`으로 넘김).
+절차·멈춤 판정의 정본은 [`commands/harness-loop.md`](commands/harness-loop.md)입니다.
+
+```bash
+/harness-loop                     # 활성 task plan의 첫 미완 단계부터 (진입 시 오케스트레이터/개별을 한 번 물음)
+/harness-loop 공개 API 시그니처 유지  # focus 문구 — Dev 지시와 리뷰에 그대로 전달
+```
 
 ### `/harness-task` — task 관리
 

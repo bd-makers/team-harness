@@ -34,7 +34,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 | **S0 셋업** | AGENTS/CLAUDE, Codex 배선, **검증 프리셋** | — | ✓ init · ✓ 프리셋(`templates/presets/` — 커밋 게이트·RN rules) |
 | **S1 Spec** | `spec.md` (PRD·Figma·API 문서·기획서·정책서 소스) | **R1 소스 검토**(차단) | ✓ harness-spec · ✓ R1 원천 검토(interview 안 단계, 규범 차단 — task `r1-source-review`) |
 | **S2 Plan** | `plan.md` + **plan 다이어그램**(이해용) | 개발자 확인 | ✓ plan · △ 다이어그램 옵트인 |
-| **S3 구현** | 코드 · TCC(작업 카드) | — (자유) | ✓ 자유 · ✗ **기본 루프** 없음 |
+| **S3 구현** | 코드 · TCC(작업 카드) | — (자유) | ✓ 자유 · ✓ 기본 루프(`/harness-loop`, 선택형) |
 | **S4 구현 검증** | spec 시나리오(Given/When/Then) ↔ 증거 | **R2 시나리오 대조**(기계 2 + 루브릭 2, §4-1b) | △ done 가드가 체크박스·evidence만 확인 |
 | **S5 커밋** | — | **검증 프리셋 실행**(lint·tsc·test) | ✓ `gate commit` — 팀 파일 `.harness/gates.json`(프리셋 제안, workspace는 turbo·nx 위임 또는 디렉터리별) |
 | **S6 코드 리뷰** | 리뷰 기록(`## Reviews`·meta.reviews) | **R3 로컬 리뷰** (PR 전 필수) | △ spec이 required 선언할 때만 강제 |
@@ -165,7 +165,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
   브랜치 기반 자동 활성화)를 만들지 않는다. 하네스가 이미 하는 것은 워크트리 안에서 깨지지 않게 동작하는 것까지다(D5).
 - **주니어용 장치**: 각 단계가 끝날 때 "무엇을, 왜 했는지" 한두 줄을 artifact에 남긴다. 머지 후 위키로 컴파일된다(§4-4).
 - 조정할 기존 규범: README의 런타임 오케스트레이션 "의도적 비채택" 문구를 "서비스형 오케스트레이터는 비채택, 선택형 루프 스킬은 제공"으로 고친다.
-- **미검증**: Codex 쪽 서브에이전트·병렬 기능의 현재 지원 범위는 확인하지 않았다.
+- **확인(2026-10-06)**: codex-cli 0.159.2에 서브에이전트·병렬 실행이 있다 — 병렬이 기본이라 Codex 호스팅 루프는 실험적(`commands/harness-loop.md` "Codex" 절).
 
 ### 4-4. 프로젝트 지식 베이스 — task는 작업대, 위키가 기억 (2026-10-05 피드백 반영)
 - 문제: task가 137개 쌓여도 전부 task 단위다. 이 형태로만 늘면 폴더가 끝없이 쌓이고,
@@ -269,6 +269,6 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 
 **진행 계획 (2026-10-06, 1–4는 0.46.0으로 릴리스)** — 남은 단계를 의존성 순서로 묶고 묶음마다 릴리스한다.
 - **A** (병렬, 격리 워크트리 2개 — D5): A1 R2 시나리오·증거(task `r2-scenario-evidence`) · A2 R1 소스 검토(task `r1-source-review`). R2는 `Done evidence`와 같은 옵트인이다 — PR 강제는 D11대로 4문서뿐.
-- **B**: 기본 루프 스킬(task `default-loop-skill`) — QA가 R2를 쓰므로 A1 뒤. 착수 전 Codex 서브에이전트 지원 범위를 실측한다(§4-3 미검증).
+- **B**: 기본 루프 스킬(task `default-loop-skill`) — QA가 R2를 쓰므로 A1 뒤. 착수 전 Codex 서브에이전트 지원 범위를 실측한다(§4-3). — 구현: task `default-loop-skill`
 - **C**: C1 위키 컴파일(추가만) → C2 task 폴더 삭제 + 원장·`done`·handoff 입력 이전(호환성 파괴). C2가 1.0 전 마지막 파괴적 변경이다.
 - **1.0 조건**: 7단계까지 끝나고, 그 계약(시나리오 표·`gates.json`·pr-check·위키 컴파일)이 소비자 저장소에서 한 릴리스 이상 돈 뒤.

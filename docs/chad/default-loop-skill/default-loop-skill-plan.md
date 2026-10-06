@@ -7,7 +7,7 @@ S3 기본 루프를 선택형 명령 `/harness-loop`(프롬프트 + 기존 CLI)�
 - [x] spec/plan 다이어그램 작성 → docs/chad/default-loop-skill/default-loop-skill-diagram.html
 - [x] 1. `tests/loop-command.test.mjs` — S2·S3·S4·S5 계약 테스트를 먼저 쓴다(red 확인)
 - [x] 2. `commands/harness-loop.md` 작성(R-1–R-13) + `skills/harness-loop/SKILL.md` 래퍼 + `.claude-plugin/plugin.json` 등록 + `commands/harness-interview.md` 포인터 한 줄 → S1·S2·S3·S4 green
-- [ ] 3. **`/harness-loop`로 실행(dogfood)**: README 설계 스코프 문단 정정 + 명령 절 추가, `docs/harness-cycle.md` §2 S3 행·§6 B 진행 표시 → S5 green, artifact 루프 기록 줄(S6)
+- [x] 3. **`/harness-loop`로 실행(dogfood)**: README 설계 스코프 문단 정정 + 명령 절 추가, `docs/harness-cycle.md` §2 S3 행·§6 B 진행 표시 → S5 green, artifact 루프 기록 줄(S6)
 - [ ] 4. overview 재생성(`node scripts/generate-harness-overview.mjs`) + `npm run docs:check` + CHANGELOG `[Unreleased]`
 - [ ] 5. `npm run test` 전체 + `node bin/harness-team.mjs scenario check` 전부 pass, 이름 찍힌 실행 출력을 artifact에 기록
 - [ ] 6. R2 루브릭 `node bin/harness-team.mjs review codex --framing scenario` → R3 `node bin/harness-team.mjs review codex` → 발견 판별·반영

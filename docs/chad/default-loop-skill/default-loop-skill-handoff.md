@@ -17,3 +17,14 @@
  .../default-loop-skill-handoff.md                  |   9 ++
  .../default-loop-skill/default-loop-skill-plan.md  |   2 +-
  4 files changed, 163 insertions(+), 1 deletion(-)
+
+## 2026-10-06T10:27:56.400Z — 65db167 feat(loop): /harness-loop 선택형 기본 루프 명령 + 계약 테스트
+.claude-plugin/plugin.json                         |   1 +
+ commands/harness-interview.md                      |   1 +
+ commands/harness-loop.md                           | 113 +++++++++++++++++++++
+ .../default-loop-skill-handoff.md                  |   7 ++
+ .../default-loop-skill/default-loop-skill-plan.md  |   4 +-
+ docs/harness-overview.html                         |  21 ++++
+ skills/harness-loop/SKILL.md                       |  26 +++++
+ tests/loop-command.test.mjs                        |  88 ++++++++++++++++
+ 8 files changed, 259 insertions(+), 2 deletions(-)
