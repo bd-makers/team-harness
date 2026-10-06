@@ -95,3 +95,9 @@ commands/harness-loop.md                                 | 16 ++++++++++------
 docs/chad/default-loop-skill/default-loop-skill-artifact.md | 3 +++
  docs/chad/default-loop-skill/default-loop-skill-handoff.md  | 7 +++++++
  2 files changed, 10 insertions(+)
+
+## 2026-10-06T10:53:57.772Z — 15c6ee0 docs(task): default-loop-skill R3 3차 기록 + 루프 멈춤(spec 공백: R3 통과 기준)
+.../default-loop-skill/default-loop-skill-artifact.md   | 17 +++++++++++++++++
+ .../default-loop-skill/default-loop-skill-handoff.md    |  5 +++++
+ .../default-loop-skill/default-loop-skill-meta.json     |  9 +++++++++
+ 3 files changed, 31 insertions(+)
