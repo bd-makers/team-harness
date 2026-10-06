@@ -33,3 +33,10 @@ AGENTS.md                                          |   3 +
 .../r2-scenario-evidence-handoff.md                | 27 ++++++++++++++++++++++
  .../r2-scenario-evidence-plan.md                   |  2 +-
  2 files changed, 28 insertions(+), 1 deletion(-)
+
+## 2026-10-06T08:47:35.354Z — fc43333 docs(r2): scenario cmd 신뢰 경계 명시 + 리뷰 기록
+README.md                                                |  2 ++
+ .../r2-scenario-evidence-artifact.md                     | 16 ++++++++++++++++
+ .../r2-scenario-evidence/r2-scenario-evidence-meta.json  |  9 +++++++++
+ .../r2-scenario-evidence/r2-scenario-evidence-spec.md    |  2 ++
+ 4 files changed, 29 insertions(+)
