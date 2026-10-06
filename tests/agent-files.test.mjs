@@ -447,6 +447,8 @@ test('harness-interview는 R1 원천 검토를 먼저 돌리고 미해결 발견
   // codex 리뷰 P2(2026-10-06): 정의·안내 속 백틱 언급까지 세면 Ontology 정의만으로 게이트가 영원히 닫힌다.
   assert.match(doc, /백틱\(인라인 코드\) 안의 `\(unresolved\)`는 정의·안내 속의 언급이라 세지 않는다/, '표기와 언급의 구분');
   assert.match(doc, /`\(interview, unresolved\)`도 표기다/, '출처와 묶인 태그도 표기');
+  assert.match(doc, /요구사항 절에 남긴 `\(unresolved\)` 항목도 `### 발견`으로 옮겨/, 'writer 충돌 표기의 해소 경로');
+  assert.match(doc, /결정 없이 마커만 지우지 않는다/, '마커 삭제는 결정과 함께');
   const spec = await readFile(join(ROOT, 'commands', 'harness-spec.md'), 'utf8');
   assert.match(spec, /`## 원천 검토 \(R1\)` 절의 `### 원천`/, 'harness-spec 이 원천 위치를 R1 절에 적는다');
 });
