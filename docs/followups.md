@@ -7,13 +7,8 @@
 
 ## 우선순위
 
-**남은 것: 12–16번** (출처: task `pr-check`, PR #125 — 2026-10-06 리뷰 두 번과 실측에서 남은 리스크).
-위험도 순서다. 12번은 강제 장치(D11)가 조용히 꺼지는 경로라 먼저 본다.
-
-### 12. 기존 설치본은 init·sync를 다시 돌려야 pre-push를 받는다
-- **맥락**: migrate는 pre-push를 설치하지 않는다(post-commit도 migrate 일반 경로에서는 설치하지 않음). 0.45.x 이전 소비자는 릴리스 후에도 강제가 없다.
-- **정본**: `src/commands/migrate.mjs`(:165는 레거시 경로에만 post-commit 설치), migrate-is-pull 원칙(cycle §4-5).
-- **제안**: 릴리스 노트·doctor 처방으로 "`harness-team sync` 1회"를 안내. migrate에 넣을지는 pull 원칙과 함께 판단 — 먼저 밀지 않는다.
+**남은 것: 13–16번** (출처: task `pr-check`, PR #125 — 2026-10-06 리뷰 두 번과 실측에서 남은 리스크).
+위험도 순서다.
 
 ### 13. post-commit 설치는 여전히 끝에 append하고 비-셸 훅에도 붙는다
 - **맥락**: pre-push는 맨 위 삽입 + shebang 검사로 고쳤지만 post-commit은 바꾸지 않았다. python·node post-commit 훅에 셸 줄이 붙으면 그 훅이 문법 오류로 죽는다
@@ -53,6 +48,8 @@ task `codex-project-hooks-probe`·`codex-hook-injection-fix`(0.38.3)로 끝냈�
 2번은 결정이 끝나 D9로 옮겼다 — 번호는 참조 안정을 위해 유지.)
 (11번은 2026-10-06 task `pre-push-hook-doctor`로 올려 여기서 지웠다 — doctor `pre-push hook (pr-check)` 검사와 훅 관리자용 가드 줄.
 그 검사는 pre-push가 없는 기존 설치본도 "sync" 처방으로 잡으므로 12번을 줄일 수 있다.)
+(12번은 2026-10-06 task `prepush-existing-installs`로 닫았다 — 코드 없이 CHANGELOG·README가 기존 설치본에 `harness-team sync` 1회를 안내한다.
+migrate에 pre-push 설치를 넣는 안은 2차 장치 규칙으로 기각(doctor가 이미 sync를 처방) — 근거는 그 task spec.)
 
 ---
 
