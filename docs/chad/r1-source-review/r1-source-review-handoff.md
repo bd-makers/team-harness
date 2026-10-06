@@ -18,3 +18,7 @@ CHANGELOG.md                                       |  10 ++
  tests/fixtures/task-paths-golden/expected.txt      |  20 ++++
  tests/task-templates.test.mjs                      |  21 ++++
  14 files changed, 349 insertions(+), 1 deletion(-)
+
+## 2026-10-06T08:32:44.999Z — bbced31 docs(task): r1-source-review plan 완료 체크
+docs/chad/r1-source-review/r1-source-review-plan.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
