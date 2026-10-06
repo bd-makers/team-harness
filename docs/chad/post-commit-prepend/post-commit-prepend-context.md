@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: post-commit 설치를 pre-push와 같은 맨 위 삽입 + 비-셸 skip으로 (followups 13)
-- Current atomic step: plan 6 — `/harness-review` codex 실행 → artifact Reviews 기록
+- Current atomic step: plan 전 단계 완료 — push·PR 승인 대기
 - Stop / human-decision condition: push·PR은 사용자 승인 후. 다이어그램 옵트인 답 대기(권장: 생략)
 
 ## Constraints and settled decisions
@@ -21,4 +21,4 @@
 ## Failure capsules (max 3 unresolved)
 
 ## Resume checklist
-- 리뷰 결과 반영 → 커밋 → handoff 반영 커밋 → `harness-team pr-check` → 사용자 승인 대기
+- 승인 시 push → PR → 머지 후 main 종결 경로(tmp 브랜치 → task → done → summary --write → push HEAD:main)

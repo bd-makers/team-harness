@@ -10,7 +10,7 @@ post-commit 설치를 pre-push와 같은 맨 위 삽입 + 비-셸 skip 경로로
 - [x] 4. `npm run test` green
 - [x] 5. CHANGELOG `[Unreleased]` 항목 + `docs/followups.md` 13번 제거
 - [x] 6. `/harness-review`(codex) 실행 → artifact `## Reviews` 기록·반영
-- [ ] 7. 커밋 → handoff 반영 커밋 → `harness-team pr-check`
+- [x] 7. 커밋 → handoff 반영 커밋 → `harness-team pr-check`
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
