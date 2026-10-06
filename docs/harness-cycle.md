@@ -190,7 +190,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
   lint·tsc·PR 전 로컬 리뷰는 '제공'이다. **PR에 spec·plan·handoff·artifact를 담는 것만 필수**이며
   (handoff는 커밋 훅이 자동 갱신하고, artifact는 머지 후 위키 컴파일(§4-4)의 재료다). 다이어그램은 권장이다(아래 다이어그램 결정).
 - **PR 필수 문서 확인 (결정)**: 결정론적 CLI 검사 하나(`harness-team pr-check`)를 두고 호출처를 셋으로 한다.
-  검사: spec·plan·handoff·artifact가 있고 템플릿 그대로가 아님. 다이어그램 파일도 생략 기록도 없으면 막지 않고 권장 안내만 낸다.
+  검사: spec·plan·handoff·artifact가 있고 비어 있지 않으며 템플릿 그대로가 아님. 다이어그램 파일도 생략 기록도 없으면 막지 않고 권장 안내만 낸다.
   호출처: ① ship 준비 보고 ② init이 설치하는 git pre-push 훅(post-commit 훅과 같은 방식) ③ 원하는 팀의 CI(같은 명령).
   하네스가 강제하는 유일한 것이라 확인 장치를 하나로 모은다.
 - **다이어그램 (결정, 2026-10-06 정정)**: PR 다이어그램은 **권장**이다 — plan 단계에서 옵트인하지 않았어도 최종 변경이 로직·구조를 바꾸면 담는다.

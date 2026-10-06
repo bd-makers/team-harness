@@ -128,6 +128,29 @@ test('artifact.md 없음 → 차단 사유에 포함', async () => {
   }
 });
 
+// 빈 plan 은 미완 `- [ ]` 가 없어 plan 가드를 통과했다 — 실례: dangerous-git-end-boundary plan 이 미완 단계를 남긴 채
+// 0바이트가 됐다(bb93755). artifact 도 템플릿 비교만 해서 0바이트면 통과했다(task empty-doc-guard).
+test('빈 plan·빈 artifact(0바이트·공백뿐) → 차단 사유에 포함', async () => {
+  for (const [plan, artifact, want] of [
+    ['', taskArtifactTemplate('demo') + '\n- 결과\n', 'plan.md가 비어 있음'],
+    [' \n', taskArtifactTemplate('demo') + '\n- 결과\n', 'plan.md가 비어 있음'],
+    ['# demo — Plan\n\n## 단계\n- [x] 완료\n', '', 'artifact.md가 비어 있음'],
+  ]) {
+    const { dir } = await makeFixture({ plan, artifact });
+    const prevExit = process.exitCode;
+    const { logs, restore } = captureLogs();
+    try {
+      await runDone({ targetDir: dir, flags: {} });
+      assert.equal(process.exitCode, 1, `${JSON.stringify(plan)} / ${JSON.stringify(artifact)}`);
+      assert.ok(logs.some(l => l.includes(want)), `${want}: ${logs.join('\n')}`);
+    } finally {
+      restore();
+      process.exitCode = prevExit;
+      await rm(dir, { recursive: true, force: true });
+    }
+  }
+});
+
 test('git 레포에 커밋이 0개면 차단 사유에 포함 (HEAD-less repo)', async () => {
   const { dir, taskDir } = await makeFixture({
     plan: '# demo — Plan\n\n## 단계\n- [x] done\n',
