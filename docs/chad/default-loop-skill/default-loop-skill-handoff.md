@@ -83,3 +83,10 @@ commands/harness-loop.md                                 |  9 ++++++---
 docs/chad/default-loop-skill/default-loop-skill-artifact.md | 4 ++++
  docs/chad/default-loop-skill/default-loop-skill-handoff.md  | 7 +++++++
  2 files changed, 11 insertions(+)
+
+## 2026-10-06T10:51:27.487Z — c7770ce docs(loop): R3 재검 P2 반영 — 마무리 전 필터 없는 scenario check, 마무리 도중 중단 시 재진입
+commands/harness-loop.md                                 | 16 ++++++++++------
+ .../default-loop-skill/default-loop-skill-artifact.md    | 15 +++++++++++++++
+ .../default-loop-skill/default-loop-skill-handoff.md     |  5 +++++
+ .../chad/default-loop-skill/default-loop-skill-meta.json |  9 +++++++++
+ 4 files changed, 39 insertions(+), 6 deletions(-)

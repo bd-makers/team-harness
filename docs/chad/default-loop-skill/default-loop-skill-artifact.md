@@ -31,6 +31,9 @@
 - loop: 2026-10-06 · 수단 subagent · 단계 6 R3 P2×3 반영(검증 단계 명령 실행 · 커밋 실패 시 체크 되돌림 · untracked 진전 포함) · QA pass · commit 9f9f0eb
   - 무엇·왜: R3(codex) changes requested, P1 없음. 오케스트레이터 판별 — 셋 다 유효. 특히 "체크 후 커밋 실패" 상태는 이번 dogfood 2단계에서 pre-commit docs:check 실패로 실제 발생했다(같은 턴 재커밋으로 넘어감).
   - QA: gate not-configured · boundary not-configured · scenario pass (6 checked) · docs:check pass. 진전 판정: 실패 집합 R3(P2×3) → 없음, diff 변화 있음.
+- loop: 2026-10-06 · 수단 subagent · 단계 6 R3 재검 P2×2 반영(마무리 전 필터 없는 scenario check · 마무리 도중 중단 시 재진입) · QA pass · commit c7770ce
+  - 무엇·왜: R3 재검(tip 6e67a16) changes requested, P1 없음, 새 실패 집합 → 진전. 둘 다 유효 판별. Dev가 요청 밖으로 성공 bullet에 "전체 시나리오 검사"를 더함 — 새 5번과 정합이라 수용.
+  - QA: gate not-configured · boundary not-configured · scenario pass (6 checked) · docs:check pass.
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
