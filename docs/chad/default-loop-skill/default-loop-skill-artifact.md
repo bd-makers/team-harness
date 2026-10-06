@@ -22,6 +22,11 @@
   - S4 `✔ loop: entry asks orchestrator-or-individual and the loop never pushes or opens a PR`
   - S5 `✔ loop: README distinguishes a service orchestrator from the optional loop command`
   - S6 grep exit 0 — 위 `- loop:` 기록 줄 2개가 증거(테스트 러너 아님)
+- loop: 2026-10-06 · 수단 subagent · 단계 6 R2 E1 반영(S3·S4 assertion 보강) · QA pass · commit 28e6858
+  - 무엇·왜: R2 루브릭(codex)이 E1 fail — 루브릭 담당 변이(S3)·승인 필요 미멈춤 변이(S4)를 테스트가 못 잡았다. 오케스트레이터는 테스트 코드를 읽어 재현했다(문서 변이 실행은 자동 모드 분류기가 안전 규칙 약화로 거부).
+    Dev가 문장 단위 비교(공백 정규화)로 고정하고, 일회성 스크립트에서 변이 문자열 9/9 기대대로 판정됨을 확인.
+  - QA: gate not-configured · boundary not-configured · scenario S1–S6 pass. 진전 판정: 실패 집합 E1(S3,S4) → 없음, diff 변화 있음.
+  - `✔ loop: QA runs machine checks before the read-only rubric and records named test output` · `✔ loop: entry asks orchestrator-or-individual and the loop never pushes or opens a PR`
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*

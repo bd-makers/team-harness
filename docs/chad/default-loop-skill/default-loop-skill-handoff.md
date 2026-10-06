@@ -55,3 +55,8 @@ commands/harness-loop.md                                    |  1 +
  .../default-loop-skill-handoff.md                  |  7 +++++++
  .../default-loop-skill-meta.json                   | 12 +++++++++++-
  3 files changed, 40 insertions(+), 1 deletion(-)
+
+## 2026-10-06T10:40:29.974Z — 28e6858 test(loop): R2 E1 반영 — 루브릭 담당·승인 필요 멈춤을 문장 단위로 고정
+.../default-loop-skill-handoff.md                  |  6 ++++++
+ tests/loop-command.test.mjs                        | 23 ++++++++++++++++++++++
+ 2 files changed, 29 insertions(+)
