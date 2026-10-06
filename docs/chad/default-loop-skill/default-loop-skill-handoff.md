@@ -60,3 +60,8 @@ commands/harness-loop.md                                    |  1 +
 .../default-loop-skill-handoff.md                  |  6 ++++++
  tests/loop-command.test.mjs                        | 23 ++++++++++++++++++++++
  2 files changed, 29 insertions(+)
+
+## 2026-10-06T10:40:39.352Z — 32ae06d docs(task): default-loop-skill 루프 기록 — R2 E1 반영
+docs/chad/default-loop-skill/default-loop-skill-artifact.md | 5 +++++
+ docs/chad/default-loop-skill/default-loop-skill-handoff.md  | 5 +++++
+ 2 files changed, 10 insertions(+)

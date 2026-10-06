@@ -55,4 +55,27 @@
 
 <!-- harness:review kind=codex-scenario scope=diff tip=747405f8fe307e7902b452d8fcf365aa5294b4d9 at=2026-10-06T10:34:58.847Z -->
 
+### 2026-10-06T10:43:52.150Z — codex-scenario (harness-team review)
+
+- engine: codex · scope: diff · tip: 32ae06d609a29b3396e21dc5deeceb4c5a5f8dd1 · exit 0 · 2318 B
+
+```text
+검토 범위: `refs/remotes/origin/main` 대비 현재 워킹트리(`HEAD 32ae06d`). 파일은 수정하지 않았습니다.
+
+**E1 · 각 시나리오의 증거가 Then을 실제로 검증 · BLOCKER · pass**
+
+- **S1:** manifest의 양방향 등록 비교와 래퍼 이름·명령 참조 assertion을 확인했습니다. 등록 제거·래퍼 이름 변경·참조 변경 변이에서 해당 테스트가 모두 실패했습니다.
+- **S2–S5:** 대상 테스트 이름이 실제 실행 출력에 나왔습니다. [테스트 코드](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/default-loop-skill/tests/loop-command.test.mjs:48>)의 assertion과 Then을 대조하고, 파일 변경 없이 입력 문서를 메모리에서 변이했습니다. S1–S5 변이 **16개 모두 해당 테스트에서 exit 1**로 거부됐습니다.
+- 기존 실패 **S3·S4**도 재현 변이가 이제 실패합니다. 출력: `✖ loop: QA runs machine checks before the read-only rubric and records named test output`, `✖ loop: entry asks orchestrator-or-individual and the loop never pushes or opens a PR`.
+- **S6:** [artifact](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/default-loop-skill/docs/chad/default-loop-skill/default-loop-skill-artifact.md:9>)에 `수단 subagent · 단계 … · QA pass · commit 789dcf8` 등 기록 줄이 있습니다. 메모리에서 기록 줄·`QA pass`·SHA를 각각 제거하면 선언된 grep이 exit 1입니다.
+
+**E2 · spec 밖 동작 변경 없음 · MAJOR · pass**
+
+diff의 명령·래퍼·등록·README·interview·cycle·overview·CHANGELOG 변경은 spec 요구사항과 영향 파일 목록에 대응합니다. 추가된 “검증만 하는 단계는 Dev 턴 없이 QA 1–4로 닫는다” 규칙도 [artifact](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/default-loop-skill/docs/chad/default-loop-skill/default-loop-skill-artifact.md:17>)에 dogfood 발견과 변경 사유가 기록되어 있습니다.
+
+**최종 verdict: pass — 실패 항목 전체: 없음.**
+```
+
+<!-- harness:review kind=codex-scenario scope=diff tip=32ae06d609a29b3396e21dc5deeceb4c5a5f8dd1 at=2026-10-06T10:43:52.150Z -->
+
 ## Learnings
