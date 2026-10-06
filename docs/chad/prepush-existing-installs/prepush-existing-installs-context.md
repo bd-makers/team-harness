@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: followups 12번을 (a)로 닫는다 — 기존 설치본에 `harness-team sync` 1회를 CHANGELOG·README로 안내, 코드 없음.
-- Current atomic step: plan 6 — 커밋 · pr-check · PR
+- Current atomic step: 모든 plan 단계 완료 — PR #127 리뷰·머지 대기
 - Stop / human-decision condition: push·PR 생성은 사용자 승인 후.
 
 ## Constraints and settled decisions
@@ -20,4 +20,4 @@
 - (none)
 
 ## Resume checklist
-- plan 6만 남음: 커밋 → `node bin/harness-team.mjs pr-check` → push·PR(승인 후).
+- 머지 후 main에서 task done.
