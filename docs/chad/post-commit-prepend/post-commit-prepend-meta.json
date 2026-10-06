@@ -1,0 +1,21 @@
+{
+  "user": "chad",
+  "task": "post-commit-prepend",
+  "created": "2026-10-06",
+  "firstActivatedAt": "2026-10-06T02:04:50.725Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "aaca78c66e37d53d49f0f99f0d90baecd3cb9f63",
+      "at": "2026-10-06T02:12:36.072Z",
+      "exitCode": 0,
+      "outputBytes": 638
+    }
+  ]
+}

@@ -69,6 +69,17 @@
   doctor는 더 이상 `backup.json`을 요구하지 않는다. 기존 백업 폴더와 `backup.json`은 건드리지 않는다. AI 설정을 gitignore한 프로젝트는
   백업이 저장소 밖 유일 사본일 수 있으니, 원할 때 gitignore를 풀고 커밋하라. migrate의 관리 절 백업(`.harness/backup/`)은 그대로다.
 
+### Fixed
+- **post-commit 훅 설치가 기존 훅 끝에 붙던 문제** (task `post-commit-prepend`, followups 13). init·sync는 이제 handoff 줄을 기존 post-commit
+  훅의 맨 위(shebang 다음)에 넣는다. 끝에 붙이면 앞선 `exit`·`exec` 뒤에서 handoff가 조용히 안 돌았다(git-lfs 훅은 lfs가 없으면 `exit 2`).
+  python·node 같은 셸이 아닌 훅은 건드리지 않고 `harness-team handoff`를 직접 부르라고 안내한다 — 예전에는 셸 줄이 붙어 그 훅이 문법
+  오류로 죽었다. 이제 handoff가 기존 훅 줄보다 먼저 돈다. 새로 만드는 훅 파일은 그대로다.
+  **이미 줄이 붙은 설치본은 고치지 않는다** — 줄이 있으면 설치된 것으로 본다. `exit` 뒤에 붙은 줄은 손으로 맨 위로 옮기고, 셸이 아닌 훅에
+  붙은 줄은 지운 뒤 그 훅에서 `harness-team handoff`를 부른다.
+- **개행 없는 shebang 한 줄짜리 훅에 넣으면 shebang이 깨지던 문제** (같은 task). `#!/bin/sh`만 있고 개행이 없는 기존 pre-push·post-commit 훅에
+  블록을 넣으면 첫 줄이 `#!/bin/sh# harness: …`가 됐다. macOS는 그래도 실행했지만(실측), shebang을 공백까지 읽는 커널(Linux)에서는
+  인터프리터 `/bin/sh#`를 찾지 못할 수 있다(미실측). 이제 개행을 채우고 넣는다.
+
 ## [0.45.0] - 2026-10-03
 
 ### Added

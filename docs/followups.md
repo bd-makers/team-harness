@@ -7,14 +7,8 @@
 
 ## 우선순위
 
-**남은 것: 13–16번** (출처: task `pr-check`, PR #125 — 2026-10-06 리뷰 두 번과 실측에서 남은 리스크).
+**남은 것: 14–16번** (출처: task `pr-check`, PR #125 — 2026-10-06 리뷰 두 번과 실측에서 남은 리스크).
 위험도 순서다.
-
-### 13. post-commit 설치는 여전히 끝에 append하고 비-셸 훅에도 붙는다
-- **맥락**: pre-push는 맨 위 삽입 + shebang 검사로 고쳤지만 post-commit은 바꾸지 않았다. python·node post-commit 훅에 셸 줄이 붙으면 그 훅이 문법 오류로 죽는다
-  (커밋은 막지 않음 — post-commit rc는 무시된다). 앞선 `exit 0` 뒤라면 handoff 갱신이 조용히 안 돈다.
-- **정본**: `src/git-hooks.mjs` `installPostCommitHook`·`SH_SHEBANG`, 테스트 `tests/git-hooks.test.mjs`.
-- **제안**: 같은 `prepend` + shebang 검사를 post-commit에도 적용. 출력 문구가 바뀌므로 기존 테스트 기대값 갱신.
 
 ### 14. origin이 아닌 원격으로 push해도 base는 origin 기준이다
 - **맥락**: 훅은 git이 주는 원격 이름(`$1`)을 넘기지 않고, pr-check의 base 사다리(`resolveScope`)는 origin만 본다. fork 워크플로(`upstream`·`fork` 원격)에서
@@ -50,6 +44,8 @@ task `codex-project-hooks-probe`·`codex-hook-injection-fix`(0.38.3)로 끝냈�
 그 검사는 pre-push가 없는 기존 설치본도 "sync" 처방으로 잡으므로 12번을 줄일 수 있다.)
 (12번은 2026-10-06 task `prepush-existing-installs`로 닫았다 — 코드 없이 CHANGELOG·README가 기존 설치본에 `harness-team sync` 1회를 안내한다.
 migrate에 pre-push 설치를 넣는 안은 2차 장치 규칙으로 기각(doctor가 이미 sync를 처방) — 근거는 그 task spec.)
+(13번은 2026-10-06 task `post-commit-prepend`로 올려 여기서 지웠다 — post-commit도 맨 위 삽입 + 비-셸 skip, append 분기 삭제.
+doctor post-commit 검사는 2차 장치 규칙으로 두지 않음(handoff 미갱신은 pr-check가 잡는다) — 근거는 그 task spec.)
 
 ---
 

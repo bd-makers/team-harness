@@ -98,15 +98,15 @@ test('기존 훅이 "harness"라는 단어만 담고 있어도 설치된 것으�
     await installPostCommitHook(dir);
     const body = await readFile(hook, 'utf8');
     assert.match(body, /echo lint/, '기존 내용 보존');
-    assert.match(body, new RegExp(POST_COMMIT_MARKER), '마커 줄 append');
+    assert.match(body, new RegExp(POST_COMMIT_MARKER), '마커 줄 삽입');
     await access(hook, constants.X_OK);
     // idempotent
     await installPostCommitHook(dir);
-    assert.equal((await readFile(hook, 'utf8')).split(POST_COMMIT_MARKER).length - 1, 1, '두 번째 실행은 append하지 않는다');
+    assert.equal((await readFile(hook, 'utf8')).split(POST_COMMIT_MARKER).length - 1, 1, '두 번째 실행은 다시 넣지 않는다');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('주석에만 harness-team handoff가 있는 훅은 설치된 것이 아니다 — 실행 줄을 append한다', async () => {
+test('주석에만 harness-team handoff가 있는 훅은 설치된 것이 아니다 — 실행 줄을 넣는다', async () => {
   const dir = await repo();
   try {
     const hook = join(dir, '.git/hooks/post-commit');
@@ -114,6 +114,95 @@ test('주석에만 harness-team handoff가 있는 훅은 설치된 것이 아니
     await installPostCommitHook(dir);
     const live = (await readFile(hook, 'utf8')).split('\n').filter(l => !/^\s*#/.test(l) && l.includes(POST_COMMIT_MARKER));
     assert.equal(live.length, 1, '실행 줄이 정확히 하나 추가된다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// post-commit 도 pre-push 와 같이 맨 위(shebang 다음)에 넣는다 — 끝에 붙이면 앞선 `exit`·`exec` 뒤에서 handoff 가 조용히
+// 안 돌고(git-lfs 훅은 lfs 가 없으면 `exit 2`), python·node 훅은 셸 줄 때문에 문법 오류로 죽었다(followups 13).
+const captureLogs = async (fn) => {
+  const logs = [];
+  const orig = console.log;
+  console.log = (...a) => logs.push(a.join(' '));
+  try { await fn(); } finally { console.log = orig; }
+  return logs;
+};
+
+test('post-commit: `exit 0` 으로 끝나는 기존 훅에서도 handoff 가 돌고, 기존 줄도 그대로 돈다', async () => {
+  const dir = await repo();
+  try {
+    const hook = join(dir, '.git/hooks/post-commit');
+    const mine = join(dir, 'mine.txt');
+    const ran = join(dir, 'handoff.txt');
+    await writeFile(hook, `#!/bin/sh\necho mine > "${mine}"\nexit 0\n`, { mode: 0o755 });
+    const logs = await captureLogs(() => installPostCommitHook(dir));
+    assert.ok(logs.some(l => /inserted harness block at top/.test(l)));
+    const body = await readFile(hook, 'utf8');
+    assert.ok(body.startsWith('#!/bin/sh\n# harness: auto-update handoff'), 'shebang 바로 다음');
+    assert.match(body, /exit 0\n$/, '기존 내용 보존');
+
+    const bin = join(dir, 'bin');
+    await mkdir(bin);
+    await writeFile(join(bin, 'harness-team'), `#!/bin/sh\n[ "$1" = handoff ] && echo ok > "${ran}"\n`, { mode: 0o755 });
+    await pexec(hook, [], { env: { PATH: `${bin}:/usr/bin:/bin` } });
+    assert.equal(await readFile(ran, 'utf8'), 'ok\n', 'handoff 실행');
+    assert.equal(await readFile(mine, 'utf8'), 'mine\n', '기존 줄 실행');
+    // CLI 가 없어도 기존 줄을 막지 않는다 — `sh -e` 에서도.
+    await rm(mine);
+    await pexec('sh', ['-e', hook], { env: { PATH: '/usr/bin:/bin' } });
+    assert.equal(await readFile(mine, 'utf8'), 'mine\n', 'CLI 없음 + sh -e 에서도 기존 줄 실행');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('post-commit: 기존 훅이 셸 스크립트가 아니면 건너뛰고 handoff 직접 호출을 처방한다', async () => {
+  const dir = await repo();
+  try {
+    const hook = join(dir, '.git/hooks/post-commit');
+    const original = '#!/usr/bin/env node\nconsole.log("hi")\n';
+    await writeFile(hook, original, { mode: 0o755 });
+    const logs = await captureLogs(() => installPostCommitHook(dir));
+    assert.equal(await readFile(hook, 'utf8'), original);
+    const line = logs.find(l => /셸 스크립트가 아님/.test(l));
+    assert.ok(line, '건너뛴 사유 안내');
+    assert.match(line, /`harness-team handoff`/);
+    assert.doesNotMatch(line, /--pre-push/, 'pre-push 처방이 새지 않는다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('post-commit: shebang 변형 — 없으면 맨 앞, bash·sh -e 는 첫 줄 유지', async () => {
+  const dir = await repo();
+  const hook = join(dir, '.git/hooks/post-commit');
+  try {
+    for (const [original, head] of [
+      ['echo plain\n', '# harness: auto-update handoff'],
+      ['#!/usr/bin/env bash\necho b\n', '#!/usr/bin/env bash\n# harness:'],
+      ['#!/bin/sh -e\necho e\n', '#!/bin/sh -e\n# harness:'],
+    ]) {
+      await writeFile(hook, original, { mode: 0o755 });
+      await installPostCommitHook(dir);
+      const body = await readFile(hook, 'utf8');
+      assert.ok(body.startsWith(head), `${JSON.stringify(original)} → ${JSON.stringify(body.slice(0, 40))}`);
+      assert.ok(body.endsWith(original.split('\n').slice(original.startsWith('#!') ? 1 : 0).join('\n')), '기존 본문 보존');
+    }
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 개행 없는 shebang 한 줄짜리 훅은 `#!/bin/sh# harness: …` 가 됐다(2026-10-06 재현) — shebang 을 공백까지 읽는 커널은
+// 인터프리터 `/bin/sh#` 를 찾는다(macOS 는 그래도 실행해서 첫 줄만 비교한다).
+test('개행 없는 shebang 한 줄짜리 훅: shebang 을 깨지 않고 다음 줄에 넣는다 (post-commit·pre-push)', async () => {
+  const dir = await repo();
+  try {
+    for (const [name, install, marker] of [
+      ['post-commit', installPostCommitHook, POST_COMMIT_MARKER],
+      ['pre-push', installPrePushHook, PRE_PUSH_MARKER],
+    ]) {
+      const hook = join(dir, '.git/hooks', name);
+      await writeFile(hook, '#!/bin/sh', { mode: 0o755 });
+      await install(dir);
+      const body = await readFile(hook, 'utf8');
+      assert.equal(body.split('\n', 1)[0], '#!/bin/sh', `${name}: shebang 줄 그대로`);
+      assert.ok(body.includes(marker));
+      await pexec('sh', ['-n', hook]); // 문법 검사
+    }
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
