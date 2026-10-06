@@ -142,3 +142,4 @@
 | hslee | preset-repo-shape | ✅ done | 2026-10-05 |
 | hslee | remove-backup-cluster | ✅ done | 2026-10-05 |
 | hslee | remove-personal-tool-refs | ✅ done | 2026-10-05 |
+| chad | prepush-existing-installs | ✅ done | 2026-10-06 |

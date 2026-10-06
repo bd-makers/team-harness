@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ prepush-existing-installs
 - ✅ task-area-flag
 - ✅ task-paths-helper
 - ✅ dangerous-git-end-boundary ⚠️
