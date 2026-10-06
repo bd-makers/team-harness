@@ -8,6 +8,7 @@
 - ✅ post-commit-prepend
 - ✅ prepush-existing-installs
 - ✅ r1-source-review
+- ✅ r2-scenario-evidence
 - ✅ roadmap-to-1-0
 - ✅ task-area-flag
 - ✅ task-paths-helper
