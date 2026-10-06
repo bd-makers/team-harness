@@ -34,6 +34,8 @@
 - loop: 2026-10-06 · 수단 subagent · 단계 6 R3 재검 P2×2 반영(마무리 전 필터 없는 scenario check · 마무리 도중 중단 시 재진입) · QA pass · commit c7770ce
   - 무엇·왜: R3 재검(tip 6e67a16) changes requested, P1 없음, 새 실패 집합 → 진전. 둘 다 유효 판별. Dev가 요청 밖으로 성공 bullet에 "전체 시나리오 검사"를 더함 — 새 5번과 정합이라 수용.
   - QA: gate not-configured · boundary not-configured · scenario pass (6 checked) · docs:check pass.
+- loop: 2026-10-06 · 수단 subagent · 단계 6 R3 3차 · 멈춤 spec 공백
+  - 사유: R3가 반영마다 새 P2를 낸다(3차, tip 6d3a716: R3 반영 뒤 R2·전체 시나리오 재검 누락 · 명령 기반 증거의 이름 줄 대안 없음 — 둘 다 유효 판별, 미반영). 실패 집합이 매번 달라 "진전 없음"에 걸리지 않지만 수렴하지 않는다. spec R-7의 "R3 통과" 기준이 정의되지 않았다 → 사람에게 질문.
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
@@ -115,5 +117,20 @@ Verification: 14 relevant tests passed; documentation freshness and diff whitesp
 ```
 
 <!-- harness:review kind=codex scope=diff tip=6e67a1690841255bac0ad16811a74316e427113c at=2026-10-06T10:50:01.540Z -->
+
+### 2026-10-06T10:53:27.085Z — codex (harness-team review)
+
+- engine: codex · scope: diff · tip: 6d3a716bdf7f19b930555362ad2e06d743d79d65 · exit 0 · 1016 B
+
+```text
+- **P2 should-fix — [commands/harness-loop.md:87](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/default-loop-skill/commands/harness-loop.md:87>):** R3 fixes rerun only QA 1–4; changes to implementation or assertions can invalidate the earlier R2 rubric pass without requiring reassessment.
+- **P2 should-fix — [commands/harness-loop.md:73](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/default-loop-skill/commands/harness-loop.md:73>):** Every passing scenario requires named test output, but valid command-based evidence such as this task’s silent `grep -Eq` S6 cannot provide it; an explicit alternative is needed.
+
+Verification: 14 relevant tests, `docs:check`, and diff whitespace checks passed. No files modified.
+
+**Final verdict: Changes requested — two P2 findings; no P1 blockers found.**
+```
+
+<!-- harness:review kind=codex scope=diff tip=6d3a716bdf7f19b930555362ad2e06d743d79d65 at=2026-10-06T10:53:27.085Z -->
 
 ## Learnings
