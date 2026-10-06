@@ -164,3 +164,9 @@ docs/chad/default-loop-skill/default-loop-skill-artifact.md | 7 +++++++
 .../default-loop-skill/default-loop-skill-artifact.md     |  2 ++
  .../default-loop-skill/default-loop-skill-diagram.html    | 15 +++++++++++----
  2 files changed, 13 insertions(+), 4 deletions(-)
+
+## 2026-10-06T12:54:45.661Z — e599705 docs(task): default-loop-skill shipcheck 반영 — R2 횟수 정정, plan 7 체크
+.../default-loop-skill-artifact.md                 | 33 ++++++++++++++++++++--
+ .../default-loop-skill-meta.json                   |  9 ++++++
+ .../default-loop-skill/default-loop-skill-plan.md  |  2 +-
+ 3 files changed, 40 insertions(+), 4 deletions(-)
