@@ -78,4 +78,20 @@ diff의 명령·래퍼·등록·README·interview·cycle·overview·CHANGELOG �
 
 <!-- harness:review kind=codex-scenario scope=diff tip=32ae06d609a29b3396e21dc5deeceb4c5a5f8dd1 at=2026-10-06T10:43:52.150Z -->
 
+### 2026-10-06T10:46:01.963Z — codex (harness-team review)
+
+- engine: codex · scope: diff · tip: 02d5f5e9254d80739c2f91aa01298a68811f6d15 · exit 0 · 1383 B
+
+```text
+- **P2 should-fix — [commands/harness-loop.md:39](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/default-loop-skill/commands/harness-loop.md:39>):** Verification-only steps close after QA 1–4 without running the step’s explicit command; a planned full test run can be marked complete after only limited scenario checks.
+- **P2 should-fix — [commands/harness-loop.md:89](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/default-loop-skill/commands/harness-loop.md:89>):** The checkbox is marked complete before committing, with no rollback on hook failure; restarting then skips an uncommitted step.
+- **P2 should-fix — [commands/harness-loop.md:105](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/default-loop-skill/commands/harness-loop.md:105>):** `git diff HEAD` excludes untracked files, so useful changes confined to newly created files can incorrectly trigger “no progress.”
+
+Relevant tests: **14 passed**. `docs:check` and diff whitespace checks passed. No files modified.
+
+**Final verdict: Changes requested — three P2 findings; no P1 blockers found.**
+```
+
+<!-- harness:review kind=codex scope=diff tip=02d5f5e9254d80739c2f91aa01298a68811f6d15 at=2026-10-06T10:46:01.963Z -->
+
 ## Learnings
