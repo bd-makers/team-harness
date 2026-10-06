@@ -98,4 +98,19 @@ Relevant tests: **14 passed**. `docs:check` and diff whitespace checks passed. N
 
 <!-- harness:review kind=codex scope=diff tip=02d5f5e9254d80739c2f91aa01298a68811f6d15 at=2026-10-06T10:46:01.963Z -->
 
+### 2026-10-06T10:50:01.540Z — codex (harness-team review)
+
+- engine: codex · scope: diff · tip: 6e67a1690841255bac0ad16811a74316e427113c · exit 0 · 656 B
+
+```text
+- **P2 should-fix — `commands/harness-loop.md:80`:** Finalization never requires an unfiltered `scenario check` pass; deferred failures can remain unchecked because the rubric explicitly excludes command-exit validation.
+- **P2 should-fix — `commands/harness-loop.md:26`:** After all implementation checkboxes are completed, interruption during final reviews leaves no unchecked stage, so re-entry rejects the task instead of resuming unfinished QA.
+
+Verification: 14 relevant tests passed; documentation freshness and diff whitespace checks passed. No files modified.
+
+**Final verdict: Changes requested — two P2 findings; no P1 blockers found.**
+```
+
+<!-- harness:review kind=codex scope=diff tip=6e67a1690841255bac0ad16811a74316e427113c at=2026-10-06T10:50:01.540Z -->
+
 ## Learnings

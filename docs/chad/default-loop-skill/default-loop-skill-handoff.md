@@ -78,3 +78,8 @@ commands/harness-loop.md                                 |  9 ++++++---
  .../default-loop-skill/default-loop-skill-handoff.md     |  6 ++++++
  .../chad/default-loop-skill/default-loop-skill-meta.json |  9 +++++++++
  4 files changed, 37 insertions(+), 3 deletions(-)
+
+## 2026-10-06T10:47:24.756Z — 6e67a16 docs(task): default-loop-skill 루프 기록 — R3 반영
+docs/chad/default-loop-skill/default-loop-skill-artifact.md | 4 ++++
+ docs/chad/default-loop-skill/default-loop-skill-handoff.md  | 7 +++++++
+ 2 files changed, 11 insertions(+)
