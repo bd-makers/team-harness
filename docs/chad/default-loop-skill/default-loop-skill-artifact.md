@@ -46,6 +46,9 @@
 - loop: 2026-10-06 · 수단 subagent · 단계 6 R2 3차 E1(S3·S4·S5) 반영 — 근거 구간 전체 고정 · QA pass · commit 3675f1e
   - 무엇·왜: R2 루브릭 3차(tip c98a11b) E1 fail — 조각 match가 의미 반전 변이(기록 안 함·묻지 않음·병렬 Dev·"제공하지 않습니다")를 놓쳤다. 조각을 늘리는 대신 각 Then의 근거 문단·항목 11곳을 공백 정규화 전체 비교로 고정. Dev가 지적 변이 5건 + 구간별 임의 단어 치환 22건 모두 FAIL 확인.
   - QA: gate not-configured · boundary not-configured · scenario pass (6 checked) · docs:check pass.
+- loop: 2026-10-06 · 수단 subagent · 단계 6 R2 4차 E1(S2) 반영 — 멈춤 조건 절 전체 고정 · QA pass · commit 31ad874
+  - 무엇·왜: R2 4차(tip 8d69938) E1 fail — 숫자 정규식만으로는 "세 번" 같은 상한 표현을 못 막는다. 사용자 결정(권장안): 남은 조각 검사 구간인 멈춤 조건 절을 첫 문단 + bullet 넷 + 절 전체 일치로 고정하고 R2는 한 번만 더 돈다. Dev가 변이 9건 FAIL 확인.
+  - QA: gate not-configured · boundary not-configured · scenario pass (6 checked) · docs:check pass.
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*

@@ -136,3 +136,8 @@ docs/chad/default-loop-skill/default-loop-skill-artifact.md | 3 +++
  .../default-loop-skill-handoff.md                  |  5 ++++
  .../default-loop-skill-meta.json                   |  9 +++++++
  3 files changed, 45 insertions(+)
+
+## 2026-10-06T12:37:14.661Z — 31ad874 test(loop): R2 4차 E1 반영 — 멈춤 조건 절 전체 고정(상한 표현 우회 차단)
+.../default-loop-skill-handoff.md                   |  6 ++++++
+ tests/loop-command.test.mjs                         | 21 +++++++++++++++++++++
+ 2 files changed, 27 insertions(+)
