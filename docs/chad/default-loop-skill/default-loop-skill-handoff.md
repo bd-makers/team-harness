@@ -35,3 +35,10 @@ README.md                                              | 18 ++++++++++++++++--
  .../chad/default-loop-skill/default-loop-skill-plan.md |  2 +-
  docs/harness-cycle.md                                  |  6 +++---
  4 files changed, 31 insertions(+), 6 deletions(-)
+
+## 2026-10-06T10:30:56.398Z — 498badd docs(loop): CHANGELOG [Unreleased]에 /harness-loop 항목 + 루프 기록 줄
+CHANGELOG.md                                                | 8 ++++++++
+ docs/chad/default-loop-skill/default-loop-skill-artifact.md | 5 +++++
+ docs/chad/default-loop-skill/default-loop-skill-handoff.md  | 7 +++++++
+ docs/chad/default-loop-skill/default-loop-skill-plan.md     | 2 +-
+ 4 files changed, 21 insertions(+), 1 deletion(-)
