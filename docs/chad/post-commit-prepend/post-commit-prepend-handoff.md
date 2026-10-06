@@ -20,3 +20,8 @@ CHANGELOG.md                                       |  11 +++
  .../chad/post-commit-prepend/post-commit-prepend-handoff.md | 13 +++++++++++++
  docs/chad/post-commit-prepend/post-commit-prepend-plan.md   |  2 +-
  3 files changed, 16 insertions(+), 3 deletions(-)
+
+## 2026-10-06T02:14:23.401Z — fcc3a81 docs(task): post-commit-prepend 문서 표면 점검 기록·handoff 반영
+docs/chad/post-commit-prepend/post-commit-prepend-artifact.md | 1 +
+ docs/chad/post-commit-prepend/post-commit-prepend-handoff.md  | 6 ++++++
+ 2 files changed, 7 insertions(+)
