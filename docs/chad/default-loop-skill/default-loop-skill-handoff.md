@@ -125,3 +125,8 @@ docs/chad/default-loop-skill/default-loop-skill-artifact.md | 7 +++++++
  .../default-loop-skill-meta.json                   |  9 ++++
  tests/loop-command.test.mjs                        | 62 ++++++++++++++++++++++
  4 files changed, 110 insertions(+)
+
+## 2026-10-06T12:29:22.605Z — 8d69938 docs(task): default-loop-skill 루프 기록 — R2 3차 반영
+docs/chad/default-loop-skill/default-loop-skill-artifact.md | 3 +++
+ docs/chad/default-loop-skill/default-loop-skill-handoff.md  | 7 +++++++
+ 2 files changed, 10 insertions(+)
