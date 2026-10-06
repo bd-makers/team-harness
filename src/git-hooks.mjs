@@ -1,14 +1,18 @@
 import { join, relative, resolve } from 'node:path';
-import { readFile, writeFile, access, appendFile, chmod, stat, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, access, chmod, stat, mkdir } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
 const pexec = promisify(execFile);
 
-export const POST_COMMIT_HOOK = `#!/bin/sh
-# harness: auto-update handoff on commit
+// post-commit 도 pre-push 처럼 기존 훅의 맨 위에 들어간다(followups 13). 끝에 붙이면 앞선 `exit`·`exec` 뒤에서 handoff 가
+// 조용히 안 돌았다(git-lfs 훅은 lfs 가 없으면 `exit 2`). stdin 계약이 없고 rc 는 git 이 무시하므로 한 줄이면 된다 —
+// `|| true` 라 `sh -e` 에서도 뒤의 기존 줄을 막지 않는다.
+export const POST_COMMIT_BLOCK = `# harness: auto-update handoff on commit
 harness-team handoff 2>/dev/null || true
 `;
+
+export const POST_COMMIT_HOOK = `#!/bin/sh\n${POST_COMMIT_BLOCK}`;
 
 // The line that proves the hook is installed. `includes('harness')` used to count a
 // stray comment containing the word as "already installed" and skip the install.
@@ -74,7 +78,9 @@ export function hasLiveMarker(text, marker) {
   return text.split('\n').some(line => !/^\s*#/.test(line) && line.includes(marker));
 }
 
-async function installGitHook(targetDir, { name, body, marker, prepend = null }) {
+// 기존 훅에는 블록을 shebang 바로 다음, 맨 위에 넣는다 — 이유는 PRE_PUSH_BLOCK·POST_COMMIT_BLOCK 주석.
+// 새 훅은 `#!/bin/sh` + 블록이다. `call` 은 셸이 아닌 훅을 건너뛸 때 사용자에게 처방하는 호출이다.
+async function installGitHook(targetDir, { name, block, marker, call }) {
   const hooksDir = await resolveHooksDir(targetDir);
   if (!hooksDir) return; // not a git repo (or no git) — nothing to hook into
   try {
@@ -102,33 +108,31 @@ async function installGitHook(targetDir, { name, body, marker, prepend = null })
 
   if (existing !== null) {
     if (hasLiveMarker(existing, marker)) return;
-    if (prepend) {
-      const firstLine = existing.split('\n', 1)[0];
-      if (firstLine.startsWith('#!') && !SH_SHEBANG.test(firstLine)) {
-        console.log(`  ${name} hook: 기존 훅이 셸 스크립트가 아님 (${firstLine}) — 건너뜀; 그 훅에서 \`${marker} --pre-push\` 를 직접 부르세요`);
-        return;
-      }
-      const at = firstLine.startsWith('#!') ? firstLine.length + 1 : 0;
-      await writeFile(hookPath, existing.slice(0, at) + prepend + '\n' + existing.slice(at), 'utf8');
-    } else {
-      await appendFile(hookPath, '\n' + body);
+    const firstLine = existing.split('\n', 1)[0];
+    if (firstLine.startsWith('#!') && !SH_SHEBANG.test(firstLine)) {
+      console.log(`  ${name} hook: 기존 훅이 셸 스크립트가 아님 (${firstLine}) — 건너뜀; 그 훅에서 \`${call}\` 를 직접 부르세요`);
+      return;
     }
+    // 개행 없는 shebang 한 줄(`#!/bin/sh` EOF)이면 개행을 채운다 — 그대로 이어 붙이면 `#!/bin/sh# harness: …` 가 되어
+    // shebang 을 공백까지 읽는 커널은 인터프리터 `/bin/sh#` 를 찾는다(2026-10-06 재현, macOS 는 그래도 실행).
+    const head = firstLine.startsWith('#!') ? `${firstLine}\n` : '';
+    await writeFile(hookPath, head + block + '\n' + existing.slice(head.length), 'utf8');
     const st = await stat(hookPath);
     if (!(st.mode & 0o111)) await chmod(hookPath, st.mode | 0o755);
-    console.log(`  ${name} hook: ${prepend ? 'inserted harness block at top' : 'appended harness line'}`);
+    console.log(`  ${name} hook: inserted harness block at top`);
   } else {
-    await writeFile(hookPath, body, 'utf8');
+    await writeFile(hookPath, `#!/bin/sh\n${block}`, 'utf8');
     await chmod(hookPath, 0o755);
     console.log(`  ${name} hook: installed`);
   }
 }
 
 export function installPostCommitHook(targetDir) {
-  return installGitHook(targetDir, { name: 'post-commit', body: POST_COMMIT_HOOK, marker: POST_COMMIT_MARKER });
+  return installGitHook(targetDir, { name: 'post-commit', block: POST_COMMIT_BLOCK, marker: POST_COMMIT_MARKER, call: POST_COMMIT_MARKER });
 }
 
 export function installPrePushHook(targetDir) {
-  return installGitHook(targetDir, { name: 'pre-push', body: PRE_PUSH_HOOK, marker: PRE_PUSH_MARKER, prepend: PRE_PUSH_BLOCK });
+  return installGitHook(targetDir, { name: 'pre-push', block: PRE_PUSH_BLOCK, marker: PRE_PUSH_MARKER, call: `${PRE_PUSH_MARKER} --pre-push` });
 }
 
 // doctor 용: push 때 pr-check 가 실제로 도는가. 훅 관리자(husky·lefthook 등)가 훅 파일을 다시 쓰면 블록이 조용히
