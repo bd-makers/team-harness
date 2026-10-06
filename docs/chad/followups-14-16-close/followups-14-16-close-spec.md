@@ -37,7 +37,7 @@ feature 브랜치에 task `mine`을 커밋한 뒤 `harness-team pr-check --pre-p
 
 ### 새로 드러난 결함 — 별도 task `empty-doc-guard`
 - pr-check와 `done` 가드는 "템플릿과 같은가"만 비교한다. 그래서 빈 문서(0바이트·공백뿐)는 통과한다.
-- 실례: `dangerous-git-end-boundary-plan.md`는 미완 `- [ ]` 3개가 남은 상태에서 `bb93755`("plan 완료")로 0바이트가 됐고, `done`을 통과했다.
+- 실례: `dangerous-git-end-boundary-plan.md`는 미완 `- [ ]` 3개가 남은 상태에서 `bb93755`("plan 완료")로 0바이트가 됐다. 그 task의 `done`은 다른 사유(미커밋 변경)로 `--force`였지만, meta `forcedIssues`에 plan 항목이 없어 빈 plan이 plan 가드를 비켜 간 것이 확인된다.
 - 범위가 코드·테스트라 이 문서 정리 task와 분리한다(메인테이너 승인 2026-10-06).
 
 ### 2차 장치 규칙
