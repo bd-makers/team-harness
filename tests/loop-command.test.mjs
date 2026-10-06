@@ -53,6 +53,11 @@ test('loop: the four stop conditions are pinned and no-progress has no numeric c
   assert.match(stops, /횟수 상한을 두지 않는다/);
   assert.doesNotMatch(stops, /\d+\s*(회|번)/, '임의 횟수 상한이 생기면 안 된다');
   assert.match(stops, /PR은 사람이 만든다/);
+  assert.equal(
+    bullet(stops, '성공'),
+    '- **성공** — 모든 단계 통과 + 전체 시나리오 검사·루브릭(시나리오 선언 시) + R3 통과(P1 없음, 재검 뒤 남은 P2는 후속 — QA의 R3 통과 기준). PR은 사람이 만든다 — `/harness-ship`으로 넘긴다.',
+    '성공은 R3 통과 기준(P1 없음)을 가리켜야',
+  );
 });
 
 test('loop: QA runs machine checks before the read-only rubric and records named test output', async () => {
@@ -73,6 +78,11 @@ test('loop: QA runs machine checks before the read-only rubric and records named
   );
   assert.match(qa, /루브릭은 모든 단계가 끝난 뒤 한 번 돌린다/);
   assert.match(qa, /이번 단계 전에 증거가 없던 시나리오는 진전 판정에서 뺀다/);
+  assert.match(
+    squash(qa),
+    /(?:^|\. )P2는 재현·판별해 유효한 것을 반영하되 R3 재검은 한 번까지만 돌린다\./,
+    'R3 재검은 한 번까지여야',
+  );
 });
 
 test('loop: entry asks orchestrator-or-individual and the loop never pushes or opens a PR', async () => {

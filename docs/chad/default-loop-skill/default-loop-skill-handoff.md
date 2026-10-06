@@ -101,3 +101,9 @@ docs/chad/default-loop-skill/default-loop-skill-artifact.md | 3 +++
  .../default-loop-skill/default-loop-skill-handoff.md    |  5 +++++
  .../default-loop-skill/default-loop-skill-meta.json     |  9 +++++++++
  3 files changed, 31 insertions(+)
+
+## 2026-10-06T11:01:49.571Z — d0de577 docs(task): default-loop-skill spec R-8 — R3 통과 기준 결정(P1 없음, P2 재검 한 번까지)
+docs/chad/default-loop-skill/default-loop-skill-handoff.md | 6 ++++++
+ docs/chad/default-loop-skill/default-loop-skill-plan.md    | 1 +
+ docs/chad/default-loop-skill/default-loop-skill-spec.md    | 8 +++++++-
+ 3 files changed, 14 insertions(+), 1 deletion(-)
