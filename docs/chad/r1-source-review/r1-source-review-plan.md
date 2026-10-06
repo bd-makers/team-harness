@@ -13,7 +13,7 @@ R1 원천 문서 검토를 `/harness-interview` 안의 단계로 넣고, spec �
 - [x] `docs/harness-cycle.md` §2 S1 "현재" 칸 · §4-1 구현 메모 + CHANGELOG `[Unreleased]`
 - [x] `npm run test` green
 - [x] `/harness-review` codex → artifact `## Reviews`에 판별 기록
-- [ ] 커밋 + `harness-team pr-check`
+- [x] 커밋 + `harness-team pr-check`
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
