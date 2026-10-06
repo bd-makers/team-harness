@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ post-commit-prepend
 - ✅ prepush-existing-installs
 - ✅ task-area-flag
 - ✅ task-paths-helper
