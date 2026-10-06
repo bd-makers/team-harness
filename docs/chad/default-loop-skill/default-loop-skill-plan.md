@@ -11,7 +11,7 @@ S3 기본 루프를 선택형 명령 `/harness-loop`(프롬프트 + 기존 CLI)�
 - [x] 4. overview 재생성(`node scripts/generate-harness-overview.mjs`) + `npm run docs:check` + CHANGELOG `[Unreleased]`
 - [x] 5. `npm run test` 전체 + `node bin/harness-team.mjs scenario check` 전부 pass, 이름 찍힌 실행 출력을 artifact에 기록
 - [x] 6. R2 루브릭 `node bin/harness-team.mjs review codex --framing scenario` → R3 `node bin/harness-team.mjs review codex` → 발견 판별·반영
-- [ ] 7. ship 준비(`/harness-ship`, `pr-check`) — push·PR은 사용자 승인 후
+- [x] 7. ship 준비(`/harness-ship`, `pr-check`) — push·PR은 사용자 승인 후
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

@@ -51,13 +51,13 @@
   - QA: gate not-configured · boundary not-configured · scenario pass (6 checked) · docs:check pass.
 - R2 최종 재검(tip dbd8222): E1·E2 pass — S1–S6 모두 변이 검출.
 - loop: 2026-10-06 · 수단 subagent · 단계 6 R2·R3 마무리 · 멈춤 성공
-  - 요약: 구현 루프 단계 3·4(Dev) + 5(검증) + 마무리 반영 Dev 턴 6회. R2 4회(fail 3 → pass), R3 3회(P1 0, P2 3·2·2 — 새 기준으로 통과). PR은 사람이 만든다 → /harness-ship.
+  - 요약: 구현 루프 단계 3·4(Dev) + 5(검증) + 마무리 반영 Dev 턴 6회. R2 5회(fail 3 · pass 2 — 1차 fail → 2차 pass → 3·4차 fail → 5차 pass), R3 3회(P1 0, P2 3·2·2 — 새 기준으로 통과). PR은 사람이 만든다 → /harness-ship.
 - 최종 검증(ship 직전, 2026-10-06): `npm run test` → tests 1188 · pass 1187 · fail 0 · skipped 1. `node bin/harness-team.mjs scenario check` → `scenario: pass (6 checked)`. `npm run docs:check` → "harness overview 생성 상태가 최신입니다."
 - 남은 리스크·후속:
   - Codex 세션이 루프를 호스팅하는 경로는 실험적이며 실제로 돌려 보지 않았다(D2·D9 개정은 별도 결정). Codex 실측은 서브에이전트 보고 기반이며 1차 출처(learn.chatgpt.com 문서·openai/codex#50880)를 직접 열어 보지 않았다.
   - 이 저장소는 `.harness/gates.json`이 없어 dogfood QA의 기계 검사가 시나리오 선언에만 기댔다 — 게이트를 설정한 소비자 저장소에서의 첫 실사용이 남은 검증이다.
   - 계약 테스트가 문서 구간을 원문 상수로 고정했다 — 루프 문서를 고칠 때 테스트도 함께 고쳐야 한다(의도된 비용).
-  - 리뷰 비용: R2 4회 · R3 3회(codex). Learnings의 "근거 구간 전체 고정"·"리뷰 종료 기준"은 반복되면 `/harness-promote` 후보.
+  - 리뷰 비용: R2 5회 · R3 3회 · shipcheck 1회(codex). Learnings의 "근거 구간 전체 고정"·"리뷰 종료 기준"은 반복되면 `/harness-promote` 후보.
   - 범위 밖: 메인 체크아웃의 iCloud 충돌 사본 정리(사용자: 나중에), `mystifying-shannon` 워크트리 안 인계 파일을 메인으로 옮기기(워크트리 삭제 전).
 
 - 다이어그램: docs/chad/default-loop-skill/default-loop-skill-diagram.html 갱신 — ship 갱신 — 마무리 전체 시나리오 검사 노드 · R3 통과 기준 추가, 브라우저 pane 렌더·텍스트 경계 확인 (2026-10-06)
@@ -253,11 +253,38 @@ diff의 명령·래퍼·등록·README·interview·cycle·overview·CHANGELOG �
 
 <!-- harness:review kind=codex-scenario scope=diff tip=dbd8222b1d5508080152b7b8ca753169df47d3c9 at=2026-10-06T12:40:42.193Z -->
 
+### 2026-10-06T12:54:26.154Z — codex-shipcheck (harness-team review)
+
+- engine: codex · scope: diff · tip: b10abe5816cba1a6932df48b29d524092daf7d95 · exit 0 · 2751 B
+
+```text
+검토 범위: `refs/remotes/origin/main`(`9f09ce7`) 대비 HEAD `b10abe5`와 워킹트리. 전후 `git status --short`는 비어 있으며, 파일은 수정하지 않았습니다.
+
+- **S1 · 요구사항과 구현 대응 · BLOCKER · pass**  
+  R-1은 명령·래퍼·manifest 추가, R-2·3·9는 진입·Dev 절차, R-4·5·8은 QA 절차, R-6·7·10·13은 커밋·기록·멈춤 조건, R-11·12는 README·Codex 절에 대응합니다. diff 인용: “Dev는 plan 단계 **하나**만 구현한다”, “이번엔 제외 없이 다시 돌려 전부 통과해야 한다”, “R3 재검은 한 번까지만 돌린다”. dogfood 증거도 artifact에 `QA pass · commit 789dcf8`로 기록되어 있습니다.
+
+- **S2 · 완료된 plan 항목의 변경·커밋 실재 · MAJOR · pass**  
+  다이어그램은 `1fed62e`, 단계 1·2의 테스트·명령·등록은 `65db167`, 단계 3은 `789dcf8`, 단계 4는 `65db167`의 overview와 `498badd`의 CHANGELOG에 대응합니다. 단계 5는 `747405f`에 “`scenario: pass (6 checked)`”와 테스트 이름 출력이 추가됐고, 단계 6은 리뷰 기록·반영 커밋들과 `449a935`의 체크 완료에 대응합니다. 과거 red 실행 자체는 출력 증거가 없어 확인하지 못했습니다.
+
+- **S3 · 문서 밖 스코프 변경 없음 · MAJOR · pass**  
+  제품 변경은 spec의 “표면 (영향 파일)” 목록과 일치합니다. 추가된 검증 단계 처리·커밋 실패 복구·마무리 재진입·R3 기준도 요구사항에 반영되어 있습니다. artifact 인용: “plan에 구현 없는 검증 단계가 있으면 루프 문서에 처리 규칙이 없었다”, “체크 후 커밋 실패…이번 dogfood 2단계에서…실제 발생했다”.
+
+- **S4 · 실행 리뷰의 artifact 마커 기록 · MAJOR · pass**  
+  meta의 리뷰 8건(R2 5건·R3 3건)은 모두 `## Reviews`의 결과와 실제 마커에 대응합니다. 예: `kind=codex-scenario scope=diff tip=dbd8222… at=2026-10-06T12:40:42.193Z`. 다만 artifact 54·60행의 “R2 4회”는 실제 기록인 **5회**로 정정할 필요가 있습니다. 리뷰 누락은 없습니다.
+
+- **S5 · 검증 결과의 명령·출력 근거 · BLOCKER · pass**  
+  artifact에는 `npm run test`의 수치, `node bin/harness-team.mjs scenario check`의 “`scenario: pass (6 checked)`”, 실제 “`✔ loop: …`” 테스트 이름, `npm run docs:check`의 “harness overview 생성 상태가 최신입니다.”가 기록되어 있습니다. 이번 검증에서도 관련 테스트 **14 pass·0 fail**, `docs:check` exit 0, spec의 S6 명령 exit 0을 확인했습니다. 전체 테스트는 재실행하지 않았습니다.
+
+**최종 verdict: pass — 실패 항목 전체: 없음.**
+```
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=b10abe5816cba1a6932df48b29d524092daf7d95 at=2026-10-06T12:54:26.154Z -->
+
 ## Learnings
 
 ## Learnings (2026-10-06)
 
-- **프롬프트 문서의 계약 테스트는 근거 구간 전체를 고정해야 수렴한다.** 문구 조각 match는 R2 루브릭이 의미 반전 변이(기록 안 함·묻지 않음·'세 번' 상한)를 찾을 때마다 한 조각씩 늘어나 4회를 돌았다. 각 Then을 떠받치는 문단·항목을 공백 정규화 전체 비교로 고정하자 한 번에 pass. 기대값을 문서 원문 상수로 두면 의도적 변경 때 테스트도 함께 고치게 된다.
+- **프롬프트 문서의 계약 테스트는 근거 구간 전체를 고정해야 수렴한다.** 문구 조각 match는 R2 루브릭이 의미 반전 변이(기록 안 함·묻지 않음·'세 번' 상한)를 찾을 때마다 한 조각씩 늘어나 R2 5회 중 3회 fail을 냈다. 각 Then을 떠받치는 문단·항목을 공백 정규화 전체 비교로 고정하자 한 번에 pass. 기대값을 문서 원문 상수로 두면 의도적 변경 때 테스트도 함께 고치게 된다.
 
 ## Learnings (2026-10-06)
 
