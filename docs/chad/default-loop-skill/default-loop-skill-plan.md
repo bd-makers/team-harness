@@ -4,7 +4,7 @@
 S3 기본 루프를 선택형 명령 `/harness-loop`(프롬프트 + 기존 CLI)로 제공하고, 이 task의 한 단계를 그 루프로 돌려 dogfood 증거(S6)를 남긴다.
 
 ## 단계
-- [ ] spec/plan 다이어그램 작성 → docs/chad/default-loop-skill/default-loop-skill-diagram.html
+- [x] spec/plan 다이어그램 작성 → docs/chad/default-loop-skill/default-loop-skill-diagram.html
 - [ ] 1. `tests/loop-command.test.mjs` — S2·S3·S4·S5 계약 테스트를 먼저 쓴다(red 확인)
 - [ ] 2. `commands/harness-loop.md` 작성(R-1–R-13) + `skills/harness-loop/SKILL.md` 래퍼 + `.claude-plugin/plugin.json` 등록 + `commands/harness-interview.md` 포인터 한 줄 → S1·S2·S3·S4 green
 - [ ] 3. **`/harness-loop`로 실행(dogfood)**: README 설계 스코프 문단 정정 + 명령 절 추가, `docs/harness-cycle.md` §2 S3 행·§6 B 진행 표시 → S5 green, artifact 루프 기록 줄(S6)

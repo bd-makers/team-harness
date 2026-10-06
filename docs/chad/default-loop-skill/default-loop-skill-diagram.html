@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>default-loop-skill — /harness-loop 흐름</title>
+<style>
+  body { margin: 0; padding: 32px 24px; background: #f5f5f5; color: #2d3142; font: 14px/1.5 system-ui, -apple-system, sans-serif; }
+  .eyebrow { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.12em; color: #7a8399; margin: 0 0 4px; }
+  h1 { font: 400 28px/1.2 Georgia, 'Times New Roman', serif; margin: 0 0 8px; }
+  p.sub { margin: 0 0 24px; color: #4f5d75; max-width: 72ch; }
+  svg { max-width: 100%; height: auto; display: block; }
+  footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid rgba(45,49,66,0.12); font: 12px ui-monospace, Menlo, monospace; color: #7a8399; }
+  .n { font: 600 16px system-ui, -apple-system, sans-serif; fill: #2d3142; }
+  .s { font: 12px system-ui, -apple-system, sans-serif; fill: #4f5d75; }
+  .m { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #4f5d75; }
+  .lane { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #7a8399; letter-spacing: 0.08em; }
+  .lbl { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #7a8399; }
+  .stopt { font: 600 12px system-ui, -apple-system, sans-serif; fill: #f5f5f5; }
+  .arrow { stroke: #4f5d75; stroke-width: 1.2; fill: none; marker-end: url(#arrow); }
+  .arrow.acc { stroke: #eb6c36; marker-end: url(#arrow-accent); }
+  .arrow.ret { stroke-dasharray: 5 4; }
+</style>
+</head>
+<body>
+<p class="eyebrow">DEFAULT-LOOP-SKILL · SWIMLANE</p>
+<h1>/harness-loop — plan 한 단계가 도는 길</h1>
+<p class="sub">메인 세션이 오케스트레이터다. Dev가 한 단계를 구현하면 오케스트레이터가 기계 검사(exit code)를 돌리고,
+모든 단계가 끝난 뒤에만 read-only 별도 프로세스가 루브릭(R2)과 R3를 판정한다. 검은 칩이 사람에게 넘기는 네 멈춤이다.</p>
+
+<svg viewBox="0 0 1200 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="harness-loop swimlane: orchestrator, Dev, QA verifier, human stops">
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+    <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+  </defs>
+  <rect width="1200" height="620" fill="#f5f5f5"/>
+
+  <!-- lanes -->
+  <text x="16" y="40" class="lbl">한 회차 = plan 미완 단계 하나 · 횟수 상한 없음</text>
+  <line x1="16" y1="64" x2="1184" y2="64" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+  <line x1="16" y1="264" x2="1184" y2="264" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+  <line x1="16" y1="360" x2="1184" y2="360" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+  <line x1="16" y1="456" x2="1184" y2="456" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+  <line x1="16" y1="536" x2="1184" y2="536" stroke="rgba(45,49,66,0.12)" stroke-width="0.8"/>
+  <text x="24" y="88" class="lane">오케스트레이터</text>
+  <text x="24" y="104" class="lane">메인 세션</text>
+  <text x="24" y="288" class="lane">DEV</text>
+  <text x="24" y="304" class="lane">서브에이전트</text>
+  <text x="24" y="384" class="lane">QA 검증자</text>
+  <text x="24" y="400" class="lane">read-only 프로세스</text>
+  <text x="24" y="480" class="lane">사람</text>
+  <text x="24" y="496" class="lane">멈춤</text>
+
+  <!-- arrows first -->
+  <path class="arrow" d="M216 152 V312 H348"/>
+  <path class="arrow acc" d="M440 280 V156"/>
+  <path class="arrow" d="M544 120 H588"/>
+  <path class="arrow" d="M520 152 V216 H596"/>
+  <path class="arrow ret" d="M632 248 V328 H532"/>
+  <path class="arrow" d="M744 248 V472"/>
+  <path class="arrow" d="M784 120 H896 V372"/>
+  <path class="arrow" d="M1000 408 H1020"/>
+  <path class="arrow" d="M1104 440 V472"/>
+
+  <!-- arrow labels (masked) -->
+  <rect x="540" y="204" width="40" height="16" rx="2" fill="#f5f5f5"/>
+  <text x="560" y="216" class="lbl" text-anchor="middle">실패</text>
+  <rect x="548" y="100" width="36" height="16" rx="2" fill="#f5f5f5"/>
+  <text x="566" y="112" class="lbl" text-anchor="middle">통과</text>
+  <rect x="544" y="316" width="72" height="16" rx="2" fill="#f5f5f5"/>
+  <text x="580" y="328" class="lbl" text-anchor="middle">달라짐</text>
+  <rect x="704" y="384" width="80" height="16" rx="2" fill="#f5f5f5"/>
+  <text x="744" y="396" class="lbl" text-anchor="middle">같음</text>
+  <rect x="800" y="100" width="96" height="16" rx="2" fill="#f5f5f5"/>
+  <text x="848" y="112" class="lbl" text-anchor="middle">모든 단계 끝</text>
+  <rect x="420" y="204" width="40" height="16" rx="2" fill="#f5f5f5"/>
+  <text x="440" y="216" class="lbl" text-anchor="middle">검사</text>
+
+  <!-- A 진입 -->
+  <rect x="128" y="88" width="176" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="144" y="112" class="n">진입 · 질문</text>
+  <text x="144" y="128" class="s">활성 task · plan 확인</text>
+  <text x="144" y="144" class="s">오케스트레이터 / 개별?</text>
+
+  <!-- B 기계 검사 (focal) -->
+  <rect x="336" y="88" width="208" height="64" rx="6" fill="#f5f5f5"/>
+  <rect x="336" y="88" width="208" height="64" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1.2"/>
+  <text x="352" y="112" class="n">QA 기계 검사</text>
+  <text x="352" y="128" class="m">gate·boundary·scenario</text>
+  <text x="352" y="144" class="s">이름 찍힌 출력 → artifact</text>
+
+  <!-- D 커밋 -->
+  <rect x="592" y="88" width="192" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="608" y="112" class="n">plan 체크 + 커밋</text>
+  <text x="608" y="128" class="m">artifact "- loop:" 줄</text>
+  <text x="608" y="144" class="s">→ 다음 미완 단계로</text>
+
+  <!-- C 진전 판정 -->
+  <rect x="600" y="184" width="176" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="616" y="208" class="n">진전 판정</text>
+  <text x="616" y="224" class="s">실패 집합 + diff를</text>
+  <text x="616" y="240" class="s">직전 Dev 턴과 비교</text>
+
+  <!-- E Dev -->
+  <rect x="352" y="280" width="176" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="368" y="304" class="n">단계 구현</text>
+  <text x="368" y="320" class="s">plan 한 단계만</text>
+  <text x="368" y="336" class="s">단일 쓰기 · 커밋 금지</text>
+
+  <!-- G R2 루브릭 -->
+  <rect x="792" y="376" width="208" height="64" rx="6" fill="#f5f5f5"/>
+  <rect x="792" y="376" width="208" height="64" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1" stroke-dasharray="4 3"/>
+  <text x="808" y="400" class="n">R2 루브릭</text>
+  <text x="808" y="416" class="m">review --framing scenario</text>
+  <text x="808" y="432" class="s">E1 · E2 판정</text>
+
+  <!-- H R3 -->
+  <rect x="1024" y="376" width="160" height="64" rx="6" fill="#f5f5f5"/>
+  <rect x="1024" y="376" width="160" height="64" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1" stroke-dasharray="4 3"/>
+  <text x="1040" y="400" class="n">R3 리뷰</text>
+  <text x="1040" y="416" class="m">review codex</text>
+  <text x="1040" y="432" class="s">없으면 claude</text>
+
+  <!-- stops -->
+  <rect x="128" y="476" width="160" height="40" rx="4" fill="#2d3142"/>
+  <text x="208" y="500" class="stopt" text-anchor="middle">spec 공백 → R1로</text>
+  <rect x="304" y="476" width="160" height="40" rx="4" fill="#2d3142"/>
+  <text x="384" y="500" class="stopt" text-anchor="middle">승인 필요 · push·PR</text>
+  <rect x="664" y="476" width="160" height="40" rx="4" fill="#2d3142"/>
+  <text x="744" y="500" class="stopt" text-anchor="middle">진전 없음</text>
+  <rect x="1024" y="476" width="160" height="40" rx="4" fill="#2d3142"/>
+  <text x="1104" y="500" class="stopt" text-anchor="middle">성공 · PR은 사람</text>
+  <text x="128" y="528" class="lbl">↑ 두 칩은 어느 단계에서든 발생</text>
+
+  <!-- legend -->
+  <line x1="16" y1="560" x2="1184" y2="560" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+  <text x="16" y="588" class="lane">LEGEND</text>
+  <rect x="96" y="576" width="24" height="16" rx="2" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="128" y="588" class="s">단계 (메인·Dev)</text>
+  <rect x="272" y="576" width="24" height="16" rx="2" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1.2"/>
+  <text x="304" y="588" class="s">핵심 판정 — exit code, 자기 채점 아님</text>
+  <rect x="592" y="576" width="24" height="16" rx="2" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1" stroke-dasharray="4 3"/>
+  <text x="624" y="588" class="s">별도 프로세스 read-only 검증자</text>
+  <rect x="880" y="576" width="24" height="16" rx="2" fill="#2d3142"/>
+  <text x="912" y="588" class="s">멈춤 — 사람에게 넘김</text>
+  <line x1="1064" y1="584" x2="1096" y2="584" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text x="1104" y="588" class="s">재시도</text>
+</svg>
+
+<footer>docs/chad/default-loop-skill · 정본: commands/harness-loop.md · spec R-1–R-13</footer>
+</body>
+</html>
