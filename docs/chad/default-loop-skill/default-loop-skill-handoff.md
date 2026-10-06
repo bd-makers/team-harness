@@ -28,3 +28,10 @@
  skills/harness-loop/SKILL.md                       |  26 +++++
  tests/loop-command.test.mjs                        |  88 ++++++++++++++++
  8 files changed, 259 insertions(+), 2 deletions(-)
+
+## 2026-10-06T10:29:49.939Z — 789dcf8 docs(loop): README 설계 스코프 정정 + /harness-loop 절, 사이클 문서 S3·§6 갱신
+README.md                                              | 18 ++++++++++++++++--
+ .../default-loop-skill/default-loop-skill-handoff.md   | 11 +++++++++++
+ .../chad/default-loop-skill/default-loop-skill-plan.md |  2 +-
+ docs/harness-cycle.md                                  |  6 +++---
+ 4 files changed, 31 insertions(+), 6 deletions(-)
