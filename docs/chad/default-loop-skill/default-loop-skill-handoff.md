@@ -153,3 +153,9 @@ docs/chad/default-loop-skill/default-loop-skill-artifact.md | 3 +++
  .../default-loop-skill-meta.json                   |  9 +++++
  .../default-loop-skill/default-loop-skill-plan.md  |  2 +-
  4 files changed, 60 insertions(+), 1 deletion(-)
+
+## 2026-10-06T12:42:28.129Z — 1615bfc docs(task): default-loop-skill ship 전 spec·artifact 최종 갱신
+docs/chad/default-loop-skill/default-loop-skill-artifact.md | 7 +++++++
+ docs/chad/default-loop-skill/default-loop-skill-handoff.md  | 7 +++++++
+ docs/chad/default-loop-skill/default-loop-skill-spec.md     | 8 +++++++-
+ 3 files changed, 21 insertions(+), 1 deletion(-)
