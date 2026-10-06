@@ -1,10 +1,10 @@
 # chad — Tasks
 
 ## Open
-- followups-14-16-close (created 2026-10-06)
 
 ## Completed
 - ✅ empty-doc-guard
+- ✅ followups-14-16-close
 - ✅ post-commit-prepend
 - ✅ prepush-existing-installs
 - ✅ task-area-flag

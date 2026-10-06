@@ -3,8 +3,8 @@
   "task": "followups-14-16-close",
   "created": "2026-10-06",
   "firstActivatedAt": "2026-10-06T03:08:43.181Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-10-06T05:52:22.732Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": []
