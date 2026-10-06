@@ -69,6 +69,8 @@ meta에 남기는 장치 · `done`에서의 증거 명령 실행.
   (파일 단위 가짜 통과 — 개수도 믿을 수 없다). 이름 필터가 아무것도 고르지 못해도 행 2는 통과한다. 이 틈은 행 3 루브릭이 막는다 — E1 템플릿이 "exit 0만으로는 pass가 아니다"를 명시하고, 증거 테스트가
   실제로 Then을 assert하는지 코드·실행 출력 인용을 요구한다. 하네스는 러너 출력 형식을 파싱하지 않는다
   (언어별 지식 → D11 위반).
+- **신뢰 경계.** `cmd`는 spec에 적힌 문자열을 `/bin/sh -c`로 실행한다 — `.harness/gates.json`·npm scripts와 같은 신뢰 수준이다
+  (팀이 커밋·리뷰한 저장소 내용). 검토하지 않은 브랜치의 spec에 `scenario check`나 자동 QA 루프를 돌리지 않는다(README에 명시).
 - **행 3·4는 기존 review 체계로 간다.** 엔진 결정·기록(meta.reviews + artifact 마커)·D6 정직성 규칙을 그대로 쓴다.
   템플릿은 기계 행이 `scenario check` 몫임을 밝혀 검증자가 중복 판정하지 않게 한다.
 - **미러 자리는 `commands/harness-review.md`.** 새 커맨드 문서를 만들면 slash command·Codex 스킬 래퍼·plugin.json·

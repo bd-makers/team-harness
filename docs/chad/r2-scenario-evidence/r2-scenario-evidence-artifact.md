@@ -143,6 +143,22 @@ S1 테스트 2개와 미러 pin을 직접 재실행하여 이름이 표시된 �
 
 **판별 (driver).** E1 pass·E2 pass → 동의. R2 4행이 모두 닫혔다: 1·2행은 `scenario check`의 pass (7 checked), 3·4행은 이 리뷰다.
 
+### 2026-10-06T08:47:22.800Z — codex (harness-team review)
+
+- engine: codex · scope: worktree · tip: baa1d5f6bdd77d8ef40a9def1ff227e4dcecf2b5 · exit 0 · 313 B
+
+```text
+P1/P2/P3 발견 사항 없음.
+
+변경된 두 문서의 신뢰 경계 설명은 실제 `/bin/sh -c` 실행 방식과 일치합니다. 문서 변경만 있어 테스트는 실행하지 않았으며, `git diff --check`는 통과했습니다. 파일은 수정하지 않았습니다.
+
+최종 판정: 승인 가능.
+```
+
+<!-- harness:review kind=codex scope=worktree tip=baa1d5f6bdd77d8ef40a9def1ff227e4dcecf2b5 at=2026-10-06T08:47:22.800Z -->
+
+**판별 (driver).** 발견이 없어 동의한다. 다만 scope가 worktree여서 미커밋 문서 2개(신뢰 경계 문구)만 봤다. 커밋된 코드 수정(`verifyEvidencePredicate`·S7)은 다음 `--base origin/main` 리뷰에서 다시 본다.
+
 ## Learnings
 
 - **exit 0도 요약 개수도 R2 2행의 증거가 되지 못한다.** `node --test --test-name-pattern`은 0건 매치에서도 exit 0이고, `✔ <파일>`·`ℹ pass 1`을 찍는다.

@@ -581,6 +581,8 @@ task는 그 만료 시각부터) 안의 증거를 결정론적으로
   `harness-team scenario check`가 각 `cmd`를 실행해 exit 0을 보고, `harness-team review <engine> --framing scenario`가
   증거가 Then을 실제로 검증하는지(+spec 밖 동작이 없는지) 채점합니다. exit 0만으로는 테스트가 실제로 돌았다는 보장이
   없어서입니다. 시나리오를 선언하면 `verify: required`는 `-scenario` kind만 셉니다.
+  `cmd`는 `/bin/sh -c`로 그대로 실행되므로 `.harness/gates.json`·npm scripts와 같은 신뢰 수준입니다 — 검토하지 않은 브랜치의 spec에
+  `scenario check`(나 자동 QA 루프)를 돌리지 마세요.
 
   ```json
   { "version": 1, "verify": "required", "scenarios": [
