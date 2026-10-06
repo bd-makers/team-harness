@@ -146,3 +146,4 @@
 | chad | followups-14-16-close | ✅ done | 2026-10-06 |
 | chad | post-commit-prepend | ✅ done | 2026-10-06 |
 | chad | prepush-existing-installs | ✅ done | 2026-10-06 |
+| chad | roadmap-to-1-0 | ✅ done | 2026-10-06 |
