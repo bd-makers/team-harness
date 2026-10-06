@@ -19,3 +19,7 @@ CHANGELOG.md                                       |  3 ++
  tests/done-guard.test.mjs                          | 23 +++++++++
  tests/pr-check.test.mjs                            | 16 +++++++
  15 files changed, 235 insertions(+), 5 deletions(-)
+
+## 2026-10-06T05:52:13.995Z — 완료
+
+태스크 종료.

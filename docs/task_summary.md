@@ -142,5 +142,7 @@
 | hslee | preset-repo-shape | ✅ done | 2026-10-05 |
 | hslee | remove-backup-cluster | ✅ done | 2026-10-05 |
 | hslee | remove-personal-tool-refs | ✅ done | 2026-10-05 |
+| chad | empty-doc-guard | ✅ done | 2026-10-06 |
+| chad | followups-14-16-close | 🔄 open | 2026-10-06 |
 | chad | post-commit-prepend | ✅ done | 2026-10-06 |
 | chad | prepush-existing-installs | ✅ done | 2026-10-06 |
