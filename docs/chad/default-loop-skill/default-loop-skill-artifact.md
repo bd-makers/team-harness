@@ -52,6 +52,13 @@
 - R2 최종 재검(tip dbd8222): E1·E2 pass — S1–S6 모두 변이 검출.
 - loop: 2026-10-06 · 수단 subagent · 단계 6 R2·R3 마무리 · 멈춤 성공
   - 요약: 구현 루프 단계 3·4(Dev) + 5(검증) + 마무리 반영 Dev 턴 6회. R2 4회(fail 3 → pass), R3 3회(P1 0, P2 3·2·2 — 새 기준으로 통과). PR은 사람이 만든다 → /harness-ship.
+- 최종 검증(ship 직전, 2026-10-06): `npm run test` → tests 1188 · pass 1187 · fail 0 · skipped 1. `node bin/harness-team.mjs scenario check` → `scenario: pass (6 checked)`. `npm run docs:check` → "harness overview 생성 상태가 최신입니다."
+- 남은 리스크·후속:
+  - Codex 세션이 루프를 호스팅하는 경로는 실험적이며 실제로 돌려 보지 않았다(D2·D9 개정은 별도 결정). Codex 실측은 서브에이전트 보고 기반이며 1차 출처(learn.chatgpt.com 문서·openai/codex#50880)를 직접 열어 보지 않았다.
+  - 이 저장소는 `.harness/gates.json`이 없어 dogfood QA의 기계 검사가 시나리오 선언에만 기댔다 — 게이트를 설정한 소비자 저장소에서의 첫 실사용이 남은 검증이다.
+  - 계약 테스트가 문서 구간을 원문 상수로 고정했다 — 루프 문서를 고칠 때 테스트도 함께 고쳐야 한다(의도된 비용).
+  - 리뷰 비용: R2 4회 · R3 3회(codex). Learnings의 "근거 구간 전체 고정"·"리뷰 종료 기준"은 반복되면 `/harness-promote` 후보.
+  - 범위 밖: 메인 체크아웃의 iCloud 충돌 사본 정리(사용자: 나중에), `mystifying-shannon` 워크트리 안 인계 파일을 메인으로 옮기기(워크트리 삭제 전).
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
