@@ -1228,3 +1228,41 @@ test('parsePorcelainPaths: handoff 로 rename 된 원본은 제외 집합에 삼
     .filter(p => !rels.has(p));
   assert.deepEqual(dirty, ['src/real.md'], '원본 삭제가 실제 dirty 로 남는다');
 });
+
+// ─── R2 시나리오 (r2-scenario-evidence) ─────────────────────────────────────
+// 시나리오를 선언한 task에서 verify는 R2 루브릭(-scenario)만 센다 — 다른 프레이밍은 Then 검증을 묻지 않는다.
+
+const SCENARIO_VERIFY_SPEC = '# demo — Spec\n\n## Done evidence\n\n```json\n' + JSON.stringify({
+  version: 1, verify: 'required', tests: 'skip',
+  scenarios: [{ id: 'S1', given: 'g', when: 'w', then: 't', test: 'demo', cmd: 'true' }],
+}) + '\n```\n';
+
+test('R2-S6: scenarios + verify required — -adversarial만 있으면 차단, -scenario가 있으면 통과', async () => {
+  const at = new Date().toISOString();
+  const adversarial = { kind: 'custom-adversarial', engine: 'custom', scope: 'worktree', tip: 'none', at, exitCode: 0, outputBytes: 10 };
+  const scenario = { ...adversarial, kind: 'custom-scenario' };
+
+  const blocked = await makeEvidenceFixture({ spec: SCENARIO_VERIFY_SPEC, metaExtra: { reviews: [adversarial] } });
+  try {
+    const { logs, exitCode } = await runDoneCapture(blocked.dir);
+    assert.equal(exitCode, 1, 'blocks — -adversarial 은 R2를 증명하지 않는다');
+    assert.ok(logs.some(l => l.includes('-scenario') && l.includes('--framing scenario')), '안내가 scenario 프레이밍을 가리킨다');
+  } finally { await rm(blocked.dir, { recursive: true, force: true }); }
+
+  const passed = await makeEvidenceFixture({ spec: SCENARIO_VERIFY_SPEC, metaExtra: { reviews: [adversarial, scenario] } });
+  try {
+    const { logs } = await runDoneCapture(passed.dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds — -scenario 항목 인정');
+  } finally { await rm(passed.dir, { recursive: true, force: true }); }
+});
+
+test('R2-S6: 증거가 빠진 시나리오 선언은 done을 막는다 (R2 1행)', async () => {
+  const spec = SCENARIO_VERIFY_SPEC.replace(',"cmd":"true"', '');
+  assert.notEqual(spec, SCENARIO_VERIFY_SPEC);
+  const { dir } = await makeEvidenceFixture({ spec, metaExtra: { reviews: [] } });
+  try {
+    const { logs, exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1);
+    assert.ok(logs.some(l => l.includes('Done evidence') && l.includes('증거 미연결')));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

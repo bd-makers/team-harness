@@ -487,6 +487,9 @@ member를 추론(2~5)했는데 다른 member에 같은 이름의 task가 있으�
 
 # spec에 선언한 JSON Schema producer/consumer boundary 대조
 harness-team boundary check
+
+# spec Done evidence의 R2 시나리오마다 증거 명령을 실행해 exit 0 대조
+harness-team scenario check
 ```
 
 ### PR 필수 문서 검사 — `harness-team pr-check`
@@ -571,8 +574,21 @@ task는 그 만료 시각부터) 안의 증거를 결정론적으로
 - `tests` (기본 `required`) — 소스가 바뀌었으면 테스트 파일 변경도 요구
 - `review` (기본 `optional`) — `required`면 판정 창 안의 리뷰 마커를 요구 (kind는 대조하지 않음)
 - `verify` (기본 `optional`, 0.20.0) — `required`면 **검증 프레이밍 kind** 마커(`-adversarial` ·
-  `-testcritic` · `-shipcheck` · `-contrarian` · `-simplifier` 접미사)만 증거로 인정합니다.
+  `-testcritic` · `-shipcheck` · `-contrarian` · `-simplifier` · `-scenario` 접미사)만 증거로 인정합니다.
   검증 마커는 review 증거를 겸하지만 역은 성립하지 않습니다.
+- `scenarios` (옵트인, R2 — cycle §4-1b) — 수용 기준을 Given/When/Then 시나리오로 선언하고 시나리오마다 증거
+  (`test` = 테스트 이름, `cmd` = 실행 명령)를 잇습니다. 증거가 빠진 시나리오는 선언 자체가 invalid라 `done`이 막힙니다.
+  `harness-team scenario check`가 각 `cmd`를 실행해 exit 0을 보고, `harness-team review <engine> --framing scenario`가
+  증거가 Then을 실제로 검증하는지(+spec 밖 동작이 없는지) 채점합니다. exit 0만으로는 테스트가 실제로 돌았다는 보장이
+  없어서입니다. 시나리오를 선언하면 `verify: required`는 `-scenario` kind만 셉니다.
+  `cmd`는 `/bin/sh -c`로 그대로 실행되므로 `.harness/gates.json`·npm scripts와 같은 신뢰 수준입니다 — 검토하지 않은 브랜치의 spec에
+  `scenario check`(나 자동 QA 루프)를 돌리지 마세요.
+
+  ```json
+  { "version": 1, "verify": "required", "scenarios": [
+    { "id": "S1", "given": "로그인한 사용자", "when": "로그아웃한다", "then": "세션 쿠키가 지워진다",
+      "test": "logout clears session", "cmd": "npm test -- -t 'logout clears session'" } ] }
+  ```
 
 가드는 마커의 존재·kind·시각만 읽습니다 — finding 내용의 품질 판정은 결정론 게이트 밖이며
 별도 컨텍스트의 검증자와 driver의 재현·판별이 담당합니다(D6,

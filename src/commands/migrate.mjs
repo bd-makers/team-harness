@@ -13,7 +13,7 @@ import { confirm } from '../prompt.mjs';
 import { applyProposal, buildProposal, describeProposal, readGates, GATES_REL } from '../presets.mjs';
 import { installPostCommitHook } from '../git-hooks.mjs';
 import {
-  taskArtifactTemplate, parseReviewMarkers, evidenceWindowStart, isVerifyKind,
+  taskArtifactTemplate, parseReviewMarkers, evidenceWindowStart, verifyEvidencePredicate,
   parseDoneEvidenceDeclaration, VERIFY_KIND_SUFFIXES, trackedUserHandoffs,
 } from './task.mjs';
 import { collectTasks, readTaskMeta, writeTaskMeta, metaRel } from './summary.mjs';
@@ -945,11 +945,12 @@ export async function collectReviewAdoptionCandidates(targetDir) {
 
     const artifact = await readTextSafe(taskFilePath(targetDir, t.user, t.task, 'artifact.md'));
     const { at: windowStart } = evidenceWindowStart(meta);
-    const dropped = (artifact ? parseReviewMarkers(artifact) : [])
-      .filter(m => (windowStart === null || m.at >= windowStart) && isVerifyKind(m.kind));
-
     const spec = await readTextSafe(taskFilePath(targetDir, t.user, t.task, 'spec.md'));
     const evidence = parseDoneEvidenceDeclaration(spec ?? '');
+    const counts = verifyEvidencePredicate(evidence);
+    const dropped = (artifact ? parseReviewMarkers(artifact) : [])
+      .filter(m => (windowStart === null || m.at >= windowStart) && counts(m.kind));
+
     candidates.push({ user: t.user, task: t.task, meta, dropped: dropped.length, verifyRequired: evidence.verify === 'required' });
   }
   return candidates;

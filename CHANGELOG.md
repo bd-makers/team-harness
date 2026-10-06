@@ -18,6 +18,15 @@
   `/harness-spec`은 수집한 원천 위치를 R1 절에도 적는다. 원천 위치는 프로젝트 데이터라 하네스가 정하지 않는다.
   기존 task의 spec은 그대로 두며, interview가 절이 없으면 만들어 채운다. 외부 엔진 프레이밍(`--framing sourcecheck`)은 보류했다 —
   read-only 엔진은 Confluence·Figma MCP에 닿지 않고, `meta.reviews`는 Plan 전 게이트가 되지 못한다.
+- **R2 시나리오 ↔ 증거 대조** (task `r2-scenario-evidence`, cycle §4-1b·§6 묶음 A1, 옵트인). spec `## Done evidence` JSON에
+  `scenarios` 배열(`id`·`given`·`when`·`then`·`test`·`cmd`)을 선언해 수용 기준을 Given/When/Then으로 쓰고 시나리오마다 증거를 잇는다.
+  - 1행(증거 연결): 키가 빠지거나 비었거나 id가 겹치면 선언 invalid → `done`이 막힌다.
+  - 2행(exit 0): 새 하위 명령 `harness-team scenario check`가 각 `cmd`를 `/bin/sh -c`로 실행한다(같은 명령은 1회). 출력 계약은
+    `boundary check`와 같다(`not-configured`·`pass (N checked)`·`failed` + `failure:` 줄, 실패 시 exit 2).
+  - 3·4행(루브릭): 새 검증 프레이밍 `harness-team review <engine> --framing scenario`(kind `<engine>-scenario`) — 증거가 Then을 실제로
+    검증하는가, spec 밖 동작이 없는가. exit 0은 필요조건일 뿐이라(이름 필터 0건 매치도 exit 0) 3행이 그 틈을 본다.
+  - 시나리오를 선언한 task에서 `verify: required`는 `-scenario` kind만 검증 증거로 센다. `done`은 증거 명령을 실행하지 않는다.
+  - **구 CLI(0.46.0 이하)는 `scenarios`를 알 수 없는 키로 보고 `done`을 막는다** — 시나리오를 쓰는 팀은 CLI를 먼저 올린다.
 
 ## [0.46.0] - 2026-10-06
 

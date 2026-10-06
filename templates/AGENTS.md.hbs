@@ -126,6 +126,9 @@ SSOT는 여전히 네 파일이며, TCC는 거기서 파생된 현재 working se
 - **경계 계약**: spec의 `## Boundary contracts` JSON 선언이 있으면 plan checkbox 완료 직전에
   `harness-team boundary check`가 생산자·소비자 JSON Schema의 필수 필드와 기본 type을 대조한다.
   선언이 없으면 `boundary: not-configured`으로 통과한다.
+- **시나리오 대조(R2, 옵트인)**: spec `## Done evidence`의 `scenarios`(Given/When/Then + 증거 `test`·`cmd`)를
+  `harness-team scenario check`가 실행해 exit 0을 보고, `harness-team review <engine> --framing scenario`가
+  증거가 Then을 실제로 검증하는지 채점한다. 선언이 없으면 `scenario: not-configured`다.
 - **commit 시**: post-commit hook이 task handoff를 갱신 — 다음 커밋에 담는다(예외: harness-task).
   `<user>-handoff.md`도 함께 갱신되지만 워크트리 로컬(gitignore)이라 커밋하지 않는다
 - **PR/MR 직전(ship)**: spec·plan·artifact를 최종 갱신하고 준비 완료를 보고한다 — 다이어그램

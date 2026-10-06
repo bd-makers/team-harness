@@ -131,7 +131,10 @@ export function taskSpecTemplate(name) {
 
 <!-- 선택 선언. 아래 주석을 벗기면 done 가드가 검사한다.
      미선언 기본값: "tests": "required" (소스가 바뀌면 테스트 파일 변경을 요구), "review": "optional",
-     "verify": "optional" ("required"면 검증 프레이밍 kind 마커 — -adversarial 등 — 를 요구). -->
+     "verify": "optional" ("required"면 검증 프레이밍 kind 마커 — -adversarial 등 — 를 요구).
+     R2(옵트인): "scenarios": [{ "id", "given", "when", "then", "test", "cmd" }] — 수용 기준을 Given/When/Then으로 쓰고
+     증거(테스트 이름·명령)를 잇는다. \`harness-team scenario check\`가 cmd exit 0을, \`review <engine> --framing scenario\`가
+     "증거가 Then을 검증하는가"를 판정한다. 선언하면 verify 증거는 -scenario kind만 센다. -->
 ## Done evidence
 <!--
 \`\`\`json
@@ -614,7 +617,7 @@ export function parseDoneEvidenceDeclaration(spec) {
     return { status: 'invalid', reason: '"version": 1 이 필요함' };
   }
 
-  const unknown = Object.keys(declaration).filter(k => k !== 'version' && !(k in DONE_EVIDENCE_VALUES));
+  const unknown = Object.keys(declaration).filter(k => k !== 'version' && k !== 'scenarios' && !(k in DONE_EVIDENCE_VALUES));
   if (unknown.length) {
     return { status: 'invalid', reason: `알 수 없는 키: ${unknown.join(', ')}` };
   }
@@ -627,7 +630,32 @@ export function parseDoneEvidenceDeclaration(spec) {
     }
     resolved[key] = declaration[key];
   }
+  if (declaration.scenarios !== undefined) {
+    const reason = scenariosIssue(declaration.scenarios);
+    if (reason) return { status: 'invalid', reason };
+    resolved.scenarios = declaration.scenarios;
+  }
   return { status: 'configured', ...resolved };
+}
+
+// R2 시나리오(harness-cycle §4-1b). 증거가 빠진 시나리오는 선언 자체가 invalid다 — R2 1행
+// "모든 시나리오에 증거가 연결돼 있다"를 파서가 판정하므로 `scenario check`와 `done`이 같은 판정을 쓴다.
+export const SCENARIO_KEYS = ['id', 'given', 'when', 'then', 'test', 'cmd'];
+
+function scenariosIssue(scenarios) {
+  if (!Array.isArray(scenarios) || !scenarios.length) return '"scenarios"는 비어 있지 않은 배열이어야 함';
+  const ids = new Set();
+  for (const [i, s] of scenarios.entries()) {
+    if (s === null || typeof s !== 'object' || Array.isArray(s)) return `scenarios[${i}]가 object가 아님`;
+    const label = typeof s.id === 'string' && s.id.trim() ? s.id : `scenarios[${i}]`;
+    const unknown = Object.keys(s).filter(k => !SCENARIO_KEYS.includes(k));
+    if (unknown.length) return `시나리오 ${label}: 알 수 없는 키 ${unknown.join(', ')}`;
+    const missing = SCENARIO_KEYS.filter(k => typeof s[k] !== 'string' || !s[k].trim());
+    if (missing.length) return `시나리오 ${label}: ${missing.join(', ')}가 비어 있지 않은 문자열이어야 함 (증거 미연결)`;
+    if (ids.has(s.id)) return `시나리오 ${label}: id 중복`;
+    ids.add(s.id);
+  }
+  return null;
 }
 
 // 언어 무관 소스 확장자 화이트리스트. 문서(.md)·설정(.json/.yml)만 바뀐 task에서는
@@ -707,7 +735,7 @@ const REVIEW_MARKER_RE = /<!--\s*harness:review\s+([^>]*?)-->/g;
 // verify 증거로 인정되는 검증 프레이밍 kind 접미사. 열거의 정본은 commands/harness-review.md
 // 5단계다 — src 상수와의 동기화는 pin 테스트가 강제한다. 엔진 자리는 custom 엔진 이름이 올 수
 // 있어 열거할 수 없으므로 접미사만 대조한다. 일반 review 증거는 현행대로 kind 비대조다.
-export const VERIFY_KIND_SUFFIXES = ['adversarial', 'testcritic', 'shipcheck', 'contrarian', 'simplifier'];
+export const VERIFY_KIND_SUFFIXES = ['adversarial', 'testcritic', 'shipcheck', 'contrarian', 'simplifier', 'scenario'];
 const VERIFY_KIND_RE = new RegExp(`-(?:${VERIFY_KIND_SUFFIXES.join('|')})$`);
 
 // 가드 밖에서도 같은 판정이 필요하다 — `migrate --adopt-reviews` 가 "채택하면 잃는 검증 증거"를
@@ -763,6 +791,13 @@ async function repoPrefix(targetDir) {
 
 export function isVerifyKind(kind) {
   return VERIFY_KIND_RE.test(kind ?? '');
+}
+
+// spec 선언에 따라 verify 증거로 세는 kind. 시나리오를 선언한 task는 R2 루브릭(-scenario)만 센다 —
+// 다른 프레이밍은 "증거가 Then을 검증하는가"를 묻지 않으므로 R2를 증명하지 않는다.
+// 가드와 `migrate --adopt-reviews`가 같은 판정을 써야 사용자가 보는 수와 가드가 세는 수가 갈라지지 않는다.
+export function verifyEvidencePredicate(evidence) {
+  return evidence && evidence.scenarios ? (kind => /-scenario$/.test(kind ?? '')) : isVerifyKind;
 }
 
 // `meta.reviews[]` 항목을 마커와 같은 형태 `{ kind, at, scope, tip }`로 정규화한다. 손으로 고쳐
@@ -884,11 +919,16 @@ async function collectDoneIssues(targetDir, active) {
     // verify는 검증 프레이밍 kind만 센다 — 검증 마커는 review도 겸하지만 역은 성립하지 않는다.
     // 가드는 존재·kind·시각만 읽는다(D6: finding 내용 판정은 결정론 게이트 밖).
     const verifySource = cliOwned ? freshCli : freshMarkers;
-    if (evidence.verify === 'required' && !verifySource.some(m => isVerifyKind(m.kind))) {
+    const scenarioTask = Boolean(evidence.scenarios);
+    const counts = verifyEvidencePredicate(evidence);
+    if (evidence.verify === 'required' && !verifySource.some(m => counts(m.kind))) {
       const where = cliOwned
         ? '검증 항목이 meta.reviews에 없음 (`harness-team review <engine> --framing <접미사>` 실행, testcritic 은 `--rubric` 추가 — 손으로 쓴 artifact 마커는 세지 않는다)'
         : '검증 마커가 artifact에 없음 (검증 프레이밍 리뷰 실행 후 기록)';
-      issues.push(`spec이 \`verify: required\`인데 이 task 기간의 ${where} (kind 접미사 ${VERIFY_KIND_SUFFIXES.map(s => `-${s}`).join('·')})`);
+      const allowed = scenarioTask
+        ? 'scenarios 선언 task는 -scenario 만 — `--framing scenario`'
+        : `kind 접미사 ${VERIFY_KIND_SUFFIXES.map(s => `-${s}`).join('·')}`;
+      issues.push(`spec이 \`verify: required\`인데 이 task 기간의 ${where} (${allowed})`);
     }
   }
 
