@@ -447,8 +447,8 @@ test('P3: custom 의 상대경로 preflight 는 targetDir 기준 — process cwd
 
 // ─── 프레이밍 프롬프트 src 이관 (framing-prompts-in-src) ─────────────────────
 
-test('프레이밍 템플릿 7종 ↔ 커맨드 문서 마커 다음 text 블록 동기화 (pin) + allowlist 양방향', async () => {
-  assert.equal(FRAMING_TEMPLATES.length, 7, '5 접미사 + testcritic 루브릭 2 추가');
+test('프레이밍 템플릿 8종 ↔ 커맨드 문서 마커 다음 text 블록 동기화 (pin) + allowlist 양방향', async () => {
+  assert.equal(FRAMING_TEMPLATES.length, 8, '6 접미사 + testcritic 루브릭 2 추가');
   assert.deepEqual([...new Set(FRAMING_TEMPLATES.map(t => t.framing))].sort(), [...VERIFY_KIND_SUFFIXES].sort(),
     '템플릿의 framing 집합 == verify allowlist');
   assert.deepEqual(FRAMING_TEMPLATES.filter(t => t.framing === 'testcritic').map(t => t.rubric), RUBRICS);
@@ -565,4 +565,31 @@ test('프레이밍 문서 7종과 verify 힌트에 "프롬프트를 파일에 �
   assert.ok(!task.includes('--prompt-file <프롬프트>'), 'verify 힌트가 파일 경로를 요구하지 않는다');
   const review = await readFile(new URL('../commands/harness-review.md', import.meta.url), 'utf8');
   assert.ok(!review.includes('자기 프롬프트를 파일에 두고'), 'harness-review.md 5단계');
+});
+
+test('R2-S7: --framing scenario 는 kind <engine>-scenario 로 기록하고 src 템플릿(spec·artifact 경로 치환)을 엔진에 넘긴다', async () => {
+  const { dir } = await makeFixture();
+  const prompts = [];
+  const runEngine = async ({ prompt }) => { prompts.push(prompt); return { exitCode: 0, stdout: 'ok', stderr: '' }; };
+  const { restore } = captureLogs();
+  try {
+    const r = await withExit(() => runReview({ targetDir: dir, flags: { framing: 'scenario' }, taskArgs: ['custom'] }, { runEngine }));
+    assert.equal(r.result.recorded, true);
+    const entry = (await readTaskMeta(dir, 'tester', 'demo')).reviews[0];
+    assert.equal(entry.kind, 'custom-scenario');
+    assert.equal(entry.scope, 'worktree', 'git target — 종전 scope 결정');
+    const { template } = findFramingTemplate('scenario');
+    assert.equal(template.doc, 'commands/harness-review.md', '미러는 harness-review.md');
+    // 엔진에 간 프롬프트 전체 == 문서 미러 블록에 CLI 치환을 손으로 적용한 값. src 를 거치지 않고 문서에서
+    // 기대값을 만들어야 "미러와 같은 템플릿"(spec S7 Then)을 증명한다 — 부분 includes 는 문장 삭제를 놓친다.
+    const doc = await readFile(new URL('../commands/harness-review.md', import.meta.url), 'utf8');
+    const block = doc.slice(doc.indexOf(promptMarker({ framing: 'scenario' }))).match(/```text\n([\s\S]*?)\n```/)[1];
+    const expected = block
+      .replace('<working tree changes | diff against <base>>', 'working tree changes')
+      .replace('<spec path>', 'docs/tester/demo/demo-spec.md')
+      .replace('<artifact path>', 'docs/tester/demo/demo-artifact.md')
+      .replace(' <focus arguments, if any>', '');
+    assert.equal(prompts[0], expected, '엔진 프롬프트 == 치환한 문서 미러');
+    assert.ok(expected.includes('E1 [BLOCKER]') && expected.includes('exit 0만으로는 pass가 아니다'), '미러 블록을 실제로 읽었다');
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
 });

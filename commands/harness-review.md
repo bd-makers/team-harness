@@ -108,14 +108,15 @@ Raw slash-command 인수:
    접미사로 구분한다 — `<engine>-adversarial`(harness-adversarial-review),
    `<engine>-testcritic`(테스트 3형제 6단계 검증자 인계), `<engine>-shipcheck`(ship
    정합 검증), `<engine>-contrarian`·`<engine>-simplifier`(페르소나 외부 엔진 모드 —
-   대상이 diff가 아니라 활성 task의 spec/plan 문서라 `scope=task-docs`로 남긴다).
+   대상이 diff가 아니라 활성 task의 spec/plan 문서라 `scope=task-docs`로 남긴다),
+   `<engine>-scenario`(R2 시나리오 대조 — 아래 "R2 시나리오 대조" 절).
    가드의 대조 규칙은 증거 키에 따라 다르다 — `review: required`는 kind를 목록 대조하지
    않아 어떤 kind든(meta 항목이든 artifact 마커든) 인정하지만, `verify: required`는 kind가
    **위 접미사 열거로 끝나는 항목만** 검증 증거로 센다(이 열거가 verify kind allowlist의
    정본이고, `src/commands/task.mjs`의 상수는 pin 테스트로 동기화된다). `--framing`도 이 열거
    밖의 접미사를 거부한다. 검증 증거는 review 증거를 겸하지만 역은 성립하지 않는다.
-   프레이밍 프롬프트의 정본은 `src/commands/review-prompts.mjs`의 템플릿 7종(접미사 5 + testcritic
-   루브릭 `unit`·`component`·`integration`)이고, 각 프레이밍 커맨드 문서의 `<!-- harness:prompt … -->`
+   프레이밍 프롬프트의 정본은 `src/commands/review-prompts.mjs`의 템플릿 8종(접미사 6 + testcritic
+   루브릭 `unit`·`component`·`integration`)이고, 각 프레이밍 커맨드 문서의 `harness:prompt` 주석
    마커 다음 text 블록이 미러다(pin 테스트). 프레이밍 커맨드는
    `harness-team review <engine> --framing <접미사> [--rubric <루브릭>] [focus ...]`로 호출한다 —
    kind 조립·템플릿 채우기(scope·활성 task 경로·focus)는 CLI가 한다. contrarian·simplifier는 scope가
@@ -197,6 +198,32 @@ gitignore 대상이 아니다)에서 커맨드 템플릿을 읽어 `{prompt}`를
 파일 또는 `custom.command` 키가 없으면 **실패시키지 말고** 위 스키마로 설정하도록
 안내하고 종료한다. 커스텀 리뷰어도 read-only여야 한다 — 쓰기 가능한 커맨드를
 등록하는 것은 사용자 책임이지만, 안내 시 read-only 요건을 명시한다.
+
+## R2 시나리오 대조 — `--framing scenario`
+
+spec의 `## Done evidence`에 `scenarios`(Given/When/Then + 증거 `test`·`cmd`)를 선언한 task의 R2
+판정이다(`docs/harness-cycle.md` §4-1b). 4행 중 기계 2행은 `harness-team scenario check`가 판정한다 —
+모든 시나리오에 증거가 연결됐는지(선언 파서), 증거 명령이 exit 0인지. **exit 0은 필요조건일 뿐이다**:
+이름 필터가 아무 테스트도 고르지 못해도 러너는 exit 0을 낼 수 있다. 그래서 루브릭 2행은 별도 컨텍스트의
+read-only 검증자가 채점한다 — `harness-team review <engine> --framing scenario [focus ...]`. 대상은
+기본 리뷰와 같은 git scope(2단계)이고, 엔진 결정·기록·발견 검증은 이 문서의 절차 그대로다.
+시나리오를 선언한 task에서 `verify: required`는 `-scenario` kind만 검증 증거로 센다.
+프롬프트는 아래 블록이다 — 정본은 `src/commands/review-prompts.mjs`의 `scenario` 템플릿이고 이 블록은
+미러다(pin 테스트가 동기화).
+
+<!-- harness:prompt framing=scenario -->
+```text
+You are an independent read-only verifier checking that this change proves its spec scenarios — R2 rubric rows (D6).
+Scope: <working tree changes | diff against <base>>. Inspect the changes yourself with git (git status, git diff).
+Read these files first: <spec path> (the `scenarios` array under `## Done evidence`) and <artifact path>. Do not modify anything.
+Score each rubric row below as one finding: id · 항목 · 심각도(BLOCKER/MAJOR/MINOR) · 판정(pass/fail/na) · 근거.
+The machine rows (every scenario has evidence, every evidence command exits 0) belong to `harness-team scenario check` — do not re-judge them.
+근거는 테스트 코드·diff·기록된 실행 출력 인용이어야 하고, 증거 없는 항목은 pass가 아니라 na다.
+exit 0만으로는 pass가 아니다 — 이름 필터가 아무 테스트도 고르지 못해도 exit 0이 나고 요약의 통과 개수도 파일 단위로 1이 찍힐 수 있다. 실행 출력에 그 테스트의 이름이 나와야 한다.
+E1 [BLOCKER] 각 시나리오의 증거(test·cmd)가 그 Then을 실제로 검증한다 — cmd가 그 테스트를 실제로 실행하고, 테스트가 Then의 결과를 assert해 Then을 깨뜨리는 변이에서 실패한다 (fail이면 시나리오 id를 근거에 적는다)
+E2 [MAJOR] spec 밖 동작이 diff에 없다 — 어떤 시나리오·요구사항에도 대응하지 않는 동작 변경이 없다 (있으면 문서에 사유 기록)
+End with a verdict that lists every fail. <focus arguments, if any>
+```
 
 ## 예시
 

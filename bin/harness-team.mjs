@@ -18,6 +18,7 @@ import { runRelease } from '../src/commands/release.mjs';
 import { runSessionContext } from '../src/commands/session-context.mjs';
 import { runContext } from '../src/commands/context.mjs';
 import { runBoundary } from '../src/commands/boundary.mjs';
+import { runScenario } from '../src/commands/scenario.mjs';
 import { runSummary } from '../src/commands/summary.mjs';
 import { runObserve } from '../src/commands/observe.mjs';
 import { runRules } from '../src/commands/rules.mjs';
@@ -51,13 +52,13 @@ async function main() {
 
   const { cmd, positional, flags } = invocation;
 
-  const taskCmds = new Set(['task', 'list', 'summary', 'done', 'handoff', 'retro', 'release', 'context', 'boundary', 'session-context', 'observe', 'rules', 'review', 'config', 'diagram', 'gate']);
+  const taskCmds = new Set(['task', 'list', 'summary', 'done', 'handoff', 'retro', 'release', 'context', 'boundary', 'scenario', 'session-context', 'observe', 'rules', 'review', 'config', 'diagram', 'gate']);
   const target = flags.target || (taskCmds.has(cmd) ? process.cwd() : positional[0]) || process.cwd();
   const ctx = {
     root: ROOT,
     targetDir: resolve(process.cwd(), target),
     flags,
-    taskArgs: (cmd === 'task' || cmd === 'retro' || cmd === 'release' || cmd === 'context' || cmd === 'boundary' || cmd === 'rules' || cmd === 'review' || cmd === 'config' || cmd === 'diagram' || cmd === 'gate') ? positional : [],
+    taskArgs: (cmd === 'task' || cmd === 'retro' || cmd === 'release' || cmd === 'context' || cmd === 'boundary' || cmd === 'scenario' || cmd === 'rules' || cmd === 'review' || cmd === 'config' || cmd === 'diagram' || cmd === 'gate') ? positional : [],
   };
 
   switch (cmd) {
@@ -79,6 +80,7 @@ async function main() {
     case 'handoff': return runHandoffAuto(ctx);
     case 'context': return runContext(ctx);
     case 'boundary': return runBoundary(ctx);
+    case 'scenario': return runScenario(ctx);
     case 'session-context': return runSessionContext(ctx);
     case 'retro': return runRetro(ctx);
     case 'rules': return runRules(ctx);

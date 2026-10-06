@@ -136,3 +136,18 @@ test('실제 CLI: 확인에서 거부하면 meta 는 바이트 단위로 그대�
     assert.equal(await readFile(metaPath, 'utf8'), before);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+// 가드와 같은 판정: 시나리오를 선언한 task는 -scenario 만 verify 증거다 — 다른 검증 마커는 지금도
+// 증거가 아니므로 "채택하면 잃는 증거"로 세면 안 된다 (r2-scenario-evidence codex 리뷰 P3).
+test('R2: scenarios 선언 task는 -scenario 마커만 잃는 증거로 센다', async () => {
+  const at = '2026-09-05T00:00:00.000Z';
+  const { dir, taskDir } = await makeLegacyTask({ markers: [MARKER('codex-adversarial', at), MARKER('codex-scenario', at)] });
+  const scenario = { id: 'S1', given: 'g', when: 'w', then: 't', test: 'demo', cmd: 'true' };
+  await writeFile(join(taskDir, 'demo-spec.md'),
+    `# demo — Spec\n\n## Done evidence\n\n\`\`\`json\n${JSON.stringify({ version: 1, verify: 'required', tests: 'skip', scenarios: [scenario] })}\n\`\`\`\n`);
+  try {
+    const [c] = await collectReviewAdoptionCandidates(dir);
+    assert.equal(c.dropped, 1, '-adversarial 은 세지 않고 -scenario 하나만');
+    assert.equal(c.verifyRequired, true);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

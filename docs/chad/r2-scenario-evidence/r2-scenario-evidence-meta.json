@@ -1,0 +1,48 @@
+{
+  "user": "chad",
+  "task": "r2-scenario-evidence",
+  "created": "2026-10-06",
+  "firstActivatedAt": "2026-10-06T08:00:26.213Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "894abb4a52c122481e15c9e8998f2e8468c434f4",
+      "at": "2026-10-06T08:35:19.989Z",
+      "exitCode": 0,
+      "outputBytes": 467
+    },
+    {
+      "kind": "codex-scenario",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "894abb4a52c122481e15c9e8998f2e8468c434f4",
+      "at": "2026-10-06T08:37:42.416Z",
+      "exitCode": 0,
+      "outputBytes": 1966
+    },
+    {
+      "kind": "codex-scenario",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "894abb4a52c122481e15c9e8998f2e8468c434f4",
+      "at": "2026-10-06T08:40:57.925Z",
+      "exitCode": 0,
+      "outputBytes": 1881
+    },
+    {
+      "kind": "codex-scenario",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "894abb4a52c122481e15c9e8998f2e8468c434f4",
+      "at": "2026-10-06T08:43:56.814Z",
+      "exitCode": 0,
+      "outputBytes": 2544
+    }
+  ]
+}

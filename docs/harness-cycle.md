@@ -87,6 +87,10 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
   4. [루브릭] spec 밖의 동작이 들어오지 않았다.
 - 시나리오를 실행 가능한 테스트로 묶는 러너(Cucumber 등)는 스택별이므로 **프리셋 옵션**(§4-2)으로 둔다. 하네스가 강제하는 것은 형식과 대조뿐이다.
 - 실행 시점은 R3와 같은 리뷰 호출 안에서 별도 절로 돌려도 된다(호출 비용 1회).
+- **구현 (2026-10-06, task `r2-scenario-evidence`)**: "표"는 마크다운 표가 아니라 `## Done evidence` JSON의 `scenarios` 배열이다
+  (증거 명령의 `|`가 표를 깨고, JSON 선언 파서를 공유한다). 1행은 선언 파서, 2행은 `harness-team scenario check`,
+  3·4행은 `harness-team review <engine> --framing scenario`. exit 0은 필요조건일 뿐이다 — 이름 필터가 0건을 골라도 exit 0일 수 있어 3행이 막는다.
+  `done`은 증거 명령을 실행하지 않는다(기각 사유는 task spec).
 
 ### 4-2. 언어별 템플릿을 하네스가 제공할 것인가
 - **권장**: 제공하되 **코드가 아니라 데이터(프리셋)로** 제공한다.

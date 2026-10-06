@@ -71,6 +71,7 @@ export const COMMANDS = [
   { name: 'handoff', args: '', summary: 'Update handoff from latest commit (post-commit hook)', flags: [] },
   { name: 'context', args: '<init|check>', summary: "Initialize or validate the active task's Context Card", flags: [] },
   { name: 'boundary', args: 'check', summary: 'Compare declared JSON Schema producer/consumer boundaries', flags: [] },
+  { name: 'scenario', args: 'check', summary: "Run each Done evidence scenario's evidence command and require exit 0 (R2 machine rows)", flags: [] },
   // `--codex-hook` wraps the same text in Codex's SessionStart envelope. Codex does not inject a
   // hook's plain stdout (measured 2026-09-12); only hookSpecificOutput.additionalContext reaches
   // the model. Claude reads plain stdout, so the default output is unchanged.

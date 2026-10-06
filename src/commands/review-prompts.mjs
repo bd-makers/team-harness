@@ -50,6 +50,21 @@ export const FRAMING_TEMPLATES = [
     ].join('\n'),
   },
   {
+    framing: 'scenario', target: 'git', doc: 'commands/harness-review.md',
+    template: [
+      "You are an independent read-only verifier checking that this change proves its spec scenarios — R2 rubric rows (D6).",
+      'Scope: <working tree changes | diff against <base>>. Inspect the changes yourself with git (git status, git diff).',
+      'Read these files first: <spec path> (the `scenarios` array under `## Done evidence`) and <artifact path>. Do not modify anything.',
+      FINDING_LINE,
+      'The machine rows (every scenario has evidence, every evidence command exits 0) belong to `harness-team scenario check` — do not re-judge them.',
+      '근거는 테스트 코드·diff·기록된 실행 출력 인용이어야 하고, 증거 없는 항목은 pass가 아니라 na다.',
+      'exit 0만으로는 pass가 아니다 — 이름 필터가 아무 테스트도 고르지 못해도 exit 0이 나고 요약의 통과 개수도 파일 단위로 1이 찍힐 수 있다. 실행 출력에 그 테스트의 이름이 나와야 한다.',
+      'E1 [BLOCKER] 각 시나리오의 증거(test·cmd)가 그 Then을 실제로 검증한다 — cmd가 그 테스트를 실제로 실행하고, 테스트가 Then의 결과를 assert해 Then을 깨뜨리는 변이에서 실패한다 (fail이면 시나리오 id를 근거에 적는다)',
+      'E2 [MAJOR] spec 밖 동작이 diff에 없다 — 어떤 시나리오·요구사항에도 대응하지 않는 동작 변경이 없다 (있으면 문서에 사유 기록)',
+      'End with a verdict that lists every fail. <focus arguments, if any>',
+    ].join('\n'),
+  },
+  {
     framing: 'contrarian', target: 'task-docs', doc: 'commands/harness-contrarian.md',
     template: [
       "You are an independent read-only verifier challenging the assumptions in this task's spec and plan (D6).",
