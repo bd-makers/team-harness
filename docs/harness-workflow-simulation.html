@@ -284,7 +284,7 @@
     <h1>Task Workflow Simulation</h1>
     <p>새로운 harness task 시스템의 전체 흐름 — init부터 완료, 세션 재개, task 전환까지의 시나리오별 시뮬레이션</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.45.0</span>
+      <span class="tag tag-purple">v0.46.0</span>
       <span class="tag tag-blue">post-commit 자동화</span>
       <span class="tag tag-green">증거 기반 종결 가드 7종</span>
       <span class="tag tag-orange">원장은 생성물</span>
@@ -293,7 +293,9 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #a78bfa;background:rgba(167,139,250,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
-    <strong>🆕 0.40.1–0.45.0 — user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시:</strong>
+    <strong>🆕 0.40.1–0.46.0 — user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사:</strong>
+    <br>
+    <code>0.46.0</code> init·sync가 <strong>pre-push 훅</strong>도 설치해 push 때 <code>harness-team pr-check</code>가 PR에 담길 task 문서(spec·plan·handoff·artifact — 없거나 비었거나 템플릿 그대로면 차단)를 확인하고, <code>/harness-ship</code>도 준비 완료 전에 같은 검사를 돌린다(아래 <strong>S1</strong>·ship). 기존 훅에는 post-commit·pre-push 모두 <strong>맨 위</strong>에 들어가고 셸이 아닌 훅은 건너뛴다.
     <br>
     <code>0.45.0</code> <code>init</code>이 적용한 하네스 버전을 <code>.harness/render-state.json</code>의 <code>harnessVersion</code>으로 남기고, <code>doctor</code>가 <code>project applied X · CLI Y · plugin Z</code> 한 줄로 보여 준다 — 적용 버전이 CLI보다 낮으면 <code>init --yes</code>를 처방한다(아래 <strong>S1</strong>).
     <br>
@@ -513,8 +515,9 @@
         <div class="step-body">
           <div class="step-actor actor-system">System (init + sync 공통)</div>
           <div class="step-content">
-            <p><span class="hook-badge hook-post">post-commit</span> hook 설치</p>
+            <p><span class="hook-badge hook-post">post-commit</span>·<span class="hook-badge hook-post">pre-push</span> hook 설치</p>
             <div class="step-file">.git/hooks/post-commit → harness-team handoff 2&gt;/dev/null || true</div>
+            <div class="step-file">.git/hooks/pre-push → harness-team pr-check --pre-push (PR 필수 task 문서 검사, 0.46.0)</div>
           </div>
           <div class="step-detail"><code>core.hooksPath</code>가 설정돼 있으면(husky·lefthook) 그 디렉터리에 설치하고, 그 디렉터리가 없으면 안내만 한다. <code>core.hooksPath</code>가 없는데 <code>.git/hooks</code>가 없으면 만들고 설치한다(0.40.2 — 전에는 조용히 건너뛰었다).</div>
           <div class="auto-badge">⚡ 이후 모든 git commit에서 자동 실행</div>
@@ -531,8 +534,10 @@
     </div>
 
     <div class="infobox">
-      <strong>migrate/sync도 동일:</strong> <code>.harness/config.json</code>이 없으면 동일하게 사용자 이름을 확인하고,
-      post-commit hook이 없으면 설치합니다. 이미 있으면 skip.
+      <strong>sync도 동일:</strong> <code>.harness/config.json</code>이 없으면 동일하게 사용자 이름을 확인하고, post-commit·pre-push hook을 다시 설치합니다.
+      훅 파일이 없으면 새로 만들고, 있으면 블록을 <strong>맨 위</strong>(shebang 다음)에 넣으며, 이미 들어 있으면 그대로 둡니다.
+      python·node 같은 셸이 아닌 훅은 건드리지 않고 직접 호출을 안내합니다(0.46.0). <code>migrate</code>는 git 훅을 설치하지 않습니다 —
+      0.46.0 이전 설치본은 업그레이드 후 <code>harness-team sync</code>를 한 번 실행해야 pre-push 훅을 받습니다.
     </div>
 
     <div class="infobox" style="border-left-color:#f5a623">
@@ -1036,9 +1041,10 @@ login-bug
       <div class="step">
         <div class="step-num step-num-green">6</div>
         <div class="step-body">
-          <div class="step-actor actor-system">보고</div>
+          <div class="step-actor actor-system">pr-check → 보고 <span style="text-transform:none;font-weight:400">(0.46.0, D11)</span></div>
           <div class="step-content">
-            <p>"PR/MR 준비 완료" — 갱신한 문서와 남은 리스크를 요약한다. <strong>여기서 멈춘다.</strong></p>
+            <p>문서 갱신을 <strong>커밋한 뒤</strong> <code>harness-team pr-check --base "$BASE"</code> — diff가 건드린 task마다 spec·plan·handoff·artifact가 커밋에 있고, 비어 있지 않으며, 템플릿 그대로가 아닌지 본다. exit 1이면 "준비 완료"를 선언하지 않는다(pre-push 훅과 CI가 같은 검사로 막는다).</p>
+            <p>"PR/MR 준비 완료" — 갱신한 문서·pr-check 결과·남은 리스크를 요약한다. <strong>여기서 멈춘다.</strong></p>
           </div>
         </div>
       </div>
@@ -1166,7 +1172,7 @@ login-bug
 </main>
 
 <footer>
-  harness-aijient-team-plugin v0.45.0 — Task Workflow Simulation &nbsp;·&nbsp; 2026-10-03
+  harness-aijient-team-plugin v0.46.0 — Task Workflow Simulation &nbsp;·&nbsp; 2026-10-06
 </footer>
 
 

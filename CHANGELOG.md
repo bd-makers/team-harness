@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.46.0] - 2026-10-06
+
 ### Added
 - **PR 필수 task 문서 검사와 git pre-push 훅** (task `pr-check`, #125, D11·cycle §6-4). `harness-team pr-check`는 `base...rev` diff가 건드린
   task마다 spec·plan·handoff·artifact가 커밋에 있고 템플릿 그대로가 아닌지 판정한다(실패면 exit 1, 다이어그램은 권장 안내만).
@@ -70,10 +72,10 @@
   백업이 저장소 밖 유일 사본일 수 있으니, 원할 때 gitignore를 풀고 커밋하라. migrate의 관리 절 백업(`.harness/backup/`)은 그대로다.
 
 ### Fixed
-- **빈 task 문서가 pr-check·done을 통과하던 문제** (task `empty-doc-guard`). pr-check와 `done`의 artifact 검사는 "템플릿 그대로인가"만, `done`의 plan 검사는 "미완 `- [ ]`가 남았는가"만 봐서 0바이트·공백뿐인 문서는 통과했다.
+- **빈 task 문서가 pr-check·done을 통과하던 문제** (task `empty-doc-guard`, #129). pr-check와 `done`의 artifact 검사는 "템플릿 그대로인가"만, `done`의 plan 검사는 "미완 `- [ ]`가 남았는가"만 봐서 0바이트·공백뿐인 문서는 통과했다.
   이제 pr-check는 `<문서> 가 비어 있음`으로 막고(exit 1), `done`은 빈 plan·빈 artifact를 차단 사유로 낸다. plan 파일이 아예 없는 경우의 `done` 동작은 그대로다.
   실례로 미완 단계를 남긴 채 0바이트가 된 `dangerous-git-end-boundary` plan을 복원했다.
-- **post-commit 훅 설치가 기존 훅 끝에 붙던 문제** (task `post-commit-prepend`, followups 13). init·sync는 이제 handoff 줄을 기존 post-commit
+- **post-commit 훅 설치가 기존 훅 끝에 붙던 문제** (task `post-commit-prepend`, #128, followups 13). init·sync는 이제 handoff 줄을 기존 post-commit
   훅의 맨 위(shebang 다음)에 넣는다. 끝에 붙이면 앞선 `exit`·`exec` 뒤에서 handoff가 조용히 안 돌았다(git-lfs 훅은 lfs가 없으면 `exit 2`).
   python·node 같은 셸이 아닌 훅은 건드리지 않고 `harness-team handoff`를 직접 부르라고 안내한다 — 예전에는 셸 줄이 붙어 그 훅이 문법
   오류로 죽었다. 이제 handoff가 기존 훅 줄보다 먼저 돈다. 새로 만드는 훅 파일은 그대로다.

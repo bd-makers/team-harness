@@ -201,7 +201,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.45.0</span>
+      <span class="tag tag-purple">v0.46.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -209,6 +209,12 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.46.0 — PR 필수 task 문서 검사 · 커밋 게이트는 팀 파일 · 모노레포 게이트:</strong>
+    <br>
+    <code>0.46.0</code> <strong>하네스가 강제하는 유일한 것(D11)을 <code>harness-team pr-check</code>가 판정한다</strong> — diff가 건드린 task마다 spec·plan·handoff·artifact가 커밋에 있고 비어 있지 않으며 템플릿 그대로가 아닌지 본다. init·sync가 설치하는 <strong>pre-push 훅</strong>과 <code>/harness-ship</code>이 같은 검사를 돌리고, doctor는 pre-push 블록 유실을 알린다(기존 설치본은 <code>harness-team sync</code> 1회).
+    커밋 게이트는 훅 하드코딩 대신 팀이 커밋하는 <code>.harness/gates.json</code>(<code>gate commit</code>·<code>gate format</code>)이 정하고, workspace 저장소는 turbo·nx 위임 또는 디렉터리별 목록을 쓴다.
+    결정 로그를 팀 운영(D2·D4·D5·D6)과 플러그인 결정으로 나눴고, 백업 클론 군과 개인 도구 문서를 뺐다. post-commit 훅도 기존 훅 맨 위에 들어가고, 빈 task 문서는 pr-check·<code>done</code>이 막는다.
+    <br><br>
     <strong>🆕 0.45.0 — 프로젝트에 적용된 하네스 버전을 doctor가 보여 준다:</strong>
     <br>
     <code>0.45.0</code> <strong><code>init</code>이 적용한 하네스 버전을 <code>.harness/render-state.json</code>의 <code>harnessVersion</code>으로 남기고, <code>doctor</code>가 <code>harness version: project applied X · CLI Y · plugin Z</code> 한 줄(<code>--json</code>은 <code>versions</code>)을 보여 준다.</strong> 적용 버전이 실행 중인 CLI보다 낮으면 <code>harness-team init --yes</code>를 처방하는 경고, 높으면 구버전 CLI로 <code>init</code>하면 관리 절이 퇴행할 수 있다는 경고를 낸다(차단 없음). 기록이 없는 기존 설치본은 <code>unknown (기록 이전 설치)</code>로 보이고 경고하지 않는다. 타임스탬프는 없어 같은 버전 재실행은 diff가 없다. <code>templates/</code>는 불변 — 소비자는 플러그인 갱신 뒤 기록을 남기려면 <strong><code>init --yes</code></strong>를 한 번 돌린다(<code>migrate</code>는 render-state를 쓰지 않음).
@@ -940,7 +946,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.45.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.46.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

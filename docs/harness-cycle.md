@@ -25,18 +25,18 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 
 ## 2. 사이클
 
-표기: ✓ 있음 · △ 약함 · ✗ 없음 (현재 0.45.0 기준)
+표기: ✓ 있음 · △ 약함 · ✗ 없음 (현재 0.46.0 기준)
 
 **R = 검토 지점(Review point)**: R1 원천 문서 검토(S1 직후) · R2 시나리오 ↔ 증거 대조(S4 구현 직후) · R3 코드 리뷰(S6, PR 전). S = 사이클 단계(Stage).
 
 | 단계 | 산출물 | 게이트 | 현재 |
 |---|---|---|---|
-| **S0 셋업** | AGENTS/CLAUDE, Codex 배선, **검증 프리셋** | — | ✓ init · △ 프리셋 없음(RN 하드코딩) |
+| **S0 셋업** | AGENTS/CLAUDE, Codex 배선, **검증 프리셋** | — | ✓ init · ✓ 프리셋(`templates/presets/` — 커밋 게이트·RN rules) |
 | **S1 Spec** | `spec.md` (PRD·Figma·API 문서·기획서·정책서 소스) | **R1 소스 검토**(차단) | ✓ harness-spec · △ 소스 검토 없음(Ambiguity 게이트·contrarian은 spec 자체만 본다) |
 | **S2 Plan** | `plan.md` + **plan 다이어그램**(이해용) | 개발자 확인 | ✓ plan · △ 다이어그램 옵트인 |
 | **S3 구현** | 코드 · TCC(작업 카드) | — (자유) | ✓ 자유 · ✗ **기본 루프** 없음 |
 | **S4 구현 검증** | spec 시나리오(Given/When/Then) ↔ 증거 | **R2 시나리오 대조**(기계 2 + 루브릭 2, §4-1b) | △ done 가드가 체크박스·evidence만 확인 |
-| **S5 커밋** | — | **검증 프리셋 실행**(lint·tsc·test) | △ pre-commit-check (typecheck·test, node 전용) |
+| **S5 커밋** | — | **검증 프리셋 실행**(lint·tsc·test) | ✓ `gate commit` — 팀 파일 `.harness/gates.json`(프리셋 제안, workspace는 turbo·nx 위임 또는 디렉터리별) |
 | **S6 코드 리뷰** | 리뷰 기록(`## Reviews`·meta.reviews) | **R3 로컬 리뷰** (PR 전 필수) | △ spec이 required 선언할 때만 강제 |
 | **S7 PR** | spec·plan·handoff·artifact 커밋, **PR 다이어그램**(권장 — 실제 구조 + plan 대비 변화) | **`pr-check`**(4문서 차단, 다이어그램은 안내) | ✓ pr-check · pre-push 훅 · ship 연동 |
 | **S8 지식화** | 최상위 **`wiki/`** 항목(기능·모듈 단위), task 폴더 삭제 | — | ✗ 없음 (task 단위로만 쌓임) |
