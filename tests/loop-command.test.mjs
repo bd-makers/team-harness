@@ -23,6 +23,19 @@ function section(doc, heading) {
   return end < 0 ? rest : rest.slice(0, end);
 }
 
+// Collapses whitespace so a sentence wrapped across lines compares as one line.
+const squash = (text) => text.replace(/\s+/g, ' ').trim();
+
+// The whole `- **<head>**` bullet: from its marker to the next top-level bullet
+// or the end of the section, whitespace-collapsed.
+function bullet(text, head) {
+  const start = text.indexOf(`\n- **${head}**`);
+  assert.ok(start >= 0, `- **${head}** bullet이 있어야`);
+  const rest = text.slice(start + 1);
+  const end = rest.search(/\n- /);
+  return squash(end < 0 ? rest : rest.slice(0, end));
+}
+
 function inOrder(text, needles) {
   let at = -1;
   for (const needle of needles) {
@@ -53,6 +66,11 @@ test('loop: QA runs machine checks before the read-only rubric and records named
   ]);
   assert.match(qa, /기계 검사는 오케스트레이터가 실행한다/);
   assert.match(qa, /read-only 검증자는 테스트를 실행하지 못한다/);
+  assert.match(
+    squash(qa),
+    /(?:^|\. )판단이 필요한 루브릭만 별도 프로세스의 read-only 검증자가 맡는다\./,
+    '루브릭은 별도 프로세스의 read-only 검증자가 맡아야',
+  );
   assert.match(qa, /루브릭은 모든 단계가 끝난 뒤 한 번 돌린다/);
   assert.match(qa, /이번 단계 전에 증거가 없던 시나리오는 진전 판정에서 뺀다/);
 });
@@ -66,6 +84,11 @@ test('loop: entry asks orchestrator-or-individual and the loop never pushes or o
   assert.match(dev, /Dev는 커밋하지 않는다/);
   assert.match(dev, /Dev가 도는 동안 오케스트레이터는 쓰지 않는다/);
   assert.match(doc, /push·PR을 하지 않는다/);
+  assert.equal(
+    bullet(section(doc, '멈춤 조건'), '승인 필요'),
+    '- **승인 필요** — push·PR·파괴적 변경·의존성 추가처럼 되돌리기 어려운 행위가 필요하다. 하지 않고 멈춘다.',
+    '승인 필요 상황에서는 하지 않고 멈춰야',
+  );
 });
 
 test('loop: README distinguishes a service orchestrator from the optional loop command', async () => {
