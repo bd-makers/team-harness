@@ -3,8 +3,8 @@
   "task": "r1-source-review",
   "created": "2026-10-06",
   "firstActivatedAt": "2026-10-06T08:00:25.667Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-10-06T09:19:05.685Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [

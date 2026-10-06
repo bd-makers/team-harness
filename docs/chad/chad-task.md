@@ -7,6 +7,7 @@
 - ✅ followups-14-16-close
 - ✅ post-commit-prepend
 - ✅ prepush-existing-installs
+- ✅ r1-source-review
 - ✅ roadmap-to-1-0
 - ✅ task-area-flag
 - ✅ task-paths-helper
