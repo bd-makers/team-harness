@@ -130,7 +130,7 @@ Raw slash-command 인수:
    harness-team pr-check --base "$BASE"   # scope=worktree 였다면 커밋 후 --base 없이
    ```
 
-   exit 1(spec·plan·handoff·artifact 중 없거나 템플릿 그대로)이면 **"준비 완료"를 선언하지 않는다** —
+   exit 1(spec·plan·handoff·artifact 중 없거나 비었거나 템플릿 그대로)이면 **"준비 완료"를 선언하지 않는다** —
    pre-push 훅과 CI가 같은 검사로 막는다. `· 권장: 다이어그램 없음` 안내는 막지 않는다(다이어그램은 권장).
 
    그다음 사용자에게 아래를 한 화면으로 보고하고 멈춘다: 브랜치와 base, 변경 파일

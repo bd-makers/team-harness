@@ -493,7 +493,7 @@ harness-team boundary check
 
 하네스가 강제하는 유일한 것(D11)은 PR에 그 task의 spec·plan·handoff·artifact를 담는 것입니다.
 `pr-check`는 base 대비 diff가 건드린 task(`docs/<user>/<task>/`)마다 네 문서가 **커밋에** 있고 템플릿 그대로가
-아닌지 판정합니다(없거나 템플릿이면 exit 1). 다이어그램은 권장이라 없으면 막지 않고 안내만 냅니다.
+아닌지 판정합니다(없거나 비었거나 템플릿이면 exit 1). 다이어그램은 권장이라 없으면 막지 않고 안내만 냅니다.
 
 ```bash
 harness-team pr-check                      # base = origin 기본 브랜치 (review·scope와 같은 판정)

@@ -1,0 +1,21 @@
+{
+  "user": "chad",
+  "task": "empty-doc-guard",
+  "created": "2026-10-06",
+  "firstActivatedAt": "2026-10-06T03:09:53.464Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "6ea11750ba2e03a8b945db8f2c3881a5f8ee987c",
+      "at": "2026-10-06T03:14:03.777Z",
+      "exitCode": 0,
+      "outputBytes": 851
+    }
+  ]
+}

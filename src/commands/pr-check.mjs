@@ -64,7 +64,9 @@ async function taskFindings(targetDir, rev, { user, task }) {
   for (const doc of DOCS) {
     const rel = taskFileRel(user, task, doc.kind);
     const content = await showAt(targetDir, rev, rel);
+    // 빈 문서(0바이트·공백뿐)는 템플릿과 달라 통과했다 — 미완 plan 이 0바이트로 커밋된 실례(bb93755, task empty-doc-guard).
     if (content === null) issues.push(`${rel} 없음 — ${doc.hint}`);
+    else if (!content.trim()) issues.push(`${rel} 가 비어 있음 — ${doc.hint}`);
     else if (content.trim() === doc.template(task).trim()) issues.push(`${rel} 가 템플릿 그대로 — ${doc.hint}`);
     if (doc.kind === 'artifact.md') artifact = content;
   }

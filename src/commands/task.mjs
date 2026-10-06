@@ -831,7 +831,10 @@ async function collectDoneIssues(targetDir, active) {
     const planContent = await readFile(planPath, 'utf8');
     // Match only line-leading checkboxes, so inline/prose mentions of `- [ ]`
     // (e.g. text describing the guard itself) don't trigger a false positive.
-    if (planHasOpenBoxes(planContent)) {
+    // 빈 plan 은 미완 체크박스가 없어 통과했다 — 미완 단계를 남긴 plan 이 0바이트로 커밋된 실례(bb93755, task empty-doc-guard).
+    if (!planContent.trim()) {
+      issues.push('plan.md가 비어 있음 (단계 없음)');
+    } else if (planHasOpenBoxes(planContent)) {
       issues.push('plan.md에 미완 체크박스(`- [ ]`)가 남아 있음');
     }
   } catch { /* no plan.md → not a positive signal, skip */ }
@@ -843,7 +846,9 @@ async function collectDoneIssues(targetDir, active) {
     issues.push('artifact.md가 없음 (결과/학습 미기록)');
   } else {
     artifactContent = await readFile(artifactPath, 'utf8');
-    if (artifactContent.trim() === taskArtifactTemplate(task).trim()) {
+    if (!artifactContent.trim()) {
+      issues.push('artifact.md가 비어 있음 (결과/학습 미기록)');
+    } else if (artifactContent.trim() === taskArtifactTemplate(task).trim()) {
       issues.push('artifact.md가 템플릿 그대로임 (내용 없음)');
     }
   }
