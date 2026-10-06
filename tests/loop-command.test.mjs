@@ -69,6 +69,27 @@ test('loop: the four stop conditions are pinned and no-progress has no numeric c
     '- **성공** — 모든 단계 통과 + 전체 시나리오 검사·루브릭(시나리오 선언 시) + R3 통과(P1 없음, 재검 뒤 남은 P2는 후속 — QA의 R3 통과 기준). PR은 사람이 만든다 — `/harness-ship`으로 넘긴다.',
     '성공은 R3 통과 기준(P1 없음)을 가리켜야',
   );
+  // The `\d+(회|번)` guard above misses a cap written in words ("세 번"), so every
+  // part of the section is pinned whole, as S3–S5 do.
+  const intro =
+    '멈추면 사람에게 무엇이 남았는지 보고한다 — 멈춘 조건, 마지막 실패 집합, 커밋된 단계, 다음 한 걸음.';
+  const specGap =
+    '- **spec 공백** — Dev나 QA가 spec이 답하지 않는 질문을 만났다. 질문을 사람에게 그대로 넘긴다(R1로 되돌림). spec이 고쳐지면 `/harness-loop`를 다시 불러 이어간다.';
+  const noProgress =
+    '- **진전 없음** — 직전 Dev 턴 이후 실패 집합이 같고 diff에도 변화가 없으면 멈춘다. 비교는 Dev 턴 전후의 `git diff HEAD` 출력, 추적되지 않은 파일(`git ls-files --others --exclude-standard`로 찾은 파일)의 내용, 실패 집합이다 — `git diff HEAD`는 새 파일을 보지 않아 새 파일만 만든 진전을 놓친다. 횟수 상한을 두지 않는다 — 상한은 진전 중인 루프를 끊고, 진전 없는 루프는 상한에 닿을 때까지 헛돈다.';
+  const approval =
+    '- **승인 필요** — push·PR·파괴적 변경·의존성 추가처럼 되돌리기 어려운 행위가 필요하다. 하지 않고 멈춘다.';
+  assert.equal(block(stops, '멈추면 사람에게'), intro, '멈춤 조건 첫 문단(멈추면 보고할 것)');
+  assert.equal(bullet(stops, 'spec 공백'), specGap, 'spec 공백은 질문을 사람에게 넘겨야');
+  assert.equal(bullet(stops, '진전 없음'), noProgress, '진전 없음은 실패 집합·diff 무변화로 정의되고 횟수 상한이 없어야');
+  assert.equal(bullet(stops, '승인 필요'), approval, '승인 필요 상황에서는 하지 않고 멈춰야');
+  // Nothing else may sit in the section — a cap added as a separate paragraph
+  // between the intro and the bullets would slip past the per-part checks.
+  assert.equal(
+    squash(stops),
+    [intro, bullet(stops, '성공'), specGap, noProgress, approval].join(' '),
+    '멈춤 조건 절은 첫 문단과 bullet 넷뿐이어야',
+  );
 });
 
 test('loop: QA runs machine checks before the read-only rubric and records named test output', async () => {
