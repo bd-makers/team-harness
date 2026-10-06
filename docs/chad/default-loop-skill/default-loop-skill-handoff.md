@@ -71,3 +71,10 @@ docs/chad/default-loop-skill/default-loop-skill-artifact.md | 5 +++++
  .../default-loop-skill-handoff.md                  |  5 +++++
  .../default-loop-skill-meta.json                   |  9 +++++++++
  3 files changed, 37 insertions(+)
+
+## 2026-10-06T10:47:14.255Z — 9f9f0eb docs(loop): R3 P2 반영 — 검증 단계 명령 실행, 커밋 실패 시 체크 되돌림, untracked 진전 포함
+commands/harness-loop.md                                 |  9 ++++++---
+ .../default-loop-skill/default-loop-skill-artifact.md    | 16 ++++++++++++++++
+ .../default-loop-skill/default-loop-skill-handoff.md     |  6 ++++++
+ .../chad/default-loop-skill/default-loop-skill-meta.json |  9 +++++++++
+ 4 files changed, 37 insertions(+), 3 deletions(-)

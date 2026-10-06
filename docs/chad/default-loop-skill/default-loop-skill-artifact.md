@@ -27,6 +27,10 @@
     Dev가 문장 단위 비교(공백 정규화)로 고정하고, 일회성 스크립트에서 변이 문자열 9/9 기대대로 판정됨을 확인.
   - QA: gate not-configured · boundary not-configured · scenario S1–S6 pass. 진전 판정: 실패 집합 E1(S3,S4) → 없음, diff 변화 있음.
   - `✔ loop: QA runs machine checks before the read-only rubric and records named test output` · `✔ loop: entry asks orchestrator-or-individual and the loop never pushes or opens a PR`
+- R2 재검(codex-scenario, tip 32ae06d): E1·E2 pass.
+- loop: 2026-10-06 · 수단 subagent · 단계 6 R3 P2×3 반영(검증 단계 명령 실행 · 커밋 실패 시 체크 되돌림 · untracked 진전 포함) · QA pass · commit 9f9f0eb
+  - 무엇·왜: R3(codex) changes requested, P1 없음. 오케스트레이터 판별 — 셋 다 유효. 특히 "체크 후 커밋 실패" 상태는 이번 dogfood 2단계에서 pre-commit docs:check 실패로 실제 발생했다(같은 턴 재커밋으로 넘어감).
+  - QA: gate not-configured · boundary not-configured · scenario pass (6 checked) · docs:check pass. 진전 판정: 실패 집합 R3(P2×3) → 없음, diff 변화 있음.
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
