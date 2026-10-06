@@ -10,6 +10,7 @@
 - 테스트 4건 추가(`tests/git-hooks.test.mjs`): `exit 0` 뒤 실행(shim, CLI 없음 + `sh -e` 포함), 비-셸 skip 처방, shebang 변형, 개행 없는 shebang(두 훅).
   `npm run test` 1166 pass / 0 fail / 1 skip(기존).
 - CHANGELOG `[Unreleased]` `### Fixed` 2항목, `docs/followups.md` 13번 제거(남은 것 14–16).
+- 문서 표면 점검: `git grep -i post-commit` 대상은 README·commands·skills·templates·docs다. post-commit 설치 위치(끝에 append)를 서술한 문장은 없어 고칠 문서가 없다. README 503행의 맨 위 삽입 설명은 pre-push만 다룬다.
 - 미해결: 이미 append된 설치본은 재작성하지 않는다. spec 범위 밖에 근거를 두고, CHANGELOG에 수동 조치를 안내했다.
 
 ## Reviews

@@ -14,3 +14,9 @@ CHANGELOG.md                                       |  11 +++
  src/git-hooks.mjs                                  |  40 ++++----
  tests/git-hooks.test.mjs                           |  95 ++++++++++++++++++-
  10 files changed, 340 insertions(+), 28 deletions(-)
+
+## 2026-10-06T02:13:06.944Z — cffe6c0 docs(task): post-commit-prepend handoff 반영·plan 7 체크
+.../chad/post-commit-prepend/post-commit-prepend-context.md |  4 ++--
+ .../chad/post-commit-prepend/post-commit-prepend-handoff.md | 13 +++++++++++++
+ docs/chad/post-commit-prepend/post-commit-prepend-plan.md   |  2 +-
+ 3 files changed, 16 insertions(+), 3 deletions(-)
