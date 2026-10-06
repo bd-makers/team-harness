@@ -13,3 +13,8 @@ CHANGELOG.md                                       |  9 +++
  .../prepush-existing-installs-spec.md              | 70 ++++++++++++++++++++++
  docs/followups.md                                  | 11 ++--
  9 files changed, 162 insertions(+), 7 deletions(-)
+
+## 2026-10-06T01:45:48.134Z — 80a475f docs(task): prepush-existing-installs plan 6 체크 — PR #127
+.../prepush-existing-installs/prepush-existing-installs-context.md    | 4 ++--
+ docs/chad/prepush-existing-installs/prepush-existing-installs-plan.md | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
