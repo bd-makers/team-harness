@@ -28,3 +28,8 @@ AGENTS.md                                          |   3 +
  tests/review-command.test.mjs                      |  31 +++-
  tests/scenario.test.mjs                            | 130 ++++++++++++++
  24 files changed, 875 insertions(+), 19 deletions(-)
+
+## 2026-10-06T08:44:45.772Z — dc28096 docs(task): r2-scenario-evidence plan 완료·handoff 반영
+.../r2-scenario-evidence-handoff.md                | 27 ++++++++++++++++++++++
+ .../r2-scenario-evidence-plan.md                   |  2 +-
+ 2 files changed, 28 insertions(+), 1 deletion(-)
