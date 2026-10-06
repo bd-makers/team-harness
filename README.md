@@ -429,6 +429,7 @@ contrarian·simplifier)은 이 명령의 절차·엔진 표를 재사용하며 `
 > 모두 멱등이라 이미 최신이면 `up to date`로 건너뜁니다.
 > (hook은 `init` 재실행의 deep-merge로도 들어옵니다 — migrate는 구조 변경 없이 hook만 보강할 때 유용하고,
 > 설치된 stock 훅 스크립트(observe-tools·boundary-checkpoint 포함)를 현재 템플릿으로 갱신하는 유일한 경로입니다.)
+> pre-push 훅은 설치하지 않습니다 — git 훅(post-commit·pre-push)은 `harness-team sync`가 설치합니다.
 
 > `--adopt-reviews`는 **옵트인**입니다(0.38+). `meta.reviews` 키가 없는 구 task를 CLI 소유 리뷰 증거로
 > 옮기는 유일한 인가 경로이며, 채택하면 그 task의 손으로 쓴 검증 마커는 `verify: required`에서 빠집니다.
@@ -502,6 +503,7 @@ harness-team pr-check --base origin/main --json
 - **pre-push 훅**: init·sync가 설치합니다. 기존 pre-push 훅(git-lfs 등)이 있으면 그 맨 위에 넣고 ref 목록(stdin)을 그대로 넘겨 주며,
   셸 스크립트가 아닌 훅은 건드리지 않고 안내합니다. 기본 브랜치 push·태그·삭제·빈 원격으로의 첫 push는 검사하지 않고,
   PATH의 `harness-team`이 없거나 `pr-check`를 모르는 구버전이면 건너뜁니다(doctor가 경고). 우회는 `git push --no-verify`.
+  pre-push 훅이 없던 버전으로 설치한 저장소는 업그레이드 후 `harness-team sync`를 한 번 실행하세요(migrate는 pre-push 훅을 설치하지 않습니다).
 - **훅 관리자(husky·lefthook 등)를 쓰면**: 관리자가 install 때 훅 파일을 다시 써서 위 블록이 지워집니다(husky는 `npm install`의
   prepare마다). 관리자 설정의 pre-push(husky라면 `.husky/pre-push`) **맨 위**에 init이 넣는 것과 같은 아래 블록을 직접 넣으세요.
   맨 `harness-team pr-check --pre-push` 한 줄은 CLI가 없거나 구버전인 팀원의 push를 전부 막고, ref 목록(stdin)을 소비해

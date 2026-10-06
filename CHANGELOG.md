@@ -10,6 +10,15 @@
 ## [Unreleased]
 
 ### Added
+- **PR 필수 task 문서 검사와 git pre-push 훅** (task `pr-check`, #125, D11·cycle §6-4). `harness-team pr-check`는 `base...rev` diff가 건드린
+  task마다 spec·plan·handoff·artifact가 커밋에 있고 템플릿 그대로가 아닌지 판정한다(실패면 exit 1, 다이어그램은 권장 안내만).
+  init·sync가 pre-push 훅을 설치해 push 때 같은 검사를 돌린다 — 기존 pre-push 훅 맨 위에 넣고 ref 목록(stdin)을 되돌려 주며, 셸이 아닌 훅은
+  건너뛴다. 기본 브랜치·태그·삭제·빈 원격 첫 push는 통과하고, PATH의 CLI가 없거나 구버전이면 fail-open이다. ship은 준비 완료 전에 같은 검사를 돌린다.
+  **기존 설치본은 업그레이드 후 `harness-team sync`를 한 번 실행해야 pre-push 훅을 받는다** — migrate는 pre-push 훅을 설치하지 않는다.
+  husky·lefthook 같은 훅 관리자를 쓰면 README `pr-check` 절의 블록을 관리자 설정 맨 위에 넣는다.
+- **doctor `pre-push hook (pr-check)` 검사** (task `pre-push-hook-doctor`, #126). git이 읽는 pre-push 훅에 pr-check 블록이 없으면(훅이 없는
+  기존 설치본, 또는 훅 관리자가 파일을 다시 써 블록이 지워진 경우) `warning`과 `harness-team sync` 처방을 낸다. 셸이 아닌 훅은 직접 호출을,
+  `core.hooksPath`(관리자 소유)는 판정 없이 README 블록을 안내한다.
 - **저장소 모양과 모노레포 커밋 게이트** (task `preset-repo-shape`, cycle §4-2b). init이 `workspaces`·`pnpm-workspace.yaml`로
   저장소 모양(앱 + 내부 패키지 / 모노레포)과 workspace 목록을 판별해 보여 주고 확인받는다 — workspace가 없는 단일 앱은 묻지도 출력하지도
   않고 종전과 같다. 거절하면(`init --shape single`) 단일로 처리하고, `/harness-init`은 `stack --json`의 `repoShape` 미리보기로 먼저 묻는다.
