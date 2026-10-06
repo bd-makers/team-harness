@@ -159,3 +159,8 @@ docs/chad/default-loop-skill/default-loop-skill-artifact.md | 7 +++++++
  docs/chad/default-loop-skill/default-loop-skill-handoff.md  | 7 +++++++
  docs/chad/default-loop-skill/default-loop-skill-spec.md     | 8 +++++++-
  3 files changed, 21 insertions(+), 1 deletion(-)
+
+## 2026-10-06T12:51:36.137Z — 474ef23 docs(task): default-loop-skill 다이어그램 갱신 — 마무리 전체 시나리오 검사·R3 통과 기준
+.../default-loop-skill/default-loop-skill-artifact.md     |  2 ++
+ .../default-loop-skill/default-loop-skill-diagram.html    | 15 +++++++++++----
+ 2 files changed, 13 insertions(+), 4 deletions(-)
