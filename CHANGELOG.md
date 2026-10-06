@@ -10,6 +10,14 @@
 ## [Unreleased]
 
 ### Added
+- **R1 원천 문서 검토** (task `r1-source-review`, cycle §4-1·§6 묶음 A2). spec 템플릿에 `## 원천 검토 (R1)` 절(`### 원천`·`### 발견`)이
+  `## 목적 / 요구사항` 다음에 생긴다. `/harness-interview`가 채점 전에 원천 문서(PRD·Figma·API 문서·기획서·정책서) 사이의 충돌·모순을
+  `(unresolved)`, 누락을 `(open)`으로 기록하고, 사용자 결정(`→ 결정:`)과 재대조 뒤 `- 검토 완료: <날짜>`로 닫는다. 원천이 없으면 `- 없음 — <사유>`.
+  6단계 통과 선언은 R1 기록이 없거나, R1 절에 미해결 발견이 있거나, spec 어디든 `(unresolved)` 항목이 남으면 하지 않는다 —
+  `/harness-spec`이 이미 표기하던 소스 충돌 `(unresolved)`를 읽는 게이트가 처음 생긴다. 기계 차단은 없다(D11 — 강제는 PR 4문서뿐).
+  `/harness-spec`은 수집한 원천 위치를 R1 절에도 적는다. 원천 위치는 프로젝트 데이터라 하네스가 정하지 않는다.
+  기존 task의 spec은 그대로 두며, interview가 절이 없으면 만들어 채운다. 외부 엔진 프레이밍(`--framing sourcecheck`)은 보류했다 —
+  read-only 엔진은 Confluence·Figma MCP에 닿지 않고, `meta.reviews`는 Plan 전 게이트가 되지 못한다.
 - **R2 시나리오 ↔ 증거 대조** (task `r2-scenario-evidence`, cycle §4-1b·§6 묶음 A1, 옵트인). spec `## Done evidence` JSON에
   `scenarios` 배열(`id`·`given`·`when`·`then`·`test`·`cmd`)을 선언해 수용 기준을 Given/When/Then으로 쓰고 시나리오마다 증거를 잇는다.
   - 1행(증거 연결): 키가 빠지거나 비었거나 id가 겹치면 선언 invalid → `done`이 막힌다.
