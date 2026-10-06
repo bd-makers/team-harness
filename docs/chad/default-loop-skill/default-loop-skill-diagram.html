@@ -26,7 +26,7 @@
 <p class="eyebrow">DEFAULT-LOOP-SKILL · SWIMLANE</p>
 <h1>/harness-loop — plan 한 단계가 도는 길</h1>
 <p class="sub">메인 세션이 오케스트레이터다. Dev가 한 단계를 구현하면 오케스트레이터가 기계 검사(exit code)를 돌리고,
-모든 단계가 끝난 뒤에만 read-only 별도 프로세스가 루브릭(R2)과 R3를 판정한다. 검은 칩이 사람에게 넘기는 네 멈춤이다.</p>
+모든 단계가 끝나면 시나리오 전체를 제외 없이 다시 검사하고, 그 뒤에만 read-only 별도 프로세스가 루브릭(R2)과 R3를 판정한다. 검은 칩이 사람에게 넘기는 네 멈춤이다.</p>
 
 <svg viewBox="0 0 1200 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="harness-loop swimlane: orchestrator, Dev, QA verifier, human stops">
   <defs>
@@ -58,7 +58,8 @@
   <path class="arrow" d="M520 152 V216 H596"/>
   <path class="arrow ret" d="M632 248 V328 H532"/>
   <path class="arrow" d="M744 248 V472"/>
-  <path class="arrow" d="M784 120 H896 V372"/>
+  <path class="arrow" d="M784 120 H936 V180"/>
+  <path class="arrow" d="M936 248 V372"/>
   <path class="arrow" d="M1000 408 H1020"/>
   <path class="arrow" d="M1104 440 V472"/>
 
@@ -107,6 +108,12 @@
   <text x="368" y="320" class="s">plan 한 단계만</text>
   <text x="368" y="336" class="s">단일 쓰기 · 커밋 금지</text>
 
+  <!-- F 전체 시나리오 검사 (마무리 기계 검사) -->
+  <rect x="848" y="184" width="176" height="64" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="864" y="208" class="n">전체 시나리오 검사</text>
+  <text x="864" y="224" class="m">scenario check</text>
+  <text x="864" y="240" class="s">제외 없이 전부 통과</text>
+
   <!-- G R2 루브릭 -->
   <rect x="792" y="376" width="208" height="64" rx="6" fill="#f5f5f5"/>
   <rect x="792" y="376" width="208" height="64" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1" stroke-dasharray="4 3"/>
@@ -118,8 +125,8 @@
   <rect x="1024" y="376" width="160" height="64" rx="6" fill="#f5f5f5"/>
   <rect x="1024" y="376" width="160" height="64" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1" stroke-dasharray="4 3"/>
   <text x="1040" y="400" class="n">R3 리뷰</text>
-  <text x="1040" y="416" class="m">review codex</text>
-  <text x="1040" y="432" class="s">없으면 claude</text>
+  <text x="1040" y="416" class="s">P1 없음 = 통과</text>
+  <text x="1040" y="432" class="s">P2 재검 한 번까지</text>
 
   <!-- stops -->
   <rect x="128" y="476" width="160" height="40" rx="4" fill="#2d3142"/>

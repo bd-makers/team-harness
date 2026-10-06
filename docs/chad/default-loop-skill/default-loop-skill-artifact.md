@@ -60,6 +60,8 @@
   - 리뷰 비용: R2 4회 · R3 3회(codex). Learnings의 "근거 구간 전체 고정"·"리뷰 종료 기준"은 반복되면 `/harness-promote` 후보.
   - 범위 밖: 메인 체크아웃의 iCloud 충돌 사본 정리(사용자: 나중에), `mystifying-shannon` 워크트리 안 인계 파일을 메인으로 옮기기(워크트리 삭제 전).
 
+- 다이어그램: docs/chad/default-loop-skill/default-loop-skill-diagram.html 갱신 — ship 갱신 — 마무리 전체 시나리오 검사 노드 · R3 통과 기준 추가, 브라우저 pane 렌더·텍스트 경계 확인 (2026-10-06)
+
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
