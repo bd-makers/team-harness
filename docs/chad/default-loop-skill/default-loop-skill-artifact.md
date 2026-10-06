@@ -27,5 +27,27 @@
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
 
+### 2026-10-06T10:34:58.847Z — codex-scenario (harness-team review)
+
+- engine: codex · scope: diff · tip: 747405f8fe307e7902b452d8fcf365aa5294b4d9 · exit 0 · 2352 B
+
+```text
+**E1 · 각 시나리오 증거가 Then을 실제로 검증 · BLOCKER · fail**
+
+실제 테스트 이름은 artifact에 기록되어 있고, S3·S4의 지정 명령에서도 확인했습니다. 그러나 다음 변이를 기존 assertion이 잡지 못했습니다. 파일 변경 없이 메모리에서 입력 문서만 변이했습니다.
+
+- **S3:** 루브릭 담당을 “별도 프로세스의 read-only 검증자”에서 “오케스트레이터가 직접”으로 바꿔도 통과했습니다. [테스트](/Users/chadonpro/Library/Mobile%20Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/default-loop-skill/tests/loop-command.test.mjs:45)는 검사 순서와 기계 검사 담당만 확인하고, 루브릭 담당은 assert하지 않습니다.
+  실행 출력: `✔ loop: QA runs machine checks before the read-only rubric and records named test output`
+- **S4:** 승인 필요 조건의 “하지 않고 멈춘다”를 “하지 않고 다음 단계로 계속한다”로 바꿔도 통과했습니다. [테스트](/Users/chadonpro/Library/Mobile%20Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/default-loop-skill/tests/loop-command.test.mjs:60)는 push·PR 금지 문구를 확인하지만, 필요한 상황에서 멈추는지는 assert하지 않습니다.
+  실행 출력: `✔ loop: entry asks orchestrator-or-individual and the loop never pushes or opens a PR`
+
+**E2 · spec 밖 동작 변경 없음 · MAJOR · pass**
+
+`origin/main` 대비 diff의 명령·래퍼·등록·README·interview·cycle·overview·CHANGELOG 변경은 spec의 요구사항과 영향 파일 목록에 대응합니다. 추가된 “검증만 하는 단계는 Dev 턴 없이 QA 1–4로 닫는다” 규칙도 [artifact](/Users/chadonpro/Library/Mobile%20Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/default-loop-skill/docs/chad/default-loop-skill/default-loop-skill-artifact.md:16)에 dogfood 발견과 변경 사유가 기록되어 있습니다.
+
+**최종 verdict: fail — 실패 항목 전체: E1(S3, S4).** 두 Then을 깨뜨리는 변이에서 테스트가 실패하도록 assertion 보강이 필요합니다. 파일은 수정하지 않았습니다.
+```
+
+<!-- harness:review kind=codex-scenario scope=diff tip=747405f8fe307e7902b452d8fcf365aa5294b4d9 at=2026-10-06T10:34:58.847Z -->
 
 ## Learnings

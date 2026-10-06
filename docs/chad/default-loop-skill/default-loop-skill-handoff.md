@@ -42,3 +42,10 @@ CHANGELOG.md                                                | 8 ++++++++
  docs/chad/default-loop-skill/default-loop-skill-handoff.md  | 7 +++++++
  docs/chad/default-loop-skill/default-loop-skill-plan.md     | 2 +-
  4 files changed, 21 insertions(+), 1 deletion(-)
+
+## 2026-10-06T10:31:49.906Z — 747405f docs(loop): 검증만 하는 plan 단계 처리 규칙 + 5단계 검증 기록
+commands/harness-loop.md                                    |  1 +
+ docs/chad/default-loop-skill/default-loop-skill-artifact.md | 12 ++++++++++++
+ docs/chad/default-loop-skill/default-loop-skill-handoff.md  |  7 +++++++
+ docs/chad/default-loop-skill/default-loop-skill-plan.md     |  2 +-
+ 4 files changed, 21 insertions(+), 1 deletion(-)
