@@ -171,7 +171,23 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
   이들의 입력을 위키와 PR 기준으로 옮기거나, 필요 없어지면 뺀다.
 - 원래 니즈 1(팀원이 무엇을 바꿨나)은 위키 항목의 작성자·PR 기록으로 이어진다.
 - 컴파일 실행 위치는 기본 브랜치가 자연스럽다(지금 `summary --write`가 있는 자리, D5).
-- **메인테이너 입력 필요**: kc-platform·kc_vault 작업에서 본 형태(저장 위치, 키 체계, 인덱스·RAG 여부)를 기준으로 정한다.
+- **메인테이너 입력 (2026-10-06)** — kc-platform의 현재 형태다. **구조는 바뀔 수 있다.**
+  ```
+  wiki/
+  ├─ index.md           시작 페이지와 주요 주제 링크
+  ├─ 00_llm_wiki/       llm_wiki 관련
+  ├─ 10_ssot/           원본 문서 정리 — PRD·기획서·정책서·Figma 등의 근거
+  ├─ 20_domain/         도메인별 정리
+  ├─ 40_data/  50_infra/  60_presentation/  70_monorepo/
+  ├─ 90_system/         템플릿·작성 규칙·AI 편집 지침
+  └─ 99_inbox/          미정리 메모·질문·링크
+  ```
+  문서 원천은 셋이다. ① **kc_vault** — 원본 SSOT(기획 미동결). 컴파일을 거쳐 성격에 맞는 위키 폴더로 옮겨진다.
+  ② **`docs/*` 개발 문서** — task 문서(`docs/<area>/<user>/<task>/`, 예: `docs/kc-admin-web/chad/feature-00`) 포함, 위키로 통합된다.
+  ③ **`wiki/*`** — LLM 위키 자체.
+  **설계 함의(추론, C spec에서 확정)**: 폴더 분류가 바뀔 수 있으므로 하네스는 위키 분류 체계를 코드에 박지 않는다(D11 —
+  프로젝트 데이터). 컴파일은 프로젝트의 `wiki/90_system/` 작성 규칙을 따르고, 분류하지 못한 것은 `99_inbox/`로 보낸다.
+  `10_ssot/`는 R1 원천 문서 검토(§4-1)의 입력 자리와 겹친다.
 
 ### 4-5. migrate의 범위 (2026-10-05 결정)
 - **migrate는 당겨 쓴다(pull).** 사용자가 필요할 때 해당 프로젝트에서 직접 실행한다. 하네스도 에이전트도 먼저 밀지 않는다
@@ -241,4 +257,10 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 4. `pr-check` + git pre-push 훅 + ship 연동(§4-6)
 5. R1 원천 문서 검토 · R2 시나리오 ↔ 증거 대조 — spec 템플릿의 Gherkin 표와 루브릭(§4-1·4-1b)
 6. 선택형 기본 루프 스킬 + README의 오케스트레이션 문구 정정(§4-3)
-7. 위키 컴파일 + task 폴더 삭제(§4-4) — 위키 형태는 kc-platform·kc_vault 기준 입력이 필요하다
+7. 위키 컴파일 + task 폴더 삭제(§4-4) — 위키 형태 입력은 2026-10-06에 받았다(§4-4)
+
+**진행 계획 (2026-10-06, 1–4는 0.46.0으로 릴리스)** — 남은 단계를 의존성 순서로 묶고 묶음마다 릴리스한다.
+- **A** (병렬, 격리 워크트리 2개 — D5): A1 R2 시나리오·증거(task `r2-scenario-evidence`) · A2 R1 소스 검토(task `r1-source-review`). R2는 `Done evidence`와 같은 옵트인이다 — PR 강제는 D11대로 4문서뿐.
+- **B**: 기본 루프 스킬(task `default-loop-skill`) — QA가 R2를 쓰므로 A1 뒤. 착수 전 Codex 서브에이전트 지원 범위를 실측한다(§4-3 미검증).
+- **C**: C1 위키 컴파일(추가만) → C2 task 폴더 삭제 + 원장·`done`·handoff 입력 이전(호환성 파괴). C2가 1.0 전 마지막 파괴적 변경이다.
+- **1.0 조건**: 7단계까지 끝나고, 그 계약(시나리오 표·`gates.json`·pr-check·위키 컴파일)이 소비자 저장소에서 한 릴리스 이상 돈 뒤.
