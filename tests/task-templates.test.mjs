@@ -33,6 +33,27 @@ test('spec 템플릿 목적 절은 문제→기대 결과 안내문을 담고, �
   assert.doesNotMatch(section, /^\s*(?:[-*]|\d+\.)\s/m);
 });
 
+// R1 원천 검토(cycle §4-1, task r1-source-review). 절은 목적 다음·설계 앞에 둔다 — Done evidence(R2 영역)와 떨어뜨린다.
+// interview 6단계는 이 절의 **목록 항목**만 읽는다: `- 없음 — …`/`- 검토 완료: …` 줄이 통과 기록이고, 목록 항목의
+// `(unresolved)`·`(open)`이 미해결이다. 갓 만든 템플릿이 통과 기록이나 미해결 마커를 목록으로 가지면 게이트가 뒤집힌다.
+test('spec 템플릿은 목적 다음에 R1 원천 검토 절을 두고, 안내문은 게이트가 읽는 목록 항목이 아니다', () => {
+  const out = taskSpecTemplate('demo');
+  const purpose = out.indexOf('## 목적 / 요구사항');
+  const r1 = out.indexOf('## 원천 검토 (R1)');
+  const design = out.indexOf('## 설계 / 접근');
+  assert.ok(purpose >= 0 && purpose < r1 && r1 < design, 'R1 절은 목적과 설계 사이');
+  const section = out.slice(r1, design);
+  assert.match(section, /### 원천/);
+  assert.match(section, /### 발견/);
+  assert.match(section, /`\(unresolved\)`/, '충돌·모순 표기 안내');
+  assert.match(section, /`\(open\)`/, '누락 표기 안내');
+  assert.match(section, /`- 없음 — <사유>`/, '원천 없는 task의 한 줄 안내');
+  const items = section.split('\n').filter(l => /^\s*(?:[-*]|\d+\.)\s/.test(l));
+  assert.ok(!items.some(l => /^\s*- (?:없음 —|검토 완료:)/.test(l)), '템플릿 자체가 R1 통과 기록을 갖지 않는다');
+  assert.ok(!items.some(l => /\((?:unresolved|open)\)/.test(l)), '템플릿 자체가 미해결 발견을 갖지 않는다');
+  assert.doesNotMatch(section, /10_ssot/, '위키 분류 체계를 템플릿에 박지 않는다(D11)');
+});
+
 test('artifact 템플릿은 Learnings 섹션을 포함한다', () => {
   const out = taskArtifactTemplate('demo');
   assert.match(out, /## Learnings/);

@@ -1,0 +1,21 @@
+{
+  "user": "chad",
+  "task": "r1-source-review",
+  "created": "2026-10-06",
+  "firstActivatedAt": "2026-10-06T08:00:25.667Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "894abb4a52c122481e15c9e8998f2e8468c434f4",
+      "at": "2026-10-06T08:31:36.798Z",
+      "exitCode": 0,
+      "outputBytes": 743
+    }
+  ]
+}

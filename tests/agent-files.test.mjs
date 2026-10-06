@@ -429,3 +429,26 @@ test('프로젝트 eager 소계가 상한을 넘지 않는다', async () => {
     `프로젝트 eager 소계 ${total} B > ${PROJECT_EAGER_MAX_BYTES} B — 내역: ` +
     sizes.map(([f, b]) => `${f} ${b} B`).join(' + '));
 });
+
+// R1 원천 검토(cycle §4-1, task r1-source-review) — 기계 차단 없이 interview 의 통과 선언이 차단이다(D11).
+// 이 문구가 빠지면 `(unresolved)` 를 읽는 게이트가 다시 사라진다(harness-spec 은 표기만 한다).
+test('harness-interview는 R1 원천 검토를 먼저 돌리고 미해결 발견이 남으면 통과를 선언하지 않는다', async () => {
+  const doc = await readFile(join(ROOT, 'commands', 'harness-interview.md'), 'utf8');
+  assert.match(doc, /## R1 원천 검토/, 'R1 절차 절');
+  assert.match(doc, /1\. [^\n]*\n[^\n]*R1 원천 검토[^\n]*먼저/, '1단계에서 R1을 채점보다 먼저 수행');
+  assert.match(doc, /충돌·모순은 `\(unresolved\)`/, '충돌·모순 표기');
+  assert.match(doc, /누락은 `\(open\)`/, '누락 표기');
+  assert.match(doc, /재대조/, '해결 후 재검토');
+  // 6단계 통과 조건 ①–③
+  assert.match(doc, /`- 없음 — <사유>` 또는 `- 검토 완료: <날짜>`/, '① R1 통과 기록 줄');
+  assert.match(doc, /R1 절 목록 항목에 `\(unresolved\)`·`\(open\)`/, '② R1 절 미해결 발견');
+  assert.match(doc, /spec 어디든 목록 항목에 `\(unresolved\)`/, '③ spec 전체의 미해결 충돌');
+  assert.match(doc, /R1 절에는 `\(open → <대상>\)` 이월을 허용하지 않는다/, 'R1 발견은 이월 불가 — 결정 줄이 해결');
+  // codex 리뷰 P2(2026-10-06): 정의·안내 속 백틱 언급까지 세면 Ontology 정의만으로 게이트가 영원히 닫힌다.
+  assert.match(doc, /백틱\(인라인 코드\) 안의 `\(unresolved\)`는 정의·안내 속의 언급이라 세지 않는다/, '표기와 언급의 구분');
+  assert.match(doc, /`\(interview, unresolved\)`도 표기다/, '출처와 묶인 태그도 표기');
+  assert.match(doc, /요구사항 절에 남긴 `\(unresolved\)` 항목도 `### 발견`으로 옮겨/, 'writer 충돌 표기의 해소 경로');
+  assert.match(doc, /결정 없이 마커만 지우지 않는다/, '마커 삭제는 결정과 함께');
+  const spec = await readFile(join(ROOT, 'commands', 'harness-spec.md'), 'utf8');
+  assert.match(spec, /`## 원천 검토 \(R1\)` 절의 `### 원천`/, 'harness-spec 이 원천 위치를 R1 절에 적는다');
+});

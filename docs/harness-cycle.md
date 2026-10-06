@@ -32,7 +32,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 | 단계 | 산출물 | 게이트 | 현재 |
 |---|---|---|---|
 | **S0 셋업** | AGENTS/CLAUDE, Codex 배선, **검증 프리셋** | — | ✓ init · ✓ 프리셋(`templates/presets/` — 커밋 게이트·RN rules) |
-| **S1 Spec** | `spec.md` (PRD·Figma·API 문서·기획서·정책서 소스) | **R1 소스 검토**(차단) | ✓ harness-spec · △ 소스 검토 없음(Ambiguity 게이트·contrarian은 spec 자체만 본다) |
+| **S1 Spec** | `spec.md` (PRD·Figma·API 문서·기획서·정책서 소스) | **R1 소스 검토**(차단) | ✓ harness-spec · ✓ R1 원천 검토(interview 안 단계, 규범 차단 — task `r1-source-review`) |
 | **S2 Plan** | `plan.md` + **plan 다이어그램**(이해용) | 개발자 확인 | ✓ plan · △ 다이어그램 옵트인 |
 | **S3 구현** | 코드 · TCC(작업 카드) | — (자유) | ✓ 자유 · ✗ **기본 루프** 없음 |
 | **S4 구현 검증** | spec 시나리오(Given/When/Then) ↔ 증거 | **R2 시나리오 대조**(기계 2 + 루브릭 2, §4-1b) | △ done 가드가 체크박스·evidence만 확인 |
@@ -74,6 +74,10 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 - **R2 — 시나리오 ↔ 증거 대조 (§4-1b).** "Done evidence로 흡수"라는 이전 권장은 철회한다(피드백: R2에도 평가 방법이 있어야 한다).
 - **R3 — PR 전 코드 리뷰 루브릭, 필수.** D2의 작성자·리뷰어 분리 그 자체다.
 - 현재와의 차이: Ambiguity 게이트와 contrarian(A1–A4)은 **spec 문서 자체**를 본다. 원천 문서끼리의 정합성 검토는 아직 없다.
+- **구현 (2026-10-06, task `r1-source-review`)**: `/harness-interview`가 채점 전에 R1을 돈다. 기록은 spec의 `## 원천 검토 (R1)` 절이다.
+  충돌·모순은 `(unresolved)`, 누락은 `(open)`으로 적고 `→ 결정:`과 재대조 뒤 `검토 완료`로 닫는다. 미해결이 남으면 interview가 통과를 선언하지 않는다 —
+  이 선언이 차단이고 기계 차단은 없다(D11). 원천 위치는 spec에 선언한다(kc-platform이면 `wiki/10_ssot/` 등 — 하네스는 분류를 정하지 않는다).
+  contrarian 확장·외부 엔진 프레이밍·별도 커맨드는 기각·보류했다 — 사유는 그 task spec의 "기각한 대안".
 
 ### 4-1b. R2의 평가 방법 — TDD·BDD·Gherkin
 셋은 대안이 아니라 층이 다르다.
