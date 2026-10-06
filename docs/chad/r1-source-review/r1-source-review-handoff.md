@@ -22,3 +22,8 @@ CHANGELOG.md                                       |  10 ++
 ## 2026-10-06T08:32:44.999Z — bbced31 docs(task): r1-source-review plan 완료 체크
 docs/chad/r1-source-review/r1-source-review-plan.md | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
+
+## 2026-10-06T08:34:38.233Z — 2ca880f docs(interview): R1 — writer 충돌 표기를 발견으로 옮겨 해소
+commands/harness-interview.md | 2 ++
+ tests/agent-files.test.mjs    | 2 ++
+ 2 files changed, 4 insertions(+)
