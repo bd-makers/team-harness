@@ -43,6 +43,9 @@
   - QA: gate not-configured · boundary not-configured · scenario pass (6 checked) · docs:check pass.
   - `✔ loop: the four stop conditions are pinned and no-progress has no numeric cap` · `✔ loop: QA runs machine checks before the read-only rubric and records named test output`
   - R3: 재검 한 번을 이미 넘겼고(3차까지 실행) 3차 P2를 모두 반영해 남은 P2 없음 → 새 기준으로 R3 통과. 테스트가 바뀌었으므로 R2 루브릭 재검을 돈다.
+- loop: 2026-10-06 · 수단 subagent · 단계 6 R2 3차 E1(S3·S4·S5) 반영 — 근거 구간 전체 고정 · QA pass · commit 3675f1e
+  - 무엇·왜: R2 루브릭 3차(tip c98a11b) E1 fail — 조각 match가 의미 반전 변이(기록 안 함·묻지 않음·병렬 Dev·"제공하지 않습니다")를 놓쳤다. 조각을 늘리는 대신 각 Then의 근거 문단·항목 11곳을 공백 정규화 전체 비교로 고정. Dev가 지적 변이 5건 + 구간별 임의 단어 치환 22건 모두 FAIL 확인.
+  - QA: gate not-configured · boundary not-configured · scenario pass (6 checked) · docs:check pass.
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*

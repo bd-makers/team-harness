@@ -118,3 +118,10 @@ commands/harness-loop.md                                   | 10 ++++++++--
 docs/chad/default-loop-skill/default-loop-skill-artifact.md | 7 +++++++
  docs/chad/default-loop-skill/default-loop-skill-handoff.md  | 6 ++++++
  2 files changed, 13 insertions(+)
+
+## 2026-10-06T12:29:07.968Z — 3675f1e test(loop): R2 3차 E1 반영 — S3·S4·S5 근거 구간을 문단·항목 전체로 고정
+.../default-loop-skill-artifact.md                 | 34 ++++++++++++
+ .../default-loop-skill-handoff.md                  |  5 ++
+ .../default-loop-skill-meta.json                   |  9 ++++
+ tests/loop-command.test.mjs                        | 62 ++++++++++++++++++++++
+ 4 files changed, 110 insertions(+)
