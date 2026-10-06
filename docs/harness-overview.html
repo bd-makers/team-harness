@@ -648,6 +648,12 @@
             <td>PR/MR 직전 spec·plan·artifact를 최종 갱신하고 다이어그램(옵트인)까지 정리한 뒤 준비 완료 상태를 보고</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
           </tr>
+          <tr data-command-source="commands/harness-loop.md">
+            <td><span class="cmd">/harness-loop</span></td>
+            <td><code>commands/harness-loop.md</code></td>
+            <td>plan 확정 뒤 선택형 기본 루프 — 메인 세션이 오케스트레이터가 되어 plan 단계마다 Dev 구현 → QA 판정 → 커밋을 순차로 돌리고, 네 멈춤 조건에서 사람에게 넘긴다</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
           <tr data-command-source="commands/harness-diagram.md">
             <td><span class="cmd">/harness-diagram</span></td>
             <td><code>commands/harness-diagram.md</code></td>
@@ -1417,6 +1423,11 @@
             <td>API 핸들러·DB 접근·캐시·아웃바운드 HTTP 등 프로세스 경계 코드에 Khorikov Part III 통합 테스트를 작성한다 (스택 감지 → managed/unmanaged 구분 강제 → 커버리지 → 검증)</td>
           </tr>
           <tr>
+            <td><code>commands/harness-loop.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>plan 확정 뒤 선택형 기본 루프 — 메인 세션이 오케스트레이터가 되어 plan 단계마다 Dev 구현 → QA 판정 → 커밋을 순차로 돌리고, 네 멈춤 조건에서 사람에게 넘긴다</td>
+          </tr>
+          <tr>
             <td><code>commands/harness-migrate.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
             <td>구버전 구조를 최신으로 마이그레이션 + 설치된 훅·스킬·규칙을 최신 템플릿으로 refresh — init은 기존 파일을 건너뛰므로 이 파일들의 템플릿 수정이 도달하는 유일한 경로 (AGENTS.md·CLAUDE.md 관리 절은 init이 렌더한다)</td>
@@ -1650,6 +1661,11 @@
             <td><code>skills/harness-inttest/agents/openai.yaml</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
             <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>skills/harness-loop/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
           </tr>
           <tr>
             <td><code>skills/harness-migrate/SKILL.md</code></td>
@@ -2518,6 +2534,11 @@
           </tr>
           <tr>
             <td><code>tests/list-remote.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/loop-command.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>

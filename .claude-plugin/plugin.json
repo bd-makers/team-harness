@@ -13,6 +13,7 @@
     "./commands/harness-promote.md",
     "./commands/harness-task.md",
     "./commands/harness-ship.md",
+    "./commands/harness-loop.md",
     "./commands/harness-diagram.md",
     "./commands/harness-migrate.md",
     "./commands/harness-spec.md",

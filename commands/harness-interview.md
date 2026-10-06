@@ -38,6 +38,7 @@ argument-hint: (없음 — 활성 task 자동 감지)
      쓰고, 없으면 직접 쓴다. 도구가 없다고 멈추지 않는다. 어느 경로든 `AGENTS.md`의 "plan.md 계약"
      (체크박스가 `done` 가드의 입력 · Ontology 변경 로그 · Done evidence)과 "task 워크플로우"
      (다이어그램 옵트인 체크박스는 상태 · Boundary contracts)를 따른다.
+   - plan을 확정한 뒤 구현을 루프로 돌릴지는 개발자가 고른다 — 선택형 `/harness-loop`(쓰지 않아도 된다).
    - 열린 질문 검사: `## 참고` 절의 `- (open) …` 항목마다 답이 spec에 반영돼 마커가 지워졌거나,
      `- (open → <대상>) …`으로 이월 대상(다음 task·`docs/decisions.md` 등)이 적혀 있어야 한다.
      대상 없는 `(open)`이 남아 있으면 통과를 선언하지 않는다 — 질문을 잃지 않기 위한 규약이다.
