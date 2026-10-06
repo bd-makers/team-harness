@@ -11,3 +11,7 @@
  .../followups-14-16-close-spec.md                  | 65 ++++++++++++++++++++++
  docs/followups.md                                  | 30 ++++------
  7 files changed, 150 insertions(+), 19 deletions(-)
+
+## 2026-10-06T03:14:35.547Z — a43961f docs(task): followups-14-16-close 실례 서술을 meta 증거에 맞게 정정
+docs/chad/followups-14-16-close/followups-14-16-close-spec.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
