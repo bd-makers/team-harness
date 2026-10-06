@@ -49,6 +49,9 @@
 - loop: 2026-10-06 · 수단 subagent · 단계 6 R2 4차 E1(S2) 반영 — 멈춤 조건 절 전체 고정 · QA pass · commit 31ad874
   - 무엇·왜: R2 4차(tip 8d69938) E1 fail — 숫자 정규식만으로는 "세 번" 같은 상한 표현을 못 막는다. 사용자 결정(권장안): 남은 조각 검사 구간인 멈춤 조건 절을 첫 문단 + bullet 넷 + 절 전체 일치로 고정하고 R2는 한 번만 더 돈다. Dev가 변이 9건 FAIL 확인.
   - QA: gate not-configured · boundary not-configured · scenario pass (6 checked) · docs:check pass.
+- R2 최종 재검(tip dbd8222): E1·E2 pass — S1–S6 모두 변이 검출.
+- loop: 2026-10-06 · 수단 subagent · 단계 6 R2·R3 마무리 · 멈춤 성공
+  - 요약: 구현 루프 단계 3·4(Dev) + 5(검증) + 마무리 반영 Dev 턴 6회. R2 4회(fail 3 → pass), R3 3회(P1 0, P2 3·2·2 — 새 기준으로 통과). PR은 사람이 만든다 → /harness-ship.
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
@@ -211,4 +214,46 @@ git diff의 명령·래퍼·등록·README·interview·cycle·overview·CHANGELO
 
 <!-- harness:review kind=codex-scenario scope=diff tip=8d69938f5b2e03a8dc974ca7bc6b45f773cf8896 at=2026-10-06T12:33:03.041Z -->
 
+### 2026-10-06T12:40:42.193Z — codex-scenario (harness-team review)
+
+- engine: codex · scope: diff · tip: dbd8222b1d5508080152b7b8ca753169df47d3c9 · exit 0 · 2049 B
+
+```text
+검토 범위: `refs/remotes/origin/main` 대비 워킹트리, HEAD `dbd8222`. 파일은 수정하지 않았으며 전후 Git status는 동일합니다.
+
+**E1 · 시나리오 증거가 Then을 실제로 검증 · BLOCKER · pass**
+
+S1–S5 지정 명령의 실행 출력에서 해당 테스트 이름을 확인했습니다. 테스트의 assertion을 그대로 호출하고 문서 입력만 메모리에서 변이한 결과, 다음 24개 변이가 모두 `ERR_ASSERTION`으로 실패했습니다.
+
+- **S1:** 등록 제거·래퍼 이름/참조 변경. manifest 양방향 비교와 래퍼 assertion이 검출합니다.
+- **S2:** 조건 삭제·실패 집합/diff 기준 제거·`3회`/`세 번` 상한 추가. 절 전체 비교가 검출합니다.
+- **S3:** 검사 담당 변경·기록 의무 제거·gate/루브릭 명령 제거. 순서와 문단 비교가 검출합니다.
+- **S4:** 질문 생략·병렬 Dev·복수 쓰기·Dev 커밋·승인 시 계속 진행. 각 경계의 전체 비교가 검출합니다.
+- **S5:** 서비스형 제공·선택형 루프 미제공으로 반전. README 문단 비교가 검출합니다.
+
+근거: `tests/manifest-sync.test.mjs:106,118`, `tests/loop-command.test.mjs:58,95,141,182`. 실제 변이 실행 출력: `Mutation totals: 29 rejected: 29 survived: 0`.
+
+**S6**는 artifact 9행의 `수단 subagent · 단계 … · QA pass · commit 789dcf8`을 확인했습니다. 기록 줄·수단·단계·QA pass·SHA를 제거한 5개 변이에서 선언된 grep 패턴이 각각 exit 1로 실패했습니다.
+
+**E2 · spec 밖 동작 변경 없음 · MAJOR · pass**
+
+diff의 명령·래퍼·등록·README·interview·cycle·overview·CHANGELOG 변경은 R-1–R-13과 spec의 영향 파일 목록에 대응합니다. 검증 단계 처리, 커밋 실패 복구, 마무리 재진입, R3 기준 보완도 artifact 17·30·33·40행에 발견과 반영 사유가 기록되어 있습니다. 대응 근거 없는 동작 변경은 발견하지 못했습니다.
+
+**최종 verdict: pass — 실패 항목 전체: 없음.**
+```
+
+<!-- harness:review kind=codex-scenario scope=diff tip=dbd8222b1d5508080152b7b8ca753169df47d3c9 at=2026-10-06T12:40:42.193Z -->
+
 ## Learnings
+
+## Learnings (2026-10-06)
+
+- **프롬프트 문서의 계약 테스트는 근거 구간 전체를 고정해야 수렴한다.** 문구 조각 match는 R2 루브릭이 의미 반전 변이(기록 안 함·묻지 않음·'세 번' 상한)를 찾을 때마다 한 조각씩 늘어나 4회를 돌았다. 각 Then을 떠받치는 문단·항목을 공백 정규화 전체 비교로 고정하자 한 번에 pass. 기대값을 문서 원문 상수로 두면 의도적 변경 때 테스트도 함께 고치게 된다.
+
+## Learnings (2026-10-06)
+
+- **리뷰 루프에는 종료 기준이 따로 필요하다.** '진전 없음'(실패 집합 동일 + diff 무변화)은 같은 실패의 반복만 잡는다. R3가 반영마다 새 P2를 내면 실패 집합이 매번 달라 영원히 돈다. 엣지 케이스가 열린 산출물(프롬프트 문서)에서는 'P1 없음 = 통과, P2 재검 한 번까지'처럼 리뷰 단위의 수렴 규칙을 둔다.
+
+## Learnings (2026-10-06)
+
+- **dogfood가 루프 문서의 빈칸을 실제로 찾았다.** 검증만 하는 plan 단계 처리, 커밋(pre-commit 훅) 실패 시 체크가 커밋 없이 남는 상태 — 후자는 2단계에서 실제로 발생했다. 문서 리뷰만으로는 나오지 않던 결함이다. 루프 변경은 실제로 한 번 돌려 본다.

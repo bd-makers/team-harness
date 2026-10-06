@@ -141,3 +141,8 @@ docs/chad/default-loop-skill/default-loop-skill-artifact.md | 3 +++
 .../default-loop-skill-handoff.md                   |  6 ++++++
  tests/loop-command.test.mjs                         | 21 +++++++++++++++++++++
  2 files changed, 27 insertions(+)
+
+## 2026-10-06T12:37:29.475Z — dbd8222 docs(task): default-loop-skill 루프 기록 — R2 4차 반영
+docs/chad/default-loop-skill/default-loop-skill-artifact.md | 3 +++
+ docs/chad/default-loop-skill/default-loop-skill-handoff.md  | 5 +++++
+ 2 files changed, 8 insertions(+)

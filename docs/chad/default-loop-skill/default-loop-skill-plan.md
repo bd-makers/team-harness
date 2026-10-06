@@ -10,7 +10,7 @@ S3 기본 루프를 선택형 명령 `/harness-loop`(프롬프트 + 기존 CLI)�
 - [x] 3. **`/harness-loop`로 실행(dogfood)**: README 설계 스코프 문단 정정 + 명령 절 추가, `docs/harness-cycle.md` §2 S3 행·§6 B 진행 표시 → S5 green, artifact 루프 기록 줄(S6)
 - [x] 4. overview 재생성(`node scripts/generate-harness-overview.mjs`) + `npm run docs:check` + CHANGELOG `[Unreleased]`
 - [x] 5. `npm run test` 전체 + `node bin/harness-team.mjs scenario check` 전부 pass, 이름 찍힌 실행 출력을 artifact에 기록
-- [ ] 6. R2 루브릭 `node bin/harness-team.mjs review codex --framing scenario` → R3 `node bin/harness-team.mjs review codex` → 발견 판별·반영
+- [x] 6. R2 루브릭 `node bin/harness-team.mjs review codex --framing scenario` → R3 `node bin/harness-team.mjs review codex` → 발견 판별·반영
 - [ ] 7. ship 준비(`/harness-ship`, `pr-check`) — push·PR은 사용자 승인 후
 
 ## Ontology 변경 로그
