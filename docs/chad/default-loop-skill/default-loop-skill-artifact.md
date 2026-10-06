@@ -140,4 +140,38 @@ Verification: 14 relevant tests, `docs:check`, and diff whitespace checks passed
 
 <!-- harness:review kind=codex scope=diff tip=6d3a716bdf7f19b930555362ad2e06d743d79d65 at=2026-10-06T10:53:27.085Z -->
 
+### 2026-10-06T12:26:09.385Z — codex-scenario (harness-team review)
+
+- engine: codex · scope: diff · tip: c98a11bd8f2c03b33e8dcc4c094ed27d8f33adf1 · exit 0 · 2596 B
+
+````text
+검토 범위: `refs/remotes/origin/main` 대비 워킹트리, HEAD `c98a11b`. 파일은 수정하지 않았으며, 전후 Git status는 동일합니다.
+
+**E1 · 각 시나리오의 증거가 Then을 실제로 검증 · BLOCKER · fail**
+
+지정 명령에서 S1–S5의 실제 테스트 이름을 확인했습니다. 그러나 [테스트 assertion](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/default-loop-skill/tests/loop-command.test.mjs:63>)은 다음 변이를 잡지 못합니다. 파일 대신 메모리의 문서 입력만 바꾸고 실제 테스트 함수를 실행했습니다.
+
+- **S3:** QA 4번의 출력 기록 의무를 “확인만 하고 artifact에는 기록하지 않는다”로 바꿔도 통과합니다. 65–71행은 문구 순서만 검사합니다.
+- **S4:** 진입 질문을 “묻지 않고 오케스트레이터로 진행한다”로 바꿔도 통과합니다. 병렬 Dev를 허용하고 쓰기 주체를 둘로 바꾸는 변이도 통과합니다. 91·95행은 질문 문구와 오케스트레이터의 쓰기 금지만 검사합니다.
+- **S5:** README의 “선택형 기본 루프 `/harness-loop`를 제공합니다”를 “제공하지 않습니다”로 바꿔도 통과합니다. 107행은 명령 이름까지만 검사합니다.
+
+위 변이의 실제 출력은 각각 exit 0입니다.
+
+```text
+✔ loop: QA runs machine checks before the read-only rubric and records named test output
+✔ loop: entry asks orchestrator-or-individual and the loop never pushes or opens a PR
+✔ loop: README distinguishes a service orchestrator from the optional loop command
+```
+
+S1의 등록·래퍼 불일치, S2의 조건 삭제·횟수 상한 추가, S6의 기록·QA pass·SHA 제거 변이는 실패했습니다. 이전 S3 루브릭 담당·S4 승인 시 멈춤 변이도 현재는 실패합니다.
+
+**E2 · spec 밖 동작 변경 없음 · MAJOR · pass**
+
+Git diff의 명령·래퍼·등록·README·interview·cycle·overview·CHANGELOG 변경은 spec R-1–R-13 및 영향 파일 목록에 대응합니다. 추가된 검증 단계 처리·커밋 실패 복구·마무리 재진입 규칙도 [artifact](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/default-loop-skill/docs/chad/default-loop-skill/default-loop-skill-artifact.md:17>)에 발견과 반영 사유가 기록되어 있습니다.
+
+**최종 verdict: fail — 실패 항목 전체: E1(S3, S4, S5).**
+````
+
+<!-- harness:review kind=codex-scenario scope=diff tip=c98a11bd8f2c03b33e8dcc4c094ed27d8f33adf1 at=2026-10-06T12:26:09.385Z -->
+
 ## Learnings
