@@ -11,7 +11,7 @@ R2(시나리오 ↔ 증거 대조)를 Done evidence `scenarios` 선언 + `scenar
 - [x] 문서: spec 템플릿 주석·AGENTS.md.hbs(+AGENTS.md)·README·harness-cycle §4-1b·CHANGELOG
 - [x] 검증: `npm run test` green + 이 task spec에 `node bin/harness-team.mjs scenario check` 실행
 - [x] 리뷰: `harness-team review codex` + `--framing scenario` 실행, artifact `## Reviews`에 판별 기록
-- [ ] 커밋 + `harness-team pr-check`
+- [x] 커밋 + `harness-team pr-check`
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
