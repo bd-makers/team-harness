@@ -107,3 +107,9 @@ docs/chad/default-loop-skill/default-loop-skill-handoff.md | 6 ++++++
  docs/chad/default-loop-skill/default-loop-skill-plan.md    | 1 +
  docs/chad/default-loop-skill/default-loop-skill-spec.md    | 8 +++++++-
  3 files changed, 14 insertions(+), 1 deletion(-)
+
+## 2026-10-06T12:22:00.222Z — 77d0d0b docs(loop): R3 통과 기준(P1 없음, P2 재검 한 번까지) + R3 3차 P2 반영
+commands/harness-loop.md                                   | 10 ++++++++--
+ docs/chad/default-loop-skill/default-loop-skill-handoff.md |  6 ++++++
+ tests/loop-command.test.mjs                                | 10 ++++++++++
+ 3 files changed, 24 insertions(+), 2 deletions(-)

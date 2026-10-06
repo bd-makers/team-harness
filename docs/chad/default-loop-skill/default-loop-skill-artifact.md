@@ -36,6 +36,13 @@
   - QA: gate not-configured · boundary not-configured · scenario pass (6 checked) · docs:check pass.
 - loop: 2026-10-06 · 수단 subagent · 단계 6 R3 3차 · 멈춤 spec 공백
   - 사유: R3가 반영마다 새 P2를 낸다(3차, tip 6d3a716: R3 반영 뒤 R2·전체 시나리오 재검 누락 · 명령 기반 증거의 이름 줄 대안 없음 — 둘 다 유효 판별, 미반영). 실패 집합이 매번 달라 "진전 없음"에 걸리지 않지만 수렴하지 않는다. spec R-7의 "R3 통과" 기준이 정의되지 않았다 → 사람에게 질문.
+- 재개(2026-10-06): 사용자 결정 — R3 통과 = P1 없음, P2는 반영 후 재검 한 번까지, 남은 P2는 후속(spec R-8 · R1 발견에 기록, 커밋 d0de577).
+- loop: 2026-10-06 · 수단 subagent · 단계 6 R3 통과 기준 + R3 3차 P2×2 반영 · QA pass · commit 77d0d0b
+  - 무엇·왜: 루프 문서에 R3 통과 기준과 종료 근거를 적고 계약 테스트로 고정. 3차 P2(반영 뒤 전체 시나리오·루브릭 재검 · 명령 기반 증거의 기록 대안) 반영.
+    Dev 해석 수용: P1은 통과까지 반영·재검하고, 그 멈춤 장치는 "진전 없음"이다.
+  - QA: gate not-configured · boundary not-configured · scenario pass (6 checked) · docs:check pass.
+  - `✔ loop: the four stop conditions are pinned and no-progress has no numeric cap` · `✔ loop: QA runs machine checks before the read-only rubric and records named test output`
+  - R3: 재검 한 번을 이미 넘겼고(3차까지 실행) 3차 P2를 모두 반영해 남은 P2 없음 → 새 기준으로 R3 통과. 테스트가 바뀌었으므로 R2 루브릭 재검을 돈다.
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
