@@ -654,6 +654,12 @@
             <td>plan 확정 뒤 선택형 기본 루프 — 메인 세션이 오케스트레이터가 되어 plan 단계마다 Dev 구현 → QA 판정 → 커밋을 순차로 돌리고, 네 멈춤 조건에서 사람에게 넘긴다</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
           </tr>
+          <tr data-command-source="commands/harness-wiki.md">
+            <td><span class="cmd">/harness-wiki</span></td>
+            <td><code>commands/harness-wiki.md</code></td>
+            <td>머지된 task의 결정·바뀐 모듈·학습을 PR·커밋·작성자 출처가 붙은 기능·모듈 위키 항목(wiki/)으로 컴파일 — 선택 단계, 머지 후 종결 절차에서 done 다음</td>
+            <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
+          </tr>
           <tr data-command-source="commands/harness-diagram.md">
             <td><span class="cmd">/harness-diagram</span></td>
             <td><code>commands/harness-diagram.md</code></td>
@@ -1483,6 +1489,11 @@
             <td>JS/TS/React/RN 프로젝트에 Khorikov 원칙 기반 단위테스트를 작성한다 (스택 자동 감지 → GWT 강제 → 커버리지 → 검증)</td>
           </tr>
           <tr>
+            <td><code>commands/harness-wiki.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
+            <td>머지된 task의 결정·바뀐 모듈·학습을 PR·커밋·작성자 출처가 붙은 기능·모듈 위키 항목(wiki/)으로 컴파일 — 선택 단계, 머지 후 종결 절차에서 done 다음</td>
+          </tr>
+          <tr>
             <td><code>docs/diagrams/harness-overview/architecture.mmd</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Mermaid</span></td>
             <td>harness overview 아키텍처 다이어그램 원본</td>
@@ -1788,6 +1799,11 @@
             <td>Codex skill 표시 메타데이터</td>
           </tr>
           <tr>
+            <td><code>skills/harness-wiki/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Skill</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
             <td><code>src/cli-args.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
             <td>CLI가 공유하는 핵심 모듈</td>
@@ -1901,6 +1917,11 @@
             <td><code>src/commands/task.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
             <td>harness-team task CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/wiki.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team wiki CLI 구현</td>
           </tr>
           <tr>
             <td><code>src/detect-stack.mjs</code></td>
@@ -2784,6 +2805,16 @@
           </tr>
           <tr>
             <td><code>tests/what-changes-latest-version.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/wiki-command.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/wiki.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>
