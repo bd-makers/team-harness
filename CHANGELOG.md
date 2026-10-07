@@ -9,8 +9,10 @@
 
 ## [Unreleased]
 
+## [0.47.0] - 2026-10-07
+
 ### Added
-- **R1 원천 문서 검토** (task `r1-source-review`, cycle §4-1·§6 묶음 A2). spec 템플릿에 `## 원천 검토 (R1)` 절(`### 원천`·`### 발견`)이
+- **R1 원천 문서 검토** (task `r1-source-review`, #132, cycle §4-1·§6 묶음 A2). spec 템플릿에 `## 원천 검토 (R1)` 절(`### 원천`·`### 발견`)이
   `## 목적 / 요구사항` 다음에 생긴다. `/harness-interview`가 채점 전에 원천 문서(PRD·Figma·API 문서·기획서·정책서) 사이의 충돌·모순을
   `(unresolved)`, 누락을 `(open)`으로 기록하고, 사용자 결정(`→ 결정:`)과 재대조 뒤 `- 검토 완료: <날짜>`로 닫는다. 원천이 없으면 `- 없음 — <사유>`.
   6단계 통과 선언은 R1 기록이 없거나, R1 절에 미해결 발견이 있거나, spec 어디든 `(unresolved)` 항목이 남으면 하지 않는다 —
@@ -18,7 +20,7 @@
   `/harness-spec`은 수집한 원천 위치를 R1 절에도 적는다. 원천 위치는 프로젝트 데이터라 하네스가 정하지 않는다.
   기존 task의 spec은 그대로 두며, interview가 절이 없으면 만들어 채운다. 외부 엔진 프레이밍(`--framing sourcecheck`)은 보류했다 —
   read-only 엔진은 Confluence·Figma MCP에 닿지 않고, `meta.reviews`는 Plan 전 게이트가 되지 못한다.
-- **R2 시나리오 ↔ 증거 대조** (task `r2-scenario-evidence`, cycle §4-1b·§6 묶음 A1, 옵트인). spec `## Done evidence` JSON에
+- **R2 시나리오 ↔ 증거 대조** (task `r2-scenario-evidence`, #133, cycle §4-1b·§6 묶음 A1, 옵트인). spec `## Done evidence` JSON에
   `scenarios` 배열(`id`·`given`·`when`·`then`·`test`·`cmd`)을 선언해 수용 기준을 Given/When/Then으로 쓰고 시나리오마다 증거를 잇는다.
   - 1행(증거 연결): 키가 빠지거나 비었거나 id가 겹치면 선언 invalid → `done`이 막힌다.
   - 2행(exit 0): 새 하위 명령 `harness-team scenario check`가 각 `cmd`를 `/bin/sh -c`로 실행한다(같은 명령은 1회). 출력 계약은
@@ -27,7 +29,7 @@
     검증하는가, spec 밖 동작이 없는가. exit 0은 필요조건일 뿐이라(이름 필터 0건 매치도 exit 0) 3행이 그 틈을 본다.
   - 시나리오를 선언한 task에서 `verify: required`는 `-scenario` kind만 검증 증거로 센다. `done`은 증거 명령을 실행하지 않는다.
   - **구 CLI(0.46.0 이하)는 `scenarios`를 알 수 없는 키로 보고 `done`을 막는다** — 시나리오를 쓰는 팀은 CLI를 먼저 올린다.
-- **`/harness-loop` 선택형 기본 루프** (task `default-loop-skill`, cycle §2 S3·§6 B). plan을 확정한 뒤 고르는 루프다 — 메인 세션이
+- **`/harness-loop` 선택형 기본 루프** (task `default-loop-skill`, #134, cycle §2 S3·§6 B). plan을 확정한 뒤 고르는 루프다 — 메인 세션이
   오케스트레이터가 되어 plan 단계마다 Dev(서브에이전트, 단일 쓰기, 커밋 금지) → QA → 로컬 커밋을 순차로 돌린다.
   - QA: 오케스트레이터가 기계 검사(`gate commit`·`boundary check`·`scenario check` + 테스트 이름이 찍힌 출력 기록)를 돌리고,
     모든 단계 뒤 read-only `review --framing scenario`, 이어 R3 리뷰.
@@ -35,7 +37,7 @@
   - 루프 전용 CLI는 없다 — 명령 문서가 기존 CLI를 엮는다. Codex 래퍼 `skills/harness-loop`, Codex가 오케스트레이터를 맡는 경로는 실험적.
   - README 설계 스코프 문구를 정정했다(서비스형 런타임 오케스트레이터는 비채택, 선택형 루프는 제공). `/harness-interview`에 포인터 한 줄.
   - 소비자 영향: 슬래시 명령 하나가 늘 뿐 기존 동작은 바뀌지 않는다.
-- **`/harness-wiki` 위키 컴파일 (C1, 추가만)** (task `wiki-compile`, cycle §4-4·§6 C1, 선택 단계). 머지된 task의 결정·바뀐 모듈·학습을
+- **`/harness-wiki` 위키 컴파일 (C1, 추가만)** (task `wiki-compile`, #135, cycle §4-4·§6 C1, 선택 단계). 머지된 task의 결정·바뀐 모듈·학습을
   최상위 `wiki/`의 기능·모듈 단위 항목으로 모은다. 머지 후 종결 절차에서 `done` 다음, `summary --write` 전에 돌리고 같은 종결 커밋에 담는다.
   - 새 하위 명령 `harness-team wiki sources [<user>/<task>] [--pr <N>]`(읽기 전용): 기본 브랜치 first-parent 이력에서 task 디렉터리를 들여온
     커밋을 찾아 PR 번호(GitHub `Merge pull request #N`·`(#N)`, GitLab `See merge request …!N`)·커밋·작성자(meta `user`)를 추론하고,
@@ -47,7 +49,7 @@
   - 소비자 영향: 슬래시 명령·CLI 하위 명령이 하나씩 늘 뿐 기존 동작(`done`·`summary`·handoff)은 바뀌지 않는다. task 폴더 삭제는 C2다.
 
 ### Fixed
-- **`wiki sources` 인용문·목록 안 펜스의 예시 마커를 컴파일 흔적으로 세던 문제** (task `wiki-fence-nested`, C1 후속 P2-b). 인용문(`>`)·목록 항목 안 펜스를 컨테이너 기준(인용 깊이·목록 내용 열)으로 판정해 그 안의 `harness:wiki` 예시 마커를 세지 않는다 — 작성 규칙 문서가 예시를 그렇게 쓰면 task가 `compiled`로 잡혀 영영 컴파일되지 않았다.
+- **`wiki sources` 인용문·목록 안 펜스의 예시 마커를 컴파일 흔적으로 세던 문제** (task `wiki-fence-nested`, #136, C1 후속 P2-b). 인용문(`>`)·목록 항목 안 펜스를 컨테이너 기준(인용 깊이·목록 내용 열)으로 판정해 그 안의 `harness:wiki` 예시 마커를 세지 않는다 — 작성 규칙 문서가 예시를 그렇게 쓰면 task가 `compiled`로 잡혀 영영 컴파일되지 않았다.
 
 ## [0.46.0] - 2026-10-06
 

@@ -201,7 +201,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.46.0</span>
+      <span class="tag tag-purple">v0.47.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -209,6 +209,12 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.47.0 — R1 원천 검토 · R2 시나리오 대조 · 선택형 기본 루프 · 위키 컴파일:</strong>
+    <br>
+    <code>0.47.0</code> <strong>사이클의 검토 지점 R1·R2와 S3 루프·S8 위키(추가만)가 생겼다.</strong> <code>/harness-interview</code>가 채점 전에 원천 문서(PRD·Figma·API 문서·기획서·정책서) 사이의 충돌·누락을 spec <code>## 원천 검토 (R1)</code>에 기록하고, 미해결이 남으면 통과를 선언하지 않는다.
+    spec <code>## Done evidence</code>에 <code>scenarios</code>(Given/When/Then + 증거 <code>test</code>·<code>cmd</code>)를 선언하면 <code>harness-team scenario check</code>가 증거 명령 exit 0을, <code>review &lt;engine&gt; --framing scenario</code>가 증거가 Then을 검증하는지를 본다(옵트인 — 선언하면 <code>verify</code> 증거는 <code>-scenario</code>만 센다).
+    선택형 <code>/harness-loop</code>는 plan 단계마다 Dev → QA → 로컬 커밋을 순차로 돌리고, <code>/harness-wiki</code> + <code>harness-team wiki sources</code>는 머지된 task를 최상위 <code>wiki/</code>로 컴파일한다. <strong>구 CLI(0.46.0 이하)는 <code>scenarios</code>를 알 수 없는 키로 보고 <code>done</code>을 막는다</strong> — 시나리오를 쓰는 팀은 CLI를 먼저 올린다.
+    <br><br>
     <strong>🆕 0.46.0 — PR 필수 task 문서 검사 · 커밋 게이트는 팀 파일 · 모노레포 게이트:</strong>
     <br>
     <code>0.46.0</code> <strong>하네스가 강제하는 유일한 것(D11)을 <code>harness-team pr-check</code>가 판정한다</strong> — diff가 건드린 task마다 spec·plan·handoff·artifact가 커밋에 있고 비어 있지 않으며 템플릿 그대로가 아닌지 본다. init·sync가 설치하는 <strong>pre-push 훅</strong>과 <code>/harness-ship</code>이 같은 검사를 돌리고, doctor는 pre-push 블록 유실을 알린다(기존 설치본은 <code>harness-team sync</code> 1회).
@@ -946,7 +952,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.46.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.47.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

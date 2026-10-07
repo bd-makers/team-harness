@@ -25,7 +25,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 
 ## 2. 사이클
 
-표기: ✓ 있음 · △ 약함 · ✗ 없음 (현재 0.46.0 기준)
+표기: ✓ 있음 · △ 약함 · ✗ 없음 (현재 0.47.0 기준)
 
 **R = 검토 지점(Review point)**: R1 원천 문서 검토(S1 직후) · R2 시나리오 ↔ 증거 대조(S4 구현 직후) · R3 코드 리뷰(S6, PR 전). S = 사이클 단계(Stage).
 
@@ -35,11 +35,11 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 | **S1 Spec** | `spec.md` (PRD·Figma·API 문서·기획서·정책서 소스) | **R1 소스 검토**(차단) | ✓ harness-spec · ✓ R1 원천 검토(interview 안 단계, 규범 차단 — task `r1-source-review`) |
 | **S2 Plan** | `plan.md` + **plan 다이어그램**(이해용) | 개발자 확인 | ✓ plan · △ 다이어그램 옵트인 |
 | **S3 구현** | 코드 · TCC(작업 카드) | — (자유) | ✓ 자유 · ✓ 기본 루프(`/harness-loop`, 선택형) |
-| **S4 구현 검증** | spec 시나리오(Given/When/Then) ↔ 증거 | **R2 시나리오 대조**(기계 2 + 루브릭 2, §4-1b) | △ done 가드가 체크박스·evidence만 확인 |
+| **S4 구현 검증** | spec 시나리오(Given/When/Then) ↔ 증거 | **R2 시나리오 대조**(기계 2 + 루브릭 2, §4-1b) | ✓ R2 시나리오 대조(옵트인 — `scenario check` + `review --framing scenario`, task `r2-scenario-evidence`) |
 | **S5 커밋** | — | **검증 프리셋 실행**(lint·tsc·test) | ✓ `gate commit` — 팀 파일 `.harness/gates.json`(프리셋 제안, workspace는 turbo·nx 위임 또는 디렉터리별) |
 | **S6 코드 리뷰** | 리뷰 기록(`## Reviews`·meta.reviews) | **R3 로컬 리뷰** (PR 전 필수) | △ spec이 required 선언할 때만 강제 |
 | **S7 PR** | spec·plan·handoff·artifact 커밋, **PR 다이어그램**(권장 — 실제 구조 + plan 대비 변화) | **`pr-check`**(4문서 차단, 다이어그램은 안내) | ✓ pr-check · pre-push 훅 · ship 연동 |
-| **S8 지식화** | 최상위 **`wiki/`** 항목(기능·모듈 단위), task 폴더 삭제 | — | ✗ 없음 (task 단위로만 쌓임) |
+| **S8 지식화** | 최상위 **`wiki/`** 항목(기능·모듈 단위), task 폴더 삭제 | — | △ 위키 컴파일(`/harness-wiki` + `wiki sources`, 추가만 — C1) · ✗ task 폴더 삭제(C2) |
 
 **가로축** (모든 단계에 걸침)
 - 세션·머신 인계: handoff ✓
@@ -267,7 +267,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 6. 선택형 기본 루프 스킬 + README의 오케스트레이션 문구 정정(§4-3)
 7. 위키 컴파일 + task 폴더 삭제(§4-4) — 위키 형태 입력은 2026-10-06에 받았다(§4-4)
 
-**진행 계획 (2026-10-06, 1–4는 0.46.0으로 릴리스)** — 남은 단계를 의존성 순서로 묶고 묶음마다 릴리스한다.
+**진행 계획 (2026-10-06, 1–4는 0.46.0, A·B·C1은 0.47.0으로 릴리스)** — 남은 단계를 의존성 순서로 묶고 묶음마다 릴리스한다.
 - **A** (병렬, 격리 워크트리 2개 — D5): A1 R2 시나리오·증거(task `r2-scenario-evidence`) · A2 R1 소스 검토(task `r1-source-review`). R2는 `Done evidence`와 같은 옵트인이다 — PR 강제는 D11대로 4문서뿐.
 - **B**: 기본 루프 스킬(task `default-loop-skill`) — QA가 R2를 쓰므로 A1 뒤. 착수 전 Codex 서브에이전트 지원 범위를 실측한다(§4-3). — 구현: task `default-loop-skill`
 - **C**: C1 위키 컴파일(추가만 — 구현: task `wiki-compile`, `/harness-wiki` + `harness-team wiki sources`) → C2 task 폴더 삭제 + 원장·`done`·handoff 입력 이전(호환성 파괴). C2가 1.0 전 마지막 파괴적 변경이다.
