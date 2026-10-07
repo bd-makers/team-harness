@@ -36,6 +36,27 @@
   S10 $ node --test --test-name-pattern="wiki dogfood" tests/wiki.test.mjs
       ✔ wiki dogfood: this repository compiled #134 and #133   (ℹ pass 1 · fail 0)
   ```
+- 최종 검증 출력(2026-10-07, ship — tip 930ec86, R3 반영 이후):
+
+  ```text
+  $ npm test   (exit 0)
+  # unit+e2e
+  ℹ tests 1198
+  ℹ suites 19
+  ℹ pass 1197
+  ℹ fail 0
+  ℹ cancelled 0
+  ℹ skipped 1
+  ℹ todo 0
+  ✔ wiki dogfood: this repository compiled #134 and #133
+  # perf (--test-concurrency=1)
+  ✔ boundary performance: steady-state cold-process check <3x and plan checkpoint <5x an equal-work baseline for 10 x 10KiB local contracts
+  ℹ tests 1
+  ℹ pass 1
+  ℹ fail 0
+  $ npm run docs:check
+  harness overview 생성 상태가 최신입니다.
+  ```
 - 남은 리스크·후속(2026-10-07, ship):
   - 후속 P2-a 얕은 클론에서 출처 오인 · P2-b 인용문·목록 안 펜스 미인식 — `## Reviews` R3 재검 판별 참조.
   - 위키 본문이 종결 커밋으로 PR 리뷰 없이 main에 들어간다 — 사람이 수용(spec 위험 절).
@@ -138,5 +159,29 @@
   - 후속 P2-a(유효): 얕은 클론(shallow)에서는 first-parent 이력의 경계 커밋이 "들여온 커밋"으로 잡혀 출처가 틀린다(검증자 재현: #133 → #134). 이 저장소 CI는 `fetch-depth: 0`, 종결은 사람의 전체 클론에서 돌아 당장 영향은 낮지만 **조용히 틀린 출처**라 우선순위가 높다. 안: `git rev-parse --is-shallow-repository`가 true면 `shallow-history` 막힘.
   - 후속 P2-b(유효): 인용문(`>`)·목록 들여쓰기 안의 펜스 블록을 인식하지 못해 그 안의 예시 마커를 `compiled`로 센다. 작성 규칙 문서가 그런 형식으로 예시를 쓸 때만 발생 — 결과는 "이미 컴파일됨"으로 멈추는 쪽(fail-closed)이다.
   - P3(공백만 있는 줄): CLI가 기록한 리뷰 원문 블록 안이라 손대지 않는다.
+
+### 2026-10-07T06:24:39.817Z — codex-shipcheck (harness-team review)
+
+- engine: codex · scope: diff · tip: 930ec865f5f1bbedb656dcf808423173376218e0 · exit 0 · 3484 B
+
+```text
+`refs/remotes/origin/main` 대비 diff와 커밋을 직접 확인했습니다. 파일은 수정하지 않았습니다.
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| S1 | spec 요구사항 대응 | BLOCKER | **pass** | R1·R2: diff의 `WIKI_DIR = 'wiki'`, `provenance: { pr: prNumber, commit, author }`. R3·R4·R6: [명령 절차](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/commands/harness-wiki.md:26)의 “done → …(선택)”, “규칙이 비어 있으면 …99_inbox”, “그 task의 마커가 연 단락…만 교체”. R5: 기존 done·summary·handoff 구현 변경 없음. R7: [spec](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/docs/chad/wiki-compile/wiki-compile-spec.md:87)에 축소 대안 4개와 기각 사유가 있습니다. 미반영 P2도 artifact에 후속으로 명시되어 있습니다. |
+| S2 | 완료 체크의 실재 | MAJOR | **pass** | [plan](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/docs/chad/wiki-compile/wiki-compile-plan.md:7)의 `[x]` 1–5에 대응하는 변경이 있습니다. CLI `b3ca5c1`, 스킬·종결 연결 `8272059`, dogfood `525ae5d`, 검증 출력 `88e2ba5`, 리뷰 기록 `540b601`·`47c18af`. diff에서 `+import { runWiki }`, `+"./commands/harness-wiki.md"`와 두 위키 항목을 확인했습니다. |
+| S3 | 스코프 밖 변경 | MAJOR | **pass** | 추가 변경인 CHANGELOG·cycle 표기도 [plan 6](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/docs/chad/wiki-compile/wiki-compile-plan.md:12)에 명시되어 있습니다. cycle diff는 “C1 위키 컴파일(추가만 — 구현: task `wiki-compile`…)”입니다. PR 브랜치 dogfood 예외도 [artifact](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/docs/chad/wiki-compile/wiki-compile-artifact.md:45)에 “위키 본문까지 PR 리뷰를 받도록”이라고 기록되어 있습니다. |
+| S4 | 리뷰 기록·마커 | MAJOR | **pass** | meta의 리뷰 4건 모두 [artifact `## Reviews`](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/docs/chad/wiki-compile/wiki-compile-artifact.md:47)에 원문·판별·마커가 있습니다. `kind=codex-scenario`의 tip `88e2ba5…`·`17ed4ac…`, `kind=codex`의 tip `540b601…`·`6974ddb…`가 각각 일치합니다. |
+| S5 | 검증 결과의 명령·출력 인용 | BLOCKER | **fail** | [artifact 14행](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/docs/chad/wiki-compile/wiki-compile-artifact.md:14)의 “`npm test` → tests 1198 … perf 1/1 pass”, “`npm run docs:check` → 최신”은 산문 요약이며 실제 출력 인용이 없습니다. S1–S10의 이름 찍힌 출력 블록은 있지만, 전체 테스트·perf 검증 보고까지 뒷받침하지는 않습니다. 해당 명령의 실제 출력 발췌가 필요합니다. |
+
+이번에 직접 실행한 읽기 전용 검사에서는 테스트 31개와 `docs:check`가 통과했습니다. 전체 `npm test`는 임시 파일 생성이 필요해 실행하지 않았습니다. `git diff --check`는 기록된 공백 5곳으로 exit 2였습니다.
+
+**최종 판정: fail — 전체 fail 목록: S5(BLOCKER, 전체 테스트·perf 검증의 실제 출력 인용 누락).**
+```
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=930ec865f5f1bbedb656dcf808423173376218e0 at=2026-10-07T06:24:39.817Z -->
+
+- 판별(2026-10-07): S5 BLOCKER fail **유효** — 5단계 전체 테스트·docs:check가 요약 산문뿐이었다. 조치(문서만): R3 반영 이후 tip 930ec86에서 `npm test`·`npm run docs:check`를 다시 돌려 실제 출력 발췌를 `## 결과` "최종 검증 출력"에 인용. S1–S4 pass, 조치 없음. `git diff --check` 공백은 CLI가 기록한 리뷰 원문 블록 안이라 손대지 않는다.
 
 ## Learnings

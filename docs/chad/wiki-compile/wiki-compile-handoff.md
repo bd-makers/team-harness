@@ -97,3 +97,9 @@ CHANGELOG.md                                   | 10 ++++++++++
  docs/chad/wiki-compile/wiki-compile-plan.md    |  2 +-
  docs/harness-cycle.md                          |  2 +-
  4 files changed, 18 insertions(+), 2 deletions(-)
+
+## 2026-10-07T06:22:11.415Z — 930ec86 docs(task): wiki-compile ship — spec 실행 시점 정정, 리스크·후속 기록
+docs/chad/wiki-compile/wiki-compile-artifact.md | 6 ++++++
+ docs/chad/wiki-compile/wiki-compile-handoff.md  | 7 +++++++
+ docs/chad/wiki-compile/wiki-compile-spec.md     | 3 ++-
+ 3 files changed, 15 insertions(+), 1 deletion(-)
