@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ default-loop-skill
 - ✅ empty-doc-guard
 - ✅ followups-14-16-close
 - ✅ post-commit-prepend
