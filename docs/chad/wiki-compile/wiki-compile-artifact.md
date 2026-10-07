@@ -112,4 +112,25 @@
   - P2-1 `done`이 활성 task를 비운다(`runDone` → `writeActive(null)`) — 안내한 `done → /harness-wiki`(인수 없음)는 "활성 task 없음"으로 실패한다. 조치: 명령 문서 "언제"·`commands/harness-task.md` 종결 절·README 예시를 `/harness-wiki <user>/<task>`로 고치고, 계약 테스트 기대값을 같이 고정.
   - P2-2 펜스 길이 무시 — 4개 백틱 블록 안의 3개 백틱이 블록을 닫았다. 조치: CommonMark 규칙(같은 문자 · 길이 ≥ 여는 펜스 · 정보 문자열 없음)으로 닫기 판정, S5 테스트에 중첩 펜스 단언 추가(옛 로직이면 `a/b`를 세어 실패).
 
+### 2026-10-07T06:21:04.895Z — codex (harness-team review)
+
+- engine: codex · scope: diff · tip: 6974ddb3ea84098926f3c4b5dfc02ee6c3ce3110 · exit 0 · 1226 B
+
+```text
+- **P2 should-fix** — [src/commands/wiki.mjs:88](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/src/commands/wiki.mjs:88): 얕은 이력의 경계 커밋을 최초 도입 커밋으로 오인합니다. 재현 시 #133 task의 출처가 #134로 바뀌므로, 이력 불완전성을 검사해야 합니다.
+- **P2 should-fix** — [src/commands/wiki.mjs:53](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/src/commands/wiki.mjs:53): 인용문·목록 안의 fenced 코드 블록을 인식하지 못해 예시 마커를 `compiled`로 반환하고 실제 컴파일을 건너뜁니다.
+- **P3 nit** — [wiki-compile-artifact.md:51](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/docs/chad/wiki-compile/wiki-compile-artifact.md:51): 공백만 있는 줄 5곳 때문에 `git diff --check`가 실패합니다.
+
+읽기 전용 테스트 31개와 생성 문서 검사는 통과했습니다. 전체 테스트는 실행하지 않았으며, 파일과 Git 상태는 변경하지 않았습니다.
+
+**최종 판정: P1 차단 문제는 없지만, 병합 전 P2 두 건 수정을 권장합니다.**
+```
+
+<!-- harness:review kind=codex scope=diff tip=6974ddb3ea84098926f3c4b5dfc02ee6c3ce3110 at=2026-10-07T06:21:04.895Z -->
+
+- 판별(2026-10-07): P1 없음 → **R3 통과**. 재검은 한 번까지라는 종료 기준(default-loop-skill Learnings · 브리프)에 따라 남은 지적은 반영하지 않고 후속으로 넘긴다.
+  - 후속 P2-a(유효): 얕은 클론(shallow)에서는 first-parent 이력의 경계 커밋이 "들여온 커밋"으로 잡혀 출처가 틀린다(검증자 재현: #133 → #134). 이 저장소 CI는 `fetch-depth: 0`, 종결은 사람의 전체 클론에서 돌아 당장 영향은 낮지만 **조용히 틀린 출처**라 우선순위가 높다. 안: `git rev-parse --is-shallow-repository`가 true면 `shallow-history` 막힘.
+  - 후속 P2-b(유효): 인용문(`>`)·목록 들여쓰기 안의 펜스 블록을 인식하지 못해 그 안의 예시 마커를 `compiled`로 센다. 작성 규칙 문서가 그런 형식으로 예시를 쓸 때만 발생 — 결과는 "이미 컴파일됨"으로 멈추는 쪽(fail-closed)이다.
+  - P3(공백만 있는 줄): CLI가 기록한 리뷰 원문 블록 안이라 손대지 않는다.
+
 ## Learnings

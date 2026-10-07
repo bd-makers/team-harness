@@ -72,3 +72,15 @@ docs/chad/wiki-compile/wiki-compile-artifact.md | 28 +++++++++++++++++++++++++
  docs/chad/wiki-compile/wiki-compile-handoff.md  |  8 +++++++
  docs/chad/wiki-compile/wiki-compile-meta.json   |  9 ++++++++
  3 files changed, 45 insertions(+)
+
+## 2026-10-07T06:18:28.564Z — 6974ddb fix(wiki): done 뒤에는 대상 task를 명시 · 펜스 닫기는 CommonMark 길이 규칙 — R3 P2 반영
+README.md                                       |  2 +-
+ commands/harness-task.md                        |  4 ++--
+ commands/harness-wiki.md                        |  4 ++--
+ docs/chad/wiki-compile/wiki-compile-artifact.md | 19 +++++++++++++++++++
+ docs/chad/wiki-compile/wiki-compile-handoff.md  |  6 ++++++
+ docs/chad/wiki-compile/wiki-compile-meta.json   |  9 +++++++++
+ src/commands/wiki.mjs                           | 18 +++++++++++++-----
+ tests/wiki-command.test.mjs                     |  6 +++---
+ tests/wiki.test.mjs                             |  3 +++
+ 9 files changed, 58 insertions(+), 13 deletions(-)
