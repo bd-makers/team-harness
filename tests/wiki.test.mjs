@@ -189,3 +189,17 @@ test('wiki sources: is read-only and summary ignores wiki/', async () => {
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+// dogfood: 이 저장소의 wiki/ 가 #134·#133 을 컴파일한 결과를 담고 있다. 출처는 저장소 자신의 first-parent 이력에서
+// 추론된다 — CI 는 fetch-depth 0 이라 이력이 있다(.github/workflows/test.yml).
+test('wiki dogfood: this repository compiled #134 and #133', async () => {
+  for (const [task, pr, file] of [
+    ['default-loop-skill', 134, 'wiki/20_domain/default-loop.md'],
+    ['r2-scenario-evidence', 133, 'wiki/20_domain/review-gates.md'],
+  ]) {
+    const out = await wikiSources(ROOT, 'chad', task, { at: AT });
+    assert.equal(out.provenance.pr, pr, task);
+    assert.deepEqual(out.compiled, [file], task);
+    assert.deepEqual(out.rules, ['wiki/90_system/compile-rules.md']);
+  }
+});

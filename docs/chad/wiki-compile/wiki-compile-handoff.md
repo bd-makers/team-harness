@@ -29,3 +29,15 @@ bin/harness-team.mjs                            |   6 +-
  tests/cli-args.test.mjs                         |   2 +-
  tests/wiki.test.mjs                             | 191 +++++++++++++++++
  10 files changed, 512 insertions(+), 18 deletions(-)
+
+## 2026-10-07T06:09:01.377Z — 8272059 feat(wiki): /harness-wiki 명령 + Codex 래퍼 + 종결 절차 선택 단계
+.claude-plugin/plugin.json                     |  1 +
+ README.md                                      | 13 +++++
+ commands/harness-task.md                       |  2 +
+ commands/harness-wiki.md                       | 53 +++++++++++++++++
+ docs/chad/wiki-compile/wiki-compile-handoff.md | 13 +++++
+ docs/chad/wiki-compile/wiki-compile-plan.md    |  4 +-
+ docs/harness-overview.html                     | 21 +++++++
+ skills/harness-wiki/SKILL.md                   | 20 +++++++
+ tests/wiki-command.test.mjs                    | 79 ++++++++++++++++++++++++++
+ 9 files changed, 204 insertions(+), 2 deletions(-)
