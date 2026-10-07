@@ -23,7 +23,7 @@ async function cli(dir, ...args) {
 
 // main 위에 task `chad/x` 를 feature 브랜치에서 만들고, `land` 방식으로 main 에 들여온다.
 // 반환하는 sha 는 들여온 커밋(머지 또는 squash) — 출처가 가리켜야 하는 커밋이다.
-async function repoWithLandedTask({ land = 'merge', subject, body = '', status = 'done' }) {
+async function repoWithLandedTask({ land = 'merge', subject, body = '', status = 'done', metaUser = 'chad' }) {
   const dir = await mkdtemp(join(tmpdir(), 'harness-wiki-'));
   await git(dir, 'init', '-q', '-b', 'main');
   await git(dir, 'config', 'user.email', 'test@example.com');
@@ -39,7 +39,7 @@ async function repoWithLandedTask({ land = 'merge', subject, body = '', status =
   await writeFile(join(taskDir, 'x-spec.md'), '# x — Spec\n');
   await writeFile(join(taskDir, 'x-plan.md'), '# x — Plan\n');
   await writeFile(join(taskDir, 'x-artifact.md'), '# x — Artifact\n');
-  await writeFile(join(taskDir, 'x-meta.json'), JSON.stringify({ user: 'chad', task: 'x', status }, null, 2) + '\n');
+  await writeFile(join(taskDir, 'x-meta.json'), JSON.stringify({ user: metaUser, task: 'x', status }, null, 2) + '\n');
   await git(dir, 'add', '-A');
   await git(dir, 'commit', '-qm', 'docs(task): x');
   await git(dir, 'checkout', '-q', 'main');
@@ -61,18 +61,19 @@ test('wiki sources: infers PR, merge commit and author from first-parent history
     { land: 'squash', subject: 'x 기능 추가 (#12)' },
   ];
   for (const c of cases) {
-    const { dir, sha7 } = await repoWithLandedTask(c);
+    // meta 의 user 를 경로의 user(chad)와 다르게 둔다 — 작성자가 경로가 아니라 meta 에서 온다는 것을 가른다.
+    const { dir, sha7 } = await repoWithLandedTask({ ...c, metaUser: 'kim' });
     try {
       // 실제 CLI 로 돌린다 — 라우터가 `wiki` 의 positional 을 대상 디렉터리로 오인하면 여기서 깨진다.
       const { stdout } = await cli(dir, 'wiki', 'sources', 'chad/x', '--json');
       const out = JSON.parse(stdout);
       assert.equal(out.status, 'success', c.subject);
-      assert.deepEqual(out.provenance, { pr: 12, commit: sha7, author: 'chad' }, c.subject);
+      assert.deepEqual(out.provenance, { pr: 12, commit: sha7, author: 'kim' }, c.subject);
       assert.deepEqual(out.blockers, [], c.subject);
       const at = /at=(\d{4}-\d{2}-\d{2}) -->$/.exec(out.marker)?.[1];
       assert.ok(at, `marker 에 at 날짜가 있어야 한다: ${out.marker}`);
-      assert.equal(out.marker, wikiMarker({ task: 'chad/x', pr: 12, commit: sha7, author: 'chad', at }), c.subject);
-      assert.equal(out.marker, `<!-- harness:wiki task=chad/x pr=12 commit=${sha7} author=chad at=${at} -->`);
+      assert.equal(out.marker, wikiMarker({ task: 'chad/x', pr: 12, commit: sha7, author: 'kim', at }), c.subject);
+      assert.equal(out.marker, `<!-- harness:wiki task=chad/x pr=12 commit=${sha7} author=kim at=${at} -->`);
       assert.deepEqual(out.docs, ['docs/chad/x/x-spec.md', 'docs/chad/x/x-plan.md', 'docs/chad/x/x-artifact.md']);
     } finally {
       await rm(dir, { recursive: true, force: true });

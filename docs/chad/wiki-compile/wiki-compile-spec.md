@@ -132,9 +132,9 @@
   "scenarios": [
     {
       "id": "S1",
-      "given": "meta status가 done인 task 디렉터리가 세 저장소에 각각 'merge: x (#12)'(이 저장소 관례) · 'Merge pull request #12 from org/x'(GitHub 기본 머지) · 'x (#12)'(GitHub squash) 커밋으로 들어왔다",
+      "given": "meta status가 done이고 meta user(kim)가 경로 user(chad)와 다른 task 디렉터리가 세 저장소에 각각 'merge: x (#12)'(이 저장소 관례) · 'Merge pull request #12 from org/x'(GitHub 기본 머지) · 'x (#12)'(GitHub squash) 커밋으로 들어왔다",
       "when": "wiki sources <user>/<task> --json 을 실행한다",
-      "then": "세 경우 모두 provenance가 pr=12 · 들여온 커밋의 sha7 · author=meta user이고, marker가 그 값으로 정확히 렌더되며 blockers가 비어 있다",
+      "then": "세 경우 모두 provenance가 pr=12 · 들여온 커밋의 sha7 · author=meta user(kim)이고, marker가 그 값으로 정확히 렌더되며 blockers가 비어 있다",
       "test": "wiki sources: infers PR, merge commit and author from first-parent history",
       "cmd": "node --test --test-name-pattern=\"wiki sources: infers PR\" tests/wiki.test.mjs"
     },

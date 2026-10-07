@@ -42,5 +42,27 @@
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
 
+### 2026-10-07T06:13:08.381Z — codex-scenario (harness-team review)
+
+- engine: codex · scope: diff · tip: 88e2ba51d1616df2b156c5188e3610d32d05fd1e · exit 0 · 2281 B
+
+```text
+- **E1 · 각 시나리오의 증거가 Then을 실제로 검증한다 · BLOCKER · fail**
+  
+  **S1의 `author=meta user`를 깨뜨리는 변이를 잡지 못합니다.** [테스트 fixture](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/tests/wiki.test.mjs:42)는 meta user를 `'chad'`로 고정하고, [호출·assertion](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/tests/wiki.test.mjs:67)도 경로 user와 기대 author를 모두 `'chad'`로 둡니다. 따라서 [구현](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/src/commands/wiki.mjs:131)을 `const author = user`로 바꿔 meta를 무시해도 S1의 provenance·marker assertion은 통과합니다. 이는 코드 대조에 따른 변이 분석이며, 파일을 변경해 실행하지는 않았습니다.
+  
+  [artifact](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/docs/chad/wiki-compile/wiki-compile-artifact.md:18)에 S1 실행 이름은 있지만, 이 검증 공백을 해소하지는 않습니다. 경로 user와 meta user가 다른 fixture가 필요합니다. S2–S10은 Then에 대응하는 assertion과 실행 이름을 확인했습니다. S9의 등록 대조 테스트도 직접 실행해 `✔ manifest-sync: commands/*.md ⟺ plugin.json commands`를 확인했습니다.
+
+- **E2 · spec 밖 동작이 diff에 없다 · MAJOR · pass**
+  
+  `refs/remotes/origin/main` 대비 diff에서 동작 변경은 wiki CLI·인자·라우터 추가, 명령·래퍼 등록, 선택형 종결 단계로 한정됩니다. 각각 spec 설계와 R-1–R-6에 대응합니다. 기존 `done`·`summary`·handoff 구현은 변경되지 않았으며, wiki 규칙·두 항목은 명시된 dogfood 범위입니다. PR 브랜치에서 dogfood를 수행한 예외도 [artifact](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/docs/chad/wiki-compile/wiki-compile-artifact.md:39)에 사유가 기록되어 있습니다.
+
+**최종 판정: fail — 전체 fail 목록: E1(S1 작성자 출처 검증 공백).** 파일은 수정하지 않았으며, 기계 행은 재판정하지 않았습니다.
+```
+
+<!-- harness:review kind=codex-scenario scope=diff tip=88e2ba51d1616df2b156c5188e3610d32d05fd1e at=2026-10-07T06:13:08.381Z -->
+
+- 판별(2026-10-07): E1 **진짜 결함** — S1 fixture의 meta user와 경로 user가 둘 다 `chad`라 `const author = user` 변이가 통과한다. 재현: 그 변이를 넣고 S1을 돌려 fail을 확인, 원복.
+  조치: fixture에 `metaUser`를 두고 S1 세 경우 모두 meta user `kim` ≠ 경로 user `chad`로 바꿨다. 변이 재실행 → `✖ wiki sources: infers PR…`(잡힘), 원복 후 `✔`. spec S1 given/then에 kim을 명시. E2 pass — 조치 없음.
 
 ## Learnings

@@ -52,3 +52,9 @@ docs/chad/wiki-compile/wiki-compile-artifact.md |  5 ++++
  wiki/90_system/compile-rules.md                 | 31 +++++++++++++++++++++++++
  wiki/index.md                                   |  9 +++++++
  8 files changed, 120 insertions(+), 1 deletion(-)
+
+## 2026-10-07T06:11:19.447Z — 88e2ba5 docs(task): wiki-compile 검증 출력 기록 — 시나리오 10개 이름 줄
+docs/chad/wiki-compile/wiki-compile-artifact.md | 25 +++++++++++++++++++++++++
+ docs/chad/wiki-compile/wiki-compile-handoff.md  | 11 +++++++++++
+ docs/chad/wiki-compile/wiki-compile-spec.md     |  2 +-
+ 3 files changed, 37 insertions(+), 1 deletion(-)
