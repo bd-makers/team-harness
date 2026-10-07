@@ -44,5 +44,22 @@ scenario: pass (2 checked)
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
 
+### 2026-10-07T07:17:15.396Z — codex (harness-team review)
+
+- engine: codex · scope: worktree · tip: 6f9498e8845e6b4abf9473057f38893b75ec2ca7 · exit 0 · 370 B
+
+```text
+No significant findings (P1/P2/P3).
+
+The working tree contains only 11 added lines in `docs/chad/wiki-fence-nested/wiki-fence-nested-handoff.md`, recording a commit summary. No staged or source-code changes are present. `git diff --check` passed.
+
+**Final verdict: PASS for the working-tree changes.** The already committed implementation was outside this review scope.
+```
+
+<!-- harness:review kind=codex scope=worktree tip=6f9498e8845e6b4abf9473057f38893b75ec2ca7 at=2026-10-07T07:17:15.396Z -->
+
+- 판별(2026-10-07): **무효 — 리뷰 대상 오류.** post-commit 훅이 handoff를 갱신해 트리가 dirty였고, scope가 `worktree`로
+  잡혀 커밋된 수정(6f9498e)을 보지 않았다. 판정에 쓰지 않는다. 트리를 정리하고 `--base refs/remotes/origin/main` diff
+  scope로 R3를 다시 실행한다(재검 횟수에 세지 않는다 — 수정을 본 첫 리뷰가 R3다).
 
 ## Learnings
