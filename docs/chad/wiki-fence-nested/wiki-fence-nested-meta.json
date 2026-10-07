@@ -1,0 +1,57 @@
+{
+  "user": "chad",
+  "task": "wiki-fence-nested",
+  "created": "2026-10-07",
+  "firstActivatedAt": "2026-10-07T07:11:45.409Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "6f9498e8845e6b4abf9473057f38893b75ec2ca7",
+      "at": "2026-10-07T07:17:15.396Z",
+      "exitCode": 0,
+      "outputBytes": 370
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "82f7cbd73e1d81c8c95e7999fb85ff0cbb84757c",
+      "at": "2026-10-07T07:19:59.676Z",
+      "exitCode": 0,
+      "outputBytes": 750
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "107766d509b093f849db819cfcf69294b662e4ce",
+      "at": "2026-10-07T07:23:36.549Z",
+      "exitCode": 0,
+      "outputBytes": 803
+    },
+    {
+      "kind": "codex-shipcheck",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "5748bafa616f8f7875e741fdd1e12288fea0981e",
+      "at": "2026-10-07T07:27:56.778Z",
+      "exitCode": 0,
+      "outputBytes": 2366
+    },
+    {
+      "kind": "codex-shipcheck",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "081388c8351e52561e2e5253caaa1c3ba8f358a1",
+      "at": "2026-10-07T07:33:16.151Z",
+      "exitCode": 0,
+      "outputBytes": 2675
+    }
+  ]
+}

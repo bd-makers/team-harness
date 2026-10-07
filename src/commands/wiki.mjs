@@ -44,25 +44,56 @@ export function parseMarkerAttrs(text) {
 
 // 펜스 코드 블록 밖의 `harness:wiki` 마커 속성 목록. 작성 규칙 문서가 마커 형식을 예시로 보여 주는 것은
 // 컴파일 흔적이 아니다 — `parseRuleMarker`가 본문 중간 예시를 유래로 치지 않는 것과 같은 이유다.
+//
+// 인용문(`>`)·목록 항목 안의 펜스도 펜스다 — 작성 규칙 문서는 예시를 흔히 그렇게 쓴다(C1 후속 P2-b).
+// CommonMark 전체가 아니라 필요한 만큼만 본다: 인용 깊이, 가장 최근 목록 항목의 내용 열, 펜스의 들여쓰기.
+// 너무 많이 펜스로 보면 닫히지 않은 펜스가 뒤의 실제 마커를 삼켜 같은 task를 다시 컴파일한다 — 펜스를 못 알아보는 쪽의 실패
+// ("이미 컴파일됨"으로 멈춤)보다 나쁘므로, 여는 펜스는 그 컨테이너의 내용 열에서 3칸 이내만 인정한다.
+const QUOTE_RE = /^(?: {0,3}> ?)*/;
+const LIST_ITEM_RE = /^( *)([-*+]|\d{1,9}[.)])( +)/;
+const FENCE_OPEN_RE = /^( *)(`{3,}|~{3,})/;
+const FENCE_CLOSE_RE = /^( *)(`{3,}|~{3,})[ \t]*$/;
+
 export function wikiMarkersIn(content) {
   const found = [];
   // CommonMark: 닫는 펜스는 여는 것과 같은 문자이고 길이가 같거나 길며, 뒤에 정보 문자열이 없다.
   // 길이를 무시하면 4개 백틱 블록 안의 3개 백틱 예시가 블록을 닫아 버린다(codex R3 P2).
-  let fence = null;
+  let fence = null; // { run, depth, col } — col: 펜스를 연 컨테이너의 내용 열
+  let listDepth = 0;
+  let listCol = 0;
   for (const line of content.split(/\r?\n/)) {
-    const marker = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
-    if (marker) {
-      const [, run, rest] = marker;
-      if (fence === null) {
-        fence = run;
-        continue;
-      }
-      if (run[0] === fence[0] && run.length >= fence.length && rest.trim() === '') {
-        fence = null;
-        continue;
-      }
+    const quote = QUOTE_RE.exec(line)[0];
+    const depth = quote.split('>').length - 1;
+    const rest = line.slice(quote.length);
+    // 인용문이 끝나거나 목록 항목의 내용 열보다 내어 쓴 줄이 오면 그 컨테이너 안에서 열린 펜스도 끝난다 —
+    // 이 줄은 펜스 밖 줄로 다시 판정한다(codex R3 재검 P2: `- ```` 뒤 맨 위 ```` ``` ````는 새 펜스를 연다).
+    if (fence !== null && (depth < fence.depth
+      || (depth === fence.depth && rest.trim() !== '' && /^ */.exec(rest)[0].length < fence.col))) fence = null;
+    if (fence !== null) {
+      const close = FENCE_CLOSE_RE.exec(rest);
+      // 닫는 펜스의 들여쓰기도 여는 펜스가 아니라 컨테이너 내용 열 기준 3칸 이내다(codex R3 P2).
+      if (close && depth === fence.depth && close[1].length - fence.col <= 3
+        && close[2][0] === fence.run[0] && close[2].length >= fence.run.length) fence = null;
+      continue;
     }
-    if (fence !== null) continue;
+    if (depth !== listDepth) [listDepth, listCol] = [depth, 0];
+    // 목록 표지는 그 너비만큼의 공백으로 바꿔 펜스의 열을 유지한다(`1. ```` 의 펜스는 3열). 표지 자체도 현재
+    // 내용 열에서 3칸 이내여야 한다 — 맨 위 `    - ~~~`는 들여쓴 코드다(codex R3 P2). 표지 뒤 공백이 5칸 이상이면
+    // 내용 열은 표지 + 1칸이고 나머지는 들여쓴 코드다 — `-     ~~~`는 펜스가 아니다(codex R3 재검 P2).
+    const item = LIST_ITEM_RE.exec(rest);
+    let body = rest;
+    if (item && item[1].length - listCol <= 3) {
+      const [whole, lead, bullet, gap] = item;
+      listCol = lead.length + bullet.length + (gap.length >= 5 ? 1 : gap.length);
+      body = ' '.repeat(whole.length) + rest.slice(whole.length);
+    } else if (rest.trim() !== '') {
+      listCol = Math.min(listCol, /^ */.exec(rest)[0].length);
+    }
+    const open = FENCE_OPEN_RE.exec(body);
+    if (open && open[1].length - listCol <= 3) {
+      fence = { run: open[2], depth, col: listCol };
+      continue;
+    }
     for (const m of line.matchAll(WIKI_MARKER_RE)) found.push(parseMarkerAttrs(m[1]));
   }
   return found;

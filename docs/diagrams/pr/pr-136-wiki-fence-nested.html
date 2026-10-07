@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PR 136 위키 예시 펜스 · 화면 / 제품 / 소스</title>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --paper: #f5f5f5;
+      --ink: #2d3142;
+      --muted: #4f5d75;
+      --soft: #7a8399;
+      --rule: rgba(45,49,66,0.12);
+      --accent: #eb6c36;
+      --bad: #9b2226;
+      --good: #2d6a4f;
+      --sans: 'Geist', 'Apple SD Gothic Neo', system-ui, sans-serif;
+      --serif: 'Instrument Serif', serif;
+      --mono: 'Geist Mono', ui-monospace, monospace;
+    }
+    html, body { height: 100%; background: var(--paper); color: var(--ink); font-family: var(--sans); }
+    .deck { height: 100vh; overflow-y: auto; scroll-snap-type: y mandatory; }
+    .slide {
+      min-height: 100vh;
+      scroll-snap-align: start;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 2.5rem 3.25rem;
+    }
+    .frame { max-width: 1180px; width: 100%; }
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 0.35rem;
+    }
+    h1 {
+      font-family: var(--serif);
+      font-size: clamp(1.3rem, 1.8vw + 0.7rem, 1.8rem);
+      font-weight: 400;
+      line-height: 1.25;
+      margin-bottom: 0.65rem;
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 1.4rem;
+      list-style: none;
+      margin-bottom: 0.85rem;
+      font-size: 0.84rem;
+      color: var(--muted);
+    }
+    .meta span {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--soft);
+      margin-right: 0.4rem;
+    }
+    .meta code { font-family: var(--mono); font-size: 0.72rem; color: var(--ink); }
+    .cols { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 0.7rem; margin-bottom: 0.85rem; }
+    .box {
+      background: #fff;
+      border: 1px solid var(--rule);
+      border-radius: 6px;
+      padding: 0.75rem 0.9rem;
+    }
+    .box h2 {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+    .box.problem h2 { color: var(--bad); }
+    .box.fix h2 { color: var(--good); }
+    .box p { font-size: 0.84rem; line-height: 1.45; color: var(--muted); }
+    .box code { font-family: var(--mono); font-size: 0.76rem; color: var(--ink); }
+    .diags { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .diag h3 {
+      font-family: var(--mono);
+      font-size: 0.62rem;
+      font-weight: 500;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 0.3rem;
+    }
+    .diag.before h3 { color: var(--bad); }
+    .diag.after h3 { color: var(--good); }
+    .diag svg { width: 100%; display: block; }
+    .foot {
+      margin-top: 0.7rem;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      line-height: 1.45;
+      color: var(--muted);
+    }
+    .foot .src { color: var(--soft); }
+    .dots {
+      position: fixed; right: 1.1rem; top: 50%; transform: translateY(-50%);
+      display: flex; flex-direction: column; gap: 12px; z-index: 4;
+    }
+    .dots a {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(45,49,66,0.18); overflow: hidden; text-indent: -99px;
+    }
+    .dots a:hover { background: var(--accent); }
+    .hint {
+      position: fixed; bottom: 1rem; left: 0; right: 0; text-align: center;
+      font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.16em;
+      text-transform: uppercase; color: var(--soft);
+    }
+    @media (max-width: 900px) {
+      .cols, .diags { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="dots" aria-label="슬라이드">
+    <a href="#s1">1</a>
+    <a href="#s2">2</a>
+  </nav>
+  <p class="hint">Scroll · 01–02</p>
+
+  <div class="deck">
+
+    <section class="slide" id="s1">
+      <div class="frame">
+        <p class="eyebrow">01 / 02 · 규칙 문서의 예시 마커</p>
+        <h1>작성 규칙 문서가 마커 예시를 인용문·목록 안에 쓰면, 그 task는 컴파일되지 않고 "이미 컴파일됨"으로 멈췄다</h1>
+        <ul class="meta">
+          <li><span>화면</span><code>harness-team wiki sources &lt;user&gt;/&lt;task&gt;</code> · <code>/harness-wiki</code> 의 <code>compiled</code> 판정</li>
+          <li><span>제품</span>C1 위키 컴파일 — 같은 task 재컴파일 방지(멱등 검색)</li>
+          <li><span>소스</span><code>src/commands/wiki.mjs</code> · <code>findCompiled</code> → <code>wikiMarkersIn</code></li>
+        </ul>
+        <div class="cols">
+          <article class="box problem">
+            <h2>이전 문제</h2>
+            <p>이미 컴파일된 위치를 찾을 때 펜스 안 예시 마커는 빼야 하는데, 줄머리 0–3칸 펜스만 펜스로 봤다. <code>&gt; ```</code> 인용문이나 깊은 목록 안 펜스의 예시 <code>&lt;!-- harness:wiki task=… --&gt;</code> 를 실제 마커로 세어 <code>compiled</code> 로 보고했다.</p>
+          </article>
+          <article class="box fix">
+            <h2>개선</h2>
+            <p>인용 접두(<code>&gt;</code> 반복)와 목록 표지를 벗긴 뒤 그 컨테이너의 내용 열 기준으로 펜스를 판정한다. 인용문·목록 안 펜스의 예시는 세지 않고, 펜스 밖 실제 마커(인용문 안 포함)는 그대로 센다.</p>
+          </article>
+        </div>
+        <div class="diags">
+          <div class="diag before">
+            <h3>변경 전</h3>
+            <svg viewBox="0 0 480 268" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <marker id="b1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+                <marker id="b1x" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#9b2226"/></marker>
+              </defs>
+              <rect width="100%" height="100%" fill="#f5f5f5"/>
+              <text x="20" y="20" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.12em">FLOW · 규칙 문서 한 줄의 판정 (origin/main)</text>
+              <line x1="140" y1="62" x2="180" y2="62" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#b1)"/>
+              <line x1="300" y1="62" x2="332" y2="62" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#b1)"/>
+              <rect x="303.0" y="49" width="26" height="12" rx="2" fill="#f5f5f5"/>
+              <text x="316" y="58" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">YES</text>
+              <line x1="240" y1="92" x2="240" y2="116" stroke="#9b2226" stroke-width="1.4" marker-end="url(#b1x)"/>
+              <rect x="228.0" y="97" width="24" height="12" rx="2" fill="#f5f5f5"/>
+              <text x="240" y="106" fill="#9b2226" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">NO</text>
+              <line x1="240" y1="160" x2="240" y2="184" stroke="#9b2226" stroke-width="1.4" marker-end="url(#b1x)"/>
+              <line x1="304" y1="204" x2="332" y2="204" stroke="#9b2226" stroke-width="1.4" marker-end="url(#b1x)"/>
+              <rect x="20" y="40" width="120" height="44" rx="20" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)"/>
+              <text x="80.0" y="58.0" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">규칙 문서 한 줄</text>
+              <text x="80.0" y="74.0" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">&gt; ```markdown</text>
+              <polygon points="240,32 300,62 240,92 180,62" fill="#fff" stroke="#2d3142"/>
+              <text x="240" y="60" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">줄머리 펜스?</text>
+              <text x="240" y="73" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">0–3칸만 본다</text>
+              <rect x="332" y="40" width="128" height="44" rx="6" fill="#fff" stroke="#2d3142"/>
+              <text x="396.0" y="58.0" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">펜스 안</text>
+              <text x="396.0" y="74.0" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">예시 건너뜀</text>
+              <rect x="176" y="116" width="128" height="44" rx="6" fill="rgba(155,34,38,0.08)" stroke="#9b2226"/>
+              <text x="240.0" y="134.0" fill="#9b2226" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">펜스 밖으로 판정</text>
+              <text x="240.0" y="150.0" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">&gt; 접두 · 4칸 목록 놓침</text>
+              <rect x="176" y="184" width="128" height="40" rx="6" fill="#fff" stroke="#2d3142"/>
+              <text x="240.0" y="200.0" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">예시 마커를 셈</text>
+              <text x="240.0" y="216.0" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">task=chad/x</text>
+              <rect x="332" y="184" width="128" height="40" rx="20" fill="rgba(155,34,38,0.08)" stroke="#9b2226"/>
+              <text x="396.0" y="208.0" fill="#9b2226" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">compiled · 멈춤</text>
+            </svg>
+          </div>
+          <div class="diag after">
+            <h3>변경 후</h3>
+            <svg viewBox="0 0 480 268" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <marker id="a1" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+                <marker id="a1c" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+              </defs>
+              <rect width="100%" height="100%" fill="#f5f5f5"/>
+              <text x="20" y="20" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.12em">FLOW · 컨테이너 기준 판정 (이 PR)</text>
+              <line x1="140" y1="62" x2="172" y2="62" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#a1)"/>
+              <line x1="240" y1="84" x2="240" y2="110" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#a1)"/>
+              <line x1="300" y1="140" x2="332" y2="140" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#a1)"/>
+              <rect x="303.0" y="127" width="26" height="12" rx="2" fill="#f5f5f5"/>
+              <text x="316" y="136" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">YES</text>
+              <line x1="180" y1="140" x2="140" y2="140" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#a1)"/>
+              <rect x="148.0" y="127" width="24" height="12" rx="2" fill="#f5f5f5"/>
+              <text x="160" y="136" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">NO</text>
+              <line x1="396" y1="162" x2="396" y2="196" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#a1c)"/>
+              <rect x="20" y="40" width="120" height="44" rx="20" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)"/>
+              <text x="80.0" y="58.0" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">규칙 문서 한 줄</text>
+              <text x="80.0" y="74.0" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">&gt; ```markdown</text>
+              <rect x="172" y="40" width="136" height="44" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36"/>
+              <text x="240.0" y="58.0" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">컨테이너 접두 벗김</text>
+              <text x="240.0" y="74.0" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">인용 깊이 · 목록 내용 열</text>
+              <polygon points="240,110 300,140 240,170 180,140" fill="#fff" stroke="#2d3142"/>
+              <text x="240" y="138" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">펜스?</text>
+              <text x="240" y="151" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">내용 열 3칸 이내</text>
+              <rect x="332" y="118" width="128" height="44" rx="6" fill="#fff" stroke="#2d3142"/>
+              <text x="396.0" y="136.0" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">펜스 안</text>
+              <text x="396.0" y="152.0" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">예시 무시</text>
+              <rect x="20" y="118" width="120" height="44" rx="6" fill="#fff" stroke="#2d3142"/>
+              <text x="80.0" y="136.0" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">펜스 밖</text>
+              <text x="80.0" y="152.0" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">실제 마커만 판정</text>
+              <rect x="316" y="196" width="160" height="40" rx="20" fill="rgba(235,108,54,0.08)" stroke="#eb6c36"/>
+              <text x="396.0" y="220.0" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">예시 제외 · 컴파일 진행</text>
+            </svg>
+          </div>
+        </div>
+        <p class="foot">유저 체감 · <code>wiki/90_system/</code> 규칙 문서가 예시를 인용문·목록으로 써도 compiled 가 비고, 다른 항목의 실제 마커가 있으면 그 파일만 compiled 로 잡힌다<br><span class="src">src/commands/wiki.mjs · wikiMarkersIn · QUOTE_RE · LIST_ITEM_RE — tests/wiki.test.mjs “fenced examples inside blockquotes and list items are not compiled markers”</span></p>
+      </div>
+    </section>
+
+    <section class="slide" id="s2">
+      <div class="frame">
+        <p class="eyebrow">02 / 02 · 펜스를 너무 넓게 보지 않기</p>
+        <h1>펜스를 더 알아보되, 닫히지 않은 펜스가 뒤의 실제 마커를 삼켜 같은 task를 다시 컴파일하지 않게 한다</h1>
+        <ul class="meta">
+          <li><span>화면</span><code>harness-team wiki sources</code> · <code>compiled</code> 판정</li>
+          <li><span>제품</span>재컴파일·단락 중복 방지 — 미인식(멈춤)보다 과인식(중복)이 나쁘다</li>
+          <li><span>소스</span><code>wikiMarkersIn</code> · <code>FENCE_OPEN_RE</code> · <code>FENCE_CLOSE_RE</code> · 인용 깊이 · 목록 내용 열</li>
+        </ul>
+        <div class="cols">
+          <article class="box problem">
+            <h2>이전 문제</h2>
+            <p>펜스 상태 기계가 맨 위 펜스만 알았다. 인용문·목록 안에서는 여는 전이가 없어 예시 줄이 펜스 밖 내용으로 읽혔다. 단순히 들여쓰기 제한을 풀면 들여쓴 코드나 끝난 목록의 펜스가 열린 채 남아 실제 마커를 삼킨다.</p>
+          </article>
+          <article class="box fix">
+            <h2>개선</h2>
+            <p>여는 펜스와 닫는 펜스 모두 컨테이너 내용 열에서 3칸 이내만 인정한다. 4칸 이상은 들여쓴 코드다. 인용문이 얕아지거나 목록 내용 열보다 내어 쓴 줄이 오면 그 안의 펜스는 강제로 끝나고, 그 줄은 펜스 밖에서 다시 판정한다.</p>
+          </article>
+        </div>
+        <div class="diags">
+          <div class="diag before">
+            <h3>변경 전</h3>
+            <svg viewBox="0 0 480 268" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <marker id="b2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+                <marker id="b2x" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#9b2226"/></marker>
+              </defs>
+              <rect width="100%" height="100%" fill="#f5f5f5"/>
+              <text x="20" y="20" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.12em">STATE · 펜스 판정 (origin/main)</text>
+              <path d="M168,130 C 216,84 264,84 312,130" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#b2)"/>
+              <rect x="174.0" y="85" width="132" height="12" rx="2" fill="#f5f5f5"/>
+              <text x="240" y="94" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">줄머리 0–3칸 ``` · ~~~</text>
+              <path d="M312,158 C 264,200 216,200 168,158" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#b2)"/>
+              <rect x="165.0" y="183" width="150" height="12" rx="2" fill="#f5f5f5"/>
+              <text x="240" y="192" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">같은 문자 · 길이 ≥ · 정보 없음</text>
+              <path d="M104,212 L104,172" fill="none" stroke="#9b2226" stroke-width="1.2" stroke-dasharray="4,4" marker-end="url(#b2x)"/>
+              <circle cx="22" cy="144" r="5" fill="#2d3142"/>
+              <line x1="27" y1="144" x2="40" y2="144" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#b2)"/>
+              <rect x="40" y="120" width="128" height="48" rx="8" fill="#fff" stroke="#2d3142"/>
+              <text x="104.0" y="140.0" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">펜스 밖</text>
+              <text x="104.0" y="156.0" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">마커를 센다</text>
+              <rect x="312" y="120" width="128" height="48" rx="8" fill="#fff" stroke="#2d3142"/>
+              <text x="376.0" y="140.0" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">펜스 안</text>
+              <text x="376.0" y="156.0" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">마커를 세지 않음</text>
+              <rect x="40" y="212" width="400" height="40" rx="6" fill="rgba(155,34,38,0.08)" stroke="#9b2226"/>
+              <text x="240.0" y="228.0" fill="#9b2226" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">&gt; ``` · 4칸 들여쓴 목록 펜스 → 여는 전이 없음</text>
+              <text x="240.0" y="244.0" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">예시 줄을 펜스 밖 내용으로 읽는다</text>
+            </svg>
+          </div>
+          <div class="diag after">
+            <h3>변경 후</h3>
+            <svg viewBox="0 0 480 268" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <marker id="a2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+                <marker id="a2c" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+              </defs>
+              <rect width="100%" height="100%" fill="#f5f5f5"/>
+              <text x="20" y="20" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.12em">STATE · 펜스 판정 (이 PR)</text>
+              <path d="M168,130 C 216,84 264,84 312,130" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#a2)"/>
+              <rect x="174.0" y="85" width="132" height="12" rx="2" fill="#f5f5f5"/>
+              <text x="240" y="94" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">접두 벗김 · 열 3칸 이내</text>
+              <path d="M312,158 C 264,198 216,198 168,158" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#a2)"/>
+              <rect x="156.0" y="179" width="168" height="12" rx="2" fill="#f5f5f5"/>
+              <text x="240" y="188" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">같은 문자·길이 · 깊이 · 열 3칸</text>
+              <path d="M72,120 C 64,74 144,74 136,120" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#a2)"/>
+              <rect x="52.0" y="57" width="104" height="12" rx="2" fill="#f5f5f5"/>
+              <text x="104" y="66" fill="#4f5d75" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">열 +4 · 들여쓴 코드</text>
+              <path d="M376,168 C 376,244 104,244 104,172" fill="none" stroke="#eb6c36" stroke-width="1.4" marker-end="url(#a2c)"/>
+              <rect x="135.0" y="227" width="210" height="12" rx="2" fill="#f5f5f5"/>
+              <text x="240" y="236" fill="#eb6c36" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">컨테이너 끝 · 인용 얕아짐 · 목록 내어쓰기</text>
+              <circle cx="22" cy="144" r="5" fill="#2d3142"/>
+              <line x1="27" y1="144" x2="40" y2="144" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#a2)"/>
+              <rect x="40" y="120" width="128" height="48" rx="8" fill="#fff" stroke="#2d3142"/>
+              <text x="104.0" y="140.0" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">펜스 밖</text>
+              <text x="104.0" y="156.0" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">마커를 센다</text>
+              <rect x="312" y="120" width="128" height="48" rx="8" fill="rgba(235,108,54,0.08)" stroke="#eb6c36"/>
+              <text x="376.0" y="140.0" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">펜스 안</text>
+              <text x="376.0" y="156.0" fill="#7a8399" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle">마커를 세지 않음</text>
+            </svg>
+          </div>
+        </div>
+        <p class="foot">유저 체감 · origin/main 대비 차등 스윕 22,374 문서에서 실제 마커를 덜 세는 경우는 5건뿐 — 모두 닫히지 않은 맨 위 펜스 뒤라 CommonMark상 코드 안이다<br><span class="src">src/commands/wiki.mjs · wikiMarkersIn — codex R3 · 재검 P2 4건 반영(107766d · d61a5b6) — docs/chad/wiki-fence-nested/wiki-fence-nested-artifact.md Reviews</span></p>
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>
