@@ -15,7 +15,7 @@
 
 import { KNOWN_STACK_IDS } from './detect-stack.mjs';
 
-export const VALUE_FLAGS = new Set(['stack', 'shape', 'member', 'target', 'days', 'name', 'paths', 'framing', 'rubric', 'prompt-file', 'scope', 'base', 'area']);
+export const VALUE_FLAGS = new Set(['stack', 'shape', 'member', 'target', 'days', 'name', 'paths', 'framing', 'rubric', 'prompt-file', 'scope', 'base', 'area', 'pr']);
 
 // Accepted on every command: they change where the harness looks or how it
 // reports, not what it does. Keeping them global means a hook can pass --target
@@ -59,6 +59,10 @@ export const COMMANDS = [
   // Owns the diagram opt-in's *record* step (artifact line + plan checkbox) that three command docs
   // used to describe in three different wordings. Probe/degrade (session-only judgment) stay in prose.
   { name: 'diagram', args: 'record [--skipped] [note ...]', summary: "Record the diagram outcome in the active task's artifact and close its plan step (--skipped needs a reason)", flags: ['skipped'] },
+  // Read-only. Owns the deterministic inputs of the wiki compile (/harness-wiki): provenance (PR · introducing
+  // commit · author), the exact provenance marker, where the task is already compiled, and the project's rule files.
+  // The compile itself (what goes where) is LLM judgment and stays in commands/harness-wiki.md.
+  { name: 'wiki', args: 'sources [<user>/<task>] [--pr <N>]', summary: "Report a merged task's wiki compile inputs: provenance, marker, existing compiles, wiki/90_system rules (read-only)", flags: ['pr'] },
   { name: 'task', args: '<name> [--area <area>]', summary: 'Create or activate a task (--area records its monorepo app/service in meta)', flags: ['area'] },
   // `--remote` reads local refs/remotes/origin/* only (no fetch): tasks on unmerged origin branches
   // that the checked-out branch does not have. Opt-in so plain `list` stays filesystem-only.
@@ -106,7 +110,7 @@ const OPTIONS_HELP = `Options:
   --yes                Non-interactive
   --member <name>      Override member (default: git config user.name, else $USER)
   --target <dir>       Target directory (default: cwd)
-  --json               Structured JSON envelope output for drive commands (task/retro/release/doctor/summary/observe/rules/stack/scope/pr-check/config/diagram)`;
+  --json               Structured JSON envelope output for drive commands (task/retro/release/doctor/summary/observe/rules/stack/scope/pr-check/config/diagram/wiki)`;
 
 // `doctor` proves the hook CLI is reachable by matching `session-context` and
 // `handoff` at the start of a line in this output, so the two-space indent is a

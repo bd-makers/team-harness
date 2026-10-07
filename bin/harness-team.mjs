@@ -23,6 +23,7 @@ import { runSummary } from '../src/commands/summary.mjs';
 import { runObserve } from '../src/commands/observe.mjs';
 import { runRules } from '../src/commands/rules.mjs';
 import { runReview } from '../src/commands/review.mjs';
+import { runWiki } from '../src/commands/wiki.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -52,13 +53,13 @@ async function main() {
 
   const { cmd, positional, flags } = invocation;
 
-  const taskCmds = new Set(['task', 'list', 'summary', 'done', 'handoff', 'retro', 'release', 'context', 'boundary', 'scenario', 'session-context', 'observe', 'rules', 'review', 'config', 'diagram', 'gate']);
+  const taskCmds = new Set(['task', 'list', 'summary', 'done', 'handoff', 'retro', 'release', 'context', 'boundary', 'scenario', 'session-context', 'observe', 'rules', 'review', 'config', 'diagram', 'gate', 'wiki']);
   const target = flags.target || (taskCmds.has(cmd) ? process.cwd() : positional[0]) || process.cwd();
   const ctx = {
     root: ROOT,
     targetDir: resolve(process.cwd(), target),
     flags,
-    taskArgs: (cmd === 'task' || cmd === 'retro' || cmd === 'release' || cmd === 'context' || cmd === 'boundary' || cmd === 'scenario' || cmd === 'rules' || cmd === 'review' || cmd === 'config' || cmd === 'diagram' || cmd === 'gate') ? positional : [],
+    taskArgs: (cmd === 'task' || cmd === 'retro' || cmd === 'release' || cmd === 'context' || cmd === 'boundary' || cmd === 'scenario' || cmd === 'rules' || cmd === 'review' || cmd === 'config' || cmd === 'diagram' || cmd === 'gate' || cmd === 'wiki') ? positional : [],
   };
 
   switch (cmd) {
@@ -72,6 +73,7 @@ async function main() {
     case 'config': return runConfig(ctx);
     case 'gate': return runGate(ctx);
     case 'diagram': return runDiagram(ctx);
+    case 'wiki': return runWiki(ctx);
     case 'task': return runTask(ctx);
     case 'list': return runList(ctx);
     case 'summary': return runSummary(ctx);

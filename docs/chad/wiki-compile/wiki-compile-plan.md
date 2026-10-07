@@ -4,7 +4,7 @@
 머지된 task를 PR·커밋·작성자 출처가 붙은 기능·모듈 위키 항목으로 컴파일하는 선택형 단계(`/harness-wiki` + 읽기 전용 `harness-team wiki sources`)를 **추가만** 해서 제공하고, 이 저장소에서 #134·#133으로 dogfood한다.
 
 ## 단계
-- [ ] 1. `wiki sources` CLI — `src/commands/wiki.mjs`(출처 추론·마커·compiled·rules·blockers) + `src/cli-args.mjs` 명령표·`--pr` + `bin/harness-team.mjs` 디스패치, `tests/wiki.test.mjs` S1–S7
+- [x] 1. `wiki sources` CLI — `src/commands/wiki.mjs`(출처 추론·마커·compiled·rules·blockers) + `src/cli-args.mjs` 명령표·`--pr` + `bin/harness-team.mjs` 디스패치, `tests/wiki.test.mjs` S1–S7
 - [ ] 2. 스킬 — `commands/harness-wiki.md` + `skills/harness-wiki/SKILL.md` + `.claude-plugin/plugin.json` commands 등록, `tests/wiki-command.test.mjs` S8(근거 문단 전체 비교), manifest-sync S9
 - [ ] 3. 종결 절차 연결 — `commands/harness-task.md` 머지 후 종결 절에 선택 한 줄, README 명령 절, `npm run docs:generate`
 - [ ] 4. dogfood — `wiki/index.md` + `wiki/90_system/compile-rules.md`, #134·#133 컴파일, 두 번째 실행 `compiled` 기록, S10 테스트
