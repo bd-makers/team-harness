@@ -155,6 +155,41 @@ test('wiki sources: reports where the task is already compiled, ignoring fenced 
   assert.deepEqual(wikiMarkersIn(nested).map(m => m.task), ['a/c']);
 });
 
+test('wiki sources: fenced examples inside blockquotes and list items are not compiled markers', async () => {
+  const { dir } = await repoWithLandedTask({ subject: 'merge: x (#12)' });
+  try {
+    await mkdir(join(dir, 'wiki', '20_domain'), { recursive: true });
+    await mkdir(join(dir, 'wiki', '90_system'), { recursive: true });
+    // 작성 규칙 문서가 마커 형식을 인용문·목록 안의 펜스로 예시한다 — 컴파일 흔적이 아니다.
+    await writeFile(join(dir, 'wiki', '90_system', 'rules.md'),
+      '# 규칙\n\n> 예시:\n>\n> ```markdown\n> <!-- harness:wiki task=chad/x pr=12 commit=abc1234 author=chad at=2026-10-01 -->\n> ```\n\n'
+      + '- 단락 규칙\n  - 마커 예시\n    ~~~\n    <!-- harness:wiki task=chad/x pr=12 commit=abc1234 author=chad at=2026-10-01 -->\n    ~~~\n');
+    let out = await wikiSources(dir, 'chad', 'x', { at: AT });
+    assert.deepEqual(out.compiled, []);
+    // 펜스 밖의 실제 마커는 여전히 센다.
+    await writeFile(join(dir, 'wiki', '20_domain', 'feature.md'),
+      '# feature\n\n<!-- harness:wiki task=chad/x pr=12 commit=abc1234 author=chad at=2026-10-01 -->\n## x\n본문\n');
+    out = await wikiSources(dir, 'chad', 'x', { at: AT });
+    assert.deepEqual(out.compiled, ['wiki/20_domain/feature.md']);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+  const tasks = text => wikiMarkersIn(text).map(m => m.task);
+  // 중첩 인용문 · 목록 표지와 같은 줄의 펜스.
+  assert.deepEqual(tasks('> > ~~~\n> > <!-- harness:wiki task=a/b -->\n> > ~~~\n'), []);
+  assert.deepEqual(tasks('1. ```markdown\n   <!-- harness:wiki task=a/b -->\n   ```\n<!-- harness:wiki task=a/c -->\n'), ['a/c']);
+  // 인용문 안에서 닫히지 않은 펜스는 인용문이 끝날 때 함께 끝난다 — 뒤의 실제 마커를 삼키지 않는다.
+  assert.deepEqual(tasks('> ```\n> <!-- harness:wiki task=a/b -->\n\n<!-- harness:wiki task=a/c -->\n'), ['a/c']);
+  // 펜스 밖의 인용문 안 마커는 실제 마커다.
+  assert.deepEqual(tasks('> <!-- harness:wiki task=a/d -->\n'), ['a/d']);
+  // 맨 위 펜스 안의 4칸 들여쓴 백틱은 닫는 펜스가 아니다(기존 동작 유지).
+  assert.deepEqual(tasks('```\n    ```\n<!-- harness:wiki task=a/b -->\n```\n'), []);
+  // 맨 위 4칸 들여쓰기는 들여쓴 코드지 여는 펜스가 아니다 — 뒤의 실제 마커를 삼키지 않는다.
+  assert.deepEqual(tasks('    ```\n<!-- harness:wiki task=a/c -->\n'), ['a/c']);
+  // 목록 항목 안 펜스의 빈 줄은 펜스를 닫지 않는다.
+  assert.deepEqual(tasks('- a\n  ```\n  <!-- harness:wiki task=a/b -->\n\n  x\n  ```\n<!-- harness:wiki task=a/c -->\n'), ['a/c']);
+});
+
 test('wiki sources: without wiki/90_system rules everything goes to 99_inbox', async () => {
   const { dir } = await repoWithLandedTask({ subject: 'merge: x (#12)' });
   try {
