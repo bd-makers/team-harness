@@ -151,3 +151,4 @@
 | chad | r2-scenario-evidence | ✅ done | 2026-10-06 |
 | chad | roadmap-to-1-0 | ✅ done | 2026-10-06 |
 | chad | wiki-compile | ✅ done | 2026-10-07 |
+| chad | wiki-fence-nested | ✅ done | 2026-10-07 |

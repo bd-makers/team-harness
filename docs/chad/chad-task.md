@@ -4,6 +4,7 @@
 
 ## Completed
 - ✅ wiki-compile
+- ✅ wiki-fence-nested
 - ✅ default-loop-skill
 - ✅ empty-doc-guard
 - ✅ followups-14-16-close
