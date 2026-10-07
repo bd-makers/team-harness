@@ -1,0 +1,93 @@
+{
+  "user": "chad",
+  "task": "default-loop-skill",
+  "created": "2026-10-06",
+  "firstActivatedAt": "2026-10-06T10:07:39.818Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex-scenario",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "747405f8fe307e7902b452d8fcf365aa5294b4d9",
+      "at": "2026-10-06T10:34:58.847Z",
+      "exitCode": 0,
+      "outputBytes": 2352
+    },
+    {
+      "kind": "codex-scenario",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "32ae06d609a29b3396e21dc5deeceb4c5a5f8dd1",
+      "at": "2026-10-06T10:43:52.150Z",
+      "exitCode": 0,
+      "outputBytes": 2318
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "02d5f5e9254d80739c2f91aa01298a68811f6d15",
+      "at": "2026-10-06T10:46:01.963Z",
+      "exitCode": 0,
+      "outputBytes": 1383
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "6e67a1690841255bac0ad16811a74316e427113c",
+      "at": "2026-10-06T10:50:01.540Z",
+      "exitCode": 0,
+      "outputBytes": 656
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "6d3a716bdf7f19b930555362ad2e06d743d79d65",
+      "at": "2026-10-06T10:53:27.085Z",
+      "exitCode": 0,
+      "outputBytes": 1016
+    },
+    {
+      "kind": "codex-scenario",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "c98a11bd8f2c03b33e8dcc4c094ed27d8f33adf1",
+      "at": "2026-10-06T12:26:09.385Z",
+      "exitCode": 0,
+      "outputBytes": 2596
+    },
+    {
+      "kind": "codex-scenario",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "8d69938f5b2e03a8dc974ca7bc6b45f773cf8896",
+      "at": "2026-10-06T12:33:03.041Z",
+      "exitCode": 0,
+      "outputBytes": 2227
+    },
+    {
+      "kind": "codex-scenario",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "dbd8222b1d5508080152b7b8ca753169df47d3c9",
+      "at": "2026-10-06T12:40:42.193Z",
+      "exitCode": 0,
+      "outputBytes": 2049
+    },
+    {
+      "kind": "codex-shipcheck",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "b10abe5816cba1a6932df48b29d524092daf7d95",
+      "at": "2026-10-06T12:54:26.154Z",
+      "exitCode": 0,
+      "outputBytes": 2751
+    }
+  ]
+}

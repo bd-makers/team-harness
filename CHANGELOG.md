@@ -27,6 +27,14 @@
     검증하는가, spec 밖 동작이 없는가. exit 0은 필요조건일 뿐이라(이름 필터 0건 매치도 exit 0) 3행이 그 틈을 본다.
   - 시나리오를 선언한 task에서 `verify: required`는 `-scenario` kind만 검증 증거로 센다. `done`은 증거 명령을 실행하지 않는다.
   - **구 CLI(0.46.0 이하)는 `scenarios`를 알 수 없는 키로 보고 `done`을 막는다** — 시나리오를 쓰는 팀은 CLI를 먼저 올린다.
+- **`/harness-loop` 선택형 기본 루프** (task `default-loop-skill`, cycle §2 S3·§6 B). plan을 확정한 뒤 고르는 루프다 — 메인 세션이
+  오케스트레이터가 되어 plan 단계마다 Dev(서브에이전트, 단일 쓰기, 커밋 금지) → QA → 로컬 커밋을 순차로 돌린다.
+  - QA: 오케스트레이터가 기계 검사(`gate commit`·`boundary check`·`scenario check` + 테스트 이름이 찍힌 출력 기록)를 돌리고,
+    모든 단계 뒤 read-only `review --framing scenario`, 이어 R3 리뷰.
+  - 멈춤 조건 넷 — 성공·spec 공백·진전 없음(실패 집합 동일 + diff 무변화, 횟수 상한 없음)·승인 필요. push·PR은 하지 않는다.
+  - 루프 전용 CLI는 없다 — 명령 문서가 기존 CLI를 엮는다. Codex 래퍼 `skills/harness-loop`, Codex가 오케스트레이터를 맡는 경로는 실험적.
+  - README 설계 스코프 문구를 정정했다(서비스형 런타임 오케스트레이터는 비채택, 선택형 루프는 제공). `/harness-interview`에 포인터 한 줄.
+  - 소비자 영향: 슬래시 명령 하나가 늘 뿐 기존 동작은 바뀌지 않는다.
 
 ## [0.46.0] - 2026-10-06
 
