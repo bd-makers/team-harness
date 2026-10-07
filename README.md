@@ -385,7 +385,7 @@ Dev 구현 → QA 판정 → 로컬 커밋을 순차로 돌리고(쓰기는 Dev 
 
 ```bash
 harness-team wiki sources chad/my-task --json   # 출처·마커·compiled·규칙 목록 (파일을 쓰지 않음)
-/harness-wiki                                   # 활성 task를 컴파일 (막힘·이미 컴파일됨이면 멈춤)
+/harness-wiki chad/my-task                      # 머지 후 종결에서 done 다음 — done이 활성 task를 비우므로 대상 명시 (막힘·이미 컴파일됨이면 멈춤)
 ```
 
 ### `/harness-task` — task 관리

@@ -93,4 +93,23 @@
 
 - 판별(2026-10-07): E1·E2 pass — 조치 없음. R2 통과.
 
+### 2026-10-07T06:17:43.646Z — codex (harness-team review)
+
+- engine: codex · scope: diff · tip: 540b601df4e4dc4001963b4e74b92846f699f5d8 · exit 0 · 894 B
+
+```text
+- **P2 should-fix** — [commands/harness-wiki.md:27](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/commands/harness-wiki.md:27): 안내된 `done → /harness-wiki` 흐름은 실패합니다. `done`이 활성 task를 비우므로, 종결한 `<user>/<task>`를 명시적으로 전달해야 합니다.
+- **P2 should-fix** — [src/commands/wiki.mjs:54](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/src/commands/wiki.mjs:54): 펜스 길이를 무시하여 4개 백틱 블록 안의 3개 백틱을 종료로 처리합니다. 예시 마커를 실제 컴파일로 오인하거나 실제 마커를 놓치는 동작을 재현했습니다.
+
+읽기 전용 테스트 31개와 `docs:check`가 통과했습니다. 파일은 수정하지 않았습니다.
+
+**최종 판정: P1 없음, P2 2건 수정 권고.**
+```
+
+<!-- harness:review kind=codex scope=diff tip=540b601df4e4dc4001963b4e74b92846f699f5d8 at=2026-10-07T06:17:43.646Z -->
+
+- 판별(2026-10-07): P1 없음 → R3 통과 기준 충족. P2 둘 다 **진짜 결함**으로 반영(재검 한 번까지).
+  - P2-1 `done`이 활성 task를 비운다(`runDone` → `writeActive(null)`) — 안내한 `done → /harness-wiki`(인수 없음)는 "활성 task 없음"으로 실패한다. 조치: 명령 문서 "언제"·`commands/harness-task.md` 종결 절·README 예시를 `/harness-wiki <user>/<task>`로 고치고, 계약 테스트 기대값을 같이 고정.
+  - P2-2 펜스 길이 무시 — 4개 백틱 블록 안의 3개 백틱이 블록을 닫았다. 조치: CommonMark 규칙(같은 문자 · 길이 ≥ 여는 펜스 · 정보 문자열 없음)으로 닫기 판정, S5 테스트에 중첩 펜스 단언 추가(옛 로직이면 `a/b`를 세어 실패).
+
 ## Learnings

@@ -150,6 +150,9 @@ test('wiki sources: reports where the task is already compiled, ignoring fenced 
     await rm(dir, { recursive: true, force: true });
   }
   assert.deepEqual(wikiMarkersIn('~~~\n<!-- harness:wiki task=a/b -->\n~~~\n'), []);
+  // 4개 백틱 블록 안의 3개 백틱은 블록을 닫지 않는다 — 그 안의 마커는 예시다. 블록이 닫힌 뒤의 마커는 센다.
+  const nested = '````markdown\n```\n<!-- harness:wiki task=a/b -->\n```\n````\n<!-- harness:wiki task=a/c -->\n';
+  assert.deepEqual(wikiMarkersIn(nested).map(m => m.task), ['a/c']);
 });
 
 test('wiki sources: without wiki/90_system rules everything goes to 99_inbox', async () => {

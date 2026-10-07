@@ -46,13 +46,21 @@ export function parseMarkerAttrs(text) {
 // 컴파일 흔적이 아니다 — `parseRuleMarker`가 본문 중간 예시를 유래로 치지 않는 것과 같은 이유다.
 export function wikiMarkersIn(content) {
   const found = [];
+  // CommonMark: 닫는 펜스는 여는 것과 같은 문자이고 길이가 같거나 길며, 뒤에 정보 문자열이 없다.
+  // 길이를 무시하면 4개 백틱 블록 안의 3개 백틱 예시가 블록을 닫아 버린다(codex R3 P2).
   let fence = null;
   for (const line of content.split(/\r?\n/)) {
-    const open = /^\s*(`{3,}|~{3,})/.exec(line);
-    if (open) {
-      if (fence === null) fence = open[1][0];
-      else if (open[1][0] === fence) fence = null;
-      continue;
+    const marker = /^ {0,3}(`{3,}|~{3,})(.*)$/.exec(line);
+    if (marker) {
+      const [, run, rest] = marker;
+      if (fence === null) {
+        fence = run;
+        continue;
+      }
+      if (run[0] === fence[0] && run.length >= fence.length && rest.trim() === '') {
+        fence = null;
+        continue;
+      }
     }
     if (fence !== null) continue;
     for (const m of line.matchAll(WIKI_MARKER_RE)) found.push(parseMarkerAttrs(m[1]));

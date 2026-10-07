@@ -66,3 +66,9 @@ docs/chad/wiki-compile/wiki-compile-artifact.md | 22 ++++++++++++++++++++++
  docs/chad/wiki-compile/wiki-compile-spec.md     |  4 ++--
  tests/wiki.test.mjs                             | 13 +++++++------
  5 files changed, 48 insertions(+), 9 deletions(-)
+
+## 2026-10-07T06:16:02.929Z — 540b601 docs(task): wiki-compile R2 재검 pass 기록
+docs/chad/wiki-compile/wiki-compile-artifact.md | 28 +++++++++++++++++++++++++
+ docs/chad/wiki-compile/wiki-compile-handoff.md  |  8 +++++++
+ docs/chad/wiki-compile/wiki-compile-meta.json   |  9 ++++++++
+ 3 files changed, 45 insertions(+)
