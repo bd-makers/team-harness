@@ -41,3 +41,14 @@ bin/harness-team.mjs                            |   6 +-
  skills/harness-wiki/SKILL.md                   | 20 +++++++
  tests/wiki-command.test.mjs                    | 79 ++++++++++++++++++++++++++
  9 files changed, 204 insertions(+), 2 deletions(-)
+
+## 2026-10-07T06:10:27.244Z — 525ae5d docs(wiki): dogfood — #134·#133을 wiki/로 컴파일 + 작성 규칙
+docs/chad/wiki-compile/wiki-compile-artifact.md |  5 ++++
+ docs/chad/wiki-compile/wiki-compile-handoff.md  | 12 ++++++++++
+ docs/chad/wiki-compile/wiki-compile-plan.md     |  2 +-
+ tests/wiki.test.mjs                             | 14 +++++++++++
+ wiki/20_domain/default-loop.md                  | 24 +++++++++++++++++++
+ wiki/20_domain/review-gates.md                  | 24 +++++++++++++++++++
+ wiki/90_system/compile-rules.md                 | 31 +++++++++++++++++++++++++
+ wiki/index.md                                   |  9 +++++++
+ 8 files changed, 120 insertions(+), 1 deletion(-)

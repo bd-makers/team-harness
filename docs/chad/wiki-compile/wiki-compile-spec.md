@@ -182,7 +182,7 @@
       "id": "S7",
       "given": "커밋이 깨끗한 저장소에 wiki/ 가 있다",
       "when": "wiki sources 를 실행한다",
-      "then": "git status가 그대로 깨끗하고, summary --check 결과가 wiki/ 유무와 무관하게 같다",
+      "then": "git status가 그대로 깨끗하고, summary 렌더 결과(stdout)가 wiki/ 유무와 무관하게 같다",
       "test": "wiki sources: is read-only and summary ignores wiki/",
       "cmd": "node --test --test-name-pattern=\"wiki sources: is read-only\" tests/wiki.test.mjs"
     },

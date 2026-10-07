@@ -11,6 +11,31 @@
 - dogfood 컴파일(2026-10-07, 4단계): `/harness-wiki` 절차대로 수행.
   - 1회차: `wiki sources chad/r2-scenario-evidence` → PR #133 · a9c3859 · chad, blockers 없음, rules 없음 → 규칙 `wiki/90_system/compile-rules.md`를 먼저 쓰고(사람 승인 Q5) 규칙대로 `wiki/20_domain/review-gates.md`에 컴파일. `chad/default-loop-skill` → PR #134 · 32aedaf · chad → `wiki/20_domain/default-loop.md`. inbox로 보낸 단락 없음.
   - 2회차(멱등 확인): 두 task 모두 `compiled: wiki/20_domain/review-gates.md` / `wiki/20_domain/default-loop.md` → 절차 4번에 따라 멈춤.
+- 검증(2026-10-07, 5단계): `npm test` → tests 1198 · pass 1197 · fail 0 · skipped 1, perf 1/1 pass. `npm run docs:check` → 최신. `node bin/harness-team.mjs scenario check` → `scenario: pass (10 checked)`, exit 0.
+  시나리오별 이름이 찍힌 실행 출력(R2 E1 근거 — 0건 매치에도 exit 0이므로 이름 줄이 증거다):
+
+  ```text
+  S1 $ node --test --test-name-pattern="wiki sources: infers PR" tests/wiki.test.mjs
+      ✔ wiki sources: infers PR, merge commit and author from first-parent history   (ℹ pass 1 · fail 0)
+  S2 $ node --test --test-name-pattern="wiki sources: reads a GitLab" tests/wiki.test.mjs
+      ✔ wiki sources: reads a GitLab merge request number from the commit body   (ℹ pass 1 · fail 0)
+  S3 $ node --test --test-name-pattern="wiki sources: no PR number" tests/wiki.test.mjs
+      ✔ wiki sources: no PR number blocks until --pr is given   (ℹ pass 1 · fail 0)
+  S4 $ node --test --test-name-pattern="wiki sources: a task that is not done" tests/wiki.test.mjs
+      ✔ wiki sources: a task that is not done is blocked   (ℹ pass 1 · fail 0)
+  S5 $ node --test --test-name-pattern="wiki sources: reports where" tests/wiki.test.mjs
+      ✔ wiki sources: reports where the task is already compiled, ignoring fenced examples   (ℹ pass 1 · fail 0)
+  S6 $ node --test --test-name-pattern="wiki sources: without wiki/90_system" tests/wiki.test.mjs
+      ✔ wiki sources: without wiki/90_system rules everything goes to 99_inbox   (ℹ pass 1 · fail 0)
+  S7 $ node --test --test-name-pattern="wiki sources: is read-only" tests/wiki.test.mjs
+      ✔ wiki sources: is read-only and summary ignores wiki/   (ℹ pass 1 · fail 0)
+  S8 $ node --test --test-name-pattern="wiki command: the compile contract" tests/wiki-command.test.mjs
+      ✔ wiki command: the compile contract stops on blockers and compiled, and never pushes   (ℹ pass 1 · fail 0)
+  S9 $ node --test --test-name-pattern="manifest-sync" tests/manifest-sync.test.mjs
+      ✔ manifest-sync: Claude harness commands have Codex command-equivalent skills   (ℹ pass 9 · fail 0)
+  S10 $ node --test --test-name-pattern="wiki dogfood" tests/wiki.test.mjs
+      ✔ wiki dogfood: this repository compiled #134 and #133   (ℹ pass 1 · fail 0)
+  ```
 - dogfood 예외: 명령 계약은 "기본 브랜치에서 실행"이지만, 이 task의 dogfood 컴파일(#134·#133)은 위키 본문까지 PR 리뷰를 받도록 PR 브랜치에서 돌린다 — 사람이 승인한 Q5(dogfood 결과를 이 PR에 커밋)의 귀결이다.
 
 ## Reviews
