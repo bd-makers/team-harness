@@ -27,3 +27,15 @@
  src/commands/wiki.mjs                              | 14 ++++++------
  tests/wiki.test.mjs                                |  4 ++++
  6 files changed, 55 insertions(+), 11 deletions(-)
+
+## 2026-10-07T07:26:13.817Z — d61a5b6 fix(wiki): 목록 항목 내어쓰기·표지 뒤 5칸 공백을 CommonMark대로 — R3 재검 P2 반영
+CHANGELOG.md                                       |  3 ++
+ .../wiki-fence-nested-artifact.md                  | 39 ++++++++++++++++++----
+ .../wiki-fence-nested/wiki-fence-nested-context.md |  2 +-
+ .../wiki-fence-nested/wiki-fence-nested-handoff.md |  9 +++++
+ .../wiki-fence-nested/wiki-fence-nested-meta.json  |  9 +++++
+ .../wiki-fence-nested/wiki-fence-nested-plan.md    |  2 +-
+ .../wiki-fence-nested/wiki-fence-nested-spec.md    | 10 +++---
+ src/commands/wiki.mjs                              | 16 +++++----
+ tests/wiki.test.mjs                                |  4 +++
+ 9 files changed, 76 insertions(+), 18 deletions(-)

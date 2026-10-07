@@ -8,7 +8,7 @@
 - [x] 2. `wikiMarkersIn` 펜스 판정 수정(인용 깊이 · 목록 내용 열) → wiki 테스트 통과
 - [x] 3. 전체 검증: `npm test` · `npm run docs:check` · `scenario check`
 - [x] 4. R3 외부 리뷰(`review codex`) — P1 없으면 통과, P2는 반영 후 재검 1회까지 (재검 P2 2건 반영, 3차 리뷰 없음)
-- [ ] 5. CHANGELOG `[Unreleased]` Fixed 한 줄 → `/harness-ship`
+- [x] 5. CHANGELOG `[Unreleased]` Fixed 한 줄 → `/harness-ship`
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
