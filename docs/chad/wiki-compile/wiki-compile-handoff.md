@@ -58,3 +58,11 @@ docs/chad/wiki-compile/wiki-compile-artifact.md | 25 +++++++++++++++++++++++++
  docs/chad/wiki-compile/wiki-compile-handoff.md  | 11 +++++++++++
  docs/chad/wiki-compile/wiki-compile-spec.md     |  2 +-
  3 files changed, 37 insertions(+), 1 deletion(-)
+
+## 2026-10-07T06:13:41.747Z — 17ed4ac test(wiki): S1이 작성자를 경로가 아니라 meta에서 읽는지 가른다 — R2 E1 반영
+docs/chad/wiki-compile/wiki-compile-artifact.md | 22 ++++++++++++++++++++++
+ docs/chad/wiki-compile/wiki-compile-handoff.md  |  6 ++++++
+ docs/chad/wiki-compile/wiki-compile-meta.json   | 12 +++++++++++-
+ docs/chad/wiki-compile/wiki-compile-spec.md     |  4 ++--
+ tests/wiki.test.mjs                             | 13 +++++++------
+ 5 files changed, 48 insertions(+), 9 deletions(-)

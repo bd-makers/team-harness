@@ -65,4 +65,32 @@
 - 판별(2026-10-07): E1 **진짜 결함** — S1 fixture의 meta user와 경로 user가 둘 다 `chad`라 `const author = user` 변이가 통과한다. 재현: 그 변이를 넣고 S1을 돌려 fail을 확인, 원복.
   조치: fixture에 `metaUser`를 두고 S1 세 경우 모두 meta user `kim` ≠ 경로 user `chad`로 바꿨다. 변이 재실행 → `✖ wiki sources: infers PR…`(잡힘), 원복 후 `✔`. spec S1 given/then에 kim을 명시. E2 pass — 조치 없음.
 
+### 2026-10-07T06:15:49.723Z — codex-scenario (harness-team review)
+
+- engine: codex · scope: diff · tip: 17ed4ac6e115f677caafd09d58e8a4eaf7f85fd6 · exit 0 · 2879 B
+
+```text
+- **E1 · 각 시나리오의 증거가 Then을 실제로 검증한다 · BLOCKER · pass**
+
+  S1–S10의 assertion과 이름이 찍힌 [실행 기록](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/docs/chad/wiki-compile/wiki-compile-artifact.md:18)을 대조했습니다.
+  
+  S1은 현재 `metaUser: 'kim'`과 경로 `chad`를 구분하고 provenance·마커를 독립 기대값으로 검증합니다. 따라서 `author = user` 변이는 실패합니다([테스트](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/tests/wiki.test.mjs:65)). 해당 변이의 실패·원복 후 통과도 [기록](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/docs/chad/wiki-compile/wiki-compile-artifact.md:65)되어 있습니다.
+
+  S2–S7은 PR 번호, blocker·마커, compiled 정확 일치·펜스 제외, 규칙 목록·inbox 안내, 깨끗한 git status·summary 동일성을 각각 assert합니다([테스트](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/tests/wiki.test.mjs:84)). S8은 계약 문단 전체를 비교하며([테스트](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/tests/wiki-command.test.mjs:44)), S9는 등록 양방향 대조와 래퍼 연결을 검증합니다([테스트](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/tests/manifest-sync.test.mjs:106)). S10은 두 PR 번호와 compiled 경로를 assert합니다([테스트](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/tests/wiki.test.mjs:196)).
+  
+  S8·S9·S10은 직접 재실행하여 해당 테스트 이름의 `✔` 출력도 확인했습니다. S1–S7은 임시 파일을 생성하므로 기록된 출력과 코드로 판정했습니다.
+
+- **E2 · spec 밖 동작이 diff에 없다 · MAJOR · pass**
+
+  `refs/remotes/origin/main` 대비 동작 변경은 wiki CLI·라우팅·인자 추가, 명령·래퍼 등록, 선택형 종결 단계입니다. 모두 spec 설계·R-1–R-6에 대응합니다. 기존 `done`·`summary`·handoff 구현 변경은 없습니다. [종결 절 diff](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/commands/harness-task.md:178)는 선택 단계만 추가합니다. 위키 규칙과 두 항목은 명시된 dogfood 범위이며, PR 브랜치 실행 예외도 [사유가 기록](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/docs/chad/wiki-compile/wiki-compile-artifact.md:39)되어 있습니다.
+
+파일은 수정하지 않았고 기계 행은 재판정하지 않았습니다.
+
+**최종 판정: pass — 전체 fail 목록: 없음.**
+```
+
+<!-- harness:review kind=codex-scenario scope=diff tip=17ed4ac6e115f677caafd09d58e8a4eaf7f85fd6 at=2026-10-07T06:15:49.723Z -->
+
+- 판별(2026-10-07): E1·E2 pass — 조치 없음. R2 통과.
+
 ## Learnings
