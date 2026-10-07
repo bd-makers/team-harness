@@ -16,3 +16,16 @@ docs/chad/wiki-compile/wiki-compile-handoff.md |   9 ++
  docs/chad/wiki-compile/wiki-compile-plan.md    |  15 +-
  docs/chad/wiki-compile/wiki-compile-spec.md    | 209 ++++++++++++++++++-------
  3 files changed, 169 insertions(+), 64 deletions(-)
+
+## 2026-10-07T06:07:15.930Z — b3ca5c1 feat(wiki): wiki sources — 위키 컴파일의 결정론적 입력(출처·마커·compiled·규칙)
+bin/harness-team.mjs                            |   6 +-
+ docs/chad/wiki-compile/wiki-compile-artifact.md |   3 +
+ docs/chad/wiki-compile/wiki-compile-handoff.md  |   6 +
+ docs/chad/wiki-compile/wiki-compile-plan.md     |   2 +-
+ docs/chad/wiki-compile/wiki-compile-spec.md     |  28 +--
+ docs/harness-overview.html                      |  10 +
+ src/cli-args.mjs                                |   8 +-
+ src/commands/wiki.mjs                           | 274 ++++++++++++++++++++++++
+ tests/cli-args.test.mjs                         |   2 +-
+ tests/wiki.test.mjs                             | 191 +++++++++++++++++
+ 10 files changed, 512 insertions(+), 18 deletions(-)

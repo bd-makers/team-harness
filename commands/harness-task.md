@@ -175,6 +175,8 @@ churn이 자기 자신을 먹여 트리가 깨끗해지는 지점이 사라지�
 
 PR/MR이 머지된 뒤 기본 브랜치에서: plan의 마지막 단계(보통 "커밋·PR")를 `- [x]`로 켠다 → `harness-team done`
 → `harness-team summary --write` → **커밋 하나**(`chore(task): <name> 종결`)에 plan·meta·handoff·원장을 함께 담는다.
+위키 컴파일은 선택이다 — `harness-team done` 다음, `summary --write` 전에 `/harness-wiki`를 돌리면 위키 변경도
+같은 종결 커밋에 담긴다(`commands/harness-wiki.md`).
 
 `done` 가드는 미커밋 변경을 막지만, 활성 task의 plan.md 변경이 **줄머리 체크박스를 켠 것뿐**이면 세지 않는다
 (`isCheckboxOnlyChange` — HEAD의 plan과 index·작업 트리를 **둘 다** 줄 단위로 대조한다. 끄기·줄 추가·산문 수정은

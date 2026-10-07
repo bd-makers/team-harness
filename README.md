@@ -375,6 +375,19 @@ Dev 구현 → QA 판정 → 로컬 커밋을 순차로 돌리고(쓰기는 Dev 
 /harness-loop 공개 API 시그니처 유지  # focus 문구 — Dev 지시와 리뷰에 그대로 전달
 ```
 
+### `/harness-wiki` — 머지된 task를 위키로 컴파일 (선택)
+
+머지 후 종결 절차에서 `done` 다음에 쓰는 선택 단계입니다. 머지된 task의 결정·바뀐 모듈·학습을 최상위 `wiki/`의
+기능·모듈 단위 항목으로 모으고, 단락마다 PR 번호·커밋·작성자 출처 마커를 남깁니다. 분류는 프로젝트의
+`wiki/90_system/` 작성 규칙을 따르며, 규칙이 없거나 분류하지 못한 것은 `wiki/99_inbox/`로 갑니다.
+결정론적 입력(출처 추론·마커·이미 컴파일된 위치)은 읽기 전용 `harness-team wiki sources`가 냅니다.
+절차의 정본은 [`commands/harness-wiki.md`](commands/harness-wiki.md)입니다.
+
+```bash
+harness-team wiki sources chad/my-task --json   # 출처·마커·compiled·규칙 목록 (파일을 쓰지 않음)
+/harness-wiki                                   # 활성 task를 컴파일 (막힘·이미 컴파일됨이면 멈춤)
+```
+
 ### `/harness-task` — task 관리
 
 아래 [task 관리](#task-관리-팀원기능별) 섹션 참조.
