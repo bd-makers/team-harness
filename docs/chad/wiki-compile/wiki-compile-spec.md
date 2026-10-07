@@ -78,7 +78,8 @@
 **기본 브랜치 확인**: CLI는 브랜치를 검사하지 않는다(읽기 전용 정보 명령). 명령 문서가 기본 브랜치가 아니면 멈추고 묻게 한다 —
 위키 본문까지 PR 리뷰를 받으려고 PR 브랜치에서 돌리는 것은 사람의 명시 지시가 있을 때만이다(이 task의 dogfood가 그 경우, artifact 기록).
 
-**실행 시점 (Q2 결정)**: 머지 후 종결 절차 — 기본 브랜치에서 `task <name>` → `done` → **(선택) `/harness-wiki`** → `summary --write` → 종결 커밋 하나.
+**실행 시점 (Q2 결정)**: 머지 후 종결 절차 — 기본 브랜치에서 `task <name>` → `done` → **(선택) `/harness-wiki <user>/<task>`** → `summary --write` → 종결 커밋 하나.
+`done`이 활성 task를 비우므로 이 자리에서는 대상을 명시한다(R3 P2 반영).
 `commands/harness-task.md` 머지 후 종결 절에 선택 한 줄만 더하고 `done`·`summary` 코드는 바꾸지 않는다.
 
 **설정 자리 (Q3 결정)**: `wiki/90_system/` 안 프로젝트 문서만. `.harness/config.json` 키는 만들지 않는다 — 사용자별 gitignore라 팀원마다 분류가 갈린다(`gates.json` 정정과 같은 이유).

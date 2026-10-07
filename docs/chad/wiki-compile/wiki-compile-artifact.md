@@ -36,6 +36,12 @@
   S10 $ node --test --test-name-pattern="wiki dogfood" tests/wiki.test.mjs
       ✔ wiki dogfood: this repository compiled #134 and #133   (ℹ pass 1 · fail 0)
   ```
+- 남은 리스크·후속(2026-10-07, ship):
+  - 후속 P2-a 얕은 클론에서 출처 오인 · P2-b 인용문·목록 안 펜스 미인식 — `## Reviews` R3 재검 판별 참조.
+  - 위키 본문이 종결 커밋으로 PR 리뷰 없이 main에 들어간다 — 사람이 수용(spec 위험 절).
+  - 의도적으로 하지 않은 것: C2(task 폴더 삭제·원장/`done`/handoff 입력 이전), R1 `wiki/10_ssot/` 겹침(이월), init의 `wiki/` scaffold.
+  - 버전 범프 없음(릴리스 몫).
+- 다이어그램: 옵트아웃(2026-10-07 사람 답 "아니오") — plan에 단계 없음, ship 6번 생략.
 - dogfood 예외: 명령 계약은 "기본 브랜치에서 실행"이지만, 이 task의 dogfood 컴파일(#134·#133)은 위키 본문까지 PR 리뷰를 받도록 PR 브랜치에서 돌린다 — 사람이 승인한 Q5(dogfood 결과를 이 PR에 커밋)의 귀결이다.
 
 ## Reviews

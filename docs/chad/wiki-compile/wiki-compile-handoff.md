@@ -90,3 +90,10 @@ docs/chad/wiki-compile/wiki-compile-artifact.md | 21 +++++++++++++++++++++
  docs/chad/wiki-compile/wiki-compile-handoff.md  | 12 ++++++++++++
  docs/chad/wiki-compile/wiki-compile-meta.json   |  9 +++++++++
  3 files changed, 42 insertions(+)
+
+## 2026-10-07T06:21:49.860Z — ee7d529 docs: wiki-compile CHANGELOG [Unreleased] · 사이클 §6 C1 구현 표기
+CHANGELOG.md                                   | 10 ++++++++++
+ docs/chad/wiki-compile/wiki-compile-handoff.md |  6 ++++++
+ docs/chad/wiki-compile/wiki-compile-plan.md    |  2 +-
+ docs/harness-cycle.md                          |  2 +-
+ 4 files changed, 18 insertions(+), 2 deletions(-)
