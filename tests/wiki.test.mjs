@@ -188,6 +188,10 @@ test('wiki sources: fenced examples inside blockquotes and list items are not co
   assert.deepEqual(tasks('    ```\n<!-- harness:wiki task=a/c -->\n'), ['a/c']);
   // 목록 항목 안 펜스의 빈 줄은 펜스를 닫지 않는다.
   assert.deepEqual(tasks('- a\n  ```\n  <!-- harness:wiki task=a/b -->\n\n  x\n  ```\n<!-- harness:wiki task=a/c -->\n'), ['a/c']);
+  // 맨 위 4칸 들여쓴 목록 표지도 들여쓴 코드다 — 표지 뒤 펜스를 열지 않는다(codex R3 P2).
+  assert.deepEqual(tasks('    - ~~~\n<!-- harness:wiki task=a/c -->\n'), ['a/c']);
+  // 닫는 펜스 들여쓰기는 컨테이너 기준이다 — 1칸 여는 펜스 뒤 4칸 백틱은 내용이다(codex R3 P2).
+  assert.deepEqual(tasks(' ```\n    ```\n<!-- harness:wiki task=a/b -->\n```\n'), []);
 });
 
 test('wiki sources: without wiki/90_system rules everything goes to 99_inbox', async () => {

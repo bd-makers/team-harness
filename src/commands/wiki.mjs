@@ -50,7 +50,7 @@ export function parseMarkerAttrs(text) {
 // 너무 많이 펜스로 보면 닫히지 않은 펜스가 뒤의 실제 마커를 삼켜 같은 task를 다시 컴파일한다 — 펜스를 못 알아보는 쪽의 실패
 // ("이미 컴파일됨"으로 멈춤)보다 나쁘므로, 여는 펜스는 그 컨테이너의 내용 열에서 3칸 이내만 인정한다.
 const QUOTE_RE = /^(?: {0,3}> ?)*/;
-const LIST_ITEM_RE = /^ *(?:[-*+]|\d{1,9}[.)]) +/;
+const LIST_ITEM_RE = /^( *)(?:[-*+]|\d{1,9}[.)]) +/;
 const FENCE_OPEN_RE = /^( *)(`{3,}|~{3,})/;
 const FENCE_CLOSE_RE = /^( *)(`{3,}|~{3,})[ \t]*$/;
 
@@ -58,7 +58,7 @@ export function wikiMarkersIn(content) {
   const found = [];
   // CommonMark: 닫는 펜스는 여는 것과 같은 문자이고 길이가 같거나 길며, 뒤에 정보 문자열이 없다.
   // 길이를 무시하면 4개 백틱 블록 안의 3개 백틱 예시가 블록을 닫아 버린다(codex R3 P2).
-  let fence = null; // { run, depth, indent }
+  let fence = null; // { run, depth, col } — col: 펜스를 연 컨테이너의 내용 열
   let listDepth = 0;
   let listCol = 0;
   for (const line of content.split(/\r?\n/)) {
@@ -69,15 +69,17 @@ export function wikiMarkersIn(content) {
     if (fence !== null && depth < fence.depth) fence = null;
     if (fence !== null) {
       const close = FENCE_CLOSE_RE.exec(rest);
-      if (close && depth === fence.depth && close[1].length <= fence.indent + 3
+      // 닫는 펜스의 들여쓰기도 여는 펜스가 아니라 컨테이너 내용 열 기준 3칸 이내다(codex R3 P2).
+      if (close && depth === fence.depth && close[1].length - fence.col <= 3
         && close[2][0] === fence.run[0] && close[2].length >= fence.run.length) fence = null;
       continue;
     }
     if (depth !== listDepth) [listDepth, listCol] = [depth, 0];
-    // 목록 표지는 그 너비만큼의 공백으로 바꿔 펜스의 열을 유지한다(`1. ```` 의 펜스는 3열).
+    // 목록 표지는 그 너비만큼의 공백으로 바꿔 펜스의 열을 유지한다(`1. ```` 의 펜스는 3열). 표지 자체도 현재
+    // 내용 열에서 3칸 이내여야 한다 — 맨 위 `    - ~~~`는 들여쓴 코드다(codex R3 P2).
     const item = LIST_ITEM_RE.exec(rest);
     let body = rest;
-    if (item) {
+    if (item && item[1].length - listCol <= 3) {
       listCol = item[0].length;
       body = ' '.repeat(listCol) + rest.slice(listCol);
     } else if (rest.trim() !== '') {
@@ -85,7 +87,7 @@ export function wikiMarkersIn(content) {
     }
     const open = FENCE_OPEN_RE.exec(body);
     if (open && open[1].length - listCol <= 3) {
-      fence = { run: open[2], depth, indent: open[1].length };
+      fence = { run: open[2], depth, col: listCol };
       continue;
     }
     for (const m of line.matchAll(WIKI_MARKER_RE)) found.push(parseMarkerAttrs(m[1]));

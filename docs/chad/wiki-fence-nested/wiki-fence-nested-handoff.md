@@ -12,3 +12,9 @@
  src/commands/wiki.mjs                              | 51 ++++++++++----
  tests/wiki.test.mjs                                | 35 ++++++++++
  8 files changed, 258 insertions(+), 13 deletions(-)
+
+## 2026-10-07T07:17:31.984Z — 82f7cbd docs(task): wiki-fence-nested 리뷰 기록(scope 오류 무효) + handoff
+.../wiki-fence-nested/wiki-fence-nested-artifact.md     | 17 +++++++++++++++++
+ .../chad/wiki-fence-nested/wiki-fence-nested-handoff.md | 11 +++++++++++
+ docs/chad/wiki-fence-nested/wiki-fence-nested-meta.json | 12 +++++++++++-
+ 3 files changed, 39 insertions(+), 1 deletion(-)
