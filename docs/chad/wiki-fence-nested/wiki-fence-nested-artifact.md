@@ -5,14 +5,15 @@
 ## 결과
 - 수정: `src/commands/wiki.mjs` `wikiMarkersIn` — 인용 깊이(`>` 반복)를 세고 목록 표지를 같은 너비 공백으로 바꿔
   펜스를 컨테이너 기준으로 판정. 여는 펜스는 가장 최근 목록 항목 내용 열에서 3칸 이내만, 닫는 펜스는 같은 인용 깊이 ·
-  들여쓰기 ≤ 여는 컨테이너 내용 열 + 3(R3 P2 반영). 목록 표지도 내용 열 3칸 이내만. 인용이 얕아지면 그 안의 펜스는 끝난다. 다이어그램: 옵트아웃(사람 결정 — 작은 버그).
+  들여쓰기 ≤ 여는 컨테이너 내용 열 + 3(R3 P2 반영). 목록 표지도 내용 열 3칸 이내만, 표지 뒤 5칸 이상 공백은 들여쓴 코드.
+  목록 내용 열보다 내어 쓴 줄은 그 안의 펜스를 끝낸다(R3 재검 P2 반영). 인용이 얕아지면 그 안의 펜스는 끝난다. 다이어그램: 옵트아웃(사람 결정 — 작은 버그).
 - 재현(수정 전): 새 테스트가 `actual: [ 'wiki/90_system/rules.md' ], expected: []`로 실패 — 인용문·목록 안 예시 마커를 `compiled`로 셈.
-- 검증 출력(수정 후, 2026-10-07):
+- 검증 출력(최종 — 재검 P2 반영 후 tip, 2026-10-07):
 
 ```text
 $ node --test --test-name-pattern="(inside blockquotes and list items|ignoring fenced examples)" tests/wiki.test.mjs
-✔ wiki sources: reports where the task is already compiled, ignoring fenced examples (179.634792ms)
-✔ wiki sources: fenced examples inside blockquotes and list items are not compiled markers (180.535792ms)
+✔ wiki sources: reports where the task is already compiled, ignoring fenced examples (170.394667ms)
+✔ wiki sources: fenced examples inside blockquotes and list items are not compiled markers (180.281084ms)
 ℹ tests 2
 ℹ pass 2
 
@@ -26,7 +27,7 @@ $ npm test
 ℹ pass 1199
 ℹ fail 0
 ℹ skipped 1                               # 기존 CI 전용 skip: "CI에서는 jq-present 매트릭스가 반드시 실행된다"
-✔ boundary performance: steady-state cold-process check <3x and plan checkpoint <5x an equal-work baseline for 10 x 10KiB local contracts (915.284167ms)
+✔ boundary performance: steady-state cold-process check <3x and plan checkpoint <5x an equal-work baseline for 10 x 10KiB local contracts (919.221875ms)
 ℹ tests 1
 ℹ pass 1
 
@@ -37,7 +38,7 @@ $ node bin/harness-team.mjs scenario check
 scenario: pass (2 checked)
 ```
 
-- 범위 밖(의도적): 목록 항목이 내어쓰기로 끝날 때 닫히지 않은 펜스 닫기, 지연 연속 줄, 탭 열 계산, P3(공백만 있는 줄).
+- 범위 밖(의도적): 지연 연속 줄, 탭 열 계산, 인용문 안 목록의 세부 규칙, P3(공백만 있는 줄).
 
 
 ## Reviews
@@ -84,5 +85,31 @@ Both regressions reproduced; `origin/main` handles these cases correctly. Read-o
     (82f7cbd `['a/b']`). 조치: 펜스에 여는 컨테이너의 내용 열을 저장하고, 닫는 펜스는 그 열에서 3칸 이내만 → `[]`.
   - 두 경우를 S2 테스트에 단언으로 추가. 수정 후 `node --test tests/wiki.test.mjs` 10/10, `npm test` 1199 pass·0 fail·1 skip(기존),
     perf 1/1, `docs:check` 최신, `scenario check` 2/2. 재검 1회를 돌린다.
+
+### 2026-10-07T07:23:36.549Z — codex (harness-team review)
+
+- engine: codex · scope: diff · tip: 107766d509b093f849db819cfcf69294b662e4ce · exit 0 · 803 B
+
+````text
+- **P2 should-fix — `src/commands/wiki.mjs:73`:** A dedented fence after `- ``` ` incorrectly closes the list fence instead of opening a top-level fence, exposing example markers and hiding subsequent real markers. [CommonMark](https://spec.commonmark.org/0.31.2/#fenced-code-blocks)
+- **P2 should-fix — `src/commands/wiki.mjs:83`:** Consuming all list padding makes `-     ~~~` open a fence despite being indented code, swallowing subsequent real markers and allowing duplicate compilation. [CommonMark](https://spec.commonmark.org/0.31.2/#list-items)
+
+Both regressions reproduced; `origin/main` handles these inputs correctly. Syntax checks and `git diff --check` passed. Fixture tests were not run because they write files. No files modified.
+
+**Final verdict: REQUEST CHANGES.** No P1 findings.
+````
+
+<!-- harness:review kind=codex scope=diff tip=107766d509b093f849db819cfcf69294b662e4ce at=2026-10-07T07:23:36.549Z -->
+
+- 판별(2026-10-07, 재검): P1 없음 → **R3 통과**(종료 기준: P1 없으면 통과). P2 두 건 모두 **유효** — 107766d 재현 결과
+  origin/main보다 나빴다(`- ``` / x / ``` / 예시 / ``` / 실제` → `['a/b']`, `-     ~~~ / 실제` → `[]`).
+  - 둘 다 이 PR이 만든 회귀이고 CommonMark 규칙으로 결정되는 작은 수정이라 **반영했다**: (1) 같은 인용 깊이에서 목록 내용 열보다
+    내어 쓴 비어 있지 않은 줄은 목록 항목과 그 안의 펜스를 끝내고, 그 줄은 펜스 밖 줄로 다시 판정한다. (2) 표지 뒤 공백이 5칸 이상이면
+    내용 열은 표지 + 1칸이다. 두 경우를 S2 테스트에 단언으로 추가 → 둘 다 `['a/c']`(main과 같음).
+  - 재검은 한 번까지라 **세 번째 외부 리뷰는 돌리지 않았다** — 이 마지막 반영은 외부 검증을 거치지 않았다(보고에 명시).
+  - 대신 차등 스윕(scratchpad, 커밋 안 함): 펜스·목록·인용 줄 18종으로 만든 3·4줄 문서 22,374개를 origin/main과 비교 → 차이 277건.
+    main보다 **실제 마커를 덜 세는**(재컴파일 쪽) 5건은 모두 `<목록 펜스 열고 닫음> / 맨 위 ``` (닫히지 않음) / 마커` 꼴 —
+    CommonMark에서 닫히지 않은 펜스는 문서 끝까지 가므로 새 동작이 맞고 main이 목록 펜스를 못 봐 짝을 잘못 맞췄던 것이다.
+    나머지 272건은 더 세는(fail-closed) 쪽이고, 표본 15건은 CommonMark와 일치했다.
 
 ## Learnings

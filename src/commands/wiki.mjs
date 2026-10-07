@@ -50,7 +50,7 @@ export function parseMarkerAttrs(text) {
 // 너무 많이 펜스로 보면 닫히지 않은 펜스가 뒤의 실제 마커를 삼켜 같은 task를 다시 컴파일한다 — 펜스를 못 알아보는 쪽의 실패
 // ("이미 컴파일됨"으로 멈춤)보다 나쁘므로, 여는 펜스는 그 컨테이너의 내용 열에서 3칸 이내만 인정한다.
 const QUOTE_RE = /^(?: {0,3}> ?)*/;
-const LIST_ITEM_RE = /^( *)(?:[-*+]|\d{1,9}[.)]) +/;
+const LIST_ITEM_RE = /^( *)([-*+]|\d{1,9}[.)])( +)/;
 const FENCE_OPEN_RE = /^( *)(`{3,}|~{3,})/;
 const FENCE_CLOSE_RE = /^( *)(`{3,}|~{3,})[ \t]*$/;
 
@@ -65,8 +65,10 @@ export function wikiMarkersIn(content) {
     const quote = QUOTE_RE.exec(line)[0];
     const depth = quote.split('>').length - 1;
     const rest = line.slice(quote.length);
-    // 인용문이 끝나면 그 안에서 열린 펜스도 끝난다 — 이 줄은 펜스 밖 줄로 다시 판정한다.
-    if (fence !== null && depth < fence.depth) fence = null;
+    // 인용문이 끝나거나 목록 항목의 내용 열보다 내어 쓴 줄이 오면 그 컨테이너 안에서 열린 펜스도 끝난다 —
+    // 이 줄은 펜스 밖 줄로 다시 판정한다(codex R3 재검 P2: `- ```` 뒤 맨 위 ```` ``` ````는 새 펜스를 연다).
+    if (fence !== null && (depth < fence.depth
+      || (depth === fence.depth && rest.trim() !== '' && /^ */.exec(rest)[0].length < fence.col))) fence = null;
     if (fence !== null) {
       const close = FENCE_CLOSE_RE.exec(rest);
       // 닫는 펜스의 들여쓰기도 여는 펜스가 아니라 컨테이너 내용 열 기준 3칸 이내다(codex R3 P2).
@@ -76,12 +78,14 @@ export function wikiMarkersIn(content) {
     }
     if (depth !== listDepth) [listDepth, listCol] = [depth, 0];
     // 목록 표지는 그 너비만큼의 공백으로 바꿔 펜스의 열을 유지한다(`1. ```` 의 펜스는 3열). 표지 자체도 현재
-    // 내용 열에서 3칸 이내여야 한다 — 맨 위 `    - ~~~`는 들여쓴 코드다(codex R3 P2).
+    // 내용 열에서 3칸 이내여야 한다 — 맨 위 `    - ~~~`는 들여쓴 코드다(codex R3 P2). 표지 뒤 공백이 5칸 이상이면
+    // 내용 열은 표지 + 1칸이고 나머지는 들여쓴 코드다 — `-     ~~~`는 펜스가 아니다(codex R3 재검 P2).
     const item = LIST_ITEM_RE.exec(rest);
     let body = rest;
     if (item && item[1].length - listCol <= 3) {
-      listCol = item[0].length;
-      body = ' '.repeat(listCol) + rest.slice(listCol);
+      const [whole, lead, bullet, gap] = item;
+      listCol = lead.length + bullet.length + (gap.length >= 5 ? 1 : gap.length);
+      body = ' '.repeat(whole.length) + rest.slice(whole.length);
     } else if (rest.trim() !== '') {
       listCol = Math.min(listCol, /^ */.exec(rest)[0].length);
     }

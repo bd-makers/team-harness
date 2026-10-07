@@ -18,3 +18,12 @@
  .../chad/wiki-fence-nested/wiki-fence-nested-handoff.md | 11 +++++++++++
  docs/chad/wiki-fence-nested/wiki-fence-nested-meta.json | 12 +++++++++++-
  3 files changed, 39 insertions(+), 1 deletion(-)
+
+## 2026-10-07T07:21:28.309Z — 107766d fix(wiki): 목록 표지·닫는 펜스 들여쓰기를 컨테이너 내용 열 기준으로 — R3 P2 반영
+.../wiki-fence-nested-artifact.md                  | 25 +++++++++++++++++++++-
+ .../wiki-fence-nested/wiki-fence-nested-handoff.md |  6 ++++++
+ .../wiki-fence-nested/wiki-fence-nested-meta.json  |  9 ++++++++
+ .../wiki-fence-nested/wiki-fence-nested-spec.md    |  8 +++----
+ src/commands/wiki.mjs                              | 14 ++++++------
+ tests/wiki.test.mjs                                |  4 ++++
+ 6 files changed, 55 insertions(+), 11 deletions(-)
