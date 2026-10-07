@@ -10,7 +10,7 @@
 - [x] 4. dogfood — `wiki/index.md` + `wiki/90_system/compile-rules.md`, #134·#133 컴파일, 두 번째 실행 `compiled` 기록, S10 테스트
 - [x] 5. 검증 — `npm test` · `npm run docs:check` · `scenario check`(이름 찍힌 출력 artifact 기록) → R2 `review codex --framing scenario` → R3 `review codex`
 - [x] 6. CHANGELOG `[Unreleased]` · `docs/harness-cycle.md` §6 C1 구현 표기 · `/harness-ship` 준비 보고
-- [ ] 7. (사람 승인 후) push · PR · PR 리뷰 덱
+- [x] 7. (사람 승인 후) push · PR · PR 리뷰 덱
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

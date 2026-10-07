@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ wiki-compile
 - ✅ default-loop-skill
 - ✅ empty-doc-guard
 - ✅ followups-14-16-close

@@ -135,3 +135,12 @@ CHANGELOG.md                                    |  2 +-
  tests/wiki-command.test.mjs                     |  2 +-
  tests/wiki.test.mjs                             | 17 ++++++++
  10 files changed, 89 insertions(+), 80 deletions(-)
+
+## 2026-10-07T06:37:59.439Z — c5691ad docs(diagram): PR 135 변경 슬라이드 추가
+docs/chad/wiki-compile/wiki-compile-handoff.md |  13 +
+ docs/diagrams/pr/pr-135-wiki-compile.html      | 412 +++++++++++++++++++++++++
+ 2 files changed, 425 insertions(+)
+
+## 2026-10-07T06:48:52.672Z — 완료
+
+태스크 종료.
