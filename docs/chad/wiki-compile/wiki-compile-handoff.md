@@ -109,3 +109,10 @@ docs/chad/wiki-compile/wiki-compile-artifact.md | 45 +++++++++++++++++++++++++
  docs/chad/wiki-compile/wiki-compile-handoff.md  |  6 ++++
  docs/chad/wiki-compile/wiki-compile-meta.json   |  9 +++++
  3 files changed, 60 insertions(+)
+
+## 2026-10-07T06:27:30.173Z — 2cfb0b7 docs(task): wiki-compile shipcheck 재검 pass · plan 6 체크
+docs/chad/wiki-compile/wiki-compile-artifact.md | 24 ++++++++++++++++++++++++
+ docs/chad/wiki-compile/wiki-compile-handoff.md  |  6 ++++++
+ docs/chad/wiki-compile/wiki-compile-meta.json   |  9 +++++++++
+ docs/chad/wiki-compile/wiki-compile-plan.md     |  2 +-
+ 4 files changed, 40 insertions(+), 1 deletion(-)
