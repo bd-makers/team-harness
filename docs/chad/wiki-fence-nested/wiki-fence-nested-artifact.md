@@ -113,9 +113,72 @@ Both regressions reproduced; `origin/main` handles these inputs correctly. Synta
     내어 쓴 비어 있지 않은 줄은 목록 항목과 그 안의 펜스를 끝내고, 그 줄은 펜스 밖 줄로 다시 판정한다. (2) 표지 뒤 공백이 5칸 이상이면
     내용 열은 표지 + 1칸이다. 두 경우를 S2 테스트에 단언으로 추가 → 둘 다 `['a/c']`(main과 같음).
   - 재검은 한 번까지라 **세 번째 외부 리뷰는 돌리지 않았다** — 이 마지막 반영은 외부 검증을 거치지 않았다(보고에 명시).
-  - 대신 차등 스윕(scratchpad, 커밋 안 함): 펜스·목록·인용 줄 18종으로 만든 3·4줄 문서 22,374개를 origin/main과 비교 → 차이 277건.
-    main보다 **실제 마커를 덜 세는**(재컴파일 쪽) 5건은 모두 `<목록 펜스 열고 닫음> / 맨 위 ``` (닫히지 않음) / 마커` 꼴 —
-    CommonMark에서 닫히지 않은 펜스는 문서 끝까지 가므로 새 동작이 맞고 main이 목록 펜스를 못 봐 짝을 잘못 맞췄던 것이다.
-    나머지 272건은 더 세는(fail-closed) 쪽이고, 표본 15건은 CommonMark와 일치했다.
+  - 대신 차등 스윕을 돌렸다(스크립트는 scratchpad에 두고 커밋하지 않음 — 재현용으로 비교 부분을 아래에 인용). 펜스·목록·인용 줄 18종으로
+    3·4줄 문서를 만들어 origin/main과 현재 `wikiMarkersIn`을 비교한다. `HIDES`는 main보다 실제 마커를 **덜** 세는(재컴파일 쪽) 경우다.
+
+````text
+$ git show refs/remotes/origin/main:src/commands/wiki.mjs > src/commands/main-wiki-check.mjs   # 비교 후 삭제
+$ node sweep.mjs "$PWD/src/commands/main-wiki-check.mjs" "$PWD/src/commands/wiki.mjs"   # tip d61a5b6 이후 소스
+docs 22374 diffs 277
+hides 5 shows 272
+HIDES - ``` |   ``` | ``` | M => main=[t/0] new=[]
+HIDES -     ``` |   ``` | ``` | M => main=[t/0] new=[]
+HIDES 1. ``` |   ``` | ``` | M => main=[t/0] new=[]
+HIDES   - ``` |   ``` | ``` | M => main=[t/0] new=[]
+HIDES - x |   ``` | ``` | M => main=[t/0] new=[]
+````
+
+````js
+// sweep.mjs 비교 부분 (출력 서식 줄 생략)
+const [main, cur] = await Promise.all([import(process.argv[2]), import(process.argv[3])]);
+const V = ['```', '~~~', '  ```', '    ```', '- ```', '-     ```', '1. ```', '> ```', '> > ```', '>     ```', '  - ```', '    - ```', 'x', '  x', '', '>', '- x', 'M'];
+const seen = new Map();
+let n = 0;
+function* gen(k, pre = []) { if (k === 0) { yield pre; return; } for (const v of V) yield* gen(k - 1, [...pre, v]); }
+for (const k of [3, 4]) for (const lines of gen(k)) {
+  let i = 0;
+  const doc = lines.map(l => l === 'M' ? `<!-- harness:wiki task=t/${i++} -->` : l).join('\n') + '\n';
+  if (!i) continue;
+  n++;
+  const a = main.wikiMarkersIn(doc).map(m => m.task).join(','), b = cur.wikiMarkersIn(doc).map(m => m.task).join(',');
+  if (a !== b) {
+    const key = (a.length > b.length ? 'HIDES ' : 'SHOWS ') + lines.join(' | ');
+    if (!seen.has(key)) seen.set(key, `main=[${a}] new=[${b}]`);
+  }
+}
+console.log('docs', n, 'diffs', seen.size);
+````
+
+    - 판단(사람 검토 대상 — 기계 검사 아님): `HIDES` 5건은 모두 `` <목록 펜스 열고 닫음> / 맨 위 ``` (닫히지 않음) / 마커 `` 꼴이다.
+      CommonMark에서 닫히지 않은 펜스는 문서 끝까지 가므로 새 동작이 맞고, main은 목록 펜스를 못 봐 짝을 잘못 맞췄다.
+      `SHOWS` 272건은 더 세는(fail-closed) 쪽이다. 첫 실행에서 출력한 표본 중 예: `` - ``` |   ``` | M => main=[] new=[t/0] ``,
+      `` - x |   ``` | M => main=[] new=[t/0] ``, `` - ``` |   ``` | > ``` | M => main=[] new=[t/0] `` — 각각 목록 펜스가 닫히거나
+      목록·인용이 끝나 마커가 펜스 밖에 있으므로 CommonMark상 새 동작이 맞다고 판단했다(참조 파서로 대조하지는 않았다).
+
+### 2026-10-07T07:27:56.778Z — codex-shipcheck (harness-team review)
+
+- engine: codex · scope: diff · tip: 5748bafa616f8f7875e741fdd1e12288fea0981e · exit 0 · 2366 B
+
+```text
+`git status`, `git diff refs/remotes/origin/main`, 커밋 이력을 직접 확인했습니다. 변경은 9개 파일이며, 미커밋 변경은 handoff뿐입니다. 파일은 수정하지 않았습니다.
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| S1 | spec 요구사항 ↔ 구현 | BLOCKER | pass | spec의 “펜스 밖 실제 마커(인용문 안 포함)는 여전히 센다”에 대응하는 테스트 `tasks('> <!-- harness:wiki task=a/d -->\n'), ['a/d']`가 있습니다. diff에는 인용 깊이·목록 내용 열·펜스 종료 조건과 S1/S2 단언이 모두 있습니다. 미구현 범위도 “지연 연속 줄, 탭 열 계산…”으로 명시되어 있습니다. |
+| S2 | 완료 체크 ↔ 변경·커밋 | MAJOR | pass | plan 1·2는 `6f9498e`의 테스트·구현, 3은 artifact의 명령·출력 블록, 4는 리뷰 3건 및 `107766d`·`d61a5b6`의 수정, 5는 CHANGELOG diff의 `+### Fixed`와 `5748baf`의 ship 기록에 대응합니다. |
+| S3 | 스코프 밖 변경 | MAJOR | pass | 소스 diff는 `wikiMarkersIn`과 관련 상수에 한정됩니다. 나머지는 관련 테스트·task 문서·CHANGELOG입니다. plan에도 “CHANGELOG `[Unreleased]` Fixed 한 줄 → `/harness-ship`”이 명시되어 있습니다. |
+| S4 | 리뷰 기록·마커 | MAJOR | pass | meta diff의 리뷰 3건이 artifact `## Reviews`의 `harness:review` 마커와 일치합니다(tip `6f9498e`, `82f7cbd`, `107766d`). 무효 리뷰도 “무효 — 리뷰 대상 오류”로 보존되어 있습니다. |
+| S5 | 검증 결과의 명령·출력 인용 | BLOCKER | **fail** | 주요 테스트·docs·scenario 결과에는 명령·출력 인용이 있습니다. 그러나 [artifact:116](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-44/docs/chad/wiki-fence-nested/wiki-fence-nested-artifact.md:116)의 “22,374개…차이 277건”, “표본 15건은 CommonMark와 일치했다”는 산문 선언이며 실행 명령·출력 인용이 없습니다. 이 스윕은 최종 수정의 검증 근거로도 제시되어 있어 S5를 충족하지 못합니다. |
+
+fixture 테스트는 파일을 쓰므로 재실행하지 않았습니다.
+
+**Verdict: REQUEST CHANGES — fail 전체 목록: S5(BLOCKER).** 차등 스윕의 실행 명령과 실제 출력 인용을 추가해야 합니다.
+```
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=5748bafa616f8f7875e741fdd1e12288fea0981e at=2026-10-07T07:27:56.778Z -->
+
+- 판별(2026-10-07): S5 BLOCKER fail **유효** — 차등 스윕 결과(22,374건·차이 277건·표본 판단)가 명령·출력 없이 산문으로만 있었다.
+  조치(문서만): 스윕을 다시 돌려 실행 명령·실제 출력·비교 스크립트를 R3 재검 판별 아래에 인용하고, `SHOWS` 표본 판단은
+  "사람 판단 — 참조 파서 대조 아님"으로 성격을 밝혔다. S1–S4 pass, 조치 없음. 코드 변경 없음.
 
 ## Learnings

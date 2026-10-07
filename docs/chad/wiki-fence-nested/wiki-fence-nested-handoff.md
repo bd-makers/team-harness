@@ -39,3 +39,9 @@ CHANGELOG.md                                       |  3 ++
  src/commands/wiki.mjs                              | 16 +++++----
  tests/wiki.test.mjs                                |  4 +++
  9 files changed, 76 insertions(+), 18 deletions(-)
+
+## 2026-10-07T07:26:36.242Z — 5748baf docs(task): wiki-fence-nested ship — 리스크·다이어그램 옵트아웃 기록 + handoff
+docs/chad/wiki-fence-nested/wiki-fence-nested-artifact.md |  6 ++++++
+ docs/chad/wiki-fence-nested/wiki-fence-nested-handoff.md  | 12 ++++++++++++
+ docs/chad/wiki-fence-nested/wiki-fence-nested-plan.md     |  2 +-
+ 3 files changed, 19 insertions(+), 1 deletion(-)
