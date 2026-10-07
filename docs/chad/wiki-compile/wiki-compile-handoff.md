@@ -122,3 +122,16 @@ docs/chad/wiki-compile/questions-1.md          | 15 +++++++
  docs/chad/wiki-compile/questions-2.md          | 56 ++++++++++++++++++++++++++
  docs/chad/wiki-compile/wiki-compile-handoff.md |  7 ++++
  3 files changed, 78 insertions(+)
+
+## 2026-10-07T06:34:18.594Z — a8c39c0 fix(wiki): 얕은 클론은 shallow-history로 막는다 — R3 후속 P2-a(사람 승인), 질문 파일 제거
+CHANGELOG.md                                    |  2 +-
+ commands/harness-wiki.md                        |  2 +-
+ docs/chad/wiki-compile/questions-1.md           | 15 -------
+ docs/chad/wiki-compile/questions-2.md           | 56 -------------------------
+ docs/chad/wiki-compile/wiki-compile-artifact.md | 39 ++++++++++++++++-
+ docs/chad/wiki-compile/wiki-compile-handoff.md  |  6 +++
+ docs/chad/wiki-compile/wiki-compile-spec.md     | 16 +++++--
+ src/commands/wiki.mjs                           | 14 +++++++
+ tests/wiki-command.test.mjs                     |  2 +-
+ tests/wiki.test.mjs                             | 17 ++++++++
+ 10 files changed, 89 insertions(+), 80 deletions(-)
