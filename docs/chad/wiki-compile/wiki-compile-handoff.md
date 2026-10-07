@@ -84,3 +84,9 @@ README.md                                       |  2 +-
  tests/wiki-command.test.mjs                     |  6 +++---
  tests/wiki.test.mjs                             |  3 +++
  9 files changed, 58 insertions(+), 13 deletions(-)
+
+## 2026-10-07T06:21:22.240Z — 47c18af docs(task): wiki-compile R3 통과 기록 — 남은 P2 2건 후속
+docs/chad/wiki-compile/wiki-compile-artifact.md | 21 +++++++++++++++++++++
+ docs/chad/wiki-compile/wiki-compile-handoff.md  | 12 ++++++++++++
+ docs/chad/wiki-compile/wiki-compile-meta.json   |  9 +++++++++
+ 3 files changed, 42 insertions(+)
