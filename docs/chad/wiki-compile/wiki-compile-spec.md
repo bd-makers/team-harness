@@ -28,7 +28,7 @@
 - C2(호환성 파괴)는 범위 밖. R1 `10_ssot/`(원천 문서 자리)와의 겹침도 범위 밖(Q6 — 이월).
 
 **위험 (사람이 수용)**
-- 컴파일은 종결 커밋(기본 브랜치 직접 커밋)에 담기므로 **LLM이 쓴 위키 본문이 PR 리뷰 없이 main에 들어간다.** 2026-10-07 사람이 수용했다(questions-2 4번).
+- 컴파일은 종결 커밋(기본 브랜치 직접 커밋)에 담기므로 **LLM이 쓴 위키 본문이 PR 리뷰 없이 main에 들어간다.** 2026-10-07 사람이 수용했다(묶음 인터뷰 4번 — 실행 시점).
   완화: 단락마다 출처 마커(PR·커밋)가 있어 원문 대조가 가능하고, 스킬은 task 문서에 없는 내용을 지어내지 않는다는 규칙을 명령 문서에 둔다.
 
 ## 원천 검토 (R1)
@@ -62,7 +62,7 @@
   - `marker`: `<!-- harness:wiki task=<user>/<task> pr=<N> commit=<sha7> author=<user> at=<YYYY-MM-DD> -->` — 막힘이 있으면 `null`
   - `compiled`: 같은 `task=` 마커가 있는 `wiki/**/*.md` 경로(펜스 코드 블록 안은 세지 않는다)
   - `rules`: `wiki/90_system/**/*.md` 경로 목록(비면 → inbox)
-  - `blockers`: `not-done`(meta status가 done이 아님) · `no-pr`(PR 번호를 못 찾음) · `no-commit`(task 디렉터리가 이 브랜치 이력에 없음)
+  - `blockers`: `not-done`(meta status가 done이 아님) · `no-pr`(PR 번호를 못 찾음) · `no-commit`(task 디렉터리가 이 브랜치 이력에 없음) · `shallow-history`(얕은 클론 — 들여온 커밋을 확정할 수 없음, R3 후속 P2-a를 사람 승인으로 반영)
   - 파일을 하나도 쓰지 않는다. task를 찾지 못하면 exit 1, 그 밖에는 exit 0(판단은 스킬 몫).
 - 출처 추론: `git log --first-parent --reverse HEAD -- docs/<user>/<task>`의 첫 커밋 = task 디렉터리를 그 브랜치에 들여온 커밋.
   머지 커밋(merge-commit 병합)이나 squash 커밋이 여기 온다. 제목의 `Merge pull request #N`(GitHub 기본 머지) 또는 `(#N)`(GitHub squash·이 저장소 관례)
@@ -107,7 +107,7 @@
 - **작성 규칙**: `wiki/90_system/` 아래 프로젝트 문서. 분류 체계·항목 템플릿·AI 편집 지침. 하네스 코드에는 없다.
 - **inbox**: `wiki/99_inbox/` — 규칙으로 분류하지 못했거나 규칙 문서가 없을 때의 자리.
 - **게이트 통과 (2026-10-07)**: 인터뷰 9문항 답(전부 권장) 반영 후 채점 5차원 pass, R1 검토 완료, 열린 질문은 `(open → C2 이후 별도 task)` 하나로 이월.
-- **막힘(blocker)**: 컴파일을 시작하면 안 되는 결정론적 상태 — `not-done`·`no-pr`·`no-commit`. 이미 컴파일됨(`compiled`)은 막힘이 아니라 재컴파일 여부를 묻는 신호다.
+- **막힘(blocker)**: 컴파일을 시작하면 안 되는 결정론적 상태 — `not-done`·`no-pr`·`no-commit`·`shallow-history`. 이미 컴파일됨(`compiled`)은 막힘이 아니라 재컴파일 여부를 묻는 신호다.
 
 ## Ambiguity 자가진단
 *각 항목이 명확하면 체크. 3개 이상 미체크면 구현 진입 금지 — 인터뷰/브레인스토밍으로 복귀해
@@ -204,6 +204,14 @@
       "cmd": "node --test --test-name-pattern=\"manifest-sync\" tests/manifest-sync.test.mjs"
     },
     {
+      "id": "S11",
+      "given": "task가 머지된 저장소를 --depth 1 로 얕게 클론했다",
+      "when": "얕은 클론에서 wiki sources 를 실행한다",
+      "then": "blockers에 shallow-history가 있고 marker=null 이며, 같은 저장소의 전체 이력에서는 막히지 않는다",
+      "test": "wiki sources: a shallow clone is blocked instead of guessing provenance",
+      "cmd": "node --test --test-name-pattern=\"wiki sources: a shallow clone\" tests/wiki.test.mjs"
+    },
+    {
       "id": "S10",
       "given": "이 저장소의 wiki/ (dogfood)",
       "when": "wiki sources 를 chad/default-loop-skill 과 chad/r2-scenario-evidence 에 실행한다",
@@ -219,7 +227,7 @@
 *코드 기반 참조가 산문 설계보다 정밀하다 — 테스트 스위트·Boundary contract(JSON Schema)·
 다이어그램·기존 코드 경로를 우선 링크하고, 산문은 코드로 표현 못 하는 의도만 담는다.*
 
-- 인터뷰 질문·답: `docs/chad/wiki-compile/questions-2.md` — 2026-10-07 사람 답 "전부 권장"(1–8 권장안, 9 범위 승인)
+- 인터뷰: 2026-10-07 비대화형 묶음 인터뷰 9문항(R1 발견 2 · 열린 질문 6 · 복잡도 게이트 1), 사람 답 "전부 권장"(1–8 권장안, 9 범위 승인). 질문 파일은 PR 전에 제거했고 결정은 이 spec에 반영돼 있다.
 - 선례: `commands/harness-loop.md` + `skills/harness-loop/SKILL.md` + `tests/loop-command.test.mjs`(#134, 스킬 + 기존 CLI)
 - 마커 문법 선례: `src/commands/rules.mjs` `ruleMarker`·`parseRuleMarker`
 - 기본 브랜치 판정: `src/git-default-branch.mjs`, `src/commands/summary.mjs` `defaultBranchCandidates`

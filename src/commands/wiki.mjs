@@ -96,6 +96,18 @@ export async function introducingCommit(targetDir, rel) {
   }
 }
 
+// 얕은 클론이면 first-parent 이력이 경계 커밋에서 잘려, 그 경계 커밋이 "들여온 커밋"으로 잡힌다 — 출처(PR·커밋)가
+// 조용히 틀린다(codex R3 재현: #133 → #134). 판정할 수 없으면 막는 쪽(fail-closed)이다. 확인 실패(git 아님)는
+// 이력 자체가 없다는 뜻이라 `no-commit` 이 이미 막는다.
+export async function isShallowRepository(targetDir) {
+  try {
+    const { stdout } = await pexec('git', ['-C', targetDir, 'rev-parse', '--is-shallow-repository']);
+    return stdout.trim() === 'true';
+  } catch {
+    return false;
+  }
+}
+
 async function walkMarkdown(targetDir, rel) {
   const out = [];
   let entries;
@@ -151,6 +163,7 @@ export async function wikiSources(targetDir, user, task, { pr = null, at = today
   if (taskStatus !== 'done') blockers.push('not-done');
   if (prNumber === null) blockers.push('no-pr');
   if (commit === null) blockers.push('no-commit');
+  if (await isShallowRepository(targetDir)) blockers.push('shallow-history');
 
   const marker = blockers.length ? null : wikiMarker({ task: label, pr: prNumber, commit, author, at });
   return {
@@ -170,6 +183,7 @@ const BLOCKER_TEXT = {
   'not-done': 'task가 done이 아님 — 머지 후 기본 브랜치에서 `harness-team done` 다음에 컴파일한다',
   'no-pr': 'PR 번호를 커밋 메시지에서 찾지 못함 — 번호를 확인해 `--pr <N>`으로 다시 실행',
   'no-commit': 'task 디렉터리가 이 브랜치 이력에 커밋돼 있지 않음',
+  'shallow-history': '얕은 클론이라 들여온 커밋을 확정할 수 없음 — `git fetch --unshallow` 후 다시 실행',
 };
 
 function usage(json, message) {

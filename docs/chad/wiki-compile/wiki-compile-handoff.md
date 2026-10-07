@@ -116,3 +116,9 @@ docs/chad/wiki-compile/wiki-compile-artifact.md | 24 ++++++++++++++++++++++++
  docs/chad/wiki-compile/wiki-compile-meta.json   |  9 +++++++++
  docs/chad/wiki-compile/wiki-compile-plan.md     |  2 +-
  4 files changed, 40 insertions(+), 1 deletion(-)
+
+## 2026-10-07T06:28:44.126Z — 1a11d1a docs(task): wiki-compile 인터뷰 질문 기록(questions-1·2) — spec 참고가 가리키는 원문
+docs/chad/wiki-compile/questions-1.md          | 15 +++++++
+ docs/chad/wiki-compile/questions-2.md          | 56 ++++++++++++++++++++++++++
+ docs/chad/wiki-compile/wiki-compile-handoff.md |  7 ++++
+ 3 files changed, 78 insertions(+)

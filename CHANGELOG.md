@@ -40,7 +40,7 @@
   - 새 하위 명령 `harness-team wiki sources [<user>/<task>] [--pr <N>]`(읽기 전용): 기본 브랜치 first-parent 이력에서 task 디렉터리를 들여온
     커밋을 찾아 PR 번호(GitHub `Merge pull request #N`·`(#N)`, GitLab `See merge request …!N`)·커밋·작성자(meta `user`)를 추론하고,
     출처 마커 `<!-- harness:wiki task=… pr=… commit=… author=… at=… -->`, 이미 컴파일된 위치(`task=` 정확 일치, 펜스 안 예시 제외),
-    `wiki/90_system/` 작성 규칙 파일, 막힘(`not-done`·`no-pr`·`no-commit`)을 낸다.
+    `wiki/90_system/` 작성 규칙 파일, 막힘(`not-done`·`no-pr`·`no-commit`·`shallow-history` — 얕은 클론은 출처를 추측하지 않고 막는다)을 낸다.
   - 분류 체계는 코드에 없다 — 프로젝트의 `wiki/90_system/` 규칙을 따르고, 규칙이 없거나 분류하지 못한 것은 `wiki/99_inbox/`로 간다.
   - 같은 task를 다시 컴파일하면 멈춘다(명시 요청 시 그 단락만 교체). push·PR은 하지 않는다. Codex 래퍼 `skills/harness-wiki`.
   - 위험(수용됨): 위키 본문은 종결 커밋으로 PR 리뷰 없이 기본 브랜치에 들어간다 — 단락마다 PR·커밋 출처가 남아 원문 대조가 가능하다.

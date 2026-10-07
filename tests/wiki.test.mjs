@@ -207,3 +207,20 @@ test('wiki dogfood: this repository compiled #134 and #133', async () => {
     assert.deepEqual(out.rules, ['wiki/90_system/compile-rules.md']);
   }
 });
+
+test('wiki sources: a shallow clone is blocked instead of guessing provenance', async () => {
+  const { dir } = await repoWithLandedTask({ subject: 'merge: x (#12)' });
+  const clone = await mkdtemp(join(tmpdir(), 'harness-wiki-shallow-'));
+  try {
+    // 깊이 1: 머지 커밋 하나만 받는다 — 이력이 잘려 있어 들여온 커밋을 확정할 수 없다.
+    await pexec('git', ['clone', '-q', '--depth', '1', `file://${dir}`, clone]);
+    const out = await wikiSources(clone, 'chad', 'x', { at: AT });
+    assert.ok(out.blockers.includes('shallow-history'), JSON.stringify(out.blockers));
+    assert.equal(out.marker, null);
+    // 같은 저장소의 전체 이력에서는 막히지 않는다 — 막힘은 얕은 이력 때문이다.
+    assert.deepEqual((await wikiSources(dir, 'chad', 'x', { at: AT })).blockers, []);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+    await rm(clone, { recursive: true, force: true });
+  }
+});

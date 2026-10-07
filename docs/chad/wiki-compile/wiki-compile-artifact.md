@@ -4,7 +4,7 @@
 
 ## 결과
 
-- spec 게이트(2026-10-07): R1 원천 검토와 채점은 오케스트레이터 지시대로 비대화형 묶음 인터뷰(`questions-2.md`, 9문항: R1 발견 2 · 열린 질문 6 · 복잡도 게이트 1)로 수행했다. 사람 답은 "전부 권장"(1–8 권장안, 9 범위 승인)이고, 그 답을 반영한 뒤 채점 5차원이 pass였다. `/harness-interview`를 대화형으로 한 문항씩 돌리지 않은 것은 AO 워커가 `AskUserQuestion`을 쓸 수 없기 때문이다.
+- spec 게이트(2026-10-07): R1 원천 검토와 채점은 오케스트레이터 지시대로 비대화형 묶음 인터뷰(질문 파일 — PR 전 제거, 결정은 spec 반영, 9문항: R1 발견 2 · 열린 질문 6 · 복잡도 게이트 1)로 수행했다. 사람 답은 "전부 권장"(1–8 권장안, 9 범위 승인)이고, 그 답을 반영한 뒤 채점 5차원이 pass였다. `/harness-interview`를 대화형으로 한 문항씩 돌리지 않은 것은 AO 워커가 `AskUserQuestion`을 쓸 수 없기 때문이다.
 - 다이어그램 옵트인: 2026-10-07 사람 답 "아니오" — plan에 단계 없음.
 - 구현(2026-10-07, 수단 main — AO 워커는 서브에이전트를 쓰지 않는다): 1단계 `wiki sources` CLI(b3ca5c1) · 2–3단계 `/harness-wiki` 명령·Codex 래퍼·종결 절 선택 한 줄(8272059).
   - 무엇·왜: 출처 추론·마커·멱등 검색을 결정론 CLI로 내리고 분류·작성만 스킬에 남겼다(Q1). 조언 반영 — GitHub 기본 머지 제목(`Merge pull request #N`)을 첫 순위로 읽고, `task=` 값은 정확 일치로만 센다(`x`가 `x-v2`에 걸리지 않게), JSON 출력의 task 상태 키는 envelope `status`를 덮지 않게 `task_status`로 했다.
@@ -57,8 +57,38 @@
   $ npm run docs:check
   harness overview 생성 상태가 최신입니다.
   ```
+- R3 후속 P2-a 반영(2026-10-07, 사람 승인): 얕은 클론이면 `shallow-history` 막힘(marker null) — 출처를 추측하지 않는다. 변이 확인: 막힘 push 줄을 지우면 새 테스트가 `✖`, 원복 후 `✔`.
+  최종 검증 출력(이 변경 이후):
+
+  ```text
+  $ npm test   (exit 0)
+  ℹ tests 1199
+  ℹ pass 1198
+  ℹ fail 0
+  ℹ skipped 1
+  # perf
+  ℹ tests 1
+  ℹ pass 1
+  ℹ fail 0
+  # 이 task의 테스트 (이름 줄)
+  ✔ wiki command: the compile contract stops on blockers and compiled, and never pushes
+  ✔ wiki command: the post-merge closing procedure offers the compile as an optional step
+  ✔ wiki sources: infers PR, merge commit and author from first-parent history
+  ✔ wiki sources: reads a GitLab merge request number from the commit body
+  ✔ wiki sources: no PR number blocks until --pr is given
+  ✔ wiki sources: a task that is not done is blocked
+  ✔ wiki sources: reports where the task is already compiled, ignoring fenced examples
+  ✔ wiki sources: without wiki/90_system rules everything goes to 99_inbox
+  ✔ wiki sources: is read-only and summary ignores wiki/
+  ✔ wiki dogfood: this repository compiled #134 and #133
+  ✔ wiki sources: a shallow clone is blocked instead of guessing provenance
+  $ npm run docs:check
+  harness overview 생성 상태가 최신입니다.
+  $ node bin/harness-team.mjs scenario check
+  scenario: pass (11 checked)
+  ```
 - 남은 리스크·후속(2026-10-07, ship):
-  - 후속 P2-a 얕은 클론에서 출처 오인 · P2-b 인용문·목록 안 펜스 미인식 — `## Reviews` R3 재검 판별 참조.
+  - 후속 P2-b 인용문·목록 안 펜스 미인식(fail-closed) — `## Reviews` R3 재검 판별 참조. P2-a는 위에서 반영.
   - 위키 본문이 종결 커밋으로 PR 리뷰 없이 main에 들어간다 — 사람이 수용(spec 위험 절).
   - 의도적으로 하지 않은 것: C2(task 폴더 삭제·원장/`done`/handoff 입력 이전), R1 `wiki/10_ssot/` 겹침(이월), init의 `wiki/` scaffold.
   - 버전 범프 없음(릴리스 몫).
@@ -207,5 +237,10 @@
 <!-- harness:review kind=codex-shipcheck scope=diff tip=9e39c7212dcc5499ef2056b850baad32fc0002a4 at=2026-10-07T06:27:20.788Z -->
 
 - 판별(2026-10-07): S1–S5 pass — 조치 없음. 정합 검증 통과.
+
+### 2026-10-07 — R3 후속 P2-a 반영 (재검 한도 예외, 사람 승인)
+
+- 승인 출처: 오케스트레이터(harness-aijient-team-plugin-42) 전달, 사람 결정 2026-10-07 — "Q2 권장: P2-a shallow-history 막힘 구현+테스트 1개. 이 변경은 사람 승인으로 R3 재검 한도 예외, 재검은 생략하고 artifact Reviews에 승인 출처 기록".
+- 조치: `isShallowRepository` → `shallow-history` 막힘, 테스트 `wiki sources: a shallow clone is blocked instead of guessing provenance`(spec S11), 명령 문서 3번·CHANGELOG 갱신. 외부 재검은 승인대로 생략했다.
 
 ## Learnings

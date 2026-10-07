@@ -51,7 +51,7 @@ test('wiki command: the compile contract stops on blockers and compiled, and nev
   const steps = section(doc, '절차');
   assert.equal(item(steps, 1), '1. **기본 브랜치 확인** — 현재 브랜치가 기본 브랜치가 아니면 멈추고 묻는다. 위키 본문까지 PR 리뷰를 받으려고 PR 브랜치에서 돌리는 것은 사람이 명시적으로 지시한 경우뿐이다.');
   assert.equal(item(steps, 2), '2. **입력 받기** — `harness-team wiki sources [<user>/<task>] [--pr <N>] --json`을 실행한다. 이 명령은 아무 파일도 쓰지 않는다.');
-  assert.equal(item(steps, 3), '3. **막힘이면 멈춘다** — `blockers`가 비어 있지 않으면 컴파일하지 않고 막힘마다 해소 방법을 알린 뒤 멈춘다. `not-done`은 `harness-team done`을 먼저, `no-pr`은 사람이 PR 번호를 확인해 `--pr <N>`으로 다시 실행, `no-commit`은 task 디렉터리를 이 브랜치에 커밋한 뒤 다시 실행이다. PR 번호를 추측해 채우지 않는다.');
+  assert.equal(item(steps, 3), '3. **막힘이면 멈춘다** — `blockers`가 비어 있지 않으면 컴파일하지 않고 막힘마다 해소 방법을 알린 뒤 멈춘다. `not-done`은 `harness-team done`을 먼저, `no-pr`은 사람이 PR 번호를 확인해 `--pr <N>`으로 다시 실행, `no-commit`은 task 디렉터리를 이 브랜치에 커밋한 뒤 다시 실행, `shallow-history`는 `git fetch --unshallow` 뒤 다시 실행이다. PR 번호를 추측해 채우지 않는다.');
   assert.equal(item(steps, 4), '4. **이미 컴파일됐으면 멈춘다** — `compiled`가 비어 있지 않고 재컴파일 명시 요청이 없으면 그 위치를 알리고 멈춘다. 재컴파일 요청이면 그 task의 마커가 연 단락(다음 `harness:wiki` 마커 또는 같은 수준 이상의 다음 제목 전까지)만 교체하고, 다른 단락은 건드리지 않는다.');
   assert.equal(item(steps, 6), '6. **쓰기** — `rules`가 비어 있으면 `wiki/99_inbox/<task>.md` 한 파일에 쓴다. 규칙이 있으면 규칙대로 항목을 고르고, 규칙으로 분류하지 못한 단락은 `wiki/99_inbox/`로 보낸다. 컴파일 단락의 첫 줄은 `marker` 문자열 그대로다 — 손으로 고치거나 다시 조립하지 않는다.');
   assert.equal(item(steps, 7), '7. **보고** — 쓴 파일과 단락 수, inbox로 보낸 것을 알린다. 커밋은 머지 후 종결 커밋에 함께 담는다. push하지 않는다.');
