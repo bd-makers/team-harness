@@ -184,4 +184,28 @@
 
 - 판별(2026-10-07): S5 BLOCKER fail **유효** — 5단계 전체 테스트·docs:check가 요약 산문뿐이었다. 조치(문서만): R3 반영 이후 tip 930ec86에서 `npm test`·`npm run docs:check`를 다시 돌려 실제 출력 발췌를 `## 결과` "최종 검증 출력"에 인용. S1–S4 pass, 조치 없음. `git diff --check` 공백은 CLI가 기록한 리뷰 원문 블록 안이라 손대지 않는다.
 
+### 2026-10-07T06:27:20.788Z — codex-shipcheck (harness-team review)
+
+- engine: codex · scope: diff · tip: 9e39c7212dcc5499ef2056b850baad32fc0002a4 · exit 0 · 3459 B
+
+```text
+`git status`와 `git diff refs/remotes/origin/main`을 직접 확인했습니다. 검증 전후 Git 상태는 동일하며 파일을 수정하지 않았습니다.
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| S1 | spec 요구사항 대응 | BLOCKER | pass | R-1·R-2는 diff의 `WIKI_DIR = 'wiki'`, `provenance: { pr: prNumber, commit, author }`로 대응합니다. R-3·R-4·R-6은 [명령 문서](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/commands/harness-wiki.md:26)의 “done 다음”, “규칙이 비어 있으면 …99_inbox”, “그 task의 마커가 연 단락…만 교체”로 구현됩니다. R-5는 기존 done·summary·handoff 구현 변경이 없습니다. R-7은 [spec](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/docs/chad/wiki-compile/wiki-compile-spec.md:87)에 축소 대안 4개와 기각 사유가 있습니다. 남은 얕은 이력·중첩 펜스 한계도 artifact에 후속으로 기록되어 있습니다. |
+| S2 | plan 완료 체크의 실재 | MAJOR | pass | [plan의 `[x]` 1–5](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/docs/chad/wiki-compile/wiki-compile-plan.md:7)에 대응하는 커밋을 확인했습니다. 1: CLI·테스트 `b3ca5c1`, 2–3: 명령·래퍼·등록·종결 연결·생성 문서 `8272059`, 4: 위키 두 항목·규칙·S10 `525ae5d`, 5: 검증 출력 `88e2ba5`·`9e39c72`와 R2·R3 리뷰 기록입니다. |
+| S3 | 스코프 밖 변경 없음 | MAJOR | pass | CHANGELOG·cycle 변경은 plan 6에 명시되어 있습니다. cycle diff도 “C1 위키 컴파일(추가만 — 구현: task `wiki-compile`…)”입니다. PR 브랜치 dogfood 예외는 [artifact](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/docs/chad/wiki-compile/wiki-compile-artifact.md:66)에 “위키 본문까지 PR 리뷰를 받도록”이라고 기록되어 있습니다. 의존성·버전 변경은 없습니다. |
+| S4 | 실행 리뷰의 기록·마커 | MAJOR | pass | meta의 기존 리뷰 5건 모두 [artifact `## Reviews`](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/docs/chad/wiki-compile/wiki-compile-artifact.md:68)에 기록되어 있습니다. `codex-scenario` 2건, `codex` 2건, `codex-shipcheck` 1건의 `kind·scope·tip·at` 마커가 각각 일치합니다. |
+| S5 | 검증 결과의 명령·출력 인용 | BLOCKER | pass | [최종 검증 출력](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-43/docs/chad/wiki-compile/wiki-compile-artifact.md:39)에 `$ npm test (exit 0)`, `ℹ tests 1198`, `ℹ pass 1197`, `ℹ fail 0`, perf 테스트 이름·`pass 1`, `$ npm run docs:check`와 “harness overview 생성 상태가 최신입니다.”가 인용되어 있습니다. S1–S10도 명령과 테스트 이름 출력이 있습니다. 이전 S5 실패는 해소됐습니다. |
+
+이번 검증에서는 읽기 전용 테스트 **31개 통과**, `docs:check` 통과를 확인했습니다. 전체 `npm test`는 임시 파일 생성이 필요하므로 재실행하지 않았습니다. `git diff --check`는 리뷰 원문 블록의 공백 5곳으로 **exit 2**이며, artifact에 미수정 사유가 기록되어 있습니다.
+
+**최종 판정: pass — 전체 fail 목록: 없음.**
+```
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=9e39c7212dcc5499ef2056b850baad32fc0002a4 at=2026-10-07T06:27:20.788Z -->
+
+- 판별(2026-10-07): S1–S5 pass — 조치 없음. 정합 검증 통과.
+
 ## Learnings

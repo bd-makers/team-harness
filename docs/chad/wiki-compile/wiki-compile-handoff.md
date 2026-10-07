@@ -103,3 +103,9 @@ docs/chad/wiki-compile/wiki-compile-artifact.md | 6 ++++++
  docs/chad/wiki-compile/wiki-compile-handoff.md  | 7 +++++++
  docs/chad/wiki-compile/wiki-compile-spec.md     | 3 ++-
  3 files changed, 15 insertions(+), 1 deletion(-)
+
+## 2026-10-07T06:25:18.934Z — 9e39c72 docs(task): wiki-compile shipcheck S5 반영 — 최종 npm test·docs:check 출력 인용
+docs/chad/wiki-compile/wiki-compile-artifact.md | 45 +++++++++++++++++++++++++
+ docs/chad/wiki-compile/wiki-compile-handoff.md  |  6 ++++
+ docs/chad/wiki-compile/wiki-compile-meta.json   |  9 +++++
+ 3 files changed, 60 insertions(+)
