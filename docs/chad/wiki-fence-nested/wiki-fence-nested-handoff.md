@@ -45,3 +45,9 @@ docs/chad/wiki-fence-nested/wiki-fence-nested-artifact.md |  6 ++++++
  docs/chad/wiki-fence-nested/wiki-fence-nested-handoff.md  | 12 ++++++++++++
  docs/chad/wiki-fence-nested/wiki-fence-nested-plan.md     |  2 +-
  3 files changed, 19 insertions(+), 1 deletion(-)
+
+## 2026-10-07T07:28:32.228Z — 081388c docs(task): wiki-fence-nested shipcheck S5 반영 — 차등 스윕 명령·출력 인용 + handoff
+.../wiki-fence-nested-artifact.md                  | 71 ++++++++++++++++++++--
+ .../wiki-fence-nested/wiki-fence-nested-handoff.md |  6 ++
+ .../wiki-fence-nested/wiki-fence-nested-meta.json  |  9 +++
+ 3 files changed, 82 insertions(+), 4 deletions(-)

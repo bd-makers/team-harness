@@ -181,4 +181,28 @@ fixture 테스트는 파일을 쓰므로 재실행하지 않았습니다.
   조치(문서만): 스윕을 다시 돌려 실행 명령·실제 출력·비교 스크립트를 R3 재검 판별 아래에 인용하고, `SHOWS` 표본 판단은
   "사람 판단 — 참조 파서 대조 아님"으로 성격을 밝혔다. S1–S4 pass, 조치 없음. 코드 변경 없음.
 
+### 2026-10-07T07:33:16.151Z — codex-shipcheck (harness-team review)
+
+- engine: codex · scope: diff · tip: 081388c8351e52561e2e5253caaa1c3ba8f358a1 · exit 0 · 2675 B
+
+```text
+`git status`, `git diff refs/remotes/origin/main`, 커밋 이력을 직접 확인했습니다. 변경은 9개 파일이며, 미커밋 변경은 handoff뿐입니다. 파일은 수정하지 않았습니다.
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| S1 | spec 요구사항 ↔ 구현 | BLOCKER | pass | diff의 `depth < fence.depth`, `close[1].length - fence.col <= 3`, `gap.length >= 5 ? 1 : gap.length`가 spec의 인용 깊이·컨테이너 들여쓰기·목록 공백 규칙에 대응합니다. 테스트의 `assert.deepEqual(out.compiled, [])`와 `['wiki/20_domain/feature.md']`가 예시 제외·실제 마커 보존을 검증합니다. 미구현 범위는 “지연 연속 줄, 탭 열 계산…”으로 명시되어 있습니다. |
+| S2 | 완료 체크 ↔ 변경·커밋 | MAJOR | pass | plan 1·2는 `6f9498e`의 재현 테스트·구현과 artifact의 `actual: [ 'wiki/90_system/rules.md' ], expected: []`에 대응합니다. 3은 검증 명령·출력 블록, 4는 리뷰 기록과 `107766d`·`d61a5b6` 수정, 5는 CHANGELOG의 `+### Fixed`와 `5748baf`의 “ship(2026-10-07)” 기록에 대응합니다. |
+| S3 | 스코프 밖 변경 | MAJOR | pass | 소스 diff는 `wikiMarkersIn`과 펜스 판정 상수에 한정됩니다. 나머지는 관련 테스트·task 문서·CHANGELOG입니다. plan의 “CHANGELOG `[Unreleased]` Fixed 한 줄 → `/harness-ship`”에도 대응합니다. |
+| S4 | 리뷰 기록·마커 | MAJOR | pass | meta diff의 리뷰 4건 모두 artifact `## Reviews`에 동일한 kind·scope·tip·at의 `<!-- harness:review … -->` 마커가 있습니다. 무효 리뷰도 “무효 — 리뷰 대상 오류”로 보존되어 있습니다. |
+| S5 | 검증 결과의 명령·출력 인용 | BLOCKER | pass | [최종 검증 기록](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-44/docs/chad/wiki-fence-nested/wiki-fence-nested-artifact.md:14)에 테스트·docs·scenario 명령과 출력이 있습니다. [차등 스윕 기록](/Users/chadonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-44/docs/chad/wiki-fence-nested/wiki-fence-nested-artifact.md:120)에도 명령과 `docs 22374 diffs 277`, `hides 5 shows 272` 출력이 추가되었습니다. 스윕을 메모리에서 독립 재실행해 동일한 수치와 HIDES 5건을 확인했습니다. |
+
+추가로 구문 검사·`docs:check`·`git diff --check`가 통과했습니다. 파일을 쓰는 fixture 테스트와 전체 테스트는 재실행하지 않았으며, 해당 결과는 문서에 인용된 출력 기준입니다.
+
+**Verdict: PASS — fail 전체 목록: 없음.**
+```
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=081388c8351e52561e2e5253caaa1c3ba8f358a1 at=2026-10-07T07:33:16.151Z -->
+
+- 판별(2026-10-07): S1–S5 전부 pass — 앞선 S5 BLOCKER 조치를 독립 검증자가 확인(스윕 재실행으로 같은 수치·HIDES 5건). 조치 없음.
+
 ## Learnings
