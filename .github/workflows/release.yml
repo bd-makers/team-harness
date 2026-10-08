@@ -15,6 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+        with:
+          # test.yml과 같은 이유다 — 기본값(depth 1)이면 이력 의존 테스트(템플릿 sha 이력 완전성,
+          # wiki dogfood의 출처 추론)가 skip되거나 실패한다. v0.47.0 첫 태그가 이것으로 빨개졌다.
+          # 이 파일 머리 주석대로 태그 커밋은 다른 곳에서 검증됐다고 가정하지 않으므로 같은 이력에서 돌린다.
+          fetch-depth: 0
 
       # Matches the tested runtime and `engines.node` — publishing must not run
       # on a version the suite never exercises (this was node 20, which is EOL).

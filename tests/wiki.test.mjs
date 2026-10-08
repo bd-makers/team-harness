@@ -238,8 +238,11 @@ test('wiki sources: is read-only and summary ignores wiki/', async () => {
 });
 
 // dogfood: 이 저장소의 wiki/ 가 #134·#133 을 컴파일한 결과를 담고 있다. 출처는 저장소 자신의 first-parent 이력에서
-// 추론된다 — CI 는 fetch-depth 0 이라 이력이 있다(.github/workflows/test.yml).
-test('wiki dogfood: this repository compiled #134 and #133', async () => {
+// 추론된다 — CI 는 fetch-depth 0 이라 이력이 있다(test.yml·release.yml). 얕은 클론에서는 `wiki sources`가
+// shallow-history 로 막으므로 출처를 판정할 수 없다 — 이력 완전성 테스트(migrate-templates·migrate-hooks)와 같이 건너뛴다.
+test('wiki dogfood: this repository compiled #134 and #133', async (t) => {
+  const { stdout: shallow } = await pexec('git', ['rev-parse', '--is-shallow-repository'], { cwd: ROOT });
+  if (shallow.trim() === 'true') return t.skip('얕은 클론 — 출처 추론 불가');
   for (const [task, pr, file] of [
     ['default-loop-skill', 134, 'wiki/20_domain/default-loop.md'],
     ['r2-scenario-evidence', 133, 'wiki/20_domain/review-gates.md'],
