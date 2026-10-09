@@ -69,4 +69,27 @@ S5는 직접 재실행하여 `✔ wiki command: the compile contract stops on bl
 
 판별(작성 세션): 발견 없음 — 조치 없음. 이 실행이 R2 증거다(scope=diff, base `refs/remotes/origin/main`).
 
+### 2026-10-09T13:08:28.216Z — codex (harness-team review)
+
+- engine: codex · scope: diff · tip: beb382d5ef043550570b1091df2e659e003ef024 · exit 0 · 599 B
+
+```text
+전하, `git status`와 `refs/remotes/origin/main` 대비 전체 diff를 직접 검토했습니다. **P1·P2·P3 발견 사항은 없습니다.**
+
+PR 마커 형식과 `task=` 기반 멱등 판정은 유지되며, 변경은 커밋 출처 허용과 안내에 한정됩니다.
+
+문서 테스트 2개, 마커 생성·파싱 단언, `docs:check`, `git diff --check`가 통과했습니다. 임시 저장소 쓰기가 필요한 통합 테스트와 전체 테스트·빌드는 재실행하지 않았습니다. 파일 변경은 없습니다.
+
+**최종 판정: 승인 가능 — 유의미한 결함 없음.**
+```
+
+<!-- harness:review kind=codex scope=diff tip=beb382d5ef043550570b1091df2e659e003ef024 at=2026-10-09T13:08:28.216Z -->
+
+판별(작성 세션): 발견 없음 — 조치 없음. 리뷰어가 재실행하지 않은 통합 테스트·전체 스위트는 작성 세션이 돌렸다(## 결과의 `npm test`·`docs:check`·scenario check).
+
 ## Learnings
+
+- 구현을 커밋한 **뒤** `harness-team review`를 돌리면 post-commit 훅이 고친 handoff 때문에 트리가 dirty라 scope가 `worktree`로 잡히고,
+  리뷰어는 handoff 몇 줄만 본다 — exit 0이라 기록은 남지만 증거가 아니다(이 task의 첫 R2). handoff를 따로 커밋해 clean tree로 만든 뒤
+  `harness-team scope --json`이 `diff`인지 확인하고 돌린다.
+- R2 루브릭 E1은 artifact에 **테스트 이름이 찍힌 실행 출력**을 요구한다 — `scenario: pass (N checked)` 집계만으로는 na가 난다.
