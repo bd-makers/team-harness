@@ -187,3 +187,5 @@ C2b 이후 원문은 git 이력에 남는다(c2a Q8-A) — 커밋 sha 출처가 
 - (open → 후속) 직접 커밋 저장소의 "들여온 커밋"은 task를 처음 커밋한 커밋(heliosent는 spec 작성 커밋 `714c448`)이라 변경 전체를 가리키지 않는다.
   범위 출처(`first..last`)는 정의 변경이라 이 task 밖이다. 원문은 `git log -- docs/<user>/<task>`로 찾을 수 있다.
 - (open → 후속) 직접 커밋 저장소에서 커밋 제목 끝 `(#N)`이 이슈 참조인 관례면 `prFromCommit`이 그것을 PR 번호로 읽는다 — 기존 동작이며 이 task 범위 밖.
+- (open → 후속) 종결된 `wiki-compile` spec의 Done evidence S3(`--test-name-pattern="wiki sources: no PR number"`)는 이 task가 그 테스트를 바꿔 **0개 테스트를 고른다** —
+  그 task의 증거를 다시 돌리면 공허한 exit 0이 난다. 종결 task 문서라 이 task에서 고치지 않았다.

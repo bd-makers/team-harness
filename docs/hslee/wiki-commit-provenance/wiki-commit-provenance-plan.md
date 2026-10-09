@@ -13,7 +13,7 @@ PR 번호가 있는 경로는 바이트 불변.
   `docs/harness-cycle.md` §4-4 · `README.md` · CHANGELOG `[Unreleased]`
 - [x] 4. 검증 — `npm test` · `npm run docs:check` · `harness-team scenario check` · heliosent 읽기 전용 재현(쓰기 0 확인) → artifact 기록
 - [x] 5. 리뷰 — R2 `review codex --framing scenario` · R3 `review codex`(codex 실패 시 claude 엔진 폴백) → artifact `## Reviews`
-- [ ] 6. ship 준비 보고 — spec·plan·artifact 최종 갱신, 로컬 커밋까지(push·PR 금지 — brief)
+- [x] 6. ship 준비 보고 — spec·plan·artifact 최종 갱신, 로컬 커밋까지(push·PR 금지 — brief)
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
