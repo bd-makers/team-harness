@@ -48,4 +48,25 @@ scenario: pass (5 checked)
 변이 확인: `src/commands/wiki.mjs`를 origin/main 판으로 되돌리면 `tests/wiki.test.mjs`에서 S1만 실패(pass 11 · fail 1)한다.
 S2·S3은 옛 코드에서도 통과한다 — 새 동작이 아니라 불변식(`--pr` 우선, 멱등 키 `task=`)을 고정하는 회귀 가드라서다. S4도 같은 성격(PR 경로 바이트 불변).
 
+### 2026-10-09T13:07:08.183Z — codex-scenario (harness-team review)
+
+- engine: codex · scope: diff · tip: 3bbc0c493f84d3a6a4c91f07c99ffb0806d0debd · exit 0 · 2198 B
+
+```text
+전하, **E1·E2 모두 pass**입니다. `git status --short`는 비어 있으며, `refs/remotes/origin/main` 대비 전체 diff를 검토했습니다.
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| E1 | 각 증거가 해당 Then을 실제 검증 | BLOCKER | pass | [artifact 실행 기록](/Users/hsonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-20/docs/hslee/wiki-commit-provenance/wiki-commit-provenance-artifact.md:39)에 **S1–S5 각각의 실제 테스트 이름**이 있습니다. [테스트](/Users/hsonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-20/tests/wiki.test.mjs:101)는 S1의 blockers·status·출처·마커·JSON/텍스트 안내를 직접 단언하고, S2는 PR override·커밋 유지·잘못된 인수의 exit 2, S3는 `compiled` 파일 경로를 단언합니다. S4는 세 병합 방식을 순회하여 마커 전체 문자열을 비교합니다(57–81행). S5는 [문서 전문 대조](/Users/hsonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-20/tests/wiki-command.test.mjs:54)로 요구 문구의 삭제·반전을 검출합니다. 각 결과를 깨뜨리면 해당 단언이 실패하는 구조이며, artifact에는 origin/main 복원 시 S1 실패 기록도 있습니다. |
+| E2 | spec 밖 동작 변경 없음 | MAJOR | pass | 런타임 diff는 `wikiMarker`의 `pr=` 생략(R-1·R-6), `no-pr` 제거(R-1), JSON/텍스트 안내(R-5)에 한정됩니다. PR 우선순위와 `findCompiled`·`wikiMarkersIn`·`parseMarkerAttrs`는 불변입니다. 명령·스킬·README·cycle·CHANGELOG 변경도 spec의 영향 표와 요구사항에 대응하며, 나머지는 테스트와 task 기록입니다. |
+
+S5는 직접 재실행하여 `✔ wiki command: the compile contract stops on blockers and compiled, and never pushes`를 확인했습니다. S1–S4는 임시 저장소 쓰기가 필요하므로 읽기 전용 환경에서 재실행하지 않고 기록된 이름별 출력과 테스트 코드를 대조했습니다. 기계 행은 재판정하지 않았으며, 파일은 수정하지 않았습니다.
+
+**Verdict: pass — fail 목록: 없음.**
+```
+
+<!-- harness:review kind=codex-scenario scope=diff tip=3bbc0c493f84d3a6a4c91f07c99ffb0806d0debd at=2026-10-09T13:07:08.183Z -->
+
+판별(작성 세션): 발견 없음 — 조치 없음. 이 실행이 R2 증거다(scope=diff, base `refs/remotes/origin/main`).
+
 ## Learnings
