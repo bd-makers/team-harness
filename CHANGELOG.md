@@ -9,6 +9,14 @@
 
 ## [Unreleased]
 
+### Changed
+- **원장이 폴더 없는 done task를 기억한다** (task `task-folder-removal`, cycle §6 C2a — 비파괴). `summary --write`는 task 디렉터리가 없는 task의
+  `✅ done` 원장 행을 그대로 이어받는다(상태·⚠️·생성일·Area). 원장 행 파서는 `parseSummaryRows` 하나로 모였다. migrate는 종전대로 폴더 있는 task만 본다.
+  done-on-main nudge와 `list --remote`는 원격에 task 폴더가 없으면 default ref 원장의 done 행으로 판정한다 — 폴더가 지워진 경우에만 nudge가
+  "새 이름으로 이어간다"고 안내한다. 지금은 모든 done 행에 폴더가 있으므로 동작이 바뀌지 않는다. 폴더 삭제는 후속 C2b다.
+- **종결된 task 이름의 재사용 거부** (task `task-folder-removal`). 원장에 `✅ done`이고 폴더가 없는 `<user>/<name>`으로 `task <name>`을 실행하면
+  만들지 않고 exit 1. 폴더가 있으면 종전대로 reopen한다.
+
 ## [0.47.0] - 2026-10-07
 
 ### Added

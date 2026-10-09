@@ -47,3 +47,11 @@
  tests/list-remote.test.mjs                         | 24 +++++++++
  tests/remote-task.test.mjs                         | 59 ++++++++++++++++++++++
  5 files changed, 135 insertions(+), 10 deletions(-)
+
+## 2026-10-09T02:26:22.754Z — a2cf411 feat(task): 폴더가 지워진 done task의 이름 재사용을 거부
+.../task-folder-removal-handoff.md                 |  8 +++
+ .../task-folder-removal-plan.md                    |  2 +-
+ docs/harness-overview.html                         |  5 ++
+ src/commands/task.mjs                              | 20 ++++++-
+ tests/task-name-reuse.test.mjs                     | 68 ++++++++++++++++++++++
+ 5 files changed, 100 insertions(+), 3 deletions(-)

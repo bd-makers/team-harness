@@ -48,6 +48,8 @@ harness-team context check    # 활성 task의 Context Card 검사 (수정하지
 - 브랜치에서는 원장을 갱신하지 않습니다 — `--write`는 기본 브랜치에서만 동작합니다.
 - 렌더는 결정론적입니다(요약표는 created 오름차순, 사용자 인덱스는 최신순).
 - CI에서 `harness-team summary --check`로 원장이 낡았는지 검사할 수 있습니다.
+- task 디렉터리가 없는 task의 `✅ done` 행은 원장이 그대로 이어받습니다(상태·⚠️·생성일·Area) — 종결 뒤 폴더를 지워도 행이 남습니다.
+  폴더 없는 `🔄 open` 행은 손으로 버린 task라 다음 렌더에서 빠집니다.
 
 ## 규약
 

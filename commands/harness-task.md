@@ -129,6 +129,11 @@ created: docs/<user>/<name>/
 - git이 없거나, 저장소가 아니거나, origin이 없거나, 그 경로에 meta가 없으면 조용히 건너뛴다. partial clone(`--filter=blob:none`)도
   마찬가지다 — `GIT_NO_LAZY_FETCH=1`로 암묵 fetch를 막으므로 blob이 없으면 "모른다"(2 s timeout). `--json`이면 envelope 최상위에
   `doneOnMain: { ref, closedAt }` 필드가 붙는다.
+- **원장 폴백**: 원격에 meta가 없으면(main에서 task 폴더를 지웠다) 같은 커밋의 `docs/task_summary.md`에서 그 task의 `✅ done` 행을 찾는다.
+  `closedAt`은 원격에서 그 task 디렉터리를 마지막으로 건드린 커밋의 시각이고, `doneOnMain`에 `source: "ledger"`가 붙는다.
+  이때만 nudge의 복구 안내가 "새 이름으로 이어간다"로 바뀐다 — main을 가져오면 폴더가 지워지고 아래 이름 가드가 그 이름을 거부하기 때문이다.
+- **종결된 이름의 재사용**: 로컬 `docs/task_summary.md`에 `<user>/<name>`이 `✅ done`이고 `docs/<user>/<name>/`이 없으면 `task <name>`은
+  만들지 않고 exit 1로 멈춘다(다른 이름으로 다시 실행, 원문은 `git log -- docs/<user>/<name>`). 폴더가 있으면 종전대로 다시 연다(`reopened:`).
 
 ## post-commit handoff — sweep 커밋에서는 침묵한다
 
