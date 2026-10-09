@@ -50,3 +50,11 @@ CHANGELOG.md                                       |  3 ++-
  src/commands/wiki.mjs                              | 19 +++++++++++++--
  tests/wiki.test.mjs                                | 27 ++++++++++++++++++---
  7 files changed, 76 insertions(+), 20 deletions(-)
+
+## 2026-10-09T13:21:25.728Z — 18c414f fix(test): 정정한 wiki-compile S3 증거가 두 실행을 모두 단언한다
+docs/chad/wiki-compile/wiki-compile-spec.md         |  4 ++--
+ .../wiki-commit-provenance-artifact.md              | 21 +++++++++++++++++++++
+ .../wiki-commit-provenance-meta.json                |  9 +++++++++
+ .../wiki-commit-provenance-spec.md                  |  2 +-
+ tests/wiki.test.mjs                                 |  8 +++++++-
+ 5 files changed, 40 insertions(+), 4 deletions(-)
