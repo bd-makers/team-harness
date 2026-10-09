@@ -75,3 +75,8 @@ CHANGELOG.md                                                 | 8 ++++++++
 .../task-folder-removal-artifact.md                | 33 ++++++++++++++++++++++
  .../task-folder-removal-meta.json                  |  9 ++++++
  2 files changed, 42 insertions(+)
+
+## 2026-10-09T02:31:53.467Z — 33e930b docs(task): R2 pass 기록
+.../task-folder-removal-artifact.md                 | 21 +++++++++++++++++++++
+ .../task-folder-removal-meta.json                   |  9 +++++++++
+ 2 files changed, 30 insertions(+)
