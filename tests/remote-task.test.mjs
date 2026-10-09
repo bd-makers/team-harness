@@ -199,6 +199,11 @@ test('remote-task: falls back to the default-ref ledger when the task folder is 
     assert.match(line, /git log origin\/main -- docs\/chad\/x/);
     assert.doesNotMatch(line, /harness-team task x /, '다시 열기 안내는 막힌 길이다(이름 재사용 가드)');
     assert.equal(line.split('\n').length, 1);
+
+    // meta 출처(source 없음)의 문구는 종전 그대로 — 다시 열기 안내를 유지한다.
+    const metaLine = renderDoneOnMainNudge({ user: 'chad', task: 'x', ref: 'origin/main', closedAt: DELETED_AT });
+    assert.match(metaLine, /harness-team task x 로 다시 연다\(reopened\)\.$/);
+    assert.doesNotMatch(metaLine, /새 이름|폴더가 지워짐/);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 

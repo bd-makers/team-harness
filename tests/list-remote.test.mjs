@@ -228,5 +228,12 @@ test('list --remote: a task done in the default-ref ledger is not branch-only', 
     const labels = result.tasks.map(t => `${t.user}/${t.task}`);
     assert.ok(!labels.includes('chad/x'), 'main 원장에서 종결된 task 는 branch-only 가 아니다');
     assert.ok(labels.includes('alice/foo'), '미머지 브랜치의 열린 task 는 그대로 나온다');
+
+    // 사용자가 보는 것은 `list --remote` 출력이다 — 그 줄에도 없어야 한다.
+    const logs = await list(dir, { remote: true });
+    const remoteSection = logs.slice(logs.indexOf('branch-only (origin, 마지막 fetch 기준):'));
+    assert.ok(remoteSection.length > 1, 'branch-only 절이 출력된다');
+    assert.ok(!remoteSection.some(l => l.includes('chad/x')), 'list --remote 출력에 chad/x 가 없다');
+    assert.ok(remoteSection.some(l => l.startsWith('  alice/foo')), 'alice/foo 는 출력된다');
   } finally { await rm(root, { recursive: true, force: true }); }
 });
