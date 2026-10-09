@@ -11,7 +11,7 @@
 - [x] 3. 문서 — `commands/harness-review.md` 2단계 · `commands/harness-task.md` post-commit 절 한 줄 · CHANGELOG `[Unreleased]` · `docs/followups.md` 17·18번
 - [x] 4. 검증 — `npm test` · `npm run docs:check` · `harness-team scenario check` → artifact 기록
 - [x] 5. 리뷰 — R2 `review codex --framing scenario --scope diff` · R3 `review codex --scope diff`(codex 실패 시 claude 폴백) → artifact `## Reviews`
-- [ ] 6. ship 준비 보고 — spec·plan·artifact 최종 갱신, 로컬 커밋까지(push·PR 금지 — brief)
+- [x] 6. ship 준비 보고 — spec·plan·artifact 최종 갱신, 로컬 커밋까지(push·PR 금지 — brief)
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

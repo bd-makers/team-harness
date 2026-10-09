@@ -37,3 +37,11 @@ CHANGELOG.md                                       |  7 ++
  .../review-scope-handoff-meta.json                 | 12 +++++++++-
  tests/review-command.test.mjs                      |  6 +++++
  4 files changed, 56 insertions(+), 1 deletion(-)
+
+## 2026-10-09T16:24:48.708Z — 519c75b docs(task): review-scope-handoff R2·R3 리뷰 판별과 재검증 기록
+.../review-scope-handoff-artifact.md               | 41 ++++++++++++++++++++++
+ .../review-scope-handoff-context.md                |  4 +--
+ .../review-scope-handoff-handoff.md                |  7 ++++
+ .../review-scope-handoff-meta.json                 | 18 ++++++++++
+ .../review-scope-handoff-plan.md                   |  2 +-
+ 5 files changed, 69 insertions(+), 3 deletions(-)
