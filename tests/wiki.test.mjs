@@ -54,6 +54,14 @@ async function repoWithLandedTask({ land = 'merge', subject, body = '', status =
   return { dir, sha7: (await git(dir, 'rev-parse', 'HEAD')).slice(0, 7) };
 }
 
+// 기본 브랜치에서 task 폴더를 다시 건드리는 종결 커밋(`done`이 meta를 바꾸는 자리)을 하나 더 쌓는다.
+async function closeOnMain(dir) {
+  const metaPath = join(dir, 'docs', 'chad', 'x', 'x-meta.json');
+  await writeFile(metaPath, JSON.stringify({ user: 'chad', task: 'x', status: 'done', closedAt: '2026-10-08T00:00:00Z' }, null, 2) + '\n');
+  await git(dir, 'commit', '-qam', 'chore(task): x 종결');
+  return (await git(dir, 'rev-parse', 'HEAD')).slice(0, 7);
+}
+
 test('wiki sources: infers PR, merge commit and author from first-parent history', async () => {
   const cases = [
     { land: 'merge', subject: 'merge: x — 기능 (#12)' },
@@ -98,9 +106,12 @@ test('wiki sources: reads a GitLab merge request number from the commit body', a
 });
 
 // PR 없이 기본 브랜치에 직접 커밋하는 저장소에는 `--pr`에 넣을 번호가 없다 — 막으면 그 저장소는 컴파일을 영영 못 한다.
-test('wiki sources: without a PR number the marker cites the commit', async () => {
-  const { dir, sha7 } = await repoWithLandedTask({ subject: "Merge branch 'feature'" });
+test('wiki sources: without a PR number the marker cites the closing commit', async () => {
+  const { dir, sha7: landed } = await repoWithLandedTask({ subject: "Merge branch 'feature'" });
   try {
+    // 직접 커밋 저장소에서 들여온 커밋은 spec 초안이다 — 출처는 task 폴더를 마지막으로 건드린 종결 커밋이어야 한다.
+    const sha7 = await closeOnMain(dir);
+    assert.notEqual(sha7, landed);
     const out = JSON.parse((await cli(dir, 'wiki', 'sources', 'chad/x', '--json')).stdout);
     assert.deepEqual(out.blockers, []);
     assert.equal(out.status, 'success');
@@ -118,12 +129,14 @@ test('wiki sources: without a PR number the marker cites the commit', async () =
   }
 });
 
+// PR 출처의 커밋은 종결 커밋이 뒤에 있어도 들여온 커밋(머지·squash) 그대로다 — `--pr`든 커밋 메시지 추론이든.
 test('wiki sources: --pr overrides the commit-only provenance', async () => {
   const { dir, sha7 } = await repoWithLandedTask({ subject: "Merge branch 'feature'" });
   try {
+    await closeOnMain(dir);
     const out = JSON.parse((await cli(dir, 'wiki', 'sources', 'chad/x', '--pr', '9', '--json')).stdout);
     assert.equal(out.provenance.pr, 9);
-    assert.equal(out.provenance.commit, sha7, '--pr 는 번호만 바꾸고 커밋은 그대로 추론한다');
+    assert.equal(out.provenance.commit, sha7, '--pr 는 번호만 바꾸고 커밋은 들여온 커밋으로 추론한다');
     assert.equal(out.summary, '컴파일 가능');
     assert.match(out.marker, new RegExp(`^<!-- harness:wiki task=chad/x pr=9 commit=${sha7} author=chad at=\\d{4}-\\d{2}-\\d{2} -->$`));
     const { stdout } = await cli(dir, 'wiki', 'sources', 'chad/x', '--pr', '9');
@@ -133,6 +146,14 @@ test('wiki sources: --pr overrides the commit-only provenance', async () => {
     assert.equal(bad?.code, 2, '--pr 는 양의 정수만 받는다');
   } finally {
     await rm(dir, { recursive: true, force: true });
+  }
+  const inferred = await repoWithLandedTask({ subject: 'merge: x (#12)' });
+  try {
+    await closeOnMain(inferred.dir);
+    const out = await wikiSources(inferred.dir, 'chad', 'x', { at: AT });
+    assert.deepEqual(out.provenance, { pr: 12, commit: inferred.sha7, author: 'chad' }, '추론한 PR 의 커밋도 들여온 커밋이다');
+  } finally {
+    await rm(inferred.dir, { recursive: true, force: true });
   }
 });
 

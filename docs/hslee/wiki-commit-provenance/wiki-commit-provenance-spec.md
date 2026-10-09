@@ -21,6 +21,7 @@ marker: (막힘 — 아래 해소 후 다시 실행)
 그 저장소에서는 영원히 닫힌다 — 컴파일된 task가 하나도 생기지 않기 때문이다.
 
 **기대 결과** (brief): PR 번호를 찾지 못하면 막지 않고 **커밋 sha를 출처로** 마커를 만든다. PR 번호가 있는 기존 경로의 출처·마커는 바이트 단위로 같다.
+(2026-10-09 사람 승인 1차 리뷰 반영) 커밋 출처의 커밋은 task 폴더를 **마지막으로 건드린 커밋(종결 커밋)**이다 — heliosent 재현에서 `714c448`(spec 초안)이 아니라 `7713257`(종결)이 나와야 한다.
 
 **요구**
 - R-1 (brief) 커밋 메시지에서 PR 번호를 못 찾고 `--pr`도 없으면 `no-pr` 막힘을 내지 않는다. 다른 막힘(`not-done`·`no-commit`·`shallow-history`)이 없으면
@@ -89,6 +90,11 @@ marker: (막힘 — 아래 해소 후 다시 실행)
 
 **우선순위** (R-3): `const prNumber = pr ?? (intro ? prFromCommit(...) : null)` 줄은 그대로다. 바뀌는 것은 마지막 `null`의 의미뿐 — 막힘이 아니라 커밋 출처.
 
+**커밋 출처의 커밋 선택** (2026-10-09 사람 승인): PR 번호가 정해지면(`--pr` 또는 추론) `commit=`은 종전처럼 **들여온 커밋**(머지·squash)이다 — PR 추론에 쓰는 커밋 선택도 그대로다.
+PR 번호가 없으면 `commit=`은 HEAD first-parent 이력에서 task 폴더를 **마지막으로 건드린 커밋**(`lastTouchingCommit`, `git log -1 --first-parent HEAD -- <dir>`)이다.
+직접 커밋 저장소의 들여온 커밋은 spec 초안 커밋이라 변경을 대표하지 못하고, 종결 커밋(`done`)은 작업 전체 뒤에 온다. 컴파일은 종결 다음·C2b 삭제 전에 돌므로 이 값은 종결 커밋이다.
+읽지 못하면 null → `no-commit` 막힘(들여온 커밋으로 조용히 되돌리지 않는다).
+
 **PR 번호가 나중에 생긴 경우** (R-4): `findCompiled`는 `attrs.task === label`만 본다 — `pr=`는 키가 아니다. 커밋 출처로 컴파일한 뒤 같은 task를 `--pr <N>`으로
 재컴파일하면 `compiled`가 그 파일을 가리키고, 스킬은 재컴파일 명시 요청일 때 그 단락만 교체한다(c1 R-6 절차 그대로). 새 코드 없음.
 
@@ -105,9 +111,10 @@ C2b 이후 원문은 git 이력에 남는다(c2a Q8-A) — 커밋 sha 출처가 
 ## Ontology
 *이 task가 다루는 핵심 개념의 정의. "X가 정확히 뭔가?"에 답한다.*
 
-- **커밋 출처(commit provenance)**: PR 번호 없이 들여온 커밋 sha·작성자만으로 남긴 출처. 마커에 `pr=` 키가 없다. JSON `provenance.pr`가 `null`이다.
+- **커밋 출처(commit provenance)**: PR 번호 없이 종결 커밋(task 폴더를 마지막으로 건드린 first-parent 커밋) sha·작성자만으로 남긴 출처. 마커에 `pr=` 키가 없다. JSON `provenance.pr`가 `null`이다.
 - **PR 출처**: 지금의 출처 — PR 번호·들여온 커밋·작성자. 마커 바이트 불변.
-- **들여온 커밋(introducing commit)**: 정의 불변 — HEAD의 first-parent 이력에서 task 디렉터리를 처음 들인 커밋. 직접 커밋 저장소에서는 task를 처음 커밋한 커밋이다.
+- **들여온 커밋(introducing commit)**: 정의 불변 — HEAD의 first-parent 이력에서 task 디렉터리를 처음 들인 커밋. PR 번호 추론과 PR 출처의 `commit=`에만 쓴다.
+- **종결 커밋(closing commit)**: HEAD의 first-parent 이력에서 task 디렉터리를 마지막으로 건드린 커밋. 커밋 출처의 `commit=`이다.
 - **`no-pr`**: 더는 막힘이 아니다. 막힘 목록은 `not-done`·`no-commit`·`shallow-history` 셋이다.
 - **게이트 통과 (2026-10-09)**: Goal pass(문제 + 기대 결과 한 문장씩), Constraint pass(제약 절 — 바꾸는 단언 둘 명시, 읽기 전용, 게이트 입력 불변),
   Success pass(Done evidence S1–S5, 테스트 이름·명령에 묶임), Context pass(영향 표 file 단위, origin/main `c9ee56d`), Ontology pass(위 정의 4개). R1 검토 완료.
@@ -136,17 +143,17 @@ C2b 이후 원문은 git 이력에 남는다(c2a Q8-A) — 커밋 sha 출처가 
   "scenarios": [
     {
       "id": "S1",
-      "given": "done task chad/x 를 PR 번호 없는 커밋 메시지('Merge branch feature')로 main 에 들였다",
+      "given": "done task chad/x 를 PR 번호 없는 커밋 메시지('Merge branch feature')로 main 에 들인 뒤, main 에서 task 폴더를 건드리는 종결 커밋을 하나 더 쌓았다",
       "when": "wiki sources chad/x --json 과 텍스트 출력을 실행한다",
-      "then": "blockers 가 비어 있고 status 가 success, provenance.pr 이 null·commit 이 들여온 커밋 sha7 이며, marker 가 정확히 '<!-- harness:wiki task=chad/x commit=<sha7> author=chad at=<날짜> -->'(pr= 키 없음)이고, JSON summary 와 텍스트 출력이 커밋 출처임을 알린다",
-      "test": "wiki sources: without a PR number the marker cites the commit",
-      "cmd": "node --test --test-name-pattern=\"wiki sources: without a PR number the marker cites the commit\" tests/wiki.test.mjs"
+      "then": "blockers 가 비어 있고 status 가 success, provenance.pr 이 null·commit 이 들여온 커밋이 아닌 그 뒤 종결 커밋(task 폴더를 마지막으로 건드린 커밋) sha7 이며, marker 가 정확히 '<!-- harness:wiki task=chad/x commit=<sha7> author=chad at=<날짜> -->'(pr= 키 없음)이고, JSON summary 와 텍스트 출력이 커밋 출처임을 알린다",
+      "test": "wiki sources: without a PR number the marker cites the closing commit",
+      "cmd": "node --test --test-name-pattern=\"wiki sources: without a PR number the marker cites the closing commit\" tests/wiki.test.mjs"
     },
     {
       "id": "S2",
-      "given": "S1 과 같은 저장소",
-      "when": "--pr 9 를 붙여 실행한다",
-      "then": "marker 가 'pr=9 commit=<sha7>' 형식(종전 바이트)이고 커밋은 그대로 추론된다. --pr abc 는 exit 2",
+      "given": "S1 과 같은 저장소(종결 커밋 있음), 그리고 커밋 메시지에 (#12) 가 있는 저장소(종결 커밋 있음)",
+      "when": "앞 저장소는 --pr 9 를 붙여, 뒤 저장소는 그대로 실행한다",
+      "then": "앞은 marker 가 'pr=9 commit=<들여온 커밋 sha7>' 형식(종전 바이트), 뒤는 provenance 가 pr 12·들여온 커밋 sha7 — 종결 커밋이 뒤에 있어도 PR 출처의 커밋은 들여온 커밋이다. --pr abc 는 exit 2",
       "test": "wiki sources: --pr overrides the commit-only provenance",
       "cmd": "node --test --test-name-pattern=\"wiki sources: --pr overrides the commit-only provenance\" tests/wiki.test.mjs"
     },
@@ -184,8 +191,7 @@ C2b 이후 원문은 git 이력에 남는다(c2a Q8-A) — 커밋 sha 출처가 
 
 - 코드: `src/commands/wiki.mjs`(`wikiMarker` · `wikiSources` · `BLOCKER_TEXT` · `runWiki`) · `tests/wiki.test.mjs` · `tests/wiki-command.test.mjs` · `commands/harness-wiki.md` · `skills/harness-wiki/SKILL.md`
 - 수동 재현(읽기 전용, artifact에 기록): `node bin/harness-team.mjs wiki sources hslee/hslee-profile --target ~/projects/heliosent/heliosent-profile` 뒤 그 저장소 `git status --porcelain`이 비어 있어야 한다.
-- (open → 후속) 직접 커밋 저장소의 "들여온 커밋"은 task를 처음 커밋한 커밋(heliosent는 spec 작성 커밋 `714c448`)이라 변경 전체를 가리키지 않는다.
-  범위 출처(`first..last`)는 정의 변경이라 이 task 밖이다. 원문은 `git log -- docs/<user>/<task>`로 찾을 수 있다.
+- (해소 2026-10-09, 사람 승인) 직접 커밋 저장소의 들여온 커밋이 spec 초안 커밋(heliosent `714c448`)이라 변경을 대표하지 못하던 문제 — 커밋 출처는 종결 커밋(`7713257`)을 쓴다(설계 절 "커밋 출처의 커밋 선택").
 - (open → 후속) 직접 커밋 저장소에서 커밋 제목 끝 `(#N)`이 이슈 참조인 관례면 `prFromCommit`이 그것을 PR 번호로 읽는다 — 기존 동작이며 이 task 범위 밖.
 - (open → 후속) 종결된 `wiki-compile` spec의 Done evidence S3(`--test-name-pattern="wiki sources: no PR number"`)는 이 task가 그 테스트를 바꿔 **0개 테스트를 고른다** —
   그 task의 증거를 다시 돌리면 공허한 exit 0이 난다. 종결 task 문서라 이 task에서 고치지 않았다.

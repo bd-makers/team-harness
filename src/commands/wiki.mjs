@@ -130,6 +130,18 @@ export async function introducingCommit(targetDir, rel) {
   }
 }
 
+// HEAD의 first-parent 이력에서 task 디렉터리를 마지막으로 건드린 커밋 — 커밋 출처(PR 번호 없음)의 `commit=`이다.
+// 직접 커밋 저장소에서 들여온 커밋은 spec 초안 커밋이라 변경을 대표하지 못한다. 종결 커밋(`done`)이 작업 전체 뒤에 온다.
+// 위키 컴파일은 종결 다음·폴더 삭제(C2b) 전에 돈다 — 삭제 뒤에 돌리면 이 값은 삭제 커밋이 된다.
+export async function lastTouchingCommit(targetDir, rel) {
+  try {
+    const { stdout } = await pexec('git', ['-C', targetDir, 'log', '-1', '--first-parent', '--format=%H', 'HEAD', '--', rel]);
+    return stdout.trim() || null;
+  } catch {
+    return null;
+  }
+}
+
 // 얕은 클론이면 first-parent 이력이 경계 커밋에서 잘려, 그 경계 커밋이 "들여온 커밋"으로 잡힌다 — 출처(PR·커밋)가
 // 조용히 틀린다(codex R3 재현: #133 → #134). 판정할 수 없으면 막는 쪽(fail-closed)이다. 확인 실패(git 아님)는
 // 이력 자체가 없다는 뜻이라 `no-commit` 이 이미 막는다.
@@ -189,9 +201,12 @@ export async function wikiSources(targetDir, user, task, { pr = null, at = today
     if (await exists(taskFilePath(targetDir, user, task, kind))) docs.push(taskFileRel(user, task, kind));
   }
 
-  const intro = await introducingCommit(targetDir, taskDirRel(user, task));
-  const commit = intro ? intro.sha.slice(0, 7) : null;
+  const rel = taskDirRel(user, task);
+  const intro = await introducingCommit(targetDir, rel);
   const prNumber = pr ?? (intro ? prFromCommit(intro.subject, intro.body) : null);
+  // PR 출처는 들여온 커밋(머지·squash), 커밋 출처는 종결 커밋. 종결 커밋을 못 읽으면 null → `no-commit`(막는 쪽).
+  const sha = !intro ? null : prNumber === null ? await lastTouchingCommit(targetDir, rel) : intro.sha;
+  const commit = sha ? sha.slice(0, 7) : null;
 
   const blockers = [];
   if (taskStatus !== 'done') blockers.push('not-done');

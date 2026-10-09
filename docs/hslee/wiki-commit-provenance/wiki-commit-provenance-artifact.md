@@ -11,6 +11,15 @@
   후 `marker: <!-- harness:wiki task=hslee/hslee-profile commit=714c448 author=hslee at=2026-10-09 -->` + `note:` 한 줄, JSON `success · 컴파일 가능 (PR 없음 — 커밋 출처) · blockers []`.
   실행 전후 그 저장소 `git status --porcelain` 0줄.
 
+- 다이어그램: 미실행 — 함수 하나의 폴백 — 그림 이득 적음(사람 결정) (2026-10-09)
+
+- **사람 승인 3건 반영(2026-10-09)**: ① 커밋 출처의 `commit=`을 종결 커밋(task 폴더를 마지막으로 건드린 first-parent 커밋, `lastTouchingCommit`)으로 — PR 출처·PR 추론의 커밋 선택은 그대로.
+  ② 다이어그램 건너뜀 기록. ③ 종결된 wiki-compile spec S3 증거를 새 테스트로 정정(정정 사유 한 줄 포함).
+- 재검증(2026-10-09, 로컬): `npm test` exit 0 — 1213 · pass 1212 · fail 0 · skipped 1(기존 CI 전용) · perf pass 1. `docs:check` 최신. `scenario check` pass(5).
+  이름별 출력: `✔ wiki sources: without a PR number the marker cites the closing commit` · `✔ wiki sources: --pr overrides the commit-only provenance`(S3–S5는 위 기록과 같은 이름으로 재실행 pass).
+  wiki-compile S3 정정 cmd도 `✔ wiki sources: --pr overrides the commit-only provenance`(pass 1)를 고른다.
+- 변이 확인: `wiki.mjs`를 직전 커밋 판(들여온 커밋 사용)으로 되돌리면 S1 `…cites the closing commit`만 실패(pass 11 · fail 1).
+- heliosent 읽기 전용 재현(갱신): `provenance: PR (없음) · commit 7713257 · author hslee`, `marker: <!-- harness:wiki task=hslee/hslee-profile commit=7713257 author=hslee at=2026-10-09 -->`. 그 저장소 `git status --porcelain` 전후 0줄.
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
