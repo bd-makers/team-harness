@@ -117,6 +117,26 @@ PR 마커 형식과 `task=` 기반 멱등 판정은 유지되며, 변경은 커�
 판별(작성 세션): P2 **진짜 결함** — 정정한 wiki-compile S3의 Then이 여전히 첫 실행 `no-pr` 막힘을 선언했고, 새 증거는 `--pr` 실행만 단언했다.
 조치: `--pr overrides the commit-only provenance` 테스트가 같은 저장소의 `--pr` 없는 첫 실행(blockers 없음·종결 커밋 출처 marker)도 단언하게 하고, wiki-compile S3 Then을 현재 동작으로 고쳤다(정정 사유 줄 갱신). 이 task S2 Then에도 그 단언을 반영했다.
 
+### 2026-10-09T13:23:05.884Z — codex (harness-team review)
+
+- engine: codex · scope: diff · tip: c45a1706fdbbc4b9bd4736093776dbbd0eb40c8e · exit 0 · 1095 B
+
+```text
+전하, origin/main 대비 diff를 직접 검토했습니다. **P1·P2 결함은 없으며, P3 문서 정합성 문제 1건입니다.**
+
+- **P3 nit — [wiki-commit-provenance-spec.md:196](/Users/hsonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-20/docs/hslee/wiki-commit-provenance/wiki-commit-provenance-spec.md:196)**: S3 증거를 “고치지 않았다”고 남겨 두었지만, 이번 변경에서 Then·test·cmd와 정정 사유를 이미 갱신했으므로 해당 항목을 해소 처리해야 합니다.
+
+`lastTouchingCommit`은 설계대로 커밋 출처에만 적용되며 PR 출처는 introducing commit을 유지합니다. 보강된 테스트는 첫 실행과 `--pr 9` 실행을 모두 단언하여 수정된 S3에 대응합니다.
+
+문서 테스트 2건·구문 검사·`docs:check`·`git diff --check`가 통과했습니다. 임시 저장소를 생성하는 런타임 테스트와 전체 테스트·빌드는 실행하지 않았으며, 파일 변경은 없습니다.
+
+**최종 판정: Approve with nit — 유의미한 코드 결함 없음.**
+```
+
+<!-- harness:review kind=codex scope=diff tip=c45a1706fdbbc4b9bd4736093776dbbd0eb40c8e at=2026-10-09T13:23:05.884Z -->
+
+판별(작성 세션): P3 진짜(문서 정합) — spec 참고 절의 S3 `(open)` 항목을 해소로 고쳤다. 코드 결함 없음 — 이 실행이 반영 후 R3 증거다.
+
 ## Learnings
 
 - 구현을 커밋한 **뒤** `harness-team review`를 돌리면 post-commit 훅이 고친 handoff 때문에 트리가 dirty라 scope가 `worktree`로 잡히고,

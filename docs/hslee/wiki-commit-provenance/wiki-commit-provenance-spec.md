@@ -193,5 +193,5 @@ C2b 이후 원문은 git 이력에 남는다(c2a Q8-A) — 커밋 sha 출처가 
 - 수동 재현(읽기 전용, artifact에 기록): `node bin/harness-team.mjs wiki sources hslee/hslee-profile --target ~/projects/heliosent/heliosent-profile` 뒤 그 저장소 `git status --porcelain`이 비어 있어야 한다.
 - (해소 2026-10-09, 사람 승인) 직접 커밋 저장소의 들여온 커밋이 spec 초안 커밋(heliosent `714c448`)이라 변경을 대표하지 못하던 문제 — 커밋 출처는 종결 커밋(`7713257`)을 쓴다(설계 절 "커밋 출처의 커밋 선택").
 - (open → 후속) 직접 커밋 저장소에서 커밋 제목 끝 `(#N)`이 이슈 참조인 관례면 `prFromCommit`이 그것을 PR 번호로 읽는다 — 기존 동작이며 이 task 범위 밖.
-- (open → 후속) 종결된 `wiki-compile` spec의 Done evidence S3(`--test-name-pattern="wiki sources: no PR number"`)는 이 task가 그 테스트를 바꿔 **0개 테스트를 고른다** —
-  그 task의 증거를 다시 돌리면 공허한 exit 0이 난다. 종결 task 문서라 이 task에서 고치지 않았다.
+- (해소 2026-10-09, 사람 승인) 종결된 `wiki-compile` spec의 Done evidence S3(`--test-name-pattern="wiki sources: no PR number"`)가 0개 테스트를 고르던 문제 —
+  그 spec의 S3 Then·test·cmd를 현재 동작과 `--pr overrides the commit-only provenance`로 정정하고 정정 사유를 그 spec 참고 절에 한 줄 남겼다.

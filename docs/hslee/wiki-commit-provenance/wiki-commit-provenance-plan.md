@@ -14,7 +14,7 @@ PR 번호가 있는 경로는 바이트 불변.
 - [x] 4. 검증 — `npm test` · `npm run docs:check` · `harness-team scenario check` · heliosent 읽기 전용 재현(쓰기 0 확인) → artifact 기록
 - [x] 5. 리뷰 — R2 `review codex --framing scenario` · R3 `review codex`(codex 실패 시 claude 엔진 폴백) → artifact `## Reviews`
 - [x] 6. ship 준비 보고 — spec·plan·artifact 최종 갱신, 로컬 커밋까지(push·PR 금지 — brief)
-- [ ] 7. 사람 승인 3건 반영(2026-10-09) — 커밋 출처 `commit=`을 종결 커밋으로(`lastTouchingCommit`) · 다이어그램 건너뜀 기록 · 종결된 wiki-compile spec S3 증거 정정 → 검증 재실행 · R3 재리뷰(scope=diff 확인)
+- [x] 7. 사람 승인 3건 반영(2026-10-09) — 커밋 출처 `commit=`을 종결 커밋으로(`lastTouchingCommit`) · 다이어그램 건너뜀 기록 · 종결된 wiki-compile spec S3 증거 정정 → 검증 재실행 · R3 재리뷰(scope=diff 확인)
 - [ ] 8. push(`HEAD:ao/harness-aijient-team-plugin-20/wiki-commit-provenance`) · PR(base main) · PR 번호·CI 상태 보고 — 머지 금지
 
 ## Ontology 변경 로그
