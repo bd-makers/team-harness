@@ -54,6 +54,14 @@ async function repoWithLandedTask({ land = 'merge', subject, body = '', status =
   return { dir, sha7: (await git(dir, 'rev-parse', 'HEAD')).slice(0, 7) };
 }
 
+// 기본 브랜치에서 task 폴더를 다시 건드리는 종결 커밋(`done`이 meta를 바꾸는 자리)을 하나 더 쌓는다.
+async function closeOnMain(dir) {
+  const metaPath = join(dir, 'docs', 'chad', 'x', 'x-meta.json');
+  await writeFile(metaPath, JSON.stringify({ user: 'chad', task: 'x', status: 'done', closedAt: '2026-10-08T00:00:00Z' }, null, 2) + '\n');
+  await git(dir, 'commit', '-qam', 'chore(task): x 종결');
+  return (await git(dir, 'rev-parse', 'HEAD')).slice(0, 7);
+}
+
 test('wiki sources: infers PR, merge commit and author from first-parent history', async () => {
   const cases = [
     { land: 'merge', subject: 'merge: x — 기능 (#12)' },
@@ -97,23 +105,120 @@ test('wiki sources: reads a GitLab merge request number from the commit body', a
   assert.equal(prFromCommit('Merge branch \'x\'', 'See merge request a/b/c!42\n'), 42);
 });
 
-test('wiki sources: no PR number blocks until --pr is given', async () => {
+// PR 없이 기본 브랜치에 직접 커밋하는 저장소에는 `--pr`에 넣을 번호가 없다 — 막으면 그 저장소는 컴파일을 영영 못 한다.
+test('wiki sources: without a PR number the marker cites the closing commit', async () => {
+  const { dir, sha7: landed } = await repoWithLandedTask({ subject: "Merge branch 'feature'" });
+  try {
+    // 직접 커밋 저장소에서 들여온 커밋은 spec 초안이다 — 출처는 task 폴더를 마지막으로 건드린 종결 커밋이어야 한다.
+    const sha7 = await closeOnMain(dir);
+    assert.notEqual(sha7, landed);
+    const out = JSON.parse((await cli(dir, 'wiki', 'sources', 'chad/x', '--json')).stdout);
+    assert.deepEqual(out.blockers, []);
+    assert.equal(out.status, 'success');
+    assert.deepEqual(out.provenance, { pr: null, commit: sha7, author: 'chad' });
+    assert.match(out.marker, new RegExp(`^<!-- harness:wiki task=chad/x commit=${sha7} author=chad at=\\d{4}-\\d{2}-\\d{2} -->$`));
+    assert.equal(out.summary, '컴파일 가능 (PR 없음 — 커밋 출처)');
+    assert.equal(wikiMarker({ task: 'chad/x', pr: null, commit: sha7, author: 'chad', at: AT }),
+      `<!-- harness:wiki task=chad/x commit=${sha7} author=chad at=${AT} -->`);
+
+    const { stdout } = await cli(dir, 'wiki', 'sources', 'chad/x');
+    assert.match(stdout, /^ {2}note: PR 번호 없음 — 커밋 출처로 마커를 만든다\. PR로 들여온 task라면 번호를 확인해 `--pr <N>`으로 다시 실행$/m);
+    assert.doesNotMatch(stdout, /✗/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+// heliosent-profile 실이력 재현: 브랜치·머지 없이 main 에 spec 초안 → 작업 → 종결을 직접 쌓는다.
+// 들여온 커밋은 spec 초안이라 출처가 될 수 없다 — 커밋 출처는 task 폴더를 마지막으로 건드린 종결 커밋이다.
+test('wiki sources: a direct-commit history without branches cites the closing commit', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-wiki-direct-'));
+  try {
+    await git(dir, 'init', '-q', '-b', 'main');
+    await git(dir, 'config', 'user.email', 'test@example.com');
+    await git(dir, 'config', 'user.name', 'test');
+    await writeFile(join(dir, '.gitignore'), '.harness/\n');
+    await writeFile(join(dir, 'README.md'), '# seed\n');
+    await git(dir, 'add', '-A');
+    await git(dir, 'commit', '-qm', 'seed');
+
+    const taskDir = join(dir, 'docs', 'chad', 'x');
+    await mkdir(taskDir, { recursive: true });
+    await writeFile(join(taskDir, 'x-spec.md'), '# x — Spec\n');
+    await writeFile(join(taskDir, 'x-plan.md'), '# x — Plan\n');
+    await writeFile(join(taskDir, 'x-meta.json'), JSON.stringify({ user: 'chad', task: 'x', status: 'open' }, null, 2) + '\n');
+    await git(dir, 'add', '-A');
+    await git(dir, 'commit', '-qm', 'docs: x spec/plan 작성');
+    const draft = (await git(dir, 'rev-parse', 'HEAD')).slice(0, 7);
+
+    await writeFile(join(dir, 'app.js'), 'export {};\n');
+    await writeFile(join(taskDir, 'x-artifact.md'), '# x — Artifact\n');
+    await git(dir, 'add', '-A');
+    await git(dir, 'commit', '-qm', 'feat: x 구현');
+    await writeFile(join(dir, 'README.md'), '# seed\n\nunrelated\n');
+    await git(dir, 'commit', '-qam', 'docs: task 와 무관한 커밋');
+
+    await writeFile(join(taskDir, 'x-meta.json'), JSON.stringify({ user: 'chad', task: 'x', status: 'done' }, null, 2) + '\n');
+    await git(dir, 'commit', '-qam', 'chore(task): x 종료');
+    const closing = (await git(dir, 'rev-parse', 'HEAD')).slice(0, 7);
+    // 무관한 커밋이 뒤에 쌓여도 출처는 task 폴더를 마지막으로 건드린 커밋이다.
+    await writeFile(join(dir, 'README.md'), '# seed\n\nafter\n');
+    await git(dir, 'commit', '-qam', 'docs: 종결 뒤 무관한 커밋');
+
+    const out = await wikiSources(dir, 'chad', 'x', { at: AT });
+    assert.deepEqual(out.blockers, []);
+    assert.notEqual(closing, draft);
+    assert.deepEqual(out.provenance, { pr: null, commit: closing, author: 'chad' });
+    assert.equal(out.marker, `<!-- harness:wiki task=chad/x commit=${closing} author=chad at=${AT} -->`);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+// PR 출처의 커밋은 종결 커밋이 뒤에 있어도 들여온 커밋(머지·squash) 그대로다 — `--pr`든 커밋 메시지 추론이든.
+test('wiki sources: --pr overrides the commit-only provenance', async () => {
   const { dir, sha7 } = await repoWithLandedTask({ subject: "Merge branch 'feature'" });
   try {
-    const first = JSON.parse((await cli(dir, 'wiki', 'sources', 'chad/x', '--json')).stdout);
-    assert.equal(first.provenance.pr, null);
-    assert.equal(first.marker, null);
-    assert.ok(first.blockers.includes('no-pr'));
-    assert.equal(first.status, 'warning');
+    const closing = await closeOnMain(dir);
+    // 같은 저장소의 `--pr` 없는 첫 실행은 막힘이 아니라 커밋 출처다(종결된 wiki-compile S3의 첫 실행 증거).
+    const first = await wikiSources(dir, 'chad', 'x', { at: AT });
+    assert.deepEqual(first.blockers, []);
+    assert.deepEqual(first.provenance, { pr: null, commit: closing, author: 'chad' });
+    assert.equal(first.marker, `<!-- harness:wiki task=chad/x commit=${closing} author=chad at=${AT} -->`);
 
-    const second = JSON.parse((await cli(dir, 'wiki', 'sources', 'chad/x', '--pr', '9', '--json')).stdout);
-    assert.equal(second.provenance.pr, 9);
-    assert.equal(second.provenance.commit, sha7, '--pr 는 번호만 바꾸고 커밋은 그대로 추론한다');
-    assert.ok(!second.blockers.includes('no-pr'));
-    assert.match(second.marker, new RegExp(`^<!-- harness:wiki task=chad/x pr=9 commit=${sha7} author=chad at=\\d{4}-\\d{2}-\\d{2} -->$`));
+    const out = JSON.parse((await cli(dir, 'wiki', 'sources', 'chad/x', '--pr', '9', '--json')).stdout);
+    assert.equal(out.provenance.pr, 9);
+    assert.equal(out.provenance.commit, sha7, '--pr 는 번호만 바꾸고 커밋은 들여온 커밋으로 추론한다');
+    assert.equal(out.summary, '컴파일 가능');
+    assert.match(out.marker, new RegExp(`^<!-- harness:wiki task=chad/x pr=9 commit=${sha7} author=chad at=\\d{4}-\\d{2}-\\d{2} -->$`));
+    const { stdout } = await cli(dir, 'wiki', 'sources', 'chad/x', '--pr', '9');
+    assert.doesNotMatch(stdout, /note:/, 'PR 출처의 텍스트 출력은 종전 그대로다');
 
     const bad = await cli(dir, 'wiki', 'sources', 'chad/x', '--pr', 'abc').then(() => null, e => e);
     assert.equal(bad?.code, 2, '--pr 는 양의 정수만 받는다');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+  const inferred = await repoWithLandedTask({ subject: 'merge: x (#12)' });
+  try {
+    await closeOnMain(inferred.dir);
+    const out = await wikiSources(inferred.dir, 'chad', 'x', { at: AT });
+    assert.deepEqual(out.provenance, { pr: 12, commit: inferred.sha7, author: 'chad' }, '추론한 PR 의 커밋도 들여온 커밋이다');
+  } finally {
+    await rm(inferred.dir, { recursive: true, force: true });
+  }
+});
+
+// 멱등 키는 `task=` 뿐이다 — 커밋 출처로 컴파일한 뒤 PR 번호가 생겨도 같은 단락으로 잡혀 재컴파일이 그 단락을 교체한다.
+test('wiki sources: a commit-only marker still counts as compiled when a PR number arrives later', async () => {
+  const { dir, sha7 } = await repoWithLandedTask({ subject: "Merge branch 'feature'" });
+  try {
+    await mkdir(join(dir, 'wiki', '99_inbox'), { recursive: true });
+    await writeFile(join(dir, 'wiki', '99_inbox', 'x.md'),
+      `# x\n\n<!-- harness:wiki task=chad/x commit=${sha7} author=chad at=2026-10-01 -->\n## x\n본문\n`);
+    const out = await wikiSources(dir, 'chad', 'x', { pr: 9, at: AT });
+    assert.deepEqual(out.compiled, ['wiki/99_inbox/x.md']);
+    assert.deepEqual(out.blockers, []);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }

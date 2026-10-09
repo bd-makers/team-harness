@@ -151,9 +151,9 @@
       "id": "S3",
       "given": "들여온 커밋 메시지에 PR 번호가 없다",
       "when": "wiki sources 를 --pr 없이, 그다음 --pr 9 로 실행한다",
-      "then": "첫 실행은 pr=null · marker=null · blockers에 no-pr, 두 번째는 pr=9 · marker에 pr=9 · no-pr 없음",
-      "test": "wiki sources: no PR number blocks until --pr is given",
-      "cmd": "node --test --test-name-pattern=\"wiki sources: no PR number\" tests/wiki.test.mjs"
+      "then": "첫 실행은 pr=null · blockers 없음 · marker가 pr= 없는 커밋 출처(2026-10-09 정정 — 아래 참고), 두 번째는 pr=9 · marker에 pr=9",
+      "test": "wiki sources: --pr overrides the commit-only provenance",
+      "cmd": "node --test --test-name-pattern=\"wiki sources: --pr overrides the commit-only provenance\" tests/wiki.test.mjs"
     },
     {
       "id": "S4",
@@ -231,4 +231,5 @@
 - 선례: `commands/harness-loop.md` + `skills/harness-loop/SKILL.md` + `tests/loop-command.test.mjs`(#134, 스킬 + 기존 CLI)
 - 마커 문법 선례: `src/commands/rules.mjs` `ruleMarker`·`parseRuleMarker`
 - 기본 브랜치 판정: `src/git-default-branch.mjs`, `src/commands/summary.mjs` `defaultBranchCandidates`
+- (정정 2026-10-09, task `hslee/wiki-commit-provenance`) Done evidence S3의 증거 테스트가 바뀌어 옛 `cmd`가 0개 테스트를 골라 공허한 exit 0을 냈다 — `--pr` 경로를 검증하는 새 테스트로 증거를 옮겼다. S3 Then의 첫 실행(원래 `no-pr` 막힘)은 그 task가 커밋 출처로 대체했으므로 Then도 현재 동작으로 고쳤고, 새 테스트가 두 실행을 모두 단언한다.
 - (open → C2 이후 별도 task) R1 원천 문서 자리 `wiki/10_ssot/`와 위키 컴파일의 겹침 — C1 입력은 머지된 task 문서뿐이다.

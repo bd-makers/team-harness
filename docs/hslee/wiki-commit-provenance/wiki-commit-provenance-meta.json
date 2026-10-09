@@ -1,0 +1,57 @@
+{
+  "user": "hslee",
+  "task": "wiki-commit-provenance",
+  "created": "2026-10-09",
+  "firstActivatedAt": "2026-10-09T12:59:30.744Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex-scenario",
+      "engine": "codex",
+      "scope": "worktree",
+      "tip": "40f056a36abbe2af57e6e335377b58706b492606",
+      "at": "2026-10-09T13:04:51.361Z",
+      "exitCode": 0,
+      "outputBytes": 2050
+    },
+    {
+      "kind": "codex-scenario",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "3bbc0c493f84d3a6a4c91f07c99ffb0806d0debd",
+      "at": "2026-10-09T13:07:08.183Z",
+      "exitCode": 0,
+      "outputBytes": 2198
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "beb382d5ef043550570b1091df2e659e003ef024",
+      "at": "2026-10-09T13:08:28.216Z",
+      "exitCode": 0,
+      "outputBytes": 599
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "5a2eaed1043d15eb120b3b746b38f663aee2fca2",
+      "at": "2026-10-09T13:20:24.395Z",
+      "exitCode": 0,
+      "outputBytes": 1031
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "tip": "c45a1706fdbbc4b9bd4736093776dbbd0eb40c8e",
+      "at": "2026-10-09T13:23:05.884Z",
+      "exitCode": 0,
+      "outputBytes": 1095
+    }
+  ]
+}

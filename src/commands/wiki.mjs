@@ -28,8 +28,10 @@ const LABEL_RE = /^([\w.-]+)\/([\w.-]+)$/;
 const PR_RE = /^[1-9]\d*$/;
 
 // `harness:rule`·`harness:review`와 같은 key=value HTML 주석 문법. 키 순서는 이 함수가 정본이다.
+// PR 번호가 없으면(PR 없이 기본 브랜치에 직접 커밋한 저장소) `pr=` 키를 뺀다 — 커밋 출처다. 가짜 값(`pr=none`)을 두지 않는다.
 export function wikiMarker({ task, pr, commit, author, at }) {
-  return `<!-- harness:wiki task=${task} pr=${pr} commit=${commit} author=${author} at=${at} -->`;
+  const prAttr = pr === null || pr === undefined ? '' : ` pr=${pr}`;
+  return `<!-- harness:wiki task=${task}${prAttr} commit=${commit} author=${author} at=${at} -->`;
 }
 
 const WIKI_MARKER_RE = /<!--\s*harness:wiki\s+([^>]*?)\s*-->/g;
@@ -100,7 +102,8 @@ export function wikiMarkersIn(content) {
 }
 
 // 들여온 커밋 메시지에서 PR/MR 번호를 읽는다. 순서: GitHub 기본 머지 제목 → 제목 끝 `(#N)`(squash·관례)
-// → GitLab 머지 커밋 본문. 못 찾으면 null — 추측하지 않는다(rebase·fast-forward 병합은 번호를 남기지 않는다).
+// → GitLab 머지 커밋 본문. 못 찾으면 null — 추측하지 않는다(rebase·fast-forward 병합·직접 커밋은 번호를 남기지 않는다).
+// null은 막힘이 아니라 커밋 출처다: CLI는 "PR이 없는 저장소"와 "번호가 빠진 PR 병합"을 가르지 못하고, 앞의 경우엔 `--pr`에 넣을 번호가 아예 없다.
 export function prFromCommit(subject = '', body = '') {
   const merge = /^Merge pull request #(\d+)\b/.exec(subject);
   if (merge) return Number(merge[1]);
@@ -122,6 +125,18 @@ export async function introducingCommit(targetDir, rel) {
     if (!first.trim()) return null;
     const [sha, subject = '', body = ''] = first.split('\x00');
     return { sha, subject, body };
+  } catch {
+    return null;
+  }
+}
+
+// HEAD의 first-parent 이력에서 task 디렉터리를 마지막으로 건드린 커밋 — 커밋 출처(PR 번호 없음)의 `commit=`이다.
+// 직접 커밋 저장소에서 들여온 커밋은 spec 초안 커밋이라 변경을 대표하지 못한다. 종결 커밋(`done`)이 작업 전체 뒤에 온다.
+// 위키 컴파일은 종결 다음·폴더 삭제(C2b) 전에 돈다 — 삭제 뒤에 돌리면 이 값은 삭제 커밋이 된다.
+export async function lastTouchingCommit(targetDir, rel) {
+  try {
+    const { stdout } = await pexec('git', ['-C', targetDir, 'log', '-1', '--first-parent', '--format=%H', 'HEAD', '--', rel]);
+    return stdout.trim() || null;
   } catch {
     return null;
   }
@@ -186,13 +201,15 @@ export async function wikiSources(targetDir, user, task, { pr = null, at = today
     if (await exists(taskFilePath(targetDir, user, task, kind))) docs.push(taskFileRel(user, task, kind));
   }
 
-  const intro = await introducingCommit(targetDir, taskDirRel(user, task));
-  const commit = intro ? intro.sha.slice(0, 7) : null;
+  const rel = taskDirRel(user, task);
+  const intro = await introducingCommit(targetDir, rel);
   const prNumber = pr ?? (intro ? prFromCommit(intro.subject, intro.body) : null);
+  // PR 출처는 들여온 커밋(머지·squash), 커밋 출처는 종결 커밋. 종결 커밋을 못 읽으면 null → `no-commit`(막는 쪽).
+  const sha = !intro ? null : prNumber === null ? await lastTouchingCommit(targetDir, rel) : intro.sha;
+  const commit = sha ? sha.slice(0, 7) : null;
 
   const blockers = [];
   if (taskStatus !== 'done') blockers.push('not-done');
-  if (prNumber === null) blockers.push('no-pr');
   if (commit === null) blockers.push('no-commit');
   if (await isShallowRepository(targetDir)) blockers.push('shallow-history');
 
@@ -212,7 +229,6 @@ export async function wikiSources(targetDir, user, task, { pr = null, at = today
 
 const BLOCKER_TEXT = {
   'not-done': 'task가 done이 아님 — 머지 후 기본 브랜치에서 `harness-team done` 다음에 컴파일한다',
-  'no-pr': 'PR 번호를 커밋 메시지에서 찾지 못함 — 번호를 확인해 `--pr <N>`으로 다시 실행',
   'no-commit': 'task 디렉터리가 이 브랜치 이력에 커밋돼 있지 않음',
   'shallow-history': '얕은 클론이라 들여온 커밋을 확정할 수 없음 — `git fetch --unshallow` 후 다시 실행',
 };
@@ -304,10 +320,11 @@ export async function runWiki(ctx) {
     const summary = result.blockers.length
       ? `막힘: ${result.blockers.join(', ')}`
       : result.compiled.length ? `이미 컴파일됨 (${result.compiled.length}곳)` : '컴파일 가능';
+    const source = !result.blockers.length && result.provenance.pr === null ? ' (PR 없음 — 커밋 출처)' : '';
     emitObservation(buildEnvelope({
       command: 'wiki',
       status: result.blockers.length ? 'warning' : 'success',
-      summary,
+      summary: summary + source,
       extra: result,
     }));
     return;
@@ -323,5 +340,8 @@ export async function runWiki(ctx) {
     : `  rules: (없음 — ${WIKI_RULES_DIR}/ 에 작성 규칙이 없으므로 모든 단락은 ${WIKI_INBOX_DIR}/ 로)`);
   console.log(`  compiled: ${result.compiled.join(', ') || '(없음)'}`);
   console.log(`  marker: ${result.marker ?? '(막힘 — 아래 해소 후 다시 실행)'}`);
+  if (result.marker !== null && p.pr === null) {
+    console.log('  note: PR 번호 없음 — 커밋 출처로 마커를 만든다. PR로 들여온 task라면 번호를 확인해 `--pr <N>`으로 다시 실행');
+  }
   for (const b of result.blockers) console.log(`  ✗ ${b}: ${BLOCKER_TEXT[b]}`);
 }
