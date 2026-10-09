@@ -353,6 +353,9 @@ test('resolveScope: a tree dirty only from the post-commit handoff resolves to d
     await hookWrites('handoffs');
     const mainTip = (await git(dir, 'rev-parse', 'HEAD')).stdout.trim();
     assert.deepEqual(await resolveScope({ targetDir: dir }), { empty: true, base: 'main', tip: mainTip });
+    const onMain = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    assert.equal(onMain.result.recorded, false, 'handoff 만 바뀐 base 브랜치는 리뷰하지 않는다');
+    assert.deepEqual((await readTaskMeta(dir, 'tester', 'demo')).reviews, []);
 
     // feature 브랜치의 구현 커밋 뒤 훅이 다시 쓴다 → diff
     await git(dir, 'checkout', '-qb', 'feature');
@@ -364,6 +367,9 @@ test('resolveScope: a tree dirty only from the post-commit handoff resolves to d
     assert.equal(r.base, 'main');
     const rr = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
     assert.equal(rr.result.entry.scope, 'diff', 'review 기록도 diff 다');
+    const saved = (await readTaskMeta(dir, 'tester', 'demo')).reviews;
+    assert.equal(saved.length, 1);
+    assert.equal(saved[0].scope, 'diff', 'meta.reviews 에 저장된 scope 도 diff 다');
   } finally { restore(); await rm(dir, { recursive: true, force: true }); }
 });
 

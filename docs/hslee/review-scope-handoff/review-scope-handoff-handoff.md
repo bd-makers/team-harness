@@ -18,3 +18,15 @@ CHANGELOG.md                                       |   7 +
  tests/review-command.test.mjs                      |  76 ++++++++++
  tests/scope-command.test.mjs                       |  22 ++-
  14 files changed, 375 insertions(+), 7 deletions(-)
+
+## 2026-10-09T16:19:48.788Z — 262d943 fix(review): scope 자동 판정이 post-commit 훅의 handoff 변경을 dirty로 세지 않는다
+CHANGELOG.md                                       |  7 ++
+ commands/harness-review.md                         |  4 +-
+ commands/harness-task.md                           |  3 +-
+ docs/followups.md                                  | 15 ++++-
+ .../review-scope-handoff-handoff.md                | 17 +++++
+ src/commands/review.mjs                            | 17 ++++-
+ src/commands/task.mjs                              |  2 +-
+ tests/review-command.test.mjs                      | 76 ++++++++++++++++++++++
+ tests/scope-command.test.mjs                       | 22 ++++++-
+ 9 files changed, 156 insertions(+), 7 deletions(-)
