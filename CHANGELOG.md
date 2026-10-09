@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.49.0] - 2026-10-10
+
 ### Changed
 - **PR 없는 저장소에서도 위키 컴파일이 돈다** (task `wiki-commit-provenance`). `harness-team wiki sources`가 들여온 커밋 메시지에서 PR 번호를 못 찾으면
   `no-pr` 막힘 대신 커밋 출처 마커(`pr=` 키 없음 — `<!-- harness:wiki task=… commit=… author=… at=… -->`)를 낸다. 이때 `commit=`은 task 폴더를

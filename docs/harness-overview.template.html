@@ -201,7 +201,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.48.0</span>
+      <span class="tag tag-purple">v0.49.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -209,6 +209,11 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.49.0 — PR 없이 커밋하는 저장소도 위키 컴파일:</strong>
+    <br>
+    <code>0.49.0</code> <strong><code>wiki sources</code>가 PR 번호를 못 찾으면 <code>no-pr</code>로 막지 않고 커밋 sha를 출처로 마커를 만든다</strong>(<code>pr=</code> 키 없음, <code>commit=</code>은 task 폴더를 마지막으로 건드린 종결 커밋). 우선순위는 <code>--pr &lt;N&gt;</code> &gt; 커밋 메시지 &gt; 커밋 출처이고, PR 번호가 있는 경로의 마커는 바이트 그대로다.
+    멱등 키는 <code>task=</code> 그대로라 나중에 <code>--pr</code>로 재컴파일해도 같은 단락을 교체한다 — 컴파일된 task만 지우는 C2b 게이트가 PR 없는 저장소에서도 열릴 수 있다.
+    <br><br>
     <strong>🆕 0.48.0 — 원장이 폴더 없는 done task를 기억한다 (C2a, 비파괴):</strong>
     <br>
     <code>0.48.0</code> <strong>task 폴더를 지워도 원장·done-on-main nudge·<code>list --remote</code>가 같은 답을 낸다 — 폴더는 아직 하나도 지우지 않는다.</strong> <code>summary --write</code>가 폴더 없는 task의 <code>✅ done</code> 원장 행(상태·⚠️·생성일·Area)을 그대로 이어받고, 원격에 meta·폴더가 없으면 default ref 원장의 done 행으로 "이미 종결됨"을 판정한다(그때만 nudge가 "새 이름으로 이어간다"고 안내).
@@ -957,7 +962,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.48.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.49.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
