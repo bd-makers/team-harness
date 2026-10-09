@@ -29,3 +29,9 @@ CHANGELOG.md                                       |   7 +
 .../wiki-commit-provenance-artifact.md              | 21 +++++++++++++++++++++
  .../wiki-commit-provenance-meta.json                |  9 +++++++++
  2 files changed, 30 insertions(+)
+
+## 2026-10-09T13:08:39.324Z — e7df93d docs(task): wiki-commit-provenance R3 기록·학습
+.../wiki-commit-provenance-artifact.md             | 23 ++++++++++++++++++++++
+ .../wiki-commit-provenance-meta.json               |  9 +++++++++
+ .../wiki-commit-provenance-plan.md                 |  2 +-
+ 3 files changed, 33 insertions(+), 1 deletion(-)
