@@ -15,7 +15,7 @@ PR 번호가 있는 경로는 바이트 불변.
 - [x] 5. 리뷰 — R2 `review codex --framing scenario` · R3 `review codex`(codex 실패 시 claude 엔진 폴백) → artifact `## Reviews`
 - [x] 6. ship 준비 보고 — spec·plan·artifact 최종 갱신, 로컬 커밋까지(push·PR 금지 — brief)
 - [x] 7. 사람 승인 3건 반영(2026-10-09) — 커밋 출처 `commit=`을 종결 커밋으로(`lastTouchingCommit`) · 다이어그램 건너뜀 기록 · 종결된 wiki-compile spec S3 증거 정정 → 검증 재실행 · R3 재리뷰(scope=diff 확인)
-- [ ] 8. push(`HEAD:ao/harness-aijient-team-plugin-20/wiki-commit-provenance`) · PR(base main) · PR 번호·CI 상태 보고 — 머지 금지
+- [x] 8. push(`HEAD:ao/harness-aijient-team-plugin-20/wiki-commit-provenance`) · PR(base main) · PR 번호·CI 상태 보고 — 머지 금지 — PR #138(2026-10-09). 리뷰 덱 미실행(스킬 없음 — `/mr-change-diagram`이 이 머신에 없다)
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
