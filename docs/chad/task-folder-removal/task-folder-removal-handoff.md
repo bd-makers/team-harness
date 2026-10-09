@@ -100,3 +100,10 @@ CHANGELOG.md                                                 | 8 ++++++++
 ## 2026-10-09T02:36:48.244Z — b016802 docs(task): task-folder-removal artifact — 남은 리스크·후속·학습
 .../task-folder-removal/task-folder-removal-artifact.md   | 15 +++++++++++++++
  1 file changed, 15 insertions(+)
+
+## 2026-10-09T02:38:35.058Z — 8f00c6e docs(task): shipcheck 지적 반영 — plan 3단계 문장 정정, 검증 출력 인용
+.../task-folder-removal-artifact.md                | 48 ++++++++++++++++++++++
+ .../task-folder-removal-handoff.md                 |  4 ++
+ .../task-folder-removal-meta.json                  |  9 ++++
+ .../task-folder-removal-plan.md                    |  2 +-
+ 4 files changed, 62 insertions(+), 1 deletion(-)

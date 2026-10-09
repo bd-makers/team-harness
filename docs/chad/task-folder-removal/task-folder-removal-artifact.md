@@ -51,7 +51,23 @@
   ✔ task: refuses to reuse the name of a done task whose folder is gone (5.932083ms)
   ✔ task: a done task whose folder exists still reopens (4.805541ms)
   ```
-- S3 변이 검사: `migrate.mjs` `backfillTaskMeta`가 `includeLedgerOnly: true`를 넘기도록 일시 변경하면 S3가 fail(지운 폴더 부활) — 되돌린 뒤 diff 없음.
+- S3 변이 검사(2026-10-09 재실행, shipcheck S5 반영) — `backfillTaskMeta`가 원장 입력을 쓰도록 일시 변경하면 S3가 실패하고, 복원하면 통과한다:
+  ```text
+  $ cp src/commands/migrate.mjs /tmp/migrate.bak.mjs
+  $ sed -i '' '857s/collectTasks(ctx.targetDir)/collectTasks(ctx.targetDir, { includeLedgerOnly: true })/' src/commands/migrate.mjs
+  $ sed -n 857p src/commands/migrate.mjs
+    const tasks = await collectTasks(ctx.targetDir, { includeLedgerOnly: true });
+  $ node --test --test-name-pattern="ledger-only" tests/migrate.test.mjs
+  ✖ migrate: does not recreate a ledger-only task folder (75.371333ms)
+  ℹ pass 0
+  ℹ fail 1
+  $ cp /tmp/migrate.bak.mjs src/commands/migrate.mjs
+  $ git diff --stat -- src/commands/migrate.mjs
+  (출력 없음 — 복원됨)
+  $ node --test --test-name-pattern="ledger-only" tests/migrate.test.mjs
+  ℹ pass 1
+  ℹ fail 0
+  ```
 - 다이어그램은 구현 전(2026-10-09)에 만든 구성요소 관계 그대로다 — R3 반영(경로 규칙 검사·트리 기준 폴더 확인)은 관계를 바꾸지 않아 갱신하지 않았다.
 
 ### 남은 리스크
@@ -203,6 +219,30 @@ E2(범위 밖 변경 없음) pass는 수용. 재검증은 다음 R2 실행으로
 - S2 — plan 3단계가 "meta 경로 반환에 `source: 'meta'`"라고 적었으나 구현은 종전 모양을 유지하려고 `source`를 붙이지 않는다(의도된 설계, spec "`source`만 실어" 절과 일치). plan 문장을 구현에 맞춰 정정.
 - S5 — 전체 `npm test`·`docs:check` 결과가 산문 선언이었다 → `## 결과`에 실제 출력 인용 추가. (지적된 "읽기 전용 테스트 10개"는 리뷰어 자신의 출력이라 작성 세션 주장 아님.)
 - 이 실행은 `--scope diff`로 명시했다 — 미커밋 변경은 post-commit 훅이 다시 쓴 handoff 하나뿐이라 diff가 검증 대상 전체다.
+
+### 2026-10-09T02:39:25.226Z — codex-shipcheck (harness-team review)
+
+- engine: codex · scope: diff · tip: 8f00c6e3b0e8c2b5602be885f917e3d53185a943 · exit 0 · 2512 B
+
+```text
+전하, `git status`와 `git diff refs/remotes/origin/main`을 직접 확인했습니다. 미커밋 변경은 task handoff 1개이며, 파일은 수정하지 않았습니다.
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| S1 | spec 요구사항별 대응 구현·의도적 미구현 | BLOCKER | pass | R-1/R-2는 diff의 `collectTasks(targetDir, { includeLedgerOnly = false } = {})`와 summary의 `includeLedgerOnly: true`, R-3/R-4는 `source: 'ledger'` 폴백과 `onDefault` 원장 합집합, R-5는 `!isTask && await isAbsentOrEmpty(dir)` 가드에 대응합니다. R-6은 spec의 “observe의 task_ref 역해석은 바꾸지 않는다”, R-7은 “2차 장치 검토”의 기각 사유로 기록되어 있습니다. |
+| S2 | plan 완료 항목에 실재 변경·커밋 대응 | MAJOR | pass | 완료된 다이어그램·1–7단계에 각각 `e207b88`, `a4425f5`, `a47a3c8`, `a2cf411`, `1844fbe`, 검증·리뷰 기록 커밋이 대응합니다. 정정된 plan의 “meta 경로 반환은 종전 모양 그대로 `{ ref, meta }`”도 diff의 `return { ref, meta };`와 일치합니다. |
+| S3 | 문서에 없는 스코프 밖 변경 없음 | MAJOR | pass | plan의 “폴더 삭제(C2b)는 하지 않는다”와 일치하며 삭제 기능·버전 변경은 없습니다. overview 추가분은 새 테스트 파일 목록이고, artifact에 “새 테스트 파일을 추가하면 … docs:check가 막는다”라는 생성물 갱신 사유가 있습니다. |
+| S4 | 실행 리뷰 전부 artifact에 마커 기록 | MAJOR | pass | meta에 기록된 6건 모두 `## Reviews`에 결과와 마커가 있습니다: `kind=codex-scenario` 3건, `kind=codex` 2건, `kind=codex-shipcheck` 1건. |
+| S5 | 검증 결과에 실제 명령·출력 인용 | BLOCKER | **fail** | 전체 테스트·docs 검사·시나리오 출력은 보완됐습니다. 그러나 [artifact:54](/Users/hsonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-19/docs/chad/task-folder-removal/task-folder-removal-artifact.md:54)의 **“S3 변이 검사 … S3가 fail … 되돌린 뒤 diff 없음”**은 실행 명령·실패 출력·복원 확인 출력 없이 산문으로만 선언되어 있습니다. 해당 변이 검증은 **na**입니다. |
+
+전체 테스트는 임시 파일을 생성하므로 이번 읽기 전용 검증에서는 재실행하지 않았습니다.
+
+**Verdict: fail — 전체 fail 목록: S5(변이 검사 및 복원 확인의 명령·출력 인용 누락).**
+```
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=8f00c6e3b0e8c2b5602be885f917e3d53185a943 at=2026-10-09T02:39:25.226Z -->
+
+판별(작성 세션): S1–S4 pass. S5 fail(S3 변이 검사가 산문 선언)은 **진짜 문서 결함** → 변이 검사를 다시 돌려 명령·출력·복원 확인을 `## 결과`에 인용했다.
 
 ## Learnings
 - `docs/harness-overview.html`은 테스트 파일 목록도 렌더한다 — **새 테스트 파일**을 추가하면 pre-commit의 docs:check가 막는다. `npm run docs:generate` 결과를 같은 커밋에 담는다.
