@@ -65,3 +65,7 @@ docs/chad/wiki-compile/wiki-compile-spec.md         |  4 ++--
  .../wiki-commit-provenance-plan.md                   |  2 +-
  .../wiki-commit-provenance-spec.md                   |  4 ++--
  4 files changed, 32 insertions(+), 3 deletions(-)
+
+## 2026-10-09T14:11:03.394Z — 821b5b9 docs(task): PR #138 기록 — 리뷰 덱 미실행(스킬 없음)
+docs/hslee/wiki-commit-provenance/wiki-commit-provenance-plan.md | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
