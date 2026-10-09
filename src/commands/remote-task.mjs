@@ -65,6 +65,11 @@ export async function readRemoteTaskMeta(targetDir, user, task, { git: run = git
     const meta = JSON.parse(raw);
     if (meta && typeof meta === 'object') return { ref, meta };
   } catch { /* 경로 없음(exit 128)·JSON 아님 — 원장으로 넘어간다 */ }
+  // 폴더(spec 마커)가 남아 있으면 "지워짐"이 아니다 — meta 없는 구 task·깨진 meta 는 종전대로 모른다(R3 P2, 2026-10-09 codex).
+  // blob 이 아니라 트리 항목을 본다 — partial clone(blob:none)에도 트리는 있으므로 "blob 없음"을 "폴더 없음"으로 오판하지 않는다.
+  try {
+    if ((await run(targetDir, ['ls-tree', '--name-only', full, '--', taskFileRel(user, task, 'spec.md')])).trim()) return null;
+  } catch { return null; }
   if (!(await readDoneLabelsAt(targetDir, full, { git: run })).has(taskLabel(user, task))) return null;
   let closedAt = null;
   try {

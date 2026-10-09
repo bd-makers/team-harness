@@ -872,3 +872,19 @@ test('summary: drops an open ledger row whose task folder is gone', async () => 
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+// R3 P2(2026-10-09 codex): 원장 행의 user·task 는 경로가 된다(`docs/<user>/<user>-task.md`). 폴더 이름에서 오던 때와 달리
+// 원장 텍스트는 `/`·`..` 를 담을 수 있으므로, 경로 규칙을 어기는 ledger-only 행은 이어받지 않는다.
+test('summary: ignores ledger-only rows whose user or task is not a safe path segment', async () => {
+  const exitCode = process.exitCode;
+  const dir = await ledgerFixture([goneTask]);
+  try {
+    const evil = '| ../../outside | x | ✅ done | 2026-01-02 |  |\n| chad | ../y | ✅ done | 2026-01-02 |  |\n| .hidden | z | ✅ done | 2026-01-02 |  |\n';
+    await writeFile(join(dir, 'docs', 'task_summary.md'), renderTaskSummary([goneTask]) + evil);
+    const tasks = await collectTasks(dir, { includeLedgerOnly: true });
+    assert.deepEqual(tasks.filter(t => t.ledgerOnly).map(t => `${t.user}/${t.task}`), ['chad/gone'], '경로 규칙을 어기는 행은 빠진다');
+  } finally {
+    process.exitCode = exitCode;
+    await rm(dir, { recursive: true, force: true });
+  }
+});

@@ -103,4 +103,28 @@ E2(범위 밖 변경 없음) pass는 수용. 재검증은 다음 R2 실행으로
 
 판별(작성 세션): E1·E2 pass, fail 없음 — 수용. R2 완료.
 
+### 2026-10-09T02:33:12.754Z — codex (harness-team review)
+
+- engine: codex · scope: diff · tip: 0aaabf31f2d99fca6d06410a5d63b535fdbee716 · exit 0 · 1028 B
+
+```text
+전하, **P2 수정 사항 2건**을 발견했습니다.
+
+- **P2 — `src/commands/summary.mjs:181`**: 원장 행의 `user`를 경로 검증 없이 렌더에 전달하여, `../../outside` 같은 값이 있으면 `summary --write`가 저장소 밖 `/outside-task.md`에 쓰기를 시도합니다. 기존 user 경로 검증을 적용해야 합니다.
+- **P2 — `src/commands/remote-task.mjs:75`**: meta 읽기 실패를 폴더 삭제로 간주하여, 폴더가 남아 있는 레거시 task나 손상된 meta에도 “폴더가 지워짐·새 이름으로 생성”을 안내합니다. 원격 폴더 존재 여부를 별도로 확인해야 합니다.
+
+**최종 판정: 수정 후 재검토 권장.** P1은 발견하지 못했습니다.
+
+`git status`는 clean이며, `git diff --check`와 `docs:check`는 통과했습니다. 위 두 경로는 쓰기 없는 함수 호출로 확인했습니다. 전체 테스트는 파일 생성이 필요한 read-only 제약으로 실행하지 않았으며, 파일은 변경하지 않았습니다.
+```
+
+<!-- harness:review kind=codex scope=diff tip=0aaabf31f2d99fca6d06410a5d63b535fdbee716 at=2026-10-09T02:33:12.754Z -->
+
+판별(작성 세션, 재현 테스트로 확인): P2 2건 모두 **진짜 결함**.
+- P2-1 경로 탈출 — 원장 행 user `../../outside`가 ledger-only로 이어받아져 `docs/<user>/<user>-task.md` 쓰기 경로가 된다. 폴더 이름에서 오던 때는 불가능했던 입력이다.
+  → `collectTasks`가 `userNameError`·task 이름 규칙을 어기는 행을 버린다. 테스트 `summary: ignores ledger-only rows whose user or task is not a safe path segment`.
+- P2-2 오탐 nudge — meta 없는 구 task 폴더가 main에 있어도 원장 폴백이 "폴더가 지워짐"을 안내했다(종전에는 null — spec "오늘 동작 불변"과 충돌).
+  → default ref 트리에 spec 마커가 있으면 폴백하지 않는다. blob이 아니라 `ls-tree`로 보아 partial clone 오판도 피한다.
+  테스트 `remote-task: a meta-less task whose folder is still on the default ref does not use the ledger fallback`.
+
 ## Learnings

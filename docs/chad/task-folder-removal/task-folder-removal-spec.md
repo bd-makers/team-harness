@@ -92,12 +92,14 @@
   `SUMMARY_ROW_RE`에 선택 5번째 칸(Area)을 더하되 4열 행의 매치 결과는 지금과 같다.
 - `collectTasks(targetDir, { includeLedgerOnly = false } = {})`. 기본값은 지금 동작 그대로라 migrate는 고치지 않는다. `runSummary`만 `true`를 넘긴다.
   ledger-only task = 폴더(spec 마커) 없음 + 원장 `done` 행 → `{ user, task, status: 'done', created, area, forcedRecovered: forced, ledgerOnly: true }`.
+  user·task가 `task` 생성과 같은 경로 규칙(`userNameError`·`^[\w.-]+$`)을 어기는 행은 이어받지 않는다 — 원장 텍스트는 `/`·`..`를 담을 수 있다(R3 P2).
 - 행 순서는 기존 정렬(`byCreatedAscThenName`)을 그대로 쓴다 — 출처가 둘(폴더·원장)이어도 렌더는 결정론이다.
 
 **done-on-main 원장 폴백 (R-3)**
 - `readRemoteTaskMeta`가 meta를 못 읽으면 `git show refs/remotes/<ref>:docs/task_summary.md` → `parseSummaryRows` → 그 task 행이 `done`이면
   `{ ref, meta: { status: 'done', closedAt }, source: 'ledger' }`. `closedAt` = `git log -1 --format=%cI refs/remotes/<ref> -- docs/<user>/<task>`. 실패하면 null.
   같은 `git()` 러너(2000ms·`GIT_NO_LAZY_FETCH`)를 쓰고, 어떤 실패도 null(=nudge 없음)로 떨어진다.
+  default ref에 그 task의 spec 마커가 **트리에 있으면** 폴백하지 않는다(null) — meta 없는 구 task·깨진 meta는 "지워짐"이 아니다(R3 P2). 트리 항목을 보므로 partial clone에서도 오판하지 않는다.
 - **Q6 해석 ① — 종결 시각**: 원장 행에는 시각이 없다. null로 두면 `reopenedAt > closedAt` 소음 끄기가 영영 안 돼 고의로 다시 연 stale 클론이 매 세션 nudge를 받는다.
   git 이력의 커밋 시각은 Q8-A("감사 흔적은 git 이력에")와 같은 출처다.
 - **Q6 해석 ② — 문구**: meta 출처의 nudge 문구는 바꾸지 않는다(사람 지시). 원장 출처(main에 폴더 없음)일 때만 복구 안내를

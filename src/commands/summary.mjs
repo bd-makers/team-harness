@@ -6,6 +6,7 @@ import { exists, writeText } from '../fsx.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 import { hasDoneMarker } from '../handoff-marker.mjs';
 import { readOriginHead } from '../git-default-branch.mjs';
+import { userNameError } from '../user-config.mjs';
 import { SUMMARY_REL, userIndexRel, metaRel, taskLabel, docsPath, taskFilePath, listTaskRefs } from '../task-paths.mjs';
 
 const pexec = promisify(execFile);
@@ -167,6 +168,8 @@ export async function readLedger(targetDir) {
 // `includeLedgerOnly`: 폴더가 없는 task 의 `✅ done` 원장 행도 이어받는다 — 폴더를 지운 뒤에도 원장 행이
 // 사라지지 않게 한다(task-folder-removal). summary 렌더만 켠다. migrate 가 켜면 meta 를 새로 써서 지운 폴더를
 // 되살린다. `🔄 open` 행 + 폴더 없음은 손으로 버린 task 라 종전대로 빠진다.
+const isTaskSegment = (name) => /^[\w.-]+$/.test(name) && name !== '.' && name !== '..';
+
 export async function collectTasks(targetDir, { includeLedgerOnly = false } = {}) {
   if (!(await exists(docsPath(targetDir)))) return [];
 
@@ -177,6 +180,9 @@ export async function collectTasks(targetDir, { includeLedgerOnly = false } = {}
     const folders = new Set((await listTaskRefs(targetDir)).map(r => key(r.user, r.task)));
     for (const row of parseSummaryRows(await readTextOrNull(join(targetDir, SUMMARY_REL)))) {
       if (!row.done || folders.has(key(row.user, row.task))) continue;
+      // 원장 텍스트는 폴더 이름과 달리 `/`·`..` 를 담을 수 있고, user 는 `docs/<user>/<user>-task.md` 경로가 된다 —
+      // `task` 생성과 같은 경로 규칙을 어기는 행은 이어받지 않는다(R3 P2, 2026-10-09 codex).
+      if (userNameError(row.user) || !isTaskSegment(row.task)) continue;
       tasks.push({
         user: row.user, task: row.task, status: 'done', created: row.created,
         ...(row.area ? { area: row.area } : {}), forcedRecovered: row.forced, ledgerOnly: true,

@@ -221,3 +221,17 @@ test('remote-task: a deliberate reopen silences the ledger-sourced nudge', async
       '그보다 먼저 연 것은 main 이 나중에 닫은 것이다');
   } finally { await rm(root, { recursive: true, force: true }); }
 });
+
+// R3 P2(2026-10-09 codex): meta 가 없을 뿐 폴더가 main 에 남아 있는 구 task 는 "폴더가 지워짐"이 아니다 —
+// 원장 폴백은 폴더(spec 마커)가 없을 때만 탄다. 종전처럼 null(모른다)이다.
+test('remote-task: a meta-less task whose folder is still on the default ref does not use the ledger fallback', async () => {
+  const { root, work } = await repoWithDeletedTask();
+  try {
+    await mkdir(join(work, 'docs', 'chad', 'x'), { recursive: true });
+    await writeFile(join(work, 'docs', 'chad', 'x', 'x-spec.md'), '# x — Spec\n');
+    await git(work, ['add', '-A']);
+    await git(work, ['commit', '-q', '-m', 'legacy folder without meta']);
+    await git(work, ['push', '-q', 'origin', 'main']);
+    assert.equal(await readRemoteTaskMeta(work, 'chad', 'x'), null);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
