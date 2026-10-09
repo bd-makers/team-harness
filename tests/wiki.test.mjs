@@ -97,23 +97,55 @@ test('wiki sources: reads a GitLab merge request number from the commit body', a
   assert.equal(prFromCommit('Merge branch \'x\'', 'See merge request a/b/c!42\n'), 42);
 });
 
-test('wiki sources: no PR number blocks until --pr is given', async () => {
+// PR 없이 기본 브랜치에 직접 커밋하는 저장소에는 `--pr`에 넣을 번호가 없다 — 막으면 그 저장소는 컴파일을 영영 못 한다.
+test('wiki sources: without a PR number the marker cites the commit', async () => {
   const { dir, sha7 } = await repoWithLandedTask({ subject: "Merge branch 'feature'" });
   try {
-    const first = JSON.parse((await cli(dir, 'wiki', 'sources', 'chad/x', '--json')).stdout);
-    assert.equal(first.provenance.pr, null);
-    assert.equal(first.marker, null);
-    assert.ok(first.blockers.includes('no-pr'));
-    assert.equal(first.status, 'warning');
+    const out = JSON.parse((await cli(dir, 'wiki', 'sources', 'chad/x', '--json')).stdout);
+    assert.deepEqual(out.blockers, []);
+    assert.equal(out.status, 'success');
+    assert.deepEqual(out.provenance, { pr: null, commit: sha7, author: 'chad' });
+    assert.match(out.marker, new RegExp(`^<!-- harness:wiki task=chad/x commit=${sha7} author=chad at=\\d{4}-\\d{2}-\\d{2} -->$`));
+    assert.equal(out.summary, '컴파일 가능 (PR 없음 — 커밋 출처)');
+    assert.equal(wikiMarker({ task: 'chad/x', pr: null, commit: sha7, author: 'chad', at: AT }),
+      `<!-- harness:wiki task=chad/x commit=${sha7} author=chad at=${AT} -->`);
 
-    const second = JSON.parse((await cli(dir, 'wiki', 'sources', 'chad/x', '--pr', '9', '--json')).stdout);
-    assert.equal(second.provenance.pr, 9);
-    assert.equal(second.provenance.commit, sha7, '--pr 는 번호만 바꾸고 커밋은 그대로 추론한다');
-    assert.ok(!second.blockers.includes('no-pr'));
-    assert.match(second.marker, new RegExp(`^<!-- harness:wiki task=chad/x pr=9 commit=${sha7} author=chad at=\\d{4}-\\d{2}-\\d{2} -->$`));
+    const { stdout } = await cli(dir, 'wiki', 'sources', 'chad/x');
+    assert.match(stdout, /^ {2}note: PR 번호 없음 — 커밋 출처로 마커를 만든다\. PR로 들여온 task라면 번호를 확인해 `--pr <N>`으로 다시 실행$/m);
+    assert.doesNotMatch(stdout, /✗/);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('wiki sources: --pr overrides the commit-only provenance', async () => {
+  const { dir, sha7 } = await repoWithLandedTask({ subject: "Merge branch 'feature'" });
+  try {
+    const out = JSON.parse((await cli(dir, 'wiki', 'sources', 'chad/x', '--pr', '9', '--json')).stdout);
+    assert.equal(out.provenance.pr, 9);
+    assert.equal(out.provenance.commit, sha7, '--pr 는 번호만 바꾸고 커밋은 그대로 추론한다');
+    assert.equal(out.summary, '컴파일 가능');
+    assert.match(out.marker, new RegExp(`^<!-- harness:wiki task=chad/x pr=9 commit=${sha7} author=chad at=\\d{4}-\\d{2}-\\d{2} -->$`));
+    const { stdout } = await cli(dir, 'wiki', 'sources', 'chad/x', '--pr', '9');
+    assert.doesNotMatch(stdout, /note:/, 'PR 출처의 텍스트 출력은 종전 그대로다');
 
     const bad = await cli(dir, 'wiki', 'sources', 'chad/x', '--pr', 'abc').then(() => null, e => e);
     assert.equal(bad?.code, 2, '--pr 는 양의 정수만 받는다');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+// 멱등 키는 `task=` 뿐이다 — 커밋 출처로 컴파일한 뒤 PR 번호가 생겨도 같은 단락으로 잡혀 재컴파일이 그 단락을 교체한다.
+test('wiki sources: a commit-only marker still counts as compiled when a PR number arrives later', async () => {
+  const { dir, sha7 } = await repoWithLandedTask({ subject: "Merge branch 'feature'" });
+  try {
+    await mkdir(join(dir, 'wiki', '99_inbox'), { recursive: true });
+    await writeFile(join(dir, 'wiki', '99_inbox', 'x.md'),
+      `# x\n\n<!-- harness:wiki task=chad/x commit=${sha7} author=chad at=2026-10-01 -->\n## x\n본문\n`);
+    const out = await wikiSources(dir, 'chad', 'x', { pr: 9, at: AT });
+    assert.deepEqual(out.compiled, ['wiki/99_inbox/x.md']);
+    assert.deepEqual(out.blockers, []);
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
