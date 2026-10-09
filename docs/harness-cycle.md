@@ -270,5 +270,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 **진행 계획 (2026-10-06, 1–4는 0.46.0, A·B·C1은 0.47.0으로 릴리스)** — 남은 단계를 의존성 순서로 묶고 묶음마다 릴리스한다.
 - **A** (병렬, 격리 워크트리 2개 — D5): A1 R2 시나리오·증거(task `r2-scenario-evidence`) · A2 R1 소스 검토(task `r1-source-review`). R2는 `Done evidence`와 같은 옵트인이다 — PR 강제는 D11대로 4문서뿐.
 - **B**: 기본 루프 스킬(task `default-loop-skill`) — QA가 R2를 쓰므로 A1 뒤. 착수 전 Codex 서브에이전트 지원 범위를 실측한다(§4-3). — 구현: task `default-loop-skill`
-- **C**: C1 위키 컴파일(추가만 — 구현: task `wiki-compile`, `/harness-wiki` + `harness-team wiki sources`) → C2 task 폴더 삭제 + 원장·`done`·handoff 입력 이전(호환성 파괴). C2가 1.0 전 마지막 파괴적 변경이다.
+- **C**: C1 위키 컴파일(추가만 — 구현: task `wiki-compile`, `/harness-wiki` + `harness-team wiki sources`) → C2a 원장·done-on-main·`list --remote`·이름 재사용 가드의 입력 이전(비파괴 — task `task-folder-removal`)
+  → C2b task 폴더 삭제(호환성 파괴 — `wiki sources`의 `compiled`가 있는 task만 지우고, 레거시 폴더는 migrate 일회성 단계로 원하는 저장소만 정리한다.
+  C1이 소비자 저장소 1곳 이상에서 한 릴리스 이상 돈 뒤 착수, 2026-10-09 결정). C2b가 1.0 전 마지막 파괴적 변경이다.
 - **1.0 조건**: 7단계까지 끝나고, 그 계약(시나리오 표·`gates.json`·pr-check·위키 컴파일)이 소비자 저장소에서 한 릴리스 이상 돈 뒤.

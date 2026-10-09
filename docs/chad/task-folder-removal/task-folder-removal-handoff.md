@@ -10,3 +10,8 @@
  .../task-folder-removal-plan.md                    |  15 ++
  .../task-folder-removal-spec.md                    | 167 +++++++++++++++++++++
  6 files changed, 232 insertions(+)
+
+## 2026-10-09T01:53:30.276Z — e6f0968 docs(task): task-folder-removal spec — task 수 정정(150), Q6×Q5 reopen 상호작용 추가
+.../task-folder-removal/task-folder-removal-handoff.md     |  9 +++++++++
+ docs/chad/task-folder-removal/task-folder-removal-spec.md  | 14 ++++++++------
+ 2 files changed, 17 insertions(+), 6 deletions(-)
