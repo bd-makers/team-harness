@@ -96,3 +96,7 @@ CHANGELOG.md                                                 | 8 ++++++++
  .../task-folder-removal-meta.json                   |  9 +++++++++
  .../task-folder-removal/task-folder-removal-plan.md |  2 +-
  3 files changed, 30 insertions(+), 2 deletions(-)
+
+## 2026-10-09T02:36:48.244Z — b016802 docs(task): task-folder-removal artifact — 남은 리스크·후속·학습
+.../task-folder-removal/task-folder-removal-artifact.md   | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)

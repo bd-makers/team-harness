@@ -8,6 +8,27 @@
 - C2a 구현(2026-10-09): `parseSummaryRows` 단일 파서 · `collectTasks({ includeLedgerOnly })`(summary만) · done-on-main/`list --remote` 원장 폴백 · 종결 이름 재사용 가드 · 문서(`commands/harness-task.md`·`templates/docs/README.md`·CHANGELOG).
 - 검증(2026-10-09, R3 P2 반영 후 최종): `npm test` 1211개 중 pass 1210 · fail 0 · skip 1(기존 CI 전용 `jq-present` 매트릭스) · `npm run docs:check` 통과 · `scenario check` pass (8 checked).
   (R2 지적 반영 직후에는 1209개 중 pass 1208 — R3 반영으로 테스트 2개 추가)
+  실행 출력(2026-10-09, tip `a9a0e65` 이후 `npm test` — unit+e2e 블록, 이어서 perf 블록):
+  ```text
+  ℹ tests 1211
+  ℹ suites 19
+  ℹ pass 1210
+  ℹ fail 0
+  ℹ cancelled 0
+  ℹ skipped 1
+  ℹ todo 0
+  ℹ tests 1
+  ℹ pass 1
+  ℹ fail 0
+  ℹ skipped 0
+  ﹣ CI에서는 jq-present 매트릭스가 반드시 실행된다 (0.50625ms) # SKIP
+  ```
+  `npm run docs:check` 출력:
+  ```text
+  > node scripts/generate-harness-overview.mjs --check
+
+  harness overview 생성 상태가 최신입니다.
+  ```
 - `harness-team scenario check` (2026-10-09, R2 지적 반영 후) — `scenario: pass (8 checked)`, 시나리오마다 `ℹ tests 1 · pass 1`(이름 필터가 정확히 한 테스트를 골랐다):
   ```text
   S1 pass [summary: keeps a done ledger row whose task folder is gone]
@@ -155,6 +176,33 @@ E2(범위 밖 변경 없음) pass는 수용. 재검증은 다음 R2 실행으로
 <!-- harness:review kind=codex scope=diff tip=059227d24b01d1bae4553cd1c6499c1bb6ef44c0 at=2026-10-09T02:35:59.056Z -->
 
 판별(작성 세션): P1·P2·P3 없음 — 수용. R3 완료.
+
+### 2026-10-09T02:38:06.046Z — codex-shipcheck (harness-team review)
+
+- engine: codex · scope: diff · tip: b016802fe9084f60029bb3f1b73b67d282f18b24 · exit 0 · 2593 B
+
+```text
+전하, `git status`와 `git diff refs/remotes/origin/main`을 직접 확인했습니다. handoff 파일 1개가 미커밋 상태이며, 파일은 수정하지 않았습니다.
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| S1 | spec 요구사항별 구현 또는 의도적 미구현 | BLOCKER | pass | R-1/R-2는 diff의 `collectTasks(targetDir, { includeLedgerOnly = false } = {})`와 summary의 `includeLedgerOnly: true`, R-3/R-4는 `source: 'ledger'` 반환과 `onDefault` 원장 합집합, R-5는 `!isTask && await isAbsentOrEmpty(dir)` 가드에 대응합니다. R-6은 spec에 “observe의 task_ref 역해석은 바꾸지 않는다”, R-7은 “2차 장치 검토”에 기각 사유가 기록되어 있습니다. |
+| S2 | plan 완료 항목과 실제 변경·커밋 일치 | MAJOR | **fail** | plan:19는 완료된 3단계에 **“meta 경로 반환에는 `source: 'meta'`”**를 명시하지만 실제 코드는 `return { ref, meta };`입니다. diff 주석도 “meta 출처 verdict의 모양 … 종전 그대로”라고 설명합니다. 나머지 완료 단계에는 다이어그램·구현·테스트·문서·리뷰 커밋이 대응합니다. |
+| S3 | 문서에 없는 스코프 밖 변경 없음 | MAJOR | pass | plan은 “폴더 삭제(C2b)는 하지 않는다”라고 명시하며 diff에도 삭제 기능·버전 변경이 없습니다. 추가 문서 변경은 C2a 설명이며, overview 생성물 변경 사유는 artifact에 “새 테스트 파일을 추가하면 … docs:check가 막는다”로 기록되어 있습니다. |
+| S4 | 실행 리뷰의 artifact 마커 기록 | MAJOR | pass | meta의 리뷰 기록 5건 모두 artifact `## Reviews`의 결과와 마커에 대응합니다. `kind=codex-scenario` 3건, `kind=codex` 2건이며 실패·보완·재검토 판별도 기록되어 있습니다. |
+| S5 | 검증 결과가 실제 명령·출력 인용 | BLOCKER | **fail** | artifact:9의 **“`npm test` 1211개 중 pass 1210 · fail 0 · skip 1 … `npm run docs:check` 통과”**는 산문 선언이며 해당 실행 출력 인용이 없습니다. artifact:149의 “읽기 전용 테스트 10개 … 통과”도 동일합니다. 시나리오 8개의 `✔ <테스트 이름> (ms)` 출력 인용은 있지만 전체 검증 주장을 뒷받침하지 못합니다. |
+
+전체 테스트는 임시 파일을 생성하므로 이번 읽기 전용 검증에서는 재실행하지 않았습니다.
+
+**Verdict: fail — 전체 fail 목록: S2(meta 출처 계약 불일치), S5(전체 테스트·docs 검사 등 검증 출력 인용 누락).**
+```
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=b016802fe9084f60029bb3f1b73b67d282f18b24 at=2026-10-09T02:38:06.046Z -->
+
+판별(작성 세션): fail 2건 모두 **진짜 문서 결함** — 코드는 그대로, 문서만 고쳤다(ship 계약).
+- S2 — plan 3단계가 "meta 경로 반환에 `source: 'meta'`"라고 적었으나 구현은 종전 모양을 유지하려고 `source`를 붙이지 않는다(의도된 설계, spec "`source`만 실어" 절과 일치). plan 문장을 구현에 맞춰 정정.
+- S5 — 전체 `npm test`·`docs:check` 결과가 산문 선언이었다 → `## 결과`에 실제 출력 인용 추가. (지적된 "읽기 전용 테스트 10개"는 리뷰어 자신의 출력이라 작성 세션 주장 아님.)
+- 이 실행은 `--scope diff`로 명시했다 — 미커밋 변경은 post-commit 훅이 다시 쓴 handoff 하나뿐이라 diff가 검증 대상 전체다.
 
 ## Learnings
 - `docs/harness-overview.html`은 테스트 파일 목록도 렌더한다 — **새 테스트 파일**을 추가하면 pre-commit의 docs:check가 막는다. `npm run docs:generate` 결과를 같은 커밋에 담는다.
