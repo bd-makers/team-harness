@@ -70,6 +70,8 @@
   ```
 - 다이어그램은 구현 전(2026-10-09)에 만든 구성요소 관계 그대로다 — R3 반영(경로 규칙 검사·트리 기준 폴더 확인)은 관계를 바꾸지 않아 갱신하지 않았다.
 
+- PR #137(2026-10-09, base main) — push는 `HEAD:ao/harness-aijient-team-plugin-19/task-folder-removal` 명시, upstream을 그 원격 브랜치로 확인. PR 리뷰 덱: 미실행(스킬 없음 — `/mr-change-diagram`이 이 머신·세션에 없음, 손으로 대신 그리지 않음).
+
 ### 남은 리스크
 - **closedAt 한계**(C2b 이후): 원장 폴백의 `closedAt`이 삭제 커밋 시각이 되어, 종결~삭제 사이의 의도적 재개도 nudge가 계속 뜬다(시끄러운 쪽 오류) — spec `(open → C2b)`.
 - **버전 혼재**: 이 변경 이전 CLI로 `summary --write`를 돌리면 폴더 없는 done 행을 다시 지운다. C2a만으로는 폴더가 지워지지 않으므로 지금은 영향 없음 — doctor 경고는 C2b 범위.
