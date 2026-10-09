@@ -55,3 +55,11 @@
  src/commands/task.mjs                              | 20 ++++++-
  tests/task-name-reuse.test.mjs                     | 68 ++++++++++++++++++++++
  5 files changed, 100 insertions(+), 3 deletions(-)
+
+## 2026-10-09T02:26:55.243Z — 1844fbe docs: 원장 폴백·종결 이름 재사용 거부 문서화 (C2a)
+CHANGELOG.md                                                 | 8 ++++++++
+ commands/harness-task.md                                     | 5 +++++
+ docs/chad/task-folder-removal/task-folder-removal-handoff.md | 8 ++++++++
+ docs/chad/task-folder-removal/task-folder-removal-plan.md    | 2 +-
+ templates/docs/README.md                                     | 2 ++
+ 5 files changed, 24 insertions(+), 1 deletion(-)
