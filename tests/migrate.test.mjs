@@ -125,3 +125,26 @@ test('F: 반환값 — 마이그레이션 수행 시 true, 대상 없으면 fals
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+// task-folder-removal(C2a): 원장 입력은 summary 렌더에만 쓴다. migrate 가 원장에만 남은 done task 를
+// 대상으로 삼으면 meta 를 새로 써서 지운 폴더를 되살린다.
+test('migrate: does not recreate a ledger-only task folder', async () => {
+  const { runMigrate } = await import('../src/commands/migrate.mjs');
+  const { renderTaskSummary } = await import('../src/commands/summary.mjs');
+  const { access } = await import('node:fs/promises');
+  const root = join(import.meta.dirname, '..');
+  const { dir } = await make06Task('live');
+  const log = console.log;
+  console.log = () => {};
+  try {
+    await writeFile(join(dir, 'docs', 'task_summary.md'), renderTaskSummary([
+      { user: 'tester', task: 'gone', created: '2026-01-02', status: 'done' },
+    ]));
+    await runMigrate({ targetDir: dir, root, flags: { yes: true } });
+    await assert.rejects(() => access(join(dir, 'docs', 'tester', 'gone')), '지운 폴더가 되살아나지 않는다');
+    await access(join(dir, 'docs', 'tester', 'live', 'live-meta.json'));
+  } finally {
+    console.log = log;
+    await rm(dir, { recursive: true, force: true });
+  }
+});

@@ -1,0 +1,127 @@
+# task-folder-removal — Handoff
+
+(세션 종료 시 post-commit hook이 자동 갱신합니다)
+
+## 2026-10-09T01:51:42.474Z — 23f4ddf docs(task): task-folder-removal spec 초안 — C2 인터뷰 질문 대기
+.../task-folder-removal-artifact.md                |  13 ++
+ .../task-folder-removal-context.md                 |  23 +++
+ .../task-folder-removal-handoff.md                 |   3 +
+ .../task-folder-removal-meta.json                  |  11 ++
+ .../task-folder-removal-plan.md                    |  15 ++
+ .../task-folder-removal-spec.md                    | 167 +++++++++++++++++++++
+ 6 files changed, 232 insertions(+)
+
+## 2026-10-09T01:53:30.276Z — e6f0968 docs(task): task-folder-removal spec — task 수 정정(150), Q6×Q5 reopen 상호작용 추가
+.../task-folder-removal/task-folder-removal-handoff.md     |  9 +++++++++
+ docs/chad/task-folder-removal/task-folder-removal-spec.md  | 14 ++++++++------
+ 2 files changed, 17 insertions(+), 6 deletions(-)
+
+## 2026-10-09T02:12:17.256Z — 5109c6c docs(task): task-folder-removal — 사람 답 반영, C2a로 범위 축소·게이트 통과·plan 작성
+.../task-folder-removal-context.md                 |  13 +-
+ .../task-folder-removal-handoff.md                 |   5 +
+ .../task-folder-removal-plan.md                    |  38 ++-
+ .../task-folder-removal-spec.md                    | 297 +++++++++++++--------
+ docs/harness-cycle.md                              |   4 +-
+ 5 files changed, 230 insertions(+), 127 deletions(-)
+
+## 2026-10-09T02:21:49.360Z — e207b88 docs(diagram): task-folder-removal C2a 입력 이전 다이어그램 + C2b closedAt 한계 기록
+.../task-folder-removal-artifact.md                |   1 +
+ .../task-folder-removal-diagram.html               | 128 +++++++++++++++++++++
+ .../task-folder-removal-handoff.md                 |   8 ++
+ .../task-folder-removal-plan.md                    |   2 +-
+ .../task-folder-removal-spec.md                    |   2 +
+ 5 files changed, 140 insertions(+), 1 deletion(-)
+
+## 2026-10-09T02:23:28.568Z — a4425f5 feat(summary): 원장 done 행을 입력으로 승격 — 폴더 없는 task 행 보존
+.../task-folder-removal-handoff.md                 |  8 +++
+ .../task-folder-removal-plan.md                    |  4 +-
+ src/commands/summary.mjs                           | 50 +++++++++++----
+ tests/migrate.test.mjs                             | 23 +++++++
+ tests/summary.test.mjs                             | 71 +++++++++++++++++++++-
+ 5 files changed, 140 insertions(+), 16 deletions(-)
+
+## 2026-10-09T02:25:22.978Z — a47a3c8 feat(remote-task): done-on-main·list --remote가 default ref 원장으로 폴백
+.../task-folder-removal-handoff.md                 |  8 +++
+ .../task-folder-removal-plan.md                    |  4 +-
+ src/commands/remote-task.mjs                       | 50 +++++++++++++++---
+ tests/list-remote.test.mjs                         | 24 +++++++++
+ tests/remote-task.test.mjs                         | 59 ++++++++++++++++++++++
+ 5 files changed, 135 insertions(+), 10 deletions(-)
+
+## 2026-10-09T02:26:22.754Z — a2cf411 feat(task): 폴더가 지워진 done task의 이름 재사용을 거부
+.../task-folder-removal-handoff.md                 |  8 +++
+ .../task-folder-removal-plan.md                    |  2 +-
+ docs/harness-overview.html                         |  5 ++
+ src/commands/task.mjs                              | 20 ++++++-
+ tests/task-name-reuse.test.mjs                     | 68 ++++++++++++++++++++++
+ 5 files changed, 100 insertions(+), 3 deletions(-)
+
+## 2026-10-09T02:26:55.243Z — 1844fbe docs: 원장 폴백·종결 이름 재사용 거부 문서화 (C2a)
+CHANGELOG.md                                                 | 8 ++++++++
+ commands/harness-task.md                                     | 5 +++++
+ docs/chad/task-folder-removal/task-folder-removal-handoff.md | 8 ++++++++
+ docs/chad/task-folder-removal/task-folder-removal-plan.md    | 2 +-
+ templates/docs/README.md                                     | 2 ++
+ 5 files changed, 24 insertions(+), 1 deletion(-)
+
+## 2026-10-09T02:29:23.868Z — 1aa52d4 test(c2a): R2 지적 반영 — S6 CLI 출력·S4 meta 문구 단언, scenario check 출력 기록
+.../task-folder-removal-artifact.md                | 38 ++++++++++++++++++++++
+ .../task-folder-removal-meta.json                  | 12 ++++++-
+ tests/list-remote.test.mjs                         |  7 ++++
+ tests/remote-task.test.mjs                         |  5 +++
+ 4 files changed, 61 insertions(+), 1 deletion(-)
+
+## 2026-10-09T02:30:58.585Z — fc86163 docs(task): R2 재검증 기록 — 러너 출력 추가
+.../task-folder-removal-artifact.md                | 33 ++++++++++++++++++++++
+ .../task-folder-removal-meta.json                  |  9 ++++++
+ 2 files changed, 42 insertions(+)
+
+## 2026-10-09T02:31:53.467Z — 33e930b docs(task): R2 pass 기록
+.../task-folder-removal-artifact.md                 | 21 +++++++++++++++++++++
+ .../task-folder-removal-meta.json                   |  9 +++++++++
+ 2 files changed, 30 insertions(+)
+
+## 2026-10-09T02:34:29.845Z — a9a0e65 fix(c2a): R3 P2 반영 — 원장 행 경로 규칙 검사, 폴더가 남은 task는 원장 폴백 제외
+.../task-folder-removal-artifact.md                | 24 ++++++++++++++++++++++
+ .../task-folder-removal-meta.json                  |  9 ++++++++
+ .../task-folder-removal-spec.md                    |  2 ++
+ src/commands/remote-task.mjs                       |  5 +++++
+ src/commands/summary.mjs                           |  6 ++++++
+ tests/remote-task.test.mjs                         | 14 +++++++++++++
+ tests/summary.test.mjs                             | 16 +++++++++++++++
+ 7 files changed, 76 insertions(+)
+
+## 2026-10-09T02:36:08.559Z — 3df27ae docs(task): R3 pass·최종 검증 수치 기록, 7단계 완료
+.../task-folder-removal-artifact.md                 | 21 ++++++++++++++++++++-
+ .../task-folder-removal-meta.json                   |  9 +++++++++
+ .../task-folder-removal/task-folder-removal-plan.md |  2 +-
+ 3 files changed, 30 insertions(+), 2 deletions(-)
+
+## 2026-10-09T02:36:48.244Z — b016802 docs(task): task-folder-removal artifact — 남은 리스크·후속·학습
+.../task-folder-removal/task-folder-removal-artifact.md   | 15 +++++++++++++++
+ 1 file changed, 15 insertions(+)
+
+## 2026-10-09T02:38:35.058Z — 8f00c6e docs(task): shipcheck 지적 반영 — plan 3단계 문장 정정, 검증 출력 인용
+.../task-folder-removal-artifact.md                | 48 ++++++++++++++++++++++
+ .../task-folder-removal-handoff.md                 |  4 ++
+ .../task-folder-removal-meta.json                  |  9 ++++
+ .../task-folder-removal-plan.md                    |  2 +-
+ 4 files changed, 62 insertions(+), 1 deletion(-)
+
+## 2026-10-09T02:39:42.428Z — 953f39d docs(task): shipcheck S5 반영 — S3 변이 검사 명령·출력 인용
+.../task-folder-removal-artifact.md                | 42 +++++++++++++++++++++-
+ .../task-folder-removal-handoff.md                 |  7 ++++
+ .../task-folder-removal-meta.json                  |  9 +++++
+ 3 files changed, 57 insertions(+), 1 deletion(-)
+
+## 2026-10-09T02:40:50.834Z — 1032130 docs(task): shipcheck pass 기록, 8단계 완료 — push·PR은 사람 지시 대기
+.../task-folder-removal-artifact.md                | 24 ++++++++++++++++++++++
+ .../task-folder-removal-handoff.md                 |  6 ++++++
+ .../task-folder-removal-meta.json                  |  9 ++++++++
+ .../task-folder-removal-plan.md                    |  2 +-
+ 4 files changed, 40 insertions(+), 1 deletion(-)
+
+## 2026-10-09T02:52:46.487Z — 5cfd81f docs(task): PR #137 기록 — 리뷰 덱 미실행(스킬 없음)
+docs/chad/task-folder-removal/task-folder-removal-artifact.md | 2 ++
+ docs/chad/task-folder-removal/task-folder-removal-plan.md     | 2 +-
+ 2 files changed, 3 insertions(+), 1 deletion(-)

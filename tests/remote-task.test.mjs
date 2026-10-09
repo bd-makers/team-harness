@@ -157,3 +157,81 @@ test('git: partial clone(blob:none)에서는 lazy fetch 대신 null — "fetch �
     assert.equal(await readRemoteTaskMeta(partial2, 'chad', 'demo'), null);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
+
+// ---- 원장 폴백 (task-folder-removal, C2a): main 에서 task 폴더가 지워진 뒤에도 종결을 안다 ----
+
+const DELETED_AT = '2026-09-10T00:00:00.000Z';
+
+// origin/main: chad/x 를 종결하고(원장 ✅ done) 폴더를 지운 상태. 지운 커밋의 committer 시각이 DELETED_AT 이다.
+async function repoWithDeletedTask() {
+  const root = await mkdtemp(join(tmpdir(), 'harness-remote-ledger-'));
+  const work = join(root, 'work');
+  const bare = join(root, 'origin.git');
+  await mkdir(join(work, 'docs', 'chad', 'x'), { recursive: true });
+  await pexec('git', ['init', '-q', '--bare', bare]);
+  await git(work, ['init', '-q']);
+  await git(work, ['symbolic-ref', 'HEAD', 'refs/heads/main']);
+  await writeFile(join(work, 'docs', 'chad', 'x', 'x-spec.md'), '# x — Spec\n');
+  await writeFile(join(work, 'docs', 'task_summary.md'),
+    '# Task Summary\n\n| User | Task | Status | Created |\n|------|------|--------|---------|\n| chad | x | ✅ done | 2026-09-01 |\n');
+  await git(work, ['add', '-A']);
+  await git(work, ['commit', '-q', '-m', 'close x']);
+  await git(work, ['rm', '-rq', 'docs/chad/x']);
+  await pexec('git', ['-C', work, ...GIT_ID, 'commit', '-q', '-m', 'remove x folder'],
+    { env: { ...process.env, GIT_COMMITTER_DATE: '2026-09-10T09:00:00+09:00' } });
+  await git(work, ['remote', 'add', 'origin', bare]);
+  await git(work, ['push', '-q', 'origin', 'main']);
+  return { root, work };
+}
+
+test('remote-task: falls back to the default-ref ledger when the task folder is gone', async () => {
+  const { root, work } = await repoWithDeletedTask();
+  try {
+    const got = await readRemoteTaskMeta(work, 'chad', 'x');
+    assert.deepEqual(got, { ref: 'origin/main', meta: { status: 'done', closedAt: DELETED_AT }, source: 'ledger' });
+    const verdict = await checkDoneOnMain(work, 'chad', 'x');
+    assert.deepEqual(verdict, { ref: 'origin/main', closedAt: DELETED_AT, source: 'ledger' });
+    assert.equal(await readRemoteTaskMeta(work, 'chad', 'nope'), null, '원장에 행이 없으면 모른다');
+
+    const line = renderDoneOnMainNudge({ user: 'chad', task: 'x', ...verdict });
+    assert.match(line, /^\[harness\] ⚠ task chad\/x/);
+    assert.match(line, /새 이름/, '폴더가 지워진 task 는 새 이름으로 이어가라고 안내한다');
+    assert.match(line, /git log origin\/main -- docs\/chad\/x/);
+    assert.doesNotMatch(line, /harness-team task x /, '다시 열기 안내는 막힌 길이다(이름 재사용 가드)');
+    assert.equal(line.split('\n').length, 1);
+
+    // meta 출처(source 없음)의 문구는 종전 그대로 — 다시 열기 안내를 유지한다.
+    const metaLine = renderDoneOnMainNudge({ user: 'chad', task: 'x', ref: 'origin/main', closedAt: DELETED_AT });
+    assert.match(metaLine, /harness-team task x 로 다시 연다\(reopened\)\.$/);
+    assert.doesNotMatch(metaLine, /새 이름|폴더가 지워짐/);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('remote-task: a deliberate reopen silences the ledger-sourced nudge', async () => {
+  const { root, work } = await repoWithDeletedTask();
+  try {
+    const td = join(work, 'docs', 'chad', 'x');
+    await mkdir(td, { recursive: true });
+    const localMeta = reopenedAt => writeFile(join(td, 'x-meta.json'),
+      JSON.stringify({ user: 'chad', task: 'x', status: 'open', closedAt: null, reopenedAt }) + '\n');
+    await localMeta('2026-09-11T00:00:00.000Z');
+    assert.equal(await checkDoneOnMain(work, 'chad', 'x'), null, '삭제 커밋 뒤의 재개는 고의다');
+    await localMeta('2026-09-09T00:00:00.000Z');
+    assert.deepEqual(await checkDoneOnMain(work, 'chad', 'x'), { ref: 'origin/main', closedAt: DELETED_AT, source: 'ledger' },
+      '그보다 먼저 연 것은 main 이 나중에 닫은 것이다');
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+// R3 P2(2026-10-09 codex): meta 가 없을 뿐 폴더가 main 에 남아 있는 구 task 는 "폴더가 지워짐"이 아니다 —
+// 원장 폴백은 폴더(spec 마커)가 없을 때만 탄다. 종전처럼 null(모른다)이다.
+test('remote-task: a meta-less task whose folder is still on the default ref does not use the ledger fallback', async () => {
+  const { root, work } = await repoWithDeletedTask();
+  try {
+    await mkdir(join(work, 'docs', 'chad', 'x'), { recursive: true });
+    await writeFile(join(work, 'docs', 'chad', 'x', 'x-spec.md'), '# x — Spec\n');
+    await git(work, ['add', '-A']);
+    await git(work, ['commit', '-q', '-m', 'legacy folder without meta']);
+    await git(work, ['push', '-q', 'origin', 'main']);
+    assert.equal(await readRemoteTaskMeta(work, 'chad', 'x'), null);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});

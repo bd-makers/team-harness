@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>task-folder-removal — C2a 입력 이전</title>
+<style>
+  body { margin: 0; padding: 32px 24px; background: #f5f5f5; color: #2d3142; font: 14px/1.5 system-ui, -apple-system, sans-serif; }
+  .eyebrow { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.12em; color: #7a8399; margin: 0 0 4px; }
+  h1 { font: 400 28px/1.2 Georgia, 'Times New Roman', serif; margin: 0 0 8px; }
+  p.sub { margin: 0 0 24px; color: #4f5d75; max-width: 76ch; }
+  svg { max-width: 100%; height: auto; display: block; }
+  footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid rgba(45,49,66,0.12); font: 12px ui-monospace, Menlo, monospace; color: #7a8399; }
+  .n { font: 600 16px system-ui, -apple-system, sans-serif; fill: #2d3142; }
+  .s { font: 12px system-ui, -apple-system, sans-serif; fill: #4f5d75; }
+  .m { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #4f5d75; }
+  .tag { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #7a8399; letter-spacing: 0.08em; }
+  .lbl { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #7a8399; }
+  .arrow { stroke: #4f5d75; stroke-width: 1.2; fill: none; marker-end: url(#tfr-arrow); }
+  .arrow.acc { stroke: #eb6c36; marker-end: url(#tfr-arrow-accent); }
+  .arrow.opt { stroke-dasharray: 5 4; }
+</style>
+</head>
+<body>
+<p class="eyebrow">TASK-FOLDER-REMOVAL · C2A · ARCHITECTURE</p>
+<h1>폴더가 있어도 없어도 같은 답 — 입력 이전</h1>
+<p class="sub">원장을 읽는 장치 넷은 task 폴더를 먼저 보고, 없으면 원장의 <code>✅ done</code> 행으로 판정한다. 원장은 공통 파서 하나로만 읽는다.
+migrate는 일부러 폴더만 본다 — 원장 입력을 쓰면 지운 폴더를 meta로 되살리기 때문이다. 이 task는 아무것도 지우지 않는다.</p>
+
+<svg viewBox="0 0 1200 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="task-folder-removal-title task-folder-removal-desc">
+  <title id="task-folder-removal-title">C2a — task 폴더와 원장을 읽는 장치들</title>
+  <desc id="task-folder-removal-desc">task 폴더를 먼저 읽고 없으면 공통 파서로 원장 done 행을 읽는 네 장치(summary, done-on-main nudge, list --remote, task 이름 가드)와, 폴더만 읽는 migrate, 영향 없는 장치를 보여 준다.</desc>
+  <defs>
+    <marker id="tfr-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+    <marker id="tfr-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+  </defs>
+  <rect width="1200" height="700" fill="#f5f5f5"/>
+
+  <!-- zone (painted first) -->
+  <rect x="640" y="40" width="520" height="448" rx="8" fill="#ececec" stroke="rgba(45,49,66,0.12)" stroke-width="1"/>
+  <text x="656" y="64" class="tag">폴더 우선 → 없으면 원장 done 행</text>
+
+  <!-- arrows before boxes -->
+  <path class="arrow" d="M280 128 H632"/>
+  <path class="arrow" d="M280 384 H352"/>
+  <path class="arrow acc" d="M560 384 H632"/>
+  <path class="arrow opt" d="M280 168 H612 Q620 168 620 176 V378 A6 6 0 0 1 620 390 V554 Q620 562 628 562 H632"/>
+
+  <!-- arrow labels (masked, gap above stroke) -->
+  <rect x="400" y="100" width="120" height="16" rx="2" fill="#f5f5f5"/>
+  <text x="460" y="112" class="lbl" text-anchor="middle">있으면 그대로</text>
+  <rect x="566" y="352" width="44" height="16" rx="2" fill="#f5f5f5"/>
+  <text x="588" y="364" class="lbl" text-anchor="middle">없으면</text>
+  <rect x="548" y="464" width="64" height="16" rx="2" fill="#f5f5f5"/>
+  <text x="608" y="476" class="lbl" text-anchor="end">폴더만</text>
+
+  <!-- inputs -->
+  <rect x="40" y="96" width="240" height="96" rx="6" fill="#f5f5f5"/>
+  <rect x="40" y="96" width="240" height="96" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+  <text x="56" y="124" class="n">task 폴더</text>
+  <text x="56" y="148" class="m">docs/&lt;user&gt;/&lt;task&gt;/</text>
+  <text x="56" y="172" class="s">spec 마커 · meta.json</text>
+
+  <rect x="40" y="336" width="240" height="96" rx="6" fill="#f5f5f5"/>
+  <rect x="40" y="336" width="240" height="96" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
+  <text x="56" y="364" class="n">원장 ✅ done 행</text>
+  <text x="56" y="388" class="m">docs/task_summary.md</text>
+  <text x="56" y="412" class="s">로컬 · refs/remotes/&lt;default&gt;</text>
+
+  <!-- focal: shared parser -->
+  <rect x="360" y="336" width="200" height="96" rx="6" fill="#f5f5f5"/>
+  <rect x="360" y="336" width="200" height="96" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+  <text x="376" y="364" class="n">parseSummaryRows</text>
+  <text x="376" y="388" class="m">summary.mjs</text>
+  <text x="376" y="412" class="s">원장 파서는 하나</text>
+
+  <!-- consumers inside zone -->
+  <rect x="660" y="80" width="480" height="84" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="676" y="106" class="n">summary --write</text>
+  <text x="676" y="128" class="s">폴더 행 + 폴더 없는 done 행을 그대로 이어받는다 (⚠️·Area 포함)</text>
+  <text x="676" y="148" class="s">open 행 + 폴더 없음 → 종전대로 빠진다</text>
+
+  <rect x="660" y="184" width="480" height="84" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="676" y="210" class="n">done-on-main nudge</text>
+  <text x="676" y="232" class="s">meta 없으면 default ref 원장 · closedAt = 디렉터리 마지막 커밋</text>
+  <text x="676" y="252" class="s">원장 출처만 문구 분기: "새 이름으로 이어간다"</text>
+
+  <rect x="660" y="288" width="480" height="84" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="676" y="314" class="n">list --remote</text>
+  <text x="676" y="336" class="m">onDefault = spec 마커 ∪ 원장 done 행</text>
+  <text x="676" y="356" class="s">지워진 done task를 branch-only로 오탐하지 않는다</text>
+
+  <rect x="660" y="392" width="480" height="84" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="676" y="418" class="n">task &lt;name&gt; 이름 가드</text>
+  <text x="676" y="440" class="s">로컬 원장 done 행 AND 폴더 없음 → 거부 (exit 1)</text>
+  <text x="676" y="460" class="s">폴더가 있으면 기존 reopen 흐름 그대로</text>
+
+  <!-- folder-only consumer -->
+  <rect x="640" y="520" width="240" height="84" rx="6" fill="#f5f5f5"/>
+  <rect x="640" y="520" width="240" height="84" rx="6" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.20)" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="656" y="546" class="n">migrate</text>
+  <text x="656" y="568" class="m">collectTasks 기본값</text>
+  <text x="656" y="588" class="s">원장 입력 안 씀 — 폴더 부활 방지</text>
+
+  <!-- unaffected -->
+  <rect x="920" y="520" width="240" height="84" rx="6" fill="rgba(45,49,66,0.03)" stroke="rgba(45,49,66,0.30)" stroke-width="1"/>
+  <text x="936" y="546" class="n">영향 없음</text>
+  <text x="936" y="568" class="s">done 가드 · handoff · pr-check</text>
+  <text x="936" y="588" class="s">wiki sources · observe(익명)</text>
+
+  <!-- legend -->
+  <line x1="40" y1="632" x2="1160" y2="632" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+  <text x="40" y="664" class="tag">LEGEND</text>
+  <rect x="120" y="652" width="24" height="16" rx="3" fill="rgba(235,108,54,0.08)" stroke="#eb6c36"/>
+  <text x="152" y="664" class="lbl">공통 파서</text>
+  <rect x="264" y="652" width="24" height="16" rx="3" fill="rgba(45,49,66,0.05)" stroke="#4f5d75"/>
+  <text x="296" y="664" class="lbl">입력(저장소 상태)</text>
+  <rect x="456" y="652" width="24" height="16" rx="3" fill="#ffffff" stroke="#2d3142"/>
+  <text x="488" y="664" class="lbl">바뀌는 장치</text>
+  <rect x="624" y="652" width="24" height="16" rx="3" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.20)" stroke-dasharray="4,3"/>
+  <text x="656" y="664" class="lbl">폴더만 읽는 장치</text>
+  <line x1="816" y1="660" x2="856" y2="660" stroke="#4f5d75" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <text x="864" y="664" class="lbl">폴더만 · 원장 경로 없음</text>
+</svg>
+
+<footer>C2b(폴더 삭제)는 후속 task — compiled 게이트 · 레거시는 migrate 일회성 정리 · C1이 소비자에서 한 릴리스 돈 뒤 착수. 이 task는 비파괴. spec: task-folder-removal-spec.md</footer>
+</body>
+</html>

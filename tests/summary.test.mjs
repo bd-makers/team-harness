@@ -9,7 +9,7 @@ import { runTask, runDone } from '../src/commands/task.mjs';
 import { USER_HANDOFF_IGNORE } from '../src/task-paths.mjs';
 import {
   collectTasks, renderTaskSummary, renderUserIndex, runSummary, readTaskMeta, defaultBranchCandidates,
-  readLedger, taskMetaTemplate, writeTaskMeta as writeTaskMetaForTest,
+  readLedger, parseSummaryRows, taskMetaTemplate, writeTaskMeta as writeTaskMetaForTest,
 } from '../src/commands/summary.mjs';
 
 const pexec = promisify(execFile);
@@ -800,6 +800,91 @@ test('meta 유실 + reopen 이후에도 우회 사실이 살아남는다 (열린
     const row = renderTaskSummary(after).split('\n').find(l => l.startsWith('| chad |'));
     assert.equal(statusCell(row), '✅ done ⚠️', 'reopen 을 거쳐도 우회 흔적이 지워지지 않는다');
   } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 원장 입력 승격 (task-folder-removal, C2a)
+//
+// task 폴더가 없어도 원장의 done 행이 사실의 출처로 남는다. 원장을 읽는 곳(summary·
+// done-on-main·list --remote·task 이름 가드)이 같은 파서를 쓰도록 `parseSummaryRows` 하나로 모은다.
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('summary: parseSummaryRows reads 4- and 5-column rows', () => {
+  const four = renderTaskSummary([forcedTask, cleanTask, { user: 'kim', task: 'wip', created: '2026-09-08', status: 'open' }]);
+  const rows = parseSummaryRows(four);
+  assert.deepEqual(rows.map(r => `${r.user}/${r.task}`), ['chad/bypassed', 'chad/clean', 'kim/wip'], 'header·구분선은 행이 아니다');
+  assert.deepEqual(rows[0], { user: 'chad', task: 'bypassed', done: true, forced: true, created: '2026-09-07', area: null });
+  assert.equal(rows[1].forced, false);
+  assert.equal(rows[2].done, false);
+
+  const five = renderTaskSummary([{ ...cleanTask, area: 'web' }, { user: 'kim', task: 'core', created: '2026-09-08', status: 'open' }]);
+  const [withArea, noArea] = parseSummaryRows(five);
+  assert.equal(withArea.area, 'web', '5번째 칸(Area)을 읽는다');
+  assert.equal(noArea.area, null, '빈 Area 칸은 null');
+  assert.deepEqual(parseSummaryRows(''), []);
+});
+
+const goneTask = {
+  user: 'chad', task: 'gone', created: '2026-01-02', status: 'done', area: 'web',
+  forcedAt: '2026-01-03T00:00:00.000Z', forcedIssues: ['x'],
+};
+
+async function ledgerFixture(ledgerTasks) {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-ledger-only-'));
+  await initRepo(dir);
+  await runTask({ targetDir: dir, flags: { member: 'chad' }, taskArgs: ['live'] });
+  await writeFile(join(dir, 'docs', 'task_summary.md'), renderTaskSummary(ledgerTasks));
+  await writeFile(join(dir, 'docs', 'chad', 'chad-task.md'), renderUserIndex('chad', ledgerTasks));
+  return dir;
+}
+
+test('summary: keeps a done ledger row whose task folder is gone', async () => {
+  const exitCode = process.exitCode;
+  const dir = await ledgerFixture([goneTask]);
+  try {
+    await runSummary({ targetDir: dir, flags: { write: true } });
+    const summary = await readFile(join(dir, 'docs', 'task_summary.md'), 'utf8');
+    assert.match(summary, /^\| chad \| gone \| ✅ done ⚠️ \| 2026-01-02 \| web \|$/m, '상태·⚠️·생성일·Area 가 그대로 남는다');
+    assert.match(summary, /^\| chad \| live \| 🔄 open \|/m, '폴더 있는 task 도 함께 렌더된다');
+    const index = await readFile(join(dir, 'docs', 'chad', 'chad-task.md'), 'utf8');
+    assert.match(index, /^- ✅ gone ⚠️$/m, 'user index 의 완료 줄도 남는다');
+
+    await runSummary({ targetDir: dir, flags: { check: true } });
+    assert.notEqual(process.exitCode, 1, '이어받은 원장을 다시 렌더해도 바이트가 같다');
+  } finally {
+    process.exitCode = exitCode;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('summary: drops an open ledger row whose task folder is gone', async () => {
+  const exitCode = process.exitCode;
+  const dir = await ledgerFixture([{ user: 'chad', task: 'abandoned', created: '2026-01-02', status: 'open' }]);
+  try {
+    await runSummary({ targetDir: dir, flags: { write: true } });
+    const summary = await readFile(join(dir, 'docs', 'task_summary.md'), 'utf8');
+    assert.doesNotMatch(summary, /abandoned/, '손으로 버린 열린 task 는 종전대로 빠진다');
+    assert.match(summary, /^\| chad \| live \| 🔄 open \|/m);
+  } finally {
+    process.exitCode = exitCode;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+// R3 P2(2026-10-09 codex): 원장 행의 user·task 는 경로가 된다(`docs/<user>/<user>-task.md`). 폴더 이름에서 오던 때와 달리
+// 원장 텍스트는 `/`·`..` 를 담을 수 있으므로, 경로 규칙을 어기는 ledger-only 행은 이어받지 않는다.
+test('summary: ignores ledger-only rows whose user or task is not a safe path segment', async () => {
+  const exitCode = process.exitCode;
+  const dir = await ledgerFixture([goneTask]);
+  try {
+    const evil = '| ../../outside | x | ✅ done | 2026-01-02 |  |\n| chad | ../y | ✅ done | 2026-01-02 |  |\n| .hidden | z | ✅ done | 2026-01-02 |  |\n';
+    await writeFile(join(dir, 'docs', 'task_summary.md'), renderTaskSummary([goneTask]) + evil);
+    const tasks = await collectTasks(dir, { includeLedgerOnly: true });
+    assert.deepEqual(tasks.filter(t => t.ledgerOnly).map(t => `${t.user}/${t.task}`), ['chad/gone'], '경로 규칙을 어기는 행은 빠진다');
+  } finally {
+    process.exitCode = exitCode;
     await rm(dir, { recursive: true, force: true });
   }
 });

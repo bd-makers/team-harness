@@ -5,13 +5,13 @@ import { promisify } from 'node:util';
 import { detectMember, sanitize } from '../member.mjs';
 import { exists, writeText } from '../fsx.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
-import { readTaskMeta, writeTaskMeta, taskMetaTemplate, inferLegacyMeta, readLedger } from './summary.mjs';
+import { readTaskMeta, writeTaskMeta, taskMetaTemplate, inferLegacyMeta, readLedger, parseSummaryRows, readTextOrNull } from './summary.mjs';
 import { renderDoneMarker } from '../handoff-marker.mjs';
 import { checkDoneOnMain, renderDoneOnMainNudge, listBranchOnlyTasks } from './remote-task.mjs';
 import { findCommand } from '../cli-args.mjs';
 import { userNameError } from '../user-config.mjs';
 import {
-  taskDirRel, taskFileRel, userHandoffRel, USER_HANDOFF_IGNORE, taskLabel, docsPath, taskDirPath, taskFilePath, userHandoffPath, listTaskRefs,
+  taskDirRel, taskFileRel, userHandoffRel, USER_HANDOFF_IGNORE, taskLabel, docsPath, taskDirPath, taskFilePath, userHandoffPath, listTaskRefs, SUMMARY_REL,
 } from '../task-paths.mjs';
 
 const pexec = promisify(execFile);
@@ -369,6 +369,22 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
       safeDefault: 'task 디렉터리도 meta 도 .harness/active.json 도 바뀌지 않는다',
       stop: 'spec 마커 없는 디렉터리는 활성화하지도, 그 안에 scaffold 하지도 말 것',
     }));
+  }
+
+  // 종결된 task 의 이름 재사용(task-folder-removal). 원장에 `✅ done` 행이 있는데 폴더가 없으면 그 task 는 종결 뒤 지워진
+  // 것이다 — 같은 이름으로 새로 만들면 위키 컴파일 단락의 키(`task=<user>/<task>`)와 원장 행이 겹친다. 폴더가 있으면
+  // 종전대로 아래 reopen 흐름이다. 원격 원장은 보지 않는다 — 그쪽은 done-on-main nudge 가 알린다(생성은 막지 않는다).
+  if (!isTask && await isAbsentOrEmpty(dir)) {
+    const rows = parseSummaryRows(await readTextOrNull(join(ctx.targetDir, SUMMARY_REL)));
+    if (rows.some(r => r.done && r.user === user && r.task === name)) {
+      return emitTaskError(json, '종결된 task 의 이름은 다시 쓸 수 없음', buildErrorPacket({
+        cause: `${SUMMARY_REL} 에 ${taskLabel(user, name)} 가 ✅ done 으로 남아 있고 ${taskDirRel(user, name)}/ 는 없다 — 종결 뒤 폴더가 지워진 task 다`,
+        retry: '다른 이름으로 `harness-team task <name>` 을 재실행',
+        alternatives: [`원문은 \`git log -- ${taskDirRel(user, name)}\` 으로 확인한다`],
+        safeDefault: 'task 디렉터리도 meta 도 .harness/active.json 도 바뀌지 않는다',
+        stop: '종결된 task 의 이름으로 새 task 를 만들지 말 것',
+      }));
+    }
   }
 
   // `task list` 처럼 하위명령을 task 인자로 넘긴 실수는 이름 규칙을 통과한다 — 새로 만들기 전에 거부한다.
