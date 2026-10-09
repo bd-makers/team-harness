@@ -18,6 +18,17 @@
   S7 pass [task: refuses to reuse the name of a done task whose folder is gone]
   S8 pass [task: a done task whose folder exists still reopens]
   ```
+- 같은 `scenario check` 실행의 **테스트 러너(`node --test`) 출력** — 각 시나리오 cmd가 실제로 고른 테스트 이름과 소요 시간:
+  ```text
+  ✔ summary: keeps a done ledger row whose task folder is gone (92.826583ms)
+  ✔ summary: drops an open ledger row whose task folder is gone (89.34925ms)
+  ✔ migrate: does not recreate a ledger-only task folder (18.573209ms)
+  ✔ remote-task: falls back to the default-ref ledger when the task folder is gone (234.819209ms)
+  ✔ remote-task: a deliberate reopen silences the ledger-sourced nudge (209.350083ms)
+  ✔ list --remote: a task done in the default-ref ledger is not branch-only (867.172167ms)
+  ✔ task: refuses to reuse the name of a done task whose folder is gone (5.932083ms)
+  ✔ task: a done task whose folder exists still reopens (4.805541ms)
+  ```
 - S3 변이 검사: `migrate.mjs` `backfillTaskMeta`가 `includeLedgerOnly: true`를 넘기도록 일시 변경하면 S3가 fail(지운 폴더 부활) — 되돌린 뒤 diff 없음.
 
 ## Reviews
@@ -48,5 +59,27 @@ S1/S2의 행 보존·제거, S3의 폴더 미생성, S4/S5의 verdict·재개 �
 - S4 Then의 "meta 출처 문구 불변"이 S4 명령이 고르는 테스트 밖에 있었다 → 같은 테스트에 meta 출처 문구 단언(종전 끝맺음 `… 로 다시 연다(reopened).`, `새 이름` 없음) 추가.
 - artifact에 이름 찍힌 실행 출력이 없었다 → `## 결과`에 `scenario check` 출력 기록.
 E2(범위 밖 변경 없음) pass는 수용. 재검증은 다음 R2 실행으로 한다.
+
+### 2026-10-09T02:30:42.748Z — codex-scenario (harness-team review)
+
+- engine: codex · scope: diff · tip: fff3355c24b7d845cff89a72430a8cb7aedf09a2 · exit 0 · 2000 B
+
+```text
+전하, `git status`는 clean이며 `refs/remotes/origin/main` 대비 diff를 직접 확인했습니다. 파일은 수정하지 않았습니다.
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| E1 | 각 시나리오의 증거가 Then을 실제 검증 | BLOCKER | **na** | 테스트 assertion은 S1–S8의 결과에 대응합니다. S1/S2는 행 보존·제거(`tests/summary.test.mjs:843–869`), S3는 폴더 미생성(`tests/migrate.test.mjs:132–147`), S4/S5는 verdict·문구·재개 판정(`tests/remote-task.test.mjs:187–221`), S6는 실제 `runList` 출력에서 `chad/x` 제외(`tests/list-remote.test.mjs:235–240`), S7/S8은 거부·미생성·reopen을 단언합니다(`tests/task-name-reuse.test.mjs:36–66`). 그러나 artifact:12–19의 `S1 pass [테스트 이름]`은 **테스트 러너 출력이 아니라 scenario checker가 선언된 이름을 출력하는 형식**입니다(`src/commands/scenario.mjs:52`). 실제 테스트 이름이 찍힌 러너 출력이 없어 S1–S8의 선택·실행 여부를 pass로 인정할 수 없습니다. `ℹ tests 1 · pass 1` 요약도 이 공백을 해소하지 못합니다. |
+| E2 | spec 밖 동작 변경 없음 | MAJOR | **pass** | 공유 파서·summary의 ledger-only 포함은 R-1/R-2, remote fallback·nudge 문구·default 집합은 R-3/R-4와 Q6 설계, 이름 재사용 가드는 R-5에 대응합니다. 나머지는 관련 테스트·문서·생성물이며, migrate·observe·done 가드·버전은 변경하지 않았습니다. 범위 밖 동작 변경은 발견하지 못했습니다. |
+
+이전 E1의 S6 출력 검증 누락과 S4 meta 문구 검증 누락은 보완되었습니다. 이번에는 읽기 전용 조건상 임시 저장소를 만드는 테스트나 변이 검사를 실행하지 않았으며, 기계 행도 재채점하지 않았습니다.
+
+**Verdict: 검증 미완료 — fail 목록: 없음. E1은 실제 테스트 이름이 포함된 러너 실행 출력 부족으로 na입니다.**
+```
+
+<!-- harness:review kind=codex-scenario scope=diff tip=fff3355c24b7d845cff89a72430a8cb7aedf09a2 at=2026-10-09T02:30:42.748Z -->
+
+판별(작성 세션): 이전 E1의 S6·S4 지적은 보완 확인됨. 이번 E1 na의 근거("`S<n> pass [이름]`은 검사기가 선언명을 찍은 것이지 러너 출력이 아니다")는 **진짜 공백** —
+`src/commands/scenario.mjs`가 선언명을 그대로 찍는다. 같은 실행 로그의 러너 `✔ <테스트 이름> (ms)` 8줄을 `## 결과`에 추가했다. fail 0, E2 pass.
 
 ## Learnings
