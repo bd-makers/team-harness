@@ -31,3 +31,11 @@
  .../task-folder-removal-plan.md                    |   2 +-
  .../task-folder-removal-spec.md                    |   2 +
  5 files changed, 140 insertions(+), 1 deletion(-)
+
+## 2026-10-09T02:23:28.568Z — a4425f5 feat(summary): 원장 done 행을 입력으로 승격 — 폴더 없는 task 행 보존
+.../task-folder-removal-handoff.md                 |  8 +++
+ .../task-folder-removal-plan.md                    |  4 +-
+ src/commands/summary.mjs                           | 50 +++++++++++----
+ tests/migrate.test.mjs                             | 23 +++++++
+ tests/summary.test.mjs                             | 71 +++++++++++++++++++++-
+ 5 files changed, 140 insertions(+), 16 deletions(-)

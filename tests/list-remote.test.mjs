@@ -206,3 +206,27 @@ test('listBranchOnlyTasks: 어떤 git 오류도 throw 하지 않고 { ok: false 
   };
   assert.deepEqual(await listBranchOnlyTasks('/nowhere', { git: boom }), { ok: false });
 });
+
+// task-folder-removal(C2a): main 이 squash 머지 뒤 task 폴더를 지웠어도 원장의 ✅ done 행이 남는다.
+// 그 task 를 싣고 남은 미머지 브랜치는 branch-only 가 아니다 — spec 마커만 보면 오탐한다.
+test('list --remote: a task done in the default-ref ledger is not branch-only', async () => {
+  const { root, dir } = await fixture();
+  try {
+    await git(dir, ['switch', '-q', 'main']);
+    await git(dir, ['switch', '-q', '-c', 'feat-x']);
+    await put(dir, 'docs/chad/x/x-spec.md');
+    await commitAll(dir, 'x');
+    await git(dir, ['push', '-q', 'origin', 'feat-x']);
+    await git(dir, ['switch', '-q', 'main']);
+    await put(dir, 'docs/task_summary.md',
+      '# Task Summary\n\n| User | Task | Status | Created |\n|------|------|--------|---------|\n| chad | x | ✅ done | 2026-09-01 |\n');
+    await commitAll(dir, 'x squash-merged, folder removed');
+    await git(dir, ['push', '-q', 'origin', 'main']);
+
+    const result = await listBranchOnlyTasks(dir);
+    assert.equal(result.ok, true);
+    const labels = result.tasks.map(t => `${t.user}/${t.task}`);
+    assert.ok(!labels.includes('chad/x'), 'main 원장에서 종결된 task 는 branch-only 가 아니다');
+    assert.ok(labels.includes('alice/foo'), '미머지 브랜치의 열린 task 는 그대로 나온다');
+  } finally { await rm(root, { recursive: true, force: true }); }
+});

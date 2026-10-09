@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { readTaskMeta } from './summary.mjs';
+import { readTaskMeta, parseSummaryRows } from './summary.mjs';
 import { readOriginHead } from '../git-default-branch.mjs';
 import { DOCS_DIR, taskDirRel, taskFileRel, taskLabel } from '../task-paths.mjs';
 
@@ -40,17 +40,39 @@ export async function resolveDefaultRef(targetDir, { git: run = git } = {}) {
   } catch { return null; }
 }
 
+// git pathspec·`<rev>:<path>` 용 POSIX 경로 — `SUMMARY_REL` 은 OS 구분자로 조립돼 여기 쓸 수 없다.
+const SUMMARY_GIT_PATH = `${DOCS_DIR}/task_summary.md`;
+
+// `<rev>` 커밋 원장(`task_summary.md`)의 `✅ done` 행 label 집합. 원장이 없거나 읽지 못하면 빈 집합(모른다).
+export async function readDoneLabelsAt(targetDir, rev, { git: run = git } = {}) {
+  try {
+    const rows = parseSummaryRows(await run(targetDir, ['show', `${rev}:${SUMMARY_GIT_PATH}`]));
+    return new Set(rows.filter(r => r.done).map(r => taskLabel(r.user, r.task)));
+  } catch { return new Set(); }
+}
+
 // 원격 default 브랜치 커밋의 `<task>-meta.json`. { ref, meta } 또는 null.
+// meta 가 없으면(main 에서 task 폴더를 지웠다) 같은 커밋의 원장 `✅ done` 행으로 판정한다 →
+// { ref, meta: { status: 'done', closedAt }, source: 'ledger' }. 원장에는 시각이 없어 `closedAt` 은 그 task 디렉터리를
+// 마지막으로 건드린 커밋의 committer 시각이다 — null 이면 `reopenedAt > closedAt` 소음 끄기가 영영 성립하지 않는다.
 export async function readRemoteTaskMeta(targetDir, user, task, { git: run = git } = {}) {
   const ref = await resolveDefaultRef(targetDir, { git: run });
   if (!ref) return null;
+  // 전체 ref 로 읽는다 — 짧은 `origin/main` 은 같은 이름의 로컬 브랜치(`refs/heads/origin/main`)로 먼저 풀린다(list --remote 와 같은 이유).
+  const full = `refs/remotes/${ref}`;
   try {
-    // 전체 ref 로 읽는다 — 짧은 `origin/main` 은 같은 이름의 로컬 브랜치(`refs/heads/origin/main`)로 먼저 풀린다(list --remote 와 같은 이유).
-    const raw = await run(targetDir, ['show', `refs/remotes/${ref}:${taskFileRel(user, task, 'meta.json')}`]);
+    const raw = await run(targetDir, ['show', `${full}:${taskFileRel(user, task, 'meta.json')}`]);
     const meta = JSON.parse(raw);
     if (meta && typeof meta === 'object') return { ref, meta };
-  } catch { /* 경로 없음(exit 128)·JSON 아님 — 모른다 */ }
-  return null;
+  } catch { /* 경로 없음(exit 128)·JSON 아님 — 원장으로 넘어간다 */ }
+  if (!(await readDoneLabelsAt(targetDir, full, { git: run })).has(taskLabel(user, task))) return null;
+  let closedAt = null;
+  try {
+    // meta 의 `closedAt` 과 같은 형식으로 맞춘다 — `%cI` 의 UTC 표기(`Z`·`+00:00`)는 git 버전마다 다르다.
+    const at = Date.parse((await run(targetDir, ['log', '-1', '--format=%cI', full, '--', taskDirRel(user, task)])).trim());
+    if (Number.isFinite(at)) closedAt = new Date(at).toISOString();
+  } catch { /* 얕은 클론·timeout — 시각 미기록 */ }
+  return { ref, meta: { status: 'done', closedAt }, source: 'ledger' };
 }
 
 // 판정 표(spec Ontology). 원격 done && 로컬 미종결 && 고의 재개 아님 → { ref, closedAt }.
@@ -63,13 +85,21 @@ export function doneOnMainVerdict({ localMeta, remote }) {
   const closedAt = typeof remote.meta.closedAt === 'string' ? remote.meta.closedAt : null;
   const reopenedAt = localMeta && typeof localMeta.reopenedAt === 'string' ? localMeta.reopenedAt : null;
   if (reopenedAt && closedAt && Date.parse(reopenedAt) > Date.parse(closedAt)) return null;
-  return { ref: remote.ref, closedAt };
+  // `source` 는 원장 출처일 때만 싣는다 — meta 출처 verdict 의 모양(`--json` envelope 포함)은 종전 그대로다.
+  return { ref: remote.ref, closedAt, ...(remote.source === 'ledger' ? { source: 'ledger' } : {}) };
 }
 
 // 한 줄. 복구 경로가 곧 침묵 조건이다 — main을 가져오면 로컬 meta가 done이 되고, 그 위에서 `task <name>`으로
 // 다시 열면 `reopenedAt`이 생겨 다음 세션부터 이 nudge가 사라진다.
-export function renderDoneOnMainNudge({ user, task, ref, closedAt }) {
+// 원장 출처(main 에서 폴더가 지워짐)는 복구 안내만 다르다 — "main 을 가져온 뒤 다시 연다"를 따르면 가져오는 순간
+// 폴더가 지워지고 `task` 의 이름 재사용 가드가 그 이름을 거부한다. 막힌 길을 안내하지 않는다.
+export function renderDoneOnMainNudge({ user, task, ref, closedAt, source }) {
   const when = closedAt ?? '(시각 미기록)';
+  if (source === 'ledger') {
+    return `[harness] ⚠ task ${taskLabel(user, task)} 는 ${ref} 에서 ${when} 에 이미 종결되고 task 폴더가 지워짐 — 재개할 것인지 확인. `
+      + `이어가면 main과 구현이 갈릴 수 있다. 근거: git log ${ref} -- ${taskDirRel(user, task)} · `
+      + `이어가려면 새 이름으로 harness-team task <새 이름> 을 만든다(원문은 위 git log).`;
+  }
   return `[harness] ⚠ task ${taskLabel(user, task)} 는 ${ref} 에서 ${when} 에 이미 종결됨 — 재개할 것인지 확인. `
     + `이어가면 main과 구현이 갈릴 수 있다. 근거: git log ${ref} -- ${taskDirRel(user, task)} · `
     + `고의로 이어가려면 main을 가져온 뒤 harness-team task ${task} 로 다시 연다(reopened).`;
@@ -106,7 +136,11 @@ export async function listBranchOnlyTasks(targetDir, { git: run = git, exclude =
     };
     // default ref 에 이미 있는 task 도 "브랜치에만" 이 아니다 — 새 main 에서 딴 브랜치는 main 의 task 를 전부 싣고 있고,
     // 로컬이 옛 브랜치면 `exclude` 만으로는 그것들이 branch-only 로 보인다.
-    const onDefault = new Set((await specMarkers(defaultFull)).map(({ label }) => label));
+    // 폴더를 지운 done task 는 spec 마커가 없다 — default ref 원장의 `✅ done` 행도 "default 에 있다"로 센다(task-folder-removal).
+    const onDefault = new Set([
+      ...(await specMarkers(defaultFull)).map(({ label }) => label),
+      ...(await readDoneLabelsAt(targetDir, defaultFull, { git: run })),
+    ]);
     const found = new Map();
     for (const ref of refs) {
       try {

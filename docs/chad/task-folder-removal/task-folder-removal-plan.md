@@ -14,13 +14,13 @@ C2a(비파괴): task 폴더가 **있어도 없어도** 원장·done-on-main nudg
   - `collectTasks(targetDir, { includeLedgerOnly = false } = {})`: true면 폴더(spec 마커) 없는 `done` 행을 `{ user, task, status: 'done', created, area, forcedRecovered: forced, ledgerOnly: true }`로 더한다. `🔄 open` 행은 더하지 않는다.
   - `runSummary`(`summary.mjs:323`)만 `{ includeLedgerOnly: true }`를 넘긴다. `migrate.mjs` 두 호출(857·940)은 기본값 그대로 — 손대지 않는다.
   - 테스트: S1 `summary: keeps a done ledger row whose task folder is gone`, S2 `summary: drops an open ledger row whose task folder is gone`(`tests/summary.test.mjs`), S3 `migrate: does not recreate a ledger-only task folder`(`tests/migrate.test.mjs`).
-- [ ] 3. done-on-main 원장 폴백 — R-3 (`src/commands/remote-task.mjs`)
+- [x] 3. done-on-main 원장 폴백 — R-3 (`src/commands/remote-task.mjs`)
   - `readRemoteTaskMeta`: meta를 못 읽으면 `git show refs/remotes/<ref>:docs/task_summary.md` → `parseSummaryRows` → 그 task가 `done`이면
     `{ ref, meta: { status: 'done', closedAt }, source: 'ledger' }`. `closedAt` = `git log -1 --format=%cI refs/remotes/<ref> -- <taskDirRel>`(빈 출력·실패 → null). meta 경로 반환에는 `source: 'meta'`.
   - `doneOnMainVerdict` 판정 표는 그대로, 반환에 `source`만 싣는다. `renderDoneOnMainNudge({ …, source })`: `'ledger'`면 복구 안내를 "이어가려면 새 이름으로 task를 만든다 — 원문은 `git log <ref> -- <dir>`"로, 그 밖에는 종전 문구 바이트 그대로.
   - 같은 `git()` 러너(2000ms·`GIT_NO_LAZY_FETCH`) — 어떤 실패도 null.
   - 테스트(`tests/remote-task.test.mjs`): S4 `remote-task: falls back to the default-ref ledger when the task folder is gone`, S5 `remote-task: a deliberate reopen silences the ledger-sourced nudge`. 기존 `render:` 테스트 무수정 통과(meta 문구 불변 증거).
-- [ ] 4. `list --remote` 오탐 제거 — R-4
+- [x] 4. `list --remote` 오탐 제거 — R-4
   - `listBranchOnlyTasks`의 `onDefault`에 `git show <defaultFull>:docs/task_summary.md`의 `done` 행 label을 더한다. 원장을 못 읽으면 spec 마커만(종전).
   - 테스트: S6 `list --remote: a task done in the default-ref ledger is not branch-only`(`tests/list-remote.test.mjs`).
 - [ ] 5. 이름 재사용 가드 — R-5 (`src/commands/task.mjs`)
