@@ -244,6 +244,30 @@ E2(범위 밖 변경 없음) pass는 수용. 재검증은 다음 R2 실행으로
 
 판별(작성 세션): S1–S4 pass. S5 fail(S3 변이 검사가 산문 선언)은 **진짜 문서 결함** → 변이 검사를 다시 돌려 명령·출력·복원 확인을 `## 결과`에 인용했다.
 
+### 2026-10-09T02:40:42.776Z — codex-shipcheck (harness-team review)
+
+- engine: codex · scope: diff · tip: 953f39dcf68cf445c3188ecd41a75cb64be3c9fd · exit 0 · 2385 B
+
+```text
+전하, `git status`와 `git diff refs/remotes/origin/main`을 직접 확인했습니다. 미커밋 변경은 task handoff 1개이며, 파일은 수정하지 않았습니다.
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| S1 | spec 요구사항별 대응 구현·의도적 미구현 | BLOCKER | pass | R-1/R-2는 diff의 `collectTasks(targetDir, { includeLedgerOnly = false } = {})`와 summary의 `includeLedgerOnly: true`, R-3/R-4는 `source: 'ledger'` 폴백과 `onDefault` 원장 합집합, R-5는 `!isTask && await isAbsentOrEmpty(dir)` 가드에 대응합니다. R-6은 spec의 “observe의 task_ref 역해석은 바꾸지 않는다”, R-7은 “2차 장치 검토”의 기각 사유로 기록되어 있습니다. |
+| S2 | plan 완료 항목에 실재 변경·커밋 대응 | MAJOR | pass | plan의 완료된 다이어그램·1–7단계에 각각 `e207b88`, `a4425f5`, `a47a3c8`, `a2cf411`, `1844fbe`, `3df27ae` 등의 실제 커밋과 diff가 대응합니다. 8·9단계는 미완료로 남아 있습니다. |
+| S3 | 문서에 없는 스코프 밖 변경 없음 | MAJOR | pass | plan의 “폴더 삭제(C2b)는 하지 않는다”와 일치하며 삭제 기능·버전 변경은 없습니다. cycle 변경은 spec의 C2a/C2b 분리 결정에 대응합니다. overview 변경은 테스트 목록 추가이며 artifact에 “새 테스트 파일을 추가하면 … docs:check가 막는다”라는 생성물 갱신 사유가 있습니다. |
+| S4 | 실행 리뷰 전부 artifact에 마커 기록 | MAJOR | pass | meta에 기록된 7건 모두 artifact `## Reviews`에 결과와 `<!-- harness:review … -->` 마커가 있습니다: `codex-scenario` 3건, `codex` 2건, `codex-shipcheck` 2건. |
+| S5 | 검증 결과에 실제 명령·출력 인용 | BLOCKER | pass | artifact는 `npm test` 출력의 `ℹ pass 1210`·`ℹ fail 0`, docs 검사 출력 “harness overview 생성 상태가 최신입니다.”, 시나리오별 `✔ <테스트 이름> (ms)`를 인용합니다. 변이 검사도 실행 명령과 `ℹ fail 1`, 복원 후 diff 출력 없음 및 `ℹ pass 1`·`ℹ fail 0`을 인용하여 이전 공백을 보완했습니다. |
+
+테스트·변이는 이번 읽기 전용 검증에서 재실행하지 않았습니다. 실행 증거는 artifact의 인용과 현재 diff를 대조했습니다.
+
+**Verdict: pass — 전체 fail 목록: 없음.**
+```
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=953f39dcf68cf445c3188ecd41a75cb64be3c9fd at=2026-10-09T02:40:42.776Z -->
+
+판별(작성 세션): S1–S5 pass, fail 없음 — 수용. 정합 검증 완료.
+
 ## Learnings
 - `docs/harness-overview.html`은 테스트 파일 목록도 렌더한다 — **새 테스트 파일**을 추가하면 pre-commit의 docs:check가 막는다. `npm run docs:generate` 결과를 같은 커밋에 담는다.
 - R2 시나리오 증거는 `scenario check`의 `S<n> pass [이름]` 줄이 아니라 **러너의 `✔ <테스트 이름> (ms)` 줄**이어야 한다 — 앞의 것은 검사기가 선언명을 그대로 찍은 것이다(R2 E1 na의 원인).

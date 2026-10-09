@@ -107,3 +107,9 @@ CHANGELOG.md                                                 | 8 ++++++++
  .../task-folder-removal-meta.json                  |  9 ++++
  .../task-folder-removal-plan.md                    |  2 +-
  4 files changed, 62 insertions(+), 1 deletion(-)
+
+## 2026-10-09T02:39:42.428Z — 953f39d docs(task): shipcheck S5 반영 — S3 변이 검사 명령·출력 인용
+.../task-folder-removal-artifact.md                | 42 +++++++++++++++++++++-
+ .../task-folder-removal-handoff.md                 |  7 ++++
+ .../task-folder-removal-meta.json                  |  9 +++++
+ 3 files changed, 57 insertions(+), 1 deletion(-)
