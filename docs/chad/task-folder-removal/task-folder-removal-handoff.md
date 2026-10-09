@@ -90,3 +90,9 @@ CHANGELOG.md                                                 | 8 ++++++++
  tests/remote-task.test.mjs                         | 14 +++++++++++++
  tests/summary.test.mjs                             | 16 +++++++++++++++
  7 files changed, 76 insertions(+)
+
+## 2026-10-09T02:36:08.559Z — 3df27ae docs(task): R3 pass·최종 검증 수치 기록, 7단계 완료
+.../task-folder-removal-artifact.md                 | 21 ++++++++++++++++++++-
+ .../task-folder-removal-meta.json                   |  9 +++++++++
+ .../task-folder-removal/task-folder-removal-plan.md |  2 +-
+ 3 files changed, 30 insertions(+), 2 deletions(-)
