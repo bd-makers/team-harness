@@ -80,3 +80,13 @@ CHANGELOG.md                                                 | 8 ++++++++
 .../task-folder-removal-artifact.md                 | 21 +++++++++++++++++++++
  .../task-folder-removal-meta.json                   |  9 +++++++++
  2 files changed, 30 insertions(+)
+
+## 2026-10-09T02:34:29.845Z — a9a0e65 fix(c2a): R3 P2 반영 — 원장 행 경로 규칙 검사, 폴더가 남은 task는 원장 폴백 제외
+.../task-folder-removal-artifact.md                | 24 ++++++++++++++++++++++
+ .../task-folder-removal-meta.json                  |  9 ++++++++
+ .../task-folder-removal-spec.md                    |  2 ++
+ src/commands/remote-task.mjs                       |  5 +++++
+ src/commands/summary.mjs                           |  6 ++++++
+ tests/remote-task.test.mjs                         | 14 +++++++++++++
+ tests/summary.test.mjs                             | 16 +++++++++++++++
+ 7 files changed, 76 insertions(+)
