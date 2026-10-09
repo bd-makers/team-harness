@@ -120,3 +120,8 @@ CHANGELOG.md                                                 | 8 ++++++++
  .../task-folder-removal-meta.json                  |  9 ++++++++
  .../task-folder-removal-plan.md                    |  2 +-
  4 files changed, 40 insertions(+), 1 deletion(-)
+
+## 2026-10-09T02:52:46.487Z — 5cfd81f docs(task): PR #137 기록 — 리뷰 덱 미실행(스킬 없음)
+docs/chad/task-folder-removal/task-folder-removal-artifact.md | 2 ++
+ docs/chad/task-folder-removal/task-folder-removal-plan.md     | 2 +-
+ 2 files changed, 3 insertions(+), 1 deletion(-)
