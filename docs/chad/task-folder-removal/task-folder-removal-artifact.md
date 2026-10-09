@@ -31,6 +31,16 @@
   ✔ task: a done task whose folder exists still reopens (4.805541ms)
   ```
 - S3 변이 검사: `migrate.mjs` `backfillTaskMeta`가 `includeLedgerOnly: true`를 넘기도록 일시 변경하면 S3가 fail(지운 폴더 부활) — 되돌린 뒤 diff 없음.
+- 다이어그램은 구현 전(2026-10-09)에 만든 구성요소 관계 그대로다 — R3 반영(경로 규칙 검사·트리 기준 폴더 확인)은 관계를 바꾸지 않아 갱신하지 않았다.
+
+### 남은 리스크
+- **closedAt 한계**(C2b 이후): 원장 폴백의 `closedAt`이 삭제 커밋 시각이 되어, 종결~삭제 사이의 의도적 재개도 nudge가 계속 뜬다(시끄러운 쪽 오류) — spec `(open → C2b)`.
+- **버전 혼재**: 이 변경 이전 CLI로 `summary --write`를 돌리면 폴더 없는 done 행을 다시 지운다. C2a만으로는 폴더가 지워지지 않으므로 지금은 영향 없음 — doctor 경고는 C2b 범위.
+- **이름 가드는 로컬 원장만 본다**: 낡은 클론은 원장에 행이 없어 가드가 침묵한다. 그 경우는 done-on-main nudge(원격 원장 폴백)가 알린다 — 막지는 않는다.
+- observe의 task_ref 역해석은 폴더가 지워진 task를 익명으로 둔다(사람 결정 Q5-A).
+
+### 후속
+- C2b(spec `## 참고`의 `(open → C2b)`): 삭제 결정론 하위명령·`compiled` 게이트·migrate 일회성 정리·doctor 버전 혼재 경고·CHANGELOG Breaking·`harness-wiki.md` 재컴파일 한계 명시.
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
@@ -147,3 +157,8 @@ E2(범위 밖 변경 없음) pass는 수용. 재검증은 다음 R2 실행으로
 판별(작성 세션): P1·P2·P3 없음 — 수용. R3 완료.
 
 ## Learnings
+- `docs/harness-overview.html`은 테스트 파일 목록도 렌더한다 — **새 테스트 파일**을 추가하면 pre-commit의 docs:check가 막는다. `npm run docs:generate` 결과를 같은 커밋에 담는다.
+- R2 시나리오 증거는 `scenario check`의 `S<n> pass [이름]` 줄이 아니라 **러너의 `✔ <테스트 이름> (ms)` 줄**이어야 한다 — 앞의 것은 검사기가 선언명을 그대로 찍은 것이다(R2 E1 na의 원인).
+- 시나리오 Then이 "기존 동작 불변"까지 말하면, 그 단언을 **그 시나리오 cmd가 고르는 테스트 안에** 둔다 — 다른 테스트에 있으면 증거로 인정되지 않는다(R2 E1 fail).
+- 원장 텍스트를 경로로 쓰는 순간 입력 검증 경계가 바뀐다 — 폴더 이름(`/` 불가)에서 오던 값이 자유 텍스트가 된다(R3 P2-1).
+- 리뷰 범위를 diff로 만들려고 handoff만 담은 sweep 커밋을 여러 번 만들었다 — ship 계약(5번)은 handoff를 문서 갱신 커밋에 함께 담으라고 한다. 다음부터는 문서·코드 커밋에 handoff를 함께 stage한다.
