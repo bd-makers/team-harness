@@ -18,3 +18,9 @@ CHANGELOG.md                                       |   7 +
  tests/wiki-command.test.mjs                        |   4 +-
  tests/wiki.test.mjs                                |  54 ++++--
  14 files changed, 338 insertions(+), 22 deletions(-)
+
+## 2026-10-09T13:05:43.133Z — d6da220 docs(task): wiki-commit-provenance R2 1차 기록·증거 보강
+.../wiki-commit-provenance-artifact.md             | 31 ++++++++++++++++++++++
+ .../wiki-commit-provenance-handoff.md              | 17 ++++++++++++
+ .../wiki-commit-provenance-meta.json               | 12 ++++++++-
+ 3 files changed, 59 insertions(+), 1 deletion(-)
