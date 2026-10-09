@@ -23,7 +23,7 @@ C2a(비파괴): task 폴더가 **있어도 없어도** 원장·done-on-main nudg
 - [x] 4. `list --remote` 오탐 제거 — R-4
   - `listBranchOnlyTasks`의 `onDefault`에 `git show <defaultFull>:docs/task_summary.md`의 `done` 행 label을 더한다. 원장을 못 읽으면 spec 마커만(종전).
   - 테스트: S6 `list --remote: a task done in the default-ref ledger is not branch-only`(`tests/list-remote.test.mjs`).
-- [ ] 5. 이름 재사용 가드 — R-5 (`src/commands/task.mjs`)
+- [x] 5. 이름 재사용 가드 — R-5 (`src/commands/task.mjs`)
   - `runTask`의 `isTask` 판정(356) 직후, 명령 이름·member 충돌 검사 앞: `!isTask && await isAbsentOrEmpty(dir)`이고 로컬 `docs/task_summary.md`의 `parseSummaryRows`에 `<user>/<name>` done 행이 있으면
     `emitTaskError(json, '종결된 task 의 이름은 다시 쓸 수 없음', buildErrorPacket({ cause, retry: 다른 이름, alternatives: ['git log -- docs/<user>/<name> 으로 원문 확인'], safeDefault: 아무것도 바뀌지 않음, stop }))`.
   - 원격 원장은 보지 않는다(`tests/task-done-on-main.test.mjs:22` "생성은 막지 않는다" 유지).

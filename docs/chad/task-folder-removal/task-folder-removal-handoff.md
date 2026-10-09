@@ -39,3 +39,11 @@
  tests/migrate.test.mjs                             | 23 +++++++
  tests/summary.test.mjs                             | 71 +++++++++++++++++++++-
  5 files changed, 140 insertions(+), 16 deletions(-)
+
+## 2026-10-09T02:25:22.978Z — a47a3c8 feat(remote-task): done-on-main·list --remote가 default ref 원장으로 폴백
+.../task-folder-removal-handoff.md                 |  8 +++
+ .../task-folder-removal-plan.md                    |  4 +-
+ src/commands/remote-task.mjs                       | 50 +++++++++++++++---
+ tests/list-remote.test.mjs                         | 24 +++++++++
+ tests/remote-task.test.mjs                         | 59 ++++++++++++++++++++++
+ 5 files changed, 135 insertions(+), 10 deletions(-)
