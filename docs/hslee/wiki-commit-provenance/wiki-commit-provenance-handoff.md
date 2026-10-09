@@ -58,3 +58,10 @@ docs/chad/wiki-compile/wiki-compile-spec.md         |  4 ++--
  .../wiki-commit-provenance-spec.md                  |  2 +-
  tests/wiki.test.mjs                                 |  8 +++++++-
  5 files changed, 40 insertions(+), 4 deletions(-)
+
+## 2026-10-09T13:23:17.825Z — 00a87c4 docs(task): wiki-commit-provenance R3 재리뷰 기록
+.../wiki-commit-provenance-artifact.md               | 20 ++++++++++++++++++++
+ .../wiki-commit-provenance-meta.json                 |  9 +++++++++
+ .../wiki-commit-provenance-plan.md                   |  2 +-
+ .../wiki-commit-provenance-spec.md                   |  4 ++--
+ 4 files changed, 32 insertions(+), 3 deletions(-)
