@@ -23,3 +23,11 @@
  .../task-folder-removal-spec.md                    | 297 +++++++++++++--------
  docs/harness-cycle.md                              |   4 +-
  5 files changed, 230 insertions(+), 127 deletions(-)
+
+## 2026-10-09T02:21:49.360Z — e207b88 docs(diagram): task-folder-removal C2a 입력 이전 다이어그램 + C2b closedAt 한계 기록
+.../task-folder-removal-artifact.md                |   1 +
+ .../task-folder-removal-diagram.html               | 128 +++++++++++++++++++++
+ .../task-folder-removal-handoff.md                 |   8 ++
+ .../task-folder-removal-plan.md                    |   2 +-
+ .../task-folder-removal-spec.md                    |   2 +
+ 5 files changed, 140 insertions(+), 1 deletion(-)

@@ -106,9 +106,25 @@ async function readTextOrNull(p) {
 // 상태 칸 패턴을 렌더가 쓰는 상수에서 조립한다. 리터럴로 다시 적으면 표시를 바꿀 때
 // 한쪽만 고치게 되고, 그러면 그 행은 매치에 실패해 조용히 사라진다 —
 // `inferLegacyMeta` 가 그 task 의 created·done 을 복구할 마지막 출처가 원장이라 손실이 영구적이다.
+// 5번째 칸(Area)은 선택이다 — 4열 원장의 매치 결과는 칸을 더하기 전과 같다.
 const SUMMARY_ROW_RE = new RegExp(
-  `^\\|\\s*([^|]+?)\\s*\\|\\s*([^|]+?)\\s*\\|\\s*(${DONE_CELL}(?: ${FORCED_MARK})?|🔄 (?:open|active))\\s*\\|\\s*([^|]*?)\\s*\\|`,
+  `^\\|\\s*([^|]+?)\\s*\\|\\s*([^|]+?)\\s*\\|\\s*(${DONE_CELL}(?: ${FORCED_MARK})?|🔄 (?:open|active))\\s*\\|\\s*([^|]*?)\\s*\\|(?:\\s*([^|]*?)\\s*\\|)?`,
 );
+
+// `task_summary.md` 행의 유일한 파서. summary·done-on-main·list --remote·task 이름 가드가 공유한다 —
+// task 폴더가 지워진 뒤에는 이 행이 그 task 의 마지막 사실이다(task-folder-removal).
+export function parseSummaryRows(text) {
+  const rows = [];
+  for (const line of (text || '').split('\n')) {
+    const m = line.match(SUMMARY_ROW_RE);
+    if (!m || m[1] === 'User') continue;
+    const done = m[3].startsWith(DONE_CELL);
+    rows.push({
+      user: m[1], task: m[2], done, forced: done && m[3].includes(FORCED_MARK), created: m[4], area: m[5] || null,
+    });
+  }
+  return rows;
+}
 
 // Parse the committed ledger so legacy facts survive the switch to meta.json.
 export async function readLedger(targetDir) {
@@ -117,16 +133,9 @@ export async function readLedger(targetDir) {
   const openCreated = new Map();
   const forcedNames = new Set();
 
-  const summary = await readTextOrNull(join(targetDir, SUMMARY_REL));
-  if (summary) {
-    for (const line of summary.split('\n')) {
-      const m = line.match(SUMMARY_ROW_RE);
-      if (!m) continue;
-      if (m[1] === 'User') continue;
-      const done = m[3].startsWith(DONE_CELL);
-      summaryRows.set(key(m[1], m[2]), { done, created: m[4] });
-      if (done && m[3].includes(FORCED_MARK)) forcedNames.add(key(m[1], m[2]));
-    }
+  for (const row of parseSummaryRows(await readTextOrNull(join(targetDir, SUMMARY_REL)))) {
+    summaryRows.set(key(row.user, row.task), { done: row.done, created: row.created });
+    if (row.forced) forcedNames.add(key(row.user, row.task));
   }
 
   const docs = docsPath(targetDir);
@@ -154,11 +163,26 @@ export async function readLedger(targetDir) {
 
 // A directory is a task when it carries the `<name>-spec.md` marker — the same rule
 // `list` uses, so docs/superpowers/{plans,specs} and similar non-task dirs stay out.
-export async function collectTasks(targetDir) {
+//
+// `includeLedgerOnly`: 폴더가 없는 task 의 `✅ done` 원장 행도 이어받는다 — 폴더를 지운 뒤에도 원장 행이
+// 사라지지 않게 한다(task-folder-removal). summary 렌더만 켠다. migrate 가 켜면 meta 를 새로 써서 지운 폴더를
+// 되살린다. `🔄 open` 행 + 폴더 없음은 손으로 버린 task 라 종전대로 빠진다.
+export async function collectTasks(targetDir, { includeLedgerOnly = false } = {}) {
   if (!(await exists(docsPath(targetDir)))) return [];
 
   const ledger = await readLedger(targetDir);
   const tasks = [];
+
+  if (includeLedgerOnly) {
+    const folders = new Set((await listTaskRefs(targetDir)).map(r => key(r.user, r.task)));
+    for (const row of parseSummaryRows(await readTextOrNull(join(targetDir, SUMMARY_REL)))) {
+      if (!row.done || folders.has(key(row.user, row.task))) continue;
+      tasks.push({
+        user: row.user, task: row.task, status: 'done', created: row.created,
+        ...(row.area ? { area: row.area } : {}), forcedRecovered: row.forced, ledgerOnly: true,
+      });
+    }
+  }
 
   for (const { user, task } of await listTaskRefs(targetDir)) {
     const meta = (await readTaskMeta(targetDir, user, task))
@@ -336,7 +360,7 @@ export async function runSummary(ctx) {
     });
   }
 
-  const tasks = await collectTasks(ctx.targetDir);
+  const tasks = await collectTasks(ctx.targetDir, { includeLedgerOnly: true });
   const files = renderAll(tasks);
 
   if (!write && !check) {

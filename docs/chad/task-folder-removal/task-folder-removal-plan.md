@@ -6,11 +6,11 @@ C2a(비파괴): task 폴더가 **있어도 없어도** 원장·done-on-main nudg
 
 ## 단계
 - [x] spec/plan 다이어그램 작성 → docs/chad/task-folder-removal/task-folder-removal-diagram.html
-- [ ] 1. 원장 파서 단일화 — `src/commands/summary.mjs`
+- [x] 1. 원장 파서 단일화 — `src/commands/summary.mjs`
   - `parseSummaryRows(text)` export: `readLedger`의 summary 루프를 옮긴 순수 함수. 반환 `[{ user, task, done, forced, created, area }]`(`area`는 5번째 칸, 없으면 `null`).
   - `SUMMARY_ROW_RE`에 선택 5번째 칸 캡처를 더한다. `readLedger`는 이 함수를 쓰고 반환 모양(`summaryRows`·`forcedNames` 등)은 그대로.
   - 테스트(`tests/summary.test.mjs`): 4열·5열 행 파싱, `⚠️`·header 행 처리. 기존 summary 테스트 무수정 통과.
-- [ ] 2. 원장 입력 승격 — R-1·R-2
+- [x] 2. 원장 입력 승격 — R-1·R-2
   - `collectTasks(targetDir, { includeLedgerOnly = false } = {})`: true면 폴더(spec 마커) 없는 `done` 행을 `{ user, task, status: 'done', created, area, forcedRecovered: forced, ledgerOnly: true }`로 더한다. `🔄 open` 행은 더하지 않는다.
   - `runSummary`(`summary.mjs:323`)만 `{ includeLedgerOnly: true }`를 넘긴다. `migrate.mjs` 두 호출(857·940)은 기본값 그대로 — 손대지 않는다.
   - 테스트: S1 `summary: keeps a done ledger row whose task folder is gone`, S2 `summary: drops an open ledger row whose task folder is gone`(`tests/summary.test.mjs`), S3 `migrate: does not recreate a ledger-only task folder`(`tests/migrate.test.mjs`).
