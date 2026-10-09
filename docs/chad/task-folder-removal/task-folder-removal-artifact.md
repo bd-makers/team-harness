@@ -6,7 +6,8 @@
 
 - 다이어그램: docs/chad/task-folder-removal/task-folder-removal-diagram.html 생성 (2026-10-09)
 - C2a 구현(2026-10-09): `parseSummaryRows` 단일 파서 · `collectTasks({ includeLedgerOnly })`(summary만) · done-on-main/`list --remote` 원장 폴백 · 종결 이름 재사용 가드 · 문서(`commands/harness-task.md`·`templates/docs/README.md`·CHANGELOG).
-- 검증(2026-10-09, R2 지적 반영 후): `npm test` 1209개 중 pass 1208 · fail 0 · skip 1(기존 CI 전용 `jq-present` 매트릭스) · `npm run docs:check` 통과.
+- 검증(2026-10-09, R3 P2 반영 후 최종): `npm test` 1211개 중 pass 1210 · fail 0 · skip 1(기존 CI 전용 `jq-present` 매트릭스) · `npm run docs:check` 통과 · `scenario check` pass (8 checked).
+  (R2 지적 반영 직후에는 1209개 중 pass 1208 — R3 반영으로 테스트 2개 추가)
 - `harness-team scenario check` (2026-10-09, R2 지적 반영 후) — `scenario: pass (8 checked)`, 시나리오마다 `ℹ tests 1 · pass 1`(이름 필터가 정확히 한 테스트를 골랐다):
   ```text
   S1 pass [summary: keeps a done ledger row whose task folder is gone]
@@ -126,5 +127,23 @@ E2(범위 밖 변경 없음) pass는 수용. 재검증은 다음 R2 실행으로
 - P2-2 오탐 nudge — meta 없는 구 task 폴더가 main에 있어도 원장 폴백이 "폴더가 지워짐"을 안내했다(종전에는 null — spec "오늘 동작 불변"과 충돌).
   → default ref 트리에 spec 마커가 있으면 폴백하지 않는다. blob이 아니라 `ls-tree`로 보아 partial clone 오판도 피한다.
   테스트 `remote-task: a meta-less task whose folder is still on the default ref does not use the ledger fallback`.
+
+### 2026-10-09T02:35:59.056Z — codex (harness-team review)
+
+- engine: codex · scope: diff · tip: 059227d24b01d1bae4553cd1c6499c1bb6ef44c0 · exit 0 · 480 B
+
+```text
+전하, `git status`와 `refs/remotes/origin/main` 대비 diff를 직접 검토했습니다.
+
+- **P1 / P2 / P3:** 보고할 유의미한 결함을 발견하지 못했습니다.
+- **검증:** 읽기 전용 테스트 10개, `docs:check`, `git diff --check` 통과.
+- 전체 테스트는 파일을 생성하므로 실행하지 않았습니다. 워킹트리는 깨끗하며 변경하지 않았습니다.
+
+**최종 판정: 승인 가능 — 검토 범위에서 차단 사유 없음.**
+```
+
+<!-- harness:review kind=codex scope=diff tip=059227d24b01d1bae4553cd1c6499c1bb6ef44c0 at=2026-10-09T02:35:59.056Z -->
+
+판별(작성 세션): P1·P2·P3 없음 — 수용. R3 완료.
 
 ## Learnings

@@ -29,7 +29,7 @@ C2a(비파괴): task 폴더가 **있어도 없어도** 원장·done-on-main nudg
   - 원격 원장은 보지 않는다(`tests/task-done-on-main.test.mjs:22` "생성은 막지 않는다" 유지).
   - 테스트(새 `tests/task-name-reuse.test.mjs`): S7 `task: refuses to reuse the name of a done task whose folder is gone`, S8 `task: a done task whose folder exists still reopens`.
 - [x] 6. 문서 — `commands/harness-task.md`("원격 done nudge" 절에 원장 폴백·문구, 생성 거부 조건 한 단락), CHANGELOG `[Unreleased]`(Changed 2줄: 원장 보존·이름 재사용 거부), 필요 시 `npm run docs:generate`
-- [ ] 7. 검증 — `npm test` · `npm run docs:check` · `harness-team scenario check`(출력 artifact 기록) → R2 `review codex --framing scenario` → R3 `review codex`(codex 실패 시 claude 엔진 폴백) → artifact `## Reviews`
+- [x] 7. 검증 — `npm test` · `npm run docs:check` · `harness-team scenario check`(출력 artifact 기록) → R2 `review codex --framing scenario` → R3 `review codex`(codex 실패 시 claude 엔진 폴백) → artifact `## Reviews`
 - [ ] 8. `/harness-ship` 준비 보고 — spec·plan·artifact 최종 갱신
 - [ ] 9. (사람 승인 후) push · PR · PR 리뷰 덱 — 브랜치 upstream이 origin/main이므로 push 대상 ref를 명시한다
 
