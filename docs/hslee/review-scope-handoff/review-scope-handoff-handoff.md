@@ -30,3 +30,10 @@ CHANGELOG.md                                       |  7 ++
  tests/review-command.test.mjs                      | 76 ++++++++++++++++++++++
  tests/scope-command.test.mjs                       | 22 ++++++-
  9 files changed, 156 insertions(+), 7 deletions(-)
+
+## 2026-10-09T16:21:50.281Z — 4d2af02 test(review): S1이 저장된 meta.reviews scope와 base 브랜치의 미기록을 검증한다
+.../review-scope-handoff-artifact.md               | 27 ++++++++++++++++++++++
+ .../review-scope-handoff-handoff.md                | 12 ++++++++++
+ .../review-scope-handoff-meta.json                 | 12 +++++++++-
+ tests/review-command.test.mjs                      |  6 +++++
+ 4 files changed, 56 insertions(+), 1 deletion(-)

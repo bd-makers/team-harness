@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: scope 자동 판정이 post-commit 훅의 handoff 변경을 dirty로 세지 않는다 — 그것뿐이면 diff.
-- Current atomic step: plan 5 — R2·R3 리뷰(`--scope diff` 명시, codex → claude 폴백).
+- Current atomic step: plan 6 — ship 준비 보고(로컬 커밋까지, push·PR 금지).
 - Stop / human-decision condition: push·PR 금지(brief). 다이어그램 옵트인은 사람 결정 대기.
 
 ## Constraints and settled decisions
@@ -18,4 +18,4 @@
 ## Failure capsules (max 3 unresolved)
 
 ## Resume checklist
-- R2·R3 결과를 artifact `## Reviews`에 반영 → ship 준비 보고(`ao report`).
+- R2 pass(2차)·R3 pass 기록 완료. 남은 것: 다이어그램 옵트인 사람 결정, push·PR 지시.

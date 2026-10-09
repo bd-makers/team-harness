@@ -46,4 +46,45 @@
 - 변이: `src/commands/review.mjs`를 0.49.0판(`396fbcc`)으로 되돌리면 세 테스트 모두 `✖`(pass 0 · fail 3), 복원 후 커밋본과 동일.
 - E2 pass — 조치 없음.
 
+### 2026-10-09T16:22:54.672Z — codex-scenario (harness-team review)
+
+- engine: codex · scope: diff · tip: 4d2af027a104992b480a14db683728d740bcc1c7 · exit 0 · 1777 B
+
+```text
+전하, `git status`와 `git diff refs/remotes/origin/main`을 직접 확인했습니다. 파일 변경·테스트·변이 재실행은 하지 않았으며, 기계 행은 재판정하지 않았습니다.
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| E1 | 각 시나리오의 증거가 Then을 실제로 검증한다 | BLOCKER | **pass** | **S1**: [테스트](tests/review-command.test.mjs:355)가 main의 `empty`, `recorded === false`, 저장된 `reviews === []`와 feature의 `scope/base`, 저장 건수·`scope === 'diff'`를 단언합니다. 저장 누락·잘못된 scope·main 기록 변이는 해당 assertion에서 실패합니다. **S2**: [테스트](tests/review-command.test.mjs:390)가 전제 diff와 (a)–(d)의 worktree, 명시 diff를 각각 단언하여 제외 범위 확대·dirty 무시·명시값 무시를 탐지합니다. **S3**: [CLI 테스트](tests/scope-command.test.mjs:328)가 실제 프로세스의 종료 코드와 JSON `scope === 'diff'`를 검사합니다. [기록된 실행 출력](docs/hslee/review-scope-handoff/review-scope-handoff-artifact.md:42)에 spec의 세 테스트 이름이 모두 `✔`로 등장하며, 46행에는 구버전 복원 시 세 테스트 실패가 기록되어 있습니다. |
+| E2 | spec 밖 동작 변경이 없다 | MAJOR | **pass** | 런타임 diff는 [resolveScope](src/commands/review.mjs:245)의 `-z` 파싱·활성 task handoff 제외·접두 보정과 [repoPrefix](src/commands/task.mjs:798)의 export입니다. 모두 spec 설계에 대응합니다. 나머지는 관련 테스트·문서·task 기록이며, 후속 17·18은 사유 기록만 추가했습니다. |
+
+**Verdict: pass — fail 목록: 없음.** 실행·변이 결과는 artifact의 기록을 근거로 확인했습니다.
+```
+
+<!-- harness:review kind=codex-scenario scope=diff tip=4d2af027a104992b480a14db683728d740bcc1c7 at=2026-10-09T16:22:54.672Z -->
+
+**판별 (2026-10-10):** R2 재실행 pass — E1·E2 모두 pass, 조치 없음. scope=diff 확인.
+
+### 2026-10-09T16:23:59.469Z — codex (harness-team review)
+
+- engine: codex · scope: diff · tip: 4d2af027a104992b480a14db683728d740bcc1c7 · exit 0 · 573 B
+
+```text
+전하, `git status`와 `git diff refs/remotes/origin/main`을 직접 확인했습니다.
+
+**발견 사항: 없음 — P1/P2/P3로 보고할 유의미한 결함을 찾지 못했습니다.**
+
+활성 task의 handoff 제외, rename 양쪽 경로 처리, 하위 디렉터리 접두 보정과 명시 scope 유지가 설계에 부합합니다.
+
+`git diff --check`와 변경된 JavaScript 4개 파일의 구문 검사는 통과했습니다. 파일은 수정하지 않았으며, 테스트·빌드는 실행하지 않았습니다.
+
+**최종 판정: PASS — 정적 리뷰 기준.**
+```
+
+<!-- harness:review kind=codex scope=diff tip=4d2af027a104992b480a14db683728d740bcc1c7 at=2026-10-09T16:23:59.469Z -->
+
+**판별 (2026-10-10):** R3 발견 없음(PASS, 정적 리뷰) — 조치 없음. scope=diff 확인. 최종 재검증: `npm test` exit 0 — 1217 · pass 1216 · fail 0 · skipped 1(기존 CI 전용) · perf pass 1, `docs:check` 최신, `scenario check` pass(3).
+
 ## Learnings
+
+- (2026-10-10) R2 1차가 잡은 것은 "테스트가 Then의 저장 결과·미기록을 단언하지 않음"이었다 — Then에 "기록한다/하지 않는다"가 있으면 반환값이 아니라 저장소(`meta.reviews`)를 읽어 단언한다.
