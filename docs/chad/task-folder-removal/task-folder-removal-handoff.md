@@ -70,3 +70,8 @@ CHANGELOG.md                                                 | 8 ++++++++
  tests/list-remote.test.mjs                         |  7 ++++
  tests/remote-task.test.mjs                         |  5 +++
  4 files changed, 61 insertions(+), 1 deletion(-)
+
+## 2026-10-09T02:30:58.585Z — fc86163 docs(task): R2 재검증 기록 — 러너 출력 추가
+.../task-folder-removal-artifact.md                | 33 ++++++++++++++++++++++
+ .../task-folder-removal-meta.json                  |  9 ++++++
+ 2 files changed, 42 insertions(+)
