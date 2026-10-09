@@ -96,6 +96,27 @@ PR 마커 형식과 `task=` 기반 멱등 판정은 유지되며, 변경은 커�
 
 판별(작성 세션): 발견 없음 — 조치 없음. 리뷰어가 재실행하지 않은 통합 테스트·전체 스위트는 작성 세션이 돌렸다(## 결과의 `npm test`·`docs:check`·scenario check).
 
+### 2026-10-09T13:20:24.395Z — codex (harness-team review)
+
+- engine: codex · scope: diff · tip: 5a2eaed1043d15eb120b3b746b38f663aee2fca2 · exit 0 · 1031 B
+
+```text
+전하, **P2 1건**입니다. P1·P3 및 `lastTouchingCommit` 구현의 유의미한 결함은 발견하지 못했습니다.
+
+- **P2 should-fix — [wiki-compile-spec.md:155](/Users/hsonpro/.ao/data/worktrees/harness-aijient-team-plugin/harness-aijient-team-plugin-20/docs/chad/wiki-compile/wiki-compile-spec.md:155)**: S3의 새 테스트는 `--pr 9` 경로만 실행하므로, 여전히 Then에 선언된 첫 실행의 `marker=null`·`no-pr` 차단을 검증하지 않습니다. Then을 현재 동작으로 정정하고 두 실행 모두를 검증하는 증거에 연결해야 합니다.
+
+커밋 출처는 마지막 task 변경 커밋, PR 출처는 introducing commit을 선택하며, 추가 테스트도 이 구분을 확인합니다.
+
+검증: `git status` clean, origin/main 대비 diff 확인, 문서 계약 테스트 2건·구문 검사 통과. Git fixture를 생성하는 런타임 테스트는 읽기 전용 제약으로 실행하지 않았습니다.
+
+**최종 판정: Request changes — S3 증거 계약 정정 필요.**
+```
+
+<!-- harness:review kind=codex scope=diff tip=5a2eaed1043d15eb120b3b746b38f663aee2fca2 at=2026-10-09T13:20:24.395Z -->
+
+판별(작성 세션): P2 **진짜 결함** — 정정한 wiki-compile S3의 Then이 여전히 첫 실행 `no-pr` 막힘을 선언했고, 새 증거는 `--pr` 실행만 단언했다.
+조치: `--pr overrides the commit-only provenance` 테스트가 같은 저장소의 `--pr` 없는 첫 실행(blockers 없음·종결 커밋 출처 marker)도 단언하게 하고, wiki-compile S3 Then을 현재 동작으로 고쳤다(정정 사유 줄 갱신). 이 task S2 Then에도 그 단언을 반영했다.
+
 ## Learnings
 
 - 구현을 커밋한 **뒤** `harness-team review`를 돌리면 post-commit 훅이 고친 handoff 때문에 트리가 dirty라 scope가 `worktree`로 잡히고,

@@ -153,7 +153,7 @@ C2b 이후 원문은 git 이력에 남는다(c2a Q8-A) — 커밋 sha 출처가 
       "id": "S2",
       "given": "S1 과 같은 저장소(종결 커밋 있음), 그리고 커밋 메시지에 (#12) 가 있는 저장소(종결 커밋 있음)",
       "when": "앞 저장소는 --pr 9 를 붙여, 뒤 저장소는 그대로 실행한다",
-      "then": "앞은 marker 가 'pr=9 commit=<들여온 커밋 sha7>' 형식(종전 바이트), 뒤는 provenance 가 pr 12·들여온 커밋 sha7 — 종결 커밋이 뒤에 있어도 PR 출처의 커밋은 들여온 커밋이다. --pr abc 는 exit 2",
+      "then": "앞은 marker 가 'pr=9 commit=<들여온 커밋 sha7>' 형식(종전 바이트), 뒤는 provenance 가 pr 12·들여온 커밋 sha7 — 종결 커밋이 뒤에 있어도 PR 출처의 커밋은 들여온 커밋이다. 앞 저장소의 --pr 없는 첫 실행은 blockers 없음·종결 커밋 출처 marker. --pr abc 는 exit 2",
       "test": "wiki sources: --pr overrides the commit-only provenance",
       "cmd": "node --test --test-name-pattern=\"wiki sources: --pr overrides the commit-only provenance\" tests/wiki.test.mjs"
     },

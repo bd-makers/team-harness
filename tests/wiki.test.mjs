@@ -133,7 +133,13 @@ test('wiki sources: without a PR number the marker cites the closing commit', as
 test('wiki sources: --pr overrides the commit-only provenance', async () => {
   const { dir, sha7 } = await repoWithLandedTask({ subject: "Merge branch 'feature'" });
   try {
-    await closeOnMain(dir);
+    const closing = await closeOnMain(dir);
+    // 같은 저장소의 `--pr` 없는 첫 실행은 막힘이 아니라 커밋 출처다(종결된 wiki-compile S3의 첫 실행 증거).
+    const first = await wikiSources(dir, 'chad', 'x', { at: AT });
+    assert.deepEqual(first.blockers, []);
+    assert.deepEqual(first.provenance, { pr: null, commit: closing, author: 'chad' });
+    assert.equal(first.marker, `<!-- harness:wiki task=chad/x commit=${closing} author=chad at=${AT} -->`);
+
     const out = JSON.parse((await cli(dir, 'wiki', 'sources', 'chad/x', '--pr', '9', '--json')).stdout);
     assert.equal(out.provenance.pr, 9);
     assert.equal(out.provenance.commit, sha7, '--pr 는 번호만 바꾸고 커밋은 들여온 커밋으로 추론한다');
