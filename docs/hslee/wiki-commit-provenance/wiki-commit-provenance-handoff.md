@@ -69,3 +69,8 @@ docs/chad/wiki-compile/wiki-compile-spec.md         |  4 ++--
 ## 2026-10-09T14:11:03.394Z — 821b5b9 docs(task): PR #138 기록 — 리뷰 덱 미실행(스킬 없음)
 docs/hslee/wiki-commit-provenance/wiki-commit-provenance-plan.md | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
+
+## 2026-10-09T14:17:30.252Z — 0988cf3 test(wiki): 브랜치 없는 직접 커밋 이력에서 커밋 출처가 종결 커밋을 가리킨다
+.../wiki-commit-provenance-artifact.md             |  2 +
+ tests/wiki.test.mjs                                | 46 ++++++++++++++++++++++
+ 2 files changed, 48 insertions(+)
