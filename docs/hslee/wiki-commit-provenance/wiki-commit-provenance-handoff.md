@@ -40,3 +40,13 @@ CHANGELOG.md                                       |   7 +
 docs/hslee/wiki-commit-provenance/wiki-commit-provenance-plan.md | 2 +-
  docs/hslee/wiki-commit-provenance/wiki-commit-provenance-spec.md | 2 ++
  2 files changed, 3 insertions(+), 1 deletion(-)
+
+## 2026-10-09T13:19:12.477Z — 6432e44 fix(wiki): 커밋 출처는 task 폴더를 마지막으로 건드린 종결 커밋을 가리킨다
+CHANGELOG.md                                       |  3 ++-
+ docs/chad/wiki-compile/wiki-compile-spec.md        |  5 ++--
+ .../wiki-commit-provenance-artifact.md             |  9 +++++++
+ .../wiki-commit-provenance-plan.md                 |  5 +++-
+ .../wiki-commit-provenance-spec.md                 | 28 +++++++++++++---------
+ src/commands/wiki.mjs                              | 19 +++++++++++++--
+ tests/wiki.test.mjs                                | 27 ++++++++++++++++++---
+ 7 files changed, 76 insertions(+), 20 deletions(-)
