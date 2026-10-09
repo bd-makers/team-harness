@@ -229,6 +229,8 @@
   삭제 결정론 하위명령 + 종결 절차 한 줄, `done` 불변(Q9-A) · 삭제 게이트 = `wiki sources`의 `compiled`(Q2-A) ·
   레거시 폴더는 두고 migrate 일회성 정리 단계, 호환 기간 없음, doctor 버전 혼재 경고, CHANGELOG Breaking(Q3-A) ·
   재컴파일은 삭제 전에만임을 `commands/harness-wiki.md`에 명시(Q7-A) · 감사 흔적은 git 이력(Q8-A) · observe 익명(Q5-A).
+- (open → C2b 후속 task) 알려진 한계(2026-10-09 사람 지적): 원장 폴백의 `closedAt`(디렉터리를 마지막으로 건드린 커밋 시각)은 C2b 이후 **삭제 커밋 시각**이 된다 —
+  종결과 삭제 사이에 의도적으로 다시 연 클론은 `reopenedAt < closedAt`이라 nudge가 계속 뜬다(시끄러운 쪽 오류, 침묵 쪽이 아님). C2b가 종결·삭제를 한 커밋에 담으면 간격이 없어진다.
 - 코드 참조: `src/task-paths.mjs`(`listTaskRefs`) · `src/commands/summary.mjs`(`readLedger` 114 · `collectTasks` 157 · `runSummary` 323) ·
   `src/commands/remote-task.mjs`(`readRemoteTaskMeta` 44 · `doneOnMainVerdict` 60 · `renderDoneOnMainNudge` 71 · `listBranchOnlyTasks` 87) ·
   `src/commands/task.mjs`(`runTask` 296 · isTask 판정 356) · `src/commands/migrate.mjs`(`backfillTaskMeta` 856 · `collectReviewAdoptionCandidates` 938)

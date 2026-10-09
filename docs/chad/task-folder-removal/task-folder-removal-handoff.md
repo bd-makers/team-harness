@@ -15,3 +15,11 @@
 .../task-folder-removal/task-folder-removal-handoff.md     |  9 +++++++++
  docs/chad/task-folder-removal/task-folder-removal-spec.md  | 14 ++++++++------
  2 files changed, 17 insertions(+), 6 deletions(-)
+
+## 2026-10-09T02:12:17.256Z — 5109c6c docs(task): task-folder-removal — 사람 답 반영, C2a로 범위 축소·게이트 통과·plan 작성
+.../task-folder-removal-context.md                 |  13 +-
+ .../task-folder-removal-handoff.md                 |   5 +
+ .../task-folder-removal-plan.md                    |  38 ++-
+ .../task-folder-removal-spec.md                    | 297 +++++++++++++--------
+ docs/harness-cycle.md                              |   4 +-
+ 5 files changed, 230 insertions(+), 127 deletions(-)

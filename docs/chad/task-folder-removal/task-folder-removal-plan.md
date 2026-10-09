@@ -5,7 +5,7 @@ C2a(비파괴): task 폴더가 **있어도 없어도** 원장·done-on-main nudg
 머지돼도 오늘 저장소의 동작은 바뀌지 않는다 — 기존 테스트 무수정 통과가 그 증거다.
 
 ## 단계
-- [ ] spec/plan 다이어그램 작성 → docs/chad/task-folder-removal/task-folder-removal-diagram.html
+- [x] spec/plan 다이어그램 작성 → docs/chad/task-folder-removal/task-folder-removal-diagram.html
 - [ ] 1. 원장 파서 단일화 — `src/commands/summary.mjs`
   - `parseSummaryRows(text)` export: `readLedger`의 summary 루프를 옮긴 순수 함수. 반환 `[{ user, task, done, forced, created, area }]`(`area`는 5번째 칸, 없으면 `null`).
   - `SUMMARY_ROW_RE`에 선택 5번째 칸 캡처를 더한다. `readLedger`는 이 함수를 쓰고 반환 모양(`summaryRows`·`forcedNames` 등)은 그대로.
