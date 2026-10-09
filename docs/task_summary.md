@@ -152,3 +152,4 @@
 | chad | roadmap-to-1-0 | ✅ done | 2026-10-06 |
 | chad | wiki-compile | ✅ done | 2026-10-07 |
 | chad | wiki-fence-nested | ✅ done | 2026-10-07 |
+| chad | task-folder-removal | ✅ done | 2026-10-09 |

@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ task-folder-removal
 - ✅ wiki-compile
 - ✅ wiki-fence-nested
 - ✅ default-loop-skill
