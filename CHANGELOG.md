@@ -9,6 +9,13 @@
 
 ## [Unreleased]
 
+### Fixed
+- **커밋 직후의 리뷰가 handoff만 보던 것** (task `review-scope-handoff`). `--scope` 없는 `harness-team review`(R2 `--framing scenario`·adversarial·testcritic 포함)와
+  `harness-team scope`는 트리가 dirty면 worktree scope를 고르는데, post-commit 훅이 커밋마다 활성 task의 handoff를 다시 써 트리가 늘 dirty였다 —
+  그래서 구현 diff 대신 handoff 한 파일을 리뷰했다. 이제 scope 판정은 `done` 가드와 같은 집합(활성 task의 `<name>-handoff.md`·`<user>-handoff.md`)을
+  dirty에서 빼고, 바뀐 것이 그것뿐이면 base 대비 diff를 리뷰한다. 그 밖의 변경이 하나라도 있으면 종전대로 worktree, 명시 `--scope`는 그대로다.
+  기본 브랜치에서 handoff만 바뀐 상태는 이제 "리뷰할 것 없음"이다.
+
 ## [0.49.0] - 2026-10-10
 
 ### Changed

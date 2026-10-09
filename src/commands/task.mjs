@@ -798,7 +798,7 @@ export function handoffRelPaths(user, task) {
 // targetDir 의 루트 기준 접두를 붙인다(git 이 직접 계산 — realpath·symlink 차이를 타지 않는다).
 // dirty 범위를 targetDir 아래로 좁히지 않는다: 설치 밖의 미커밋 변경도 종전대로 가드가 본다.
 // 읽지 못하면 빈 접두 — 루트 설치본의 종전 동작이다.
-async function repoPrefix(targetDir) {
+export async function repoPrefix(targetDir) {
   try {
     const { stdout } = await pexec('git', ['-C', targetDir, 'rev-parse', '--show-prefix'], { maxBuffer: 1024 * 1024 });
     return stdout.replace(/\n$/, '');

@@ -40,7 +40,9 @@ Raw slash-command 인수:
      `custom`은 체인에 포함되지 않는다 — 명시 호출 전용이다.
 
 2. **Scope 결정** — `git status --short`가 dirty면 working tree 전체가 리뷰 대상이다.
-   clean이면 base 대비 브랜치 diff를 리뷰한다 — base는 `--base <ref>` 인수가 있으면 그 값,
+   단 post-commit 훅이 커밋 뒤에 쓰는 **활성 task의 handoff**(`<name>-handoff.md`·`<user>-handoff.md`)는 dirty로 세지 않는다 —
+   `done` 가드가 무시하는 것과 같은 집합이다. 그것까지 세면 커밋 직후의 리뷰가 구현 diff 대신 handoff만 보게 된다.
+   바뀐 것이 그 둘뿐이면 clean으로 본다. clean이면 base 대비 브랜치 diff를 리뷰한다 — base는 `--base <ref>` 인수가 있으면 그 값,
    없으면 **원격 기본 브랜치**를 찾는다: `origin/HEAD`가 가리키는 것 → `origin/main` → `origin/master`,
    **실재하는 것만** 채택한다(`origin/HEAD`는 삭제된 브랜치를 가리킨 채 남아 있을 수 있다).
    추론한 base는 `refs/remotes/origin/<branch>` 전체 이름으로 나온다 — 짧은 `origin/main`은 같은 이름의

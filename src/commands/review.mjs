@@ -16,7 +16,7 @@ import { readFile, access, constants } from 'node:fs/promises';
 import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { exists, writeText } from '../fsx.mjs';
-import { readActive, taskArtifactTemplate, VERIFY_KIND_SUFFIXES } from './task.mjs';
+import { readActive, taskArtifactTemplate, VERIFY_KIND_SUFFIXES, handoffRelPaths, parsePorcelainPaths, repoPrefix } from './task.mjs';
 import { readTaskMeta, writeTaskMeta } from './summary.mjs';
 import { RUBRICS, findFramingTemplate } from './review-prompts.mjs';
 import { resolveDefaultRef } from './remote-task.mjs';
@@ -236,8 +236,21 @@ export async function resolveScope({ targetDir, scope, base }) {
   try { tip = (await git(targetDir, ['rev-parse', 'HEAD'])).trim() || 'none'; } catch { /* no commits / no git */ }
   if (scope === 'task-docs') return { scope, tip };
 
+  // post-commit 훅은 커밋 **뒤에** 활성 task 의 handoff 를 다시 쓴다 — 그 변경을 dirty 로 세면 커밋 직후의 리뷰가
+  // 구현 diff 대신 handoff 만 보는 worktree scope 가 된다(wiki-commit-provenance R2 1차 실행). 제외 집합은 done 가드와
+  // 같은 `handoffRelPaths` 이고, 경로를 대조하므로 `-z` 로 읽는다(기본 출력은 비-ASCII 경로를 octal 로 인용한다).
+  // 활성 task 가 없으면 훅은 아무것도 쓰지 않으므로 제외도 없다.
   let dirty = null;
-  try { dirty = (await git(targetDir, ['status', '--porcelain'])).trim().length > 0; } catch { /* not a git repo */ }
+  try {
+    const paths = parsePorcelainPaths(await git(targetDir, ['status', '--porcelain', '-z']));
+    const active = await readActive(targetDir);
+    let hookWritten = new Set();
+    if (active && active.user && active.task) {
+      const prefix = await repoPrefix(targetDir);
+      hookWritten = new Set([...handoffRelPaths(active.user, active.task)].map(p => prefix + p));
+    }
+    dirty = paths.some(p => !hookWritten.has(p));
+  } catch { /* not a git repo */ }
   if (dirty === null) {
     if (scope === 'diff') return { error: 'git 저장소가 아니라 diff scope 를 계산할 수 없음' };
     return { scope: 'worktree', tip };
