@@ -3,8 +3,8 @@
   "task": "wiki-commit-provenance",
   "created": "2026-10-09",
   "firstActivatedAt": "2026-10-09T12:59:30.744Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-10-09T14:22:20.352Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [

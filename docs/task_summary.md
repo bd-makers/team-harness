@@ -153,3 +153,4 @@
 | chad | wiki-compile | ✅ done | 2026-10-07 |
 | chad | wiki-fence-nested | ✅ done | 2026-10-07 |
 | chad | task-folder-removal | ✅ done | 2026-10-09 |
+| hslee | wiki-commit-provenance | ✅ done | 2026-10-09 |

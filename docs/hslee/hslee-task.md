@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ wiki-commit-provenance
 - ✅ decision-log-split
 - ✅ pr-check
 - ✅ pre-push-hook-doctor
