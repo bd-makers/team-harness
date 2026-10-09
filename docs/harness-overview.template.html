@@ -201,7 +201,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.47.0</span>
+      <span class="tag tag-purple">v0.48.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -209,6 +209,11 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.48.0 — 원장이 폴더 없는 done task를 기억한다 (C2a, 비파괴):</strong>
+    <br>
+    <code>0.48.0</code> <strong>task 폴더를 지워도 원장·done-on-main nudge·<code>list --remote</code>가 같은 답을 낸다 — 폴더는 아직 하나도 지우지 않는다.</strong> <code>summary --write</code>가 폴더 없는 task의 <code>✅ done</code> 원장 행(상태·⚠️·생성일·Area)을 그대로 이어받고, 원격에 meta·폴더가 없으면 default ref 원장의 done 행으로 "이미 종결됨"을 판정한다(그때만 nudge가 "새 이름으로 이어간다"고 안내).
+    원장에 done이고 폴더도 없는 이름으로는 <code>task &lt;name&gt;</code>이 새 task를 만들지 않는다(폴더가 있으면 종전대로 reopen). 지금은 모든 done 행에 폴더가 있어 동작이 같다 — 폴더 삭제(C2b)는 후속이며, 그 전에 팀 전원이 0.48.0 이상이어야 한다(구 CLI의 <code>summary --write</code>는 폴더 없는 행을 지운다).
+    <br><br>
     <strong>🆕 0.47.0 — R1 원천 검토 · R2 시나리오 대조 · 선택형 기본 루프 · 위키 컴파일:</strong>
     <br>
     <code>0.47.0</code> <strong>사이클의 검토 지점 R1·R2와 S3 루프·S8 위키(추가만)가 생겼다.</strong> <code>/harness-interview</code>가 채점 전에 원천 문서(PRD·Figma·API 문서·기획서·정책서) 사이의 충돌·누락을 spec <code>## 원천 검토 (R1)</code>에 기록하고, 미해결이 남으면 통과를 선언하지 않는다.
@@ -952,7 +957,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.47.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.48.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

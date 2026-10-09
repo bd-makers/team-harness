@@ -284,7 +284,7 @@
     <h1>Task Workflow Simulation</h1>
     <p>새로운 harness task 시스템의 전체 흐름 — init부터 완료, 세션 재개, task 전환까지의 시나리오별 시뮬레이션</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.47.0</span>
+      <span class="tag tag-purple">v0.48.0</span>
       <span class="tag tag-blue">post-commit 자동화</span>
       <span class="tag tag-green">증거 기반 종결 가드 7종</span>
       <span class="tag tag-orange">원장은 생성물</span>
@@ -293,7 +293,9 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #a78bfa;background:rgba(167,139,250,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
-    <strong>🆕 0.40.1–0.47.0 — user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키:</strong>
+    <strong>🆕 0.40.1–0.48.0 — user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키 · 폴더 없는 done task:</strong>
+    <br>
+    <code>0.48.0</code> 원장·done-on-main nudge·<code>list --remote</code>가 <strong>task 폴더가 없어도</strong> 원장의 <code>✅ done</code> 행으로 종결을 안다 — <code>summary --write</code>가 그 행을 보존하고, 그런 이름으로는 <code>task &lt;name&gt;</code>이 새 task를 만들지 않는다. 폴더를 지우는 단계는 아직 없어 아래 시나리오의 동작은 그대로다(S4 종결 절차 불변).
     <br>
     <code>0.47.0</code> <code>/harness-interview</code>가 채점 전에 <strong>R1 원천 문서 검토</strong>를 돌려 spec <code>## 원천 검토 (R1)</code>에 충돌·누락을 남긴다(아래 <strong>S2</strong> 5단계). spec <code>## Done evidence</code>에 <code>scenarios</code>(Given/When/Then + 증거)를 선언하면 <strong>R2 시나리오 대조</strong> — <code>harness-team scenario check</code>가 증거 명령 exit 0을, <code>review &lt;engine&gt; --framing scenario</code>가 증거가 Then을 검증하는지를 본다(아래 <strong>S4</strong> 가드 7번). 선택형 <code>/harness-loop</code>(plan 단계마다 Dev → QA → 로컬 커밋)와, 머지 후 종결에서 <code>done</code> 다음에 고르는 <code>/harness-wiki</code> 위키 컴파일이 생겼다.
     <br>
@@ -1179,7 +1181,7 @@ login-bug
 </main>
 
 <footer>
-  harness-aijient-team-plugin v0.47.0 — Task Workflow Simulation &nbsp;·&nbsp; 2026-10-07
+  harness-aijient-team-plugin v0.48.0 — Task Workflow Simulation &nbsp;·&nbsp; 2026-10-09
 </footer>
 
 

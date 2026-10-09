@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.48.0] - 2026-10-09
+
 ### Changed
 - **원장이 폴더 없는 done task를 기억한다** (task `task-folder-removal`, cycle §6 C2a — 비파괴). `summary --write`는 task 디렉터리가 없는 task의
   `✅ done` 원장 행을 그대로 이어받는다(상태·⚠️·생성일·Area). 원장 행 파서는 `parseSummaryRows` 하나로 모였다. migrate는 종전대로 폴더 있는 task만 본다.
