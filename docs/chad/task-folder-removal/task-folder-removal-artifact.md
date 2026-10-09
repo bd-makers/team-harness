@@ -82,4 +82,25 @@ E2(범위 밖 변경 없음) pass는 수용. 재검증은 다음 R2 실행으로
 판별(작성 세션): 이전 E1의 S6·S4 지적은 보완 확인됨. 이번 E1 na의 근거("`S<n> pass [이름]`은 검사기가 선언명을 찍은 것이지 러너 출력이 아니다")는 **진짜 공백** —
 `src/commands/scenario.mjs`가 선언명을 그대로 찍는다. 같은 실행 로그의 러너 `✔ <테스트 이름> (ms)` 8줄을 `## 결과`에 추가했다. fail 0, E2 pass.
 
+### 2026-10-09T02:31:47.411Z — codex-scenario (harness-team review)
+
+- engine: codex · scope: diff · tip: d51a9c5869bfc61608ff655853ff061252939ad9 · exit 0 · 1908 B
+
+```text
+전하, `git status`는 clean이며 `refs/remotes/origin/main` 대비 diff를 직접 확인했습니다. 파일은 수정하지 않았습니다.
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| E1 | 각 시나리오의 증거가 Then을 실제 검증 | BLOCKER | **pass** | artifact:21–30에 S1–S8 각각의 실제 러너 출력 `✔ <테스트 이름> (ms)`가 있습니다. S1/S2는 보존할 행의 모든 필드·user index·check와 open 행 제거를 단언합니다(`tests/summary.test.mjs:843–869`). S3는 폴더 미생성과 정상 task의 meta 생성을 함께 확인합니다(`tests/migrate.test.mjs:140–145`); artifact:32에는 ledger-only를 migrate에 포함하는 변이에서 실패했다는 기록도 있습니다. S4/S5는 정확한 verdict·시각·출처·문구와 재개 시각 전후 판정을 검증합니다(`tests/remote-task.test.mjs:190–221`). S6는 실제 `runList` 출력에서 `chad/x` 제외와 `alice/foo` 포함을 단언합니다(`tests/list-remote.test.mjs:233–237`). S7/S8은 exit·안내·미생성·reopen 상태를 확인합니다(`tests/task-name-reuse.test.mjs:39–66`). 각 Then의 결과를 뒤집으면 해당 assertion이 실패하는 구조입니다. |
+| E2 | spec 밖 동작 변경 없음 | MAJOR | **pass** | `summary.mjs`의 공유 파서·ledger-only 포함은 R-1/R-2, `remote-task.mjs`의 fallback·문구·default 집합은 R-3/R-4와 Q6 설계, `task.mjs`의 이름 가드는 R-5에 대응합니다. 나머지 diff는 관련 테스트·문서·task 산출물입니다. migrate·observe·done 가드·버전 변경이나 별도 범위 밖 동작은 발견하지 못했습니다. |
+
+기계 행은 재채점하지 않았습니다. 테스트·변이를 새로 실행하지 않았으며, 실행 여부는 기록된 러너 출력과 현재 테스트 코드를 대조했습니다.
+
+**Verdict: pass — fail 목록: 없음.**
+```
+
+<!-- harness:review kind=codex-scenario scope=diff tip=d51a9c5869bfc61608ff655853ff061252939ad9 at=2026-10-09T02:31:47.411Z -->
+
+판별(작성 세션): E1·E2 pass, fail 없음 — 수용. R2 완료.
+
 ## Learnings
