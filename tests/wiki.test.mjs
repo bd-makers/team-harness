@@ -129,6 +129,52 @@ test('wiki sources: without a PR number the marker cites the closing commit', as
   }
 });
 
+// heliosent-profile 실이력 재현: 브랜치·머지 없이 main 에 spec 초안 → 작업 → 종결을 직접 쌓는다.
+// 들여온 커밋은 spec 초안이라 출처가 될 수 없다 — 커밋 출처는 task 폴더를 마지막으로 건드린 종결 커밋이다.
+test('wiki sources: a direct-commit history without branches cites the closing commit', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-wiki-direct-'));
+  try {
+    await git(dir, 'init', '-q', '-b', 'main');
+    await git(dir, 'config', 'user.email', 'test@example.com');
+    await git(dir, 'config', 'user.name', 'test');
+    await writeFile(join(dir, '.gitignore'), '.harness/\n');
+    await writeFile(join(dir, 'README.md'), '# seed\n');
+    await git(dir, 'add', '-A');
+    await git(dir, 'commit', '-qm', 'seed');
+
+    const taskDir = join(dir, 'docs', 'chad', 'x');
+    await mkdir(taskDir, { recursive: true });
+    await writeFile(join(taskDir, 'x-spec.md'), '# x — Spec\n');
+    await writeFile(join(taskDir, 'x-plan.md'), '# x — Plan\n');
+    await writeFile(join(taskDir, 'x-meta.json'), JSON.stringify({ user: 'chad', task: 'x', status: 'open' }, null, 2) + '\n');
+    await git(dir, 'add', '-A');
+    await git(dir, 'commit', '-qm', 'docs: x spec/plan 작성');
+    const draft = (await git(dir, 'rev-parse', 'HEAD')).slice(0, 7);
+
+    await writeFile(join(dir, 'app.js'), 'export {};\n');
+    await writeFile(join(taskDir, 'x-artifact.md'), '# x — Artifact\n');
+    await git(dir, 'add', '-A');
+    await git(dir, 'commit', '-qm', 'feat: x 구현');
+    await writeFile(join(dir, 'README.md'), '# seed\n\nunrelated\n');
+    await git(dir, 'commit', '-qam', 'docs: task 와 무관한 커밋');
+
+    await writeFile(join(taskDir, 'x-meta.json'), JSON.stringify({ user: 'chad', task: 'x', status: 'done' }, null, 2) + '\n');
+    await git(dir, 'commit', '-qam', 'chore(task): x 종료');
+    const closing = (await git(dir, 'rev-parse', 'HEAD')).slice(0, 7);
+    // 무관한 커밋이 뒤에 쌓여도 출처는 task 폴더를 마지막으로 건드린 커밋이다.
+    await writeFile(join(dir, 'README.md'), '# seed\n\nafter\n');
+    await git(dir, 'commit', '-qam', 'docs: 종결 뒤 무관한 커밋');
+
+    const out = await wikiSources(dir, 'chad', 'x', { at: AT });
+    assert.deepEqual(out.blockers, []);
+    assert.notEqual(closing, draft);
+    assert.deepEqual(out.provenance, { pr: null, commit: closing, author: 'chad' });
+    assert.equal(out.marker, `<!-- harness:wiki task=chad/x commit=${closing} author=chad at=${AT} -->`);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 // PR 출처의 커밋은 종결 커밋이 뒤에 있어도 들여온 커밋(머지·squash) 그대로다 — `--pr`든 커밋 메시지 추론이든.
 test('wiki sources: --pr overrides the commit-only provenance', async () => {
   const { dir, sha7 } = await repoWithLandedTask({ subject: "Merge branch 'feature'" });

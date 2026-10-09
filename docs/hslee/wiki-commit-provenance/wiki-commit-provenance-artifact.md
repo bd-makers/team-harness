@@ -21,6 +21,8 @@
 - 변이 확인: `wiki.mjs`를 직전 커밋 판(들여온 커밋 사용)으로 되돌리면 S1 `…cites the closing commit`만 실패(pass 11 · fail 1).
 - heliosent 읽기 전용 재현(갱신): `provenance: PR (없음) · commit 7713257 · author hslee`, `marker: <!-- harness:wiki task=hslee/hslee-profile commit=7713257 author=hslee at=2026-10-09 -->`. 그 저장소 `git status --porcelain` 전후 0줄.
 
+- **AO 리뷰(codex) approved @939e90c 선택 제안 반영(2026-10-09)**: 브랜치·머지 없이 main에 spec 초안 → 구현 → 종결 → 무관한 커밋을 쌓는 직접 커밋 fixture 테스트 `wiki sources: a direct-commit history without branches cites the closing commit` 추가(heliosent 실이력 재현). 들여온 커밋 판(`40f056a`)의 `wiki.mjs`로 되돌리면 이 테스트가 실패한다. `npm test` exit 0 — 1214 · pass 1213 · fail 0 · skipped 1(기존 CI 전용), `docs:check` 최신.
+
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
