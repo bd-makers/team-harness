@@ -35,3 +35,8 @@ CHANGELOG.md                                       |   7 +
  .../wiki-commit-provenance-meta.json               |  9 +++++++++
  .../wiki-commit-provenance-plan.md                 |  2 +-
  3 files changed, 33 insertions(+), 1 deletion(-)
+
+## 2026-10-09T13:10:17.151Z — 1db2e05 docs(task): wiki-commit-provenance ship 준비
+docs/hslee/wiki-commit-provenance/wiki-commit-provenance-plan.md | 2 +-
+ docs/hslee/wiki-commit-provenance/wiki-commit-provenance-spec.md | 2 ++
+ 2 files changed, 3 insertions(+), 1 deletion(-)
