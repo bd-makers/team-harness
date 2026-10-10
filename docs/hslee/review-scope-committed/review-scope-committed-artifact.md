@@ -150,4 +150,30 @@ merge-base 계산, 프롬프트 전달, 기록 필드와 ship 문서가 일관�
 작성 세션의 검증 선언이 아니다(작성 세션의 검증은 `## 결과`의 출력 인용). 다만 출력 없는 주장이 artifact 에 남아 있는 것은 사실이라, 같은 검사를 직접 실행해
 `## 결과` "정적 검사"에 명령·exit 를 기록했다(전부 exit 0). 코드 변경 없음. shipcheck 를 다시 돌린다.
 
+### 2026-10-10T16:29:39.446Z — codex-shipcheck (harness-team review)
+
+- engine: codex · scope: diff · base: refs/remotes/origin/main · mergeBase: a8e230bfbc509df3f7750740d36992472c45c3c9 · tip: c1945def9ff54aa7361a03df4c385df11dc4b59d · exit 0 · 2253 B
+
+```text
+전하, 지정 문서와 `git status`, `git diff refs/remotes/origin/main`, 커밋 이력을 직접 대조했습니다.
+
+아래 문서 위치는 `docs/hslee/review-scope-committed/` 기준입니다.
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| S1 | spec 요구사항별 구현 또는 의도적 미구현 기록 | BLOCKER | pass | spec의 “merge-base 이후 커밋 + 미커밋 + untracked”에 diff의 `return { scope: 'worktree', base: resolved.base, mergeBase, tip }`과 프롬프트의 `committed and uncommitted, including untracked files`가 대응합니다. degrade/error 분기, 기록 필드, scope 출력, ship 문서도 설계 §1–5와 일치합니다. |
+| S2 | plan 완료 항목에 대응 변경·커밋 실재 | MAJOR | pass | plan:7–14에 대응하여 `550743e`에 spec·승인 결정, `f62f833`에 구현·테스트·문서, `d406f0f`에 검증 출력, `bdb69b2`에 리뷰 판별 기록이 있습니다. artifact:14–32의 `✖`·`✔` 출력이 red/green 기록을 뒷받침합니다. 머지는 `- [ ]`로 남아 있습니다. |
+| S3 | 사유 없는 스코프 밖 변경 부재 | MAJOR | pass | spec 영향 표의 review·scope·summary·테스트·명령 문서·CHANGELOG·followups가 실제 diff와 대응합니다. 추가 파일은 task 기록이며, 미커밋 diff도 handoff의 `c1945de` 커밋 기록 추가뿐입니다. |
+| S4 | 실행된 리뷰 전부 Reviews에 마커로 기록 | MAJOR | pass | meta의 리뷰 4건이 artifact의 네 블록과 일치합니다. :81·103·121·147의 `harness:review` 마커에 각각 kind·scope·tip·at이 기록되어 있고 판별·조치도 있습니다. |
+| S5 | 검증 결과가 실제 명령·출력 인용 | BLOCKER | pass | artifact:14–32에 테스트 명령과 실패·성공 출력, :35–36에 `npm test` 집계와 docs:check 출력이 있습니다. 이전 지적 대상도 :41–45의 `git diff --check refs/remotes/origin/main...HEAD` 및 모듈별 `node --check … → exit 0` 기록으로 보강됐습니다. |
+
+파일은 수정하지 않았으며 테스트·빌드는 실행하지 않았습니다. 실행 근거는 artifact에 기록된 출력이며, 독립 재실행 검증은 아닙니다.
+
+**Verdict: PASS — fail 목록: 없음.**
+```
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=c1945def9ff54aa7361a03df4c385df11dc4b59d at=2026-10-10T16:29:39.446Z -->
+
+**판별 (작성 세션):** S1–S5 전부 pass — 1차 S5 fail 이 정적 검사 출력 기록으로 해소됐다. BLOCKER 없음, 조치 없음.
+
 ## Learnings

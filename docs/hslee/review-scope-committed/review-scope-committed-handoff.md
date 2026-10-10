@@ -44,3 +44,9 @@ CHANGELOG.md                                       | 10 +++
 .../review-scope-committed/review-scope-committed-artifact.md     | 8 ++++++++
  .../review-scope-committed/review-scope-committed-handoff.md      | 7 +++++++
  2 files changed, 15 insertions(+)
+
+## 2026-10-10T16:28:39.714Z — c1945de docs(task): review-scope-committed shipcheck S5 — 정적 검사 출력 기록
+.../review-scope-committed-artifact.md             | 38 ++++++++++++++++++++++
+ .../review-scope-committed-handoff.md              |  5 +++
+ .../review-scope-committed-meta.json               | 11 +++++++
+ 3 files changed, 54 insertions(+)
