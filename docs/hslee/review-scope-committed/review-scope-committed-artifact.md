@@ -65,4 +65,43 @@ scenario: pass (4 checked)
 **판별 (작성 세션):** E2 pass — 동의. E1 na — **진짜 결함(기록 누락)**: 테스트 코드는 Then 을 assert 하지만 artifact 에 시나리오 테스트 이름이 찍힌 실행 출력과
 변이(구현 전 실패) 근거가 없었다. 조치: `## 결과`에 red/green 실행 출력과 `npm test`·`docs:check` 결과를 기록하고 R2 를 다시 돌린다. 코드 변경 없음.
 
+### 2026-10-10T16:17:43.252Z — codex-scenario (harness-team review)
+
+- engine: codex · scope: diff · base: refs/remotes/origin/main · mergeBase: a8e230bfbc509df3f7750740d36992472c45c3c9 · tip: d406f0fce08f69cddcac567335765bc797d0e79e · exit 0 · 2218 B
+
+```text
+전하, `git status`와 `git diff refs/remotes/origin/main`을 직접 확인했습니다. 판정은 **E1 pass, E2 pass**입니다.
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| E1 | 각 시나리오의 증거가 Then을 실제로 검증한다 | BLOCKER | **pass** | **S1:** `tests/review-command.test.mjs:446–461`은 feature 커밋과 미커밋 편집을 만들고 scope·base·분기점 SHA, 엔진에 전달된 `'committed and uncommitted'` 프롬프트, 저장된 리뷰 필드를 assert합니다. **S2:** 같은 파일 `472–486`은 추론 불가 origin에서 기존 프롬프트·null 필드·경고를 검증하고, 잘못된 명시 base의 exit 1과 기록 수 불변을 assert합니다. **S3:** `496`의 `assert.deepEqual`은 `mergeBase=HEAD`를 검증합니다. **S4:** `tests/scope-command.test.mjs:250–256`은 실제 CLI를 실행하여 scope·base·mergeBase와 `"--scope worktree --base 'main'"` 안내를 assert합니다. spec의 이름 필터는 이 테스트 이름들과 일치합니다. artifact `14–18`에는 네 테스트 이름이 찍힌 구현 전 실패(`✖`), `24–31`에는 동일한 이름의 구현 후 성공(`✔`)이 기록되어 있습니다. 종전 구현으로 Then을 깨뜨렸을 때 실패했다는 근거와 실제 선택·실행 근거가 모두 있습니다. |
+| E2 | spec 밖 동작 변경이 없다 | MAJOR | **pass** | diff의 공용 base 판정·merge-base 계산·degrade/error 분기는 spec 설계 §1, 프롬프트 변경은 §2, 기록 필드·블록 변경은 §3, scope 출력·경고는 §4, ship 절차 변경은 §5에 대응합니다. `summary.mjs`는 주석만 변경됐으며 changelog·followups 정리도 spec 영향 표에 명시되어 있습니다. 어떤 요구사항에도 대응하지 않는 동작 변경은 발견하지 못했습니다. |
+
+파일은 수정하지 않았고 테스트·빌드는 로컬에서 실행하지 않았습니다. 실행·변이 근거는 artifact에 기록된 출력을 사용했습니다. 실제 리뷰 엔진이 프롬프트를 따라 git 명령을 실행하는지는 이 검증 범위 밖입니다. machine rows는 재판정하지 않았습니다.
+
+**Verdict: pass — fail 목록: 없음.**
+```
+
+<!-- harness:review kind=codex-scenario scope=diff tip=d406f0fce08f69cddcac567335765bc797d0e79e at=2026-10-10T16:17:43.252Z -->
+
+**판별 (작성 세션):** E1·E2 pass — 1차의 E1 na 사유(실행 출력·변이 근거 부재)가 `## 결과` 기록으로 해소됐다. 리뷰어가 짚은 범위 밖 항목(실제 엔진이 넓어진 fill 대로 `git diff <mergeBase>`를 실행하는가)은 `## 결과` 미검증에 이미 적었다. 조치 없음.
+
+### 2026-10-10T16:18:52.745Z — codex (harness-team review)
+
+- engine: codex · scope: diff · base: refs/remotes/origin/main · mergeBase: a8e230bfbc509df3f7750740d36992472c45c3c9 · tip: d406f0fce08f69cddcac567335765bc797d0e79e · exit 0 · 557 B
+
+```text
+전하, `git status`와 `git diff refs/remotes/origin/main`을 직접 확인했습니다. **유의미한 P1/P2/P3 결함은 발견하지 못했습니다.**
+
+merge-base 계산, 프롬프트 전달, 기록 필드와 ship 문서가 일관됩니다. `git diff --check`와 변경 모듈의 구문 검사는 통과했습니다.
+
+파일은 수정하지 않았습니다. 테스트·빌드는 실행하지 않았으며, artifact의 실행 기록을 독립 검증으로 간주하지 않았습니다.
+
+**최종 판정: PASS — 정적 리뷰 기준 승인 가능.**
+```
+
+<!-- harness:review kind=codex scope=diff tip=d406f0fce08f69cddcac567335765bc797d0e79e at=2026-10-10T16:18:52.745Z -->
+
+**판별 (작성 세션):** 발견 0건 — 판별할 지적 없음. 엔진은 codex(probe 체인 첫 엔진, 명시 호출). 셋 모두 `scope: diff`·`mergeBase` 기록이 이 변경의 새 블록 형식으로 남았다(dogfood). 조치 없음.
+
 ## Learnings

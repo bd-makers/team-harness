@@ -25,3 +25,10 @@ CHANGELOG.md                                       | 10 +++
  tests/review-command.test.mjs                      | 62 +++++++++++++++++++
  tests/scope-command.test.mjs                       |  8 ++-
  11 files changed, 216 insertions(+), 61 deletions(-)
+
+## 2026-10-10T16:16:41.196Z — d406f0f docs(task): review-scope-committed 검증 출력·R2 1차 판별 기록
+.../review-scope-committed-artifact.md             | 55 ++++++++++++++++++++++
+ .../review-scope-committed-handoff.md              | 14 ++++++
+ .../review-scope-committed-meta.json               | 14 +++++-
+ .../review-scope-committed-plan.md                 |  2 +-
+ 4 files changed, 83 insertions(+), 2 deletions(-)

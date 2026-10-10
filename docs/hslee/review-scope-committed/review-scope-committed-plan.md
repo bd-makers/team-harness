@@ -11,7 +11,7 @@ worktree scope 리뷰가 base 와의 merge-base 이후 커밋 + 미커밋을 보
 - [x] `scope.mjs` — `extra.mergeBase` · degrade 경고
 - [x] 문서 — `commands/harness-review.md` 2·3·5단계, `commands/harness-ship.md` 2·7·8단계·예시, `summary.mjs` 주석, `CHANGELOG.md` [Unreleased]
 - [x] 검증 — `npm test` · `npm run docs:check` · `harness-team scenario check`
-- [ ] 리뷰 — `harness-team review <engine> --framing scenario` 및 기본 리뷰, artifact `## Reviews`에 판별 기록
+- [x] 리뷰 — `harness-team review <engine> --framing scenario` 및 기본 리뷰, artifact `## Reviews`에 판별 기록 (codex-scenario 1차 E1 na → 기록 보강 → 2차 pass · codex 발견 0)
 - [ ] 머지 (사람 지시 후 — 종결은 기본 브랜치에서)
 
 ## Ontology 변경 로그
