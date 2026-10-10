@@ -12,7 +12,15 @@
   `npm run docs:check` — "harness overview 생성 상태가 최신입니다". `harness-team scenario check` — `scenario: pass (3 checked)`.
 - B(가드 강화) 기각·관련 잠재 문제 후속 — spec 설계 절 "B 판단", `docs/followups.md` 17번.
 - 구현 중 발견: 리뷰 기록(artifact·meta)이 다음 자동 판정을 worktree로 되돌린다(실측) — 범위 밖, `docs/followups.md` 18번.
+- **사람 결정 반영(2026-10-10) — followups 18 포함**: 원칙 "하네스가 스스로 쓴 기록 파일은 dirty 판정에서 제외"로 scope 판정 제외 집합에
+  활성 task의 `<name>-artifact.md`·`<name>-meta.json`(review 가 성공마다 쓰는 두 파일 — `runReview` 코드 확인)을 추가. done 가드 집합은 handoff만으로 불변.
+  artifact 손 편집만 있을 때도 diff로 가는 트레이드오프는 spec 설계 절 "제외 집합 확장". followups 18 지움(괄호 기록), 17 open 유지.
+  - 실패 재현 먼저: S4 `resolveScope: consecutive reviews without a commit both resolve to diff`를 수정 전에 돌려 2회차 `actual: 'worktree'`로 실패 확인 → 수정 후 pass.
+  - 변이: 제외 집합에서 artifact·meta를 빼면 S4만 `✖`(pass 0 · fail 1), 복원 후 동일.
+  - 재검증: `npm test` exit 0 — tests 1218 · pass 1217 · fail 0 · skipped 1(기존 CI 전용) · perf pass 1. `docs:check` 최신. `scenario check` pass (4 checked).
+    이름 선택 실행: `✔ resolveScope: consecutive reviews without a commit both resolve to diff` (pass 1) · `✔ resolveScope: only the active task's harness-written paths are excluded` (pass 1, S2 테스트 이름 변경).
 
+- 다이어그램: 미실행 — 함수 하나의 판정 수정 — 그림 이득 적음(사람 결정) (2026-10-10)
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*

@@ -373,7 +373,28 @@ test('resolveScope: a tree dirty only from the post-commit handoff resolves to d
   } finally { restore(); await rm(dir, { recursive: true, force: true }); }
 });
 
-test("resolveScope: only the active task's hook-written handoff paths are excluded", async () => {
+// review 는 성공마다 활성 task 의 artifact·meta 를 쓴다. 그것을 dirty 로 세면 커밋 없이 이어 돌린 두 번째 리뷰
+// (R2 → R3)가 다시 worktree 가 됐다(followups 18, 2026-10-10 실측).
+test('resolveScope: consecutive reviews without a commit both resolve to diff', async () => {
+  const { dir, taskDir } = await makeGitFixture();
+  const { restore } = captureLogs();
+  try {
+    await git(dir, 'checkout', '-qb', 'feature');
+    await writeFile(join(dir, 'b.txt'), 'b\n');
+    await git(dir, 'add', 'b.txt'); await git(dir, 'commit', '-qm', 'feat');
+    const first = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    assert.equal(first.result.entry.scope, 'diff');
+    const second = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    assert.equal(second.result.entry.scope, 'diff', '첫 리뷰의 기록이 두 번째 판정을 worktree 로 바꾸지 않는다');
+    assert.deepEqual((await readTaskMeta(dir, 'tester', 'demo')).reviews.map(r => r.scope), ['diff', 'diff']);
+
+    // 제외는 review 가 쓰는 두 파일뿐이다 — 같은 task 의 spec 수정은 여전히 worktree
+    await writeFile(join(taskDir, 'demo-spec.md'), '# spec\n');
+    assert.equal((await resolveScope({ targetDir: dir })).scope, 'worktree');
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test("resolveScope: only the active task's harness-written paths are excluded", async () => {
   const { dir, taskDir } = await makeGitFixture();
   try {
     const taskHandoff = join(taskDir, 'demo-handoff.md');

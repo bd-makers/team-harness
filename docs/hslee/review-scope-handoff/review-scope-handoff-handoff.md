@@ -45,3 +45,8 @@ CHANGELOG.md                                       |  7 ++
  .../review-scope-handoff-meta.json                 | 18 ++++++++++
  .../review-scope-handoff-plan.md                   |  2 +-
  5 files changed, 69 insertions(+), 3 deletions(-)
+
+## 2026-10-09T16:26:25.876Z — d9ae310 docs(task): review-scope-handoff ship 준비 완료
+docs/hslee/review-scope-handoff/review-scope-handoff-handoff.md | 8 ++++++++
+ docs/hslee/review-scope-handoff/review-scope-handoff-plan.md    | 2 +-
+ 2 files changed, 9 insertions(+), 1 deletion(-)

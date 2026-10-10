@@ -2,12 +2,12 @@
 <!-- working set only; UTF-8 <= 6 KiB, nonblank lines <= 100 -->
 
 ## Now
-- Goal: scope 자동 판정이 post-commit 훅의 handoff 변경을 dirty로 세지 않는다 — 그것뿐이면 diff.
-- Current atomic step: plan 6 — ship 준비 보고(로컬 커밋까지, push·PR 금지).
-- Stop / human-decision condition: push·PR 금지(brief). 다이어그램 옵트인은 사람 결정 대기.
+- Goal: scope 자동 판정이 하네스 기록 파일(훅 handoff·review 의 artifact·meta)을 dirty로 세지 않는다.
+- Current atomic step: plan 8 — R2·R3 재리뷰(`--scope diff`) → plan 9 push·PR.
+- Stop / human-decision condition: PR 생성 후 보고하고 멈춤(머지 금지). push·PR 막히면 --needs-input.
 
 ## Constraints and settled decisions
-- 제외 집합 = `handoffRelPaths`(훅 코드 근거). B 기각, 잠재 문제·리뷰 기록 dirty는 followups 17·18.
+- 제외 집합 = `handoffRelPaths` ∪ artifact·meta(사람 결정). done 가드는 handoff만. B 기각, 잠재 문제 followups 17.
 
 ## JIT retrieval map
 - Identifiers / symbols: `resolveScope`, `handoffRelPaths`, `parsePorcelainPaths`, `repoPrefix`, `runHandoffAuto`
@@ -18,4 +18,4 @@
 ## Failure capsules (max 3 unresolved)
 
 ## Resume checklist
-- R2 pass(2차)·R3 pass 기록 완료. 남은 것: 다이어그램 옵트인 사람 결정, push·PR 지시.
+- 재리뷰 결과 artifact 기록 → push·PR → ao report(PR 번호·CI).
