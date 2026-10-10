@@ -39,6 +39,14 @@ scenario: pass (4 checked)
 
 **미검증:** 실제 codex·claude 리뷰어가 넓어진 fill 문구를 받아 `git diff <mergeBase>`를 실제로 실행하는지는 엔진 행동이라 테스트하지 않았다(프롬프트 문자열까지만 assert).
 
+### 남은 리스크 · 후속
+
+- **리뷰 대상이 넓어진다.** dirty 트리에서 `--scope` 없이 돌린 리뷰가 이제 브랜치 전체를 본다 — 오래 산 브랜치는 리뷰어 토큰·시간이 diff scope 만큼 든다.
+  미커밋만 보려면 `--base HEAD`. 상한은 두지 않았다(spec 설계 7).
+- **과거 worktree 기록은 그대로 증거다.** 두 키가 없는 기록은 미커밋만 본 리뷰였을 수 있지만 소급하지 않는다(spec 설계 3) — 감사가 필요하면 키 유무로 가려낸다.
+- **소비자 영향:** `templates/` 불변 — 플러그인 갱신만으로 받는다. `scope --json` 의 worktree `base` 가 null 이 아니게 된 것은 출력 계약 변경이다(ship 문서는 동기화함).
+- 후속 없음 — followups 17 은 이 task 로 닫는다.
+
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*

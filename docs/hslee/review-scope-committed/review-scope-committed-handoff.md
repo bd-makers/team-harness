@@ -32,3 +32,10 @@ CHANGELOG.md                                       | 10 +++
  .../review-scope-committed-meta.json               | 14 +++++-
  .../review-scope-committed-plan.md                 |  2 +-
  4 files changed, 83 insertions(+), 2 deletions(-)
+
+## 2026-10-10T16:19:08.294Z — bdb69b2 docs(task): review-scope-committed 리뷰 판별 기록 — R2 pass · 기본 리뷰 발견 0
+.../review-scope-committed-artifact.md             | 39 ++++++++++++++++++++++
+ .../review-scope-committed-handoff.md              |  7 ++++
+ .../review-scope-committed-meta.json               | 22 ++++++++++++
+ .../review-scope-committed-plan.md                 |  2 +-
+ 4 files changed, 69 insertions(+), 1 deletion(-)
