@@ -39,3 +39,8 @@ CHANGELOG.md                                       | 10 +++
  .../review-scope-committed-meta.json               | 22 ++++++++++++
  .../review-scope-committed-plan.md                 |  2 +-
  4 files changed, 69 insertions(+), 1 deletion(-)
+
+## 2026-10-10T16:27:03.799Z — 62ce12b docs(task): review-scope-committed ship — 남은 리스크·후속 기록
+.../review-scope-committed/review-scope-committed-artifact.md     | 8 ++++++++
+ .../review-scope-committed/review-scope-committed-handoff.md      | 7 +++++++
+ 2 files changed, 15 insertions(+)

@@ -35,6 +35,16 @@ scenario: pass (4 checked)
 **전체:** `npm test` exit 0 — unit+e2e `tests 1221 · pass 1220 · fail 0 · skipped 1`(기존 CI 전용 jq 매트릭스 skip), perf `pass 1 · fail 0`.
 `npm run docs:check` → `harness overview 생성 상태가 최신입니다.`
 
+**정적 검사 (shipcheck S5 후속, 작성 세션이 직접 실행):**
+
+```text
+$ git diff --check refs/remotes/origin/main...HEAD
+git diff --check exit 0
+$ node --check src/commands/review.mjs   → exit 0
+$ node --check src/commands/scope.mjs    → exit 0
+$ node --check src/commands/summary.mjs  → exit 0
+```
+
 **의도된 계약 변경:** `tests/scope-command.test.mjs`의 "dirty 워킹트리는 worktree 로 보고하고 base 는 비운다"를 S4 테스트로 바꿨다(spec 영향 표).
 
 **미검증:** 실제 codex·claude 리뷰어가 넓어진 fill 문구를 받아 `git diff <mergeBase>`를 실제로 실행하는지는 엔진 행동이라 테스트하지 않았다(프롬프트 문자열까지만 assert).
@@ -111,5 +121,33 @@ merge-base 계산, 프롬프트 전달, 기록 필드와 ship 문서가 일관�
 <!-- harness:review kind=codex scope=diff tip=d406f0fce08f69cddcac567335765bc797d0e79e at=2026-10-10T16:18:52.745Z -->
 
 **판별 (작성 세션):** 발견 0건 — 판별할 지적 없음. 엔진은 codex(probe 체인 첫 엔진, 명시 호출). 셋 모두 `scope: diff`·`mergeBase` 기록이 이 변경의 새 블록 형식으로 남았다(dogfood). 조치 없음.
+
+### 2026-10-10T16:28:19.962Z — codex-shipcheck (harness-team review)
+
+- engine: codex · scope: diff · base: refs/remotes/origin/main · mergeBase: a8e230bfbc509df3f7750740d36992472c45c3c9 · tip: 62ce12be987a9b49f296cf04b0f3f8bb551ddc9d · exit 0 · 2674 B
+
+```text
+전하, 지정 문서와 `git status`, `git diff refs/remotes/origin/main`, 커밋 이력을 직접 대조했습니다. **S5가 fail입니다.**
+
+아래 spec·plan·artifact는 `docs/hslee/review-scope-committed/`의 해당 파일입니다.
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| S1 | spec 요구사항에 대응 구현 또는 의도적 미구현 기록 | BLOCKER | pass | spec의 “merge-base 대비 작업 트리 전체”, degrade, 기록 호환 요구에 각각 diff의 `return { scope: 'worktree', base: resolved.base, mergeBase, tip }`, `degrade(...)`, `{ base: base ?? null, mergeBase: mergeBase ?? null }`이 대응합니다. 프롬프트·scope 출력·ship 문서도 설계 §2–5에 대응합니다. 실제 엔진 행동은 artifact:40에 “프롬프트 문자열까지만 assert”로 미검증을 명시했습니다. |
+| S2 | plan의 완료 항목에 대응 변경·커밋 실재 | MAJOR | pass | plan:7–14의 승인·테스트·구현·문서·검증·리뷰에 대응하는 변경이 존재합니다. `550743e`는 spec·plan, `f62f833`은 구현·테스트·문서, `d406f0f`는 검증 출력, `bdb69b2`는 리뷰·판별 기록을 담습니다. artifact:14–32에는 red/green 출력이 있습니다. 머지는 plan:15에서 미완료로 유지했습니다. |
+| S3 | 설명 없는 스코프 밖 변경 부재 | MAJOR | pass | spec 영향 표에 review·scope·summary·테스트·명령 문서·CHANGELOG·followups가 명시되어 있고 실제 diff와 대응합니다. 추가 task 문서는 작업 기록입니다. 미커밋 변경도 handoff의 `62ce12b` 커밋 기록 추가뿐입니다. |
+| S4 | 실행된 리뷰가 Reviews에 마커와 함께 기록 | MAJOR | pass | meta의 리뷰 3건이 artifact:54·76·97의 블록 및 :71·93·111의 `harness:review` 마커와 kind·scope·tip·at 모두 일치합니다. 각 리뷰의 판별·조치도 :73–74·95·113에 있습니다. |
+| S5 | 검증 결과가 실제 명령·출력 인용 | BLOCKER | **fail** | artifact:14–32에는 실제 테스트 출력 인용이 있지만, :104의 **“`git diff --check`와 변경 모듈의 구문 검사는 통과했습니다.”**에는 실행 명령 전체·출력·exit code가 없습니다. 해당 부분은 산문 선언이므로 요청한 증거 기준을 충족하지 못합니다. |
+
+파일은 수정하지 않았으며 테스트·빌드는 실행하지 않았습니다. 기존 실행 기록을 독립 실행 검증으로 간주하지 않았습니다.
+
+**Verdict: FAIL — fail 목록: S5(BLOCKER).** 작성 세션에서 해당 검사들의 실제 명령과 출력·종료 코드를 artifact에 기록해야 합니다.
+```
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=62ce12be987a9b49f296cf04b0f3f8bb551ddc9d at=2026-10-10T16:28:19.962Z -->
+
+**판별 (작성 세션):** S1–S4 pass 동의. S5 fail — 지적된 "`git diff --check`와 구문 검사는 통과" 문장은 기본 `codex` 리뷰 **엔진 출력 블록 안**의 리뷰어 주장이고
+작성 세션의 검증 선언이 아니다(작성 세션의 검증은 `## 결과`의 출력 인용). 다만 출력 없는 주장이 artifact 에 남아 있는 것은 사실이라, 같은 검사를 직접 실행해
+`## 결과` "정적 검사"에 명령·exit 를 기록했다(전부 exit 0). 코드 변경 없음. shipcheck 를 다시 돌린다.
 
 ## Learnings
