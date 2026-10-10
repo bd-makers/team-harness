@@ -1,0 +1,58 @@
+# review-scope-committed — Handoff
+
+(세션 종료 시 post-commit hook이 자동 갱신합니다)
+
+## 2026-10-10T16:05:13.567Z — 550743e docs(task): review-scope-committed spec·plan — worktree scope 를 merge-base 이후 커밋 + 미커밋으로
+docs/followups.md                                  |  10 +-
+ .../review-scope-committed-artifact.md             |  13 ++
+ .../review-scope-committed-context.md              |  27 +++
+ .../review-scope-committed-handoff.md              |   3 +
+ .../review-scope-committed-meta.json               |  11 +
+ .../review-scope-committed-plan.md                 |  23 +++
+ .../review-scope-committed-spec.md                 | 222 +++++++++++++++++++++
+ 7 files changed, 301 insertions(+), 8 deletions(-)
+
+## 2026-10-10T16:15:09.922Z — f62f833 fix(review): worktree scope 가 base 와의 merge-base 이후 커밋까지 리뷰한다
+CHANGELOG.md                                       | 10 +++
+ commands/harness-review.md                         | 25 ++++++--
+ commands/harness-ship.md                           | 19 +++---
+ .../review-scope-committed-handoff.md              | 10 +++
+ .../review-scope-committed-plan.md                 | 15 ++---
+ .../review-scope-committed-spec.md                 | 42 +++++++------
+ src/commands/review.mjs                            | 71 +++++++++++++++++-----
+ src/commands/scope.mjs                             | 13 ++--
+ src/commands/summary.mjs                           |  2 +-
+ tests/review-command.test.mjs                      | 62 +++++++++++++++++++
+ tests/scope-command.test.mjs                       |  8 ++-
+ 11 files changed, 216 insertions(+), 61 deletions(-)
+
+## 2026-10-10T16:16:41.196Z — d406f0f docs(task): review-scope-committed 검증 출력·R2 1차 판별 기록
+.../review-scope-committed-artifact.md             | 55 ++++++++++++++++++++++
+ .../review-scope-committed-handoff.md              | 14 ++++++
+ .../review-scope-committed-meta.json               | 14 +++++-
+ .../review-scope-committed-plan.md                 |  2 +-
+ 4 files changed, 83 insertions(+), 2 deletions(-)
+
+## 2026-10-10T16:19:08.294Z — bdb69b2 docs(task): review-scope-committed 리뷰 판별 기록 — R2 pass · 기본 리뷰 발견 0
+.../review-scope-committed-artifact.md             | 39 ++++++++++++++++++++++
+ .../review-scope-committed-handoff.md              |  7 ++++
+ .../review-scope-committed-meta.json               | 22 ++++++++++++
+ .../review-scope-committed-plan.md                 |  2 +-
+ 4 files changed, 69 insertions(+), 1 deletion(-)
+
+## 2026-10-10T16:27:03.799Z — 62ce12b docs(task): review-scope-committed ship — 남은 리스크·후속 기록
+.../review-scope-committed/review-scope-committed-artifact.md     | 8 ++++++++
+ .../review-scope-committed/review-scope-committed-handoff.md      | 7 +++++++
+ 2 files changed, 15 insertions(+)
+
+## 2026-10-10T16:28:39.714Z — c1945de docs(task): review-scope-committed shipcheck S5 — 정적 검사 출력 기록
+.../review-scope-committed-artifact.md             | 38 ++++++++++++++++++++++
+ .../review-scope-committed-handoff.md              |  5 +++
+ .../review-scope-committed-meta.json               | 11 +++++++
+ 3 files changed, 54 insertions(+)
+
+## 2026-10-10T16:29:49.942Z — 715c446 docs(task): review-scope-committed shipcheck 2차 pass 판별 기록
+.../review-scope-committed-artifact.md             | 26 ++++++++++++++++++++++
+ .../review-scope-committed-handoff.md              |  6 +++++
+ .../review-scope-committed-meta.json               | 11 +++++++++
+ 3 files changed, 43 insertions(+)

@@ -41,7 +41,8 @@ Raw slash-command 인수:
    - `status: "error"`면 `next_actions`를 따르고, 판정하지 못한 base로 진행하지 않는다.
    - 출력의 `base`를 7단계 검증에 그대로 넘긴다 — 여기서 정한 기준과 검증자가 보는 기준을 맞춘다.
 
-   그다음 그 scope의 변경을 실제로 읽는다. `worktree`면 uncommitted 변경까지 포함된 상태다.
+   그다음 그 scope의 변경을 실제로 읽는다. `worktree`면 출력의 `mergeBase`(base와 갈라진 점) 이후 커밋 + 미커밋 + untracked가 대상이다.
+   `next_actions`에 "base 를 판정하지 못해" 경고가 있으면 미커밋만으로 내려간 판정이다(`base`·`mergeBase`가 `null`) — `--base <ref>`로 다시 판정한다.
 
 3. **spec 최종 갱신** — 구현하면서 바뀐 요구사항·설계 결정을 `<name>-spec.md`에 반영한다.
    Ontology와 Ambiguity 자가진단은 spec에 직접 두고, 외부 문서를 가리키는 포인터 껍데기로
@@ -98,8 +99,8 @@ Raw slash-command 인수:
    ```bash
    # 2번 출력이 scope=diff 인 경우
    harness-team review <engine> --framing shipcheck --scope diff --base "$BASE"
-   # 2번 출력이 scope=worktree 인 경우 (base 없음)
-   harness-team review <engine> --framing shipcheck --scope worktree
+   # 2번 출력이 scope=worktree 인 경우 — base 가 null(내려간 판정)이면 --base 를 뺀다
+   harness-team review <engine> --framing shipcheck --scope worktree --base "$BASE"
    ```
 
    실행하면 CLI가 `kind=<engine>-shipcheck`로 meta.reviews와 artifact `## Reviews` 마커를
@@ -127,7 +128,7 @@ Raw slash-command 인수:
    **커밋한 뒤에** 실행한다 — pr-check는 작업 트리가 아니라 커밋을 본다(push·CI가 보는 것):
 
    ```bash
-   harness-team pr-check --base "$BASE"   # scope=worktree 였다면 커밋 후 --base 없이
+   harness-team pr-check --base "$BASE"   # 2번 출력의 base 가 null 이었다면 --base 없이
    ```
 
    exit 1(spec·plan·handoff·artifact 중 없거나 비었거나 템플릿 그대로)이면 **"준비 완료"를 선언하지 않는다** —
@@ -145,14 +146,16 @@ Raw slash-command 인수:
 node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" scope --json
 git status --short
 
-# scope=diff 일 때만 base 범위를 읽는다. BASE 는 위 출력의 base 값이며,
+# scope=diff 일 때 base 범위를 읽는다. BASE 는 위 출력의 base 값이며,
 # 비어 있는 채로 "$BASE"..HEAD 를 쓰면 git 이 에러 없이 빈 범위로 읽어 변경을 통째로 놓친다.
 git log --oneline "$BASE"..HEAD
 git diff --stat "$BASE"...HEAD
 
-# scope=worktree 일 때 (base 는 null 이다 — 위 두 줄을 쓰지 않는다)
-git diff --stat HEAD
-# `--stat HEAD` 는 untracked 를 세지 않는다. scope 판정은 `git status --porcelain` 기준이라
+# scope=worktree 일 때 — MB 는 위 출력의 mergeBase 값이다. 커밋 + 미커밋을 한 번에 본다.
+# mergeBase 가 null(내려간 판정)이면 MB 대신 HEAD 를 쓴다 — 그때는 미커밋만이고 커밋된 변경은 빠진다.
+git log --oneline "$MB"..HEAD
+git diff --stat "$MB"
+# `git diff --stat` 은 untracked 를 세지 않는다. scope 판정은 `git status --porcelain` 기준이라
 # untracked 도 worktree 에 포함되므로 새 파일을 따로 확인한다 — 빠뜨리면 ship 이 신규 파일을 놓친다.
 git ls-files --others --exclude-standard
 ```

@@ -1,0 +1,67 @@
+{
+  "user": "hslee",
+  "task": "review-scope-committed",
+  "created": "2026-10-10",
+  "firstActivatedAt": "2026-10-10T16:00:38.028Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex-scenario",
+      "engine": "codex",
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "a8e230bfbc509df3f7750740d36992472c45c3c9",
+      "tip": "f62f8336af8483ddd255e9d4fa2f3e5ae2aec588",
+      "at": "2026-10-10T16:16:13.950Z",
+      "exitCode": 0,
+      "outputBytes": 1717
+    },
+    {
+      "kind": "codex-scenario",
+      "engine": "codex",
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "a8e230bfbc509df3f7750740d36992472c45c3c9",
+      "tip": "d406f0fce08f69cddcac567335765bc797d0e79e",
+      "at": "2026-10-10T16:17:43.252Z",
+      "exitCode": 0,
+      "outputBytes": 2218
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "a8e230bfbc509df3f7750740d36992472c45c3c9",
+      "tip": "d406f0fce08f69cddcac567335765bc797d0e79e",
+      "at": "2026-10-10T16:18:52.745Z",
+      "exitCode": 0,
+      "outputBytes": 557
+    },
+    {
+      "kind": "codex-shipcheck",
+      "engine": "codex",
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "a8e230bfbc509df3f7750740d36992472c45c3c9",
+      "tip": "62ce12be987a9b49f296cf04b0f3f8bb551ddc9d",
+      "at": "2026-10-10T16:28:19.962Z",
+      "exitCode": 0,
+      "outputBytes": 2674
+    },
+    {
+      "kind": "codex-shipcheck",
+      "engine": "codex",
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "a8e230bfbc509df3f7750740d36992472c45c3c9",
+      "tip": "c1945def9ff54aa7361a03df4c385df11dc4b59d",
+      "at": "2026-10-10T16:29:39.446Z",
+      "exitCode": 0,
+      "outputBytes": 2253
+    }
+  ]
+}

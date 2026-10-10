@@ -6,7 +6,7 @@
 // 이 커맨드가 생긴 이유는 `commands/harness-ship.md` 2단계다. ship 은 같은 사다리를 산문으로 다시
 // 적어 에이전트에게 손으로 실행시키고, 그 결과를 7단계에서 `review --scope diff --base <ref>` 로
 // 넘긴다 — 호출할 CLI 표면이 없었기 때문이다. 이제 있다.
-import { resolveScope, SCOPES, posixSingleQuote } from './review.mjs';
+import { resolveScope, SCOPES, posixSingleQuote, degradeWarningFor } from './review.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 
 // task-docs 는 `review` 가 framing 또는 --prompt-file 없이는 즉시 거절한다(review.mjs:404). 그냥
@@ -62,6 +62,10 @@ export async function runScope(ctx) {
   const scope = empty ? null : resolved.scope;
   const base = resolved.base ?? null;
   const tip = resolved.tip ?? 'none';
+  // worktree 의 mergeBase 는 ship 이 변경을 읽을 기준점이다(`git diff <mergeBase>`). degrade 는 status 를 warning 으로 올리지
+  // 않는다 — ship 은 warning 을 "할 것 없음"으로 읽고 멈춘다. 경고는 next_actions 맨 앞에 싣는다.
+  const mergeBase = resolved.mergeBase ?? null;
+  const degradeWarning = resolved.degraded ? degradeWarningFor(resolved.degraded) : null;
 
   if (json) {
     emitObservation(buildEnvelope({
@@ -70,8 +74,8 @@ export async function runScope(ctx) {
       summary: empty ? EMPTY_SUMMARY : `scope: ${scope}${base ? ` · base: ${base}` : ''} · tip: ${tip}`,
       nextActions: empty
         ? ['변경을 커밋하거나 `--base <ref>` 로 다른 기준을 주고 다시 판정하세요']
-        : [reviewHint(scope, base)],
-      extra: { scope, base, tip },
+        : [...(degradeWarning ? [degradeWarning] : []), reviewHint(scope, base)],
+      extra: { scope, base, mergeBase, tip },
     }));
     return;
   }
@@ -81,5 +85,6 @@ export async function runScope(ctx) {
     console.log(`base: ${base} · tip: ${tip}`);
     return;
   }
-  console.log(`scope: ${scope}${base ? ` · base: ${base}` : ''} · tip: ${tip}`);
+  console.log(`scope: ${scope}${base ? ` · base: ${base}` : ''}${mergeBase ? ` · mergeBase: ${mergeBase}` : ''} · tip: ${tip}`);
+  if (degradeWarning) console.log(`warning: ${degradeWarning}`);
 }
