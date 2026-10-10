@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.49.1] - 2026-10-11
+
 ### Fixed
 - **커밋 직후의 리뷰가 handoff만 보던 것, 이어 돌린 리뷰가 앞 리뷰의 기록만 보던 것** (task `review-scope-handoff`). `--scope` 없는 `harness-team review`(R2 `--framing scenario`·adversarial·testcritic 포함)와
   `harness-team scope`는 트리가 dirty면 worktree scope를 고르는데, post-commit 훅이 커밋마다 활성 task의 handoff를 다시 써 트리가 늘 dirty였다 —

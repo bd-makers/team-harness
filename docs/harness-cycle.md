@@ -25,7 +25,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 
 ## 2. 사이클
 
-표기: ✓ 있음 · △ 약함 · ✗ 없음 (현재 0.49.0 기준)
+표기: ✓ 있음 · △ 약함 · ✗ 없음 (현재 0.49.1 기준)
 
 **R = 검토 지점(Review point)**: R1 원천 문서 검토(S1 직후) · R2 시나리오 ↔ 증거 대조(S4 구현 직후) · R3 코드 리뷰(S6, PR 전). S = 사이클 단계(Stage).
 

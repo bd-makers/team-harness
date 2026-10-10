@@ -284,7 +284,7 @@
     <h1>Task Workflow Simulation</h1>
     <p>새로운 harness task 시스템의 전체 흐름 — init부터 완료, 세션 재개, task 전환까지의 시나리오별 시뮬레이션</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.49.0</span>
+      <span class="tag tag-purple">v0.49.1</span>
       <span class="tag tag-blue">post-commit 자동화</span>
       <span class="tag tag-green">증거 기반 종결 가드 7종</span>
       <span class="tag tag-orange">원장은 생성물</span>
@@ -293,7 +293,9 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #a78bfa;background:rgba(167,139,250,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
-    <strong>🆕 0.40.1–0.49.0 — user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키 · 폴더 없는 done task · PR 없는 위키 컴파일:</strong>
+    <strong>🆕 0.40.1–0.49.1 — user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키 · 폴더 없는 done task · PR 없는 위키 컴파일 · 리뷰 scope 판정 정정:</strong>
+    <br>
+    <code>0.49.1</code> ship·리뷰의 scope 판정이 <strong>하네스가 스스로 쓴 기록 파일</strong>(훅이 쓴 handoff, <code>review</code>가 쓴 artifact·meta)을 dirty로 세지 않는다 — 커밋 직후나 리뷰를 이어 돌린 직후에도 브랜치 diff를 리뷰한다. 아래 S7 ship 시나리오의 scope 단계 설명을 그에 맞췄고 단계는 그대로다.
     <br>
     <code>0.49.0</code> 머지 후 종결의 선택 단계 <code>/harness-wiki</code>가 <strong>PR 없이 기본 브랜치에 직접 커밋한 task</strong>도 컴파일한다 — PR 번호가 없으면 막지 않고 종결 커밋을 출처로 쓴다. 아래 시나리오의 단계는 그대로다(S4 종결 절차 불변).
     <br>
@@ -1008,7 +1010,7 @@ login-bug
           <div class="step-actor actor-claude">Claude</div>
           <div class="step-content">
             <p>활성 task 확인 → scope 파악</p>
-            <div class="step-detail">scope와 base는 <code>harness-team scope</code>가 판정한다(<code>--base</code>가 주어지면 그것으로 덮어쓴다) — 0.40.0부터 판정의 정본은 CLI 하나다. working tree가 dirty면 미커밋 변경도 scope에 포함한다. 활성 task가 없으면 <strong>임의로 만들지 않고</strong> 보고 후 종료.</div>
+            <div class="step-detail">scope와 base는 <code>harness-team scope</code>가 판정한다(<code>--base</code>가 주어지면 그것으로 덮어쓴다) — 0.40.0부터 판정의 정본은 CLI 하나다. working tree가 dirty면 미커밋 변경도 scope에 포함한다 — 하네스가 스스로 쓴 기록 파일(handoff·<code>review</code>의 artifact·meta)만 바뀐 상태는 dirty가 아니다(0.49.1). 활성 task가 없으면 <strong>임의로 만들지 않고</strong> 보고 후 종료.</div>
           </div>
         </div>
       </div>
@@ -1183,7 +1185,7 @@ login-bug
 </main>
 
 <footer>
-  harness-aijient-team-plugin v0.49.0 — Task Workflow Simulation &nbsp;·&nbsp; 2026-10-10
+  harness-aijient-team-plugin v0.49.1 — Task Workflow Simulation &nbsp;·&nbsp; 2026-10-11
 </footer>
 
 
