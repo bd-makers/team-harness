@@ -3,8 +3,8 @@
   "task": "review-scope-handoff",
   "created": "2026-10-09",
   "firstActivatedAt": "2026-10-09T16:12:51.948Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-10-10T14:06:41.230Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [
