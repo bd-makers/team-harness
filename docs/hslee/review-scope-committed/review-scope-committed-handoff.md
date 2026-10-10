@@ -50,3 +50,9 @@ CHANGELOG.md                                       | 10 +++
  .../review-scope-committed-handoff.md              |  5 +++
  .../review-scope-committed-meta.json               | 11 +++++++
  3 files changed, 54 insertions(+)
+
+## 2026-10-10T16:29:49.942Z — 715c446 docs(task): review-scope-committed shipcheck 2차 pass 판별 기록
+.../review-scope-committed-artifact.md             | 26 ++++++++++++++++++++++
+ .../review-scope-committed-handoff.md              |  6 +++++
+ .../review-scope-committed-meta.json               | 11 +++++++++
+ 3 files changed, 43 insertions(+)
