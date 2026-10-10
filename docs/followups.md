@@ -7,7 +7,17 @@
 
 ## 우선순위
 
-**남은 것: 없음.** 13–16번은 2026-10-06에 닫았다(아래 괄호 기록). 새 후보가 생기면 이 절에 번호를 이어 붙인다(17번부터).
+**남은 것: 17번.** 13–16번은 2026-10-06에 닫았다(아래 괄호 기록). 새 후보가 생기면 이 절에 번호를 이어 붙인다(19번부터).
+
+17. **worktree scope 리뷰가 이미 커밋된 브랜치 변경을 보지 않는다.** 미커밋 편집이 하나라도 있으면 `--scope` 없는 `review`는
+    worktree를 고르고, 리뷰 프롬프트는 "working tree changes"만 가리킨다 — base 대비 이미 커밋한 구현은 리뷰에서 빠진다.
+    그 리뷰도 `meta.reviews[]`에 기록돼 `verify: required`·R2 증거로 세진다(`verifyEvidencePredicate`는 kind만 본다).
+    고치려면 worktree의 의미를 "미커밋 + base 대비 커밋"으로 넓혀야 하고, 이는 리뷰 프롬프트 문구·`commands/harness-review.md` 2단계 정본·
+    기록되는 scope 값의 의미를 함께 바꾸는 계약 변경이다. 가드에 scope 검사를 붙이는 안은 정당한 커밋 전 리뷰까지 증거에서 빼면서
+    이 결함은 못 고쳐 기각했다. 출처·근거: task `review-scope-handoff` spec 설계 절 "B 판단"·"관련 잠재 문제".
+
+(18번 — 리뷰 기록(artifact·meta)이 커밋 없는 다음 리뷰의 scope를 worktree로 바꾸던 것 — 은 2026-10-10 사람 결정으로 task `review-scope-handoff`에
+포함해 여기서 지웠다. scope 판정이 `review`가 쓰는 활성 task의 `<name>-artifact.md`·`<name>-meta.json`도 dirty에서 뺀다 — 트레이드오프는 그 task spec.)
 
 (10번은 2026-09-28 task `simulation-doc-refresh`로 처리했다 — 시뮬레이션 문서 본문을 현행화하고
 `docs:check` 현행 문서로 등록했다. 대조표는 그 task의 artifact에 있다.)

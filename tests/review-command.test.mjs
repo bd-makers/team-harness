@@ -332,6 +332,109 @@ test('P2: 실제 git 저장소에서 scope 판정 — dirty→worktree, clean→
   } finally { restore(); await rm(dir, { recursive: true, force: true }); }
 });
 
+// post-commit 훅은 커밋 뒤에 활성 task 의 handoff 두 파일을 다시 쓴다. 그 변경을 dirty 로 세면 커밋 직후의 리뷰가
+// 구현 diff 대신 handoff 만 보는 worktree scope 가 됐다(wiki-commit-provenance R2 1차 실행 "무효 범위").
+test('resolveScope: a tree dirty only from the post-commit handoff resolves to diff', async () => {
+  const { dir, taskDir } = await makeGitFixture();
+  const { restore } = captureLogs();
+  try {
+    // user handoff 는 gitignore 도입 전 구 저장소처럼 추적 상태로 둔다 — 그래야 status 에 나온다
+    const taskHandoff = join(taskDir, 'demo-handoff.md');
+    const userHandoff = join(dir, 'docs', 'tester', 'tester-handoff.md');
+    await writeFile(taskHandoff, '# demo — Handoff\n');
+    await writeFile(userHandoff, '# tester\n');
+    await git(dir, 'add', '-A'); await git(dir, 'commit', '-qm', 'handoffs');
+    const hookWrites = async label => {
+      await writeFile(taskHandoff, `${await readFile(taskHandoff, 'utf8')}\n## 2026-10-10T00:00:00Z — ${label}\n`);
+      await writeFile(userHandoff, `# tester\nlast: ${label}\n`);
+    };
+
+    // base 브랜치: 훅 출력만 dirty 면 handoff 를 worktree 로 리뷰하지 않는다 — 리뷰할 것 없음
+    await hookWrites('handoffs');
+    const mainTip = (await git(dir, 'rev-parse', 'HEAD')).stdout.trim();
+    assert.deepEqual(await resolveScope({ targetDir: dir }), { empty: true, base: 'main', tip: mainTip });
+    const onMain = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    assert.equal(onMain.result.recorded, false, 'handoff 만 바뀐 base 브랜치는 리뷰하지 않는다');
+    assert.deepEqual((await readTaskMeta(dir, 'tester', 'demo')).reviews, []);
+
+    // feature 브랜치의 구현 커밋 뒤 훅이 다시 쓴다 → diff
+    await git(dir, 'checkout', '-qb', 'feature');
+    await writeFile(join(dir, 'b.txt'), 'b\n');
+    await git(dir, 'add', 'b.txt'); await git(dir, 'commit', '-qm', 'feat');
+    await hookWrites('feat');
+    const r = await resolveScope({ targetDir: dir });
+    assert.equal(r.scope, 'diff');
+    assert.equal(r.base, 'main');
+    const rr = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    assert.equal(rr.result.entry.scope, 'diff', 'review 기록도 diff 다');
+    const saved = (await readTaskMeta(dir, 'tester', 'demo')).reviews;
+    assert.equal(saved.length, 1);
+    assert.equal(saved[0].scope, 'diff', 'meta.reviews 에 저장된 scope 도 diff 다');
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+// review 는 성공마다 활성 task 의 artifact·meta 를 쓴다. 그것을 dirty 로 세면 커밋 없이 이어 돌린 두 번째 리뷰
+// (R2 → R3)가 다시 worktree 가 됐다(followups 18, 2026-10-10 실측).
+test('resolveScope: consecutive reviews without a commit both resolve to diff', async () => {
+  const { dir, taskDir } = await makeGitFixture();
+  const { restore } = captureLogs();
+  try {
+    await git(dir, 'checkout', '-qb', 'feature');
+    await writeFile(join(dir, 'b.txt'), 'b\n');
+    await git(dir, 'add', 'b.txt'); await git(dir, 'commit', '-qm', 'feat');
+    const first = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    assert.equal(first.result.entry.scope, 'diff');
+    const second = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }));
+    assert.equal(second.result.entry.scope, 'diff', '첫 리뷰의 기록이 두 번째 판정을 worktree 로 바꾸지 않는다');
+    assert.deepEqual((await readTaskMeta(dir, 'tester', 'demo')).reviews.map(r => r.scope), ['diff', 'diff']);
+
+    // 제외는 review 가 쓰는 두 파일뿐이다 — 같은 task 의 spec 수정은 여전히 worktree
+    await writeFile(join(taskDir, 'demo-spec.md'), '# spec\n');
+    assert.equal((await resolveScope({ targetDir: dir })).scope, 'worktree');
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test("resolveScope: only the active task's harness-written paths are excluded", async () => {
+  const { dir, taskDir } = await makeGitFixture();
+  try {
+    const taskHandoff = join(taskDir, 'demo-handoff.md');
+    const otherHandoff = join(dir, 'docs', 'tester', 'other', 'other-handoff.md');
+    await mkdir(join(dir, 'docs', 'tester', 'other'), { recursive: true });
+    await writeFile(taskHandoff, '# h\n');
+    await writeFile(otherHandoff, '# o\n');
+    await git(dir, 'add', '-A'); await git(dir, 'commit', '-qm', 'handoffs');
+    await git(dir, 'checkout', '-qb', 'feature');
+    await writeFile(join(dir, 'b.txt'), 'b\n');
+    await git(dir, 'add', 'b.txt'); await git(dir, 'commit', '-qm', 'feat');
+    await writeFile(taskHandoff, '# h\n\n## entry\n');
+    const scope = async () => (await resolveScope({ targetDir: dir })).scope;
+    assert.equal(await scope(), 'diff', '전제: 훅 출력만 dirty');
+
+    // (a) 추적 파일 수정 — 명시 --scope diff 는 dirty 와 무관하게 diff
+    await writeFile(join(dir, 'a.txt'), 'changed\n');
+    assert.equal(await scope(), 'worktree');
+    assert.equal((await resolveScope({ targetDir: dir, scope: 'diff' })).scope, 'diff');
+    await git(dir, 'checkout', '--', 'a.txt');
+
+    // (b) 새 미추적 파일
+    await writeFile(join(dir, 'c.txt'), 'c\n');
+    assert.equal(await scope(), 'worktree');
+    await rm(join(dir, 'c.txt'));
+
+    // (c) 활성 task 없음 — 훅은 아무것도 쓰지 않으므로 제외할 것도 없다
+    const activePath = join(dir, '.harness', 'active.json');
+    const active = await readFile(activePath, 'utf8');
+    await rm(activePath);
+    assert.equal(await scope(), 'worktree');
+    await writeFile(activePath, active);
+
+    // (d) 활성 task 가 아닌 task 의 handoff 만 dirty
+    await git(dir, 'checkout', '--', taskHandoff);
+    await writeFile(otherHandoff, '# o\n\n## entry\n');
+    assert.equal(await scope(), 'worktree');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('P3: which() 는 경로 토큰을 PATH 가 아니라 그 파일로 판정한다', async () => {
   const { which } = await import('../src/commands/review.mjs');
   const { dir, fake } = await makeFixture();

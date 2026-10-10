@@ -16,7 +16,7 @@ import { readFile, access, constants } from 'node:fs/promises';
 import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { exists, writeText } from '../fsx.mjs';
-import { readActive, taskArtifactTemplate, VERIFY_KIND_SUFFIXES } from './task.mjs';
+import { readActive, taskArtifactTemplate, VERIFY_KIND_SUFFIXES, handoffRelPaths, parsePorcelainPaths, repoPrefix } from './task.mjs';
 import { readTaskMeta, writeTaskMeta } from './summary.mjs';
 import { RUBRICS, findFramingTemplate } from './review-prompts.mjs';
 import { resolveDefaultRef } from './remote-task.mjs';
@@ -236,8 +236,27 @@ export async function resolveScope({ targetDir, scope, base }) {
   try { tip = (await git(targetDir, ['rev-parse', 'HEAD'])).trim() || 'none'; } catch { /* no commits / no git */ }
   if (scope === 'task-docs') return { scope, tip };
 
+  // 하네스가 스스로 쓴 기록 파일은 dirty 로 세지 않는다. 세면 리뷰가 구현 diff 대신 그 기록만 보는 worktree scope 가 된다:
+  // - post-commit 훅이 커밋 **뒤에** 다시 쓰는 handoff 두 파일(`handoffRelPaths` — done 가드와 같은 집합). 커밋 직후의
+  //   리뷰가 handoff 만 봤다(wiki-commit-provenance R2 1차 실행).
+  // - 이 명령이 성공마다 쓰는 `<name>-artifact.md`·`<name>-meta.json`. 커밋 없이 R2 → R3 를 이어 돌리면 두 번째가
+  //   worktree 였다(followups 18). artifact 는 사람이 쓰는 SSOT 이기도 해서 손 편집만 있을 때도 diff 로 간다 —
+  //   diff 는 커밋된 코드를 보므로 잃는 것이 작다. done 가드는 종결 커밋에 artifact 를 요구하므로 이 둘을 빼지 않는다.
+  // 경로를 대조하므로 `-z` 로 읽는다(기본 출력은 비-ASCII 경로를 octal 로 인용한다). 활성 task 가 없으면 하네스는
+  // 이 파일들을 쓰지 않으므로 제외도 없다.
   let dirty = null;
-  try { dirty = (await git(targetDir, ['status', '--porcelain'])).trim().length > 0; } catch { /* not a git repo */ }
+  try {
+    const paths = parsePorcelainPaths(await git(targetDir, ['status', '--porcelain', '-z']));
+    const active = await readActive(targetDir);
+    let harnessWritten = new Set();
+    if (active && active.user && active.task) {
+      const { user, task } = active;
+      const prefix = await repoPrefix(targetDir);
+      const rels = [...handoffRelPaths(user, task), taskFileRel(user, task, 'artifact.md'), taskFileRel(user, task, 'meta.json')];
+      harnessWritten = new Set(rels.map(p => prefix + p));
+    }
+    dirty = paths.some(p => !harnessWritten.has(p));
+  } catch { /* not a git repo */ }
   if (dirty === null) {
     if (scope === 'diff') return { error: 'git 저장소가 아니라 diff scope 를 계산할 수 없음' };
     return { scope: 'worktree', tip };
