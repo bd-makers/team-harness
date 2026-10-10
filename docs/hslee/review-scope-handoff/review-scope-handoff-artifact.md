@@ -93,6 +93,43 @@
 
 **판별 (2026-10-10):** R3 발견 없음(PASS, 정적 리뷰) — 조치 없음. scope=diff 확인. 최종 재검증: `npm test` exit 0 — 1217 · pass 1216 · fail 0 · skipped 1(기존 CI 전용) · perf pass 1, `docs:check` 최신, `scenario check` pass(3).
 
+### 2026-10-10T13:11:09.678Z — codex-scenario (harness-team review)
+
+- engine: codex · scope: diff · tip: 0afbee1ff708285234e1043c59fe4abb60e0837e · exit 0 · 1989 B
+
+```text
+전하, `git status`와 `git diff refs/remotes/origin/main`을 직접 확인했습니다. 파일 수정·테스트·변이 재실행은 하지 않았으며, 기계 행은 재판정하지 않았습니다.
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| E1 | 각 시나리오의 증거가 Then을 실제로 검증한다 | BLOCKER | **pass** | **S1**: [테스트](tests/review-command.test.mjs:355)가 main의 `empty`, `recorded === false`, 저장된 `reviews === []`와 feature의 `scope/base`, 저장 건수·scope를 단언합니다. **S2**: [테스트](tests/review-command.test.mjs:411)가 (a)–(d)의 `worktree`와 명시 `diff`를 각각 단언합니다. **S3**: [테스트](tests/scope-command.test.mjs:328)가 실제 CLI 출력의 `scope === 'diff'`를 검사합니다. **S4**: [테스트](tests/review-command.test.mjs:385)가 연속 리뷰 반환값, 저장된 `['diff','diff']`, spec 수정 후 `worktree`를 단언합니다. 해당 결과를 깨뜨리는 변이는 각 assertion에서 실패합니다. [실행 기록](docs/hslee/review-scope-handoff/review-scope-handoff-artifact.md:50)에 S1·S3의 정확한 테스트 이름이, [추가 기록](docs/hslee/review-scope-handoff/review-scope-handoff-artifact.md:18)에 현재 S2·S4 이름이 `✔`로 나옵니다. 구버전 복원 시 S1–S3 실패와 artifact·meta 제외 제거 시 S4 실패도 기록돼 있습니다. |
+| E2 | spec 밖 동작 변경이 없다 | MAJOR | **pass** | 런타임 diff는 [resolveScope](src/commands/review.mjs:249)의 `-z` 파싱·활성 task 기록 파일 제외·접두 보정과 [repoPrefix](src/commands/task.mjs:798)의 export입니다. 모두 spec 설계에 대응합니다. artifact·meta 제외 확장과 수기 편집 트레이드오프도 문서화됐으며, 나머지는 관련 테스트·문서·task 기록입니다. |
+
+**Verdict: pass — 전체 fail 목록: 없음.** 실행·변이 결과는 artifact에 기록된 증거를 근거로 판단했습니다.
+```
+
+<!-- harness:review kind=codex-scenario scope=diff tip=0afbee1ff708285234e1043c59fe4abb60e0837e at=2026-10-10T13:11:09.678Z -->
+
+**판별 (2026-10-10, followups 18 포함 후 재리뷰):** R2 pass — E1(S1–S4 증거가 Then 검증)·E2(spec 밖 변경 없음) 모두 pass, 조치 없음. scope=diff 확인.
+
+### 2026-10-10T13:12:27.689Z — codex (harness-team review)
+
+- engine: codex · scope: diff · tip: 0afbee1ff708285234e1043c59fe4abb60e0837e · exit 0 · 592 B
+
+```text
+전하, `git status`와 `git diff refs/remotes/origin/main`을 직접 검토했으며 **P1·P2·P3 지적 사항은 없습니다.**
+
+활성 task 기록 파일의 제외 범위, rename 원본 경로 보존, 경로 접두 보정과 명시적 scope 유지가 설계에 부합합니다.
+
+문법 검사와 `git diff --check`는 통과했고, 현재 상태의 자동 판정도 `diff`로 확인했습니다. 테스트·빌드는 실행하지 않았으며 파일은 변경하지 않았습니다.
+
+**최종 판정: PASS — 이번 변경에서 유의미한 결함을 발견하지 못했습니다.**
+```
+
+<!-- harness:review kind=codex scope=diff tip=0afbee1ff708285234e1043c59fe4abb60e0837e at=2026-10-10T13:12:27.689Z -->
+
+**판별 (2026-10-10):** R3 발견 없음(PASS) — 조치 없음. scope=diff 확인. 도그푸딩: R2가 artifact·meta를 쓴 뒤(`M` artifact·meta·handoff) `scope --json`이 `scope: diff`.
+
 ## Learnings
 
 - (2026-10-10) R2 1차가 잡은 것은 "테스트가 Then의 저장 결과·미기록을 단언하지 않음"이었다 — Then에 "기록한다/하지 않는다"가 있으면 반환값이 아니라 저장소(`meta.reviews`)를 읽어 단언한다.

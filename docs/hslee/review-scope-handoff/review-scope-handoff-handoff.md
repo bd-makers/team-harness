@@ -50,3 +50,17 @@ CHANGELOG.md                                       |  7 ++
 docs/hslee/review-scope-handoff/review-scope-handoff-handoff.md | 8 ++++++++
  docs/hslee/review-scope-handoff/review-scope-handoff-plan.md    | 2 +-
  2 files changed, 9 insertions(+), 1 deletion(-)
+
+## 2026-10-10T13:10:20.154Z — 0afbee1 fix(review): scope 판정이 review 자신의 artifact·meta 기록도 dirty로 세지 않는다
+CHANGELOG.md                                       |  7 +--
+ commands/harness-review.md                         |  8 ++--
+ commands/harness-task.md                           |  3 +-
+ docs/followups.md                                  | 11 ++---
+ .../review-scope-handoff-artifact.md               | 10 +++-
+ .../review-scope-handoff-context.md                | 10 ++--
+ .../review-scope-handoff-handoff.md                |  5 ++
+ .../review-scope-handoff-plan.md                   |  6 ++-
+ .../review-scope-handoff-spec.md                   | 55 +++++++++++++++-------
+ src/commands/review.mjs                            | 20 +++++---
+ tests/review-command.test.mjs                      | 23 ++++++++-
+ 11 files changed, 113 insertions(+), 45 deletions(-)
