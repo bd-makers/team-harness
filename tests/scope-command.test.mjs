@@ -241,15 +241,19 @@ test('CLI scope: diff 판정을 envelope 로 보고한다', async () => {
   }
 });
 
-test('CLI scope: dirty 워킹트리는 worktree 로 보고하고 base 는 비운다', async () => {
+// worktree 는 base 와의 merge-base 이후 커밋 + 미커밋이다 — base 를 비우면 ship 이 커밋된 변경을 읽지 않는다(followups 17).
+test('CLI scope: dirty worktree reports its base and merge base', async () => {
   const dir = await repo('main');
   try {
     await writeFile(join(dir, 'a.txt'), 'changed\n');
+    const head = (await git(dir, 'rev-parse', 'HEAD')).stdout.trim();
     const { code, stdout } = await cli(['scope', '--json', '--target', dir]);
     assert.equal(code, 0);
     const env = JSON.parse(stdout);
     assert.equal(env.scope, 'worktree');
-    assert.equal(env.base, null);
+    assert.equal(env.base, 'main');
+    assert.equal(env.mergeBase, head);
+    assert.ok(env.next_actions.join('\n').includes("--scope worktree --base 'main'"), env.next_actions.join('\n'));
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

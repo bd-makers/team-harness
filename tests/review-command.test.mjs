@@ -435,6 +435,68 @@ test("resolveScope: only the active task's harness-written paths are excluded", 
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+// worktree 는 base 를 계산하지 않아 리뷰어가 HEAD 대비 미커밋만 봤다 — 구현을 커밋한 뒤 문서를 손보다 돌린 리뷰가
+// 커밋된 구현을 통째로 놓친 채 증거로 기록됐다(followups 17). 이제 base 와의 merge-base 를 기준으로 커밋 + 미커밋을 본다.
+test('resolveScope: worktree scope carries the merge base so committed branch changes are reviewed', async () => {
+  const { dir } = await makeGitFixture();
+  const prompts = [];
+  const runEngine = async ({ prompt }) => { prompts.push(prompt); return { exitCode: 0, stdout: 'ok', stderr: '' }; };
+  const { restore } = captureLogs();
+  try {
+    const fork = (await git(dir, 'rev-parse', 'HEAD')).stdout.trim();
+    await git(dir, 'checkout', '-qb', 'feature');
+    await writeFile(join(dir, 'b.txt'), 'b\n');
+    await git(dir, 'add', 'b.txt'); await git(dir, 'commit', '-qm', 'feat');
+    await writeFile(join(dir, 'a.txt'), 'changed\n');
+    const r = await resolveScope({ targetDir: dir });
+    assert.equal(r.scope, 'worktree');
+    assert.equal(r.base, 'main');
+    assert.equal(r.mergeBase, fork, 'merge-base 는 분기점');
+    const rr = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }, { runEngine }));
+    assert.equal(rr.result.recorded, true);
+    assert.ok(prompts[0].includes(`Scope: working tree changes since ${fork}, the merge base with main — committed and uncommitted`), prompts[0]);
+    const [entry] = (await readTaskMeta(dir, 'tester', 'demo')).reviews;
+    assert.equal(entry.scope, 'worktree');
+    assert.equal(entry.base, 'main');
+    assert.equal(entry.mergeBase, fork, 'tip 과 짝지은 mergeBase 가 범위의 사후 증명');
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('resolveScope: worktree degrades to uncommitted-only when the base cannot be inferred', async () => {
+  const { dir } = await makeGitFixture();
+  const prompts = [];
+  const runEngine = async ({ prompt }) => { prompts.push(prompt); return { exitCode: 0, stdout: 'ok', stderr: '' }; };
+  const { logs, restore } = captureLogs();
+  try {
+    // origin 은 있지만 fetch 한 적이 없어 origin/HEAD·origin/main·origin/master 가 모두 없다 — diff 라면 error 인 상태
+    await git(dir, 'remote', 'add', 'origin', join(dir, 'no-such-remote'));
+    await writeFile(join(dir, 'a.txt'), 'changed\n');
+    const rr = await withExit(() => runReview({ targetDir: dir, flags: {}, taskArgs: ['custom'] }, { runEngine }));
+    assert.equal(rr.exitCode, undefined, 'worktree 는 base 추론 실패로 막히지 않는다');
+    assert.ok(prompts[0].includes('Scope: working tree changes. '), '종전 문구 — 미커밋만');
+    const [entry] = (await readTaskMeta(dir, 'tester', 'demo')).reviews;
+    assert.equal(entry.scope, 'worktree');
+    assert.equal(entry.base, null, 'degrade 는 키 생략이 아니라 null — 생략은 과거 기록의 표지');
+    assert.equal(entry.mergeBase, null);
+    assert.ok(logs.some(l => l.includes('커밋된 변경은 리뷰 대상에서 빠졌다')), logs.join('\n'));
+
+    // 사람이 준 --base 가 틀린 것은 degrade 하지 않는다 — 엉뚱한 기준을 기록하지 않는다
+    const e = await withExit(() => runReview({ targetDir: dir, flags: { scope: 'worktree', base: 'nope' }, taskArgs: ['custom'] }, { runEngine }));
+    assert.equal(e.exitCode, 1);
+    assert.equal((await readTaskMeta(dir, 'tester', 'demo')).reviews.length, 1, '기록 없음');
+  } finally { restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('resolveScope: worktree on the base branch has its merge base at HEAD', async () => {
+  const { dir } = await makeGitFixture();
+  try {
+    await writeFile(join(dir, 'a.txt'), 'changed\n');
+    const head = (await git(dir, 'rev-parse', 'HEAD')).stdout.trim();
+    const r = await resolveScope({ targetDir: dir });
+    assert.deepEqual(r, { scope: 'worktree', base: 'main', mergeBase: head, tip: head });
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('P3: which() 는 경로 토큰을 PATH 가 아니라 그 파일로 판정한다', async () => {
   const { which } = await import('../src/commands/review.mjs');
   const { dir, fake } = await makeFixture();

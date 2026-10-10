@@ -47,12 +47,17 @@ export const REVIEW_PROMPT_TEMPLATE = [
 // template 은 프레이밍 템플릿(review-prompts.mjs)의 본문 — 없으면 공용 프롬프트. taskPaths 는 활성 task 의
 // spec/plan/artifact 상대 경로: task-docs·shipcheck·testcritic 템플릿이 엔진에게 읽으라고 지시하는 자리를
 // CLI 가 채운다(에이전트가 경로를 써 넣던 일이 사라진다). promptText(--prompt-file)가 있으면 둘 다 무시한다.
-export function buildPrompt({ scope, base, focus = [], promptText = null, template = null, taskPaths = null }) {
+export function buildPrompt({ scope, base, mergeBase = null, focus = [], promptText = null, template = null, taskPaths = null }) {
   const focusText = focus.join(' ').trim();
   if (promptText !== null) {
     return focusText ? `${promptText.trimEnd()}\n${focusText}` : promptText;
   }
-  const scopeText = scope === 'diff' ? `diff against ${base}` : 'working tree changes';
+  // worktree 의 fill 은 placeholder 의 선택지 이름(`working tree changes`)으로 시작한다 — 리터럴과 문서 미러를 바꾸지 않아도
+  // 참이다. merge-base 는 sha 로 준다: ref 만 주면 리뷰어가 `git diff <base>`(tip 비교)로 base 쪽 drift 까지 끌고 온다.
+  // mergeBase 가 없으면(degrade) 종전 문구 — 미커밋만.
+  const scopeText = scope === 'diff' ? `diff against ${base}`
+    : mergeBase ? `working tree changes since ${mergeBase}, the merge base with ${base} — committed and uncommitted, including untracked files (git diff ${mergeBase}; git status)`
+      : 'working tree changes';
   let text = (template ?? REVIEW_PROMPT_TEMPLATE)
     .replace('<working tree changes | diff against <base>>', scopeText)
     .replace(' <focus arguments, if any>', focusText ? ` ${focusText}` : '');
@@ -115,14 +120,14 @@ export function renderReviewMarker({ kind, scope, tip, at }) {
   return `<!-- harness:review kind=${kind} scope=${scope} tip=${tip} at=${at} -->`;
 }
 
-export function renderReviewBlock({ kind, engine, scope, tip, at, output, rubric }) {
+export function renderReviewBlock({ kind, engine, scope, base, mergeBase, tip, at, output, rubric }) {
   const { text, bytes, truncated } = truncateOutput(output);
   const fence = fenceFor(text);
   return [
     '',
     `### ${at} — ${kind} (harness-team review)`,
     '',
-    `- engine: ${engine} · scope: ${scope}${rubric ? ` · rubric: ${rubric}` : ''} · tip: ${tip} · exit 0 · ${bytes} B${truncated ? ' (artifact에는 앞부분만)' : ''}`,
+    `- engine: ${engine} · scope: ${scope}${base !== undefined ? ` · base: ${base ?? 'none'}${mergeBase ? ` · mergeBase: ${mergeBase}` : ''}` : ''}${rubric ? ` · rubric: ${rubric}` : ''} · tip: ${tip} · exit 0 · ${bytes} B${truncated ? ' (artifact에는 앞부분만)' : ''}`,
     '',
     fence + 'text',
     text.trimEnd(),
@@ -257,12 +262,47 @@ export async function resolveScope({ targetDir, scope, base }) {
     }
     dirty = paths.some(p => !harnessWritten.has(p));
   } catch { /* not a git repo */ }
+  // worktree 는 base 와의 merge-base 대비 작업 트리 전체다 — merge-base 이후 커밋 + 미커밋 + untracked. 예전엔 base 를
+  // 계산하지 않아 리뷰어가 HEAD 대비 미커밋만 봤고, 구현을 커밋한 뒤 문서를 손보다 돌린 리뷰가 커밋된 구현을 통째로 놓친 채
+  // 증거로 기록됐다(followups 17). base 를 판정하지 못하면 실패시키지 않고 종전 의미(미커밋만)로 degrade 한다 — 오늘 worktree
+  // 리뷰는 어떤 저장소에서도 실패하지 않으므로 error 로 바꾸면 그것이 회귀다. 대신 `degraded` 로 알려 호출부가 경고한다.
+  // 사람이 준 `--base` 가 틀린 것만은 degrade 하지 않는다 — 조용히 넘기면 엉뚱한 기준을 기록한다.
+  const degrade = reason => ({ scope: 'worktree', base: null, mergeBase: null, tip, degraded: reason });
   if (dirty === null) {
     if (scope === 'diff') return { error: 'git 저장소가 아니라 diff scope 를 계산할 수 없음' };
-    return { scope: 'worktree', tip };
+    return degrade('git 저장소가 아님');
   }
-  if (scope === 'worktree' || (scope === undefined && dirty)) return { scope: 'worktree', tip };
+  if (scope === 'worktree' || (scope === undefined && dirty)) {
+    const resolved = await resolveBase(targetDir, base);
+    if (resolved.error) return base ? { error: resolved.error } : degrade(resolved.error);
+    const mergeBase = await mergeBaseOf(targetDir, resolved.base);
+    if (!mergeBase) return degrade(`${resolved.base} 와 HEAD 의 merge-base 를 계산할 수 없음`);
+    return { scope: 'worktree', base: resolved.base, mergeBase, tip };
+  }
 
+  const resolved = await resolveBase(targetDir, base);
+  if (resolved.error) return { error: resolved.error };
+  const resolvedBase = resolved.base;
+  let diff = '';
+  try { diff = await git(targetDir, ['diff', '--stat', `${resolvedBase}...HEAD`]); } catch (err) {
+    return { error: `diff 계산 실패: ${err.message.split('\n')[0]}` };
+  }
+  if (!diff.trim()) return { empty: true, base: resolvedBase, tip };
+  return { scope: 'diff', base: resolvedBase, mergeBase: await mergeBaseOf(targetDir, resolvedBase), tip };
+}
+
+// worktree degrade 는 조용히 좁히지 않는다 — review·scope 가 같은 문장으로 알린다.
+export function degradeWarningFor(reason) {
+  return `base 를 판정하지 못해(${reason}) 커밋된 변경은 리뷰 대상에서 빠졌다 — 미커밋만 본다. 커밋까지 보려면 \`--base <ref>\` 로 다시 실행`;
+}
+
+// merge-base 는 리뷰 범위의 기준점이다(diff 의 `<base>...HEAD` 와 같은 점). unborn HEAD·관계없는 히스토리면 null.
+async function mergeBaseOf(targetDir, base) {
+  try { return (await git(targetDir, ['merge-base', base, 'HEAD'])).trim() || null; } catch { return null; }
+}
+
+// base 사다리 — diff·worktree 공용(정본: harness-review.md 2단계). `{ base }` 또는 `{ error }`.
+async function resolveBase(targetDir, base) {
   let resolvedBase = base;
   if (!resolvedBase) {
     // 기본 브랜치는 `origin/HEAD`가 정본이다. 여기서 `origin/main`을 하드코딩했더니 기본 브랜치가
@@ -306,12 +346,7 @@ export async function resolveScope({ targetDir, scope, base }) {
   } catch {
     return { error: `base ref "${resolvedBase}" 를 찾을 수 없음` };
   }
-  let diff = '';
-  try { diff = await git(targetDir, ['diff', '--stat', `${resolvedBase}...HEAD`]); } catch (err) {
-    return { error: `diff 계산 실패: ${err.message.split('\n')[0]}` };
-  }
-  if (!diff.trim()) return { empty: true, base: resolvedBase, tip };
-  return { scope: 'diff', base: resolvedBase, tip };
+  return { base: resolvedBase };
 }
 
 function run(cmd, args, { cwd }) {
@@ -481,7 +516,8 @@ export async function runReview(ctx, deps = {}) {
     }
     return { recorded: false, reason: 'empty-diff' };
   }
-  const { scope, base, tip } = scoped;
+  const { scope, base, mergeBase, tip } = scoped;
+  const degradeWarning = scoped.degraded ? degradeWarningFor(scoped.degraded) : null;
 
   let promptText = null;
   if (flags['prompt-file']) {
@@ -499,7 +535,7 @@ export async function runReview(ctx, deps = {}) {
     plan: taskFileRel(active.user, active.task, 'plan.md'),
     artifact: taskFileRel(active.user, active.task, 'artifact.md'),
   };
-  const prompt = buildPrompt({ scope, base, focus, promptText, template: template ? template.template : null, taskPaths });
+  const prompt = buildPrompt({ scope, base, mergeBase, focus, promptText, template: template ? template.template : null, taskPaths });
 
   let result;
   try {
@@ -539,7 +575,11 @@ export async function runReview(ctx, deps = {}) {
   if (!(await exists(artifactPath))) await writeText(artifactPath, taskArtifactTemplate(task));
 
   const outputBytes = Buffer.byteLength(result.stdout, 'utf8');
-  const entry = { kind, engine, scope, tip, at, exitCode: 0, outputBytes, ...(rubric !== undefined ? { rubric } : {}) };
+  // git scope 는 base·mergeBase 를 항상 둘 다 남긴다 — mergeBase..tip(+ worktree 면 그 시점 미커밋)이 리뷰 범위의 사후 증명이다
+  // (base ref 는 움직이고 머지 뒤 merge-base 는 재계산할 수 없다). degrade 는 null 이지 생략이 아니다: 두 키가 없는 worktree
+  // 항목은 "넓어지기 전의 과거 기록(미커밋만)"의 표지라 겹치면 안 된다. task-docs 는 git 범위가 아니라 넣지 않는다.
+  const range = scope === 'task-docs' ? {} : { base: base ?? null, mergeBase: mergeBase ?? null };
+  const entry = { kind, engine, scope, ...range, tip, at, exitCode: 0, outputBytes, ...(rubric !== undefined ? { rubric } : {}) };
 
   // meta 에 `reviews` 키가 있는 task(새 템플릿)만 meta 에 쓴다 — 가드의 verify 정본이고, artifact
   // 쓰기가 실패해도 증거는 남도록 먼저 쓴다. 키가 없는 구 task 에는 키를 **만들지 않는다**: 여기서
@@ -557,6 +597,7 @@ export async function runReview(ctx, deps = {}) {
 
   const summary = `${kind} recorded (exit 0, ${outputBytes} B)`;
   const nextActions = [
+    ...(degradeWarning ? [degradeWarning] : []),
     `${artifactRel} 의 새 블록 아래에 발견 판별(진짜 결함/오탐)과 조치를 산문으로 남긴다 — harness-review.md 4단계`,
   ];
   const metaFileRel = taskFileRel(user, task, 'meta.json');

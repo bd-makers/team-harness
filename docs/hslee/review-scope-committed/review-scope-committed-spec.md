@@ -18,7 +18,7 @@ shipcheck·scenario), 명시 `--scope worktree` 포함. `harness-team scope`(`sr
 
 **기대 결과.** worktree scope 의 의미를 **"base 와의 merge-base 대비 작업 트리 전체 = base 이후 커밋 + 미커밋 + untracked"**로 넓힌다.
 `resolveScope`는 worktree 에도 base 를 판정하고 merge-base sha 를 함께 돌려주며, 프롬프트는 그 sha 를 명시해 리뷰어가 `git diff <sha>`로
-커밋·미커밋을 한 번에 보게 한다. 기록(`meta.reviews[]`)에 `base` 키를 더해 넓어진 의미의 기록과 과거 기록을 구분한다. base 를 판정하지
+커밋·미커밋을 한 번에 보게 한다. 기록(`meta.reviews[]`)에 `base`·`mergeBase` 키를 더해 넓어진 의미의 기록과 과거 기록을 구분하고, `tip`과 짝지어 리뷰 범위를 사후 증명할 수 있게 한다. base 를 판정하지
 못하면 실패시키지 않고 **종전 의미(미커밋만)로 degrade** 하되 그 사실을 출력에 알린다.
 
 **제약.** 런타임 의존성 0 · 가드(`verifyEvidencePredicate`·done 가드) 불변 — scope 검사 추가안은 기각됨(아래 원천) · `diff`·`task-docs`
@@ -81,17 +81,19 @@ degrade 는 종전 의미(미커밋만)다. 오늘 worktree 는 어떤 저장소
 merge-base 는 CLI 가 계산해 **sha 로** 넣는다 — 리뷰어에게 ref 만 주고 계산을 맡기면 `git diff <base>`(tip 비교)로 틀리기 쉽다. 템플릿 뒤 문장
 "Inspect the changes yourself with git (git status, git diff)."는 그대로다. `--prompt-file` 경로는 scope 를 채우지 않으므로 불변.
 
-**3. 기록 호환 — `base` 키.** `runReview`의 entry 에 git-target scope(worktree·diff)일 때 `base` 키를 넣는다: 판정한 ref, worktree degrade 면
-`null`. task-docs 에는 넣지 않는다. 해석 규칙(정본은 harness-review.md 5단계에 쓴다):
-- `scope: worktree` + `base: <ref>` → 넓어진 의미(merge-base 이후 커밋 + 미커밋).
-- `scope: worktree` + `base: null` → degrade, 미커밋만.
-- `scope: worktree` + **`base` 키 없음** → 이 변경 이전 기록, 미커밋만(과거 의미). 
-- diff 기록은 키 유무와 무관하게 의미 불변(`base` 키는 감사 편의).
+**3. 기록 호환 — `base`·`mergeBase` 키 (Q1 결정 2026-10-11: 둘 다 기록).** `runReview`의 entry 에 git-target scope(worktree·diff)일 때
+`base`(판정한 ref)와 `mergeBase`(`git merge-base <base> HEAD` sha)를 **항상 둘 다** 넣는다. worktree degrade 면 **두 키 모두 `null`**(키 생략이
+아니다 — 생략은 "과거 기록"의 표지라 겹치면 안 된다). task-docs 에는 둘 다 넣지 않는다. 이유: base ref 는 나중에 움직이고 머지 뒤에는 merge-base 를
+다시 계산할 수 없다 — `mergeBase`..`tip` + 미커밋이 리뷰 범위의 사후 증명이다. 해석 규칙(정본은 harness-review.md 5단계에 쓴다):
+- `scope: worktree` + `base: <ref>`·`mergeBase: <sha>` → 넓어진 의미(`mergeBase` 이후 커밋 + 미커밋).
+- `scope: worktree` + `base: null`·`mergeBase: null` → degrade, 미커밋만.
+- `scope: worktree` + **두 키 없음** → 이 변경 이전 기록, 미커밋만(과거 의미).
+- diff 기록은 키 유무와 무관하게 의미 불변(키는 감사 편의 — `mergeBase`..`tip`이 리뷰한 범위).
 
 **소급하지 않는다.** 과거 worktree 기록은 그대로 `review`·`verify` 증거로 센다 — 가드는 scope 를 보지 않고(B 기각), 이미 있던 증거를 무효로 만들면
 가드가 `--force` 훈련기가 된다(구 task 호환 절과 같은 원칙). 파서(`parseMetaReviews`·`parseReviewMarkers`)는 바꾸지 않는다 — 추가 키를 무시한다.
 artifact 마커 형식(`<!-- harness:review kind= scope= tip= at= -->`)도 바꾸지 않는다 — 마커는 구 task 의 증거 형식이고 거기에 키를 더할 실익이 없다.
-사람이 읽는 블록 첫 줄(`- engine: … · scope: …`)에만 `· base: <ref>`를 붙인다.
+사람이 읽는 블록 첫 줄(`- engine: … · scope: …`)에만 `· base: <ref> · mergeBase: <sha>`를 붙인다(degrade 면 `· base: none`).
 
 **4. `harness-team scope`.** 판정을 그대로 보고하므로 worktree 에도 `base`가 채워진다(degrade 면 `null` + 경고). `reviewHint`는 base 가 있으면
 이미 `--base`를 붙인다 — 코드 변경 없이 `review <engine> --scope worktree --base '<ref>'`가 된다. `mergeBase`는 envelope `extra`에 싣는다
@@ -122,7 +124,7 @@ artifact 마커 형식(`<!-- harness:review kind= scope= tip= at= -->`)도 바�
 
 | 파일 | 변경 |
 |---|---|
-| `src/commands/review.mjs` | base 사다리 추출 · worktree 에 base·mergeBase 판정(degrade/error 비대칭) · `buildPrompt` fill · entry `base` 키 · degrade 경고 · 블록 줄에 base |
+| `src/commands/review.mjs` | base 사다리 추출 · worktree·diff 에 mergeBase 판정(worktree degrade/error 비대칭) · `buildPrompt` fill · entry `base`·`mergeBase` 키 · degrade 경고 · 블록 줄에 base |
 | `src/commands/scope.mjs` | `extra.mergeBase` · degrade 경고를 nextActions 에 |
 | `tests/review-command.test.mjs` | S1·S2·S3 테스트 추가 |
 | `tests/scope-command.test.mjs` | S4 — 기존 "worktree 는 base 를 비운다" 단언을 새 계약으로 수정(의도된 계약 변경) |
@@ -135,7 +137,7 @@ artifact 마커 형식(`<!-- harness:review kind= scope= tip= at= -->`)도 바�
 **기각한 대안.**
 - **가드에 scope 검사**(worktree 기록을 verify 증거에서 제외) — 선행 task "B 판단"에서 기각: 정당한 커밋 전 리뷰까지 빼면서 결함(리뷰가 커밋을 안 봄)은 못 고친다.
 - **새 scope 값**(`branch`·`worktree+diff` 등) — 신·구 구분은 되지만 `SCOPES`·`--scope` 허용값·ship 분기·scope 힌트·문서 전반을 바꾸고, 사용자가
-  고를 선택지만 늘린다. brief 도 "worktree 의 의미를 넓힌다"로 지시했다. 구분은 `base` 키로 충분하다.
+  고를 선택지만 늘린다. brief 도 "worktree 의 의미를 넓힌다"로 지시했다. 구분은 `base`·`mergeBase` 키로 충분하다.
 - **placeholder 리터럴 변경** — 7 템플릿·6 문서 미러·pin 테스트를 같이 바꿔야 하는데 얻는 것은 문서 표기뿐이다. fill 이 `working tree changes`로
   시작해 리터럴이 여전히 참이다.
 - **base ref 만 프롬프트에 넣고 merge-base 계산은 리뷰어에게** — `git diff <base>`(tip 비교)로 base 쪽 drift 를 끌고 오기 쉽다. sha 는 모호하지 않다.
@@ -146,9 +148,10 @@ artifact 마커 형식(`<!-- harness:review kind= scope= tip= at= -->`)도 바�
 
 - **base**: scope 판정 사다리(명시 `--base` → `origin/HEAD`·`origin/main`·`origin/master` 중 실재 → origin 없을 때만 `main`)가 고른 ref. diff·worktree 공용.
 - **merge-base**: `git merge-base <base> HEAD` — 브랜치가 base 에서 갈라진 커밋. diff scope 의 `<base>...HEAD`와 같은 기준점.
-- **worktree scope(넓어진 의미)**: merge-base 대비 작업 트리 전체 — merge-base 이후 커밋 + 미커밋 + untracked. 기록에 `base: <ref>`.
-- **worktree degrade**: base 또는 merge-base 를 판정하지 못한 worktree — 종전 의미(미커밋만), 기록에 `base: null`, 출력에 경고.
-- **과거 worktree 기록**: `base` 키가 없는 `scope: worktree` 항목 — 이 변경 이전, 미커밋만. 증거 자격은 그대로.
+- **worktree scope(넓어진 의미)**: merge-base 대비 작업 트리 전체 — merge-base 이후 커밋 + 미커밋 + untracked. 기록에 `base: <ref>`·`mergeBase: <sha>`.
+- **리뷰 범위 증명**: 기록의 `mergeBase`..`tip`(+ worktree 면 그 시점 미커밋). base ref 는 움직이므로 sha 가 정본이다.
+- **worktree degrade**: base 또는 merge-base 를 판정하지 못한 worktree — 종전 의미(미커밋만), 기록에 `base: null`·`mergeBase: null`, 출력에 경고. 증거 자격은 그대로(Q2).
+- **과거 worktree 기록**: `base`·`mergeBase` 키가 없는 `scope: worktree` 항목 — 이 변경 이전, 미커밋만. 증거 자격은 그대로.
 - 게이트 근거: Goal·Constraint·Success·Context 전 항목 pass — 아래 자가진단.
 
 ## Ambiguity 자가진단
@@ -159,7 +162,7 @@ artifact 마커 형식(`<!-- harness:review kind= scope= tip= at= -->`)도 바�
 - [x] **Constraint 명확도** (30%) — 기술/시간/범위 제약이 명시되었는가? — 근거: 제약 절(의존성 0·가드 불변·diff/task-docs 불변·placeholder 불변·소급 없음·범프 없음).
 - [x] **Success 기준** (30%) — 완료를 어떻게 측정하는가? — 근거: Done evidence S1–S4 + `npm test`·`npm run docs:check` 통과.
 - [x] **Context 명확도** (brownfield 한정) — 영향 받는 기존 코드/파일을 식별했는가? — 근거: 설계 절 영향 표, 기준 origin/main `a8e230b`(0.49.1).
-- [x] **Ambiguity ≤ 0.2** — 위 항목 가중합 ≥ 0.8 — 근거: 전 항목 pass(가중합 1.0). 남은 열린 질문(참고 절)은 권장안이 있는 선택이라 게이트를 막지 않는다.
+- [x] **Ambiguity ≤ 0.2** — 위 항목 가중합 ≥ 0.8 — 근거: 전 항목 pass(가중합 1.0). 열린 질문 Q1–Q3 은 2026-10-11 사람 결정으로 닫혔다(참고 절).
 
 <!-- 선택 선언. 아래 주석을 벗기면 done 가드가 검사한다.
      미선언 기본값: "tests": "required" (소스가 바뀌면 테스트 파일 변경을 요구), "review": "optional",
@@ -177,7 +180,7 @@ artifact 마커 형식(`<!-- harness:review kind= scope= tip= at= -->`)도 바�
       "id": "S1",
       "given": "활성 task 가 있고 origin 없는 저장소의 feature 브랜치에 main 이후 구현 커밋이 있으며, 그 위에 추적 파일 미커밋 편집이 있다",
       "when": "--scope 없이 resolveScope 와 review 를 실행한다",
-      "then": "scope 는 worktree, base 는 main, mergeBase 는 분기점 sha 다. 엔진에 간 프롬프트가 그 sha 와 'committed and uncommitted' 를 담고, meta.reviews 항목이 scope=worktree·base=main 으로 기록된다",
+      "then": "scope 는 worktree, base 는 main, mergeBase 는 분기점 sha 다. 엔진에 간 프롬프트가 그 sha 와 'committed and uncommitted' 를 담고, meta.reviews 항목이 scope=worktree·base=main·mergeBase=분기점 sha 로 기록된다",
       "test": "resolveScope: worktree scope carries the merge base so committed branch changes are reviewed",
       "cmd": "node --test --test-name-pattern=\"resolveScope: worktree scope carries the merge base so committed branch changes are reviewed\" tests/review-command.test.mjs"
     },
@@ -185,7 +188,7 @@ artifact 마커 형식(`<!-- harness:review kind= scope= tip= at= -->`)도 바�
       "id": "S2",
       "given": "origin 이 있지만 origin/HEAD·origin/main·origin/master 가 모두 없는 저장소에 미커밋 편집이 있다",
       "when": "--scope 없이 review 를 실행하고, 이어서 --scope worktree --base nope 로 실행한다",
-      "then": "첫 실행은 실패하지 않고 scope=worktree·base=null 로 기록되며 프롬프트는 종전 'working tree changes' 이고 출력에 커밋된 변경이 빠졌다는 경고가 있다. 둘째 실행은 exit 1 이고 아무것도 기록하지 않는다",
+      "then": "첫 실행은 실패하지 않고 scope=worktree·base=null·mergeBase=null 로 기록되며 프롬프트는 종전 'working tree changes' 이고 출력에 커밋된 변경이 빠졌다는 경고가 있다. 둘째 실행은 exit 1 이고 아무것도 기록하지 않는다",
       "test": "resolveScope: worktree degrades to uncommitted-only when the base cannot be inferred",
       "cmd": "node --test --test-name-pattern=\"resolveScope: worktree degrades to uncommitted-only when the base cannot be inferred\" tests/review-command.test.mjs"
     },
@@ -216,7 +219,6 @@ artifact 마커 형식(`<!-- harness:review kind= scope= tip= at= -->`)도 바�
 - 판정: `src/commands/review.mjs` `resolveScope`(base 사다리 L266–303) · 프롬프트 `buildPrompt`(L50) · 기록 `runReview` entry(L542)·`renderReviewBlock`(L118)
 - 소비자: `src/commands/scope.mjs` `runScope`·`reviewHint` · `commands/harness-ship.md` 2·7·8단계·예시 · `src/commands/pr-check.mjs:184`(명시 diff — 불변)
 - 가드(불변): `src/commands/task.mjs` `verifyEvidencePredicate`·`parseMetaReviews`·`parseReviewMarkers`
-- (open) **Q1 기록 필드** — `base`(ref)만 기록 vs `mergeBase` sha 도 기록. 권장: `base`만. ref 는 나중에 움직이므로 정밀한 감사엔 sha 가 낫지만,
-  리뷰 대상 재구성은 `tip`과 base 로 대부분 충분하고 스키마 표면을 최소로 둔다.
-- (open) **Q2 degrade 경고 강도** — 출력 경고만 vs degrade 기록을 verify 증거에서 제외. 권장: 경고만. 제외는 기각된 B(가드 scope 검사)의 변형이다.
-- (open) **Q3 다이어그램** — 옵트인 단계 추가 여부. 권장: 생략(선행 task 와 같이 CLI·문서 계약 변경이라 도식 실익이 작다). plan 에 단계를 두지 않는다.
+- (resolved 2026-10-11) **Q1 기록 필드** → 결정(사람, 오케스트레이터 경유): `base`와 `mergeBase`를 둘 다 기록한다. base ref 는 움직이고 머지 뒤 merge-base 는 재계산할 수 없어 `tip`과 짝지은 sha 가 범위의 사후 증명이다. degrade 는 두 키 모두 `null`(생략 아님) — 설계 3.
+- (resolved 2026-10-11) **Q2 degrade 처리** → 결정: 출력 경고 + `base: null` 기록만, 증거 제외 없음(제외는 기각된 B 의 변형).
+- (resolved 2026-10-11) **Q3 다이어그램** → 결정: 생략. plan 에 단계를 두지 않는다.

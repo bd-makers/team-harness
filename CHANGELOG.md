@@ -9,6 +9,16 @@
 
 ## [Unreleased]
 
+### Fixed
+- **worktree scope 리뷰가 이미 커밋된 브랜치 변경을 보지 않던 것** (task `review-scope-committed`). 하네스 기록 파일 밖의 미커밋 편집이 하나라도 있으면
+  `--scope` 없는 `harness-team review`는 worktree scope를 고르는데, 프롬프트가 "working tree changes"만 가리켜 리뷰어는 HEAD 대비 미커밋만 봤다 —
+  구현을 커밋한 뒤 문서를 손보다 돌린 R2·adversarial이 커밋된 구현을 통째로 놓친 채 증거로 기록됐다. 이제 worktree는 **base와의 merge-base 대비
+  작업 트리 전체**(이후 커밋 + 미커밋 + untracked)이고, CLI가 merge-base sha를 계산해 프롬프트에 넣는다. `meta.reviews[]` 항목은 git scope일 때
+  `base`·`mergeBase`를 함께 남긴다(`mergeBase`..`tip`이 리뷰 범위의 사후 증명). base를 판정하지 못하면 실패하지 않고 종전 의미(미커밋만)로 내려가
+  경고하고 `base: null`·`mergeBase: null`로 기록한다 — 명시 `--base`가 틀린 것만 error다. 두 키가 없는 과거 worktree 기록은 미커밋만 본 것으로 읽되
+  증거 자격은 그대로다(소급 없음). `harness-team scope`도 worktree에 `base`·`mergeBase`를 보고하고, `/harness-ship`은 그 기준으로 변경을 읽고
+  shipcheck에 `--base`를 넘긴다. 미커밋만 리뷰하려면 `--base HEAD`.
+
 ## [0.49.1] - 2026-10-11
 
 ### Fixed

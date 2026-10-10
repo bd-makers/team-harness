@@ -39,12 +39,13 @@ Raw slash-command 인수:
      Gemini는 하네스 멤버가 아니다(플러그인 저장소 `docs/decisions.md` D7) — 필요하면 `custom`으로 등록한다.
      `custom`은 체인에 포함되지 않는다 — 명시 호출 전용이다.
 
-2. **Scope 결정** — `git status --short`가 dirty면 working tree 전체가 리뷰 대상이다.
+2. **Scope 결정** — `git status --short`가 dirty면 `worktree` scope다 — base와의 **merge-base 대비 작업 트리 전체**
+   (merge-base 이후 커밋 + 미커밋 + untracked)가 리뷰 대상이다.
    단 **하네스가 스스로 쓴 활성 task의 기록 파일**은 dirty로 세지 않는다 — post-commit 훅이 커밋 뒤에 쓰는
    `<name>-handoff.md`·`<user>-handoff.md`(`done` 가드가 무시하는 것과 같은 집합)와, 이 명령이 성공마다 쓰는
    `<name>-artifact.md`·`<name>-meta.json`이다. 세면 커밋 직후의 리뷰가 구현 diff 대신 handoff만 보고, 커밋 없이 이어 돌린
    두 번째 리뷰(R2 → R3)가 첫 리뷰의 기록만 보게 된다. artifact를 손으로만 고친 상태도 diff로 간다 — diff는 커밋된 코드를 본다.
-   바뀐 것이 그 파일들뿐이면 clean으로 본다. clean이면 base 대비 브랜치 diff를 리뷰한다 — base는 `--base <ref>` 인수가 있으면 그 값,
+   바뀐 것이 그 파일들뿐이면 clean으로 본다. clean이면 base 대비 브랜치 diff를 리뷰한다. base는 두 scope가 같은 규칙으로 정한다 — `--base <ref>` 인수가 있으면 그 값,
    없으면 **원격 기본 브랜치**를 찾는다: `origin/HEAD`가 가리키는 것 → `origin/main` → `origin/master`,
    **실재하는 것만** 채택한다(`origin/HEAD`는 삭제된 브랜치를 가리킨 채 남아 있을 수 있다).
    추론한 base는 `refs/remotes/origin/<branch>` 전체 이름으로 나온다 — 짧은 `origin/main`은 같은 이름의
@@ -57,6 +58,14 @@ Raw slash-command 인수:
    `git remote set-head origin -a`로 `origin/HEAD`를 설정한다.
 
    diff가 비어 있으면 리뷰할 것이 없다고 보고하고 종료한다.
+
+   **worktree의 기준점은 merge-base다** — `git merge-base <base> HEAD`. base tip이 아니라 갈라진 점이어야 분기 이후 base 쪽 변경을
+   끌고 오지 않는다(diff의 `<base>...HEAD`와 같은 점). 미커밋만 보던 예전 worktree는 커밋한 구현을 놓친 채 증거로 기록됐다.
+   기본 브랜치 위에서 origin과 같으면 merge-base가 HEAD라 대상은 종전과 같고(미커밋만), 미푸시 커밋이 있으면 그것도 들어간다.
+   미커밋만 리뷰하고 싶으면 `--base HEAD`를 준다. base나 merge-base를 판정하지 못하면(origin 기본 브랜치 없음·unborn HEAD·비-git)
+   worktree는 **실패하지 않고 미커밋만으로 내려간다** — 대신 출력에 커밋된 변경이 빠졌다고 경고하고 기록에 `base: null`을 남긴다.
+   diff와 달리 error로 멈추지 않는 이유는 worktree 리뷰가 원래 어떤 저장소에서도 실패하지 않았기 때문이다. 사람이 준 `--base`가
+   틀린 것은 둘 다 error다 — 엉뚱한 기준을 조용히 기록하지 않는다.
 
    이 판정만 따로 필요하면(예: `/harness-ship` 2단계) `harness-team scope --json`이 같은 규칙으로
    `{scope, base, tip}`을 돌려준다 — 판정을 손으로 다시 실행하지 않는다.
@@ -79,15 +88,23 @@ Raw slash-command 인수:
    If nothing significant is found, say so explicitly. <focus arguments, if any>
    ```
 
+   scope 자리의 채움(모든 git 대상 프레이밍 공통): diff는 `diff against <base>`, worktree는
+   `working tree changes since <mergeBase>, the merge base with <base> — committed and uncommitted, including untracked files (git diff <mergeBase>; git status)`,
+   내려간 worktree는 `working tree changes`. merge-base는 CLI가 계산한 sha로 준다 — ref만 주면 리뷰어가 `git diff <base>`(tip 비교)로 틀리기 쉽다.
+
 4. **발견 검증** — 리뷰어의 지적은 주장이지 사실이 아니다. 각 발견을 코드에서 직접
    재현·대조해 **진짜 결함 / 오탐**을 판별한 뒤 보고한다. 검증 없이 지적을 그대로
    반영하거나 기각하지 않는다.
 
 5. **기록** — 기록의 기계 판독 부분은 3단계의 CLI가 이미 남겼다. 성공한 실행마다 두 곳에 쓴다:
 
-   - **`<name>-meta.json`의 `reviews[]`** — `{ kind, engine, scope, tip, at, exitCode, outputBytes }`.
+   - **`<name>-meta.json`의 `reviews[]`** — `{ kind, engine, scope, base, mergeBase, tip, at, exitCode, outputBytes }`.
      harness 소유 기계 상태이며 `verify: required` 가드의 **정본**이다. 손으로 고치지 않는다.
-   - **artifact `## Reviews`** — `### <at> — <kind> (harness-team review)` 헤딩, 엔진·scope·tip·크기 한 줄,
+     `base`·`mergeBase`는 git scope(worktree·diff)일 때 **둘 다** 남는다 — `mergeBase`..`tip`(+ worktree면 그 시점 미커밋)이
+     리뷰 범위의 사후 증명이다(base ref는 움직이고 머지 뒤 merge-base는 다시 계산할 수 없다). worktree 해석: 두 값이 있으면
+     merge-base 이후 커밋 + 미커밋, 둘 다 `null`이면 내려간 실행(미커밋만), **두 키가 없으면** 이 규칙 이전의 기록(미커밋만)이다.
+     과거 기록도 증거 자격은 그대로다 — 가드는 scope를 보지 않고, 소급하지 않는다.
+   - **artifact `## Reviews`** — `### <at> — <kind> (harness-team review)` 헤딩, 엔진·scope·base·mergeBase·tip·크기 한 줄,
      엔진 출력(상한 초과분은 잘라내고 잘랐다고 표기), 그리고 종전 형식의 마커 한 줄:
 
    ```text
