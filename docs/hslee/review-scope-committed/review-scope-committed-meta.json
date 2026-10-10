@@ -7,5 +7,17 @@
   "closedAt": null,
   "forcedAt": null,
   "forcedIssues": null,
-  "reviews": []
+  "reviews": [
+    {
+      "kind": "codex-scenario",
+      "engine": "codex",
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "a8e230bfbc509df3f7750740d36992472c45c3c9",
+      "tip": "f62f8336af8483ddd255e9d4fa2f3e5ae2aec588",
+      "at": "2026-10-10T16:16:13.950Z",
+      "exitCode": 0,
+      "outputBytes": 1717
+    }
+  ]
 }

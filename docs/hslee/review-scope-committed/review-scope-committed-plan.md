@@ -1,7 +1,7 @@
 # review-scope-committed — Plan
 
 ## 목표
-worktree scope 리뷰가 base 와의 merge-base 이후 커밋 + 미커밋을 보게 하고, 기록의 `base` 키로 신·구 의미를 구분한다(spec 설계 1–7).
+worktree scope 리뷰가 base 와의 merge-base 이후 커밋 + 미커밋을 보게 하고, 기록의 `base`·`mergeBase` 키로 신·구 의미를 구분하고 리뷰 범위를 사후 증명한다(spec 설계 1–7).
 
 ## 단계
 - [x] spec 승인 대기 — needs-input 보고 → 2026-10-11 승인(Q1 base+mergeBase 기록·Q2 경고만·Q3 다이어그램 생략)
