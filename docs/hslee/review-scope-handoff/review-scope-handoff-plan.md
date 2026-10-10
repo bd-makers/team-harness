@@ -14,7 +14,7 @@
 - [x] 6. ship 준비 보고 — spec·plan·artifact 최종 갱신, 로컬 커밋까지(push·PR 금지 — brief)
 - [x] 7. followups 18 포함(사람 결정 2026-10-10) — 실패 재현 테스트 S4(커밋 없이 review 2회 → 2회차도 diff) 먼저 → `resolveScope` 제외 집합에 활성 task artifact·meta 추가 → spec·정본 문서·CHANGELOG·followups 갱신
 - [x] 8. 재검증·재리뷰 — `npm test` · `docs:check` · `scenario check` → R2 `review codex --framing scenario --scope diff` · R3 `review codex --scope diff`(scope 기록 확인)
-- [ ] 9. push(`HEAD:ao/harness-aijient-team-plugin-21/review-scope-handoff`) · PR(base main) · PR 번호·CI 보고 — 머지 금지
+- [x] 9. push(`HEAD:ao/harness-aijient-team-plugin-21/review-scope-handoff`) · PR(base main) · PR 번호·CI 보고 — 머지 금지 — PR #139(2026-10-10), CI `test (24)` success @8fd2288. 리뷰 덱 미실행(스킬 없음 — `/mr-change-diagram`이 이 머신에 없다)
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

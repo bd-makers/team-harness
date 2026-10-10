@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: scope 자동 판정이 하네스 기록 파일(훅 handoff·review 의 artifact·meta)을 dirty로 세지 않는다.
-- Current atomic step: plan 8 — R2·R3 재리뷰(`--scope diff`) → plan 9 push·PR.
+- Current atomic step: PR #139 리뷰 대기(머지 금지).
 - Stop / human-decision condition: PR 생성 후 보고하고 멈춤(머지 금지). push·PR 막히면 --needs-input.
 
 ## Constraints and settled decisions
@@ -18,4 +18,4 @@
 ## Failure capsules (max 3 unresolved)
 
 ## Resume checklist
-- 재리뷰 결과 artifact 기록 → push·PR → ao report(PR 번호·CI).
+- PR #139 생성·CI green. 리뷰 코멘트가 오면 대응.
