@@ -64,3 +64,10 @@ CHANGELOG.md                                       |  7 +--
  src/commands/review.mjs                            | 20 +++++---
  tests/review-command.test.mjs                      | 23 ++++++++-
  11 files changed, 113 insertions(+), 45 deletions(-)
+
+## 2026-10-10T13:12:45.243Z — ebaddb0 docs(task): review-scope-handoff 재리뷰(R2·R3, scope=diff) 판별 기록
+.../review-scope-handoff-artifact.md               | 37 ++++++++++++++++++++++
+ .../review-scope-handoff-handoff.md                | 14 ++++++++
+ .../review-scope-handoff-meta.json                 | 18 +++++++++++
+ .../review-scope-handoff-plan.md                   |  2 +-
+ 4 files changed, 70 insertions(+), 1 deletion(-)
