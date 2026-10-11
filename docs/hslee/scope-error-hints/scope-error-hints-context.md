@@ -16,5 +16,8 @@
 - Read next: spec `## 설계 / 접근` 두 표
 - Verification command: `node --test --test-name-pattern="CLI scope error|pr-check base error retry" tests/scope-command.test.mjs tests/pr-check.test.mjs`
 
+## Failure capsules (max 3 unresolved)
+- (none)
+
 ## Resume checklist
 - `npm test` · `npm run docs:check` green 확인 후 PR 상태·리뷰 코멘트 확인.
