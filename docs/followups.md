@@ -7,7 +7,34 @@
 
 ## 우선순위
 
-**남은 것: 없음.** 13–16번은 2026-10-06에, 20–23번은 2026-10-11에 닫았다(아래 괄호 기록). 새 후보가 생기면 이 절에 번호를 이어 붙인다(24번부터).
+**남은 것: 24번** (출처: 2026-10-11 `heliosent-profile` C1 실사용 회신, 전역 CLI 0.49.4 — 경미, 사용성). 13–16번은 2026-10-06에, 20–23번은 2026-10-11에 닫았다(아래 괄호 기록). 새 후보가 생기면 이 절에 번호를 이어 붙인다(25번부터).
+
+24. **기본 브랜치에서 인수 없는 `wiki sources` 는 "활성 task 없음" 으로 끝나, 미컴파일 done task 를 찾을 길이 없다(경미, 사용성).**
+    소비자 저장소 main 체크아웃에서 `harness-team wiki sources` 를 인수 없이 실행하면 활성 task 가 없어 exit 1 로 끝났다(읽기 전용, 무변경).
+    그래서 아직 컴파일하지 않은 done task 를 찾으려고 task 를 하나씩 지정했다(`hslee/hslee-profile` → `compiled`, `hslee/profile-deploy` → `blockers [not-done]`).
+    **판정: 문서대로이고 결함이 아니라 사용성 공백이다.** 인수 없는 형태의 의도는 "활성 task" 이며, 기본 브랜치에는 활성 task 가 없다는 것까지 문서가 예상한다 —
+    `docs/chad/wiki-compile/wiki-compile-spec.md:58`("인수 없으면 활성 task")·`:82`("`done`이 활성 task를 비우므로 이 자리에서는 대상을 명시한다"),
+    `commands/harness-wiki.md:21`·`:28`, `commands/harness-task.md:185-186`, 실행 위치는 `docs/harness-cycle.md:181`(기본 브랜치). 코드도 같다 —
+    `src/commands/wiki.mjs:26`(USAGE "인수가 없으면 활성 task")·`:293-303`(활성 task 없으면 오류 패킷). 비는 것은 **발견**이다: 종결 절차 안에서는 방금 `done` 한
+    task 를 알고 있으니 명시하면 되지만, 이미 done 된 task 를 소급 컴파일할 때(C1 첫 소비자 실사용이 그 경우 — `docs/harness-cycle.md:276`)는 후보 목록이 없다.
+    `harness-team list` 는 task 이름만 내고 done·compiled 여부를 보이지 않는다.
+    재현(2026-10-11, 이 저장소 `origin/main` c343655): `.harness/active.json` 이 없는 워크트리에서 `node bin/harness-team.mjs wiki sources`
+    → `✗ wiki: 활성 task 없음` / `cause: 인수가 없고 .harness/active.json 에도 활성 task가 없음` /
+    `` retry: `harness-team wiki sources <user>/<task>` 로 대상을 지정하거나 `harness-team task <name>` 으로 활성화 ``, exit 1. `--json` 은 `status: error` 에
+    `alternatives: []`, exit 1. `active.json` 이 `{}`(task 필드 없음)여도 같다. 즉 "task 를 지정하라" 는 안내는 **이미 retry 에 있다** — 없는 것은 후보를 찾는 길이다.
+    고칠 방향 후보(spec 에서 고른다):
+    - A. **인수 없고 활성 task 도 없으면 done task 전체를 훑어 목록을 낸다** — task 마다 컴파일 가능 / `compiled` / `blockers`. 재료는 있다(`readTaskMeta` —
+      `src/commands/summary.mjs`, `findCompiled` — `wiki.mjs:174`). 다만 spec 계약 둘을 바꾼다: `:58`(인수 없으면 활성 task)과 `:66`(task 를 찾지 못하면 exit 1 —
+      목록이면 exit 0). JSON 도 단일 task 필드에서 목록으로 모양이 갈린다(스킬 2단계는 종결 절차에서 늘 `<user>/<task>` 를 주므로 닿지 않는다).
+    - B. **인수 없는 계약은 두고 옵트인으로 목록을 낸다** — `wiki sources --all`(또는 `list` 쪽 표시). A 와 같은 목록이되 기본 동작·exit 계약은 그대로다.
+      D11 2차 장치 규칙상 `list` 에 붙일지 `wiki` 에 붙일지를 spec 에서 고른다.
+    - C. **오류 패킷만 보강한다** — 비어 있는 `alternatives` 에 후보 찾는 법(`harness-team list` 로 이름을 본 뒤 `<user>/<task>` 지정)을 싣는다(#143·#144 의 `alternatives` 패턴).
+      코드가 가장 적지만 `list` 가 done·compiled 를 보이지 않으므로 하나씩 지정하는 수고는 그대로다 — 반쪽 해법이다.
+    곁가지(같은 spec 에서 볼 것): retry 의 두 번째 안 "`harness-team task <name>` 으로 활성화" 는 명령 문서(`commands/harness-wiki.md:28`)가 기본 브랜치에서 권하는 길(대상 명시)과 다르다.
+    테스트 자리: `tests/wiki.test.mjs:227`(not-done 막힘)·`:239`(compiled 감지) 옆 — `repoWithLandedTask` 픽스처와 `cli(dir, 'wiki', 'sources', …)` 로 부른다.
+    인수 없는 분기(`wiki.mjs:293-303`)는 지금 테스트가 없다. `tests/wiki-command.test.mjs:49`·`:77` 은 `commands/harness-wiki.md:28`·`commands/harness-task.md:185-186`
+    문장을 그대로 단언하므로, 그 문장을 고치면 테스트도 함께 고친다.
+    선행 조건: 없음(A 는 spec 계약 개정이 먼저다). 참고로 done task 의 `compiled` 일괄 조회는 C2b(`compiled` 가 있는 task 만 지운다 — `docs/harness-cycle.md:274`)의 입력과도 겹친다.
 
 (22·23번은 2026-10-11 task `followups-22-23`으로 올려 여기서 지웠다 — 22번: `diff-failed` cause 를 git stderr 의 사유 줄(마지막 `fatal:`·`error:` 줄, 없으면 마지막 비어 있지 않은 줄 — 커밋 없는 HEAD 는 사용법 안내가 마지막이다)로 바꿔 `review`·`scope`·`pr-check` 가 git 의 사유를 싣고 절대경로·명령줄을 싣지 않는다. 23번: **방향 A(사람 결정)** — 기본 브랜치와 공통 조상이 없는 브랜치의 push 는 PR 을 열 수 없으므로 pre-push 검사 대상에서 뺀다(`git merge-base` exit 1 일 때만, 그 밖의 실패는 삼키지 않는다). gh-pages 를 **체크아웃한 채** push 하면 여전히 base 판정에서 #144 의 `diff-failed` 패킷이 난다 — 범위이며 근거는 그 task spec.)
 (20·21번은 2026-10-11 task `scope-error-hints`로 올려 여기서 지웠다 — `scope` 오류의 `alternatives` 와 `pr-check` base 오류의 `retry:` 를 #143 의 `errorKind` 로 고른다. 21번의 "pre-push 는 사실상 `default-base` 만 닿는다" 는 실측으로 틀렸다 — orphan 브랜치·커밋 없는 HEAD 를 체크아웃한 채 push 하면 `diff-failed` 가 닿아 pre-push 갈래도 종류별로 고쳤다.)
