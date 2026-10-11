@@ -16,3 +16,12 @@ CHANGELOG.md                                       |   3 +
  tests/review-command.test.mjs                      |  54 ++++++++++
  tests/scope-command.test.mjs                       |  50 ++++++++++
  12 files changed, 353 insertions(+), 25 deletions(-)
+
+## 2026-10-11T05:27:08.698Z — d87cfa8 fix(scope): diff-failed retry 가 worktree 의 범위 축소를 알린다 (codex P3)
+.../review-retry-hint-artifact.md                  | 23 ++++++++++++++++++++++
+ .../review-retry-hint/review-retry-hint-handoff.md | 15 ++++++++++++++
+ .../review-retry-hint/review-retry-hint-meta.json  | 14 ++++++++++++-
+ .../review-retry-hint/review-retry-hint-spec.md    |  3 ++-
+ src/commands/review.mjs                            |  2 +-
+ src/commands/scope.mjs                             |  2 +-
+ 6 files changed, 55 insertions(+), 4 deletions(-)

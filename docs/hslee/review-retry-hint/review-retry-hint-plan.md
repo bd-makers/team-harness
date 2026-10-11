@@ -10,7 +10,7 @@
 - [x] `review.mjs`·`scope.mjs` retry 를 `errorKind` 로 고른다 → 테스트 ✔
 - [x] `docs/followups.md` 19번 삭제 + 괄호 기록 + "남은 것" 갱신, CHANGELOG `[Unreleased]` Fixed 1줄
 - [x] `npm test`·`npm run docs:check` 통과
-- [ ] PR 생성 + 리뷰 덱
+- [x] PR 생성(#143) — 리뷰 덱 미실행(스킬 없음)
 - [ ] 머지 (사람)
 
 ## Ontology 변경 로그
