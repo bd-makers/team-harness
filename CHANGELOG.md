@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.49.2] - 2026-10-11
+
 ### Fixed
 - **worktree scope 리뷰가 이미 커밋된 브랜치 변경을 보지 않던 것** (task `review-scope-committed`). 하네스 기록 파일 밖의 미커밋 편집이 하나라도 있으면
   `--scope` 없는 `harness-team review`는 worktree scope를 고르는데, 프롬프트가 "working tree changes"만 가리켜 리뷰어는 HEAD 대비 미커밋만 봤다 —

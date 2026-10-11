@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.49.1</span>
+      <span class="tag tag-purple">v0.49.2</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,11 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.49.2 — worktree 리뷰가 이미 커밋한 구현까지 본다:</strong>
+    <br>
+    <code>0.49.2</code> <strong><code>review</code>의 worktree scope가 base와의 merge-base 대비 작업 트리 전체(이후 커밋 + 미커밋 + untracked)를 리뷰한다</strong> — CLI가 merge-base sha를 계산해 프롬프트에 넣고, <code>meta.reviews[]</code> 항목은 git scope일 때 <code>base</code>·<code>mergeBase</code>를 남긴다(<code>mergeBase</code>..<code>tip</code>이 리뷰 범위의 사후 증명).
+    이전에는 구현을 커밋한 뒤 문서를 손보다 돌린 리뷰가 미커밋만 보고 증거로 기록됐다. base를 못 정하면 실패하지 않고 미커밋만 보며 경고한다(명시 <code>--base</code>가 틀린 것만 error). 두 키가 없는 과거 기록은 증거 자격 그대로다. <code>templates/</code>는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 된다.
+    <br><br>
     <strong>🆕 0.49.1 — 커밋 직후의 리뷰가 구현 diff를 다시 본다:</strong>
     <br>
     <code>0.49.1</code> <strong><code>--scope</code> 없는 <code>review</code>·<code>scope</code>의 자동 판정이 하네스가 스스로 쓴 활성 task의 기록 파일을 dirty로 세지 않는다</strong> — post-commit 훅이 커밋 뒤에 쓰는 <code>&lt;name&gt;-handoff.md</code>·<code>&lt;user&gt;-handoff.md</code>(<code>done</code> 가드와 같은 집합)와 <code>review</code>가 성공마다 쓰는 <code>&lt;name&gt;-artifact.md</code>·<code>&lt;name&gt;-meta.json</code>.
@@ -2851,7 +2856,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.49.1 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.49.2 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Harness Aijient Team 0.49.1 — 무엇이 왜 달라졌나</title>
+  <title>Harness Aijient Team 0.49.2 — 무엇이 왜 달라졌나</title>
   <style>
     :root {
       --bg: #0f1117;
@@ -217,10 +217,11 @@
 </head>
 <body>
   <nav aria-label="문서 섹션">
-    <div class="nav-logo">Harness 0.49.1</div>
+    <div class="nav-logo">Harness 0.49.2</div>
     <div class="nav-links">
       <a href="#why">왜 patch인가</a>
-      <a href="#scope">scope 판정</a>
+      <a href="#scope">worktree의 새 의미</a>
+      <a href="#record">기록과 과거 기록</a>
       <a href="#compat">소비자가 할 일</a>
     </div>
   </nav>
@@ -228,60 +229,77 @@
   <main>
     <header class="hero">
       <div class="eyebrow">Release note · 2026-10-11 · patch</div>
-      <h1>커밋 직후의 리뷰가<br><strong>구현 diff를 다시 봅니다</strong></h1>
-      <p><code>--scope</code> 없이 돌린 <code>harness-team review</code>는 트리가 dirty면 working tree를, 깨끗하면 base 대비 브랜치 diff를 리뷰합니다.
-      그런데 하네스 자신이 트리를 늘 더럽혔습니다. post-commit 훅은 커밋마다 활성 task의 handoff를 다시 쓰고, <code>review</code>는 성공할 때마다 artifact·meta에 기록을 남깁니다.
-      그래서 커밋 직후의 리뷰는 구현 대신 <strong>handoff 한 파일</strong>을, 커밋 없이 이어 돌린 두 번째 리뷰(R2 → R3)는 <strong>앞 리뷰의 기록</strong>을 리뷰했습니다 — 그 리뷰도 증거로 기록됐습니다.
-      0.49.1은 하네스가 스스로 쓴 기록 파일을 dirty로 세지 않습니다.</p>
+      <h1>worktree 리뷰가<br><strong>이미 커밋한 구현까지 봅니다</strong></h1>
+      <p><code>--scope</code> 없이 돌린 <code>harness-team review</code>는 하네스 기록 파일 밖의 미커밋 편집이 하나라도 있으면 worktree scope를 고릅니다.
+      그런데 프롬프트는 "working tree changes"만 가리켜, 리뷰어는 <strong>HEAD 대비 미커밋</strong>만 봤습니다.
+      구현을 커밋한 뒤 문서를 손보다 돌린 R2·adversarial은 커밋된 구현을 통째로 놓친 채 증거로 기록됐습니다.
+      0.49.2의 worktree는 <strong>base와의 merge-base 대비 작업 트리 전체</strong>입니다.</p>
       <div class="tags">
-        <span class="tag tag-purple">0.49.0 → 0.49.1</span>
-        <span class="tag tag-orange">patch — 판정 결함 수정</span>
-        <span class="tag tag-blue">PR #139</span>
+        <span class="tag tag-purple">0.49.1 → 0.49.2</span>
+        <span class="tag tag-orange">patch — 리뷰 범위 결함 수정</span>
+        <span class="tag tag-blue">PR #140</span>
         <span class="tag tag-green">소비자 조치 — 플러그인 갱신</span>
       </div>
     </header>
 
     <dl class="release-brief" aria-label="릴리스 요약">
-      <div><dt>버전</dt><dd>0.49.1</dd></div>
+      <div><dt>버전</dt><dd>0.49.2</dd></div>
       <div><dt>날짜</dt><dd>2026-10-11</dd></div>
-      <div><dt>기준</dt><dd><code>v0.49.0..main</code> — #139(<code>dce96a5</code>), 종결 <code>42167c3</code></dd></div>
+      <div><dt>기준</dt><dd><code>v0.49.1..main</code> — #140(<code>5ef330b</code>), 종결 <code>c7ba861</code></dd></div>
     </dl>
 
     <section id="why">
-      <h2 class="section-title">왜 patch인가 — 문서가 약속한 판정을 코드가 지키지 못했다</h2>
-      <p class="section-sub">명령·플래그·출력 형식은 그대로입니다. "dirty면 worktree, clean이면 diff"라는 판정이 하네스 자신의 출력 때문에 늘 worktree로 기울던 결함을 고쳤습니다. 명시한 <code>--scope</code>는 동작이 같습니다.</p>
+      <h2 class="section-title">왜 patch인가 — 증거로 기록된 리뷰가 구현을 보지 않았다</h2>
+      <p class="section-sub">명령·플래그는 그대로입니다. scope 판정 규칙(언제 worktree를 고르는가)도 0.49.1과 같습니다. 바뀐 것은 worktree가 <strong>무엇을 리뷰하는가</strong>와, 그 범위를 기록에 남기는 두 키입니다. 명시한 <code>--scope diff</code>·<code>task-docs</code>는 동작이 같습니다.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>표면</th><th>경로</th><th>도달 경로</th><th>소비자 영향</th></tr></thead>
           <tbody>
-            <tr><td>CLI 동작</td><td><code>src/commands/review.mjs</code> <code>resolveScope</code></td><td>플러그인 갱신</td><td><code>review</code>(R2 <code>--framing scenario</code>·adversarial·testcritic 포함)와 <code>harness-team scope</code>의 자동 판정</td></tr>
-            <tr><td>슬래시 명령</td><td><code>commands/harness-review.md</code> 2단계 · <code>commands/harness-task.md</code></td><td>플러그인 갱신</td><td>판정 규칙 정본에 제외 집합을 적었다</td></tr>
+            <tr><td>CLI 동작</td><td><code>src/commands/review.mjs</code> <code>resolveScope</code>·<code>buildPrompt</code></td><td>플러그인 갱신</td><td>worktree 리뷰 범위가 merge-base 이후 커밋까지 넓어짐 · <code>meta.reviews[]</code>에 <code>base</code>·<code>mergeBase</code></td></tr>
+            <tr><td>CLI 출력</td><td><code>src/commands/scope.mjs</code></td><td>플러그인 갱신</td><td><code>harness-team scope</code>가 worktree에도 <code>base</code>·<code>mergeBase</code>를 보고</td></tr>
+            <tr><td>슬래시 명령</td><td><code>commands/harness-review.md</code> 2·3·5단계 · <code>commands/harness-ship.md</code> 2·7·8단계</td><td>플러그인 갱신</td><td>worktree 의미·기록 해석 규칙의 정본 · ship이 shipcheck에 <code>--base</code>를 넘김</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
     <section id="scope">
-      <h2 class="section-title">scope 판정 — 하네스 기록 파일은 dirty가 아니다</h2>
-      <p class="section-sub">제외는 활성 task의 네 파일뿐입니다. 그 밖의 변경이 하나라도 있으면 0.49.0처럼 worktree입니다. 활성 task가 없으면 제외도 없습니다.</p>
+      <h2 class="section-title">worktree의 새 의미 — merge-base 이후 전부</h2>
+      <p class="section-sub">기준점은 diff scope가 <code>&lt;base&gt;...HEAD</code>로 쓰는 것과 같은 merge-base입니다. CLI가 sha를 계산해 프롬프트에 직접 넣으므로 리뷰어가 base를 추측하지 않습니다.</p>
       <div class="change-grid">
         <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Fixed · #139</div><h3>커밋 직후 — 훅이 쓴 handoff</h3></div>
+          <div class="card-head"><div class="kind">Fixed · #140</div><h3>리뷰 범위 — 커밋 + 미커밋 + untracked</h3></div>
           <dl>
-            <div><dt>원인</dt><dd>post-commit 훅(<code>harness-team handoff</code>)은 커밋 <strong>뒤에</strong> <code>&lt;name&gt;-handoff.md</code>·<code>&lt;user&gt;-handoff.md</code>를 다시 씁니다. 그래서 커밋 직후의 트리는 늘 dirty였고, 자동 판정은 handoff만 보는 worktree였습니다(R2 시나리오 대조가 두 task에서 "무효 범위"로 기록됨).</dd></div>
-            <div><dt>지금</dt><dd>이 두 파일을 dirty에서 뺍니다. <code>done</code> 가드가 "훅 자신의 출력"으로 무시해 온 것과 같은 집합(<code>handoffRelPaths</code>)입니다.</dd></div>
-            <div class="why"><dt>바뀌는 것</dt><dd>기본 브랜치에서 handoff만 바뀐 상태는 이제 handoff를 리뷰하지 않고 "리뷰할 것 없음"으로 끝납니다.</dd></div>
+            <div><dt>원인</dt><dd>worktree 프롬프트의 채움은 <code>working tree changes</code> 한 줄이었습니다. 리뷰어는 이를 <code>git diff</code>(HEAD 대비)로 읽어, 브랜치에 이미 커밋한 구현을 보지 않았습니다.</dd></div>
+            <div><dt>지금</dt><dd>채움이 <code>working tree changes since &lt;mergeBase&gt;, the merge base with &lt;base&gt; — committed and uncommitted, including untracked files (git diff &lt;mergeBase&gt;; git status)</code>가 됩니다. 프롬프트의 자리표시 문구 자체는 그대로라 미러는 바뀌지 않았습니다.</dd></div>
+            <div class="why"><dt>기본 브랜치</dt><dd>base 브랜치 위에서는 merge-base가 HEAD라 종전과 같은 범위(미커밋)입니다.</dd></div>
           </dl>
         </article>
         <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Fixed · #139</div><h3>이어 돌린 리뷰 — review가 쓴 기록</h3></div>
+          <div class="card-head"><div class="kind">Fixed · #140</div><h3>base를 못 정할 때 — 실패 대신 내려가기</h3></div>
           <dl>
-            <div><dt>원인</dt><dd><code>review</code>는 성공할 때마다 활성 task의 <code>&lt;name&gt;-artifact.md</code>·<code>&lt;name&gt;-meta.json</code>에 기록합니다. 커밋 없이 R2 다음 R3를 돌리면 두 번째 판정이 그 두 파일 때문에 다시 worktree였습니다.</dd></div>
-            <div><dt>지금</dt><dd>scope 판정은 이 두 파일도 dirty에서 뺍니다. <code>done</code> 가드는 빼지 않습니다 — 종결 커밋에 담겨야 하는 파일입니다.</dd></div>
-            <div class="why"><dt>트레이드오프</dt><dd>artifact는 사람이 쓰는 기록이기도 해서, artifact만 손으로 고친 상태도 diff로 갑니다. 그 편집은 리뷰에 안 잡히지만 diff는 커밋된 코드를 보므로 잃는 것이 작습니다.</dd></div>
+            <div><dt>사다리</dt><dd><code>--base</code> → <code>origin/HEAD</code> → <code>origin/main</code> → <code>origin/master</code>(있는 ref만) → origin이 없을 때만 로컬 <code>main</code>. diff scope와 같은 순서입니다.</dd></div>
+            <div><dt>degrade</dt><dd>git 저장소가 아니거나 base·merge-base를 못 구하면 실패하지 않고 종전 의미(미커밋만)로 리뷰하고, 출력 맨 앞에 경고와 <code>--base &lt;ref&gt;</code> 재실행 안내를 냅니다.</dd></div>
+            <div class="why"><dt>error</dt><dd><strong>명시한 <code>--base</code>가 틀린 경우만</strong> exit 1이고 아무것도 기록하지 않습니다. 미커밋만 리뷰하고 싶으면 <code>--base HEAD</code>를 줍니다.</dd></div>
           </dl>
         </article>
       </div>
+    </section>
+
+    <section id="record">
+      <h2 class="section-title">기록과 과거 기록 — 두 키로 구분한다</h2>
+      <p class="section-sub"><code>meta.reviews[]</code> 항목은 git scope(worktree·diff)일 때 <code>base</code>·<code>mergeBase</code>를 함께 남깁니다. <code>mergeBase</code>..<code>tip</code>이 그 리뷰가 본 범위의 사후 증명입니다. <code>task-docs</code>는 두 키를 쓰지 않습니다.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>기록 모양</th><th>읽는 법</th><th>증거 자격</th></tr></thead>
+          <tbody>
+            <tr><td><code>base</code>·<code>mergeBase</code> 둘 다 값</td><td>merge-base 이후 전부를 리뷰함(0.49.2 의미)</td><td>그대로</td></tr>
+            <tr><td>둘 다 <code>null</code></td><td>degrade — 미커밋만 리뷰함</td><td>그대로(경고만)</td></tr>
+            <tr><td>두 키 모두 없음</td><td>0.49.1까지의 기록 — 미커밋만 본 것으로 읽음</td><td>그대로(소급 없음)</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout"><strong>가드는 바꾸지 않았습니다.</strong> <code>done</code>·verify 증거 판정은 종전처럼 리뷰 kind만 봅니다. worktree 기록을 증거에서 빼는 안은 기각했습니다 — 정당한 커밋 전 리뷰까지 빼면서 정작 결함(리뷰가 커밋을 안 봄)은 고치지 못하고, 이미 있던 증거를 소급해 무효로 만들면 가드가 <code>--force</code>를 부추깁니다.</div>
     </section>
 
     <section id="compat">
@@ -291,20 +309,20 @@
           <div class="card-head"><div class="kind">Do · 1</div><h3>플러그인 갱신</h3></div>
           <dl>
             <div><dt>왜</dt><dd>바뀐 것은 CLI 코드와 플러그인이 싣는 명령 문서뿐이라 플러그인 채널로만 옵니다.</dd></div>
-            <div class="effect"><dt>어떻게</dt><dd><code>/plugin marketplace update</code>(또는 clone에서 <code>git pull</code>). <code>harness-team --version</code>이 <code>0.49.1</code>이면 됩니다.</dd></div>
+            <div class="effect"><dt>어떻게</dt><dd><code>/plugin marketplace update</code>(또는 clone에서 <code>git pull</code>). <code>harness-team --version</code>이 <code>0.49.2</code>이면 됩니다.</dd></div>
           </dl>
         </article>
         <article class="change-card maintenance">
           <div class="card-head"><div class="kind">Note</div><h3>migrate·init·sync는 필요 없습니다</h3></div>
           <dl>
             <div><dt>설치 파일</dt><dd>훅·규칙·관리 절(<code>AGENTS.md</code>)·템플릿을 바꾸지 않았습니다.</dd></div>
-            <div class="why"><dt>남은 것</dt><dd>진짜 미커밋 편집이 있을 때 worktree 리뷰는 이미 커밋한 브랜치 변경을 보지 않습니다. 계약 변경이라 이번 범위 밖이며 후속 후보입니다 — 그런 상태에서 브랜치 전체를 리뷰하려면 <code>--scope diff</code>를 명시합니다.</dd></div>
+            <div class="why"><dt>미검증</dt><dd>리뷰 엔진이 프롬프트의 <code>git diff &lt;mergeBase&gt;</code>를 실제로 실행하는지는 엔진 쪽 동작이라 테스트로 보장하지 않습니다. 범위의 사후 증명은 기록의 <code>mergeBase</code>..<code>tip</code>입니다.</dd></div>
           </dl>
         </article>
       </div>
     </section>
 
-    <footer>Harness Aijient Team Plugin 0.49.1 · 2026-10-11 · 0.49.0 이후 변경 설명</footer>
+    <footer>Harness Aijient Team Plugin 0.49.2 · 2026-10-11 · 0.49.1 이후 변경 설명</footer>
   </main>
 </body>
 </html>
