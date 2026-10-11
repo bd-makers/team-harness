@@ -23,3 +23,13 @@ docs/hslee/followups-22-23/followups-22-23-context.md | 2 +-
  docs/hslee/followups-22-23/followups-22-23-handoff.md | 5 +++++
  docs/hslee/followups-22-23/followups-22-23-plan.md    | 2 +-
  3 files changed, 7 insertions(+), 2 deletions(-)
+
+## 2026-10-11T07:27:58.664Z — cb51324 fix(review): diff-failed cause 는 사용법 안내가 아니라 git 의 사유 줄을 싣는다
+CHANGELOG.md                                           | 2 +-
+ docs/followups.md                                      | 2 +-
+ docs/hslee/followups-22-23/followups-22-23-artifact.md | 3 +++
+ docs/hslee/followups-22-23/followups-22-23-handoff.md  | 5 +++--
+ docs/hslee/followups-22-23/followups-22-23-spec.md     | 9 ++++++---
+ src/commands/review.mjs                                | 8 +++++---
+ tests/review-command.test.mjs                          | 6 ++++++
+ 7 files changed, 25 insertions(+), 10 deletions(-)
