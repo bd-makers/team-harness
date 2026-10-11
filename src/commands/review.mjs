@@ -391,7 +391,7 @@ const SCOPE_ERROR_RETRY = {
   'default-base': '`--scope worktree` 를 명시하거나 존재하는 `--base <ref>` 를 주고 다시 실행',
   // git 저장소가 아니면 base 를 줘도 같은 오류다 — worktree 만 base 검사 전에 degrade 한다.
   'not-git': '`--scope worktree` 를 명시해 다시 실행',
-  // base 는 이미 존재한다. 실패는 merge-base 가 없을 때다(관계없는 히스토리·커밋 없는 HEAD).
+  // base 는 이미 존재한다. 흔한 실패는 merge-base 가 없을 때다(관계없는 히스토리·커밋 없는 HEAD) — 실제 원인은 cause 의 git 메시지가 싣는다.
   'diff-failed': 'HEAD 와 공통 조상이 있는 `--base <ref>` 를 주거나(`git merge-base <ref> HEAD` 로 확인) `--scope worktree` 로 다시 실행 — worktree 는 merge-base 를 못 잡으면 미커밋만 본다',
 };
 

@@ -28,6 +28,7 @@
 - 두 원천은 일치한다. 브리프가 `:288`(diff 계산 실패) 문구를 spec 에 맡겼다 → 결정: 아래 표.
 - `:288` 의 실제 발생 경로를 실측했다: 관계없는 히스토리의 ref 를 base 로 주면 `git diff --stat other...HEAD` 가
   `fatal: other...HEAD: no merge base`(exit 128, git 2.54.0). 다른 경로는 커밋 없는 HEAD. 둘 다 merge-base 가 없다는 뜻이다.
+  그 밖의 `git diff` 예외(출력 버퍼 초과 등)도 같은 종류로 오지만 드물고, 실제 원인은 cause 의 git 메시지가 싣는다 — 안내는 흔한 경우에 맞춘다.
 - 검토 완료: 2026-10-11
 
 ## 설계 / 접근
@@ -42,7 +43,7 @@
 | `base-missing` | `:277` worktree + 없는 `--base`, `:284` diff + 없는 `--base` (`resolveBase` `:347`) | 존재하는 `--base <ref>` 를 주고 다시 실행 | 존재하는 `--base <ref>` 로 기준을 직접 주고 다시 실행 |
 | `default-base` | `:284` `--base` 없음, 기본 base 판정 실패 (`resolveBase` `:340`) | **종전 그대로** | **종전 그대로** |
 | `not-git` | `:272` diff scope + git 저장소 아님 | `--scope worktree` 를 명시해 다시 실행 | `--scope worktree` 로 워킹트리 전체를 대상으로 다시 실행 |
-| `diff-failed` | `:288` `git diff <base>...HEAD` 실패 | HEAD 와 공통 조상이 있는 `--base <ref>` 를 주거나(`git merge-base <ref> HEAD` 로 확인) `--scope worktree` 로 다시 실행 — worktree 는 merge-base 를 못 잡으면 미커밋만 본다 | HEAD 와 공통 조상이 있는 `--base <ref>` 를 주거나(`git merge-base <ref> HEAD` 로 확인), `--scope worktree` 로 워킹트리 전체를 대상으로 다시 실행 |
+| `diff-failed` | `:288` `git diff <base>...HEAD` 실패 | HEAD 와 공통 조상이 있는 `--base <ref>` 를 주거나(`git merge-base <ref> HEAD` 로 확인) `--scope worktree` 로 다시 실행 — worktree 는 merge-base 를 못 잡으면 미커밋만 본다 | HEAD 와 공통 조상이 있는 `--base <ref>` 를 주거나(`git merge-base <ref> HEAD` 로 확인) `--scope worktree` 로 다시 실행 — worktree 는 merge-base 를 못 잡으면 미커밋만 본다 |
 
 - `base-missing` 에 `--scope worktree` 를 권하지 않는다 — worktree 도 사람이 준 `--base` 가 없으면 `:277` 에서 같은 오류다.
 - `not-git` 은 종전 문장의 뒤 절반("존재하는 `--base`")을 뺀다. git 저장소가 아니면 base 를 줘도 `:272` 에서 같은 오류이고, worktree 만
