@@ -17,6 +17,9 @@
   - 22: `root_cause: "diff 계산 실패: fatal: gh-pages...HEAD: no merge base"`.
   - 수동 `pr-check`(push 없이)는 종전대로 HEAD 를 검사(task 문서 없음 ✗, exit 1) — 무변경.
   - 그 밖의 실패는 삼키지 않음: 로컬에 없는 sha 를 stdin 으로 주면 `merge-base` exit 128 → 종전처럼 스택 트레이스 exit 1(git 은 pre-push 에 로컬 sha 만 주므로 실사용에서는 닿지 않는다 — 고치지 않음).
+- 편차(advisor 지적 후 실측): 커밋 없는 HEAD(`checkout --orphan nocommit`)에서 "마지막 비어 있지 않은 줄"은
+  `diff 계산 실패: 'git <command> [<revision>...] -- [<file>...]'` 였다(사용법 안내 줄). 마지막 `fatal:`·`error:` 줄을 우선하도록 다듬고
+  같은 테스트에 unborn HEAD 단언을 더했다 — 다듬기 전 ✖, 후 ✔. 결과: `diff 계산 실패: fatal: ambiguous argument 'main...HEAD': unknown revision or path not in the working tree.`
 - 검증: `npm test` — tests 1239 · pass 1238 · fail 0 (+ perf 1 pass), `npm run docs:check` — 최신.
 
 ## Reviews

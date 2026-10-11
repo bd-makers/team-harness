@@ -8,7 +8,7 @@
 - 문제: `resolveScope`(`src/commands/review.mjs`)가 cause 를 `err.message` 첫 줄로 만든다. execFile 오류의 첫 줄은
   `Command failed: git -C <절대경로> diff --stat <base>...HEAD` 라 git 의 사유(`fatal: <base>...HEAD: no merge base`)는 잘리고 절대경로가 envelope 에 실린다.
 - 영향: `review`·`scope`·`pr-check` 세 명령 — 셋 모두 `resolveScope` 의 같은 cause 를 쓴다(판정 지점은 하나).
-- 기대: cause = `diff 계산 실패: ` + `err.stderr` 의 마지막 비어 있지 않은 줄(없으면 종전 `err.message` 첫 줄).
+- 기대: cause = `diff 계산 실패: ` + `err.stderr` 의 마지막 비어 있지 않은 줄(없으면 종전 `err.message` 첫 줄) — 단 `fatal:`·`error:` 줄이 있으면 그중 마지막을 우선한다(설계 참고).
 - 제약: 접두 `diff 계산 실패:` 유지. errorKind·retry·alternatives·exit code·envelope 형태 불변.
 
 **23 — pre-push 가 기본 브랜치와 무관한 히스토리의 브랜치를 push 하면 스택 트레이스로 죽는다.**
@@ -35,7 +35,10 @@
 ## 설계 / 접근
 
 **22** — `review.mjs` 에 `gitFailureReason(err)` 를 두고 `resolveScope` 의 diff-failed 한 자리에서만 쓴다. `err.stderr`(promisify(execFile) 오류의 속성)를
-줄로 나눠 trim 후 비어 있지 않은 마지막 줄, 없으면 `err.message.split('\n')[0]`. 세 명령이 같은 반환값을 쓰므로 한 자리 수정으로 셋에 반영된다.
+줄로 나눠 trim 후 `fatal:`·`error:` 로 시작하는 마지막 줄, 없으면 비어 있지 않은 마지막 줄, 그것도 없으면 `err.message.split('\n')[0]`.
+`fatal:`/`error:` 우선은 브리프의 "마지막 비어 있지 않은 줄"에서 다듬은 편차다: 커밋 없는 HEAD(#144 가 확인한 diff-failed 의 다른 트리거)에서 git 은
+`fatal: ambiguous argument 'main...HEAD': …` 뒤에 사용법 안내 두 줄을 붙여, 마지막 줄은 `'git <command> [<revision>...] -- [<file>...]'` 다(실측).
+접두가 로케일로 번역되면 브리프대로 마지막 줄로 떨어지므로 그 경우에도 브리프보다 나빠지지 않는다. 세 명령이 같은 반환값을 쓰므로 한 자리 수정으로 셋에 반영된다.
 예: `diff 계산 실패: Command failed: git -C /…/repro diff --stat gh-pages...HEAD` → `diff 계산 실패: fatal: gh-pages...HEAD: no merge base`.
 
 **23** — `pr-check.mjs` 의 pre-push 루프에서 기본 브랜치 push 건너뛰기 바로 다음에 `sharesHistory(targetDir, base, sha)` 로 판정한다.
@@ -57,7 +60,7 @@
 ## Ontology
 *이 task가 다루는 핵심 개념의 정의. "X가 정확히 뭔가?"에 답한다.*
 
-- **diff-failed cause**: `resolveScope` 가 `<base>...HEAD` diff 에 실패했을 때의 오류 문장. `diff 계산 실패: <git stderr 의 마지막 비어 있지 않은 줄>`.
+- **diff-failed cause**: `resolveScope` 가 `<base>...HEAD` diff 에 실패했을 때의 오류 문장. `diff 계산 실패: <git stderr 의 사유 줄 — 마지막 fatal:/error: 줄, 없으면 마지막 비어 있지 않은 줄>`.
 - **pre-push 검사 대상**: push 되는 ref 중 삭제·비브랜치·기본 브랜치·**기본 브랜치와 공통 조상이 없는 브랜치**를 뺀 것(이 task 에서 마지막 항목 추가).
 - **공통 조상 없음**: `git merge-base <base> <sha>` 가 exit 1 로 끝남 — 그 밖의 실패는 이 판정이 아니다.
 - 게이트 통과 근거: 두 결함 모두 정본(followups)에 소스 위치·재현이 있고, 방향은 브리프가 정했으며, 성공 기준은 아래 테스트 2건·`npm test`·`docs:check` 다.

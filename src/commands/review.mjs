@@ -292,10 +292,12 @@ export async function resolveScope({ targetDir, scope, base }) {
 }
 
 // execFile 오류의 첫 줄은 `Command failed: git -C <절대경로> …` 다 — git 의 실패 사유(`fatal: …`)는 stderr 에 있다.
-// 첫 줄을 쓰면 사유가 잘리고 절대경로가 envelope 에 실렸다(followups 22). stderr 가 비면(spawn 실패 등) 종전 첫 줄로 떨어진다.
+// 첫 줄을 쓰면 사유가 잘리고 절대경로가 envelope 에 실렸다(followups 22). 마지막 `fatal:`·`error:` 줄을 고른다 — 커밋 없는 HEAD 처럼
+// 사용법 안내가 뒤따르면 마지막 줄은 `'git <command> [<revision>...] -- [<file>...]'` 다. 그런 줄이 없으면(로케일 번역 등) 마지막
+// 비어 있지 않은 줄, stderr 가 비면(spawn 실패 등) 종전 첫 줄로 떨어진다.
 function gitFailureReason(err) {
-  const last = String(err.stderr ?? '').split('\n').map(l => l.trim()).filter(Boolean).pop();
-  return last ?? err.message.split('\n')[0];
+  const lines = String(err.stderr ?? '').split('\n').map(l => l.trim()).filter(Boolean);
+  return lines.findLast(l => /^(fatal|error):/.test(l)) ?? lines.at(-1) ?? err.message.split('\n')[0];
 }
 
 // worktree degrade 는 조용히 좁히지 않는다 — review·scope 가 같은 문장으로 알린다.

@@ -565,6 +565,12 @@ test('scope error cause: a diff failure carries git\'s reason, not the command l
     assert.ok(err.root_cause.includes('unrelated...HEAD'), err.root_cause);
     assert.ok(!err.root_cause.includes('Command failed'), err.root_cause);
     assert.ok(!err.root_cause.includes(dir), err.root_cause);
+
+    // 커밋 없는 HEAD — git 이 사유 뒤에 사용법 안내 줄을 붙인다. 마지막 줄이 아니라 사유 줄을 싣는다.
+    await git(dir, 'checkout', '-q', '--orphan', 'nocommit');
+    const unborn = await scopeErrorPacket(dir, { scope: 'diff', base: 'main' });
+    assert.ok(unborn.root_cause.includes('main...HEAD'), unborn.root_cause);
+    assert.ok(!unborn.root_cause.includes('<revision>'), unborn.root_cause);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

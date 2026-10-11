@@ -9,7 +9,7 @@
 
 **남은 것: 없음.** 13–16번은 2026-10-06에, 20–23번은 2026-10-11에 닫았다(아래 괄호 기록). 새 후보가 생기면 이 절에 번호를 이어 붙인다(24번부터).
 
-(22·23번은 2026-10-11 task `followups-22-23`으로 올려 여기서 지웠다 — 22번: `diff-failed` cause 를 git stderr 의 마지막 비어 있지 않은 줄로 바꿔 `review`·`scope`·`pr-check` 가 git 의 사유를 싣고 절대경로·명령줄을 싣지 않는다. 23번: **방향 A(사람 결정)** — 기본 브랜치와 공통 조상이 없는 브랜치의 push 는 PR 을 열 수 없으므로 pre-push 검사 대상에서 뺀다(`git merge-base` exit 1 일 때만, 그 밖의 실패는 삼키지 않는다). gh-pages 를 **체크아웃한 채** push 하면 여전히 base 판정에서 #144 의 `diff-failed` 패킷이 난다 — 범위이며 근거는 그 task spec.)
+(22·23번은 2026-10-11 task `followups-22-23`으로 올려 여기서 지웠다 — 22번: `diff-failed` cause 를 git stderr 의 사유 줄(마지막 `fatal:`·`error:` 줄, 없으면 마지막 비어 있지 않은 줄 — 커밋 없는 HEAD 는 사용법 안내가 마지막이다)로 바꿔 `review`·`scope`·`pr-check` 가 git 의 사유를 싣고 절대경로·명령줄을 싣지 않는다. 23번: **방향 A(사람 결정)** — 기본 브랜치와 공통 조상이 없는 브랜치의 push 는 PR 을 열 수 없으므로 pre-push 검사 대상에서 뺀다(`git merge-base` exit 1 일 때만, 그 밖의 실패는 삼키지 않는다). gh-pages 를 **체크아웃한 채** push 하면 여전히 base 판정에서 #144 의 `diff-failed` 패킷이 난다 — 범위이며 근거는 그 task spec.)
 (20·21번은 2026-10-11 task `scope-error-hints`로 올려 여기서 지웠다 — `scope` 오류의 `alternatives` 와 `pr-check` base 오류의 `retry:` 를 #143 의 `errorKind` 로 고른다. 21번의 "pre-push 는 사실상 `default-base` 만 닿는다" 는 실측으로 틀렸다 — orphan 브랜치·커밋 없는 HEAD 를 체크아웃한 채 push 하면 `diff-failed` 가 닿아 pre-push 갈래도 종류별로 고쳤다.)
 (19번은 2026-10-11 task `review-retry-hint`로 올려 여기서 지웠다 — scope 오류의 `retry:` 를 원인 종류(없는 `--base`·기본 base 판정 실패·git 저장소 아님·diff 계산 실패)로 고른다. standalone `scope` 의 retry 도 같은 어긋남이 있어 함께 고쳤다.)
 (17번은 2026-10-11 task `review-scope-committed`로 올려 여기서 지웠다 — worktree scope 의 의미를 merge-base 이후 커밋 + 미커밋으로 넓힌다.)
