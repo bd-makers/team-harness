@@ -33,3 +33,12 @@ CHANGELOG.md                                           | 2 +-
  src/commands/review.mjs                                | 8 +++++---
  tests/review-command.test.mjs                          | 6 ++++++
  7 files changed, 25 insertions(+), 10 deletions(-)
+
+## 2026-10-11T08:11:30.429Z — be624de fix(review): diff-failed 의 diff·merge-base 호출만 LC_ALL=C 로 부른다
+.../followups-22-23/followups-22-23-artifact.md    | 22 ++++++++-
+ docs/hslee/followups-22-23/followups-22-23-plan.md |  2 +-
+ docs/hslee/followups-22-23/followups-22-23-spec.md |  3 +-
+ src/commands/pr-check.mjs                          |  8 ++--
+ src/commands/review.mjs                            |  8 ++--
+ tests/pr-check.test.mjs                            | 52 +++++++++++++++++++++-
+ 6 files changed, 85 insertions(+), 10 deletions(-)
