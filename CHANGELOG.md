@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.49.4] - 2026-10-11
+
 ### Fixed
 - **`diff-failed` 오류의 원인 문장이 git의 실패 사유 대신 명령줄을 싣던 것** (task `followups-22-23`). `harness-team review`·`scope`·`pr-check`는 diff 계산 실패를 `Command failed: git -C <절대경로> diff --stat <base>...HEAD`로 알려 사유가 잘리고 저장소 절대경로가 envelope에 실렸다. 이제 git이 stderr에 남긴 실패 사유 줄(예: `fatal: <base>...HEAD: no merge base` — 커밋 없는 HEAD처럼 뒤에 사용법 안내가 붙어도 사유 줄)을 싣는다. 접두 `diff 계산 실패:`·retry·exit code·envelope 형태는 그대로다.
 - **pre-push 훅이 기본 브랜치와 무관한 히스토리의 브랜치를 push하면 스택 트레이스로 죽던 것** (task `followups-22-23`). 관련 브랜치를 체크아웃한 채 gh-pages 같은 orphan 브랜치를 push하면 오류 패킷 없이 exit 1 했다. 그런 브랜치는 기본 브랜치로 PR을 열 수 없으므로 이제 기본 브랜치 push처럼 검사하지 않고 통과시킨다 — 같은 push의 관련 브랜치는 그대로 검사한다. 수동 `pr-check`는 바뀌지 않는다.

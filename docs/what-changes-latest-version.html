@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Harness Aijient Team 0.49.3 — 무엇이 왜 달라졌나</title>
+  <title>Harness Aijient Team 0.49.4 — 무엇이 왜 달라졌나</title>
   <style>
     :root {
       --bg: #0f1117;
@@ -217,10 +217,11 @@
 </head>
 <body>
   <nav aria-label="문서 섹션">
-    <div class="nav-logo">Harness 0.49.3</div>
+    <div class="nav-logo">Harness 0.49.4</div>
     <div class="nav-links">
       <a href="#why">왜 patch인가</a>
-      <a href="#kinds">원인별 안내</a>
+      <a href="#cause">diff 실패 사유</a>
+      <a href="#prepush">pre-push 건너뛰기</a>
       <a href="#same">바뀌지 않은 것</a>
       <a href="#compat">소비자가 할 일</a>
     </div>
@@ -229,88 +230,90 @@
   <main>
     <header class="hero">
       <div class="eyebrow">Release note · 2026-10-11 · patch</div>
-      <h1>scope 오류가<br><strong>원인에 맞는 다음 행동을 알려 줍니다</strong></h1>
-      <p><code>harness-team review</code>·<code>scope</code>·<code>pr-check</code>는 base·scope를 판정하지 못하면 오류 패킷의 <code>retry:</code>(와 <code>alternatives:</code>)로 다음 행동을 안내합니다.
-      그런데 그 안내는 원인과 무관한 <strong>한 문장</strong>이었습니다 — <code>--scope worktree --base &lt;없는 ref&gt;</code>에 이미 준 <code>--scope worktree</code>를 다시 권하고,
-      없는 <code>--base</code>·git 저장소 아님·merge-base 없음에도 <code>git remote set-head origin -a</code>를 권했습니다. 따라 해도 같은 오류가 납니다.
-      0.49.3은 안내를 <strong>원인 종류</strong>로 고릅니다.</p>
+      <h1>diff 실패가 <strong>git의 사유</strong>를 싣고,<br><strong>pre-push가 PR을 열 수 없는 브랜치를 건너뜁니다</strong></h1>
+      <p>0.49.3 릴리스 노트는 알려진 한계 두 가지를 남겼습니다 — <code>diff-failed</code>의 원인 문장이 git의 실패 사유 대신 실행한 명령줄을 싣는다는 것,
+      그리고 pre-push 훅이 기본 브랜치와 무관한 히스토리의 브랜치를 push하면 오류 패킷 없이 스택 트레이스로 막힌다는 것. 0.49.4는 그 둘을 닫습니다.
+      후자에 쓰던 <code>git push --no-verify</code> 우회는 더 필요하지 않습니다.</p>
       <div class="tags">
-        <span class="tag tag-purple">0.49.2 → 0.49.3</span>
-        <span class="tag tag-orange">patch — 오류 안내 수정</span>
-        <span class="tag tag-blue">PR #143 · #144</span>
+        <span class="tag tag-purple">0.49.3 → 0.49.4</span>
+        <span class="tag tag-orange">patch — 오류 원인·pre-push 수정</span>
+        <span class="tag tag-blue">PR #146</span>
         <span class="tag tag-green">소비자 조치 — 플러그인 갱신</span>
       </div>
     </header>
 
     <dl class="release-brief" aria-label="릴리스 요약">
-      <div><dt>버전</dt><dd>0.49.3</dd></div>
+      <div><dt>버전</dt><dd>0.49.4</dd></div>
       <div><dt>날짜</dt><dd>2026-10-11</dd></div>
-      <div><dt>기준</dt><dd><code>v0.49.2..main</code> — #143(<code>66c9668</code>, 종결 <code>a493364</code>) · #144(<code>4ed36d1</code>, 종결 <code>657d177</code>). 같은 범위의 #141·#142·#145는 문서만 바꿨습니다.</dd></div>
+      <div><dt>기준</dt><dd><code>v0.49.3..main</code> — #146(<code>68d6300</code>, 종결 <code>5a5ac53</code>). task <code>followups-22-23</code>(후속 후보 22·23번).</dd></div>
     </dl>
 
     <section id="why">
-      <h2 class="section-title">왜 patch인가 — 안내를 따르면 같은 오류가 났다</h2>
-      <p class="section-sub">명령·플래그·판정 규칙은 그대로입니다. 바뀐 것은 오류일 때 내는 <strong>안내 문장</strong>뿐입니다. 하지만 이 안내는 사람만 읽는 문장이 아니라 에이전트가 그대로 실행하는 다음 행동이라, 틀린 안내는 같은 실패를 되풀이시킵니다.</p>
+      <h2 class="section-title">왜 patch인가 — 원인을 못 읽고, push가 죽었다</h2>
+      <p class="section-sub">명령·플래그·D11 게이트의 판정 대상(PR로 갈 브랜치)은 그대로입니다. 바뀐 것은 실패 원인 문장의 출처와, PR을 열 수 없는 브랜치를 pre-push가 검사 대상에서 빼는 것입니다. 둘 다 잘못 동작하던 CLI를 고친 것이라 patch입니다.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>표면</th><th>경로</th><th>도달 경로</th><th>소비자 영향</th></tr></thead>
           <tbody>
-            <tr><td>CLI 판정</td><td><code>src/commands/review.mjs</code> <code>resolveScope</code>·<code>resolveBase</code></td><td>플러그인 갱신</td><td>scope 오류에 원인 종류 <code>errorKind</code>를 붙임(출력에는 나오지 않음)</td></tr>
-            <tr><td>CLI 출력</td><td><code>src/commands/review.mjs</code> <code>SCOPE_ERROR_RETRY</code></td><td>플러그인 갱신</td><td><code>harness-team review</code>의 scope 오류 <code>retry:</code></td></tr>
-            <tr><td>CLI 출력</td><td><code>src/commands/scope.mjs</code> <code>SCOPE_ERROR_RETRY</code>·<code>SCOPE_ERROR_ALTERNATIVES</code></td><td>플러그인 갱신</td><td><code>harness-team scope</code>의 <code>retry:</code>·<code>alternatives:</code></td></tr>
-            <tr><td>CLI 출력</td><td><code>src/commands/pr-check.mjs</code> <code>BASE_ERROR_RETRY</code>·<code>PRE_PUSH_BASE_ERROR_RETRY</code></td><td>플러그인 갱신(pre-push 훅은 PATH CLI)</td><td><code>harness-team pr-check</code>·pre-push 훅의 base 오류 <code>retry:</code></td></tr>
+            <tr><td>CLI 출력</td><td><code>src/commands/review.mjs</code> <code>resolveScope</code>·<code>gitFailureReason</code></td><td>플러그인 갱신</td><td><code>review</code>·<code>scope</code>·<code>pr-check</code>의 <code>diff 계산 실패:</code> 원인 문장</td></tr>
+            <tr><td>CLI 판정</td><td><code>src/commands/pr-check.mjs</code> <code>sharesHistory</code></td><td>플러그인 갱신(pre-push 훅은 PATH CLI)</td><td>pre-push가 기본 브랜치와 무관한 브랜치의 push를 건너뜀</td></tr>
+            <tr><td>문서</td><td><code>README.md</code> pre-push 훅 절</td><td>읽기 전용</td><td>건너뛰는 push 목록에 "기본 브랜치와 공통 조상이 없는 브랜치" 추가 — 조치 없음</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <section id="kinds">
-      <h2 class="section-title">원인별 안내 — 네 종류</h2>
-      <p class="section-sub">세 명령이 같은 판정(<code>resolveScope</code>)의 원인 종류를 받아 각자의 표에서 문장을 고릅니다. 표에 없는 종류는 종전 문장(기본 base 판정 실패)으로 떨어집니다.</p>
+    <section id="cause">
+      <h2 class="section-title">diff 실패 원인 — 명령줄 대신 git의 사유</h2>
+      <p class="section-sub">세 명령이 같은 판정(<code>resolveScope</code>)의 원인 문장을 씁니다. 그래서 한 곳을 고쳐 셋이 함께 바뀝니다.</p>
+      <div class="change-grid">
+        <article class="change-card accuracy">
+          <div class="card-head"><div class="kind">Fixed · #146 · 후속 22번</div><h3>원인 문장이 사유를 잃고 절대경로를 실었다</h3></div>
+          <dl>
+            <div><dt>이전</dt><dd>원인을 오류 메시지 첫 줄로 만들었는데, 그 줄은 <code>Command failed: git -C &lt;절대경로&gt; diff --stat &lt;base&gt;...HEAD</code>입니다. git의 사유는 둘째 줄 이후라 잘렸고, 저장소 절대경로가 envelope에 실렸습니다.</dd></div>
+            <div><dt>지금</dt><dd>git이 stderr에 남긴 <strong>마지막 <code>fatal:</code>·<code>error:</code> 줄</strong>을 싣습니다(예: <code>diff 계산 실패: fatal: &lt;base&gt;...HEAD: no merge base</code>). 그런 줄이 없으면 마지막 비어 있지 않은 줄, stderr가 비면 종전 첫 줄로 떨어집니다.</dd></div>
+            <div class="why"><dt>왜 "마지막"</dt><dd>커밋 없는 HEAD처럼 사유 뒤에 사용법 안내가 붙는 경우가 있어, 단순히 마지막 줄을 쓰면 사용법 안내가 실립니다.</dd></div>
+          </dl>
+        </article>
+        <article class="change-card maintenance">
+          <div class="card-head"><div class="kind">Note</div><h3>로케일은 그 호출에만 C로 고정</h3></div>
+          <dl>
+            <div><dt>무엇</dt><dd><code>fatal:</code> 접두로 사유 줄을 고르므로, git 메시지가 번역되면 찾지 못합니다. 그래서 diff 계산과 pre-push의 공통 조상 판정 호출만 <code>LC_ALL=C</code>로 부릅니다.</dd></div>
+            <div class="effect"><dt>범위</dt><dd>다른 git 호출의 환경은 그대로입니다. 접두 <code>diff 계산 실패:</code>·<code>retry:</code> 안내·exit code·envelope 형태도 그대로입니다.</dd></div>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <section id="prepush">
+      <h2 class="section-title">pre-push — PR을 열 수 없는 브랜치는 검사하지 않는다</h2>
+      <p class="section-sub">기본 브랜치와 공통 조상이 없는 브랜치는 그 기본 브랜치로 PR을 열 수 없습니다(GitHub이 비교를 거부합니다). 그래서 D11(PR 필수 task 문서)의 대상이 아니고, 기본 브랜치 push처럼 건너뜁니다. 갈래는 <strong>무엇을 체크아웃했느냐</strong>로 나뉩니다.</p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>원인 종류</th><th>언제</th><th><code>review</code>·<code>scope</code></th><th><code>pr-check</code></th></tr></thead>
+          <thead><tr><th>상황</th><th>0.49.3</th><th>0.49.4</th></tr></thead>
           <tbody>
-            <tr><td><code>base-missing</code></td><td>사람이 준 <code>--base</code>가 없는 ref</td><td>존재하는 <code>--base &lt;ref&gt;</code>만 안내</td><td>존재하는 <code>--base &lt;ref&gt;</code>만 안내</td></tr>
-            <tr><td><code>default-base</code></td><td><code>--base</code> 없이 기본 브랜치를 못 찾음</td><td>종전 문장 그대로 · <code>scope</code>는 기본 브랜치 설정 확인 대안도 그대로</td><td>종전 문장 그대로(<code>--base</code> 또는 set-head)</td></tr>
-            <tr><td><code>not-git</code></td><td>git 저장소가 아님</td><td><code>--scope worktree</code>만 안내(base를 줘도 같은 오류)</td><td>저장소 안에서 실행하거나 <code>--target &lt;저장소 경로&gt;</code></td></tr>
-            <tr><td><code>diff-failed</code></td><td>diff 계산 실패 — 흔히 merge-base 없음(관계없는 히스토리·커밋 없는 HEAD)</td><td>HEAD와 공통 조상이 있는 <code>--base</code>(<code>git merge-base &lt;ref&gt; HEAD</code>로 확인) 또는 <code>--scope worktree</code></td><td>HEAD와 공통 조상이 있는 <code>--base</code></td></tr>
+            <tr><td>관련 브랜치를 체크아웃한 채 gh-pages 같은 무관한 브랜치를 push</td><td>오류 패킷 없이 스택 트레이스 · exit 1 (<code>--json</code>도 envelope 없음)</td><td><strong>검사하지 않고 통과</strong></td></tr>
+            <tr><td>같은 push에 관련 브랜치도 함께</td><td>위와 같이 죽음</td><td>관련 브랜치는 <strong>그대로 검사</strong> — 문서가 빠졌으면 막힘</td></tr>
+            <tr><td>무관한 브랜치를 <strong>체크아웃한 채</strong> push</td><td><code>diff-failed</code> 패킷 — 공통 조상이 있는 브랜치를 체크아웃한 뒤 다시 push 안내</td><td>그대로(원인 문장만 git의 사유로 바뀜). 훅은 체크아웃된 HEAD로 base를 판정하기 때문이며, 의도한 범위입니다</td></tr>
+            <tr><td>수동 <code>harness-team pr-check</code></td><td>—</td><td>그대로</td></tr>
           </tbody>
         </table>
       </div>
-      <div class="change-grid">
-        <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Fixed · #144</div><h3><code>scope</code>의 대안 줄은 기본 base 실패에만</h3></div>
-          <dl>
-            <div><dt>원인</dt><dd><code>harness-team scope</code>는 모든 오류에 <code>git remote -v</code>·<code>git symbolic-ref refs/remotes/origin/HEAD</code> 확인을 대안으로 냈습니다. 원격 설정과 무관한 원인에도 나왔습니다.</dd></div>
-            <div><dt>지금</dt><dd><code>default-base</code>에만 남고, 나머지 세 종류는 <code>alternatives</code>가 빈 배열이라 text 출력에서 <code>alternatives:</code> 줄이 나오지 않습니다.</dd></div>
-          </dl>
-        </article>
-        <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Fixed · #144</div><h3>pre-push 훅은 <code>--base</code>를 줄 수 없다</h3></div>
-          <dl>
-            <div><dt>default-base</dt><dd>종전대로 <code>git remote set-head origin -a</code> 후 다시 push.</dd></div>
-            <div><dt>diff-failed</dt><dd>gh-pages 같은 orphan 브랜치를 체크아웃한 채 push하면 닿습니다. 훅은 체크아웃된 HEAD로 base를 판정하므로 <strong>기본 브랜치와 공통 조상이 있는 브랜치를 체크아웃한 뒤 다시 push</strong>하라고 안내합니다.</dd></div>
-            <div class="why"><dt>우회</dt><dd><code>git push --no-verify</code> 대안 줄은 그대로입니다.</dd></div>
-          </dl>
-        </article>
-      </div>
+      <div class="callout"><strong>건너뛰는 조건은 좁습니다.</strong> <code>git merge-base</code>가 exit 1(공통 조상 없음)을 돌려줄 때만 건너뜁니다. 그 밖의 실패(exit 128 등)는 삼키지 않고 종전대로 실패로 남습니다 — 판정하지 못한 브랜치를 조용히 통과시키지 않기 위해서입니다.</div>
     </section>
 
     <section id="same">
-      <h2 class="section-title">바뀌지 않은 것과 알려진 한계</h2>
+      <h2 class="section-title">바뀌지 않은 것</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>항목</th><th>0.49.3</th></tr></thead>
+          <thead><tr><th>항목</th><th>0.49.4</th></tr></thead>
           <tbody>
-            <tr><td>원인 문자열(<code>root_cause</code>)</td><td>그대로</td></tr>
-            <tr><td>exit code · <code>pr-check</code> 차단 여부</td><td>그대로 — 판정하지 못한 base로는 여전히 통과시키지 않습니다(D11)</td></tr>
-            <tr><td><code>--json</code> envelope 형태</td><td>그대로 — <code>errorKind</code>는 출력에 싣지 않습니다</td></tr>
+            <tr><td>원인 종류(<code>errorKind</code>)와 종류별 <code>retry:</code>·<code>alternatives:</code></td><td>그대로 — 0.49.3의 네 종류 표가 유효합니다</td></tr>
+            <tr><td>exit code · <code>--json</code> envelope 형태</td><td>그대로</td></tr>
+            <tr><td>PR로 갈 브랜치의 <code>pr-check</code> 차단</td><td>그대로 — 기본 브랜치 push·태그·삭제·빈 원격으로의 첫 push에 무관 히스토리 브랜치가 건너뛰기 목록에 더해졌을 뿐입니다</td></tr>
           </tbody>
         </table>
       </div>
-      <div class="callout"><strong>알려진 한계 두 가지는 후속 후보로 남겼습니다(<code>docs/followups.md</code> 22·23번).</strong> <code>diff-failed</code>의 원인 문자열은 git의 실패 사유 대신 실행한 명령줄을 싣습니다(22번).
-      pre-push의 <code>diff-failed</code> 안내는 <strong>HEAD가</strong> 기본 브랜치와 무관할 때만 덮습니다 — HEAD는 관련 있는 채 무관한 히스토리의 브랜치를 push하면 오류 패킷 없이 스택 트레이스와 exit 1로 막힙니다(23번). 그때는 <code>git push --no-verify</code>로 우회합니다.</div>
     </section>
 
     <section id="compat">
@@ -319,21 +322,21 @@
         <article class="change-card accuracy">
           <div class="card-head"><div class="kind">Do · 1</div><h3>플러그인 갱신</h3></div>
           <dl>
-            <div><dt>왜</dt><dd>바뀐 것은 CLI 코드(<code>src/</code>)의 출력 문구뿐이라 플러그인 채널로만 옵니다.</dd></div>
-            <div class="effect"><dt>어떻게</dt><dd><code>/plugin marketplace update</code>(또는 clone에서 <code>git pull</code>). <code>harness-team --version</code>이 <code>0.49.3</code>이면 됩니다. pre-push 훅은 PATH의 <code>harness-team</code>(보통 clone)을 부르므로 clone이 갱신돼야 훅의 안내도 바뀝니다.</dd></div>
+            <div><dt>왜</dt><dd>바뀐 것은 CLI 코드(<code>src/</code>)뿐이라 플러그인 채널로만 옵니다.</dd></div>
+            <div class="effect"><dt>어떻게</dt><dd><code>/plugin marketplace update</code>(또는 clone에서 <code>git pull</code>). <code>harness-team --version</code>이 <code>0.49.4</code>이면 됩니다. pre-push 훅은 PATH의 <code>harness-team</code>(보통 clone)을 부르므로 clone이 갱신돼야 훅의 건너뛰기도 적용됩니다.</dd></div>
           </dl>
         </article>
         <article class="change-card maintenance">
           <div class="card-head"><div class="kind">Note</div><h3>migrate·init·sync는 필요 없습니다</h3></div>
           <dl>
-            <div><dt>설치 파일</dt><dd>훅 블록·규칙·관리 절(<code>AGENTS.md</code>·<code>CLAUDE.md</code>)·템플릿·명령 문서·스킬을 바꾸지 않았습니다.</dd></div>
-            <div class="why"><dt>문서</dt><dd>같은 범위의 문서 변경(#141 사이클 문서의 C1 실사용 기록, #142 검증 기록, #145 후속 후보 등록)도 소비자 조치가 없습니다.</dd></div>
+            <div><dt>설치 파일</dt><dd>pre-push 훅 블록(훅 본문은 PATH CLI의 <code>pr-check --pre-push</code>를 부를 뿐입니다)·규칙·관리 절(<code>AGENTS.md</code>·<code>CLAUDE.md</code>)·템플릿·명령 문서·스킬을 바꾸지 않았습니다.</dd></div>
+            <div class="why"><dt>문서</dt><dd>README의 pre-push 훅 절 갱신과 <code>docs/followups.md</code>의 22·23번 정리는 읽을거리라 조치가 없습니다.</dd></div>
           </dl>
         </article>
       </div>
     </section>
 
-    <footer>Harness Aijient Team Plugin 0.49.3 · 2026-10-11 · 0.49.2 이후 변경 설명</footer>
+    <footer>Harness Aijient Team Plugin 0.49.4 · 2026-10-11 · 0.49.3 이후 변경 설명</footer>
   </main>
 </body>
 </html>
