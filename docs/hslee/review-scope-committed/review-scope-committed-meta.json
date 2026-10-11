@@ -3,8 +3,8 @@
   "task": "review-scope-committed",
   "created": "2026-10-10",
   "firstActivatedAt": "2026-10-10T16:00:38.028Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-10-11T00:15:43.040Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [

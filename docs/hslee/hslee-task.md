@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ review-scope-committed
 - ✅ review-scope-handoff
 - ✅ wiki-commit-provenance
 - ✅ decision-log-split

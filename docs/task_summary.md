@@ -155,3 +155,4 @@
 | chad | task-folder-removal | ✅ done | 2026-10-09 |
 | hslee | review-scope-handoff | ✅ done | 2026-10-09 |
 | hslee | wiki-commit-provenance | ✅ done | 2026-10-09 |
+| hslee | review-scope-committed | ✅ done | 2026-10-10 |
