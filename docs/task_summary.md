@@ -156,5 +156,6 @@
 | hslee | review-scope-handoff | ✅ done | 2026-10-09 |
 | hslee | wiki-commit-provenance | ✅ done | 2026-10-09 |
 | hslee | review-scope-committed | ✅ done | 2026-10-10 |
+| hslee | followups-22-23 | ✅ done | 2026-10-11 |
 | hslee | review-retry-hint | ✅ done | 2026-10-11 |
 | hslee | scope-error-hints | ✅ done | 2026-10-11 |

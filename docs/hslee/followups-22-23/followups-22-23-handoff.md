@@ -42,3 +42,7 @@ CHANGELOG.md                                           | 2 +-
  src/commands/review.mjs                            |  8 ++--
  tests/pr-check.test.mjs                            | 52 +++++++++++++++++++++-
  6 files changed, 85 insertions(+), 10 deletions(-)
+
+## 2026-10-11T08:43:58.504Z — 완료
+
+태스크 종료.

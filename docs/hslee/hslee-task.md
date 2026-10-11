@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ followups-22-23
 - ✅ review-retry-hint
 - ✅ scope-error-hints
 - ✅ review-scope-committed
