@@ -13,7 +13,7 @@ import { promisify } from 'node:util';
 import { exists } from '../fsx.mjs';
 import { readActive } from './task.mjs';
 import { readTaskMeta } from './summary.mjs';
-import { taskDirRel, taskFileRel, taskFilePath, taskLabel } from '../task-paths.mjs';
+import { docsPath, listTaskRefs, taskDirRel, taskFileRel, taskFilePath, taskLabel } from '../task-paths.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 
 const pexec = promisify(execFile);
@@ -23,7 +23,7 @@ export const WIKI_RULES_DIR = 'wiki/90_system';
 export const WIKI_INBOX_DIR = 'wiki/99_inbox';
 
 const ACTIONS = ['sources'];
-const USAGE = 'usage: harness-team wiki sources [<user>/<task>] [--pr <N>]   (인수가 없으면 활성 task)';
+const USAGE = 'usage: harness-team wiki sources [<user>/<task>] [--pr <N>] | --all   (인수가 없으면 활성 task, --all 은 task 전체의 컴파일 후보 목록)';
 const LABEL_RE = /^([\w.-]+)\/([\w.-]+)$/;
 const PR_RE = /^[1-9]\d*$/;
 
@@ -170,14 +170,22 @@ async function walkMarkdown(targetDir, rel) {
   return out;
 }
 
+// task 라벨 → 그 마커가 있는 위키 파일(정렬). `wiki/` 를 한 번만 걷는다 — `--all` 이 task 마다 다시 걷지 않게.
+async function compiledIndex(targetDir) {
+  const index = new Map();
+  for (const rel of (await walkMarkdown(targetDir, WIKI_DIR)).sort()) {
+    const content = await readFile(join(targetDir, rel), 'utf8');
+    for (const label of new Set(wikiMarkersIn(content).map(attrs => attrs.task))) {
+      if (!index.has(label)) index.set(label, []);
+      index.get(label).push(rel);
+    }
+  }
+  return index;
+}
+
 // 같은 task 마커가 있는 위키 파일. 값이 **정확히** 같을 때만 센다 — `chad/x`가 `chad/x-v2`에 걸리면 안 된다.
 export async function findCompiled(targetDir, label) {
-  const hits = [];
-  for (const rel of await walkMarkdown(targetDir, WIKI_DIR)) {
-    const content = await readFile(join(targetDir, rel), 'utf8');
-    if (wikiMarkersIn(content).some(attrs => attrs.task === label)) hits.push(rel);
-  }
-  return hits.sort();
+  return (await compiledIndex(targetDir)).get(label) ?? [];
 }
 
 export async function listRules(targetDir) {
@@ -188,8 +196,19 @@ function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// task 에 무관한 저장소 단위 값. `--all` 은 한 번 만들어 task 마다 넘긴다.
+async function repoScan(targetDir) {
+  return {
+    shallow: await isShallowRepository(targetDir),
+    compiled: await compiledIndex(targetDir),
+    rules: await listRules(targetDir),
+  };
+}
+
 // 컴파일 입력 전체. 파일을 쓰지 않는다. 판단(멈출지·어디에 쓸지)은 호출자(스킬) 몫이다.
-export async function wikiSources(targetDir, user, task, { pr = null, at = today() } = {}) {
+// `scan` 은 `--all` 이 넘기는 공유 값이다 — 없으면 이 task 하나를 위해 만든다(단일 task 경로).
+export async function wikiSources(targetDir, user, task, { pr = null, at = today(), scan = null } = {}) {
+  const repo = scan ?? await repoScan(targetDir);
   const label = taskLabel(user, task);
   const meta = await readTaskMeta(targetDir, user, task);
   // 키 이름이 `status`가 아닌 이유: JSON 출력은 이 객체를 envelope 에 펼치므로 envelope 의 `status` 를 덮는다.
@@ -211,7 +230,7 @@ export async function wikiSources(targetDir, user, task, { pr = null, at = today
   const blockers = [];
   if (taskStatus !== 'done') blockers.push('not-done');
   if (commit === null) blockers.push('no-commit');
-  if (await isShallowRepository(targetDir)) blockers.push('shallow-history');
+  if (repo.shallow) blockers.push('shallow-history');
 
   const marker = blockers.length ? null : wikiMarker({ task: label, pr: prNumber, commit, author, at });
   return {
@@ -220,11 +239,32 @@ export async function wikiSources(targetDir, user, task, { pr = null, at = today
     docs,
     provenance: { pr: prNumber, commit, author },
     marker,
-    compiled: await findCompiled(targetDir, label),
-    rules: await listRules(targetDir),
+    compiled: [...(repo.compiled.get(label) ?? [])],
+    rules: [...repo.rules],
     inbox: WIKI_INBOX_DIR,
     blockers,
   };
+}
+
+// 소급 컴파일 후보 목록(`--all`). task 마다 판정은 `wikiSources` 그대로다 — 목록과 개별 조회가 갈라지지 않게.
+// 집합은 `list` 와 같다(spec 이 있는 task 전부). provenance·marker 는 싣지 않는다 — 고른 뒤 단일 task 로 다시 부른다.
+export async function wikiSourcesAll(targetDir) {
+  if (!(await exists(docsPath(targetDir)))) return [];
+  const scan = await repoScan(targetDir);
+  const rows = [];
+  for (const { user, task } of await listTaskRefs(targetDir)) {
+    const r = await wikiSources(targetDir, user, task, { scan });
+    // 우선순위는 스킬 절차 순서다 — 막힘(3단계)이 이미 컴파일됨(4단계)보다 먼저.
+    const state = r.blockers.length ? 'blocked' : r.compiled.length ? 'compiled' : 'compilable';
+    rows.push({ task: r.task, task_status: r.task_status, state, compiled: r.compiled, blockers: r.blockers });
+  }
+  return rows.sort((a, b) => a.task.localeCompare(b.task));
+}
+
+function allSummary(rows) {
+  if (!rows.length) return 'task 없음';
+  const count = state => rows.filter(r => r.state === state).length;
+  return `${rows.length}개 task — 컴파일 가능 ${count('compilable')} · 이미 컴파일됨 ${count('compiled')} · 막힘 ${count('blocked')}`;
 }
 
 const BLOCKER_TEXT = {
@@ -263,6 +303,21 @@ function emitError(json, summary, packet) {
   for (const line of renderErrorPacket(packet)) console.log(line);
 }
 
+// 목록은 막힌 행이 있어도 성공이다 — 막힘은 행의 속성이지 명령의 실패가 아니다(단일 task 경로의 warning 과 다르다).
+function emitAll(json, rows) {
+  const summary = allSummary(rows);
+  if (json) {
+    emitObservation(buildEnvelope({ command: 'wiki', status: 'success', summary, extra: { tasks: rows } }));
+    return;
+  }
+  console.log(`wiki sources --all: ${summary}`);
+  for (const r of rows) {
+    const detail = r.state === 'blocked' ? `막힘: ${r.blockers.join(', ')}`
+      : r.state === 'compiled' ? `이미 컴파일됨: ${r.compiled.join(', ')}` : '컴파일 가능';
+    console.log(`  ${r.task}  ${detail}`);
+  }
+}
+
 export async function runWiki(ctx) {
   const json = !!(ctx.flags && ctx.flags.json);
   const args = ctx.taskArgs || [];
@@ -281,6 +336,15 @@ export async function runWiki(ctx) {
     return;
   }
 
+  if (ctx.flags && ctx.flags.all) {
+    if (args[1] || rawPr !== undefined) {
+      usage(json, `--all 은 ${args[1] ? `대상(${args[1]})` : '--pr'} 과 함께 쓸 수 없음`);
+      return;
+    }
+    await emitAll(json, await wikiSourcesAll(ctx.targetDir));
+    return;
+  }
+
   let user;
   let task;
   if (args[1]) {
@@ -295,7 +359,9 @@ export async function runWiki(ctx) {
     if (!active || !active.task) {
       emitError(json, '활성 task 없음', buildErrorPacket({
         cause: '인수가 없고 .harness/active.json 에도 활성 task가 없음',
-        retry: '`harness-team wiki sources <user>/<task>` 로 대상을 지정하거나 `harness-team task <name>` 으로 활성화',
+        // `task <name>` 활성화는 권하지 않는다 — done task 를 reopen 해 meta·원장을 바꾸고, 다음 실행을 not-done 으로 막는다.
+        retry: '`harness-team wiki sources <user>/<task>` 로 대상을 지정',
+        alternatives: ['`harness-team wiki sources --all` 로 후보를 찾는다 — task 마다 컴파일 가능·이미 컴파일됨·막힘'],
         safeDefault: '아무 파일도 바뀌지 않았다(읽기 전용 명령)',
         stop: '대상 task 없이 컴파일하지 말 것',
       }));

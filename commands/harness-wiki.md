@@ -26,6 +26,7 @@ Raw slash-command 인수:
 머지 후 종결 절차(`commands/harness-task.md` "머지 후 종결") 안에서 돈다 — 기본 브랜치에서 `harness-team task <name>` →
 `harness-team done` → **`/harness-wiki <user>/<task>`(선택)** → `harness-team summary --write` → 종결 커밋 하나.
 `done`이 끝나야 meta가 `status: done`이 되어 "머지된 task"가 확정된다. `done`은 활성 task를 비우므로 이때는 대상을 `<user>/<task>`로 명시한다.
+이미 done 된 task를 소급 컴파일할 때 대상을 모르면 `harness-team wiki sources --all`로 후보를 본다 — task마다 컴파일 가능·이미 컴파일됨·막힘을 보이며(읽기 전용), 고른 task를 `<user>/<task>`로 명시한다.
 
 ## 절차
 

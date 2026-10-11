@@ -62,7 +62,7 @@ export const COMMANDS = [
   // Read-only. Owns the deterministic inputs of the wiki compile (/harness-wiki): provenance (PR · introducing
   // commit · author), the exact provenance marker, where the task is already compiled, and the project's rule files.
   // The compile itself (what goes where) is LLM judgment and stays in commands/harness-wiki.md.
-  { name: 'wiki', args: 'sources [<user>/<task>] [--pr <N>]', summary: "Report a merged task's wiki compile inputs: provenance, marker, existing compiles, wiki/90_system rules (read-only)", flags: ['pr'] },
+  { name: 'wiki', args: 'sources [<user>/<task>] [--pr <N>] | sources --all', summary: "Report a merged task's wiki compile inputs: provenance, marker, existing compiles, wiki/90_system rules; --all lists every task as compilable, compiled or blocked (read-only)", flags: ['pr', 'all'] },
   { name: 'task', args: '<name> [--area <area>]', summary: 'Create or activate a task (--area records its monorepo app/service in meta)', flags: ['area'] },
   // `--remote` reads local refs/remotes/origin/* only (no fetch): tasks on unmerged origin branches
   // that the checked-out branch does not have. Opt-in so plain `list` stays filesystem-only.
