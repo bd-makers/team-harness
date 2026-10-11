@@ -61,7 +61,7 @@
   "워킹트리 전체를 대상으로" 라고 안내했다. review 와 같은 꼬리("worktree 는 merge-base 를 못 잡으면 미커밋만 본다")로 바꿨다(spec 표 동기화).
   `scope` 의 `not-git`·`default-base` 문장은 "워킹트리 전체" 를 유지한다 — `default-base` 는 종전 문장 불변 결정, `not-git` 은 비교할 커밋이 없다.
 - **관찰: `diff-failed` 는 merge-base 부재만이 아니다 — 맞음, 코멘트·spec 만 보정.** 출력 버퍼 초과 같은 다른 `git diff` 예외도 같은 종류로 온다.
-  드물고 cause 가 git 메시지를 그대로 실으므로 문구는 흔한 경우에 맞추고, review.mjs 코멘트의 단정("실패는 … 때다")을 "흔한 실패는" 으로 고쳤다.
+  드물어 문구는 흔한 경우에 맞추고, review.mjs 코멘트의 단정("실패는 … 때다")을 "흔한 실패는" 으로 고쳤다.
 - 반영 후 `scope error retry` 8건 ✔.
 
 ### 2026-10-11 — AO native review (head 78e6ec8)
@@ -72,5 +72,10 @@
 ### 2026-10-11 — AO native review (head 662d573)
 - 결과: changes_requested 1건 — `scope.mjs` `EMPTY_SUMMARY` 의 `=` 뒤 공백이 빠져 무관한 줄이 diff 에 들어갔다. **진짜 결함(내 편집 실수), 반영**(b621789).
   스레드에 답글을 달고 resolve 했다. scope-command 21건 ✔, CI(662d573) success.
+
+### 2026-10-11 — 정정: diff-failed cause 는 git 메시지를 싣지 않는다
+- 위 판별과 review.mjs 코멘트·spec 에 "실제 원인은 cause 의 git 메시지가 싣는다" 고 썼으나 **틀렸다**. followups 등록 중 `pr-check --base <관계없는 ref>` 를
+  실측하니 cause 가 `diff 계산 실패: Command failed: git -C <절대경로> diff --stat other...HEAD` 였다 — `err.message` 첫 줄은 execFile 의 명령줄이다.
+  세 곳의 문장을 고쳤고, cause 개선은 기존 동작이라 followups 22로 남겼다.
 
 ## Learnings

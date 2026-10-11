@@ -28,7 +28,8 @@
 - 두 원천은 일치한다. 브리프가 `:288`(diff 계산 실패) 문구를 spec 에 맡겼다 → 결정: 아래 표.
 - `:288` 의 실제 발생 경로를 실측했다: 관계없는 히스토리의 ref 를 base 로 주면 `git diff --stat other...HEAD` 가
   `fatal: other...HEAD: no merge base`(exit 128, git 2.54.0). 다른 경로는 커밋 없는 HEAD. 둘 다 merge-base 가 없다는 뜻이다.
-  그 밖의 `git diff` 예외(출력 버퍼 초과 등)도 같은 종류로 오지만 드물고, 실제 원인은 cause 의 git 메시지가 싣는다 — 안내는 흔한 경우에 맞춘다.
+  그 밖의 `git diff` 예외(출력 버퍼 초과 등)도 같은 종류로 오지만 드물다 — 안내는 흔한 경우에 맞춘다.
+  cause 는 `err.message` 첫 줄(실행한 명령줄)이라 git 의 stderr(`no merge base`)를 싣지 않는다 — 기존 동작이고 범위 밖(followups 22).
 - 검토 완료: 2026-10-11
 
 ## 설계 / 접근

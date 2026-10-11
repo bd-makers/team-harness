@@ -7,7 +7,30 @@
 
 ## 우선순위
 
-**남은 것: 없음.** 13–16번은 2026-10-06에 닫았다(아래 괄호 기록). 새 후보가 생기면 이 절에 번호를 이어 붙인다(20번부터).
+**남은 것: 20–22번** (출처: task `review-retry-hint`, PR #143 — 2026-10-11 AO 리뷰와 실측에서 남은 것, 모두 경미). 13–16번은 2026-10-06에 닫았다(아래 괄호 기록). 새 후보가 생기면 이 절에 번호를 이어 붙인다(23번부터).
+20·21번은 PR #143 의 `errorKind`(`resolveScope` 가 `{ error }` 에 싣는 원인 종류 `base-missing`·`default-base`·`not-git`·`diff-failed`)를 전제로 한다 — **선행 조건: #143 머지.**
+
+20. **`scope` 오류의 `alternatives` 가 원인과 무관하게 기본 브랜치 설정 확인을 권한다(경미).** `src/commands/scope.mjs:55` 의 `alternatives` 는
+    "`git remote -v` 와 `git symbolic-ref refs/remotes/origin/HEAD` 로 기본 브랜치 설정을 확인" 한 줄이고 모든 scope 오류에 나간다. 맞는 것은 `default-base`
+    (그중에서도 origin 이 있는 경우)뿐이다 — 없는 `--base`(`base-missing`)·git 저장소 아님(`not-git`)·merge-base 없음(`diff-failed`)에는 관계가 없다.
+    #143 은 브리프가 retry 외 필드를 고정해 두어 손대지 않았다(그 task artifact `### 의도적으로 하지 않은 것`).
+    고칠 방향: retry 와 같은 `errorKind` 표로 고르고, 맞는 대안이 없는 종류는 빈 배열로 둔다(`renderErrorPacket` 은 빈 alternatives 줄을 내지 않는다).
+    `review` 의 scope 오류 패킷은 `alternatives` 가 없어 해당 없음. 테스트 자리: `tests/scope-command.test.mjs` 의 `CLI scope error retry:` 4건 옆.
+
+21. **`pr-check` 의 base 오류 retry 가 원인과 무관하게 `git remote set-head origin -a` 를 권한다(경미).** `src/commands/pr-check.mjs:138`(`emitBaseError`)의 retry 는
+    pre-push 가 아니면 "`--base <ref>` 로 기준을 직접 주거나 `git remote set-head origin -a` 로 origin/HEAD 를 설정" 한 문장이다. 실측(2026-10-11):
+    `pr-check --base nope`(`base-missing`)·`--base <관계없는 히스토리 ref>`(`diff-failed`)·git 저장소 아닌 `--target`(`not-git`) 모두 이 문장을 받는다 —
+    set-head 는 셋 중 어느 것도 고치지 못하고, `base-missing` 에는 "존재하는" 조건이 빠졌으며, `not-git` 에는 두 절반 모두 소용없다(pr-check 는 diff scope 고정이라 worktree 대안도 없다).
+    pre-push 갈래(`set-head` 만 안내)는 훅이 `--base` 없이 부르므로(`src/git-hooks.mjs:61`) 사실상 `default-base` 만 닿아 문제가 작다.
+    고칠 방향: #143 과 같이 `errorKind` 로 retry 를 고른다. `stop`(D11 강제 검사)·`originIsEmpty` 통과 분기·exit 은 그대로 둔다.
+    테스트가 이 문구를 고정하지 않는다 — spec 세션이 `tests/pr-check*.test.mjs` 관례대로 종류별 회귀 테스트를 추가한다.
+
+22. **`diff-failed` 의 cause 가 git 의 실패 사유 대신 명령줄을 싣는다(경미).** `src/commands/review.mjs:288` 은 cause 를 `err.message` 첫 줄로 만드는데,
+    execFile 오류의 첫 줄은 `Command failed: git -C <절대경로> diff --stat <base>...HEAD` 다 — git 의 stderr(`fatal: <base>...HEAD: no merge base`)는 둘째 줄 이후라 잘린다.
+    그래서 사람은 왜 실패했는지 모르고, 대신 targetDir 절대경로가 envelope 에 실린다. `review`·`scope`·`pr-check` 세 명령이 같은 cause 를 쓴다.
+    실측 출처: 2026-10-11 21번 실측(`pr-check --base <관계없는 ref>`). #143 은 원인 문자열을 고정 범위로 두어 손대지 않았다.
+    고칠 방향 후보: `err.stderr` 의 마지막 비어 있지 않은 줄(없으면 종전 첫 줄)을 쓴다 — `git` 헬퍼(`review.mjs:232`, promisify(execFile))의 오류는 `stderr` 속성을 갖는다.
+    cause 문자열을 단언하는 테스트(`/diff 계산 실패/` 정규식 — #143 의 diff-failed 테스트 2건)는 접두만 보므로 깨지지 않는다.
 
 (19번은 2026-10-11 task `review-retry-hint`로 올려 여기서 지웠다 — scope 오류의 `retry:` 를 원인 종류(없는 `--base`·기본 base 판정 실패·git 저장소 아님·diff 계산 실패)로 고른다. standalone `scope` 의 retry 도 같은 어긋남이 있어 함께 고쳤다.)
 (17번은 2026-10-11 task `review-scope-committed`로 올려 여기서 지웠다 — worktree scope 의 의미를 merge-base 이후 커밋 + 미커밋으로 넓힌다.)

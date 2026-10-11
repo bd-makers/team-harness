@@ -43,3 +43,8 @@ docs/hslee/review-retry-hint/review-retry-hint-artifact.md | 5 +++++
 docs/hslee/review-retry-hint/review-retry-hint-handoff.md | 7 +++++++
  src/commands/scope.mjs                                    | 2 +-
  2 files changed, 8 insertions(+), 1 deletion(-)
+
+## 2026-10-11T06:03:11.521Z — 060d040 docs(task): review-retry-hint AO review 2차 판별 기록
+docs/hslee/review-retry-hint/review-retry-hint-artifact.md | 4 ++++
+ docs/hslee/review-retry-hint/review-retry-hint-handoff.md  | 5 +++++
+ 2 files changed, 9 insertions(+)
