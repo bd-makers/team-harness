@@ -271,10 +271,13 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 - **A** (병렬, 격리 워크트리 2개 — D5): A1 R2 시나리오·증거(task `r2-scenario-evidence`) · A2 R1 소스 검토(task `r1-source-review`). R2는 `Done evidence`와 같은 옵트인이다 — PR 강제는 D11대로 4문서뿐.
 - **B**: 기본 루프 스킬(task `default-loop-skill`) — QA가 R2를 쓰므로 A1 뒤. 착수 전 Codex 서브에이전트 지원 범위를 실측한다(§4-3). — 구현: task `default-loop-skill`
 - **C**: C1 위키 컴파일(추가만 — 구현: task `wiki-compile`, `/harness-wiki` + `harness-team wiki sources`) → C2a 원장·done-on-main·`list --remote`·이름 재사용 가드의 입력 이전(비파괴 — task `task-folder-removal`)
-  → C2b task 폴더 삭제(호환성 파괴 — `wiki sources`의 `compiled`가 있는 task만 지우고, 레거시 폴더는 migrate 일회성 단계로 원하는 저장소만 정리한다.
+  → C2b task 폴더 삭제(호환성 파괴 — `wiki sources`의 `compiled`가 있는 task만 지우고(삭제 대상은 `wiki sources --all`(0.50.0)로 한 번에 본다), 레거시 폴더는 migrate 일회성 단계로 원하는 저장소만 정리한다.
   C1이 소비자 저장소 1곳 이상에서 한 릴리스 이상 돈 뒤 착수, 2026-10-09 결정). C2b가 1.0 전 마지막 파괴적 변경이다.
   **C1 첫 소비자 실사용 (2026-10-11, 전역 CLI 0.49.2)**: PR 없이 main에 직접 커밋하는 `heliosent-profile`에서 task `hslee/hslee-profile`을 `/harness-wiki`로 처음 컴파일했다 —
   `wiki/99_inbox/hslee-profile.md` 1파일(작성 규칙 `wiki/90_system/` 없음 → inbox 폴백), 마커 `commit=7713257 author=hslee`(PR이 없어 커밋 출처, `pr=` 없음), `wiki sources` 재실행의 `compiled` 감지 정상, main 커밋 `fb80bd0`.
   절차 1단계(기본 브랜치에서 실행)는 사람의 명시 지시로 예외였다 — origin/main 기준 브랜치에서 컴파일한 뒤 main에 fast-forward했다. 막힘 2건은 위키와 무관한 환경 문제였고 게이트는 우회하지 않았다
   (AO 워크트리에 `node_modules`가 없어 커밋 게이트 tsc 실패 → `bun install --frozen-lockfile`, Next 라우트 타입 미생성 → `bunx next typegen`). C2b 착수 조건의 "한 릴리스 이상" 시계는 이날 시작됐고 아직 충족 전이다.
+  **C1 두 번째 시도 (2026-10-11, 전역 CLI 0.49.4)**: 같은 `heliosent-profile`에서 재실행했으나 컴파일 대상이 0건이었다 — `hslee/hslee-profile`은 이미 `compiled`, `hslee/profile-deploy`는 not-done이라 새 커밋은 없다(main `fb80bd0` 그대로).
+  따라서 "한 릴리스 이상" 조건의 두 번째 실사용은 성립하지 않았고 시계는 그대로이며, 다음 기회는 `profile-deploy`가 done 된 뒤다.
+  이 과정에서 인수 없는 `wiki sources`가 기본 브랜치에서 후보를 보이지 못하는 공백이 드러나 followups 24 → task `wiki-sources-all`(0.50.0, `wiki sources --all`)로 닫았다.
 - **1.0 조건**: 7단계까지 끝나고, 그 계약(시나리오 표·`gates.json`·pr-check·위키 컴파일)이 소비자 저장소에서 한 릴리스 이상 돈 뒤.
