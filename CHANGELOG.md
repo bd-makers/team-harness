@@ -9,6 +9,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- **scope 오류의 `retry:` 안내가 원인과 어긋나던 것** (task `review-retry-hint`). `harness-team review`·`harness-team scope`는 scope를 결정하지 못하면 원인과 무관하게 한 문장을 안내해, `--scope worktree --base <없는 ref>`에 이미 준 `--scope worktree`를 다시 권했다(따라 해도 같은 오류). 이제 원인 종류로 고른다 — 없는 `--base`는 존재하는 `--base <ref>`만, git 저장소 아님은 `--scope worktree`만, diff 계산 실패(merge-base 없음)는 HEAD와 공통 조상이 있는 `--base` 또는 `--scope worktree`를 안내하고, 기본 base 판정 실패는 종전 문장 그대로다. 원인 문자열·exit code·envelope 형태는 그대로다.
+
 ## [0.49.2] - 2026-10-11
 
 ### Fixed

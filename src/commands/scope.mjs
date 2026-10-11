@@ -21,6 +21,14 @@ function reviewHint(scope, base) {
   return `\`harness-team review <engine> --scope ${scope}${baseArg}\` 로 이 대상을 리뷰할 수 있습니다`;
 }
 
+// retry 는 원인 종류(`resolveScope` 의 errorKind)로 고른다 — 사유는 review.mjs 의 같은 표(followups 19).
+const SCOPE_ERROR_RETRY = {
+  'base-missing': '존재하는 `--base <ref>` 로 기준을 직접 주고 다시 실행',
+  'default-base': '`--base <ref>` 로 기준을 직접 주거나, `--scope worktree` 로 워킹트리 전체를 대상으로 다시 실행',
+  'not-git': '`--scope worktree` 로 워킹트리 전체를 대상으로 다시 실행',
+  'diff-failed': 'HEAD 와 공통 조상이 있는 `--base <ref>` 를 주거나(`git merge-base <ref> HEAD` 로 확인) `--scope worktree` 로 다시 실행 — worktree 는 merge-base 를 못 잡으면 미커밋만 본다',
+};
+
 const EMPTY_SUMMARY = 'base 대비 diff 가 비어 있습니다 — 리뷰하거나 ship 할 변경이 없습니다';
 
 export async function runScope(ctx) {
@@ -43,7 +51,7 @@ export async function runScope(ctx) {
   if (resolved.error) {
     const packet = buildErrorPacket({
       cause: resolved.error,
-      retry: '`--base <ref>` 로 기준을 직접 주거나, `--scope worktree` 로 워킹트리 전체를 대상으로 다시 실행',
+      retry: SCOPE_ERROR_RETRY[resolved.errorKind] ?? SCOPE_ERROR_RETRY['default-base'],
       alternatives: ['`git remote -v` 와 `git symbolic-ref refs/remotes/origin/HEAD` 로 기본 브랜치 설정을 확인'],
       safeDefault: '아무것도 바뀌지 않았다 — 이 명령은 판정만 한다',
       stop: '판정하지 못한 base 로 리뷰를 기록하지 말 것',

@@ -282,6 +282,57 @@ test('CLI scope: 없는 base 는 error 패킷과 exit 1 이다', async () => {
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+// retry 는 원인 종류로 갈린다 — 예전 한 문장은 `--scope worktree --base nope` 에도 `--scope worktree` 를 권했다(followups 19).
+async function scopeErrorPacket(args) {
+  const { code, stdout } = await cli(['scope', '--json', ...args]);
+  assert.equal(code, 1);
+  return JSON.parse(stdout).error;
+}
+
+test('CLI scope error retry: a missing --base is not told to add --scope worktree', async () => {
+  const dir = await repo('main');
+  try {
+    for (const scope of ['worktree', 'diff']) {
+      const err = await scopeErrorPacket(['--scope', scope, '--base', 'nope', '--target', dir]);
+      assert.match(err.root_cause, /base ref "nope" 를 찾을 수 없음/);
+      assert.equal(err.safe_retry, '존재하는 `--base <ref>` 로 기준을 직접 주고 다시 실행', scope);
+    }
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('CLI scope error retry: a failed default-base inference keeps the --scope worktree hint', async () => {
+  const dir = await repo('main');
+  try {
+    await git(dir, 'remote', 'add', 'origin', join(dir, 'no-such-remote'));
+    const err = await scopeErrorPacket(['--scope', 'diff', '--target', dir]);
+    assert.match(err.root_cause, /기본 브랜치를 판정하지 못함/);
+    assert.equal(err.safe_retry, '`--base <ref>` 로 기준을 직접 주거나, `--scope worktree` 로 워킹트리 전체를 대상으로 다시 실행');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('CLI scope error retry: outside a git repo only --scope worktree is suggested', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-scope-nogit-'));
+  try {
+    const err = await scopeErrorPacket(['--scope', 'diff', '--base', 'main', '--target', dir]);
+    assert.match(err.root_cause, /git 저장소가 아니라/);
+    assert.equal(err.safe_retry, '`--scope worktree` 로 워킹트리 전체를 대상으로 다시 실행');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('CLI scope error retry: a diff failure asks for a base that shares history with HEAD', async () => {
+  const dir = await repo('main');
+  try {
+    await git(dir, 'checkout', '-q', '--orphan', 'unrelated');
+    await git(dir, 'commit', '-qm', 'unrelated root');
+    await git(dir, 'checkout', '-q', 'main');
+    const err = await scopeErrorPacket(['--scope', 'diff', '--base', 'unrelated', '--target', dir]);
+    assert.match(err.root_cause, /diff 계산 실패/);
+    assert.ok(!err.safe_retry.includes('존재하는'), `base 는 이미 존재한다: ${err.safe_retry}`);
+    assert.ok(err.safe_retry.includes('git merge-base <ref> HEAD'), err.safe_retry);
+    assert.ok(err.safe_retry.includes('worktree 는 merge-base 를 못 잡으면 미커밋만 본다'), `같은 base 의 worktree 는 좁아진다: ${err.safe_retry}`);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 // codex P2: resolveScope 는 모르는 scope 값을 조용히 diff 로 흘린다. review 는 호출 전에 목록
 // 대조로 막지만 scope 커맨드가 빠뜨려, `--scope typo` 가 성공한 diff 판정으로 나왔다.
 test('CLI scope: 알 수 없는 --scope 는 판정을 내지 않고 exit 2 로 거절한다', async () => {

@@ -1,0 +1,23 @@
+{
+  "user": "hslee",
+  "task": "review-retry-hint",
+  "created": "2026-10-11",
+  "firstActivatedAt": "2026-10-11T05:18:29.484Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex-adversarial",
+      "engine": "codex",
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "5428c466c324eb903f1b71e52ce80a784807ee64",
+      "tip": "0927c69017712fce82684c16a7beb5ae675d346e",
+      "at": "2026-10-11T05:26:03.915Z",
+      "exitCode": 0,
+      "outputBytes": 1302
+    }
+  ]
+}

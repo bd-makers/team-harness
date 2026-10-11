@@ -7,23 +7,32 @@
 
 ## 우선순위
 
-**남은 것: 19번.** 13–16번은 2026-10-06에 닫았다(아래 괄호 기록). 새 후보가 생기면 이 절에 번호를 이어 붙인다(20번부터).
+**남은 것: 20–22번** (출처: task `review-retry-hint`, PR #143 — 2026-10-11 AO 리뷰와 실측에서 남은 것, 모두 경미). 13–16번은 2026-10-06에 닫았다(아래 괄호 기록). 새 후보가 생기면 이 절에 번호를 이어 붙인다(23번부터).
+20·21번은 PR #143 의 `errorKind`(`resolveScope` 가 `{ error }` 에 싣는 원인 종류 `base-missing`·`default-base`·`not-git`·`diff-failed`)를 전제로 한다 — **선행 조건: #143 머지.**
 
-19. **`review` 의 scope 오류 `retry:` 문구가 이미 준 `--scope worktree` 를 다시 권한다(경미).** `harness-team review <engine> --scope worktree --base <없는 ref>`
-    는 exit 1 로 멈추는데(엔진 미실행·파일 무변경, 정상), 오류 envelope 의 `retry:` 가 "`--scope worktree` 를 명시하거나 존재하는 `--base <ref>` 를 주고 다시 실행"이다.
-    worktree 를 이미 명시한 호출이라 앞 절반은 상황과 어긋나고, 따라 해도 같은 오류가 난다. 실측 출처: 2026-10-11 mergeBase 실사용 검증의 대조군
-    (task `review-scope-committed` artifact `### 실사용 검증` 절).
-    소스: 문구는 `src/commands/review.mjs:506` 한 줄이고, `resolveScope` 가 `{ error }` 를 돌려준 모든 경우에 `:503`(`if (scoped.error)`)에서 나온다.
-    base 와 관련된 `{ error }` 는 세 경로에서 온다(그 밖에 diff scope 의 `:272` git 저장소 아님·`:288` diff 계산 실패도 같은 문구를 받는다) — (1) diff scope(명시 또는 clean 트리 추론)에서 기본 base 를 판정 못함(`:284`, 원인 문자열은 `resolveBase` `:340`·`:347`)
-    → 이때는 "`--scope worktree`" 가 맞는 안내다(worktree 는 base 를 못 찾으면 degrade 한다). (2) diff scope + 없는 `--base` → 틀린 안내(worktree 로 가도 `:277` 에서 같은 오류).
-    (3) worktree(명시 또는 dirty 트리 추론) + 없는 `--base` → 관측된 경우, 틀린 안내. worktree 경로는 `--base` 를 준 경우에만 error 다(`:277`, 없으면 degrade).
-    고칠 방향 후보: (A) 명시 `--scope` 여부(`flags.scope === 'worktree'`)로 retry 문구를 분기한다 — 관측 경우는 고치지만 dirty 트리 추론(3)·(2)는 남는다.
-    (B) `--base` 를 줬고 원인이 base ref 미존재(`:277`·`:284` 경로)일 때만 "존재하는 `--base <ref>`" 로 안내하고 `--scope worktree` 를 권하지 않는다 — (2)(3)을 함께 덮는다.
-    `flags.base !== undefined` 만으로 분기하면 안 된다: `:272`(git 저장소 아님)는 `--base` 를 줘도 맞는 재시도가 `--scope worktree` 이고(worktree 는 `:273` 에서
-    base 검사 전에 degrade 한다), `:288`(diff 계산 실패)는 base 가 이미 존재해 "존재하는 `--base`" 안내가 맞지 않는다. 그래서 (B) 는 원인 종류로 retry 를 고르는
-    분기가 필요하다(예: `resolveScope` 가 error 와 함께 원인 종류를 돌려준다). 선행 조건: 이 문구를 고정하는 테스트가 없다(`tests/` 에 "명시하거나" 0건) — spec 세션이 회귀 테스트를 추가한다.
-    같은 계열: standalone `scope` 명령의 retry(`src/commands/scope.mjs:45`)도 `--scope worktree` 를 권한다 — 같은 어긋남이 있는지는 spec 세션이 확인한다(미검증).
+20. **`scope` 오류의 `alternatives` 가 원인과 무관하게 기본 브랜치 설정 확인을 권한다(경미).** `src/commands/scope.mjs:55` 의 `alternatives` 는
+    "`git remote -v` 와 `git symbolic-ref refs/remotes/origin/HEAD` 로 기본 브랜치 설정을 확인" 한 줄이고 모든 scope 오류에 나간다. 맞는 것은 `default-base`
+    (그중에서도 origin 이 있는 경우)뿐이다 — 없는 `--base`(`base-missing`)·git 저장소 아님(`not-git`)·merge-base 없음(`diff-failed`)에는 관계가 없다.
+    #143 은 브리프가 retry 외 필드를 고정해 두어 손대지 않았다(그 task artifact `### 의도적으로 하지 않은 것`).
+    고칠 방향: retry 와 같은 `errorKind` 표로 고르고, 맞는 대안이 없는 종류는 빈 배열로 둔다(`renderErrorPacket` 은 빈 alternatives 줄을 내지 않는다).
+    `review` 의 scope 오류 패킷은 `alternatives` 가 없어 해당 없음. 테스트 자리: `tests/scope-command.test.mjs` 의 `CLI scope error retry:` 4건 옆.
 
+21. **`pr-check` 의 base 오류 retry 가 원인과 무관하게 `git remote set-head origin -a` 를 권한다(경미).** `src/commands/pr-check.mjs:138`(`emitBaseError`)의 retry 는
+    pre-push 가 아니면 "`--base <ref>` 로 기준을 직접 주거나 `git remote set-head origin -a` 로 origin/HEAD 를 설정" 한 문장이다. 실측(2026-10-11):
+    `pr-check --base nope`(`base-missing`)·`--base <관계없는 히스토리 ref>`(`diff-failed`)·git 저장소 아닌 `--target`(`not-git`) 모두 이 문장을 받는다 —
+    set-head 는 셋 중 어느 것도 고치지 못하고, `base-missing` 에는 "존재하는" 조건이 빠졌으며, `not-git` 에는 두 절반 모두 소용없다(pr-check 는 diff scope 고정이라 worktree 대안도 없다).
+    pre-push 갈래(`set-head` 만 안내)는 훅이 `--base` 없이 부르므로(`src/git-hooks.mjs:61`) 사실상 `default-base` 만 닿아 문제가 작다.
+    고칠 방향: #143 과 같이 `errorKind` 로 retry 를 고른다. `stop`(D11 강제 검사)·`originIsEmpty` 통과 분기·exit 은 그대로 둔다.
+    테스트가 이 문구를 고정하지 않는다 — spec 세션이 `tests/pr-check*.test.mjs` 관례대로 종류별 회귀 테스트를 추가한다.
+
+22. **`diff-failed` 의 cause 가 git 의 실패 사유 대신 명령줄을 싣는다(경미).** `src/commands/review.mjs:288` 은 cause 를 `err.message` 첫 줄로 만드는데,
+    execFile 오류의 첫 줄은 `Command failed: git -C <절대경로> diff --stat <base>...HEAD` 다 — git 의 stderr(`fatal: <base>...HEAD: no merge base`)는 둘째 줄 이후라 잘린다.
+    그래서 사람은 왜 실패했는지 모르고, 대신 targetDir 절대경로가 envelope 에 실린다. `review`·`scope`·`pr-check` 세 명령이 같은 cause 를 쓴다.
+    실측 출처: 2026-10-11 21번 실측(`pr-check --base <관계없는 ref>`). #143 은 원인 문자열을 고정 범위로 두어 손대지 않았다.
+    고칠 방향 후보: `err.stderr` 의 마지막 비어 있지 않은 줄(없으면 종전 첫 줄)을 쓴다 — `git` 헬퍼(`review.mjs:232`, promisify(execFile))의 오류는 `stderr` 속성을 갖는다.
+    cause 문자열을 단언하는 테스트(`/diff 계산 실패/` 정규식 — #143 의 diff-failed 테스트 2건)는 접두만 보므로 깨지지 않는다.
+
+(19번은 2026-10-11 task `review-retry-hint`로 올려 여기서 지웠다 — scope 오류의 `retry:` 를 원인 종류(없는 `--base`·기본 base 판정 실패·git 저장소 아님·diff 계산 실패)로 고른다. standalone `scope` 의 retry 도 같은 어긋남이 있어 함께 고쳤다.)
 (17번은 2026-10-11 task `review-scope-committed`로 올려 여기서 지웠다 — worktree scope 의 의미를 merge-base 이후 커밋 + 미커밋으로 넓힌다.)
 (18번 — 리뷰 기록(artifact·meta)이 커밋 없는 다음 리뷰의 scope를 worktree로 바꾸던 것 — 은 2026-10-10 사람 결정으로 task `review-scope-handoff`에
 포함해 여기서 지웠다. scope 판정이 `review`가 쓰는 활성 task의 `<name>-artifact.md`·`<name>-meta.json`도 dirty에서 뺀다 — 트레이드오프는 그 task spec.)
