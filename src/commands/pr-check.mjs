@@ -185,6 +185,17 @@ async function fullRefName(targetDir, ref) {
   try { return (await git(targetDir, ['rev-parse', '--symbolic-full-name', ref])).trim() || ref; } catch { return ref; }
 }
 
+// 기본 브랜치와 공통 조상이 없는 브랜치(gh-pages 등)는 그 기본 브랜치로 PR 을 열 수 없다(GitHub 은 비교를 거부한다) — D11 의
+// 대상이 아니라 기본 브랜치 push 처럼 건너뛴다(followups 23, 방향 A). base 판정은 HEAD 로 하므로 HEAD 가 관련 브랜치면 통과하고,
+// 이 sha 의 diff 가 throw 해 스택 트레이스로 죽었다. `git merge-base` 의 exit 1 = 공통 조상 없음일 때만 건너뛴다 — 그 밖의
+// 실패(exit 128 등)는 삼키지 않고 종전대로 둔다. gh-pages 를 체크아웃한 채 push 하면 base 판정에서 diff-failed 패킷이 먼저 난다.
+async function sharesHistory(targetDir, base, rev) {
+  try { await git(targetDir, ['merge-base', base, rev]); return true; } catch (err) {
+    if (err.code === 1) return false;
+    throw err;
+  }
+}
+
 function emitQuietPass(json) {
   if (json) emitObservation(buildEnvelope({ command: 'pr-check', status: 'success', summary: 'pre-push: 검사할 브랜치 push 없음', extra: { base: null, checks: [] } }));
 }
@@ -211,7 +222,9 @@ export async function runPrCheck(ctx, { readStdin = readAllStdin } = {}) {
   if (prePush) {
     const defaultRef = `refs/heads/${branchName(await fullRefName(ctx.targetDir, base))}`;
     for (const t of pushes) {
-      if (t.remoteRef !== defaultRef) runs.push({ label: t.remoteRef.replace(/^refs\/heads\//, ''), rev: t.rev });
+      if (t.remoteRef === defaultRef) continue;
+      if (!(await sharesHistory(ctx.targetDir, base, t.rev))) continue;
+      runs.push({ label: t.remoteRef.replace(/^refs\/heads\//, ''), rev: t.rev });
     }
   } else {
     runs.push({ label: 'HEAD', rev: 'HEAD' });

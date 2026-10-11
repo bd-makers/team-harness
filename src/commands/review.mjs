@@ -285,10 +285,17 @@ export async function resolveScope({ targetDir, scope, base }) {
   const resolvedBase = resolved.base;
   let diff = '';
   try { diff = await git(targetDir, ['diff', '--stat', `${resolvedBase}...HEAD`]); } catch (err) {
-    return { error: `diff 계산 실패: ${err.message.split('\n')[0]}`, errorKind: 'diff-failed' };
+    return { error: `diff 계산 실패: ${gitFailureReason(err)}`, errorKind: 'diff-failed' };
   }
   if (!diff.trim()) return { empty: true, base: resolvedBase, tip };
   return { scope: 'diff', base: resolvedBase, mergeBase: await mergeBaseOf(targetDir, resolvedBase), tip };
+}
+
+// execFile 오류의 첫 줄은 `Command failed: git -C <절대경로> …` 다 — git 의 실패 사유(`fatal: …`)는 stderr 에 있다.
+// 첫 줄을 쓰면 사유가 잘리고 절대경로가 envelope 에 실렸다(followups 22). stderr 가 비면(spawn 실패 등) 종전 첫 줄로 떨어진다.
+function gitFailureReason(err) {
+  const last = String(err.stderr ?? '').split('\n').map(l => l.trim()).filter(Boolean).pop();
+  return last ?? err.message.split('\n')[0];
 }
 
 // worktree degrade 는 조용히 좁히지 않는다 — review·scope 가 같은 문장으로 알린다.

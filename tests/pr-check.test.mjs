@@ -318,6 +318,35 @@ test('pr-check --pre-push: push 되는 sha 를 판정하고, 빈 stdin 이면 �
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+// 기본 브랜치와 공통 조상이 없는 브랜치(gh-pages 등)는 그 기본 브랜치로 PR 을 열 수 없다 — 기본 브랜치 push 처럼 건너뛴다(followups 23).
+// 전에는 HEAD 로 base 판정을 통과한 뒤 그 sha 의 diff 가 throw 해 스택 트레이스로 죽었다. 같은 push 의 관련 브랜치는 여전히 검사된다.
+test('pr-check --pre-push: 기본 브랜치와 무관한 히스토리의 브랜치는 건너뛰고, 관련 브랜치는 그대로 검사한다', async () => {
+  const dir = await repo();
+  try {
+    await git(dir, 'checkout', '-q', '--orphan', 'gh-pages');
+    await git(dir, 'commit', '-qm', 'pages');
+    const { stdout: pages } = await git(dir, 'rev-parse', 'HEAD');
+    await git(dir, 'checkout', '-q', 'feature');
+    await writeTask(dir, 't', { files: { 'spec.md': 'template' } });
+    await commit(dir);
+    const { stdout: feature } = await git(dir, 'rev-parse', 'HEAD');
+    await git(dir, 'remote', 'add', 'origin', join(dir, 'no-such-remote'));
+    await git(dir, 'update-ref', 'refs/remotes/origin/main', 'main');
+    const zero = '0'.repeat(40);
+    const pagesLine = `refs/heads/gh-pages ${pages.trim()} refs/heads/gh-pages ${zero}\n`;
+
+    const only = await capture(() => runPrCheck({ targetDir: dir, flags: { 'pre-push': true } }, { readStdin: async () => pagesLine }));
+    assert.equal(only.exitCode, undefined);
+    assert.equal(only.out, '');
+
+    const both = pagesLine + `refs/heads/feature ${feature.trim()} refs/heads/feature ${zero}\n`;
+    const mixed = await capture(() => runPrCheck({ targetDir: dir, flags: { 'pre-push': true } }, { readStdin: async () => both }));
+    assert.equal(mixed.exitCode, 1);
+    assert.match(mixed.out, /✗ pr-check feature: u\/t/);
+    assert.ok(!mixed.out.includes('gh-pages'), mixed.out);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 // 실제 git push — 훅이 PATH 의 CLI 를 부르고, 기본 브랜치 push 는 통과, 피처 브랜치는 막히며, --no-verify 로 우회된다.
 // CLI 가 없거나 pr-check 를 모르는 구버전이면 훅은 건너뛴다(fail-open).
 test('pre-push 훅 실측: 빈 원격 첫 push · 앞선 훅의 stdin 소비 · 차단 · --no-verify · 태그 · 기본 브랜치 · CLI 부재/구버전', async () => {

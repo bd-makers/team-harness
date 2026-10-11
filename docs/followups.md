@@ -7,34 +7,9 @@
 
 ## 우선순위
 
-**남은 것: 22·23번** (22번 출처: task `review-retry-hint`, PR #143 — 2026-10-11 AO 리뷰와 실측에서 남은 것, 경미. 23번 출처: task `scope-error-hints`, PR #144 — 2026-10-11 실측). 13–16번은 2026-10-06에, 20·21번은 2026-10-11에 닫았다(아래 괄호 기록). 새 후보가 생기면 이 절에 번호를 이어 붙인다(24번부터).
+**남은 것: 없음.** 13–16번은 2026-10-06에, 20–23번은 2026-10-11에 닫았다(아래 괄호 기록). 새 후보가 생기면 이 절에 번호를 이어 붙인다(24번부터).
 
-22. **`diff-failed` 의 cause 가 git 의 실패 사유 대신 명령줄을 싣는다(경미).** `src/commands/review.mjs:288` 은 cause 를 `err.message` 첫 줄로 만드는데,
-    execFile 오류의 첫 줄은 `Command failed: git -C <절대경로> diff --stat <base>...HEAD` 다 — git 의 stderr(`fatal: <base>...HEAD: no merge base`)는 둘째 줄 이후라 잘린다.
-    그래서 사람은 왜 실패했는지 모르고, 대신 targetDir 절대경로가 envelope 에 실린다. `review`·`scope`·`pr-check` 세 명령이 같은 cause 를 쓴다.
-    실측 출처: 2026-10-11 21번 실측(`pr-check --base <관계없는 ref>`). #143 은 원인 문자열을 고정 범위로 두어 손대지 않았다.
-    고칠 방향 후보: `err.stderr` 의 마지막 비어 있지 않은 줄(없으면 종전 첫 줄)을 쓴다 — `git` 헬퍼(`review.mjs:232`, promisify(execFile))의 오류는 `stderr` 속성을 갖는다.
-    cause 문자열을 단언하는 테스트(`/diff 계산 실패/` 정규식 — #143 의 diff-failed 테스트 2건)는 접두만 보므로 깨지지 않는다.
-
-23. **pre-push 가 기본 브랜치와 무관한 히스토리의 브랜치를 push 하면 오류 패킷 없이 스택 트레이스로 죽는다.** HEAD 는 기본 브랜치와 공통 조상이 있는 채
-    gh-pages 같은 orphan 브랜치를 push 하면, base 판정(`src/commands/pr-check.mjs:202` → `src/commands/review.mjs:287` 의 `diff --stat <base>...HEAD`)은
-    **HEAD** 로 하므로 통과한다. 그다음 push 되는 sha 마다 `collectPrCheck`(`pr-check.mjs:83`, 호출은 `:221`)가 `git diff --name-only <base>...<sha>` 를
-    부르는데 merge base 가 없어 throw 하고, 아무도 잡지 않아 `bin/harness-team.mjs:99` 의 최상위 catch 가 스택 트레이스를 찍고 exit 1 한다.
-    push 는 막히지만 `emitBaseError`(`pr-check.mjs:157`)의 패킷이 없어 `--no-verify` 우회 안내도 없고, `--json` 이어도 envelope 가 나오지 않는다.
-    21번을 닫을 때 고친 pre-push `diff-failed` 문장(`pr-check.mjs:151`, "공통 조상이 있는 브랜치를 체크아웃")은 **HEAD 가 무관한** 경우만 덮는다 — 이 경우는 HEAD 가 이미 그런 브랜치다.
-    재현(2026-10-11 재확인): 임시 저장소에 `main`·`feature`(main 에서 분기)·`--orphan gh-pages` 를 커밋하고 `git update-ref refs/remotes/origin/main main`,
-    `feature` 를 체크아웃한 채 `printf 'refs/heads/gh-pages <gh-pages sha> refs/heads/gh-pages <0×40>\n' | node bin/harness-team.mjs pr-check --pre-push --target <dir>`
-    → `Error: Command failed: git ... diff --name-only --relative refs/remotes/origin/main...<sha>` / `fatal: ...: no merge base` + 스택, exit 1. `--json` 도 같다.
-    수동 `pr-check`(push 없이)는 rev 가 HEAD 라 base 판정 단계에서 걸러져 닿지 않는다 — pre-push 갈래만의 결함이다.
-    고칠 방향 후보(spec 에서 고른다):
-    - A. **검사 대상에서 뺀다** — 기본 브랜치와 공통 조상이 없는 브랜치는 그 기본 브랜치로 PR 을 열 수 없으므로(GitHub 은 비교 자체를 거부한다) 기본 브랜치 push 처럼
-      조용히 통과시킨다(`pr-check.mjs:214` 의 건너뛰기와 같은 자리). D11 게이트를 좁히는 결정이라 근거를 spec 에 남긴다.
-    - B. **막되 패킷으로 알린다** — `collectPrCheck` 의 diff 실패를 잡아 `emitBaseError` 로 보낸다. 이때 pre-push `diff-failed` 문장은 이 경우에 틀리므로
-      새 `errorKind`(또는 push 되는 ref 를 이름으로 대는 문장)가 필요하고, 그 브랜치는 `--no-verify` 로만 push 할 수 있게 남는다.
-    cause 를 git 의 stderr 로 바꾸는 22번과 겹치는 것은 B 뿐이다(B 의 cause 도 같은 `err.message` 첫 줄 문제를 가진다).
-    테스트 자리: `tests/pr-check.test.mjs:264`(#144 의 diff-failed 테스트, orphan 브랜치 픽스처)와 `:302`(`runPrCheck` 에 `readStdin` 주입) 옆에 하나.
-    선행 조건 없음.
-
+(22·23번은 2026-10-11 task `followups-22-23`으로 올려 여기서 지웠다 — 22번: `diff-failed` cause 를 git stderr 의 마지막 비어 있지 않은 줄로 바꿔 `review`·`scope`·`pr-check` 가 git 의 사유를 싣고 절대경로·명령줄을 싣지 않는다. 23번: **방향 A(사람 결정)** — 기본 브랜치와 공통 조상이 없는 브랜치의 push 는 PR 을 열 수 없으므로 pre-push 검사 대상에서 뺀다(`git merge-base` exit 1 일 때만, 그 밖의 실패는 삼키지 않는다). gh-pages 를 **체크아웃한 채** push 하면 여전히 base 판정에서 #144 의 `diff-failed` 패킷이 난다 — 범위이며 근거는 그 task spec.)
 (20·21번은 2026-10-11 task `scope-error-hints`로 올려 여기서 지웠다 — `scope` 오류의 `alternatives` 와 `pr-check` base 오류의 `retry:` 를 #143 의 `errorKind` 로 고른다. 21번의 "pre-push 는 사실상 `default-base` 만 닿는다" 는 실측으로 틀렸다 — orphan 브랜치·커밋 없는 HEAD 를 체크아웃한 채 push 하면 `diff-failed` 가 닿아 pre-push 갈래도 종류별로 고쳤다.)
 (19번은 2026-10-11 task `review-retry-hint`로 올려 여기서 지웠다 — scope 오류의 `retry:` 를 원인 종류(없는 `--base`·기본 base 판정 실패·git 저장소 아님·diff 계산 실패)로 고른다. standalone `scope` 의 retry 도 같은 어긋남이 있어 함께 고쳤다.)
 (17번은 2026-10-11 task `review-scope-committed`로 올려 여기서 지웠다 — worktree scope 의 의미를 merge-base 이후 커밋 + 미커밋으로 넓힌다.)
