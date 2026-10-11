@@ -17,8 +17,9 @@ import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } f
 
 const pexec = promisify(execFile);
 
-const git = async (targetDir, args) =>
-  (await pexec('git', ['-C', targetDir, '-c', 'core.quotepath=false', ...args], { maxBuffer: 16 * 1024 * 1024 })).stdout;
+// env 는 호출 하나에만 준다 — 기본값(undefined)은 process.env 그대로다.
+const git = async (targetDir, args, env) =>
+  (await pexec('git', ['-C', targetDir, '-c', 'core.quotepath=false', ...args], { maxBuffer: 16 * 1024 * 1024, env })).stdout;
 
 // `rev:./path` 는 -C 디렉터리 기준이다 — targetDir 가 저장소 하위 디렉터리여도 docs/ 를 그 기준으로 찾는다.
 async function showAt(targetDir, rev, rel) {
@@ -190,7 +191,8 @@ async function fullRefName(targetDir, ref) {
 // 이 sha 의 diff 가 throw 해 스택 트레이스로 죽었다. `git merge-base` 의 exit 1 = 공통 조상 없음일 때만 건너뛴다 — 그 밖의
 // 실패(exit 128 등)는 삼키지 않고 종전대로 둔다. gh-pages 를 체크아웃한 채 push 하면 base 판정에서 diff-failed 패킷이 먼저 난다.
 async function sharesHistory(targetDir, base, rev) {
-  try { await git(targetDir, ['merge-base', base, rev]); return true; } catch (err) {
+  // 판정은 exit code 로 하지만 rethrow 되는 오류의 stderr 는 사람이 읽으므로 C 로케일로 부른다(diff-failed cause 와 같이).
+  try { await git(targetDir, ['merge-base', base, rev], { ...process.env, LC_ALL: 'C' }); return true; } catch (err) {
     if (err.code === 1) return false;
     throw err;
   }

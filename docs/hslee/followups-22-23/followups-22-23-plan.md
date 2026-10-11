@@ -6,7 +6,7 @@
 ## 단계
 - [x] spec/plan 다이어그램 — 미실행(경미한 오류 경로 수정)
 - [x] 회귀 테스트 추가(review-command: diff-failed cause · pr-check: pre-push 무관 히스토리 건너뛰기 + 관련 브랜치 검사) → 구현 전 ✖ 확인, artifact 기록
-- [x] `review.mjs` `resolveScope` 의 diff-failed cause 를 git stderr 마지막 줄로(`gitFailureReason`)
+- [x] `review.mjs` `resolveScope` 의 diff-failed cause 를 git stderr 의 사유 줄로(`gitFailureReason` — 마지막 `fatal:`·`error:` 줄 우선 → 마지막 비어 있지 않은 줄 → 종전 `err.message` 첫 줄)
 - [x] `pr-check.mjs` pre-push 루프에 `sharesHistory`(merge-base exit 1 만 건너뛰기) → 테스트 ✔
 - [x] README pre-push 건너뛰기 목록 동기화, `docs/followups.md` 22·23번 삭제 + 괄호 기록 + "남은 것: 없음", CHANGELOG `[Unreleased]` Fixed
 - [x] `npm test`·`npm run docs:check` 통과

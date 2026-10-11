@@ -38,7 +38,8 @@
 줄로 나눠 trim 후 `fatal:`·`error:` 로 시작하는 마지막 줄, 없으면 비어 있지 않은 마지막 줄, 그것도 없으면 `err.message.split('\n')[0]`.
 `fatal:`/`error:` 우선은 브리프의 "마지막 비어 있지 않은 줄"에서 다듬은 편차다: 커밋 없는 HEAD(#144 가 확인한 diff-failed 의 다른 트리거)에서 git 은
 `fatal: ambiguous argument 'main...HEAD': …` 뒤에 사용법 안내 두 줄을 붙여, 마지막 줄은 `'git <command> [<revision>...] -- [<file>...]'` 다(실측).
-접두가 로케일로 번역되면 브리프대로 마지막 줄로 떨어지므로 그 경우에도 브리프보다 나빠지지 않는다. 세 명령이 같은 반환값을 쓰므로 한 자리 수정으로 셋에 반영된다.
+접두가 번역되지 않도록 이 diff 호출과 23 의 merge-base 호출에만 `LC_ALL=C` 를 준다(AO 리뷰 선택 제안 1) — 공용 git 헬퍼의 다른 호출은
+사용자 로케일 그대로라 출력을 파싱하는 명령에 영향이 없다. 헬퍼에는 호출 단위 `env` 인자만 더했다. 세 명령이 같은 반환값을 쓰므로 한 자리 수정으로 셋에 반영된다.
 예: `diff 계산 실패: Command failed: git -C /…/repro diff --stat gh-pages...HEAD` → `diff 계산 실패: fatal: gh-pages...HEAD: no merge base`.
 
 **23** — `pr-check.mjs` 의 pre-push 루프에서 기본 브랜치 push 건너뛰기 바로 다음에 `sharesHistory(targetDir, base, sha)` 로 판정한다.

@@ -229,8 +229,9 @@ export async function resolveEngine(requested, { targetDir, which: probe = which
   return { error: `probe 폴백 체인(${PROBE_CHAIN.join(' → ')})에서 가용 엔진을 찾지 못함` };
 }
 
-async function git(targetDir, args) {
-  const { stdout } = await pexec('git', ['-C', targetDir, ...args], { maxBuffer: 8 * 1024 * 1024 });
+// env 는 호출 하나에만 준다 — 기본값(undefined)은 process.env 그대로다.
+async function git(targetDir, args, env) {
+  const { stdout } = await pexec('git', ['-C', targetDir, ...args], { maxBuffer: 8 * 1024 * 1024, env });
   return stdout;
 }
 
@@ -284,7 +285,8 @@ export async function resolveScope({ targetDir, scope, base }) {
   if (resolved.error) return resolved;
   const resolvedBase = resolved.base;
   let diff = '';
-  try { diff = await git(targetDir, ['diff', '--stat', `${resolvedBase}...HEAD`]); } catch (err) {
+  // cause 를 git stderr 에서 고르므로(`gitFailureReason`) 이 호출만 C 로케일로 부른다 — 번역되면 `fatal:` 접두를 못 찾는다.
+  try { diff = await git(targetDir, ['diff', '--stat', `${resolvedBase}...HEAD`], { ...process.env, LC_ALL: 'C' }); } catch (err) {
     return { error: `diff 계산 실패: ${gitFailureReason(err)}`, errorKind: 'diff-failed' };
   }
   if (!diff.trim()) return { empty: true, base: resolvedBase, tip };
