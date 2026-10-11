@@ -38,3 +38,8 @@ docs/hslee/review-retry-hint/review-retry-hint-artifact.md | 5 +++++
  tests/review-command.test.mjs                              | 1 +
  tests/scope-command.test.mjs                               | 1 +
  4 files changed, 13 insertions(+)
+
+## 2026-10-11T06:02:57.239Z — b621789 style(scope): EMPTY_SUMMARY 의 = 뒤 공백 복원 — 무관한 줄을 diff 에서 뺀다 (AO review)
+docs/hslee/review-retry-hint/review-retry-hint-handoff.md | 7 +++++++
+ src/commands/scope.mjs                                    | 2 +-
+ 2 files changed, 8 insertions(+), 1 deletion(-)
