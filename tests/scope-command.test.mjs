@@ -329,6 +329,7 @@ test('CLI scope error retry: a diff failure asks for a base that shares history 
     assert.match(err.root_cause, /diff 계산 실패/);
     assert.ok(!err.safe_retry.includes('존재하는'), `base 는 이미 존재한다: ${err.safe_retry}`);
     assert.ok(err.safe_retry.includes('git merge-base <ref> HEAD'), err.safe_retry);
+    assert.ok(err.safe_retry.includes('worktree 는 merge-base 를 못 잡으면 미커밋만 본다'), `같은 base 의 worktree 는 좁아진다: ${err.safe_retry}`);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

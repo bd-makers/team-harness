@@ -64,4 +64,9 @@
   드물고 cause 가 git 메시지를 그대로 실으므로 문구는 흔한 경우에 맞추고, review.mjs 코멘트의 단정("실패는 … 때다")을 "흔한 실패는" 으로 고쳤다.
 - 반영 후 `scope error retry` 8건 ✔.
 
+### 2026-10-11 — AO native review (head 78e6ec8)
+- 결과: 승인, 필수 수정 없음(정적 검토 + CI success 확인, 로컬 실행 없음).
+- 선택 제안: diff-failed 테스트 2건이 worktree 범위 축소 꼬리 문구도 단언할 것 → **반영**(사용자 지시). codex P3 보정 문구의 회귀를 고정한다.
+  `scope error retry` 8건 ✔.
+
 ## Learnings

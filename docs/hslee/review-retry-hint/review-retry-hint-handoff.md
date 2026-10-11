@@ -25,3 +25,9 @@ CHANGELOG.md                                       |   3 +
  src/commands/review.mjs                            |  2 +-
  src/commands/scope.mjs                             |  2 +-
  6 files changed, 55 insertions(+), 4 deletions(-)
+
+## 2026-10-11T05:28:01.749Z — 78e6ec8 docs(task): review-retry-hint PR #143 기록 — 리뷰 덱 미실행(스킬 없음)
+docs/hslee/review-retry-hint/review-retry-hint-context.md | 2 +-
+ docs/hslee/review-retry-hint/review-retry-hint-handoff.md | 9 +++++++++
+ docs/hslee/review-retry-hint/review-retry-hint-plan.md    | 2 +-
+ 3 files changed, 11 insertions(+), 2 deletions(-)
