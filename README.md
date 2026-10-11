@@ -531,7 +531,7 @@ harness-team pr-check --base origin/main --json
 ```
 
 - **pre-push 훅**: init·sync가 설치합니다. 기존 pre-push 훅(git-lfs 등)이 있으면 그 맨 위에 넣고 ref 목록(stdin)을 그대로 넘겨 주며,
-  셸 스크립트가 아닌 훅은 건드리지 않고 안내합니다. 기본 브랜치 push·태그·삭제·빈 원격으로의 첫 push는 검사하지 않고,
+  셸 스크립트가 아닌 훅은 건드리지 않고 안내합니다. 기본 브랜치 push·태그·삭제·빈 원격으로의 첫 push·기본 브랜치와 공통 조상이 없는 브랜치(gh-pages 등 — PR을 열 수 없다)는 검사하지 않고,
   PATH의 `harness-team`이 없거나 `pr-check`를 모르는 구버전이면 건너뜁니다(doctor가 경고). 우회는 `git push --no-verify`.
   pre-push 훅이 없던 버전으로 설치한 저장소는 업그레이드 후 `harness-team sync`를 한 번 실행하세요(migrate는 pre-push 훅을 설치하지 않습니다).
 - **훅 관리자(husky·lefthook 등)를 쓰면**: 관리자가 install 때 훅 파일을 다시 써서 위 블록이 지워집니다(husky는 `npm install`의

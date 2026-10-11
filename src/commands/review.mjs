@@ -229,8 +229,9 @@ export async function resolveEngine(requested, { targetDir, which: probe = which
   return { error: `probe 폴백 체인(${PROBE_CHAIN.join(' → ')})에서 가용 엔진을 찾지 못함` };
 }
 
-async function git(targetDir, args) {
-  const { stdout } = await pexec('git', ['-C', targetDir, ...args], { maxBuffer: 8 * 1024 * 1024 });
+// env 는 호출 하나에만 준다 — 기본값(undefined)은 process.env 그대로다.
+async function git(targetDir, args, env) {
+  const { stdout } = await pexec('git', ['-C', targetDir, ...args], { maxBuffer: 8 * 1024 * 1024, env });
   return stdout;
 }
 
@@ -284,11 +285,21 @@ export async function resolveScope({ targetDir, scope, base }) {
   if (resolved.error) return resolved;
   const resolvedBase = resolved.base;
   let diff = '';
-  try { diff = await git(targetDir, ['diff', '--stat', `${resolvedBase}...HEAD`]); } catch (err) {
-    return { error: `diff 계산 실패: ${err.message.split('\n')[0]}`, errorKind: 'diff-failed' };
+  // cause 를 git stderr 에서 고르므로(`gitFailureReason`) 이 호출만 C 로케일로 부른다 — 번역되면 `fatal:` 접두를 못 찾는다.
+  try { diff = await git(targetDir, ['diff', '--stat', `${resolvedBase}...HEAD`], { ...process.env, LC_ALL: 'C' }); } catch (err) {
+    return { error: `diff 계산 실패: ${gitFailureReason(err)}`, errorKind: 'diff-failed' };
   }
   if (!diff.trim()) return { empty: true, base: resolvedBase, tip };
   return { scope: 'diff', base: resolvedBase, mergeBase: await mergeBaseOf(targetDir, resolvedBase), tip };
+}
+
+// execFile 오류의 첫 줄은 `Command failed: git -C <절대경로> …` 다 — git 의 실패 사유(`fatal: …`)는 stderr 에 있다.
+// 첫 줄을 쓰면 사유가 잘리고 절대경로가 envelope 에 실렸다(followups 22). 마지막 `fatal:`·`error:` 줄을 고른다 — 커밋 없는 HEAD 처럼
+// 사용법 안내가 뒤따르면 마지막 줄은 `'git <command> [<revision>...] -- [<file>...]'` 다. 그런 줄이 없으면(로케일 번역 등) 마지막
+// 비어 있지 않은 줄, stderr 가 비면(spawn 실패 등) 종전 첫 줄로 떨어진다.
+function gitFailureReason(err) {
+  const lines = String(err.stderr ?? '').split('\n').map(l => l.trim()).filter(Boolean);
+  return lines.findLast(l => /^(fatal|error):/.test(l)) ?? lines.at(-1) ?? err.message.split('\n')[0];
 }
 
 // worktree degrade 는 조용히 좁히지 않는다 — review·scope 가 같은 문장으로 알린다.

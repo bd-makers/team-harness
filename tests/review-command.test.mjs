@@ -552,6 +552,28 @@ test('scope error retry: a diff failure asks for a base that shares history with
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+// execFile 오류의 첫 줄은 `Command failed: git -C <절대경로> …` 라 git 의 실패 사유가 잘리고 경로가 실렸다(followups 22).
+// review·scope·pr-check 가 이 cause 를 함께 쓴다. git 메시지 문구는 로케일을 탈 수 있어 rev 범위·부재로 단언한다.
+test('scope error cause: a diff failure carries git\'s reason, not the command line or the absolute path', async () => {
+  const { dir } = await makeGitFixture();
+  try {
+    await git(dir, 'checkout', '-q', '--orphan', 'unrelated');
+    await git(dir, 'commit', '-qm', 'unrelated root');
+    await git(dir, 'checkout', '-q', 'main');
+    const err = await scopeErrorPacket(dir, { scope: 'diff', base: 'unrelated' });
+    assert.match(err.root_cause, /^diff 계산 실패: /);
+    assert.ok(err.root_cause.includes('unrelated...HEAD'), err.root_cause);
+    assert.ok(!err.root_cause.includes('Command failed'), err.root_cause);
+    assert.ok(!err.root_cause.includes(dir), err.root_cause);
+
+    // 커밋 없는 HEAD — git 이 사유 뒤에 사용법 안내 줄을 붙인다. 마지막 줄이 아니라 사유 줄을 싣는다.
+    await git(dir, 'checkout', '-q', '--orphan', 'nocommit');
+    const unborn = await scopeErrorPacket(dir, { scope: 'diff', base: 'main' });
+    assert.ok(unborn.root_cause.includes('main...HEAD'), unborn.root_cause);
+    assert.ok(!unborn.root_cause.includes('<revision>'), unborn.root_cause);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('P3: which() 는 경로 토큰을 PATH 가 아니라 그 파일로 판정한다', async () => {
   const { which } = await import('../src/commands/review.mjs');
   const { dir, fake } = await makeFixture();

@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { mkdtemp, mkdir, writeFile, rm, chmod } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm, chmod } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -316,6 +316,85 @@ test('pr-check --pre-push: push 되는 sha 를 판정하고, 빈 stdin 이면 �
     assert.equal(quiet.exitCode, undefined);
     assert.equal(quiet.out, '');
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 기본 브랜치와 공통 조상이 없는 브랜치(gh-pages 등)는 그 기본 브랜치로 PR 을 열 수 없다 — 기본 브랜치 push 처럼 건너뛴다(followups 23).
+// 전에는 HEAD 로 base 판정을 통과한 뒤 그 sha 의 diff 가 throw 해 스택 트레이스로 죽었다. 같은 push 의 관련 브랜치는 여전히 검사된다.
+test('pr-check --pre-push: 기본 브랜치와 무관한 히스토리의 브랜치는 건너뛰고, 관련 브랜치는 그대로 검사한다', async () => {
+  const dir = await repo();
+  try {
+    await git(dir, 'checkout', '-q', '--orphan', 'gh-pages');
+    await git(dir, 'commit', '-qm', 'pages');
+    const { stdout: pages } = await git(dir, 'rev-parse', 'HEAD');
+    await git(dir, 'checkout', '-q', 'feature');
+    await writeTask(dir, 't', { files: { 'spec.md': 'template' } });
+    await commit(dir);
+    const { stdout: feature } = await git(dir, 'rev-parse', 'HEAD');
+    await git(dir, 'remote', 'add', 'origin', join(dir, 'no-such-remote'));
+    await git(dir, 'update-ref', 'refs/remotes/origin/main', 'main');
+    const zero = '0'.repeat(40);
+    const pagesLine = `refs/heads/gh-pages ${pages.trim()} refs/heads/gh-pages ${zero}\n`;
+
+    const only = await capture(() => runPrCheck({ targetDir: dir, flags: { 'pre-push': true } }, { readStdin: async () => pagesLine }));
+    assert.equal(only.exitCode, undefined);
+    assert.equal(only.out, '');
+
+    const both = pagesLine + `refs/heads/feature ${feature.trim()} refs/heads/feature ${zero}\n`;
+    const mixed = await capture(() => runPrCheck({ targetDir: dir, flags: { 'pre-push': true } }, { readStdin: async () => both }));
+    assert.equal(mixed.exitCode, 1);
+    assert.match(mixed.out, /✗ pr-check feature: u\/t/);
+    assert.ok(!mixed.out.includes('gh-pages'), mixed.out);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// diff-failed cause 는 git stderr 의 `fatal:` 줄을 고르므로, 번역된 로케일이면 접두를 못 찾고 사용법 안내 줄로 떨어진다.
+// 그 diff 와 23 의 merge-base 판정만 LC_ALL=C 로 부른다. 번역 카탈로그 없는 git(macOS Xcode 등)에서는 메시지가 번역되지
+// 않아 재현이 안 되므로, PATH 의 git 래퍼가 받은 LC_ALL 을 기록해 두 호출만 C 를 받는지 단언한다.
+test('pr-check: 지역화 env 에서도 diff·merge-base 호출만 LC_ALL=C 로 불러 cause 가 fatal: 줄을 싣는다', async () => {
+  const dir = await repo();
+  const bin = await mkdtemp(join(tmpdir(), 'harness-prcheck-gitwrap-'));
+  const saved = { PATH: process.env.PATH, LANG: process.env.LANG, LC_ALL: process.env.LC_ALL };
+  try {
+    await git(dir, 'checkout', '-q', '--orphan', 'gh-pages');
+    await git(dir, 'commit', '-qm', 'pages');
+    const { stdout: pages } = await git(dir, 'rev-parse', 'HEAD');
+    await git(dir, 'checkout', '-q', 'feature');
+    await git(dir, 'remote', 'add', 'origin', join(dir, 'no-such-remote'));
+    await git(dir, 'update-ref', 'refs/remotes/origin/main', 'main');
+
+    const { stdout: realGit } = await pexec('sh', ['-c', 'command -v git']);
+    const log = join(bin, 'calls.log');
+    await writeFile(join(bin, 'git'), `#!/bin/sh\nprintf '%s|%s\\n' "\${LC_ALL-}" "$*" >> '${log}'\nexec '${realGit.trim()}' "$@"\n`);
+    await chmod(join(bin, 'git'), 0o755);
+    process.env.PATH = `${bin}:${saved.PATH}`;
+    process.env.LANG = 'ko_KR.UTF-8';
+    process.env.LC_ALL = 'ko_KR.UTF-8';
+
+    const stdin = `refs/heads/gh-pages ${pages.trim()} refs/heads/gh-pages ${'0'.repeat(40)}\n`;
+    const pushed = await capture(() => runPrCheck({ targetDir: dir, flags: { 'pre-push': true } }, { readStdin: async () => stdin }));
+    assert.equal(pushed.exitCode, undefined);
+
+    await git(dir, 'checkout', '-q', '--orphan', 'nocommit');
+    const err = await baseErrorPacket(dir, { base: 'main' });
+    assert.match(err.root_cause, /^diff 계산 실패: fatal: /);
+
+    const calls = (await readFile(log, 'utf8')).trim().split('\n').map(line => {
+      const at = line.indexOf('|');
+      return { lcAll: line.slice(0, at), args: line.slice(at + 1) };
+    });
+    const targeted = calls.filter(c => / (diff --stat|merge-base refs\/remotes\/origin\/main [0-9a-f]{40})/.test(c.args));
+    assert.ok(targeted.some(c => c.args.includes('diff --stat')), JSON.stringify(calls));
+    assert.ok(targeted.some(c => c.args.includes('merge-base')), JSON.stringify(calls));
+    assert.ok(targeted.every(c => c.lcAll === 'C'), JSON.stringify(targeted));
+    // 공용 헬퍼의 다른 호출은 사용자 로케일 그대로다 — 출력을 파싱하는 명령에 영향을 주지 않는다.
+    assert.ok(calls.filter(c => !targeted.includes(c)).every(c => c.lcAll === 'ko_KR.UTF-8'), JSON.stringify(calls));
+  } finally {
+    for (const [key, value] of Object.entries(saved)) {
+      if (value === undefined) delete process.env[key]; else process.env[key] = value;
+    }
+    await rm(dir, { recursive: true, force: true });
+    await rm(bin, { recursive: true, force: true });
+  }
 });
 
 // 실제 git push — 훅이 PATH 의 CLI 를 부르고, 기본 브랜치 push 는 통과, 피처 브랜치는 막히며, --no-verify 로 우회된다.
