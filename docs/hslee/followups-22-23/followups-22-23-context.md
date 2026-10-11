@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: diff-failed cause 에 git stderr 사유(22) · pre-push 가 무관 히스토리 브랜치를 건너뜀(23, 방향 A)
-- Current atomic step: PR 생성 후 리뷰 대기(머지·종결은 사람)
+- Current atomic step: PR #146 리뷰 대기(머지·종결은 사람)
 - Stop / human-decision condition: decisions.md D11 문구 변경이 필요하면 고치지 말고 보고
 
 ## Constraints and settled decisions

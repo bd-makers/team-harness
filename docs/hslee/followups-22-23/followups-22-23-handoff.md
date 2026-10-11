@@ -17,3 +17,8 @@ CHANGELOG.md                                       |  4 +
  tests/pr-check.test.mjs                            | 29 +++++++
  tests/review-command.test.mjs                      | 16 ++++
  13 files changed, 255 insertions(+), 30 deletions(-)
+
+## 2026-10-11T07:23:50.745Z — d3d85a1 docs(task): followups-22-23 PR #146 생성 기록
+docs/hslee/followups-22-23/followups-22-23-context.md | 2 +-
+ docs/hslee/followups-22-23/followups-22-23-plan.md    | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)

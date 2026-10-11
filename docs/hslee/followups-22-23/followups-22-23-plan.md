@@ -10,7 +10,7 @@
 - [x] `pr-check.mjs` pre-push 루프에 `sharesHistory`(merge-base exit 1 만 건너뛰기) → 테스트 ✔
 - [x] README pre-push 건너뛰기 목록 동기화, `docs/followups.md` 22·23번 삭제 + 괄호 기록 + "남은 것: 없음", CHANGELOG `[Unreleased]` Fixed
 - [x] `npm test`·`npm run docs:check` 통과
-- [ ] PR 생성
+- [x] PR 생성(#146) — 리뷰 덱 미실행(스킬 없음)
 - [ ] 머지 (사람)
 
 ## Ontology 변경 로그
