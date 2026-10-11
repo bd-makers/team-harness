@@ -269,23 +269,23 @@ export async function resolveScope({ targetDir, scope, base }) {
   // 사람이 준 `--base` 가 틀린 것만은 degrade 하지 않는다 — 조용히 넘기면 엉뚱한 기준을 기록한다.
   const degrade = reason => ({ scope: 'worktree', base: null, mergeBase: null, tip, degraded: reason });
   if (dirty === null) {
-    if (scope === 'diff') return { error: 'git 저장소가 아니라 diff scope 를 계산할 수 없음' };
+    if (scope === 'diff') return { error: 'git 저장소가 아니라 diff scope 를 계산할 수 없음', errorKind: 'not-git' };
     return degrade('git 저장소가 아님');
   }
   if (scope === 'worktree' || (scope === undefined && dirty)) {
     const resolved = await resolveBase(targetDir, base);
-    if (resolved.error) return base ? { error: resolved.error } : degrade(resolved.error);
+    if (resolved.error) return base ? resolved : degrade(resolved.error);
     const mergeBase = await mergeBaseOf(targetDir, resolved.base);
     if (!mergeBase) return degrade(`${resolved.base} 와 HEAD 의 merge-base 를 계산할 수 없음`);
     return { scope: 'worktree', base: resolved.base, mergeBase, tip };
   }
 
   const resolved = await resolveBase(targetDir, base);
-  if (resolved.error) return { error: resolved.error };
+  if (resolved.error) return resolved;
   const resolvedBase = resolved.base;
   let diff = '';
   try { diff = await git(targetDir, ['diff', '--stat', `${resolvedBase}...HEAD`]); } catch (err) {
-    return { error: `diff 계산 실패: ${err.message.split('\n')[0]}` };
+    return { error: `diff 계산 실패: ${err.message.split('\n')[0]}`, errorKind: 'diff-failed' };
   }
   if (!diff.trim()) return { empty: true, base: resolvedBase, tip };
   return { scope: 'diff', base: resolvedBase, mergeBase: await mergeBaseOf(targetDir, resolvedBase), tip };
@@ -301,7 +301,9 @@ async function mergeBaseOf(targetDir, base) {
   try { return (await git(targetDir, ['merge-base', base, 'HEAD'])).trim() || null; } catch { return null; }
 }
 
-// base 사다리 — diff·worktree 공용(정본: harness-review.md 2단계). `{ base }` 또는 `{ error }`.
+// base 사다리 — diff·worktree 공용(정본: harness-review.md 2단계). `{ base }` 또는 `{ error, errorKind }`.
+// errorKind 는 retry 안내를 고르는 데 쓴다: 사다리가 후보를 못 찾으면 'default-base', 마지막 검증 실패는 사람이 준 `--base`
+// 에서만 닿으므로(사다리 후보는 이미 검증을 통과한 것만 채택한다) 'base-missing' 이다.
 async function resolveBase(targetDir, base) {
   let resolvedBase = base;
   if (!resolvedBase) {
@@ -338,13 +340,14 @@ async function resolveBase(targetDir, base) {
         error: hasOrigin
           ? 'origin 의 기본 브랜치를 판정하지 못함 — `--base <ref>` 로 기준을 직접 주거나 `git remote set-head origin -a` 로 origin/HEAD 를 설정할 것 (로컬 브랜치로 때우면 엉뚱한 diff 를 조용히 리뷰한다)'
           : 'base ref "main" 를 찾을 수 없음',
+        errorKind: 'default-base',
       };
     }
   }
   try {
     await git(targetDir, ['rev-parse', '--verify', '--quiet', resolvedBase]);
   } catch {
-    return { error: `base ref "${resolvedBase}" 를 찾을 수 없음` };
+    return { error: `base ref "${resolvedBase}" 를 찾을 수 없음`, errorKind: 'base-missing' };
   }
   return { base: resolvedBase };
 }
@@ -379,6 +382,18 @@ function stderrTail(stderr, n = 20) {
   const lines = stderr.trimEnd().split('\n').filter(l => l.length);
   return lines.slice(-n);
 }
+
+// scope 오류의 retry 는 원인 종류(`resolveScope` 의 errorKind)로 고른다. 한 문장으로 두었더니 `--scope worktree --base <없는 ref>`
+// 에 이미 준 `--scope worktree` 를 다시 권했다 — worktree 도 사람이 준 base 가 없으면 같은 오류다(followups 19).
+// 모르는 종류는 'default-base' 문장으로 떨어진다.
+const SCOPE_ERROR_RETRY = {
+  'base-missing': '존재하는 `--base <ref>` 를 주고 다시 실행',
+  'default-base': '`--scope worktree` 를 명시하거나 존재하는 `--base <ref>` 를 주고 다시 실행',
+  // git 저장소가 아니면 base 를 줘도 같은 오류다 — worktree 만 base 검사 전에 degrade 한다.
+  'not-git': '`--scope worktree` 를 명시해 다시 실행',
+  // base 는 이미 존재한다. 실패는 merge-base 가 없을 때다(관계없는 히스토리·커밋 없는 HEAD).
+  'diff-failed': 'HEAD 와 공통 조상이 있는 `--base <ref>` 를 주거나(`git merge-base <ref> HEAD` 로 확인) `--scope worktree` 로 다시 실행 — worktree 는 merge-base 를 못 잡으면 미커밋만 본다',
+};
 
 function emitError(json, summary, packet) {
   process.exitCode = 1;
@@ -503,7 +518,7 @@ export async function runReview(ctx, deps = {}) {
   if (scoped.error) {
     return emitError(json, 'scope 를 결정할 수 없음', buildErrorPacket({
       cause: scoped.error,
-      retry: '`--scope worktree` 를 명시하거나 존재하는 `--base <ref>` 를 주고 다시 실행',
+      retry: SCOPE_ERROR_RETRY[scoped.errorKind] ?? SCOPE_ERROR_RETRY['default-base'],
       safeDefault: '엔진을 실행하지 않았고 어느 파일도 바뀌지 않았다',
       stop: 'scope 를 추측해 기록하지 말 것',
     }));

@@ -497,6 +497,60 @@ test('resolveScope: worktree on the base branch has its merge base at HEAD', asy
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+// scope 오류의 retry 는 원인 종류로 갈린다. 예전엔 한 문장이 모든 원인에 나가, `--scope worktree --base <없는 ref>` 에
+// 이미 준 `--scope worktree` 를 다시 권했다 — 따라 해도 같은 오류다(followups 19).
+async function scopeErrorPacket(dir, flags) {
+  const { logs, restore } = captureLogs();
+  try {
+    const { exitCode } = await withExit(() => runReview({ targetDir: dir, flags: { ...flags, json: true }, taskArgs: ['custom'] }));
+    assert.equal(exitCode, 1);
+    return JSON.parse(logs.join('\n')).error;
+  } finally { restore(); }
+}
+
+test('scope error retry: a missing --base is not told to add --scope worktree', async () => {
+  const { dir } = await makeGitFixture();
+  try {
+    for (const scope of ['worktree', 'diff']) {
+      const err = await scopeErrorPacket(dir, { scope, base: 'nope' });
+      assert.match(err.root_cause, /base ref "nope" 를 찾을 수 없음/);
+      assert.equal(err.safe_retry, '존재하는 `--base <ref>` 를 주고 다시 실행', scope);
+    }
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('scope error retry: a failed default-base inference keeps the --scope worktree hint', async () => {
+  const { dir } = await makeGitFixture();
+  try {
+    await git(dir, 'remote', 'add', 'origin', join(dir, 'no-such-remote'));
+    const err = await scopeErrorPacket(dir, { scope: 'diff' });
+    assert.match(err.root_cause, /기본 브랜치를 판정하지 못함/);
+    assert.equal(err.safe_retry, '`--scope worktree` 를 명시하거나 존재하는 `--base <ref>` 를 주고 다시 실행');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('scope error retry: outside a git repo only --scope worktree is suggested', async () => {
+  const { dir } = await makeFixture();
+  try {
+    const err = await scopeErrorPacket(dir, { scope: 'diff', base: 'main' });
+    assert.match(err.root_cause, /git 저장소가 아니라/);
+    assert.equal(err.safe_retry, '`--scope worktree` 를 명시해 다시 실행');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('scope error retry: a diff failure asks for a base that shares history with HEAD', async () => {
+  const { dir } = await makeGitFixture();
+  try {
+    await git(dir, 'checkout', '-q', '--orphan', 'unrelated');
+    await git(dir, 'commit', '-qm', 'unrelated root');
+    await git(dir, 'checkout', '-q', 'main');
+    const err = await scopeErrorPacket(dir, { scope: 'diff', base: 'unrelated' });
+    assert.match(err.root_cause, /diff 계산 실패/);
+    assert.ok(!err.safe_retry.includes('존재하는'), `base 는 이미 존재한다: ${err.safe_retry}`);
+    assert.ok(err.safe_retry.includes('git merge-base <ref> HEAD'), err.safe_retry);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('P3: which() 는 경로 토큰을 PATH 가 아니라 그 파일로 판정한다', async () => {
   const { which } = await import('../src/commands/review.mjs');
   const { dir, fake } = await makeFixture();
