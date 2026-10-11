@@ -9,7 +9,7 @@
 - [x] `cli-args.mjs` wiki 항목에 `all` 플래그·args 도움말
 - [x] 문서: `commands/harness-wiki.md` "언제" 절 + `tests/wiki-command.test.mjs`, README `/harness-wiki` 예시, CHANGELOG `[Unreleased]`, `docs/followups.md` 24번 삭제 + 괄호 기록 + "남은 것" 갱신
 - [x] `npm test`·`npm run docs:check` 통과
-- [ ] PR 생성
+- [x] PR 생성(#148) — 리뷰 덱 미실행(스킬 없음)
 - [ ] 머지 (사람)
 
 ## Ontology 변경 로그

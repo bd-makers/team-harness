@@ -18,3 +18,9 @@ CHANGELOG.md                                       |   3 +
  tests/wiki-command.test.mjs                        |   3 +-
  tests/wiki.test.mjs                                |  93 +++++++++++++
  14 files changed, 411 insertions(+), 43 deletions(-)
+
+## 2026-10-11T12:27:48.838Z — ed4a5f3 docs(task): wiki-sources-all codex 리뷰 기록
+.../hslee/wiki-sources-all/wiki-sources-all-artifact.md | 17 +++++++++++++++++
+ docs/hslee/wiki-sources-all/wiki-sources-all-handoff.md | 17 +++++++++++++++++
+ docs/hslee/wiki-sources-all/wiki-sources-all-meta.json  | 14 +++++++++++++-
+ 3 files changed, 47 insertions(+), 1 deletion(-)

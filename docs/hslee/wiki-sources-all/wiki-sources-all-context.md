@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: `wiki sources --all` 컴파일 후보 목록(followups 24, 방향 B)
-- Current atomic step: PR 생성 후 리뷰 대기
+- Current atomic step: PR #148 리뷰·머지 대기
 - Stop / human-decision condition: 머지는 사람
 
 ## Constraints and settled decisions
