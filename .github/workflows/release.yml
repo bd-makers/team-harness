@@ -23,12 +23,12 @@ jobs:
 
       # Matches the tested runtime and `engines.node` — publishing must not run
       # on a version the suite never exercises (this was node 20, which is EOL).
-      # Kept as a floating major for the same reason as test.yml: it tracks the
-      # latest 24.x, so it picks up 24.20.0 (the node:test deserialization fix)
-      # and later security patches without a manual bump.
+      # `24` follows the latest 24.x only because of `check-latest: true` — see
+      # the matrix comment in test.yml for why.
       - uses: actions/setup-node@v5
         with:
           node-version: 24
+          check-latest: true
 
       # A tag on a commit whose manifests were never bumped would publish a
       # release that does not match what the plugin reports as its version.
@@ -50,7 +50,9 @@ jobs:
           git config --global init.defaultBranch main
 
       - name: Run tests
-        run: npm test
+        run: |
+          printf '::notice::runtime %s\n' "$(node -v)"
+          npm test
 
       - name: Extract release notes
         run: node scripts/changelog-section.mjs "${GITHUB_REF_NAME#v}" > release-notes.md
