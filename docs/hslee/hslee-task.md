@@ -6,6 +6,7 @@
 - ✅ followups-22-23
 - ✅ review-retry-hint
 - ✅ scope-error-hints
+- ✅ wiki-sources-all
 - ✅ review-scope-committed
 - ✅ review-scope-handoff
 - ✅ wiki-commit-provenance
