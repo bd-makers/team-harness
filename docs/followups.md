@@ -7,7 +7,22 @@
 
 ## 우선순위
 
-**남은 것: 없음.** 13–16번은 2026-10-06에 닫았다(아래 괄호 기록). 새 후보가 생기면 이 절에 번호를 이어 붙인다(19번부터).
+**남은 것: 19번.** 13–16번은 2026-10-06에 닫았다(아래 괄호 기록). 새 후보가 생기면 이 절에 번호를 이어 붙인다(20번부터).
+
+19. **`review` 의 scope 오류 `retry:` 문구가 이미 준 `--scope worktree` 를 다시 권한다(경미).** `harness-team review <engine> --scope worktree --base <없는 ref>`
+    는 exit 1 로 멈추는데(엔진 미실행·파일 무변경, 정상), 오류 envelope 의 `retry:` 가 "`--scope worktree` 를 명시하거나 존재하는 `--base <ref>` 를 주고 다시 실행"이다.
+    worktree 를 이미 명시한 호출이라 앞 절반은 상황과 어긋나고, 따라 해도 같은 오류가 난다. 실측 출처: 2026-10-11 mergeBase 실사용 검증의 대조군
+    (task `review-scope-committed` artifact `### 실사용 검증` 절).
+    소스: 문구는 `src/commands/review.mjs:506` 한 줄이고, `resolveScope` 가 `{ error }` 를 돌려준 모든 경우에 `:503`(`if (scoped.error)`)에서 나온다.
+    base 와 관련된 `{ error }` 는 세 경로에서 온다(그 밖에 diff scope 의 `:272` git 저장소 아님·`:288` diff 계산 실패도 같은 문구를 받는다) — (1) diff scope(명시 또는 clean 트리 추론)에서 기본 base 를 판정 못함(`:284`, 원인 문자열은 `resolveBase` `:340`·`:347`)
+    → 이때는 "`--scope worktree`" 가 맞는 안내다(worktree 는 base 를 못 찾으면 degrade 한다). (2) diff scope + 없는 `--base` → 틀린 안내(worktree 로 가도 `:277` 에서 같은 오류).
+    (3) worktree(명시 또는 dirty 트리 추론) + 없는 `--base` → 관측된 경우, 틀린 안내. worktree 경로는 `--base` 를 준 경우에만 error 다(`:277`, 없으면 degrade).
+    고칠 방향 후보: (A) 명시 `--scope` 여부(`flags.scope === 'worktree'`)로 retry 문구를 분기한다 — 관측 경우는 고치지만 dirty 트리 추론(3)·(2)는 남는다.
+    (B) `--base` 를 줬고 원인이 base ref 미존재(`:277`·`:284` 경로)일 때만 "존재하는 `--base <ref>`" 로 안내하고 `--scope worktree` 를 권하지 않는다 — (2)(3)을 함께 덮는다.
+    `flags.base !== undefined` 만으로 분기하면 안 된다: `:272`(git 저장소 아님)는 `--base` 를 줘도 맞는 재시도가 `--scope worktree` 이고(worktree 는 `:273` 에서
+    base 검사 전에 degrade 한다), `:288`(diff 계산 실패)는 base 가 이미 존재해 "존재하는 `--base`" 안내가 맞지 않는다. 그래서 (B) 는 원인 종류로 retry 를 고르는
+    분기가 필요하다(예: `resolveScope` 가 error 와 함께 원인 종류를 돌려준다). 선행 조건: 이 문구를 고정하는 테스트가 없다(`tests/` 에 "명시하거나" 0건) — spec 세션이 회귀 테스트를 추가한다.
+    같은 계열: standalone `scope` 명령의 retry(`src/commands/scope.mjs:45`)도 `--scope worktree` 를 권한다 — 같은 어긋남이 있는지는 spec 세션이 확인한다(미검증).
 
 (17번은 2026-10-11 task `review-scope-committed`로 올려 여기서 지웠다 — worktree scope 의 의미를 merge-base 이후 커밋 + 미커밋으로 넓힌다.)
 (18번 — 리뷰 기록(artifact·meta)이 커밋 없는 다음 리뷰의 scope를 worktree로 바꾸던 것 — 은 2026-10-10 사람 결정으로 task `review-scope-handoff`에

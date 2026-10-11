@@ -49,6 +49,43 @@ $ node --check src/commands/summary.mjs  → exit 0
 
 **미검증:** 실제 codex·claude 리뷰어가 넓어진 fill 문구를 받아 `git diff <mergeBase>`를 실제로 실행하는지는 엔진 행동이라 테스트하지 않았다(프롬프트 문자열까지만 assert).
 
+### 실사용 검증 (2026-10-11, 0.49.2)
+
+**결론: 위 미검증 항목 해소 — 두 엔진 모두 `git diff <mergeBase sha>` 를 실행했고 bare `git diff` 는 실행하지 않았다.**
+근거는 일회성 워크트리(AO worker -25)에서 돌린 실측이다. 그 워크트리와 결함 커밋은 삭제됐고 판정표 원본은
+`~/.ao/data/artifacts/harness-aijient-team-plugin-25/mergebase-probe-verification.md` 에 있다.
+
+**셋업.** HEAD = `refs/remotes/origin/main` = `7380ebf` 위에 세 종류의 변경을 심었다:
+커밋 전용 결함(`b756a1d`, `src/lib/probe-sum.mjs` 의 `i <= arr.length` off-by-one) + 미커밋 README 끝줄 1개 +
+미추적 task 폴더 `docs/hslee/mergebase-probe/`. `harness-team scope --json` →
+`scope: worktree · base: refs/remotes/origin/main · mergeBase: 7380ebf3… · tip: b756a1d…`.
+두 엔진이 받은 fill 은 `Scope: working tree changes since 7380ebf…, the merge base with refs/remotes/origin/main — committed and uncommitted, including untracked files (git diff 7380ebf…; git status).` 로 같았다.
+
+| 기준 | codex (exit 0, 714 B) | claude (exit 0, 3741 B) |
+|---|---|---|
+| (a) 기록에 scope·base·mergeBase | ✅ | ✅ |
+| (b) `git diff <mergeBase sha>` 실행 | ✅ | ✅ |
+| (c) 커밋 전용 off-by-one 지적 | ✅ P2 | ✅ P1 (독립 데이터 아님 — 한계 1) |
+| (d) 미커밋 README 언급 | △ diff 출력에 있었으나 이름으로 언급 안 함 | ✅ P2 |
+
+- (a) 근거: artifact Reviews 블록과 `meta.reviews[]` 두 항목 모두 `base: refs/remotes/origin/main` · `mergeBase: 7380ebf381a08e5cdc43f1aa204457455dfa7061`.
+- (b) 근거(하네스는 stdout 만 보관하므로 엔진 자체 세션 로그): codex
+  `~/.codex/sessions/2026/10/11/rollout-2026-10-11T13-28-01-01a12937-be87-79e3-8612-d052117825fb.jsonl` 의 call 2 가
+  `git diff 7380ebf381a08e5cdc43f1aa204457455dfa7061`, claude
+  `~/.claude/projects/-Users-hsonpro--ao-data-worktrees-harness-aijient-team-plugin-harness-aijient-team-plugin-25/d35a898e-4e77-4dc4-b9b1-675e6bb07b6c.jsonl`
+  의 두 번째 Bash 가 같은 명령이다. 두 출력 모두 README 변경과 결함 라인을 담았다.
+- (d) codex 의 미언급은 정보 부족이 아니다 — 같은 diff 출력에 README 가 있었다. "결함 보고" 요구에 무해한 문구를 묶은 엔진 판단 차이로 본다(추론), fill 문제 아님.
+
+**대조군.** `harness-team review claude --scope worktree --base no-such-ref-xyz` → exit 1,
+`cause: base ref "no-such-ref-xyz" 를 찾을 수 없음`, 엔진 미실행·파일 무변경, `meta.reviews` 2건 그대로.
+이 오류의 `retry:` 문구가 이미 `--scope worktree` 를 준 호출에도 "`--scope worktree` 를 명시하거나 …" 로 안내한 것은
+`docs/followups.md` 19번으로 넘겼다.
+
+**한계.**
+1. claude (c) 는 독립 데이터가 아니다 — claude 는 codex 다음에 돌았고 diff 와 같은 호출에서 artifact 를 읽어 codex 리뷰 블록(같은 결함 지적)을 봤다. 출력도 그 사실을 밝힌다. (b) 는 영향 없다. 독립 확인이 필요하면 claude 를 먼저(또는 단독으로) 돌려야 한다.
+2. 1회 실행 · 결함 1건 · 작은 diff 다. diff 가 크거나 결함이 미묘할 때의 재현성은 보장하지 않는다.
+3. 결함 커밋은 `git commit --no-verify` 로 만든 일회성 로컬 커밋이다(pre-commit docs:check 가 `src/` 새 파일 때문에 overview 재생성을 요구했고, 재생성분이 리뷰 diff 에 잡음을 넣기 때문). push 하지 않았다.
+
 ### 남은 리스크 · 후속
 
 - **리뷰 대상이 넓어진다.** dirty 트리에서 `--scope` 없이 돌린 리뷰가 이제 브랜치 전체를 본다 — 오래 산 브랜치는 리뷰어 토큰·시간이 diff scope 만큼 든다.
