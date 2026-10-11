@@ -16,3 +16,8 @@ CHANGELOG.md                                       |   1 +
  tests/pr-check.test.mjs                            |  70 +++++++++++-
  tests/scope-command.test.mjs                       |  42 ++++++++
  12 files changed, 371 insertions(+), 24 deletions(-)
+
+## 2026-10-11T06:31:17.789Z — ddfdaca docs(task): scope-error-hints TCC 필수 절 복원 + handoff
+docs/hslee/scope-error-hints/scope-error-hints-context.md |  3 +++
+ docs/hslee/scope-error-hints/scope-error-hints-handoff.md | 15 +++++++++++++++
+ 2 files changed, 18 insertions(+)

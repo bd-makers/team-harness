@@ -10,7 +10,7 @@
 - [x] `pr-check.mjs` `emitBaseError` retry 를 `errorKind` 로 고른다(pre-push 는 `default-base`·`diff-failed` 만 덮음) → 테스트 ✔
 - [x] `docs/followups.md` 20·21번 삭제 + 괄호 기록 + "남은 것" 갱신, CHANGELOG `[Unreleased]` Fixed
 - [x] `npm test`·`npm run docs:check` 통과
-- [ ] PR 생성
+- [x] PR 생성(#144) — 리뷰 덱 미실행(스킬 없음)
 - [ ] 머지 (사람)
 
 ## Ontology 변경 로그

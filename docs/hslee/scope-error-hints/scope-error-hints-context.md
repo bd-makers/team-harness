@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: scope alternatives·pr-check base retry 를 `errorKind` 로 고른다(followups 20·21).
-- Current atomic step: PR 생성 → AO review 대기(오케스트레이터가 띄운다).
+- Current atomic step: PR #144 열림 → AO review 대기(오케스트레이터가 띄운다).
 - Stop / human-decision condition: 종류별 문구가 기존 계약을 깨야 하면 ao report 로 멈춤. 머지·done 은 사람.
 
 ## Constraints and settled decisions
