@@ -29,7 +29,7 @@ const SCOPE_ERROR_RETRY = {
   'diff-failed': 'HEAD 와 공통 조상이 있는 `--base <ref>` 를 주거나(`git merge-base <ref> HEAD` 로 확인) `--scope worktree` 로 다시 실행 — worktree 는 merge-base 를 못 잡으면 미커밋만 본다',
 };
 
-const EMPTY_SUMMARY ='base 대비 diff 가 비어 있습니다 — 리뷰하거나 ship 할 변경이 없습니다';
+const EMPTY_SUMMARY = 'base 대비 diff 가 비어 있습니다 — 리뷰하거나 ship 할 변경이 없습니다';
 
 export async function runScope(ctx) {
   const json = !!(ctx.flags && ctx.flags.json);

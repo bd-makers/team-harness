@@ -31,3 +31,10 @@ docs/hslee/review-retry-hint/review-retry-hint-context.md | 2 +-
  docs/hslee/review-retry-hint/review-retry-hint-handoff.md | 9 +++++++++
  docs/hslee/review-retry-hint/review-retry-hint-plan.md    | 2 +-
  3 files changed, 11 insertions(+), 2 deletions(-)
+
+## 2026-10-11T06:00:49.848Z — 662d573 test(review): diff-failed retry 의 worktree 범위 축소 문구도 고정 (AO review 제안)
+docs/hslee/review-retry-hint/review-retry-hint-artifact.md | 5 +++++
+ docs/hslee/review-retry-hint/review-retry-hint-handoff.md  | 6 ++++++
+ tests/review-command.test.mjs                              | 1 +
+ tests/scope-command.test.mjs                               | 1 +
+ 4 files changed, 13 insertions(+)
