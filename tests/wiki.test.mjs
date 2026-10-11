@@ -236,6 +236,99 @@ test('wiki sources: a task that is not done is blocked', async () => {
   }
 });
 
+// 실패 exit 를 기대하는 CLI 호출 — pexec 는 non-zero exit 에서 reject 하므로 오류 객체의 code·stdout 을 돌려준다.
+async function cliFail(dir, ...args) {
+  try {
+    await cli(dir, ...args);
+  } catch (err) {
+    return err;
+  }
+  assert.fail(`exit 0 이면 안 된다: ${args.join(' ')}`);
+}
+
+// 기본 브랜치에서 소급 컴파일 후보를 찾는 자리(followups 24, 방향 B). 행 상태는 스킬 절차 순서(막힘 → 이미 컴파일됨)를 따른다.
+test('wiki sources --all: lists every task as compilable, compiled or blocked', async () => {
+  const { dir } = await repoWithLandedTask({ subject: 'merge: x (#12)' });
+  try {
+    for (const [task, status] of [['y', 'open'], ['z', 'done']]) {
+      const taskDir = join(dir, 'docs', 'chad', task);
+      await mkdir(taskDir, { recursive: true });
+      await writeFile(join(taskDir, `${task}-spec.md`), `# ${task} — Spec\n`);
+      await writeFile(join(taskDir, `${task}-meta.json`), JSON.stringify({ user: 'chad', task, status }, null, 2) + '\n');
+    }
+    await mkdir(join(dir, 'wiki', '99_inbox'), { recursive: true });
+    await writeFile(join(dir, 'wiki', '99_inbox', 'z.md'), '<!-- harness:wiki task=chad/z commit=abc1234 author=chad at=2026-10-01 -->\n# z\n');
+    await git(dir, 'add', '-A');
+    await git(dir, 'commit', '-qm', 'y·z');
+
+    const out = JSON.parse((await cli(dir, 'wiki', 'sources', '--all', '--json')).stdout);
+    assert.equal(out.status, 'success');
+    assert.equal(out.error, null);
+    assert.equal(out.summary, '3개 task — 컴파일 가능 1 · 이미 컴파일됨 1 · 막힘 1');
+    assert.deepEqual(out.tasks, [
+      { task: 'chad/x', task_status: 'done', state: 'compilable', compiled: [], blockers: [] },
+      { task: 'chad/y', task_status: 'open', state: 'blocked', compiled: [], blockers: ['not-done'] },
+      { task: 'chad/z', task_status: 'done', state: 'compiled', compiled: ['wiki/99_inbox/z.md'], blockers: [] },
+    ]);
+
+    const { stdout } = await cli(dir, 'wiki', 'sources', '--all');
+    assert.deepEqual(stdout.trimEnd().split('\n'), [
+      'wiki sources --all: 3개 task — 컴파일 가능 1 · 이미 컴파일됨 1 · 막힘 1',
+      '  chad/x  컴파일 가능',
+      '  chad/y  막힘: not-done',
+      '  chad/z  이미 컴파일됨: wiki/99_inbox/z.md',
+    ]);
+    assert.equal(await git(dir, 'status', '--porcelain', '--untracked-files=all'), '', 'wiki sources --all 은 아무 파일도 쓰지 않는다');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('wiki sources --all: no tasks is an empty list with exit 0, and it refuses a target or --pr', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-wiki-empty-'));
+  try {
+    const empty = { status: 'success', summary: 'task 없음', tasks: [] };
+    const pick = out => ({ status: out.status, summary: out.summary, tasks: out.tasks });
+    // docs/ 가 없을 때와, 있지만 task 가 0건일 때 — 둘 다 "후보 없음" 이지 오류가 아니다.
+    assert.deepEqual(pick(JSON.parse((await cli(dir, 'wiki', 'sources', '--all', '--json')).stdout)), empty);
+    await mkdir(join(dir, 'docs', 'chad'), { recursive: true });
+    assert.deepEqual(pick(JSON.parse((await cli(dir, 'wiki', 'sources', '--all', '--json')).stdout)), empty);
+    assert.equal((await cli(dir, 'wiki', 'sources', '--all')).stdout, 'wiki sources --all: task 없음\n');
+
+    for (const extra of [['chad/x'], ['--pr', '3']]) {
+      const err = await cliFail(dir, 'wiki', 'sources', '--all', ...extra, '--json');
+      assert.equal(err.code, 2, extra.join(' '));
+      assert.equal(JSON.parse(err.stdout).status, 'error', extra.join(' '));
+    }
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+// 인수 없는 계약은 그대로다(활성 task, 없으면 exit 1). retry 는 대상 지정만 권한다 — `task <name>` 활성화는 done task 를 reopen 한다.
+test('wiki sources: without a target and without an active task it fails and points to --all', async () => {
+  const { dir } = await repoWithLandedTask({ subject: 'merge: x (#12)' });
+  try {
+    const retry = '`harness-team wiki sources <user>/<task>` 로 대상을 지정';
+    const alternative = '`harness-team wiki sources --all` 로 후보를 찾는다 — task 마다 컴파일 가능·이미 컴파일됨·막힘';
+    const text = await cliFail(dir, 'wiki', 'sources');
+    assert.equal(text.code, 1);
+    assert.match(text.stdout, /^✗ wiki: 활성 task 없음$/m);
+    assert.ok(text.stdout.includes(`retry: ${retry}\n`), text.stdout);
+    assert.ok(text.stdout.includes(`alternatives: ${alternative}\n`), text.stdout);
+
+    const json = await cliFail(dir, 'wiki', 'sources', '--json');
+    assert.equal(json.code, 1);
+    const out = JSON.parse(json.stdout);
+    assert.equal(out.status, 'error');
+    assert.equal(out.error.safe_retry, retry);
+    assert.deepEqual(out.error.alternatives, [alternative]);
+    assert.equal(await git(dir, 'status', '--porcelain', '--untracked-files=all'), '');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('wiki sources: reports where the task is already compiled, ignoring fenced examples', async () => {
   const { dir } = await repoWithLandedTask({ subject: 'merge: x (#12)' });
   try {

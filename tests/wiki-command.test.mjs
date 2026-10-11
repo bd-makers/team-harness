@@ -46,7 +46,8 @@ test('wiki command: the compile contract stops on blockers and compiled, and nev
 
   assert.equal(squash(section(doc, '언제')), squash(`머지 후 종결 절차(\`commands/harness-task.md\` "머지 후 종결") 안에서 돈다 — 기본 브랜치에서 \`harness-team task <name>\` →
 \`harness-team done\` → **\`/harness-wiki <user>/<task>\`(선택)** → \`harness-team summary --write\` → 종결 커밋 하나.
-\`done\`이 끝나야 meta가 \`status: done\`이 되어 "머지된 task"가 확정된다. \`done\`은 활성 task를 비우므로 이때는 대상을 \`<user>/<task>\`로 명시한다.`));
+\`done\`이 끝나야 meta가 \`status: done\`이 되어 "머지된 task"가 확정된다. \`done\`은 활성 task를 비우므로 이때는 대상을 \`<user>/<task>\`로 명시한다.
+이미 done 된 task를 소급 컴파일할 때 대상을 모르면 \`harness-team wiki sources --all\`로 후보를 본다 — task마다 컴파일 가능·이미 컴파일됨·막힘을 보이며(읽기 전용), 고른 task를 \`<user>/<task>\`로 명시한다.`));
 
   const steps = section(doc, '절차');
   assert.equal(item(steps, 1), '1. **기본 브랜치 확인** — 현재 브랜치가 기본 브랜치가 아니면 멈추고 묻는다. 위키 본문까지 PR 리뷰를 받으려고 PR 브랜치에서 돌리는 것은 사람이 명시적으로 지시한 경우뿐이다.');

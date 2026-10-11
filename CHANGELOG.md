@@ -9,6 +9,9 @@
 
 ## [Unreleased]
 
+### Added
+- **`harness-team wiki sources --all` — 소급 위키 컴파일 후보 목록** (task `wiki-sources-all`). 기본 브랜치에는 활성 task가 없어 인수 없는 `wiki sources`가 "활성 task 없음"으로 끝났고, `list`는 done·컴파일 여부를 보이지 않아 이미 done 된 task를 소급 컴파일하려면 하나씩 지정해야 했다. `--all`은 task 전체를 라벨순으로 훑어 task마다 컴파일 가능·이미 컴파일됨(파일)·막힘(사유)을 보인다 — 판정은 단일 task 조회와 같은 함수다. 목록은 exit 0(대상 0건도), `--json`은 `tasks` 배열에 `{ task, task_status, state, compiled, blockers }`를 담는다. 읽기 전용이며 대상·`--pr`과 함께 쓰면 usage 오류다. 인수 없는 형태는 종전대로 활성 task이고 없으면 exit 1이다 — 그 오류의 `retry:`는 이제 대상 지정만 권하고(`task <name>` 활성화는 done task를 다시 열었다) `alternatives:`에 `--all`을 싣는다.
+
 ## [0.49.4] - 2026-10-11
 
 ### Fixed
