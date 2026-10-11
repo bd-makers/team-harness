@@ -23,11 +23,8 @@ jobs:
 
       # Matches the tested runtime and `engines.node` — publishing must not run
       # on a version the suite never exercises (this was node 20, which is EOL).
-      # `24` is a floating major, but it only tracks the latest 24.x (24.20.0 has
-      # the node:test deserialization fix) because of `check-latest: true`:
-      # without it setup-node takes the runner image's cached patch release and
-      # never reads the manifest — measured 2026-08-28, see the matrix comment
-      # in test.yml.
+      # `24` follows the latest 24.x only because of `check-latest: true` — see
+      # the matrix comment in test.yml for why.
       - uses: actions/setup-node@v5
         with:
           node-version: 24
