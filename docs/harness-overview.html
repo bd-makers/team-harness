@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.49.2</span>
+      <span class="tag tag-purple">v0.49.3</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,11 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.49.3 — scope 오류가 원인에 맞는 다음 행동을 안내한다:</strong>
+    <br>
+    <code>0.49.3</code> <strong><code>review</code>·<code>scope</code>·<code>pr-check</code>의 base·scope 오류 안내(<code>retry:</code>, <code>scope</code>는 <code>alternatives:</code>도)를 원인 종류로 고른다</strong> — 없는 <code>--base</code>·기본 base 판정 실패·git 저장소 아님·diff 계산 실패(merge-base 없음).
+    이전에는 원인과 무관한 한 문장이라 <code>--scope worktree --base &lt;없는 ref&gt;</code>에 <code>--scope worktree</code>를, 없는 <code>--base</code>·merge-base 없음에도 <code>git remote set-head origin -a</code>를 권했다. set-head·원격 설정 확인은 기본 base 판정 실패에만 남는다. 원인 문자열·exit code·차단 여부·envelope 형태는 그대로다. <code>templates/</code>는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 된다.
+    <br><br>
     <strong>🆕 0.49.2 — worktree 리뷰가 이미 커밋한 구현까지 본다:</strong>
     <br>
     <code>0.49.2</code> <strong><code>review</code>의 worktree scope가 base와의 merge-base 대비 작업 트리 전체(이후 커밋 + 미커밋 + untracked)를 리뷰한다</strong> — CLI가 merge-base sha를 계산해 프롬프트에 넣고, <code>meta.reviews[]</code> 항목은 git scope일 때 <code>base</code>·<code>mergeBase</code>를 남긴다(<code>mergeBase</code>..<code>tip</code>이 리뷰 범위의 사후 증명).
@@ -2856,7 +2861,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.49.2 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.49.3 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

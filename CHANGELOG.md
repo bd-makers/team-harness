@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.49.3] - 2026-10-11
+
 ### Fixed
 - **scope 오류의 `retry:` 안내가 원인과 어긋나던 것** (task `review-retry-hint`). `harness-team review`·`harness-team scope`는 scope를 결정하지 못하면 원인과 무관하게 한 문장을 안내해, `--scope worktree --base <없는 ref>`에 이미 준 `--scope worktree`를 다시 권했다(따라 해도 같은 오류). 이제 원인 종류로 고른다 — 없는 `--base`는 존재하는 `--base <ref>`만, git 저장소 아님은 `--scope worktree`만, diff 계산 실패(merge-base 없음)는 HEAD와 공통 조상이 있는 `--base` 또는 `--scope worktree`를 안내하고, 기본 base 판정 실패는 종전 문장 그대로다. 원인 문자열·exit code·envelope 형태는 그대로다.
 - **`scope` 오류의 `alternatives`와 `pr-check` base 오류의 `retry:`가 원인과 어긋나던 것** (task `scope-error-hints`). `harness-team scope`는 모든 오류에 기본 브랜치 설정 확인(`git remote -v`·`symbolic-ref`)을 대안으로 냈고, `harness-team pr-check`는 없는 `--base`·git 저장소 아님·merge-base 없음에도 `git remote set-head origin -a`를 권했다. 이제 둘 다 원인 종류로 고른다 — 원격 설정 확인·set-head는 기본 base 판정 실패에만 남고, `scope`의 나머지 종류는 대안 줄을 내지 않는다. `pr-check`는 없는 `--base`면 존재하는 ref를, git 저장소 아님이면 저장소 안에서(또는 `--target`) 실행을, merge-base 없음이면 HEAD와 공통 조상이 있는 `--base`를 안내한다. pre-push 훅이 무관한 히스토리(gh-pages 같은 orphan 브랜치)를 체크아웃한 채 막히면 공통 조상이 있는 브랜치를 체크아웃한 뒤 다시 push하라고 안내한다. 원인 문자열·exit code·차단 여부·envelope 형태는 그대로다.

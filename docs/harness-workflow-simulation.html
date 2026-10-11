@@ -284,7 +284,7 @@
     <h1>Task Workflow Simulation</h1>
     <p>새로운 harness task 시스템의 전체 흐름 — init부터 완료, 세션 재개, task 전환까지의 시나리오별 시뮬레이션</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.49.2</span>
+      <span class="tag tag-purple">v0.49.3</span>
       <span class="tag tag-blue">post-commit 자동화</span>
       <span class="tag tag-green">증거 기반 종결 가드 7종</span>
       <span class="tag tag-orange">원장은 생성물</span>
@@ -293,7 +293,9 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #a78bfa;background:rgba(167,139,250,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
-    <strong>🆕 0.40.1–0.49.2 — user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키 · 폴더 없는 done task · PR 없는 위키 컴파일 · 리뷰 scope 판정 정정 · worktree 리뷰 범위 확장:</strong>
+    <strong>🆕 0.40.1–0.49.3 — user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키 · 폴더 없는 done task · PR 없는 위키 컴파일 · 리뷰 scope 판정 정정 · worktree 리뷰 범위 확장 · scope 오류 안내 정정:</strong>
+    <br>
+    <code>0.49.3</code> <code>review</code>·<code>scope</code>·<code>pr-check</code>가 base·scope를 판정하지 못했을 때의 <strong>안내 문장</strong>을 원인 종류로 고른다 — 판정 규칙·차단 여부는 그대로라 아래 시나리오의 단계는 그대로다.
     <br>
     <code>0.49.2</code> worktree scope가 <strong>base와의 merge-base 이후 커밋 + 미커밋 + untracked</strong>를 리뷰한다 — 구현을 커밋한 뒤 문서를 손보다 돌린 리뷰도 커밋된 구현을 본다. 아래 S7 ship 시나리오의 scope 단계 설명을 그에 맞췄고 단계는 그대로다.
     <br>
@@ -1187,7 +1189,7 @@ login-bug
 </main>
 
 <footer>
-  harness-aijient-team-plugin v0.49.2 — Task Workflow Simulation &nbsp;·&nbsp; 2026-10-11
+  harness-aijient-team-plugin v0.49.3 — Task Workflow Simulation &nbsp;·&nbsp; 2026-10-11
 </footer>
 
 
