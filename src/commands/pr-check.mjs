@@ -135,12 +135,30 @@ async function readAllStdin() {
   return Buffer.concat(chunks).toString('utf8');
 }
 
-function emitBaseError(json, error, prePush) {
+// base 오류 retry 는 원인 종류(`resolveScope` 의 errorKind)로 고른다. 한 문장일 때는 없는 `--base`·git 저장소 아님·merge-base 없음에도
+// set-head 를 권했다 — set-head 는 기본 base 를 못 찾았을 때만 고친다(followups 21). pr-check 는 diff scope 고정이라 worktree 대안은 없다.
+// 모르는 종류는 'default-base' 문장으로 떨어진다.
+const BASE_ERROR_RETRY = {
+  'base-missing': '존재하는 `--base <ref>` 로 기준을 직접 주고 다시 실행',
+  'default-base': '`--base <ref>` 로 기준을 직접 주거나 `git remote set-head origin -a` 로 origin/HEAD 를 설정',
+  'not-git': 'git 저장소 안에서 실행하거나 `--target <저장소 경로>` 로 저장소를 가리켜 다시 실행',
+  'diff-failed': 'HEAD 와 공통 조상이 있는 `--base <ref>` 를 주고 다시 실행(`git merge-base <ref> HEAD` 로 확인)',
+};
+
+// 훅은 `--base` 없이 부르므로 base 를 주라는 안내는 소용없다 — 훅이 닿는 두 종류만 덮는다. diff-failed 는 gh-pages 같은 orphan 브랜치나
+// 커밋 없는 HEAD 를 체크아웃한 채 push 할 때 온다(base 판정은 push 되는 sha 가 아니라 HEAD 로 한다). 없는 `--base` 는 수동
+// `--pre-push --base` 에서만, git 저장소 아님은 훅이 설치되지 않는 bare 저장소에서만 닿아 위 문장을 그대로 쓴다.
+const PRE_PUSH_BASE_ERROR_RETRY = {
+  ...BASE_ERROR_RETRY,
+  'default-base': '`git remote set-head origin -a` 로 origin/HEAD 를 설정한 뒤 다시 push',
+  'diff-failed': '기본 브랜치와 공통 조상이 있는 브랜치를 체크아웃한 뒤 다시 push — 훅은 체크아웃된 HEAD 로 base 를 판정한다(`git merge-base <기본 브랜치> HEAD` 로 확인)',
+};
+
+function emitBaseError(json, error, errorKind, prePush) {
+  const retries = prePush ? PRE_PUSH_BASE_ERROR_RETRY : BASE_ERROR_RETRY;
   const packet = buildErrorPacket({
     cause: error,
-    retry: prePush
-      ? '`git remote set-head origin -a` 로 origin/HEAD 를 설정한 뒤 다시 push'
-      : '`--base <ref>` 로 기준을 직접 주거나 `git remote set-head origin -a` 로 origin/HEAD 를 설정',
+    retry: retries[errorKind] ?? retries['default-base'],
     alternatives: prePush ? ['검사 없이 push 하려면 `git push --no-verify` (git 표준 우회)'] : [],
     safeDefault: '아무것도 바뀌지 않았다 — 이 명령은 판정만 한다',
     stop: '판정하지 못한 base 로 통과시키지 않는다 — 하네스가 강제하는 유일한 검사다(D11)',
@@ -184,7 +202,7 @@ export async function runPrCheck(ctx, { readStdin = readAllStdin } = {}) {
   const resolved = await resolveScope({ targetDir: ctx.targetDir, scope: 'diff', base: ctx.flags.base });
   if (resolved.error) {
     if (prePush && (await originIsEmpty(ctx.targetDir))) { emitQuietPass(json); return; }
-    emitBaseError(json, resolved.error, prePush);
+    emitBaseError(json, resolved.error, resolved.errorKind, prePush);
     return;
   }
   const base = resolved.base;

@@ -29,6 +29,15 @@ const SCOPE_ERROR_RETRY = {
   'diff-failed': 'HEAD 와 공통 조상이 있는 `--base <ref>` 를 주거나(`git merge-base <ref> HEAD` 로 확인) `--scope worktree` 로 다시 실행 — worktree 는 merge-base 를 못 잡으면 미커밋만 본다',
 };
 
+// alternatives 도 같은 종류로 고른다. 기본 브랜치 설정 확인은 기본 base 를 못 찾았을 때만 맞는다 — 없는 `--base`·git 저장소 아님·
+// merge-base 없음에는 관계가 없어 빈 배열로 둔다(빈 alternatives 는 text 줄을 내지 않는다). 모르는 종류는 'default-base' 로 떨어진다.
+const SCOPE_ERROR_ALTERNATIVES = {
+  'base-missing': [],
+  'default-base': ['`git remote -v` 와 `git symbolic-ref refs/remotes/origin/HEAD` 로 기본 브랜치 설정을 확인'],
+  'not-git': [],
+  'diff-failed': [],
+};
+
 const EMPTY_SUMMARY = 'base 대비 diff 가 비어 있습니다 — 리뷰하거나 ship 할 변경이 없습니다';
 
 export async function runScope(ctx) {
@@ -52,7 +61,7 @@ export async function runScope(ctx) {
     const packet = buildErrorPacket({
       cause: resolved.error,
       retry: SCOPE_ERROR_RETRY[resolved.errorKind] ?? SCOPE_ERROR_RETRY['default-base'],
-      alternatives: ['`git remote -v` 와 `git symbolic-ref refs/remotes/origin/HEAD` 로 기본 브랜치 설정을 확인'],
+      alternatives: SCOPE_ERROR_ALTERNATIVES[resolved.errorKind] ?? SCOPE_ERROR_ALTERNATIVES['default-base'],
       safeDefault: '아무것도 바뀌지 않았다 — 이 명령은 판정만 한다',
       stop: '판정하지 못한 base 로 리뷰를 기록하지 말 것',
     });

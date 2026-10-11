@@ -333,6 +333,48 @@ test('CLI scope error retry: a diff failure asks for a base that shares history 
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+// alternatives 도 원인 종류로 고른다 — 기본 브랜치 설정 확인은 기본 base 를 못 찾았을 때만 맞는다(followups 20).
+const REMOTE_CHECK_ALT = '`git remote -v` 와 `git symbolic-ref refs/remotes/origin/HEAD` 로 기본 브랜치 설정을 확인';
+
+test('CLI scope error alternatives: a missing --base gets no remote-config check', async () => {
+  const dir = await repo('main');
+  try {
+    const err = await scopeErrorPacket(['--scope', 'diff', '--base', 'nope', '--target', dir]);
+    assert.deepEqual(err.alternatives, []);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('CLI scope error alternatives: a failed default-base inference keeps the remote-config check', async () => {
+  const dir = await repo('main');
+  try {
+    await git(dir, 'remote', 'add', 'origin', join(dir, 'no-such-remote'));
+    const err = await scopeErrorPacket(['--scope', 'diff', '--target', dir]);
+    assert.deepEqual(err.alternatives, [REMOTE_CHECK_ALT]);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('CLI scope error alternatives: outside a git repo there is no alternatives line', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-scope-nogit-'));
+  try {
+    const err = await scopeErrorPacket(['--scope', 'diff', '--base', 'main', '--target', dir]);
+    assert.deepEqual(err.alternatives, []);
+    // text 미러는 빈 alternatives 의 줄을 내지 않는다.
+    const { stdout } = await cli(['scope', '--scope', 'diff', '--base', 'main', '--target', dir]);
+    assert.ok(!stdout.includes('alternatives:'), stdout);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('CLI scope error alternatives: a diff failure gets no remote-config check', async () => {
+  const dir = await repo('main');
+  try {
+    await git(dir, 'checkout', '-q', '--orphan', 'unrelated');
+    await git(dir, 'commit', '-qm', 'unrelated root');
+    await git(dir, 'checkout', '-q', 'main');
+    const err = await scopeErrorPacket(['--scope', 'diff', '--base', 'unrelated', '--target', dir]);
+    assert.deepEqual(err.alternatives, []);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 // codex P2: resolveScope 는 모르는 scope 값을 조용히 diff 로 흘린다. review 는 호출 전에 목록
 // 대조로 막지만 scope 커맨드가 빠뜨려, `--scope typo` 가 성공한 diff 판정으로 나왔다.
 test('CLI scope: 알 수 없는 --scope 는 판정을 내지 않고 exit 2 로 거절한다', async () => {

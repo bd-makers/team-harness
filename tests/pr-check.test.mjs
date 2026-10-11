@@ -204,14 +204,82 @@ test('pr-check --json: envelope 에 base 와 task 별 issues 를 싣는다', asy
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+// origin 은 있는데 origin/HEAD·origin/main·origin/master 가 없다 — 훅(`--base` 없음)이 실제로 닿는 `default-base`.
+// 원격 추적 ref 가 하나는 있어야 한다: 비어 있으면 `originIsEmpty` 로 조용히 통과한다.
+async function originWithoutDefault(dir) {
+  await git(dir, 'remote', 'add', 'origin', join(dir, 'no-such-remote'));
+  await git(dir, 'update-ref', 'refs/remotes/origin/develop', 'HEAD');
+}
+
 test('pr-check: base 를 판정하지 못하면 차단(exit 1) — pre-push 는 set-head 와 --no-verify 를 알린다', async () => {
   const dir = await repo();
   try {
+    await originWithoutDefault(dir);
     const stdin = `refs/heads/feature ${'a'.repeat(40)} refs/heads/feature ${'0'.repeat(40)}\n`;
-    const { out, exitCode } = await capture(() => runPrCheck({ targetDir: dir, flags: { base: 'nosuch', 'pre-push': true } }, { readStdin: async () => stdin }));
+    const { out, exitCode } = await capture(() => runPrCheck({ targetDir: dir, flags: { 'pre-push': true } }, { readStdin: async () => stdin }));
     assert.equal(exitCode, 1);
     assert.match(out, /git remote set-head origin -a/);
     assert.match(out, /--no-verify/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// base 오류 retry 는 원인 종류(`resolveScope` 의 errorKind)로 고른다 — set-head 는 기본 base 를 못 찾았을 때만 고친다.
+// pr-check 는 diff scope 고정이라 어느 종류에도 `--scope worktree` 를 권하지 않는다(followups 21).
+async function baseErrorPacket(dir, flags, stdin) {
+  const { out, exitCode } = await capture(() => runPrCheck({ targetDir: dir, flags: { ...flags, json: true } }, { readStdin: async () => stdin }));
+  assert.equal(exitCode, 1);
+  const err = JSON.parse(out).error;
+  assert.ok(!err.safe_retry.includes('worktree'), err.safe_retry);
+  return err;
+}
+
+test('pr-check base error retry: a missing --base asks for an existing ref, not set-head', async () => {
+  const dir = await repo();
+  try {
+    const err = await baseErrorPacket(dir, { base: 'nope' });
+    assert.match(err.root_cause, /base ref "nope" 를 찾을 수 없음/);
+    assert.equal(err.safe_retry, '존재하는 `--base <ref>` 로 기준을 직접 주고 다시 실행');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('pr-check base error retry: a failed default-base inference keeps the set-head hint', async () => {
+  const dir = await repo();
+  try {
+    await originWithoutDefault(dir);
+    const err = await baseErrorPacket(dir, {});
+    assert.match(err.root_cause, /기본 브랜치를 판정하지 못함/);
+    assert.equal(err.safe_retry, '`--base <ref>` 로 기준을 직접 주거나 `git remote set-head origin -a` 로 origin/HEAD 를 설정');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('pr-check base error retry: outside a git repo it points at a repository', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-prcheck-nogit-'));
+  try {
+    const err = await baseErrorPacket(dir, { base: 'main' });
+    assert.match(err.root_cause, /git 저장소가 아니라/);
+    assert.equal(err.safe_retry, 'git 저장소 안에서 실행하거나 `--target <저장소 경로>` 로 저장소를 가리켜 다시 실행');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('pr-check base error retry: a diff failure asks for a base that shares history with HEAD — pre-push asks to check out such a branch', async () => {
+  const dir = await repo();
+  try {
+    await git(dir, 'checkout', '-q', '--orphan', 'unrelated');
+    await git(dir, 'commit', '-qm', 'unrelated root');
+    await git(dir, 'checkout', '-q', 'feature');
+    const err = await baseErrorPacket(dir, { base: 'unrelated' });
+    assert.match(err.root_cause, /diff 계산 실패/);
+    assert.equal(err.safe_retry, 'HEAD 와 공통 조상이 있는 `--base <ref>` 를 주고 다시 실행(`git merge-base <ref> HEAD` 로 확인)');
+
+    // 훅은 `--base` 없이 부른다 — 기본 브랜치와 무관한 HEAD(gh-pages 같은 orphan 브랜치)를 체크아웃한 채 push 하면 여기 닿는다.
+    await git(dir, 'remote', 'add', 'origin', join(dir, 'no-such-remote'));
+    await git(dir, 'update-ref', 'refs/remotes/origin/main', 'main');
+    await git(dir, 'checkout', '-q', 'unrelated');
+    const stdin = `refs/heads/feature ${'a'.repeat(40)} refs/heads/feature ${'0'.repeat(40)}\n`;
+    const pushed = await baseErrorPacket(dir, { 'pre-push': true }, stdin);
+    assert.match(pushed.root_cause, /diff 계산 실패/);
+    assert.equal(pushed.safe_retry, '기본 브랜치와 공통 조상이 있는 브랜치를 체크아웃한 뒤 다시 push — 훅은 체크아웃된 HEAD 로 base 를 판정한다(`git merge-base <기본 브랜치> HEAD` 로 확인)');
+    assert.deepEqual(pushed.alternatives, ['검사 없이 push 하려면 `git push --no-verify` (git 표준 우회)']);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
