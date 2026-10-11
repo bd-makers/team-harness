@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Harness Aijient Team 0.49.4 — 무엇이 왜 달라졌나</title>
+  <title>Harness Aijient Team 0.50.0 — 무엇이 왜 달라졌나</title>
   <style>
     :root {
       --bg: #0f1117;
@@ -217,11 +217,11 @@
 </head>
 <body>
   <nav aria-label="문서 섹션">
-    <div class="nav-logo">Harness 0.49.4</div>
+    <div class="nav-logo">Harness 0.50.0</div>
     <div class="nav-links">
-      <a href="#why">왜 patch인가</a>
-      <a href="#cause">diff 실패 사유</a>
-      <a href="#prepush">pre-push 건너뛰기</a>
+      <a href="#why">왜 minor인가</a>
+      <a href="#all">wiki sources --all</a>
+      <a href="#retry">활성 task 없음 안내</a>
       <a href="#same">바뀌지 않은 것</a>
       <a href="#compat">소비자가 할 일</a>
     </div>
@@ -229,88 +229,87 @@
 
   <main>
     <header class="hero">
-      <div class="eyebrow">Release note · 2026-10-11 · patch</div>
-      <h1>diff 실패가 <strong>git의 사유</strong>를 싣고,<br><strong>pre-push가 PR을 열 수 없는 브랜치를 건너뜁니다</strong></h1>
-      <p>0.49.3 릴리스 노트는 알려진 한계 두 가지를 남겼습니다 — <code>diff-failed</code>의 원인 문장이 git의 실패 사유 대신 실행한 명령줄을 싣는다는 것,
-      그리고 pre-push 훅이 기본 브랜치와 무관한 히스토리의 브랜치를 push하면 오류 패킷 없이 스택 트레이스로 막힌다는 것. 0.49.4는 그 둘을 닫습니다.
-      후자에 쓰던 <code>git push --no-verify</code> 우회는 더 필요하지 않습니다.</p>
+      <div class="eyebrow">Release note · 2026-10-12 · minor</div>
+      <h1>이미 done 된 task 중<br><strong>무엇을 소급 컴파일할지 한 번에 봅니다</strong></h1>
+      <p>위키 컴파일(<code>/harness-wiki</code>)은 머지 후 종결에서 <code>done</code> 다음에 도는 선택 단계라, 건너뛴 task가 쌓입니다. 그런데 그것들을 나중에 찾을 길이 없었습니다 —
+      기본 브랜치에는 활성 task가 없어 인수 없는 <code>wiki sources</code>는 "활성 task 없음"으로 끝났고, <code>list</code>는 done·컴파일 여부를 보이지 않아 task를 하나씩 지정해 봐야 했습니다.
+      0.50.0은 <code>harness-team wiki sources --all</code>을 더해 task 전체를 한 번에 훑고, task마다 <strong>컴파일 가능·이미 컴파일됨·막힘</strong>을 보입니다.</p>
       <div class="tags">
-        <span class="tag tag-purple">0.49.3 → 0.49.4</span>
-        <span class="tag tag-orange">patch — 오류 원인·pre-push 수정</span>
-        <span class="tag tag-blue">PR #146</span>
+        <span class="tag tag-purple">0.49.4 → 0.50.0</span>
+        <span class="tag tag-orange">minor — 읽기 전용 플래그 하나 추가</span>
+        <span class="tag tag-blue">PR #148</span>
         <span class="tag tag-green">소비자 조치 — 플러그인 갱신</span>
       </div>
     </header>
 
     <dl class="release-brief" aria-label="릴리스 요약">
-      <div><dt>버전</dt><dd>0.49.4</dd></div>
-      <div><dt>날짜</dt><dd>2026-10-11</dd></div>
-      <div><dt>기준</dt><dd><code>v0.49.3..main</code> — #146(<code>68d6300</code>, 종결 <code>5a5ac53</code>). task <code>followups-22-23</code>(후속 후보 22·23번).</dd></div>
+      <div><dt>버전</dt><dd>0.50.0</dd></div>
+      <div><dt>날짜</dt><dd>2026-10-12</dd></div>
+      <div><dt>기준</dt><dd><code>v0.49.4..main</code> — #148(<code>b65e71d</code>, 종결 <code>b9a2b5d</code>). task <code>wiki-sources-all</code>(후속 후보 24번, #147로 등록). #149는 CI 전용이라 아래 "바뀌지 않은 것"에만 적습니다.</dd></div>
     </dl>
 
     <section id="why">
-      <h2 class="section-title">왜 patch인가 — 원인을 못 읽고, push가 죽었다</h2>
-      <p class="section-sub">명령·플래그·D11 게이트의 판정 대상(PR로 갈 브랜치)은 그대로입니다. 바뀐 것은 실패 원인 문장의 출처와, PR을 열 수 없는 브랜치를 pre-push가 검사 대상에서 빼는 것입니다. 둘 다 잘못 동작하던 CLI를 고친 것이라 patch입니다.</p>
+      <h2 class="section-title">왜 minor인가 — CLI 표면에 플래그가 하나 늘었다</h2>
+      <p class="section-sub"><code>wiki sources</code>에 <code>--all</code>이라는 새 입력과 새 출력 형태(<code>tasks</code> 배열)가 생겼습니다. 기존 형태(<code>wiki sources [&lt;user&gt;/&lt;task&gt;] [--pr &lt;N&gt;]</code>)의 동작·출력은 그대로이고, 제거된 명령·플래그는 없습니다. 기능 추가라 minor입니다.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>표면</th><th>경로</th><th>도달 경로</th><th>소비자 영향</th></tr></thead>
           <tbody>
-            <tr><td>CLI 출력</td><td><code>src/commands/review.mjs</code> <code>resolveScope</code>·<code>gitFailureReason</code></td><td>플러그인 갱신</td><td><code>review</code>·<code>scope</code>·<code>pr-check</code>의 <code>diff 계산 실패:</code> 원인 문장</td></tr>
-            <tr><td>CLI 판정</td><td><code>src/commands/pr-check.mjs</code> <code>sharesHistory</code></td><td>플러그인 갱신(pre-push 훅은 PATH CLI)</td><td>pre-push가 기본 브랜치와 무관한 브랜치의 push를 건너뜀</td></tr>
-            <tr><td>문서</td><td><code>README.md</code> pre-push 훅 절</td><td>읽기 전용</td><td>건너뛰는 push 목록에 "기본 브랜치와 공통 조상이 없는 브랜치" 추가 — 조치 없음</td></tr>
+            <tr><td>CLI 동작</td><td><code>src/commands/wiki.mjs</code> <code>wikiSourcesAll</code> · <code>src/cli-args.mjs</code></td><td>플러그인 갱신(전역 CLI)</td><td><code>wiki sources --all</code> 추가 · 인수 없는 형태의 "활성 task 없음" 안내 정정</td></tr>
+            <tr><td>슬래시 명령</td><td><code>commands/harness-wiki.md</code></td><td>플러그인 갱신</td><td>소급 컴파일 대상을 모르면 <code>--all</code>로 후보를 보라는 한 줄</td></tr>
+            <tr><td>문서</td><td><code>README.md</code> 위키 절 · <code>docs/followups.md</code> 24번</td><td>읽기 전용</td><td>명령 예시 한 줄 추가 · 24번 등록(#147)과 정리 — 조치 없음</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <section id="cause">
-      <h2 class="section-title">diff 실패 원인 — 명령줄 대신 git의 사유</h2>
-      <p class="section-sub">세 명령이 같은 판정(<code>resolveScope</code>)의 원인 문장을 씁니다. 그래서 한 곳을 고쳐 셋이 함께 바뀝니다.</p>
+    <section id="all">
+      <h2 class="section-title"><code>wiki sources --all</code> — 소급 컴파일 후보 목록</h2>
+      <p class="section-sub">task 전체(<code>list</code>와 같은 집합 — spec이 있는 task)를 라벨순으로 훑습니다. 판정은 단일 task 조회와 <strong>같은 함수</strong>(<code>wikiSources</code>)라 목록과 개별 조회가 갈라지지 않습니다.</p>
       <div class="change-grid">
-        <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Fixed · #146 · 후속 22번</div><h3>원인 문장이 사유를 잃고 절대경로를 실었다</h3></div>
+        <article class="change-card feature">
+          <div class="card-head"><div class="kind">Added · #148 · 후속 24번</div><h3>task마다 세 상태 중 하나</h3></div>
           <dl>
-            <div><dt>이전</dt><dd>원인을 오류 메시지 첫 줄로 만들었는데, 그 줄은 <code>Command failed: git -C &lt;절대경로&gt; diff --stat &lt;base&gt;...HEAD</code>입니다. git의 사유는 둘째 줄 이후라 잘렸고, 저장소 절대경로가 envelope에 실렸습니다.</dd></div>
-            <div><dt>지금</dt><dd>git이 stderr에 남긴 <strong>마지막 <code>fatal:</code>·<code>error:</code> 줄</strong>을 싣습니다(예: <code>diff 계산 실패: fatal: &lt;base&gt;...HEAD: no merge base</code>). 그런 줄이 없으면 마지막 비어 있지 않은 줄, stderr가 비면 종전 첫 줄로 떨어집니다.</dd></div>
-            <div class="why"><dt>왜 "마지막"</dt><dd>커밋 없는 HEAD처럼 사유 뒤에 사용법 안내가 붙는 경우가 있어, 단순히 마지막 줄을 쓰면 사용법 안내가 실립니다.</dd></div>
+            <div><dt>상태</dt><dd><strong>막힘</strong>(사유: <code>not-done</code>·<code>no-commit</code>·<code>shallow-history</code>) &gt; <strong>이미 컴파일됨</strong>(위키 파일 경로) &gt; <strong>컴파일 가능</strong> 순으로 하나를 고릅니다. 이 우선순위는 <code>/harness-wiki</code> 절차 순서(막힘 확인 → 중복 확인)와 같습니다.</dd></div>
+            <div><dt>출력</dt><dd>텍스트는 요약 한 줄(<code>N개 task — 컴파일 가능 a · 이미 컴파일됨 b · 막힘 c</code>)과 task별 한 줄. <code>--json</code>은 envelope의 <code>tasks</code> 배열에 <code>{ task, task_status, state, compiled, blockers }</code>를 담습니다.</dd></div>
+            <div class="why"><dt>왜 출처는 없나</dt><dd>provenance·marker는 싣지 않습니다. 후보를 고른 뒤 <code>wiki sources &lt;user&gt;/&lt;task&gt;</code>로 다시 불러 그 task의 출처·마커를 받습니다.</dd></div>
+            <div class="effect"><dt>exit</dt><dd>목록은 막힌 행이 있어도, 대상이 0건이어도 <strong>exit 0</strong>입니다 — 막힘은 행의 속성이지 명령의 실패가 아닙니다. 대상(<code>&lt;user&gt;/&lt;task&gt;</code>)·<code>--pr</code>과 함께 쓰면 usage 오류(exit 2)입니다.</dd></div>
           </dl>
         </article>
         <article class="change-card maintenance">
-          <div class="card-head"><div class="kind">Note</div><h3>로케일은 그 호출에만 C로 고정</h3></div>
+          <div class="card-head"><div class="kind">Note</div><h3>읽기 전용, <code>wiki/</code>는 한 번만 걷는다</h3></div>
           <dl>
-            <div><dt>무엇</dt><dd><code>fatal:</code> 접두로 사유 줄을 고르므로, git 메시지가 번역되면 찾지 못합니다. 그래서 diff 계산과 pre-push의 공통 조상 판정 호출만 <code>LC_ALL=C</code>로 부릅니다.</dd></div>
-            <div class="effect"><dt>범위</dt><dd>다른 git 호출의 환경은 그대로입니다. 접두 <code>diff 계산 실패:</code>·<code>retry:</code> 안내·exit code·envelope 형태도 그대로입니다.</dd></div>
+            <div><dt>무엇</dt><dd>파일을 쓰지 않습니다. 저장소 단위 값(얕은 클론 여부·컴파일 색인·<code>wiki/90_system/</code> 규칙)은 한 번만 만들어 task마다 넘기므로, task 수만큼 <code>wiki/</code>를 다시 걷지 않습니다.</dd></div>
+            <div class="why"><dt>왜 <code>wiki</code>에</dt><dd><code>list</code>에 붙이지 않았습니다 — <code>list</code>는 <code>--json</code> 계약이 없고, 위키 스캔·git 이력 읽기를 모든 task 목록에 결합하게 되며, <code>wiki.mjs</code>→<code>task.mjs</code> import와 순환합니다.</dd></div>
           </dl>
         </article>
       </div>
     </section>
 
-    <section id="prepush">
-      <h2 class="section-title">pre-push — PR을 열 수 없는 브랜치는 검사하지 않는다</h2>
-      <p class="section-sub">기본 브랜치와 공통 조상이 없는 브랜치는 그 기본 브랜치로 PR을 열 수 없습니다(GitHub이 비교를 거부합니다). 그래서 D11(PR 필수 task 문서)의 대상이 아니고, 기본 브랜치 push처럼 건너뜁니다. 갈래는 <strong>무엇을 체크아웃했느냐</strong>로 나뉩니다.</p>
+    <section id="retry">
+      <h2 class="section-title">"활성 task 없음" 안내 — done task를 다시 열라고 권하지 않는다</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>상황</th><th>0.49.3</th><th>0.49.4</th></tr></thead>
+          <thead><tr><th>항목</th><th>0.49.4</th><th>0.50.0</th></tr></thead>
           <tbody>
-            <tr><td>관련 브랜치를 체크아웃한 채 gh-pages 같은 무관한 브랜치를 push</td><td>오류 패킷 없이 스택 트레이스 · exit 1 (<code>--json</code>도 envelope 없음)</td><td><strong>검사하지 않고 통과</strong></td></tr>
-            <tr><td>같은 push에 관련 브랜치도 함께</td><td>위와 같이 죽음</td><td>관련 브랜치는 <strong>그대로 검사</strong> — 문서가 빠졌으면 막힘</td></tr>
-            <tr><td>무관한 브랜치를 <strong>체크아웃한 채</strong> push</td><td><code>diff-failed</code> 패킷 — 공통 조상이 있는 브랜치를 체크아웃한 뒤 다시 push 안내</td><td>그대로(원인 문장만 git의 사유로 바뀜). 훅은 체크아웃된 HEAD로 base를 판정하기 때문이며, 의도한 범위입니다</td></tr>
-            <tr><td>수동 <code>harness-team pr-check</code></td><td>—</td><td>그대로</td></tr>
+            <tr><td><code>retry:</code></td><td>대상 지정 <strong>또는</strong> <code>harness-team task &lt;name&gt;</code>으로 활성화</td><td>대상 지정(<code>wiki sources &lt;user&gt;/&lt;task&gt;</code>)만</td></tr>
+            <tr><td><code>alternatives:</code></td><td>없음</td><td><code>wiki sources --all</code>로 후보를 찾는다</td></tr>
+            <tr><td>exit code · 원인 문장</td><td>exit 1</td><td>그대로</td></tr>
           </tbody>
         </table>
       </div>
-      <div class="callout"><strong>건너뛰는 조건은 좁습니다.</strong> <code>git merge-base</code>가 exit 1(공통 조상 없음)을 돌려줄 때만 건너뜁니다. 그 밖의 실패(exit 128 등)는 삼키지 않고 종전대로 실패로 남습니다 — 판정하지 못한 브랜치를 조용히 통과시키지 않기 위해서입니다.</div>
+      <div class="callout"><strong>왜 활성화 안내를 지웠나.</strong> 위키 컴파일 대상은 이미 done 된 task입니다. 그 task를 <code>task &lt;name&gt;</code>으로 활성화하면 reopen이 되어 meta·원장이 바뀌고, 다음 <code>wiki sources</code> 실행이 <code>not-done</code>으로 막힙니다 — 안내를 따르면 오히려 컴파일을 못 하게 되던 문장입니다.</div>
     </section>
 
     <section id="same">
       <h2 class="section-title">바뀌지 않은 것</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>항목</th><th>0.49.4</th></tr></thead>
+          <thead><tr><th>항목</th><th>0.50.0</th></tr></thead>
           <tbody>
-            <tr><td>원인 종류(<code>errorKind</code>)와 종류별 <code>retry:</code>·<code>alternatives:</code></td><td>그대로 — 0.49.3의 네 종류 표가 유효합니다</td></tr>
-            <tr><td>exit code · <code>--json</code> envelope 형태</td><td>그대로</td></tr>
-            <tr><td>PR로 갈 브랜치의 <code>pr-check</code> 차단</td><td>그대로 — 기본 브랜치 push·태그·삭제·빈 원격으로의 첫 push에 무관 히스토리 브랜치가 건너뛰기 목록에 더해졌을 뿐입니다</td></tr>
+            <tr><td>인수 없는 <code>wiki sources</code></td><td>그대로 활성 task 대상, 없으면 exit 1(안내 문장만 위처럼 바뀜)</td></tr>
+            <tr><td>단일 task 조회의 출력·막힘·마커</td><td>그대로 — 0.49.0의 커밋 출처 규칙도 유효합니다</td></tr>
+            <tr><td><code>release.yml</code>(#149)</td><td>메인테이너 CI 전용 — 릴리스 발행 job의 setup-node에 <code>check-latest: true</code>를 더해 <code>test.yml</code>처럼 최신 24.x로 해석하고 런타임을 <code>::notice::</code>로 남깁니다. 플러그인에 실리지 않아 소비자 영향이 없습니다</td></tr>
           </tbody>
         </table>
       </div>
@@ -322,21 +321,21 @@
         <article class="change-card accuracy">
           <div class="card-head"><div class="kind">Do · 1</div><h3>플러그인 갱신</h3></div>
           <dl>
-            <div><dt>왜</dt><dd>바뀐 것은 CLI 코드(<code>src/</code>)뿐이라 플러그인 채널로만 옵니다.</dd></div>
-            <div class="effect"><dt>어떻게</dt><dd><code>/plugin marketplace update</code>(또는 clone에서 <code>git pull</code>). <code>harness-team --version</code>이 <code>0.49.4</code>이면 됩니다. pre-push 훅은 PATH의 <code>harness-team</code>(보통 clone)을 부르므로 clone이 갱신돼야 훅의 건너뛰기도 적용됩니다.</dd></div>
+            <div><dt>왜</dt><dd>바뀐 것은 CLI 코드(<code>src/</code>)와 플러그인이 싣는 명령 문서(<code>commands/</code>)뿐이라 플러그인 채널·전역 CLI 갱신만으로 닿습니다.</dd></div>
+            <div class="effect"><dt>어떻게</dt><dd><code>/plugin marketplace update</code>(또는 clone에서 <code>git pull</code>). <code>harness-team --version</code>이 <code>0.50.0</code>이면 됩니다.</dd></div>
           </dl>
         </article>
         <article class="change-card maintenance">
           <div class="card-head"><div class="kind">Note</div><h3>migrate·init·sync는 필요 없습니다</h3></div>
           <dl>
-            <div><dt>설치 파일</dt><dd>pre-push 훅 블록(훅 본문은 PATH CLI의 <code>pr-check --pre-push</code>를 부를 뿐입니다)·규칙·관리 절(<code>AGENTS.md</code>·<code>CLAUDE.md</code>)·템플릿·명령 문서·스킬을 바꾸지 않았습니다.</dd></div>
-            <div class="why"><dt>문서</dt><dd>README의 pre-push 훅 절 갱신과 <code>docs/followups.md</code>의 22·23번 정리는 읽을거리라 조치가 없습니다.</dd></div>
+            <div><dt>설치 파일</dt><dd>훅·규칙·관리 절(<code>AGENTS.md</code>·<code>CLAUDE.md</code>)·<code>templates/</code>·Codex 스킬을 바꾸지 않았습니다.</dd></div>
+            <div class="why"><dt>써 보기</dt><dd>기본 브랜치에서 <code>harness-team wiki sources --all</code> → "컴파일 가능" 행을 골라 <code>/harness-wiki &lt;user&gt;/&lt;task&gt;</code>. 위키를 쓰지 않는 프로젝트는 할 일이 없습니다.</dd></div>
           </dl>
         </article>
       </div>
     </section>
 
-    <footer>Harness Aijient Team Plugin 0.49.4 · 2026-10-11 · 0.49.3 이후 변경 설명</footer>
+    <footer>Harness Aijient Team Plugin 0.50.0 · 2026-10-12 · 0.49.4 이후 변경 설명</footer>
   </main>
 </body>
 </html>
