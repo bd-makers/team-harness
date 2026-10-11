@@ -3,8 +3,8 @@
   "task": "scope-error-hints",
   "created": "2026-10-11",
   "firstActivatedAt": "2026-10-11T06:25:29.032Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-10-11T06:45:32.300Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": []

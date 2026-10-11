@@ -4,6 +4,7 @@
 
 ## Completed
 - ✅ review-retry-hint
+- ✅ scope-error-hints
 - ✅ review-scope-committed
 - ✅ review-scope-handoff
 - ✅ wiki-commit-provenance
