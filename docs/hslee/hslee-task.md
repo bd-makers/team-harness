@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ review-retry-hint
 - ✅ review-scope-committed
 - ✅ review-scope-handoff
 - ✅ wiki-commit-provenance

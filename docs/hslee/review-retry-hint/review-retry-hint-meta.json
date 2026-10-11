@@ -3,8 +3,8 @@
   "task": "review-retry-hint",
   "created": "2026-10-11",
   "firstActivatedAt": "2026-10-11T05:18:29.484Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-10-11T06:15:36.997Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [
