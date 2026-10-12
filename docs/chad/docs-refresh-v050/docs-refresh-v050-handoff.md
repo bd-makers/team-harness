@@ -45,3 +45,9 @@
  docs/harness-rubric-guide.html                     |  8 +-
  docs/harness-workflow-schematics.html              | 97 ++++++++++++----------
  4 files changed, 62 insertions(+), 51 deletions(-)
+
+## 2026-10-12T06:06:18.095Z — 0f8a2aa docs(kickoff-deck): 킥오프 덱을 v0.50.0 기준으로 갱신
+.../docs-refresh-v050/docs-refresh-v050-handoff.md |  7 ++
+ .../docs-refresh-v050/docs-refresh-v050-plan.md    |  2 +-
+ docs/harness-kickoff-deck.html                     | 78 +++++++++++-----------
+ 3 files changed, 48 insertions(+), 39 deletions(-)
