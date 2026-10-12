@@ -51,3 +51,9 @@
  .../docs-refresh-v050/docs-refresh-v050-plan.md    |  2 +-
  docs/harness-kickoff-deck.html                     | 78 +++++++++++-----------
  3 files changed, 48 insertions(+), 39 deletions(-)
+
+## 2026-10-12T06:08:16.911Z — 49b3fb7 docs(playground): 운용 시나리오 구성기를 v0.50.0 기준으로 갱신
+.../docs-refresh-v050/docs-refresh-v050-handoff.md |   6 +
+ .../docs-refresh-v050/docs-refresh-v050-plan.md    |   2 +-
+ docs/harness-operations-playground.html            | 146 +++++++++++----------
+ 3 files changed, 86 insertions(+), 68 deletions(-)

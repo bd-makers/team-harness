@@ -3,7 +3,7 @@
 
 ## Now
 - Goal: docs/index.html이 링크하는 상시 문서 8개를 v0.50.0 기준으로 맞추고 기준 버전 표기
-- Current atomic step: plan 2 — 문서별 낡은 지점 조사(서브에이전트 4개, 읽기 전용)
+- Current atomic step: plan 12단계 모두 완료 — 다음은 사용자 지시에 따라 push·PR (ship), 머지 후 기본 브랜치에서 done
 - Stop / human-decision condition: 조사 결과가 문서 구조 개편(삭제·재작성 수준)을 요구하면 사용자에게 확인
 
 ## Constraints and settled decisions

@@ -27,9 +27,25 @@
 - `docs/harness-overview.html`도 mermaid JS 사용 — "docs는 inline SVG" 관례가 저장소 전체에 일관되지 않음.
 
 
+### 반영 결과 (2026-10-12)
+8개 문서 모두 v0.50.0 기준으로 갱신, 문서마다 커밋 1개(onboarding 7232d44 · rubric 4f074a8 · cheatsheet bbec1ff · task-guide 539cdf5 · workflow-diagrams e85fabb · schematics 0aa1459 · kickoff-deck 0f8a2aa · playground 49b3fb7) + index 설명 정합.
+- 기준 표기: 6개는 hero tag/footer에 "기준 v0.50.0"(docs-version-drift 분류 baseline), cheatsheet·kickoff-deck은 tag가 아닌 위치(ver span·eyebrow)라 unversioned로 남지만 본문에 "기준 v0.50.0"이 보인다.
+- 테스트가 고정한 구조 유지: onboarding 5 Phase(항목 24→26, localStorage 키 v2 + 테스트 갱신) · deck 16장·SVG 2개 · playground 프리셋 5개·고정 문자열.
+
+### 검증 (실행 출력)
+- `npm run test` → `ℹ tests 1243 · ℹ pass 1242 · ℹ fail 0` (+ perf `ℹ pass 1 · fail 0`)
+- `npm run docs:check` → `harness overview 생성 상태가 최신입니다.`
+- 문서별 테스트: onboarding 14/14 · kickoff-deck 22/22 · playground 30/30 · docs-version-drift 8/8
+- HTML 태그 균형(파이썬 파서) 8개 + index 오류 0
+- 브라우저(docs-static 서버): cheatsheet A4 초과 0mm(원본 1mm 여유, 수정 초안 47mm 초과 → 문구 압축) · workflow-diagrams mermaid 5/5 렌더 · schematics·rubric·task-guide SVG 텍스트 넘침 기하 검사 0건(수정 중 8건 발견→보정) · deck 루프·게이트 장 육안 확인 · playground R2 프리셋 클릭 경로 확인
+- 보장하지 못하는 것: CLI 출력 예시는 소스 문자열 대조이고 실제 실행 출력이 아니다. Obsidian 뷰어 렌더는 확인하지 않았다(mermaid 문서는 원래 브라우저 전용).
+
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
 
 
 ## Learnings
+- (2026-10-12) 상시 문서 갱신 시 버전 표기는 `scripts/docs-version-drift.mjs` 분류를 먼저 본다 — hero tag/footer에 "기준" 없이 버전을 달면 current로 분류되어 등록 없이는 drift 테스트가 실패한다.
+- (2026-10-12) inline SVG 라벨을 늘리면 도형 밖으로 넘친다 — 문구 수정 후 브라우저에서 text getBBox ⊂ 도형 bbox 기하 검사로 확인한다(이번에 8건 적발).
+- (2026-10-12) 저장소가 iCloud Drive 안에 있으면 `.git` 파일이 dataless로 내려가 git pull이 `mmap failed`로 중단되고 작업 트리 파일을 잘라 둔다 — 비워진 파일을 읽어 강제로 내려받은 뒤 복원·재시도.
