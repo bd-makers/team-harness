@@ -57,3 +57,11 @@
  .../docs-refresh-v050/docs-refresh-v050-plan.md    |   2 +-
  docs/harness-operations-playground.html            | 146 +++++++++++----------
  3 files changed, 86 insertions(+), 68 deletions(-)
+
+## 2026-10-12T06:09:16.056Z — f0b6030 docs(index): 갱신한 문서들의 인덱스 설명을 v0.50.0에 맞춤 + task 검증 기록
+.../chad/docs-refresh-v050/docs-refresh-v050-artifact.md | 16 ++++++++++++++++
+ docs/chad/docs-refresh-v050/docs-refresh-v050-context.md |  2 +-
+ docs/chad/docs-refresh-v050/docs-refresh-v050-handoff.md |  6 ++++++
+ docs/chad/docs-refresh-v050/docs-refresh-v050-plan.md    |  4 ++--
+ docs/index.html                                          | 10 +++++-----
+ 5 files changed, 30 insertions(+), 8 deletions(-)

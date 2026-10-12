@@ -9,7 +9,7 @@
 - **제약**:
   - 파일명에 버전이 붙은 스냅샷(`harness-overview-0.x.html`·`harness-workflow-simulation-0.x.html`·`what-changes-0.x.html`)은 고치지 않는다(사용자 결정 2026-10-12).
   - 링크된 `.md`(`prerequisites.md`·`decisions.md` 등)는 범위 밖.
-  - 새로 그리는 다이어그램은 자립형 inline SVG. 기존 mermaid 문서(workflow-diagrams)는 형식은 두고 소스만 갱신한다 — `harness-overview.html`도 mermaid라 형식 전환은 범위 밖(2026-10-12 결정).
+  - 새로 그리는 다이어그램은 자립형 inline SVG. 기존 mermaid 문서(workflow-diagrams)는 형식은 두고 소스만 갱신한다 — `harness-overview.html`도 mermaid라 형식 전환은 범위 밖으로 둔다 — 작성 세션의 판단(2026-10-12), 사용자 확인 대기. 전환하면 브라우저 렌더 SVG를 추출해 script를 제거한다.
   - 코드·`templates/`는 바꾸지 않는다(문서만).
 
 ## 원천 검토 (R1)

@@ -9,7 +9,7 @@
 ## Constraints and settled decisions
 - 버전 스냅샷 파일(*-0.x.html)은 고치지 않는다(사용자 결정 2026-10-12)
 - .md 링크·코드·templates/ 범위 밖
-- 다이어그램은 inline SVG, script 의존 금지
+- 새 다이어그램은 inline SVG. workflow-diagrams는 mermaid 유지(작성 세션 판단 — 사용자 확인 대기)
 - 쓰기는 메인 세션 단일 스레드(D4)
 
 ## JIT retrieval map
