@@ -18,3 +18,11 @@
  .../docs-refresh-v050/docs-refresh-v050-plan.md    |   4 +-
  docs/harness-rubric-guide.html                     | 177 +++++++++++++--------
  3 files changed, 125 insertions(+), 67 deletions(-)
+
+## 2026-10-12T05:58:33.274Z — bbec1ff docs(cheatsheet): 치트시트를 v0.50.0 기준으로 갱신
+.../docs-refresh-v050-artifact.md                  | 22 ++++++++
+ .../docs-refresh-v050/docs-refresh-v050-handoff.md | 17 ++++++
+ .../docs-refresh-v050/docs-refresh-v050-plan.md    |  4 +-
+ .../docs-refresh-v050/docs-refresh-v050-spec.md    |  4 +-
+ docs/harness-cheatsheet.html                       | 60 +++++++++++-----------
+ 5 files changed, 73 insertions(+), 34 deletions(-)
