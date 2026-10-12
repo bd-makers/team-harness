@@ -26,3 +26,9 @@
  .../docs-refresh-v050/docs-refresh-v050-spec.md    |  4 +-
  docs/harness-cheatsheet.html                       | 60 +++++++++++-----------
  5 files changed, 73 insertions(+), 34 deletions(-)
+
+## 2026-10-12T06:01:05.283Z — 539cdf5 docs(task-guide): task 작업 가이드를 v0.50.0 기준으로 갱신
+.../docs-refresh-v050/docs-refresh-v050-handoff.md |   8 ++
+ .../docs-refresh-v050/docs-refresh-v050-plan.md    |   2 +-
+ docs/harness-task-guide.html                       | 127 +++++++++++----------
+ 3 files changed, 77 insertions(+), 60 deletions(-)

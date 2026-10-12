@@ -148,10 +148,10 @@
     <p>한 task가 태어나서 닫히기까지의 팀 워크플로우를 다섯 가지 형태로 그렸다.
        각 다이어그램은 같은 워크플로우를 다른 질문으로 자른다.</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">기준 v0.23.0</span>
+      <span class="tag tag-purple">기준 v0.50.0</span>
       <span class="tag tag-blue">5가지 형태</span>
       <span class="tag tag-green">정본: AGENTS.md · commands/*</span>
-      <span class="tag tag-orange">D2 · D4 · D5 · D6</span>
+      <span class="tag tag-orange">D2 · D4 · D5 · D6 · D11</span>
     </div>
   </div>
 
@@ -169,40 +169,44 @@
 
   <section id="flow">
     <div class="section-title">1 · 플로우차트 — task의 전체 여정</div>
-    <div class="section-sub">세션 시작 → task 활성화 → spec 게이트 → 구현 루프 → 리뷰 → ship → done → summary.</div>
+    <div class="section-sub">세션 시작 → task 활성화 → spec 게이트(R1·Ambiguity) → 구현 루프 → 리뷰(R3) → ship(pr-check) → PR 머지 → done → summary. 사이클의 S0–S8·R1–R3 표기는 <code>docs/harness-cycle.md</code>가 정본이다.</div>
     <div class="diagram-wrap">
       <div class="mermaid">
 flowchart TD
     S([세션 시작]) --> SC["SessionStart 훅<br/>harness-team session-context"]
     SC -->|활성 task 있음| TCC["TCC 주입<br/>(breadcrumb + &lt;name&gt;-context.md)"]
+    SC -->|origin에서 이미 done| NUDGE["종결됨 nudge<br/>(breadcrumb·TCC 대신)"]
     SC -->|활성 task 없음| GATE{"task-gate nudge<br/>재개 / 새 task / task 없이"}
     GATE -->|새 task| T["harness-team task &lt;name&gt;"]
     GATE -->|재개| TCC
     T -->|created| DIA{"다이어그램 옵트인?<br/>(1회만 질문)"}
-    DIA -->|예: plan에 체크박스 추가| SPEC
+    DIA -->|예: plan에 단계 추가| SPEC
     DIA -->|아니오| SPEC
     TCC --> PLANREAD["plan.md 현재 단계 파악"] --> IMPL
-    SPEC["spec.md — Ambiguity 자가진단 게이트"] -->|본문이 비면| SPECGEN["/harness-spec<br/>(Confluence·Figma·인터뷰)"]
+    SPEC["spec.md — R1 원천 검토 · Ambiguity 자가진단"] -->|본문이 비면| SPECGEN["/harness-spec<br/>(Confluence·Figma·인터뷰)"]
     SPECGEN --> SPEC
-    SPEC -->|막히면| INT["/harness-interview"] --> SPEC
-    SPEC -->|통과| PLAN["plan.md 단계별 체크리스트"] --> IMPL
-    IMPL["구현 루프<br/>JIT retrieval: TCC → Grep → Glob → Read"] --> BC{"boundary check<br/>(checkbox 완료 직전)"}
-    BC -->|통과 / not-configured| CK["plan 체크박스 - [x]"] --> CM["git commit"]
-    CM --> HK["post-commit 훅<br/>handoff.md 자동 갱신"]
+    SPEC -->|R1 미해결 · 막히면| INT["/harness-interview<br/>R1 → Ambiguity 채점"] --> SPEC
+    SPEC -->|R1 검토 완료 + Ambiguity 통과| PLAN["plan.md 단계별 체크리스트"] --> LOOPQ{"/harness-loop?<br/>(선택)"}
+    LOOPQ -->|예| LOOP["Dev 1단계 → QA<br/>(gate · boundary · scenario check) → 로컬 커밋"] --> REV
+    LOOPQ -->|아니오| IMPL
+    IMPL["구현 루프<br/>JIT retrieval: TCC → Grep → Glob → Read"] --> BC{"boundary checkpoint 훅<br/>(plan 체크 편집 직전)"}
+    BC -->|통과 / not-configured| CK["plan 체크박스 - [x]"] --> GC{"gate commit<br/>(pre-commit 훅 · gates.json)"}
+    GC -->|통과| CM["git commit"]
+    CM --> HK["post-commit 훅<br/>task handoff append (다음 커밋에 포함)"]
     HK -->|다음 atomic step| IMPL
-    HK -->|중요 변경 완료| REV["/harness-review<br/>probe 폴백: codex → claude"]
-    REV --> ART["artifact.md ## Reviews 기록<br/>발견 재현·판별 후 단일 스레드 반영"]
+    HK -->|중요 변경 완료| REV["R3 — harness-team review<br/>probe: codex → claude"]
+    REV --> ART["CLI가 meta.reviews[]·마커 기록<br/>발견 재현·판별 후 단일 스레드 반영"]
     ART -->|반영할 발견 있음| IMPL
-    ART --> SHIP["ship — spec·plan·artifact 최종 갱신<br/>+ 준비 완료 보고 (PR/MR은 별도 지시)"]
-    SHIP --> DQ{"plan 전체 완료?<br/>AskUserQuestion"}
-    DQ -->|아직| IMPL
+    ART --> SHIP["ship — spec·plan·artifact 최종 갱신<br/>8단계 pr-check (D11 유일한 강제) → 준비 완료 보고"]
+    SHIP --> PUSH["push — pre-push pr-check<br/>→ PR/MR → 머지 (사용자 지시)"]
+    PUSH --> DQ{"기본 브랜치<br/>마지막 단계 체크 · AskUserQuestion"}
     DQ -->|완료| DN["harness-team done<br/>가드 통과 → active.json = null"]
-    DN --> SM["기본 브랜치에서<br/>harness-team summary --write"] --> E([task 종료])
+    DN --> WK["/harness-wiki &lt;user&gt;/&lt;task&gt;<br/>(선택)"] --> SM["harness-team summary --write<br/>→ 종결 커밋 1개"] --> E([task 종료])
 
     classDef gate fill:#3d2700,stroke:#f5a623,color:#f5a623
     classDef hook fill:#0e3d30,stroke:#4df0aa,color:#4df0aa
-    class GATE,DIA,BC,DQ gate
-    class SC,HK hook
+    class GATE,DIA,BC,GC,DQ,LOOPQ gate
+    class SC,HK,NUDGE hook
       </div>
     </div>
     <div class="diagram-label">정본: AGENTS.md §작업 프로토콜 · commands/harness-task.md · commands/harness-ship.md</div>
@@ -210,7 +214,10 @@ flowchart TD
       <summary>이 그림이 접어 둔 것</summary>
       <ul>
         <li>spec의 Ambiguity 게이트는 작은 버그·문서 수정에는 생략할 수 있다.</li>
-        <li>ship 8단계 중 다이어그램 갱신(6)·적대적 검증(7, D6)은 옵트인이다.</li>
+        <li>ship 8단계 중 다이어그램 갱신(6)·적대적 검증(7, D6)은 옵트인이고, 8단계는 <code>pr-check</code> 후 준비 완료 보고다.</li>
+        <li><code>/harness-loop</code>는 멈춤 조건 넷(성공·spec 공백·진전 없음·승인 필요)에서 사람에게 넘기며, push·PR은 하지 않는다.</li>
+        <li>R2(옵트인): spec <code>scenarios</code>를 선언하면 <code>harness-team scenario check</code>와 <code>review --framing scenario</code>가 증거를 대조한다.</li>
+        <li>SessionStart는 발화한 observe 트립와이어를 한 줄로 덧붙인다.</li>
         <li>집계 파일(<code>docs/task_summary.md</code> 등)은 생성물이라 task/done이 건드리지 않는다.</li>
       </ul>
     </details>
@@ -224,24 +231,24 @@ flowchart TD
 flowchart LR
     subgraph U["👤 사용자"]
         U1["작업 요청<br/>AskUserQuestion 응답"]
-        U2["PR/MR 지시"]
+        U2["push · PR/MR 지시<br/>(permissions.ask 확인)"]
     end
     subgraph C["🤖 Claude Code — 리드 드라이버 · 쓰기는 단일 스레드 (D4)"]
         direction TB
         C1["spec · plan 작성"] --> C2["구현 · commit"] --> C3["리뷰 발견<br/>재현·판별·반영"] --> C4["ship 보고"]
     end
     subgraph H["⚙ harness-team CLI · hooks"]
-        H1["task · boundary check<br/>done · summary"]
-        H1 ~~~ H2["SessionStart ·<br/>post-commit 훅"]
+        H1["task · gate · boundary · scenario check<br/>review · scope · pr-check<br/>done · summary · wiki sources"]
+        H1 ~~~ H2["SessionStart · PreToolUse 훅<br/>post-commit · pre-push(pr-check)"]
     end
-    subgraph R["🔍 리뷰어 — read-only (D2)"]
-        R1["Codex"]
+    subgraph R["🔍 리뷰 엔진 — read-only (D2 · D6)"]
+        R1["codex → claude 폴백<br/>custom (명시 호출)"]
     end
     U1 --> C1
     C2 <-.->|"명령·훅 왕복<br/>(handoff 자동 갱신)"| H1
-    C2 -->|"/harness-review<br/>probe: codex → claude"| R1
-    R1 -->|"루브릭 발견 — 반박만,<br/>수정 없음 (D6)"| C3
-    R2 --> C3
+    C2 -->|"harness-team review<br/>--framing …"| H1
+    H1 -->|"엔진 실행"| R1
+    R1 -->|"발견 — 반박만, 수정 없음<br/>(CLI가 meta.reviews 기록)"| C3
     C4 --> U2
       </div>
     </div>
@@ -251,7 +258,8 @@ flowchart LR
       <ul>
         <li>어떤 세션·에이전트도 같은 워킹트리에 <strong>동시에</strong> 쓰지 않는다(D4). OpenCode·Gemini는 멤버에서 제외됐다(D7).</li>
         <li>Cursor는 보조 에디터로 <code>.cursor/rules/*.mdc</code>를 자동 적용받는다.</li>
-        <li>리뷰 기록이 없는 리뷰는 "안 한 것"이다 — artifact <code>## Reviews</code>가 증거다.</li>
+        <li>리뷰 기록이 없는 리뷰는 "안 한 것"이다 — <code>harness-team review</code>가 성공한 실행만 <code>meta.reviews[]</code>와 artifact <code>## Reviews</code>에 기록한다. 기본 리뷰는 P1/P2/P3 + <code>file:line</code>, 루브릭은 framing일 때만.</li>
+        <li>PreToolUse 훅: protect-files · block-dangerous-git · boundary-checkpoint · pre-commit-check.</li>
       </ul>
     </details>
   </section>
@@ -266,33 +274,42 @@ sequenceDiagram
     participant CC as Claude Code (drive)
     participant HT as harness-team CLI
     participant HK as hooks
-    participant RV as Codex (read-only)
+    participant RV as 리뷰 엔진 (codex→claude · custom)
 
-    HK->>CC: SessionStart — session-context (TCC 또는 task-gate nudge 주입)
+    HK->>CC: SessionStart — session-context (TCC · task-gate nudge · 종결됨 nudge)
     U->>CC: 작업 요청
     CC->>HT: harness-team task &lt;name&gt;
     HT-->>CC: created — SSOT 4파일 + context.md + meta.json 생성
     CC->>U: 다이어그램 옵트인? (신규 task, 1회만)
     U-->>CC: 예 / 아니오
-    CC->>CC: spec.md Ambiguity 게이트 통과 → plan.md 체크리스트
+    CC->>CC: /harness-interview — R1 원천 검토 → Ambiguity 통과 → plan.md
 
-    loop 구현 루프 (atomic step 단위)
+    loop 구현 루프 (atomic step 단위 · /harness-loop는 선택)
         CC->>CC: JIT retrieval (TCC → Grep → Glob → Read) → 구현
-        CC->>HT: boundary check (plan 체크박스 완료 직전)
-        CC->>HK: git commit → post-commit
-        HK-->>CC: handoff.md 자동 갱신
+        CC->>HK: Edit — plan 체크 직전
+        HK->>HT: boundary checkpoint
+        CC->>HK: git commit 시도 (PreToolUse)
+        HK->>HT: gate commit (.harness/gates.json)
+        HK-->>CC: 통과 → commit → post-commit
+        HK-->>CC: task handoff append (다음 커밋에 포함)
     end
 
-    CC->>RV: /harness-review (중요 변경 — probe 폴백 codex → claude)
-    RV-->>CC: 루브릭 발견 (id·항목·심각도·판정·근거) — 반박만
-    CC->>CC: 발견 재현·판별 → 단일 스레드 반영, artifact ## Reviews 기록
-    CC->>U: ship — 준비 완료 보고 (PR/MR 생성은 별도 지시)
-    U-->>CC: 완료 신호
-    CC->>U: AskUserQuestion — 완료 확인
+    CC->>HT: harness-team review (중요 변경)
+    HT->>RV: 엔진 실행 (read-only)
+    RV-->>HT: P1/P2/P3 · file:line · verdict (framing이면 루브릭)
+    HT-->>CC: meta.reviews[] · artifact 마커 기록
+    CC->>CC: 발견 재현·판별 → 단일 스레드 반영
+    CC->>HT: ship 8단계 — harness-team pr-check
+    CC->>U: 준비 완료 보고 (push·PR은 별도 지시)
+    U-->>CC: push · PR 지시
+    CC->>HK: git push
+    HK->>HT: pre-push — pr-check
+    Note over U,CC: PR/MR 머지
+    CC->>U: AskUserQuestion — 기본 브랜치에서 완료 확인
     U-->>CC: 완료
     CC->>HT: harness-team done
     HT-->>CC: 가드 통과 → meta status=done · active.json = null
-    Note over HT: 집계 갱신은 기본 브랜치에서 harness-team summary --write
+    CC->>HT: (선택) wiki → summary --write → 종결 커밋 1개
       </div>
     </div>
     <div class="diagram-label">정본: AGENTS.md §task 워크플로우 · commands/harness-review.md §실행 절차 · commands/harness-ship.md</div>
@@ -307,24 +324,27 @@ stateDiagram-v2
     [*] --> NoTask : 세션 시작 (active.json = null)
     NoTask --> Created : harness-team task &lt;name&gt;
     Created --> Active : 자동 활성화 (다이어그램 옵트인 1회)
-    Active --> Active : 구현 · commit · handoff 자동 갱신
-    Active --> Reviewing : /harness-review (중요 변경)
+    Active --> Active : 구현 · gate commit · handoff append
+    Active --> Reviewing : harness-team review (중요 변경)
     Reviewing --> Active : 발견 재현·판별 후 단일 스레드 반영
-    Active --> Shipping : plan 전체 완료 → ship (spec·plan·artifact 정합)
-    Shipping --> AskDone : 준비 완료 보고 + 완료 확인 (AskUserQuestion)
+    Active --> Shipping : 구현 단계 완료 → ship (문서 정합 · pr-check)
+    Shipping --> Merged : push (pre-push pr-check) → PR/MR 머지
+    Merged --> AskDone : 기본 브랜치 — 마지막 단계 체크 + 완료 확인
     AskDone --> Active : 아직 진행 중
-    AskDone --> Done : harness-team done — 가드 통과
-    Done --> [*] : active.json = null · summary는 기본 브랜치에서
+    AskDone --> Done : harness-team done — 가드 통과 (--force면 forcedAt 감사)
+    Done --> Active : task &lt;name&gt; → reopened (새 판정 창)
+    Done --> [*] : wiki(선택) · summary --write · 종결 커밋 1개
 
     note right of AskDone
-        done 가드: firstActivatedAt 이후의
-        증거(커밋·plan 체크)를 대조한다.
-        열린 plan 체크박스가 있으면 막힌다 —
-        미실행 사유를 붙여 닫는 게 정답.
+        done 가드 7종 + 선언 유효성.
+        판정 창 = reopenedAt 또는 firstActivatedAt 이후의
+        증거(커밋·plan 체크·테스트·meta.reviews)를 대조한다.
+        체크박스만 켠 plan 변경은 미커밋으로 세지 않는다.
+        열린 체크박스·빈 plan/artifact는 막힌다.
     end note
       </div>
     </div>
-    <div class="diagram-label">정본: docs/diagrams/harness-overview/task-lifecycle.mmd · AGENTS.md §task 단위 관리</div>
+    <div class="diagram-label">정본: commands/harness-task.md §meta.json·판정 창 · src/commands/task.mjs collectDoneIssues · AGENTS.md §task 단위 관리</div>
   </section>
 
   <section id="parallel">
@@ -337,27 +357,29 @@ gitGraph
    branch task-a
    checkout task-a
    commit id: "A: spec·plan"
-   commit id: "A: 구현 + handoff 갱신"
+   commit id: "A: 구현 + handoff"
    checkout main
    branch task-b
    checkout task-b
    commit id: "B: spec·plan"
    checkout task-a
-   commit id: "A: 리뷰 반영"
+   commit id: "A: ship 문서 → push(pr-check)"
    checkout main
    merge task-a id: "PR merge A"
+   commit id: "A 종결: done·summary"
    checkout task-b
-   commit id: "B: 구현 + handoff 갱신"
+   commit id: "B: ship 문서 → push(pr-check)"
    checkout main
    merge task-b id: "PR merge B"
-   commit id: "summary --write (생성물 갱신)"
+   commit id: "B 종결: done·summary"
       </div>
     </div>
     <div class="diagram-label">정본: docs/decisions.md D5 · AGENTS.md §task 단위 관리 (집계 파일은 생성물)</div>
     <div class="infobox">
       <strong>왜 충돌하지 않나:</strong> task SSOT 4파일은 <code>docs/&lt;user&gt;/&lt;name&gt;/</code>에 격리되고,
       집계 파일(<code>docs/task_summary.md</code> · <code>&lt;user&gt;-task.md</code>)은 어느 브랜치도 직접 쓰지 않는다 —
-      병합이 끝난 기본 브랜치에서 <code>harness-team summary --write</code>로만 갱신한다.
+      병합이 끝난 기본 브랜치에서 <code>harness-team summary --write</code>로만 갱신한다 — 머지마다 그 task의 <strong>종결 커밋 하나</strong>(plan 체크 · done meta · task handoff · 원장)를 둔다.
+      <code>&lt;user&gt;-handoff.md</code>는 gitignore된 워크트리 로컬이라 병렬 PR이 충돌하지 않고(0.44.4), summary 가드는 HEAD가 origin 기본 브랜치와 같은 커밋인지를 본다(detached HEAD 허용).
     </div>
   </section>
 
@@ -370,7 +392,7 @@ gitGraph
           <tr><td>온보딩 — 전체 흐름을 처음 익힐 때</td><td><a href="#flow">플로우차트</a></td><td>AGENTS.md §작업 프로토콜</td></tr>
           <tr><td>권한 경계 — 누가 쓰고 누가 반박하나</td><td><a href="#lanes">스윔레인</a></td><td>docs/decisions.md D2·D4·D6</td></tr>
           <tr><td>디버깅 — 어느 시점에 어떤 훅·명령이 개입하나</td><td><a href="#sequence">시퀀스</a></td><td>commands/harness-*.md</td></tr>
-          <tr><td>막힘 — done이 왜 안 되나, 지금 어떤 상태인가</td><td><a href="#states">상태</a></td><td>task-lifecycle.mmd</td></tr>
+          <tr><td>막힘 — done이 왜 안 되나, 지금 어떤 상태인가</td><td><a href="#states">상태</a></td><td>commands/harness-task.md</td></tr>
           <tr><td>협업 설계 — 세션·브랜치를 어떻게 나눌까</td><td><a href="#parallel">gitGraph</a></td><td>docs/decisions.md D5</td></tr>
         </tbody>
       </table>
@@ -379,7 +401,7 @@ gitGraph
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.23.0 기준 &nbsp;·&nbsp; 같은 워크플로우, 다섯 개의 단면</footer>
+<footer>harness-aijient-team-plugin v0.50.0 기준 &nbsp;·&nbsp; 같은 워크플로우, 다섯 개의 단면</footer>
 
 <script>
   mermaid.initialize({
