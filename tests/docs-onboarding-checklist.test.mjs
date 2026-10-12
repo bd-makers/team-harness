@@ -78,7 +78,7 @@ const report = () => document.getElementById('report').textContent;
 const ensureFlagged = (n) => { if (!/막혔습니다/.test(report())) flag(n); };
 
 describe('구조', () => {
-  test('항목 24개 · 페이즈 5개', () => {
+  test('항목 26개 · 페이즈 5개', () => {
     assert.ok(ALL.length > 0, 'ALL 비어 있음');
     assert.equal(PHASES.length, 5);
   });
@@ -92,8 +92,8 @@ describe('체크 → 진행률·저장', () => {
   test('1개 체크', () => { check(1); assert.equal(cnt(), `1 / ${ALL.length}`); });
   test('localStorage 저장됨', () => {
     check(1);
-    assert.ok(LS['harness-onboarding-v1']);
-    assert.match(LS['harness-onboarding-v1'], /p0-1/);
+    assert.ok(LS['harness-onboarding-v2']);
+    assert.match(LS['harness-onboarding-v2'], /p0-1/);
   });
 });
 
