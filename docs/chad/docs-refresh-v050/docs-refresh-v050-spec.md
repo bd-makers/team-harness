@@ -3,13 +3,13 @@
 ## 목적 / 요구사항
 - **문제**: `docs/index.html`이 링크하는 상시(버전 없는 파일명) 문서 중 8개가 v0.50.0 현재 표면과 어긋난다.
   4개는 본문 기준 버전이 낡았고(cheatsheet 0.47.0 · task-guide 0.27.0 · workflow-diagrams 0.23.0 · rubric-guide 0.20.0),
-  4개는 버전 표기가 없다(kickoff-deck · onboarding-checklist · operations-playground · workflow-schematics).
+  4개는 버전 표기가 없거나 낡았다(kickoff-deck · onboarding-checklist · operations-playground는 표기 없음, workflow-schematics는 footer에 V0.23.0 기준).
 - **영향**: 문서를 보고 하네스를 배우거나 운영하는 팀원 — 없어진 명령·바뀐 게이트를 그대로 따라 하게 된다.
 - **기대 결과**: 8개 모두 v0.50.0 기준으로 내용이 맞고, 기준 버전이 눈에 보이게 표기된다.
 - **제약**:
   - 파일명에 버전이 붙은 스냅샷(`harness-overview-0.x.html`·`harness-workflow-simulation-0.x.html`·`what-changes-0.x.html`)은 고치지 않는다(사용자 결정 2026-10-12).
   - 링크된 `.md`(`prerequisites.md`·`decisions.md` 등)는 범위 밖.
-  - 다이어그램은 자립형 inline SVG — Obsidian이 script를 지우므로 mermaid JS를 쓰지 않는다.
+  - 새로 그리는 다이어그램은 자립형 inline SVG. 기존 mermaid 문서(workflow-diagrams)는 형식은 두고 소스만 갱신한다 — `harness-overview.html`도 mermaid라 형식 전환은 범위 밖(2026-10-12 결정).
   - 코드·`templates/`는 바꾸지 않는다(문서만).
 
 ## 원천 검토 (R1)

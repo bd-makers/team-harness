@@ -108,7 +108,7 @@
   <header>
     <h1>하네스 치트시트</h1>
     <span class="sub">harness-aijient-team — 하루에 실제로 쓰는 것만</span>
-    <span class="ver" id="ver"></span>
+    <span class="ver">기준 v0.50.0</span>
   </header>
 
   <div class="grid">
@@ -118,16 +118,16 @@
       <h2><span class="n">1</span>하루의 명령<span class="hint">이 여덟 개면 충분</span></h2>
       <div class="flow">
         <span>task</span><i>→</i><span>spec</span><i>→</i><span>plan</span><i>→</i><span>구현</span>
-        <i>→</i><span>review</span><i>→</i><span>ship</span><i>→</i><span class="g">done</span>
+        <i>→</i><span>review</span><i>→</i><span>ship</span><i>→</i><span>PR·머지</span><i>→</i><span class="g">done</span>
       </div>
       <table>
         <tr><td class="k"><code>/harness-task &lt;name&gt;</code></td><td class="d">생성 <b>또는</b> 활성화. 같은 이름이면 그 task로 전환</td></tr>
         <tr><td class="k"><code>/harness-task list</code></td><td class="d"><code>*</code> 가 활성 task</td></tr>
         <tr><td class="k"><code>/harness-spec</code></td><td class="d">spec 초안 — Confluence · Figma · 인터뷰 3소스 (writer)</td></tr>
-        <tr><td class="k"><code>/harness-interview</code></td><td class="d">선행 채점 + 소크라테스 검증 (validator)</td></tr>
-        <tr><td class="k"><code>/harness-review [engine]</code></td><td class="d">외부 read-only 리뷰. 엔진 생략 시 codex → claude 폴백</td></tr>
-        <tr><td class="k"><code>/harness-ship</code></td><td class="d"><em>준비 완료 보고에서 멈춘다</em> — PR을 만들지 않고 <code>done</code>도 아니다</td></tr>
-        <tr><td class="k"><code>/harness-task done</code></td><td class="d">가드 통과 시 종결</td></tr>
+        <tr><td class="k"><code>/harness-interview</code></td><td class="d">R1 원천 검토 + 선행 채점 (validator)</td></tr>
+        <tr><td class="k"><code>/harness-review [engine]</code></td><td class="d">read-only 리뷰 → <code>meta.reviews[]</code> 기록. 엔진 생략 시 codex → claude</td></tr>
+        <tr><td class="k"><code>/harness-ship</code></td><td class="d"><em>준비 완료 보고에서 멈춘다</em>(<code>pr-check</code> 통과 전제) — PR·<code>done</code> 아님</td></tr>
+        <tr><td class="k"><code>/harness-task done</code></td><td class="d"><b>머지 후 기본 브랜치에서</b> 가드 통과 시 종결</td></tr>
         <tr><td class="k"><code>harness-team doctor</code></td><td class="d">막히면 제일 먼저. exit 1이면 작업을 시작하지 않는다</td></tr>
       </table>
     </div>
@@ -135,21 +135,22 @@
     <div class="box">
       <h2><span class="n">2</span>task 4파일<span class="hint">docs/&lt;member&gt;/&lt;name&gt;/</span></h2>
       <table>
-        <tr><td class="k"><code>-spec.md</code></td><td class="d"><b>사람</b> · 요구사항 · Ambiguity 자가진단 · Ontology · Boundary contracts · Done evidence</td></tr>
+        <tr><td class="k"><code>-spec.md</code></td><td class="d"><b>사람</b> · 요구사항 · R1 · Ambiguity · Ontology · Boundary · Done evidence</td></tr>
         <tr><td class="k"><code>-plan.md</code></td><td class="d"><b>사람</b> · 단계 체크리스트 — 산문이 아니라 <b>기계 입력</b></td></tr>
-        <tr><td class="k"><code>-handoff.md</code></td><td class="d"><b>하네스</b> · post-commit 훅이 갱신 — 손대지 않는다</td></tr>
+        <tr><td class="k"><code>-handoff.md</code></td><td class="d"><b>하네스</b> · post-commit 훅이 갱신 → 다음 커밋에 담는다</td></tr>
         <tr><td class="k"><code>-artifact.md</code></td><td class="d"><b>사람</b> · 결과 · 학습 · <code>## Reviews</code> — 팀 학습의 SSOT</td></tr>
-        <tr><td class="k"><code>-meta.json</code></td><td class="d"><b>하네스</b> · 기계 상태 — <em>손으로 고치지 않는다</em>. 판정 창이 여기서 정해진다</td></tr>
-        <tr><td class="k"><code>-context.md</code></td><td class="d">TCC(선택) · 6 KiB · 비공백 100행 · 미해결 <code>F-*</code> 3개 이하</td></tr>
+        <tr><td class="k"><code>-meta.json</code></td><td class="d"><b>하네스</b> · <em>손으로 고치지 않는다</em> · 판정 창 · <code>reviews[]</code></td></tr>
+        <tr><td class="k"><code>-context.md</code></td><td class="d">TCC(비-SSOT 카드) · 6 KiB · 100행 · <code>F-*</code> ≤ 3</td></tr>
       </table>
     </div>
 
     <div class="box gate">
-      <h2><span class="n">3</span>세 게이트<span class="hint">코드가 판정한다</span></h2>
+      <h2><span class="n">3</span>게이트<span class="hint">강제는 pr-check 하나(D11)</span></h2>
       <table>
-        <tr><td class="k"><b>Ambiguity</b></td><td class="d">구현 진입 전 · spec에 자가진단·Ontology를 <b>직접</b> 쓴다<br>작은 버그·문서 수정은 생략해도 된다(강제 아님)</td></tr>
-        <tr><td class="k"><b>boundary</b></td><td class="d">plan 체크박스 완료 <b>직전</b> · 훅이 자동 실행<br>producer·consumer JSON Schema의 <code>required</code>·기본 <code>type</code> 대조. LLM 아님</td></tr>
-        <tr><td class="k"><b>done 가드</b></td><td class="d">종결 직전 · 마커의 <b>존재 · kind · 시각</b>만 읽는다<br>판정 창 = <code>reopenedAt || firstActivatedAt</code> 이후</td></tr>
+        <tr><td class="k"><b>R1·Ambiguity</b></td><td class="d">구현 전 · 규범 — spec에 <b>직접</b> 쓴다 (작은 수정은 생략)</td></tr>
+        <tr><td class="k"><b>boundary</b></td><td class="d">plan 체크 <b>직전</b> 훅 · JSON Schema <code>required</code>·<code>type</code> 대조</td></tr>
+        <tr><td class="k"><b>done 가드</b></td><td class="d">증거의 <b>존재·kind·시각</b> · 창 = <code>reopenedAt || firstActivatedAt</code></td></tr>
+        <tr><td class="k"><b>pr-check</b></td><td class="d">ship · pre-push — PR의 task 문서 계약 (<b>강제</b>)</td></tr>
       </table>
     </div>
 
@@ -157,12 +158,11 @@
       <h2><span class="n">4</span>Done evidence<span class="hint">spec에 선언</span></h2>
       <div class="json">{ "version": 1, "tests": "required", "review": "optional", "verify": "optional" }</div>
       <table>
-        <tr><td class="k"><code>tests</code></td><td class="d">기본 <code>required</code> — 소스가 바뀌었으면 테스트 파일 변경도 요구</td></tr>
-        <tr><td class="k"><code>review</code></td><td class="d">기본 <code>optional</code> — <code>required</code>면 판정 창 안의 리뷰 마커 요구 (kind 무관)</td></tr>
-        <tr><td class="k"><code>verify</code></td><td class="d">기본 <code>optional</code> — <b>검증 프레이밍 kind만</b> 인정<br>
+        <tr><td class="k"><code>tests</code></td><td class="d">기본 <code>required</code> — 소스 변경 시 테스트 변경 요구</td></tr>
+        <tr><td class="k"><code>review</code></td><td class="d">기본 <code>optional</code> — 리뷰 기록 요구 (kind 무관)</td></tr>
+        <tr><td class="k"><code>verify</code></td><td class="d">기본 <code>optional</code> — <b>검증 프레이밍 kind만</b>, <code>meta.reviews</code>만(손 마커 무효)<br>
           <code>-adversarial</code> <code>-testcritic</code> <code>-shipcheck</code> <code>-contrarian</code> <code>-simplifier</code> <code>-scenario</code><br>
-          <code>scenarios</code>를 선언한 spec은 <code>-scenario</code>만 센다 (0.47.0)<br>
-          <em>검증 마커는 review를 겸하지만 역은 아니다</em></td></tr>
+          <code>scenarios</code> 선언 시 <code>-scenario</code>만 (0.47.0)</td></tr>
       </table>
     </div>
 
@@ -175,9 +175,9 @@
         <li><span class="m">✕</span><span><b>안 끝난 단계를 <code>- [x]</code>로 켜기</b> — 체크박스는 <code>done</code> 가드와 세션 재개 판정이 읽는다</span></li>
         <li><span class="m">✕</span><span><b>spec을 외부 문서 포인터 껍데기로 두기</b> — 자가진단 없는 spec은 doctor가 경고</span></li>
         <li><span class="m">✕</span><span><b>같은 브랜치·워킹트리에서 병렬로 쓰기</b>(D4) — 격리하려면 worktree(D5). 읽기·반박 병렬은 자유</span></li>
-        <li><span class="m">✕</span><span><b>리뷰를 돌리고 기록 안 남기기</b> — 남기지 않은 리뷰는 “안 한 것”</span></li>
+        <li><span class="m">✕</span><span><b>리뷰 마커를 손으로 쓰기</b> — CLI가 기록 안 한 리뷰는 “안 한 것”</span></li>
         <li><span class="m">✕</span><span><b>집계 파일 손으로 고치기</b> — <code>task_summary.md</code>·<code>&lt;user&gt;-task.md</code>는 생성물</span></li>
-        <li><span class="m">✕</span><span><b>다이어그램 체크박스 지우기</b> — 못 했으면 지우지 말고 사유를 붙여 닫는다</span></li>
+        <li><span class="m">✕</span><span><b>다이어그램 체크박스 지우기</b> — <code>diagram record --skipped</code>로 닫는다</span></li>
         <li><span class="m">✕</span><span><b>개인 메모리에 팀 학습 넣기</b> — 다른 팀원·리뷰 엔진에게 안 보인다</span></li>
       </ul>
     </div>
@@ -196,11 +196,12 @@
     <div class="box">
       <h2><span class="n">6</span>자동으로 도는 것<span class="hint">내가 부르지 않는다</span></h2>
       <table>
-        <tr><td class="k">SessionStart</td><td class="d">활성 task + Context Card 주입</td></tr>
+        <tr><td class="k">SessionStart</td><td class="d">활성 task + Context Card (main에서 done이면 nudge)</td></tr>
         <tr><td class="k">Edit/Write 전</td><td class="d">보호 파일 차단 · boundary 대조</td></tr>
-        <tr><td class="k">Bash 전</td><td class="d">위험 git 차단 · 커밋 전 점검</td></tr>
-        <tr><td class="k">Edit/Write 후</td><td class="d">자동 포맷</td></tr>
-        <tr><td class="k">post-commit</td><td class="d">handoff 갱신 (핸드오프만 바꾼 sweep 커밋은 제외)</td></tr>
+        <tr><td class="k">Bash 전</td><td class="d">위험 git 차단 · <code>gate commit</code></td></tr>
+        <tr><td class="k">Edit/Write 후</td><td class="d"><code>gate format</code> (gates.json 선언분)</td></tr>
+        <tr><td class="k">post-commit</td><td class="d">task handoff 갱신 (user handoff는 로컬)</td></tr>
+        <tr><td class="k">pre-push</td><td class="d"><code>pr-check</code> — clone 후 <code>harness-team sync</code></td></tr>
         <tr><td class="k">모든 도구</td><td class="d">관측 로그 · 트립와이어 (<code>/harness-observe</code>)</td></tr>
       </table>
     </div>
@@ -208,18 +209,18 @@
     <div class="box">
       <h2><span class="n">7</span>커맨드가 안 보이면<span class="hint">채널 3개</span></h2>
       <table>
-        <tr><td class="k"><code>init</code></td><td class="d">프로젝트당 1회 — hooks · rules · AGENTS/CLAUDE · docs 구조<br>
+        <tr><td class="k"><code>init</code></td><td class="d">프로젝트당 1회 — hooks · rules · AGENTS/CLAUDE · docs · gates<br>
           <b>clone한 저장소엔 이미 커밋돼 있다</b></td></tr>
         <tr><td class="k">플러그인</td><td class="d">사람·머신마다 — <code>/harness-*</code> 슬래시 커맨드는 <b>여기서만</b> 온다</td></tr>
         <tr><td class="k">전역 CLI</td><td class="d">사람마다 — 터미널과 훅이 부르는 <code>harness-team</code><br>
-          <code>harness-team --version</code>이 <code>Unknown command</code>면 클론이 낡은 것</td></tr>
+          드리프트는 doctor의 <code>harness version</code> 줄로 확인</td></tr>
       </table>
     </div>
 
     <div class="box">
       <h2><span class="n">8</span>역할 규범<span class="hint">decisions.md가 정본</span></h2>
       <ul>
-        <li><span class="m ok">D2</span><span>작성 = Claude, 리뷰 = Codex — 작성자와 리뷰어를 분리</span></li>
+        <li><span class="m ok">D2</span><span>작성 = Claude, 리뷰 = Codex(폴백 claude) — 분리</span></li>
         <li><span class="m ok">D4</span><span>같은 워킹트리·브랜치에서 쓰기는 <b>단일 스레드</b></span></li>
         <li><span class="m ok">D5</span><span>격리된 브랜치·worktree + PR 병합은 <b>허용·권장</b></span></li>
         <li><span class="m ok">D6</span><span>검증자는 별도 컨텍스트 read-only — <b>반박만 하고 고치지 않는다</b></span></li>
@@ -230,7 +231,7 @@
   </div>
 
   <footer>
-    <b>종결 후</b> 기본 브랜치에서 <code>harness-team summary --write</code> — <code>task</code>/<code>done</code>은 집계 파일을 건드리지 않는다 ·
+    <b>종결</b> 머지 후 기본 브랜치: 체크 → <code>done</code> → (<code>/harness-wiki</code>) → <code>summary --write</code> → <b>커밋 하나</b> ·
     <b>학습</b>은 artifact.md에 append, 같은 교정이 3회 이상 반복되면 <code>/harness-promote</code>로 <code>.claude/rules</code> 승격(항목은 사람이 고른다) ·
     <b>더 보기</b> docs/index.html · harness-onboarding-checklist.html · harness-operations-playground.html
   </footer>
@@ -245,7 +246,6 @@ function check(){
   if(over>2){ w.style.display='block'; w.textContent=`\u26a0 A4 한 장을 ${Math.round(over/PX_PER_MM)}mm 넘습니다 — 항목을 줄이세요`; }
   else { w.style.display='none'; console.log('[cheatsheet] fits A4 · 여유 '+Math.round(-over/PX_PER_MM)+'mm'); }
 }
-document.getElementById('ver').textContent=new Date().toISOString().slice(0,10);
 addEventListener('load',check); addEventListener('resize',check); check();
 </script>
 </body>
