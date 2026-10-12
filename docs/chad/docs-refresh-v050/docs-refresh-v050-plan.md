@@ -12,7 +12,7 @@
 - [x] 6. `harness-workflow-schematics.html` 갱신 + 버전 표기
 - [x] 7. `harness-rubric-guide.html` 갱신
 - [x] 8. `harness-onboarding-checklist.html` 갱신 + 버전 표기
-- [ ] 9. `harness-kickoff-deck.html` 갱신 + 버전 표기
+- [x] 9. `harness-kickoff-deck.html` 갱신 + 버전 표기
 - [ ] 10. `harness-operations-playground.html` 갱신 + 버전 표기
 - [ ] 11. `docs/index.html` 해당 항목 설명 버전 정합
 - [ ] 12. 검증(grep·HTML 파싱·`npm run test`) 후 artifact 기록
