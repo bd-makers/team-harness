@@ -9,7 +9,7 @@
 - [x] 3. `harness-cheatsheet.html` 갱신
 - [x] 4. `harness-task-guide.html` 갱신
 - [x] 5. `harness-workflow-diagrams.html` 갱신
-- [ ] 6. `harness-workflow-schematics.html` 갱신 + 버전 표기
+- [x] 6. `harness-workflow-schematics.html` 갱신 + 버전 표기
 - [x] 7. `harness-rubric-guide.html` 갱신
 - [x] 8. `harness-onboarding-checklist.html` 갱신 + 버전 표기
 - [ ] 9. `harness-kickoff-deck.html` 갱신 + 버전 표기

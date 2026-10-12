@@ -567,7 +567,7 @@
 
           <rect class="svg-box-accent" x="665" y="30" width="140" height="42" rx="8"></rect>
           <text class="svg-label" x="735" y="48" text-anchor="middle" style="font-size:11.5px">shipcheck S1–S5</text>
-          <text class="svg-sub" x="735" y="63" text-anchor="middle">7단계 옵트인 · 8단계 pr-check</text>
+          <text class="svg-sub" x="735" y="63" text-anchor="middle">7 옵트인 · 8 pr-check</text>
           <line x1="730" y1="72" x2="730" y2="105" stroke="#7c6af5" stroke-width="1.3" stroke-dasharray="3 3"></line>
 
           <!-- bottom attachments -->
@@ -581,9 +581,9 @@
           <text class="svg-sub" x="425" y="218" text-anchor="middle">옵트인 · scenario check 다음</text>
           <line x1="425" y1="185" x2="425" y2="151" stroke="#7c6af5" stroke-width="1.3" stroke-dasharray="3 3"></line>
 
-          <rect class="svg-box-green" x="620" y="185" width="340" height="42" rx="8"></rect>
-          <text class="svg-label" x="790" y="203" text-anchor="middle" style="font-size:11.5px">verify: required → meta.reviews의 검증 kind 요구</text>
-          <text class="svg-sub" x="790" y="218" text-anchor="middle" style="font-size:9px">-adversarial·-testcritic·-shipcheck·-contrarian·-simplifier·-scenario</text>
+          <rect class="svg-box-green" x="600" y="185" width="372" height="42" rx="8"></rect>
+          <text class="svg-label" x="786" y="203" text-anchor="middle" style="font-size:11.5px">verify: required → meta.reviews의 검증 kind 요구</text>
+          <text class="svg-sub" x="786" y="218" text-anchor="middle" style="font-size:8.5px">-adversarial·-testcritic·-shipcheck·-contrarian·-simplifier·-scenario</text>
           <line x1="890" y1="185" x2="890" y2="151" stroke="#4df0aa" stroke-width="1.3" stroke-dasharray="3 3"></line>
         </svg>
         <figcaption>층이 다르면 서로 대체하지 않는다 — contrarian은 spec/plan의 가정을, adversarial은 구현 diff를 공격한다. done 가드는 이 검증들의 실행 기록(<code>meta.reviews[]</code>)을 결정론적으로 확인할 뿐이고, PR 단계에서 하네스가 강제하는 것은 ship 8단계·pre-push의 <code>pr-check</code>다(D11).</figcaption>

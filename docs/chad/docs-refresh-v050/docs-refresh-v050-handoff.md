@@ -32,3 +32,9 @@
  .../docs-refresh-v050/docs-refresh-v050-plan.md    |   2 +-
  docs/harness-task-guide.html                       | 127 +++++++++++----------
  3 files changed, 77 insertions(+), 60 deletions(-)
+
+## 2026-10-12T06:02:43.650Z — e85fabb docs(workflow-diagrams): 워크플로우 다이어그램 5종을 v0.50.0 기준으로 갱신
+.../docs-refresh-v050/docs-refresh-v050-handoff.md |   6 +
+ .../docs-refresh-v050/docs-refresh-v050-plan.md    |   2 +-
+ docs/harness-workflow-diagrams.html                | 142 ++++++++++++---------
+ 3 files changed, 89 insertions(+), 61 deletions(-)
