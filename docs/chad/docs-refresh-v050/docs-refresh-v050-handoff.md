@@ -65,3 +65,9 @@
  docs/chad/docs-refresh-v050/docs-refresh-v050-plan.md    |  4 ++--
  docs/index.html                                          | 10 +++++-----
  5 files changed, 30 insertions(+), 8 deletions(-)
+
+## 2026-10-12T06:11:09.978Z — 17bfea4 docs(task): mermaid 형식 유지를 작성 세션 판단(사용자 확인 대기)으로 정정
+docs/chad/docs-refresh-v050/docs-refresh-v050-context.md | 2 +-
+ docs/chad/docs-refresh-v050/docs-refresh-v050-handoff.md | 8 ++++++++
+ docs/chad/docs-refresh-v050/docs-refresh-v050-spec.md    | 2 +-
+ 3 files changed, 10 insertions(+), 2 deletions(-)
