@@ -361,7 +361,7 @@
             <tr>
               <td><strong>testcritic</strong></td>
               <td>새 테스트</td>
-              <td>unit T1–T6 · component C1–C6 · integration I1–I6</td>
+              <td>unit T1–T7 · component C1–C7 · integration I1–I7</td>
               <td>테스트 3형제 6단계 (unittest·comptest·inttest)<br><code>--framing testcritic --rubric unit|component|integration</code> — <code>--rubric</code> 필수</td>
               <td><code>-testcritic</code> / <code>worktree|diff</code></td>
               <td>tautological·mock 반향 테스트가 "커버리지"로 통과하는 것</td>
@@ -448,7 +448,7 @@
       </div>
       <p style="font-size:0.85rem; color:var(--muted)">fail마다 <strong>제거안 한 줄</strong>을 요구한다 — 제거"안"까지가 검증자의 몫이고, plan.md 수정은 driver가 사용자 승인 후 수행한다.</p>
 
-      <h4 style="margin:1.4rem 0 0.3rem; font-size:0.95rem">testcritic — T1–T6 (새 테스트 비평)</h4>
+      <h4 style="margin:1.4rem 0 0.3rem; font-size:0.95rem">testcritic — T1–T7 (새 테스트 비평)</h4>
       <div class="table-wrap">
         <table>
           <thead><tr><th>id</th><th>항목</th><th>심각도</th></tr></thead>
@@ -459,11 +459,12 @@
             <tr><td>T4</td><td>각 테스트가 죽일 수 있는 프로덕션 변이(mutation)를 최소 1개 지목할 수 있다</td><td><span class="sev sev-major">MAJOR</span></td></tr>
             <tr><td>T5</td><td>GWT 3구획·서술형 테스트명·When 한 줄 규율 준수</td><td><span class="sev sev-major">MAJOR</span></td></tr>
             <tr><td>T6</td><td>구현 세부사항 assert 없음 — private/호출 순서/내부 상태 검증 부재</td><td><span class="sev sev-major">MAJOR</span></td></tr>
+            <tr><td>T7</td><td>기존 테스트 후퇴 없음 — 기존 테스트의 삭제, <code>.skip</code>·<code>xit</code>·<code>xdescribe</code>·<code>@Disabled</code>·<code>@Ignore</code> 등 비활성화, 기대값 완화·assert 제거가 diff에 없다 (의도한 삭제는 spec 근거를 인용해야 pass)</td><td><span class="sev sev-blocker">BLOCKER</span></td></tr>
           </tbody>
         </table>
       </div>
 
-      <h4 style="margin:1.4rem 0 0.3rem; font-size:0.95rem">testcritic — C1–C6 (component) · I1–I6 (integration)</h4>
+      <h4 style="margin:1.4rem 0 0.3rem; font-size:0.95rem">testcritic — C1–C7 (component) · I1–I7 (integration)</h4>
       <p style="font-size:0.85rem; color:var(--muted)">kind는 셋 다 <code>-testcritic</code>이고 <code>meta.reviews</code> 항목의 <code>rubric</code> 필드로만 구분됩니다. C·I의 1–3행은 T1–T3과 같은 축(실행 증거·tautological·mock 반향, 전부 BLOCKER)입니다.</p>
       <div class="table-wrap">
         <table>
@@ -473,10 +474,12 @@
             <tr><td>C4</td><td>마크업 리팩토링에도 살아남는다 — 사용자 관점 쿼리 우선순위 준수</td><td><span class="sev sev-major">MAJOR</span></td></tr>
             <tr><td>C5</td><td>msw 핸들러를 지우면 실패한다 — 네트워크 경로를 실제로 태운다 (해당 시)</td><td><span class="sev sev-major">MAJOR</span></td></tr>
             <tr><td>C6</td><td>로딩/에러/빈 상태 기본 세트가 커버되거나 미커버 사유가 보고됐다</td><td><span class="sev sev-major">MAJOR</span></td></tr>
+            <tr><td>C7</td><td>기존 테스트 후퇴 없음 — 기존 테스트의 삭제, <code>.skip</code>·<code>xit</code>·<code>xdescribe</code>·<code>@Disabled</code>·<code>@Ignore</code> 등 비활성화, 기대값 완화·assert 제거가 diff에 없다 (의도한 삭제는 spec 근거를 인용해야 pass)</td><td><span class="sev sev-blocker">BLOCKER</span></td></tr>
             <tr><td>I1</td><td>실행·전부 통과 증거 — 단독 1회 + 전체 1회, 결과 동일(격리 증명)</td><td><span class="sev sev-blocker">BLOCKER</span></td></tr>
             <tr><td>I4</td><td>DB assert를 지우면 실패한다 — 부수효과 검증이 존재한다 (해당 시)</td><td><span class="sev sev-major">MAJOR</span></td></tr>
             <tr><td>I5</td><td>msw 핸들러를 지우면 실패한다 — 아웃바운드 경로를 실제로 태운다 (해당 시)</td><td><span class="sev sev-major">MAJOR</span></td></tr>
             <tr><td>I6</td><td>managed/unmanaged 구분 준수 — managed 의존성 목킹 없음</td><td><span class="sev sev-major">MAJOR</span></td></tr>
+            <tr><td>I7</td><td>기존 테스트 후퇴 없음 — 기존 테스트의 삭제, <code>.skip</code>·<code>xit</code>·<code>xdescribe</code>·<code>@Disabled</code>·<code>@Ignore</code> 등 비활성화, 기대값 완화·assert 제거가 diff에 없다 (의도한 삭제는 spec 근거를 인용해야 pass)</td><td><span class="sev sev-blocker">BLOCKER</span></td></tr>
           </tbody>
         </table>
       </div>
