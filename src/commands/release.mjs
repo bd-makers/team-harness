@@ -64,7 +64,9 @@ function computeNewVersion(bump, current) {
   return `${maj}.${min}.${pat}`;
 }
 
-// Exclude .git, node_modules, tests, scripts (any path segment) and docs/superpowers (rooted).
+// Exclude .git, node_modules, tests, scripts (any path segment), docs/superpowers and
+// .claude/worktrees (rooted). Worktrees are full repo checkouts: copying them bloats the
+// cache, and on iCloud an evicted file inside one blocks the copy indefinitely.
 function cacheFilter(root) {
   return (src) => {
     const rel = path.relative(root, src);
@@ -72,6 +74,7 @@ function cacheFilter(root) {
     const segs = rel.split(path.sep);
     if (segs.some(s => EXCLUDE_SEGMENTS.has(s))) return false;
     if (segs[0] === 'docs' && segs[1] === 'superpowers') return false;
+    if (segs[0] === '.claude' && segs[1] === 'worktrees') return false;
     return true;
   };
 }
