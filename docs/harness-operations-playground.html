@@ -130,6 +130,7 @@
 
 <header>
   <h1>하네스 운용 시나리오 구성기</h1>
+  <span class="tag">기준 v0.50.0</span>
   <span class="sub">harness-aijient-team · 상황을 고르면 실행 순서·자동 훅·<code style="background:none;border:none;padding:0">done</code> 가드 판정이 함께 바뀝니다</span>
   <div class="presets" id="presets"></div>
 </header>
@@ -153,7 +154,7 @@
 const DEFAULTS = {
   taskName: 'auth-redesign',
   taskState: 'new',          // new | resume
-  scenario: 'feature',       // feature | bug | arch | release | setup | docs
+  scenario: 'feature',       // feature | bug | arch | setup | docs
   scale: 'medium',           // small | medium | large
   isolation: 'same',         // same | worktree
   sessions: 'one',           // one | multi
@@ -165,6 +166,7 @@ const DEFAULTS = {
   personas: { interview:false, contrarian:false, simplifier:false },
   tests: { unit:false, comp:false, int:false },
   evidence: { tests:'required', review:'optional', verify:'optional' },
+  scenarios: false,          // spec Done evidence의 scenarios(R2) 선언
 };
 const state = structuredClone(DEFAULTS);
 
@@ -172,7 +174,6 @@ const SCENARIOS = {
   feature: { label:'신규 기능',      touchesSrc:true  },
   bug:     { label:'버그 수정',      touchesSrc:true  },
   arch:    { label:'아키텍처·리팩터', touchesSrc:true  },
-  release: { label:'릴리스',         touchesSrc:false },
   setup:   { label:'하네스 정비',    touchesSrc:false },
   docs:    { label:'문서·규칙만',    touchesSrc:false },
 };
@@ -191,10 +192,10 @@ const PRESETS = {
     ambiguity:true, boundary:true, diagram:true, reviewKind:'adversarial', engine:'codex',
     personas:{interview:true,contrarian:true,simplifier:true}, tests:{unit:true,comp:false,int:true},
     evidence:{tests:'required',review:'required',verify:'required'} },
-  '릴리스': { scenario:'release', scale:'small', taskState:'new', isolation:'same', sessions:'one',
-    ambiguity:false, boundary:false, diagram:false, reviewKind:'review', engine:'auto',
-    personas:{interview:false,contrarian:false,simplifier:false}, tests:{unit:false,comp:false,int:false},
-    evidence:{tests:'skip',review:'optional',verify:'optional'} },
+  'R2 시나리오 기능': { scenario:'feature', scale:'medium', taskState:'new', isolation:'worktree', sessions:'one',
+    ambiguity:true, boundary:false, diagram:false, reviewKind:'review', engine:'codex',
+    personas:{interview:true,contrarian:false,simplifier:false}, tests:{unit:true,comp:false,int:false},
+    evidence:{tests:'required',review:'required',verify:'required'}, scenarios:true },
   '하네스 정비': { scenario:'setup', scale:'small', taskState:'new', isolation:'same', sessions:'one',
     ambiguity:false, boundary:false, diagram:false, reviewKind:'none', engine:'auto',
     personas:{interview:false,contrarian:false,simplifier:false}, tests:{unit:false,comp:false,int:false},
@@ -203,15 +204,17 @@ const PRESETS = {
 
 /* ---------------- derived rules ---------------- */
 // AGENTS.md / CLAUDE.md: 작은 버그·문서 수정에는 Ambiguity 게이트·페르소나 호출을 생략해도 된다
-const gateSkippable = () => state.scale === 'small' && ['bug','docs','setup','release'].includes(state.scenario);
+const gateSkippable = () => state.scale === 'small' && ['bug','docs','setup'].includes(state.scenario);
 // CLAUDE.md §5-A 복잡도 게이트
 const escalates = () => state.scale === 'large' || state.scenario === 'arch';
-// done 가드: verify 증거로 인정되는 '검증 프레이밍 kind' 마커를 남기는 단계들
+// done 가드: verify 증거로 인정되는 '검증 프레이밍 kind' 기록(meta.reviews[])을 남기는 단계들
+// scenarios(R2)를 선언한 task는 -scenario만 센다 (src/commands/task.mjs)
 function verifySources(){
+  if(state.scenarios) return ['harness-team review --framing scenario → <code>-scenario</code>'];
   const v=[];
   if(state.reviewKind==='adversarial') v.push('/harness-adversarial-review → <code>kind=&lt;engine&gt;-adversarial</code>');
-  if(state.tests.unit||state.tests.comp||state.tests.int) v.push('테스트 3형제 → <code>--framing testcritic</code>');
-  if(state.scenario!=='setup') v.push('/harness-ship 7단계 → <code>--framing shipcheck</code>');
+  if(state.tests.unit||state.tests.comp||state.tests.int) v.push('테스트 3형제 → <code>--framing testcritic --rubric</code>');
+  if(state.scenario!=='setup') v.push('/harness-ship 7단계(옵트인) → <code>--framing shipcheck</code>');
   if(state.personas.contrarian && state.engine!=='auto') v.push('/harness-contrarian (엔진 인수) → <code>-contrarian</code>');
   if(state.personas.simplifier && state.engine!=='auto') v.push('/harness-simplifier (엔진 인수) → <code>-simplifier</code>');
   return v;
@@ -252,18 +255,18 @@ function renderControls(){
     <h3>게이트</h3>
     <label class="chk">
       <input type="checkbox" data-ck="ambiguity" ${state.ambiguity?'checked':''}>
-      <span>Ambiguity 자가진단 + Ontology
-        <small>${skip?'작은 '+SCENARIOS[state.scenario].label+'에는 <b>생략해도 된다</b> — 강제가 아니라 허용이라 켜 둬도 됩니다':'spec.md 안에 직접 쓴다. 외부 포인터 껍데기 spec은 doctor가 경고'}</small></span>
+      <span>R1 · Ambiguity 자가진단 + Ontology
+        <small>${skip?'작은 '+SCENARIOS[state.scenario].label+'에는 <b>생략해도 된다</b> — 강제가 아니라 허용이라 켜 둬도 됩니다':'spec.md 안에 직접 쓴다 — R1 원천 검토 절 포함. 외부 포인터 껍데기 spec은 doctor가 경고'}</small></span>
     </label>
     <label class="chk">
       <input type="checkbox" data-ck="boundary" ${state.boundary?'checked':''}>
       <span>Boundary contracts 선언
-        <small>spec의 <code>## Boundary contracts</code> JSON. 선언이 있으면 plan 체크박스 직전에 훅이 자동 대조</small></span>
+        <small>spec의 <code>## Boundary contracts</code> JSON. 선언이 있으면 plan 체크박스 직전에 boundary-checkpoint 훅이 자동 대조</small></span>
     </label>
     <label class="chk ${state.taskState==='resume'?'disabled':''}">
       <input type="checkbox" data-ck="diagram" ${state.diagram?'checked':''} ${state.taskState==='resume'?'disabled':''}>
       <span>다이어그램 옵트인
-        <small>${state.taskState==='resume'?'재활성화 때는 묻지 않는다 — 신규 생성 시 1회만':'plan.md의 그 체크박스가 곧 상태다. 못 하면 지우지 말고 사유를 달아 닫는다'}</small></span>
+        <small>${state.taskState==='resume'?'재활성화 때는 묻지 않는다 — 신규 생성 시 1회만':'plan.md의 그 체크박스가 곧 상태다. 못 하면 지우지 말고 <code>diagram record --skipped</code>로 닫는다'}</small></span>
     </label>
   </div>
 
@@ -272,13 +275,13 @@ function renderControls(){
     ${seg('reviewKind',[['none','없음'],['review','표준'],['adversarial','적대적']],state.reviewKind)}
     <div style="height:6px"></div>
     ${seg('engine',[['auto','엔진 자동'],['codex','codex'],['claude','claude']],state.engine)}
-    <div class="hint">결과는 activetask artifact <code>## Reviews</code>에 마커로 남고, 그 마커가 <code>done</code> 가드의 증거가 됩니다.</div>
+    <div class="hint"><code>harness-team review</code>가 성공한 실행을 <code>meta.reviews[]</code>와 artifact <code>## Reviews</code>에 기록하고, 그 기록이 <code>done</code> 가드의 증거가 됩니다. 마커를 손으로 쓰지 않습니다.</div>
   </div>
 
   <div class="grp">
     <h3>페르소나</h3>
     <label class="chk"><input type="checkbox" data-pk="interview" ${p.interview?'checked':''}>
-      <span>/harness-interview <small>입력(스펙)이 모호한가 — 선행 채점 + 소크라테스 검증</small></span></label>
+      <span>/harness-interview <small>입력(스펙)이 모호한가 — R1 원천 검토 → 선행 채점 + 소크라테스 검증</small></span></label>
     <label class="chk"><input type="checkbox" data-pk="contrarian" ${p.contrarian?'checked':''}>
       <span>/harness-contrarian <small>가정이 옳은가 — 엔진 인수를 주면 외부 검증자가 반론</small></span></label>
     <label class="chk"><input type="checkbox" data-pk="simplifier" ${p.simplifier?'checked':''}>
@@ -297,11 +300,16 @@ function renderControls(){
 
   <div class="grp">
     <h3>Done evidence 선언</h3>
-    ${['tests','review','verify'].map(k=>`
+    ${[['tests',['required','skip']],['review',['required','optional']],['verify',['required','optional']]].map(([k,vals])=>`
       <div class="tri"><label>${k}</label>
-        ${seg('ev:'+k,[['required','required'],['optional','optional'],['skip','skip']],e[k])}
+        ${seg('ev:'+k,vals.map(v=>[v,v]),e[k])}
       </div>`).join('')}
-    <div class="hint">spec의 <code>## Done evidence</code> JSON. 가드는 판정 창(<code>reopenedAt || firstActivatedAt</code> 이후) 안의 마커 <b>존재·kind·시각</b>만 읽습니다 — finding 품질은 판정하지 않습니다.</div>
+    <label class="chk" style="margin-top:6px">
+      <input type="checkbox" data-ck="scenarios" ${state.scenarios?'checked':''}>
+      <span>scenarios 선언 (R2, 옵트인)
+        <small>Given/When/Then + 증거 <code>test</code>·<code>cmd</code>. 선언하면 verify 증거는 <code>-scenario</code>만 센다 · CLI 0.47.0 이상 필요</small></span>
+    </label>
+    <div class="hint">spec의 <code>## Done evidence</code> JSON. 허용값은 <code>tests: required|skip</code> · <code>review</code>/<code>verify: required|optional</code> — 그 밖의 값은 선언 오류로 <code>done</code>이 막힙니다. 가드는 판정 창(<code>reopenedAt || firstActivatedAt</code> 이후) 안의 리뷰 기록 <b>존재·kind·시각</b>만 읽습니다 — finding 품질은 판정하지 않습니다.</div>
   </div>
 
   <div class="grp">
@@ -332,7 +340,7 @@ function buildSteps(){
   push(`<code>/harness-task ${n}</code>`,
     state.taskState==='new'
       ? '생성 → <code>created:</code> · <code>.harness/active.json</code>이 이 task를 가리킨다'
-      : '같은 이름이 이미 있으면 그 task를 active로 전환 — 완료 상태는 만료되고 <code>reopened:</code>');
+      : '열린 task면 <code>activated:</code>로 전환, done task면 <code>reopened:</code>(status open · 새 판정 창). 원장에 done인데 폴더가 지워진 이름은 거부된다');
 
   if(escalates()){
     push('<b>멈추고 escalation 패킷 5항목 제출</b>',
@@ -341,37 +349,33 @@ function buildSteps(){
 
   if(state.taskState==='new' && state.diagram)
     push('다이어그램 옵트인 질문에 <b>예</b>',
-      'plan.md에 그 단계가 추가된다 — 이 체크박스가 곧 상태다. 도구가 없으면 지우지 말고 <code>- [x] … — 미실행(도구 없음)</code>으로 닫고 artifact에 한 줄', 'gate');
+      'plan.md에 그 단계가 추가된다 — 이 체크박스가 곧 상태다. 도구가 없으면 지우지 말고 <code>harness-team diagram record --skipped "&lt;사유&gt;"</code>로 닫는다(plan·artifact를 한 명령이)', 'gate');
 
   if(state.scenario==='setup'){
-    push('<code>/harness-init</code>','기존 파일은 비파괴 — 마커 섹션 교체 · JSON deep-merge · hooks/rules/skills는 있으면 건너뜀');
-    push('<code>/harness-migrate</code>','템플릿 수정이 <b>기존 설치</b>에 도달하는 유일한 경로 (init은 기존 파일을 건너뛴다)');
-    push('<code>/harness-sync</code>','<code>.claude/rules</code> → <code>.cursor/rules</code> 미러 재생성 + post-commit 훅 재설치');
-    push('<code>/harness-doctor</code>','symlink · JSON · 실행 권한 · 외부 도구 · 규칙 유래 마커 — 문제가 있으면 exit 1');
+    push('<code>/harness-init</code>','기존 파일은 비파괴 — 마커 섹션 교체 · JSON deep-merge · hooks/rules/skills는 있으면 건너뜀. <code>.harness/gates.json</code> 제안·기록, git post-commit·pre-push 훅 설치, 적용 버전 기록. AGENTS/CLAUDE 관리 절 갱신은 <code>init --yes</code>');
+    push('<code>/harness-migrate</code>','훅·스킬·규칙 템플릿 수정이 <b>기존 설치</b>에 도달하는 유일한 경로 (init은 기존 파일을 건너뛴다)');
+    push('<code>/harness-sync</code>','<code>.claude/rules</code> → <code>.cursor/rules</code> 미러 재생성 + post-commit·pre-push 훅 재설치 (clone한 팀원은 1회 필수)');
+    push('<code>/harness-doctor</code>','symlink · JSON · 실행 권한 · 외부 도구 · 규칙 유래 마커 · <code>harness version</code> 줄 · 낡은 관리 절 · pre-push 훅 · gates 지문 — 문제가 있으면 exit 1');
     push('<code>/harness-observe</code>','관측 JSONL 스코어카드 + 트립와이어 2종 — 발화 시 exit 1, read-only');
     push('<code>/harness-retro</code>','정비에서 드러난 교정을 artifact.md에 append', 'opt');
     push('<code>/harness-task done</code>','열어 둔 task를 닫는다 — plan에 미완 <code>- [ ]</code>가 남으면 막힌다', 'gate');
-    push('기본 브랜치에서 <code>harness-team summary --write</code>','집계 원장 갱신');
+    push('기본 브랜치에서 <code>harness-team summary --write</code>','집계 원장 갱신 → 종결 커밋 하나');
     return S;
   }
 
-  if(state.scenario==='release'){
-    push('<code>docs/what-changes-&lt;ver&gt;.html</code> + CHANGELOG 작성','문서를 <b>bump 전에</b> 쓴다 — 순서가 뒤집히면 버전 문장이 틀어진다');
-    push('<code>/harness-release</code>','4개 매니페스트 동시 bump (package.json · .claude-plugin/plugin.json · marketplace.json · .codex-plugin/plugin.json) + 캐시·마켓플레이스·installed_plugins.json 동기화');
-    push('<code>npm run docs:check</code> · <code>npm test</code>','dry-run 출력만 믿지 말고 실제 상태를 새로 검증');
-  } else {
+  {
     if(state.scenario!=='docs'){
       push('<code>/harness-spec</code>',
-        'spec.md 초안을 Confluence·Figma·인터뷰 3소스에서 생성 (writer). 본문이 이미 있으면 건너뛴다', state.scenario==='bug'?'opt':null);
+        'spec.md 초안을 Confluence·Figma·인터뷰 3소스에서 생성 (writer). 본문이 이미 있으면 merge(기본)·replace·cancel을 묻고, 수집한 원천은 <code>## 원천 검토 (R1)</code>에 적는다', state.scenario==='bug'?'opt':null);
     }
     if(state.ambiguity)
-      push('spec.md — Ambiguity 자가진단 + Ontology','구현 진입 전 통과해야 하는 게이트. 요구사항·자가진단·Ontology는 spec.md에 <b>직접</b> 쓴다', 'gate');
+      push('spec.md — R1 원천 검토 · Ambiguity 자가진단 + Ontology','구현 진입 전 통과해야 하는 게이트(규범). 요구사항·원천 검토·자가진단·Ontology는 spec.md에 <b>직접</b> 쓴다. 원천이 없으면 R1에 <code>- 없음 — &lt;사유&gt;</code>', 'gate');
     if(state.personas.interview)
-      push('<code>/harness-interview</code>','선행 채점 후 소크라테스식 질문으로 숨은 가정을 드러낸다 (validator)');
+      push('<code>/harness-interview</code>','R1 원천 검토(<code>(unresolved)</code>·<code>(open)</code>이 남으면 통과를 선언하지 않는다) → 선행 채점 → 소크라테스식 질문으로 숨은 가정을 드러낸다 (validator)');
     if(state.boundary)
       push('spec.md — <code>## Boundary contracts</code> JSON','producer/consumer JSON Schema 경로 선언. V1은 <code>properties</code>·<code>required</code>·기본 <code>type</code>만 비교', 'gate');
     push('spec.md — <code>## Done evidence</code> JSON',
-      `<code>{ "version":1, "tests":"${state.evidence.tests}", "review":"${state.evidence.review}", "verify":"${state.evidence.verify}" }</code>`, 'gate');
+      `<code>{ "version":1, "tests":"${state.evidence.tests}", "review":"${state.evidence.review}", "verify":"${state.evidence.verify}"${state.scenarios?', "scenarios":[{ "id", "given", "when", "then", "test", "cmd" }]':''} }</code>`, 'gate');
     push('plan.md — 단계 체크리스트 작성',
       'superpowers:writing-plans가 있으면 그것으로, 없으면 직접. 하지 않은 단계를 미리 <code>- [x]</code>로 켜지 않는다');
     if(state.scenario==='bug')
@@ -379,23 +383,28 @@ function buildSteps(){
     push(state.scenario==='docs' ? '문서·규칙 수정' : '구현 — 가장 작은 end-to-end 단위부터',
       state.scenario==='docs'
         ? '<code>.claude/rules</code>를 고쳤으면 <code>/harness-sync</code>로 cursor 미러를 재생성한다. plan 체크박스는 실제 완료 시점에만 <code>- [x]</code>'
-        : '검증된 상태 위에 점진 확장. plan 체크박스는 <b>실제 완료 시점에만</b> <code>- [x]</code>');
+        : '검증된 상태 위에 점진 확장. plan 체크박스는 <b>실제 완료 시점에만</b> <code>- [x]</code>. 커밋은 <code>gate commit</code>(gates.json)을 지난다. plan을 단계별로 자동 진행하려면 선택형 <code>/harness-loop</code>');
     const tl=[]; if(state.tests.unit)tl.push('/harness-unittest'); if(state.tests.comp)tl.push('/harness-comptest'); if(state.tests.int)tl.push('/harness-inttest');
-    if(tl.length) push(tl.map(x=>`<code>${x}</code>`).join(' · '),'스택 감지 → 강제 규칙 → 커버리지 → 검증. D6 <code>testcritic</code> 프레이밍이 verify 증거 마커를 남긴다');
+    if(tl.length) push(tl.map(x=>`<code>${x}</code>`).join(' · '),'스택 감지 → 강제 규칙 → 커버리지 → 검증. D6 <code>testcritic</code> 프레이밍(<code>--rubric</code> 필수)이 verify 증거를 남긴다');
+    if(state.scenarios){
+      push('<code>harness-team scenario check</code>','모든 시나리오에 증거가 연결됐는지, 증거 명령이 exit 0인지 — exit 0은 필요조건일 뿐이다', 'gate');
+      push(`<code>harness-team review${eng||' &lt;engine&gt;'} --framing scenario</code>`,'증거가 Then을 실제로 검증하는가(E1)·spec 밖 동작이 없는가(E2) — verify 증거는 <code>-scenario</code>만 센다');
+    }
     if(state.personas.contrarian) push('<code>/harness-contrarian'+eng+'</code>','spec·plan의 모든 가정에 의문 — 엔진 인수를 주면 외부 read-only 검증자가 반론');
     if(state.personas.simplifier) push('<code>/harness-simplifier'+eng+'</code>','plan에서 제거 가능한 단계와 추상화를 찾는다');
     if(state.reviewKind!=='none')
       push(`<code>/harness-${state.reviewKind==='adversarial'?'adversarial-review':'review'}${eng}</code>`,
-        state.engine==='auto' ? '엔진 미지정 → probe 폴백 체인 (codex → claude). artifact <code>## Reviews</code>에 마커 기록'
-                              : 'artifact <code>## Reviews</code>에 날짜·엔진과 함께 기록 — 남기지 않은 리뷰는 “안 한 것”');
+        (state.engine==='auto' ? '엔진 미지정 → probe 폴백 체인 (codex → claude). ' : '')
+        + '<code>harness-team review</code>가 성공한 실행만 <code>meta.reviews[]</code>·artifact <code>## Reviews</code>에 기록 — 판별·조치는 직접 쓴다');
   }
 
-  push('<code>/harness-ship</code>','spec·plan·artifact를 코드 현실과 맞추고 <b>준비 완료를 보고</b> — PR/MR을 만들지 않고, <code>done</code>을 대체·실행하지도 않는다. 7단계의 <code>--framing shipcheck</code>가 <code>kind=&lt;engine&gt;-shipcheck</code> 마커를 남긴다 (verify 증거)');
-  push('PR/MR 생성','사용자 지시로 별도 진행 (<code>git push</code>·<code>gh pr create</code>는 settings의 <code>ask</code> 목록)', 'opt');
+  push('<code>/harness-ship</code>','spec·plan·artifact를 코드 현실과 맞추고 8단계에서 <code>harness-team pr-check</code>(D11 유일한 강제)를 통과한 뒤 <b>준비 완료를 보고</b> — PR/MR을 만들지 않고, <code>done</code>을 대체·실행하지도 않는다. 7단계(옵트인)의 <code>--framing shipcheck</code>가 <code>-shipcheck</code> 기록을 남긴다 (verify 증거)');
+  push('push → PR/MR → 머지','사용자 지시로 별도 진행 — push 때 pre-push 훅이 <code>pr-check</code>를 다시 돌린다 (<code>git push</code>·<code>gh pr create/merge</code>는 settings의 <code>ask</code> 목록)', 'opt');
   push('<code>/harness-retro</code>','artifact.md에 학습·교정 append — 팀 학습의 SSOT는 artifact.md, 개인 메모리가 아니다', 'opt');
-  push('<code>/harness-task done</code>','가드가 판정 창 안의 증거를 결정론적으로 검사 → meta status <code>done</code>', 'gate');
-  push('기본 브랜치에서 <code>harness-team summary --write</code>',
-    `<code>task</code>/<code>done</code>은 집계 파일을 건드리지 않는다${state.isolation==='worktree'?' — 브랜치를 병렬로 둬도 충돌하지 않는 이유':''}`);
+  push('<code>/harness-task done</code>','<b>머지 후 기본 브랜치에서</b> plan 마지막 단계를 체크하고 실행 — 가드가 판정 창 안의 증거를 결정론적으로 검사 → meta status <code>done</code>. 체크박스만 켠 plan 변경은 미커밋으로 세지 않는다', 'gate');
+  push('<code>/harness-wiki &lt;user&gt;/&lt;task&gt;</code>','위키 컴파일 — done 다음, summary 전에 돌려 같은 종결 커밋에 담는다', 'opt');
+  push('기본 브랜치에서 <code>harness-team summary --write</code> → 종결 커밋 하나',
+    `plan·meta·handoff·원장을 <code>chore(task): &lt;name&gt; 종결</code> 커밋 하나에. <code>task</code>/<code>done</code>은 집계 파일을 건드리지 않는다${state.isolation==='worktree'?' — 브랜치를 병렬로 둬도 충돌하지 않는 이유':''}`);
   push('<code>/harness-promote</code>','같은 교정이 3회 이상 반복되고 주관 없이 검사 가능할 때만. 사용자가 항목을 고른다 — LLM 자기 승격 경로는 없다', 'opt');
   return S;
 }
@@ -406,10 +415,11 @@ function buildAuto(){
     ['SessionStart','observe-tools.mjs','<code>.harness/observability/</code> JSONL 기록 — 도구 이름·세션 id는 HMAC 참조'],
     ['PreToolUse Edit|Write','protect-files.sh','보호 경로 쓰기 차단'],
   ];
-  if(state.boundary) A.push(['PreToolUse Edit|Write','boundary-checkpoint.sh','plan 체크박스를 완료로 바꾸기 직전 <code>harness-team boundary check</code> 실행 — LLM이 아니라 결정론적 CLI']);
-  A.push(['PreToolUse Bash','block-dangerous-git.sh · pre-commit-check.sh','위험 git 차단 + 커밋 전 점검']);
-  A.push(['PostToolUse Edit|Write','auto-format.sh','포맷 자동 적용']);
-  A.push(['post-commit','harness-team handoff','<code>&lt;name&gt;-handoff.md</code>·<code>&lt;user&gt;-handoff.md</code> 자동 갱신 — 핸드오프만 바꾼 sweep 커밋에는 쓰지 않는다']);
+  if(state.boundary) A.push(['PreToolUse Edit|Write','boundary-checkpoint.sh','plan 체크박스를 완료로 바꾸기 직전 <code>harness-team boundary checkpoint</code> 실행 — LLM이 아니라 결정론적 CLI']);
+  A.push(['PreToolUse Bash','block-dangerous-git.sh · pre-commit-check.sh','위험 git 차단 + 커밋 게이트 <code>harness-team gate commit</code> (<code>.harness/gates.json</code>의 commit 목록, 없으면 안내 후 통과)']);
+  A.push(['PostToolUse Edit|Write','auto-format.sh','<code>harness-team gate format</code> — gates.json에 선언된 포맷터만']);
+  A.push(['post-commit','harness-team handoff','<code>&lt;name&gt;-handoff.md</code> append(다음 작업 커밋에 담는다) · <code>&lt;user&gt;-handoff.md</code>는 gitignore된 로컬 — 핸드오프만 바꾼 sweep 커밋에는 쓰지 않는다']);
+  A.push(['pre-push','harness-team pr-check --pre-push','PR이 담은 task 문서 계약 — 하네스의 유일한 강제(D11)']);
   A.push(['PermissionDenied / PostToolUseFailure','observe-tools.mjs','실패·거부율 트립와이어 입력']);
   return A;
 }
@@ -421,12 +431,13 @@ function buildFiles(){
     [`docs/&lt;member&gt;/${n}/${n}-handoff.md`,'세션 인수인계 — post-commit 훅이 갱신','m'],
     [`docs/&lt;member&gt;/${n}/${n}-artifact.md`,'실행 결과·학습·## Reviews — done·retro 시 append','h'],
   ];
-  F.push([`docs/&lt;member&gt;/${n}/${n}-meta.json`,'기계 상태 — 손으로 고치지 않는다. done 가드의 판정 창이 여기서 정해진다','m']);
-  if(state.sessions==='multi'||state.isolation==='worktree')
-    F.push([`docs/&lt;member&gt;/${n}/${n}-context.md`,'TCC — 비-SSOT cache/workpad. 6 KiB · 비공백 100행 · 미해결 F-* 3개 이하','h']);
+  F.push([`docs/&lt;member&gt;/${n}/${n}-meta.json`,'기계 상태 — 손으로 고치지 않는다. 판정 창과 verify 증거 정본 <code>reviews[]</code>','m']);
+  F.push([`docs/&lt;member&gt;/${n}/${n}-context.md`,'TCC — 비-SSOT cache/workpad, 항상 생성되고 SessionStart가 주입. 6 KiB · 비공백 100행 · 미해결 F-* 3개 이하','h']);
   if(state.diagram && state.taskState==='new')
     F.push([`docs/&lt;member&gt;/${n}/${n}-diagram.html`,'자립형 inline SVG (Obsidian이 script를 제거한다) · SSOT 4파일 아님','h']);
   F.push(['.harness/active.json','활성 task 포인터','m']);
+  F.push(['docs/&lt;user&gt;/&lt;user&gt;-handoff.md','세션 진입점 — gitignore된 워크트리 로컬, 커밋하지 않는다','m']);
+  F.push(['.harness/gates.json','커밋·포맷 게이트 — 팀이 커밋한다','h']);
   F.push(['docs/task_summary.md · docs/&lt;user&gt;/&lt;user&gt;-task.md','<b>생성물</b> — 기본 브랜치에서 <code>summary --write</code>로만 갱신','m']);
   return F;
 }
@@ -442,21 +453,21 @@ function buildGuard(){
   } else G.push(['ok',`tests: ${e.tests}`,'소스 변경과 테스트 파일 변경을 대조하지 않습니다']);
   // review
   if(e.review==='required'){
-    if(hasReviewMarker()) G.push(['ok','review: required — 판정 창 안에 리뷰 마커가 생김','kind는 대조하지 않습니다']);
-    else G.push(['no','review: required 인데 리뷰 마커를 남기는 단계가 없음','<code>/harness-review</code>를 켜거나 <code>review</code>를 <code>optional</code>로']);
-  } else G.push(['ok',`review: ${e.review}`,'리뷰 마커를 요구하지 않습니다']);
+    if(hasReviewMarker()) G.push(['ok','review: required — 판정 창 안에 리뷰 기록이 생김','kind는 대조하지 않습니다']);
+    else G.push(['no','review: required 인데 리뷰 기록을 남기는 단계가 없음','<code>/harness-review</code>를 켜거나 <code>review</code>를 <code>optional</code>로']);
+  } else G.push(['ok',`review: ${e.review}`,'리뷰 기록을 요구하지 않습니다']);
   // verify
   if(e.verify==='required'){
     const vs=verifySources();
     if(vs.length===1 && vs[0].startsWith('/harness-ship'))
-      G.push(['wa','verify: required — 증거원이 ship의 shipcheck 하나뿐','외부 엔진이 없거나 ship 7단계를 건너뛰면 마커가 안 남아 <code>done</code>이 막힙니다. 적대적 리뷰·테스트 3형제 중 하나를 더 켜 두는 쪽이 안전합니다']);
-    else if(vs.length) G.push(['ok','verify: required — 검증 프레이밍 마커를 남기는 단계가 있음','증거원: '+vs.join(' · ')+'. 모두 외부 read-only 엔진(codex·claude)이 있어야 실행됩니다']);
-    else G.push(['no','verify: required 인데 검증 프레이밍이 없음','<b>일반 review 마커는 verify 증거가 되지 않습니다.</b> 적대적 리뷰·테스트 3형제·contrarian/simplifier(엔진 인수) 중 하나를 켜세요']);
-  } else G.push(['ok',`verify: ${e.verify}`,'검증 프레이밍 마커를 요구하지 않습니다']);
+      G.push(['wa','verify: required — 증거원이 ship의 shipcheck 하나뿐','ship 7단계는 옵트인이라 건너뛰거나 외부 엔진이 없으면 기록이 안 남아 <code>done</code>이 막힙니다. 적대적 리뷰·테스트 3형제 중 하나를 더 켜 두는 쪽이 안전합니다']);
+    else if(vs.length) G.push(['ok','verify: required — 검증 프레이밍 마커를 남기는 단계가 있음','증거원: '+vs.join(' · ')+'. 모두 외부 read-only 엔진(codex·claude)이 있어야 실행되고, 새 task는 <code>meta.reviews</code> 기록만 셉니다(손 마커 무효)']);
+    else G.push(['no','verify: required 인데 검증 프레이밍이 없음','<b>일반 review 기록은 verify 증거가 되지 않습니다.</b> 적대적 리뷰·테스트 3형제·contrarian/simplifier(엔진 인수) 중 하나를 켜세요']);
+  } else G.push(['ok',`verify: ${e.verify}`,'검증 프레이밍 기록을 요구하지 않습니다']);
   // plan checkbox
   if(state.diagram && state.taskState==='new')
-    G.push(['wa','plan의 다이어그램 체크박스','열어 두면 <code>done</code>이 막힙니다 — 못 하면 지우지 말고 사유를 붙여 닫으세요']);
-  G.push(['wa','plan.md 미완 <code>- [ ]</code>','하나라도 남으면 <code>done</code>이 막힙니다']);
+    G.push(['wa','plan의 다이어그램 체크박스','열어 두면 <code>done</code>이 막힙니다 — 못 하면 지우지 말고 <code>diagram record --skipped</code>로 닫으세요']);
+  G.push(['wa','plan.md 미완 <code>- [ ]</code> · 빈 plan/artifact','하나라도 남으면 <code>done</code>이 막힙니다. 마지막 단계는 머지 후 기본 브랜치에서 켭니다']);
   if(state.isolation==='worktree')
     G.push(['wa','D5 — 격리 브랜치·worktree','쓰기 대상이 겹치지 않아 허용. 단 <b>한 세션 안에서는</b> D4(단일 스레드)가 그대로 적용됩니다']);
   return G;
@@ -514,17 +525,18 @@ function updatePrompt(){
   if(state.ambiguity) L.push('- 요구사항·Ambiguity 자가진단·Ontology는 spec.md에 직접 쓴다. 외부 문서를 가리키는 포인터 껍데기로 두지 않는다.');
   else L.push(`- 작은 ${sc.label}이라 Ambiguity 자가진단 게이트와 페르소나 호출은 생략한다.`);
   if(state.boundary) L.push('- spec의 `## Boundary contracts` JSON을 선언한다. plan 체크박스 완료 직전에 훅이 `harness-team boundary check`를 자동 실행한다 (producer/consumer JSON Schema의 required·기본 type 대조).');
-  if(state.taskState==='new' && state.diagram) L.push('- 다이어그램 옵트인 단계를 plan.md에 넣는다. 산출물은 자립형 inline SVG. 도구가 없으면 단계를 지우지 말고 `- [x] … — 미실행(도구 없음)`으로 닫고 artifact에 한 줄 남긴다.');
-  L.push(`- spec의 \`## Done evidence\`를 \`{ "version": 1, "tests": "${e.tests}", "review": "${e.review}", "verify": "${e.verify}" }\` 로 선언한다.`);
-  if(e.verify==='required') L.push('- verify 증거는 검증 프레이밍 kind 마커(-adversarial · -testcritic · -shipcheck · -contrarian · -simplifier)만 인정된다. 일반 review 마커로는 통과하지 못한다.');
+  if(state.taskState==='new' && state.diagram) L.push('- 다이어그램 옵트인 단계를 plan.md에 넣는다. 산출물은 자립형 inline SVG. 도구가 없으면 단계를 지우지 말고 `harness-team diagram record --skipped "<사유>"`로 닫는다.');
+  L.push(`- spec의 \`## Done evidence\`를 \`{ "version": 1, "tests": "${e.tests}", "review": "${e.review}", "verify": "${e.verify}"${state.scenarios?', "scenarios": [...]':''} }\` 로 선언한다.`);
+  if(state.scenarios) L.push('- scenarios(R2)는 Given/When/Then + 증거 test·cmd로 쓴다. `harness-team scenario check`가 exit 0인지, `harness-team review <engine> --framing scenario`가 증거가 Then을 검증하는지 판정한다.');
+  if(e.verify==='required') L.push(state.scenarios ? '- scenarios를 선언했으므로 verify 증거는 -scenario 기록만 인정된다.' : '- verify 증거는 검증 프레이밍 kind 기록(-adversarial · -testcritic · -shipcheck · -contrarian · -simplifier · -scenario)만 인정된다. 일반 review 기록으로는 통과하지 못한다.');
   L.push('- plan.md 체크박스는 실제로 끝난 단계만 `- [x]`로 켠다. 미리 켜지 않는다.');
-  L.push('- 리뷰 결과는 활성 task의 artifact.md `## Reviews`에 날짜·엔진과 함께 남긴다. 남기지 않은 리뷰는 안 한 것으로 친다.');
+  L.push('- 리뷰는 `harness-team review`(/harness-review)로 돌린다. CLI가 meta.reviews[]와 artifact `## Reviews`에 기록하므로 마커를 손으로 쓰지 않고, 발견의 판별·조치만 그 아래 남긴다.');
   L.push('- 팀 학습은 artifact.md가 SSOT다. 개인 메모리에는 개인 선호·머신 환경만 둔다.');
   if(state.isolation==='worktree') L.push('- 격리된 브랜치·worktree에서 작업하고 PR/MR로 병합한다(D5). 단 한 세션 안에서는 쓰기를 단일 스레드로 유지한다(D4).');
   else L.push('- 같은 워킹트리·브랜치 안에서 쓰기는 단일 스레드다(D4). 병렬 쓰기 에이전트를 두지 않는다.');
   if(state.sessions==='multi') L.push('- 세션을 넘기기 전과 plan의 atomic step이 바뀔 때 TCC(`<name>-context.md`)를 갱신한다. 6 KiB · 비공백 100행 · 미해결 failure capsule 3개 이하.');
-  L.push('- `/harness-ship`은 준비 완료 보고에서 멈춘다. PR/MR 생성과 push는 내 지시를 받고 한다.');
-  L.push('- `task`/`done`은 집계 파일을 건드리지 않는다. `docs/task_summary.md` 갱신은 기본 브랜치에서 `harness-team summary --write`로만 한다.');
+  L.push('- `/harness-ship`은 `harness-team pr-check`를 통과한 뒤 준비 완료 보고에서 멈춘다. PR/MR 생성과 push는 내 지시를 받고 한다.');
+  L.push('- done은 PR이 머지된 뒤 기본 브랜치에서 한다: 마지막 단계 체크 → `harness-team done` → (선택) `/harness-wiki` → `harness-team summary --write` → 종결 커밋 하나. `task`/`done`은 집계 파일을 건드리지 않는다.');
   L.push('');
   L.push('진행 중 막히면 멈추고 다시 계획해. 동작을 증명하지 않고 완료 처리하지 마.');
 
@@ -538,7 +550,7 @@ function renderPresets(){
   const el=document.getElementById('presets');
   el.innerHTML=Object.keys(PRESETS).map(k=>`<button data-p="${k}">${k}</button>`).join('');
   el.querySelectorAll('button').forEach(b=>b.onclick=()=>{
-    Object.assign(state, structuredClone(PRESETS[b.dataset.p]));
+    Object.assign(state, { scenarios:false }, structuredClone(PRESETS[b.dataset.p]));
     el.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
     b.classList.add('on');
     updateAll();

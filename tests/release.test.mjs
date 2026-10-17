@@ -168,6 +168,26 @@ test('real run updates installed_plugins record but NOT the schema version', asy
   }
 });
 
+test('cache copy excludes .claude/worktrees but keeps the rest of .claude', async () => {
+  const root = await makeRoot();
+  const pr = await makePluginsRoot();
+  try {
+    await mkdir(join(root, '.claude/worktrees/wt/docs'), { recursive: true });
+    await writeFile(join(root, '.claude/worktrees/wt/docs/a.md'), 'x\n');
+    await mkdir(join(root, '.claude/commands'), { recursive: true });
+    await writeFile(join(root, '.claude/commands/keep.md'), 'x\n');
+
+    await release({ bump: 'patch', root, pluginsRoot: pr, gitSha: 'deadbeef' });
+
+    const cache = join(pr, 'cache', MARKET, PLUGIN, '1.2.4');
+    assert.equal(await fileExists(join(cache, '.claude/worktrees')), false);
+    assert.ok(await fileExists(join(cache, '.claude/commands/keep.md')));
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(pr, { recursive: true, force: true });
+  }
+});
+
 test('marketplace sync: copies marketplace.json + commands, removes stale dest command, preserves non-commands files', async () => {
   const root = await makeRoot();
   const pr = await makePluginsRoot();
