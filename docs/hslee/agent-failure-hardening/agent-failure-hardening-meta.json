@@ -3,8 +3,8 @@
   "task": "agent-failure-hardening",
   "created": "2026-10-17",
   "firstActivatedAt": "2026-10-17T03:38:16.956Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-10-17T12:04:40.624Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [

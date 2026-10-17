@@ -1,9 +1,9 @@
 # hslee — Tasks
 
 ## Open
-- agent-failure-hardening (created 2026-10-17)
 
 ## Completed
+- ✅ agent-failure-hardening
 - ✅ followups-22-23
 - ✅ review-retry-hint
 - ✅ scope-error-hints
