@@ -284,7 +284,7 @@
     <h1>Task Workflow Simulation</h1>
     <p>새로운 harness task 시스템의 전체 흐름 — init부터 완료, 세션 재개, task 전환까지의 시나리오별 시뮬레이션</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.50.0</span>
+      <span class="tag tag-purple">v0.51.0</span>
       <span class="tag tag-blue">post-commit 자동화</span>
       <span class="tag tag-green">증거 기반 종결 가드 7종</span>
       <span class="tag tag-orange">원장은 생성물</span>
@@ -293,7 +293,9 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #a78bfa;background:rgba(167,139,250,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
-    <strong>🆕 0.40.1–0.50.0 — user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키 · 폴더 없는 done task · PR 없는 위키 컴파일 · 리뷰 scope 판정 정정 · worktree 리뷰 범위 확장 · scope 오류 안내 정정 · pre-push가 무관 히스토리 브랜치를 건너뜀 · 소급 위키 컴파일 후보 목록:</strong>
+    <strong>🆕 0.40.1–0.51.0 — user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키 · 폴더 없는 done task · PR 없는 위키 컴파일 · 리뷰 scope 판정 정정 · worktree 리뷰 범위 확장 · scope 오류 안내 정정 · pre-push가 무관 히스토리 브랜치를 건너뜀 · 소급 위키 컴파일 후보 목록:</strong>
+    <br>
+    <code>0.51.0</code> 아래 <strong>S4</strong> done 가드 5번이 <strong>삭제된 테스트 파일을 증거로 세지 않고, 기존 테스트 파일을 지우면 차단</strong>한다(의도한 삭제는 <code>--force</code>와 사유 기록) — 가드 수는 7종 그대로다.
     <br>
     <code>0.50.0</code> <code>harness-team wiki sources --all</code>이 task마다 <strong>컴파일 가능·이미 컴파일됨·막힘</strong>을 보여(읽기 전용), 이미 done 된 task의 소급 컴파일 대상을 고를 수 있다 — 아래 <strong>S4</strong> 종결 절차의 <code>/harness-wiki &lt;user&gt;/&lt;task&gt;</code> 단계는 그대로다.
     <br>
@@ -788,12 +790,12 @@ stop: 가드가 지적한 증거가 실제로 없으면 종결하지 말 것
             </div>
             <div class="step-detail">"결과를 증명하지 않은 done"을 코드가 거부 — dogfooding이 입증한 강제 갭을 메움 (P0). <strong>0.9.5</strong>: 커밋 직후 post-commit 훅이 handoff를 더럽혀 <code>done</code>이 항상 <code>--force</code>를 요구하던 마찰을 가드 측에서 해소(<code>parsePorcelainPaths</code> 헬퍼) — handoff 외 실제 미커밋 작업이 있을 때만 차단.</div>
             <div class="tree" style="margin-top:0.6rem">
-<span class="tree-dir">가드 7종 + 선언 유효성 (가드 수는 0.21.0 이후 불변 — 증거 출처는 0.37.0, 7번이 세는 kind는 0.47.0에서 바뀜)</span>
+<span class="tree-dir">가드 7종 + 선언 유효성 (가드 수는 0.21.0 이후 불변 — 증거 출처는 0.37.0, 7번이 세는 kind는 0.47.0, 5번의 테스트 증거 판정은 0.51.0에서 바뀜)</span>
 1. plan.md에 미완 체크박스(- [ ])                 <span style="color:var(--border)"># 0.7~</span>
 2. artifact.md 미작성 / 템플릿 그대로              <span style="color:var(--border)"># 0.7~</span>
 3. 미커밋 변경 존재                                <span style="color:var(--border)"># handoff 제외 (0.9.5) · plan 체크박스만 켠 변경 제외 (0.44.0)</span>
 4. task 시작 이후 커밋 0개                         <span style="color:var(--border)"># 0.7~</span>
-5. 소스 변경 O + 테스트 변경 X                    <span style="color:var(--border)"># 0.18.1 · 기본 ON — 0.19.0에서 실제 발동</span>
+5. 소스 변경 O + 테스트 변경 X                    <span style="color:var(--border)"># 0.18.1 · 기본 ON — 0.19.0에서 실제 발동 · 삭제는 증거 아님, 기존 테스트 삭제는 차단 (0.51.0)</span>
 6. spec이 review: required인데 리뷰 증거 없음      <span style="color:var(--border)"># 0.18.1 · spec opt-in · 0.37.0부터 meta.reviews[]</span>
 7. spec이 verify: required인데 검증 프레이밍 증거 없음 <span style="color:var(--border)"># 0.20.0 · spec opt-in · 0.37.0부터 손으로 쓴 마커는 미인정 · scenarios 선언 시 -scenario만 (0.47.0)</span>
 
@@ -1193,7 +1195,7 @@ login-bug
 </main>
 
 <footer>
-  harness-aijient-team-plugin v0.50.0 — Task Workflow Simulation &nbsp;·&nbsp; 2026-10-12
+  harness-aijient-team-plugin v0.51.0 — Task Workflow Simulation &nbsp;·&nbsp; 2026-10-17
 </footer>
 
 

@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.50.0</span>
+      <span class="tag tag-purple">v0.51.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.51.0 — 테스트를 지워서 통과하는 길과 Bash로 돌아가는 길을 막는다:</strong>
+    <br>
+    <code>0.51.0</code> <strong><code>done</code>의 <code>tests: required</code>가 삭제된 테스트 파일을 증거로 세지 않고, 기존 테스트 파일을 지우면 차단한다</strong> — testcritic 루브릭에 T7·C7·I7 "기존 테스트 후퇴 없음" BLOCKER, <code>/harness-loop</code>는 테스트를 줄여 얻은 진전에서 멈춘다. 새 <code>block-dangerous-bash.sh</code> 훅이 <code>rm -fr</code> 철자 변형·<code>find -delete</code>·<code>curl | sh</code>·<code>.env</code> 복사를 막고, AGENTS.md에 완료 보고 4요소·차단 존중 원칙, spec 템플릿에 <code>## 범위 (In / Out)</code>가 더해졌다. 훅·원칙은 <code>init --yes</code>로 받는다.
+    <br><br>
     <strong>🆕 0.50.0 — 소급 위키 컴파일 후보를 한 번에 본다:</strong>
     <br>
     <code>0.50.0</code> <strong><code>harness-team wiki sources --all</code>이 task 전체를 라벨순으로 훑어 task마다 컴파일 가능·이미 컴파일됨(파일)·막힘(사유)을 보인다</strong> — 이미 done 된 task를 소급 컴파일하려면 하나씩 지정해야 했다. 판정은 단일 task 조회와 같은 함수이고, 읽기 전용이며, 목록은 막힌 행이 있어도 대상이 0건이어도 exit 0이다(<code>--json</code>은 <code>tasks</code> 배열). 대상·<code>--pr</code>과 함께 쓰면 usage 오류다. 인수 없는 <code>wiki sources</code>는 종전대로 활성 task 대상이고, 없을 때의 <code>retry:</code>는 이제 대상 지정만 권한다(<code>task &lt;name&gt;</code> 활성화는 done task를 다시 열었다) — <code>alternatives:</code>에 <code>--all</code>. <code>templates/</code>는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 된다.
@@ -2884,7 +2888,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.50.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.51.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

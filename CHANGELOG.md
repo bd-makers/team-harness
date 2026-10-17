@@ -9,7 +9,10 @@
 
 ## [Unreleased]
 
+## [0.51.0] - 2026-10-17
+
 ### Fixed
+- **`release`가 `.claude/worktrees`까지 플러그인 캐시로 복사하던 것** (#152, 메인테이너 전용). 캐시 복사 필터가 `.git`·`node_modules`·`tests`·`scripts`·`docs/superpowers`만 빼서, 저장소 안의 git worktree(전체 체크아웃)가 버전별 캐시에 실렸다 — 0.50.0 resync에서 캐시가 약 110MB 불었고, iCloud 저장소에서는 내려받지 않은(evicted) 파일 하나에서 읽기가 막혀 복사가 50분 넘게 멈췄다. 이제 루트 기준 `.claude/worktrees`를 제외한다(나머지 `.claude/`는 그대로). 이미 불어난 캐시는 `cp`가 지우지 않으므로 해당 버전 캐시의 `.claude/worktrees`를 손으로 지운다.
 - **done 가드가 삭제된 테스트 파일을 테스트 증거로 세던 것** (task `agent-failure-hardening`). `tests: required` 검사는 판정 창의 `git log --name-only` 경로만 읽어, 소스를 고치고 실패하던 테스트 파일을 지운 커밋도 "테스트 변경"으로 통과시켰다. 이제 `--name-status -M`으로 경로별 창 끝 상태를 접어, 삭제된 경로는 증거에서 빠지고 **창 이전부터 있던 테스트 파일이 창 끝에 삭제 상태면 `기존 테스트 파일이 삭제됨: …`으로 차단**한다(다른 테스트를 추가해도 차단). 앞 커밋에서 고치고 다음 커밋에서 지운 경우도 잡는다. 이름 변경(`git mv`)과 창 안에서 만들고 지운 파일은 삭제가 아니다. 의도한 삭제는 `done --force`로 닫고 사유를 artifact에 남긴다(meta `forcedIssues`가 감사 흔적). 한계: 지운 테스트와 내용이 50% 이상 같은 새 파일은 이름 변경으로 짝지어진다 — 제자리 assert 약화와 같은 부류라 아래 루브릭 행이 맡는다. 또 판정 창은 종전처럼 `git log --since`라 창 안에 병합된 **다른 PR의 테스트 삭제도 이 task를 막는다**(종전엔 그런 경로가 증거를 늘리기만 했다) — main에서 `done`할 때 드물게 걸리며, 그때는 `--force`와 사유 기록으로 닫는다.
 
 ### Added

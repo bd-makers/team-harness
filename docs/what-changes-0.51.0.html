@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Harness Aijient Team 0.51.0 — 무엇이 왜 달라졌나</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3350;
+      --accent: #7c6af5;
+      --accent2: #50c8f5;
+      --accent3: #4df0aa;
+      --warning: #f5a623;
+      --danger: #f5657f;
+      --text: #e2e6f0;
+      --muted: #9aa2bf;
+      --tag-blue: #1e3a5f;
+      --tag-green: #0e3d30;
+      --tag-purple: #2a1f5c;
+      --tag-orange: #3d2700;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      min-width: 0;
+      height: 54px;
+      padding: 0 2rem;
+      background: rgba(15, 17, 23, 0.95);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(12px);
+    }
+    .nav-logo {
+      flex: 0 0 auto;
+      margin-right: 1.5rem;
+      color: var(--accent);
+      font-weight: 750;
+      white-space: nowrap;
+    }
+    .nav-links {
+      display: flex;
+      min-width: 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .nav-links::-webkit-scrollbar { display: none; }
+    .nav-links a {
+      display: flex;
+      align-items: center;
+      height: 54px;
+      padding: 0 0.8rem;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      font-size: 0.84rem;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .nav-links a:hover { color: var(--text); border-bottom-color: var(--accent); }
+
+    main { width: min(1120px, 100%); margin: 0 auto; padding: 2.5rem 2rem 5rem; }
+    .hero { padding: 3.5rem 0 2.5rem; text-align: center; }
+    .eyebrow {
+      margin-bottom: 0.75rem;
+      color: var(--accent3);
+      font-size: 0.78rem;
+      font-weight: 750;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0 0 1rem;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      background-clip: text;
+      color: transparent;
+      font-size: clamp(2rem, 6vw, 3.25rem);
+      line-height: 1.18;
+    }
+    .hero > p { max-width: 760px; margin: 0 auto 1.4rem; color: var(--muted); }
+    .tags { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+    .tag { padding: 4px 12px; border-radius: 999px; font-size: 0.78rem; font-weight: 650; }
+    .tag-purple { background: var(--tag-purple); color: #a99cf8; }
+    .tag-blue { background: var(--tag-blue); color: var(--accent2); }
+    .tag-green { background: var(--tag-green); color: var(--accent3); }
+    .tag-orange { background: var(--tag-orange); color: var(--warning); }
+
+    .release-brief {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      overflow: hidden;
+      margin: 0 0 4rem;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--border);
+    }
+    .release-brief > div { min-width: 0; padding: 1.2rem 1.3rem; background: var(--surface); }
+    .release-brief dt { color: var(--muted); font-size: 0.74rem; font-weight: 700; text-transform: uppercase; }
+    .release-brief dd { margin: 0.25rem 0 0; font-size: 0.95rem; overflow-wrap: anywhere; }
+
+    section { margin-bottom: 4.5rem; scroll-margin-top: 76px; }
+    .section-title { display: flex; align-items: center; gap: 0.65rem; margin: 0 0 0.35rem; font-size: 1.5rem; }
+    .section-title::before {
+      width: 4px;
+      height: 1.5rem;
+      border-radius: 2px;
+      background: var(--accent);
+      content: "";
+    }
+    .section-sub { margin: 0 0 1.4rem; color: var(--muted); font-size: 0.92rem; }
+    .change-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+    .change-card {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+    }
+    .change-card.accuracy { border-top: 3px solid var(--accent3); }
+    .change-card.feature { border-top: 3px solid var(--accent2); }
+    .change-card.maintenance { border-top: 3px solid var(--accent); }
+    .change-card.breaking { border-top: 3px solid var(--danger); }
+    .card-head { padding: 1.2rem 1.3rem 0.9rem; border-bottom: 1px solid var(--border); }
+    .card-head h3 { margin: 0.25rem 0 0; font-size: 1.02rem; line-height: 1.4; }
+    .kind { color: var(--muted); font-size: 0.72rem; font-weight: 750; letter-spacing: 0.08em; text-transform: uppercase; }
+    .kind.danger { color: var(--danger); }
+    .change-card dl { margin: 0; }
+    .change-card dl > div {
+      display: grid;
+      grid-template-columns: 5.4rem minmax(0, 1fr);
+      gap: 0.8rem;
+      padding: 0.85rem 1.3rem;
+      border-bottom: 1px solid rgba(46, 51, 80, 0.7);
+    }
+    .change-card dl > div:last-child { border-bottom: 0; }
+    .change-card dt { color: var(--muted); font-size: 0.78rem; font-weight: 750; }
+    .change-card dd { min-width: 0; margin: 0; color: #cbd1e3; font-size: 0.87rem; overflow-wrap: anywhere; }
+    .change-card .why dt { color: var(--warning); }
+    .change-card .effect dt { color: var(--accent3); }
+    code {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--surface2);
+      color: var(--accent2);
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.83em;
+      overflow-wrap: anywhere;
+    }
+
+    .figure {
+      overflow-x: auto;
+      margin: 0 0 1.4rem;
+      padding: 1.2rem 1.3rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface);
+    }
+    .figure svg { display: block; width: 100%; min-width: 640px; height: auto; }
+    .figure figcaption { margin-top: 0.8rem; color: var(--muted); font-size: 0.83rem; }
+    .svg-panel { fill: #161926; stroke: #2e3350; }
+    .svg-title { fill: #e2e6f0; font: 700 15px -apple-system, BlinkMacSystemFont, sans-serif; }
+    .svg-label { fill: #9aa2bf; font: 500 12px -apple-system, BlinkMacSystemFont, sans-serif; }
+    .svg-note { fill: #9aa2bf; font: 400 11px "SF Mono", "Fira Code", monospace; }
+    .svg-ok { fill: #4df0aa; font: 700 12px -apple-system, BlinkMacSystemFont, sans-serif; }
+    .svg-bad { fill: #f5657f; font: 700 12px -apple-system, BlinkMacSystemFont, sans-serif; }
+    .bar-base { fill: #3c4468; }
+    .bar-meas { fill: #50c8f5; }
+    .bar-meas-bad { fill: #f5657f; }
+    .axis { stroke: #2e3350; stroke-width: 1; }
+
+    .callout {
+      margin: 0 0 1.4rem;
+      padding: 1.1rem 1.3rem;
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--warning);
+      border-radius: 10px;
+      background: var(--surface);
+      font-size: 0.9rem;
+    }
+    .callout strong { color: var(--warning); }
+    .callout.danger { border-left-color: var(--danger); }
+    .callout.danger strong { color: var(--danger); }
+
+    footer { padding: 2rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.8rem; text-align: center; }
+
+    @media (max-width: 780px) {
+      nav { padding: 0 1rem; }
+      main { padding: 1.5rem 1rem 4rem; }
+      .hero { padding-top: 2.5rem; }
+      .release-brief, .change-grid { grid-template-columns: minmax(0, 1fr); }
+      .change-card dl > div { grid-template-columns: minmax(0, 1fr); gap: 0.3rem; }
+    }
+    .table-wrap { overflow-x: auto; margin: 1.4rem 0; border: 1px solid var(--border); border-radius: 12px; }
+    .table-wrap table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 560px; }
+    .table-wrap th { text-align: left; padding: 0.7rem 0.9rem; color: var(--muted); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    .table-wrap td { padding: 0.6rem 0.9rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .table-wrap tr:last-child td { border-bottom: none; }
+    .table-wrap td:first-child { color: var(--text); }
+    pre { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 0.9rem 1rem; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; margin: 0.8rem 0 0; }
+    pre code { background: none; padding: 0; }
+  </style>
+</head>
+<body>
+  <nav aria-label="문서 섹션">
+    <div class="nav-logo">Harness 0.51.0</div>
+    <div class="nav-links">
+      <a href="#why">왜 minor인가</a>
+      <a href="#done">done 가드</a>
+      <a href="#rubric">testcritic T7·C7·I7</a>
+      <a href="#loop">harness-loop</a>
+      <a href="#bash">Bash 가드 훅</a>
+      <a href="#principles">원칙·spec 범위</a>
+      <a href="#same">바뀌지 않은 것</a>
+      <a href="#compat">소비자가 할 일</a>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="eyebrow">Release note · 2026-10-17 · minor</div>
+      <h1>테스트를 지워서 통과하는 길과<br><strong>Bash로 돌아가는 길을 막습니다</strong></h1>
+      <p>"15 Ways AI Coding Agents Fail in Real Repos"(2026-10-16) 글과 하네스를 대조해 빈틈 다섯 곳을 찾았습니다.
+      done 가드는 <strong>삭제된 테스트 파일을 테스트 증거로 셌고</strong>, testcritic은 기존 테스트의 삭제·skip을 보지 않았으며,
+      파일 보호 훅은 <code>Edit|Write</code>만 보고 Bash deny는 접두 매칭이라 철자만 바꾸면 빠져나갔습니다.
+      0.51.0은 이 경로를 가드·루브릭·훅으로 막고, 훅이 걸리지 않는 에이전트를 위해 원칙 두 줄을 더합니다.</p>
+      <div class="tags">
+        <span class="tag tag-purple">0.50.0 → 0.51.0</span>
+        <span class="tag tag-orange">minor — 새 가드 3종 · 템플릿 변경</span>
+        <span class="tag tag-blue">PR #153 · #152 · #154</span>
+        <span class="tag tag-green">소비자 조치 — 플러그인 갱신 + init</span>
+      </div>
+    </header>
+
+    <dl class="release-brief" aria-label="릴리스 요약">
+      <div><dt>버전</dt><dd>0.51.0</dd></div>
+      <div><dt>날짜</dt><dd>2026-10-17</dd></div>
+      <div><dt>기준</dt><dd><code>v0.50.0..main</code> — #153(<code>72fce3f</code>, task <code>agent-failure-hardening</code>), #152(<code>21d432f</code>, 문서 현행화 + release 캐시 수정), #154(<code>bccc21d</code>, 루브릭 가이드 7행). #150·#151은 문서·주석뿐이라 아래 "바뀌지 않은 것"에만 적습니다.</dd></div>
+    </dl>
+
+    <section id="why">
+      <h2 class="section-title">왜 minor인가 — 새 가드가 생기고 템플릿이 바뀌었다</h2>
+      <p class="section-sub">MAINTAINING.md의 크기 기준에서 ① 에이전트 행동 표면에 <strong>새 가드</strong>를 더하면 minor입니다. 0.50.0에서 통과하던 <code>done</code>이 이제 막힐 수 있고(기존 테스트 삭제), 새 훅이 명령을 막고, 루브릭에 BLOCKER 행이 늘었습니다. 제거된 명령·플래그는 없습니다.</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>표면</th><th>경로</th><th>도달 경로</th><th>소비자 영향</th></tr></thead>
+          <tbody>
+            <tr><td>CLI 동작</td><td><code>src/commands/task.mjs</code>(done 가드) · <code>review-prompts.mjs</code></td><td>플러그인 갱신(전역 CLI)</td><td>기존 테스트 삭제가 <code>done</code>을 막음 · 루브릭 T7·C7·I7</td></tr>
+            <tr><td>슬래시 명령</td><td><code>commands/harness-{unittest,comptest,inttest,loop,spec}.md</code></td><td>플러그인 갱신</td><td>루브릭 미러 · loop 멈춤 조건 · spec 골격의 범위 절</td></tr>
+            <tr><td>설치 파일</td><td><code>templates/.claude/hooks/block-dangerous-bash.sh</code> · <code>settings.json</code> · <code>AGENTS.md.hbs</code></td><td><strong><code>init</code></strong>(관리 절은 <code>init --yes</code>)</td><td>새 Bash 훅 · 원칙 2줄 — <code>migrate</code>로는 오지 않음</td></tr>
+            <tr><td>메인테이너 전용</td><td><code>src/commands/release.mjs</code></td><td>저장소 전용</td><td>캐시 복사에서 <code>.claude/worktrees</code> 제외 — 소비자 영향 없음</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="done">
+      <h2 class="section-title">done 가드 — 삭제된 테스트는 증거가 아니다</h2>
+      <p class="section-sub"><code>tests: required</code> 검사는 판정 창의 <code>git log --name-only</code> 경로만 읽어, 변경 상태를 보지 않았습니다. 소스를 고치고 <strong>실패하던 테스트 파일을 지운 커밋</strong>도 "테스트 변경"으로 통과했습니다.</p>
+      <div class="change-grid">
+        <article class="change-card accuracy">
+          <div class="card-head"><div class="kind">Fixed · #153</div><h3>경로별 창 끝 상태로 판정</h3></div>
+          <dl>
+            <div><dt>무엇</dt><dd><code>--name-status -M</code>으로 경로마다 창 끝 상태를 접습니다. 삭제된 경로는 증거에서 빠지고, <strong>창 이전부터 있던 테스트 파일이 창 끝에 삭제 상태면 <code>기존 테스트 파일이 삭제됨: …</code>으로 차단</strong>합니다 — 다른 테스트를 추가해도 차단입니다.</dd></div>
+            <div><dt>삭제가 아닌 것</dt><dd>이름 변경(<code>git mv</code>), 창 안에서 만들고 지운 파일. 앞 커밋에서 고치고 다음 커밋에서 지운 경우는 잡습니다.</dd></div>
+            <div class="effect"><dt>의도한 삭제</dt><dd><code>done --force</code>로 닫고 사유를 artifact에 남깁니다(meta <code>forcedIssues</code>가 감사 흔적).</dd></div>
+          </dl>
+        </article>
+        <article class="change-card maintenance">
+          <div class="card-head"><div class="kind">Note · 한계</div><h3>가드가 보지 못하는 것</h3></div>
+          <dl>
+            <div><dt>짝지음</dt><dd>지운 테스트와 내용이 50% 이상 같은 새 파일은 이름 변경으로 짝지어집니다. 제자리 assert 약화와 같은 부류라 아래 루브릭 행이 맡습니다.</dd></div>
+            <div class="why"><dt>다른 PR</dt><dd>판정 창은 종전처럼 <code>git log --since</code>라, 창 안에 병합된 <strong>다른 PR의 테스트 삭제도 이 task를 막습니다</strong>(종전엔 증거를 늘리기만 했습니다). main에서 <code>done</code>할 때 드물게 걸리며, <code>--force</code>와 사유 기록으로 닫습니다.</dd></div>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <section id="rubric">
+      <h2 class="section-title">testcritic — "기존 테스트 후퇴 없음" BLOCKER</h2>
+      <div class="change-grid">
+        <article class="change-card feature">
+          <div class="card-head"><div class="kind">Added · #153 · #154</div><h3>T7 · C7 · I7</h3></div>
+          <dl>
+            <div><dt>pass 조건</dt><dd>기존 테스트의 삭제, <code>.skip</code>·<code>xit</code>·<code>xdescribe</code>·<code>@Disabled</code>·<code>@Ignore</code> 등 비활성화, 기대값 완화·assert 제거가 diff에 없어야 합니다. 의도한 삭제는 spec 근거를 인용합니다.</dd></div>
+            <div class="effect"><dt>번호</dt><dd>기존 1–6행 번호는 그대로이고 7행이 더해집니다. <code>/harness-unittest</code>·<code>/harness-comptest</code>·<code>/harness-inttest</code> 미러와 루브릭 가이드(#154)도 같습니다.</dd></div>
+          </dl>
+        </article>
+        <article class="change-card maintenance">
+          <div class="card-head"><div class="kind">Why</div><h3>가드와 루브릭의 분담</h3></div>
+          <dl>
+            <div><dt>가드</dt><dd>파일 단위 삭제는 done 가드가 결정론적으로 막습니다.</dd></div>
+            <div class="why"><dt>루브릭</dt><dd>skip 표지·assert 약화·이름 변경으로 위장한 삭제는 문자열 판정이 어려워 리뷰어 판단에 둡니다.</dd></div>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <section id="loop">
+      <h2 class="section-title"><code>/harness-loop</code> — 테스트를 줄여 얻은 진전은 진전이 아니다</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>항목</th><th>0.50.0</th><th>0.51.0</th></tr></thead>
+          <tbody>
+            <tr><td>실패 집합이 줄었을 때</td><td>진전</td><td>그 Dev 턴이 기존 테스트를 지우거나 skip·assert 약화로 줄였으면 <strong>멈춤</strong></td></tr>
+            <tr><td>판정 근거</td><td>—</td><td>그 턴의 <code>git diff HEAD</code>의 삭제된 테스트 파일·추가된 skip 표지·제거된 assert 줄</td></tr>
+            <tr><td>횟수 상한</td><td>없음</td><td>여전히 없음 — 멈춤 조건은 넷 그대로입니다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout"><strong>왜 "3회 재시도 상한"을 따르지 않나.</strong> 글은 재시도 횟수 상한을 권하지만, 하네스는 "진전 없음"을 멈춤 기준으로 둔 설계를 유지합니다. 횟수는 진전 중인 루프도 끊고 진전 없는 루프는 상한까지 돌립니다. 이번 변경은 그 기준에서 "가짜 진전"을 걸러 낼 뿐입니다.</div>
+    </section>
+
+    <section id="bash">
+      <h2 class="section-title"><code>block-dangerous-bash.sh</code> — git 밖 위험 셸 명령 차단</h2>
+      <p class="section-sub">Claude Code의 Bash deny 규칙은 명령 문자열 매칭이라 <code>Bash(rm -rf *)</code>가 <code>rm -fr</code>·<code>rm -r -f</code>·<code>/bin/rm -rf</code>를 막지 못했고, <code>curl … | sh</code>와 <code>cp .env x</code>에는 규칙이 없었습니다.</p>
+      <div class="change-grid">
+        <article class="change-card feature">
+          <div class="card-head"><div class="kind">Added · #153</div><h3>Bash PreToolUse 훅 (exit 2)</h3></div>
+          <dl>
+            <div><dt>막는 것</dt><dd>재귀+강제 <code>rm</code>의 모든 철자, <code>find -delete</code>·<code>-exec rm</code>, <code>curl|wget … | sh</code>·<code>bash -c "$(curl …)"</code>·<code>bash &lt;(curl …)</code>, <code>.env</code>·<code>.env.*</code>를 피연산자로 받는 <code>cp</code>·<code>mv</code>·<code>ln</code>·<code>rsync</code>·<code>scp</code>·<code>install</code>. <code>cp .env.example .env</code>도 막힙니다.</dd></div>
+            <div><dt>배선</dt><dd>settings에 <strong>별도 PreToolUse group</strong>으로 겁니다. 기존 설치의 <code>init</code> 병합이 기존 Bash 훅을 중복시키지 않게 하기 위해서입니다. jq가 없을 때의 폴백 블록은 기존 훅과 공유합니다.</dd></div>
+          </dl>
+        </article>
+        <article class="change-card maintenance">
+          <div class="card-head"><div class="kind">Note · 범위</div><h3>보지 않는 것</h3></div>
+          <dl>
+            <div><dt><code>cat .env</code></dt><dd>공식 문서상 <code>Read(./.env)</code> deny가 Bash의 <code>cat</code>·<code>head</code>·<code>tail</code>·<code>sed</code>·<code>tee</code>·리다이렉트에도 적용돼 다루지 않습니다.</dd></div>
+            <div class="why"><dt>휴리스틱</dt><dd>문자열 휴리스틱이라 <code>bash -c '…'</code> 안이나 스크립트 안의 파일 접근은 못 보고, 따옴표 안의 <code>;</code>도 구분자로 봐 오탐(차단)합니다. git 훅과 같은 fail-closed 수용이며, 경계는 sandbox입니다.</dd></div>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <section id="principles">
+      <h2 class="section-title">AGENTS.md 원칙 2줄 · spec <code>## 범위 (In / Out)</code></h2>
+      <div class="change-grid">
+        <article class="change-card feature">
+          <div class="card-head"><div class="kind">Added · #153</div><h3>완료 보고 · 차단 존중</h3></div>
+          <dl>
+            <div><dt>완료 보고</dt><dd>끝났다고 보고할 때 네 가지를 적습니다 — 바뀐 파일, 실행한 명령과 결과, 검증하지 못한 것, 묻지 않고 내린 결정.</dd></div>
+            <div><dt>차단 존중</dt><dd>훅·권한이 막은 행위는 다른 도구나 다른 명령으로 다시 시도하지 않고, 막힌 사실과 사유를 보고합니다.</dd></div>
+            <div class="why"><dt>왜 문장으로</dt><dd>훅이 걸리지 않는 Codex·Cursor에는 이 문장이 유일한 장치입니다.</dd></div>
+          </dl>
+        </article>
+        <article class="change-card feature">
+          <div class="card-head"><div class="kind">Added · #153</div><h3>spec 템플릿의 범위 절</h3></div>
+          <dl>
+            <div><dt>무엇</dt><dd>목적 다음에 이번 task가 바꾸는 것(In)과 하지 않기로 한 것(Out, 이유 한 줄)을 씁니다. <code>/harness-spec</code>이 골격으로 채웁니다.</dd></div>
+            <div class="effect"><dt>적용</dt><dd>새 task부터입니다. 기존 spec은 그대로 두며, doctor도 이 절을 요구하지 않습니다.</dd></div>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <section id="same">
+      <h2 class="section-title">바뀌지 않은 것</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>항목</th><th>0.51.0</th></tr></thead>
+          <tbody>
+            <tr><td>done 가드의 다른 검사</td><td>그대로 — 바뀐 것은 <code>tests: required</code>의 증거 판정뿐입니다</td></tr>
+            <tr><td>testcritic 1–6행</td><td>문구·번호 그대로</td></tr>
+            <tr><td>기존 훅(<code>block-dangerous-git.sh</code>·<code>protect-files.sh</code> 등)</td><td>그대로 — 새 훅은 별도 group입니다</td></tr>
+            <tr><td><code>release</code> 캐시 수정(#152)</td><td>메인테이너 전용 — 저장소 안 git worktree가 캐시에 복사돼 iCloud에서 복사가 멈추던 것을 고쳤습니다. 플러그인 동작과 무관합니다</td></tr>
+            <tr><td>문서(#152·#150·#154)</td><td>소비자 문서의 v0.50.0 현행화, C1 두 번째 시도 기록, 루브릭 가이드 7행 — 읽기 전용</td></tr>
+            <tr><td><code>src/render.mjs</code>(#151)</td><td>주석만 — <code>.hbs</code>가 Handlebars가 아닌 단순 치환임을 명시</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="compat">
+      <h2 class="section-title">소비자가 할 일</h2>
+      <div class="change-grid">
+        <article class="change-card accuracy">
+          <div class="card-head"><div class="kind">Do · 1</div><h3>플러그인 갱신</h3></div>
+          <dl>
+            <div><dt>왜</dt><dd>done 가드·루브릭·loop·spec 골격은 CLI 코드와 플러그인 명령 문서라 플러그인 채널로 닿습니다.</dd></div>
+            <div class="effect"><dt>어떻게</dt><dd><code>/plugin marketplace update</code>(또는 clone에서 <code>git pull</code>). <code>harness-team --version</code>이 <code>0.51.0</code>이면 됩니다.</dd></div>
+          </dl>
+        </article>
+        <article class="change-card accuracy">
+          <div class="card-head"><div class="kind">Do · 2</div><h3><code>harness-team init --yes</code></h3></div>
+          <dl>
+            <div><dt>왜</dt><dd>새 Bash 훅과 AGENTS.md 원칙(관리 절)은 설치 파일입니다. <strong><code>migrate</code>는 없는 훅을 새로 깔지 않고 관리 절도 렌더하지 않아</strong> 이 둘을 받지 못합니다.</dd></div>
+            <div class="why"><dt>확인</dt><dd>doctor는 이 훅이 없어도 optional로만 표시합니다. 받은 뒤 <code>.claude/hooks/block-dangerous-bash.sh</code>와 settings의 Bash group을 확인하세요.</dd></div>
+          </dl>
+        </article>
+      </div>
+    </section>
+
+    <footer>Harness Aijient Team Plugin 0.51.0 · 2026-10-17 · 0.50.0 이후 변경 설명</footer>
+  </main>
+</body>
+</html>
