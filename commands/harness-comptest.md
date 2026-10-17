@@ -205,6 +205,7 @@ C3 [BLOCKER] mock 반향 테스트 없음 — 프로덕션 렌더·상호작용�
 C4 [MAJOR] 마크업 리팩토링(div→section, 스타일 변경)에도 살아남는다 — 사용자 관점 쿼리 우선순위 준수
 C5 [MAJOR] msw 핸들러를 지우면 실패한다 — 네트워크 경로를 실제로 태운다 (해당 시)
 C6 [MAJOR] 로딩/에러/빈 상태 기본 세트가 커버되거나 미커버 사유가 보고됐다
+C7 [BLOCKER] 기존 테스트 후퇴 없음 — 기존 테스트의 삭제, `.skip`·`xit`·`xdescribe`·`@Disabled`·`@Ignore` 등 비활성화, 기대값 완화·assert 제거가 diff에 없다 (의도한 삭제는 spec 근거를 인용해야 pass)
 End with a verdict that lists every fail. <focus arguments, if any>
 ```
 

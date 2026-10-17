@@ -12,6 +12,7 @@ const REQUIRED_PATHS = [
   '.claude/settings.json',
   '.claude/hooks/protect-files.sh',
   '.claude/hooks/block-dangerous-git.sh',
+  '.claude/hooks/block-dangerous-bash.sh',
   '.claude/hooks/boundary-checkpoint.sh',
   '.claude/hooks/auto-format.sh',
   '.claude/hooks/pre-commit-check.sh',

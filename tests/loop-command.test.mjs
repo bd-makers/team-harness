@@ -76,7 +76,7 @@ test('loop: the four stop conditions are pinned and no-progress has no numeric c
   const specGap =
     '- **spec 공백** — Dev나 QA가 spec이 답하지 않는 질문을 만났다. 질문을 사람에게 그대로 넘긴다(R1로 되돌림). spec이 고쳐지면 `/harness-loop`를 다시 불러 이어간다.';
   const noProgress =
-    '- **진전 없음** — 직전 Dev 턴 이후 실패 집합이 같고 diff에도 변화가 없으면 멈춘다. 비교는 Dev 턴 전후의 `git diff HEAD` 출력, 추적되지 않은 파일(`git ls-files --others --exclude-standard`로 찾은 파일)의 내용, 실패 집합이다 — `git diff HEAD`는 새 파일을 보지 않아 새 파일만 만든 진전을 놓친다. 횟수 상한을 두지 않는다 — 상한은 진전 중인 루프를 끊고, 진전 없는 루프는 상한에 닿을 때까지 헛돈다.';
+    '- **진전 없음** — 직전 Dev 턴 이후 실패 집합이 같고 diff에도 변화가 없으면 멈춘다. 비교는 Dev 턴 전후의 `git diff HEAD` 출력, 추적되지 않은 파일(`git ls-files --others --exclude-standard`로 찾은 파일)의 내용, 실패 집합이다 — `git diff HEAD`는 새 파일을 보지 않아 새 파일만 만든 진전을 놓친다. 횟수 상한을 두지 않는다 — 상한은 진전 중인 루프를 끊고, 진전 없는 루프는 상한에 닿을 때까지 헛돈다. 실패 집합이 줄었어도 그 Dev 턴이 기존 테스트를 지우거나 비활성화(`.skip`·`xit`·`@Disabled` 등)하거나 assert를 약화해 줄였으면 진전이 아니다 — 멈추고 그 diff를 보고한다. 판정은 같은 Dev 턴의 `git diff HEAD`에서 삭제된 테스트 파일, 추가된 줄의 skip 표지, 제거된 줄의 assert로 한다.';
   const approval =
     '- **승인 필요** — push·PR·파괴적 변경·의존성 추가처럼 되돌리기 어려운 행위가 필요하다. 하지 않고 멈춘다.';
   assert.equal(block(stops, '멈추면 사람에게'), intro, '멈춤 조건 첫 문단(멈추면 보고할 것)');

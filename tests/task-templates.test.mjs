@@ -33,6 +33,20 @@ test('spec 템플릿 목적 절은 문제→기대 결과 안내문을 담고, �
   assert.doesNotMatch(section, /^\s*(?:[-*]|\d+\.)\s/m);
 });
 
+// 범위 절은 목적 다음·R1 앞에 둔다. 자리표시자를 목록으로 두지 않는다 — 위 목적 절 검사가 목적~설계 구간의
+// 목록 항목을 금하고, 갓 만든 템플릿에 빈 In/Out 항목이 있으면 채운 것과 구별되지 않는다.
+test('spec 템플릿은 목적 다음에 범위 (In / Out) 절을 두고, In·Out 쓰는 법을 안내한다', () => {
+  const out = taskSpecTemplate('demo');
+  const purpose = out.indexOf('## 목적 / 요구사항');
+  const scope = out.indexOf('## 범위 (In / Out)');
+  const r1 = out.indexOf('## 원천 검토 (R1)');
+  assert.ok(purpose >= 0 && purpose < scope && scope < r1, '범위 절은 목적과 R1 사이');
+  const section = out.slice(scope, r1);
+  assert.match(section, /`- \*\*In\*\*: …`/);
+  assert.match(section, /`- \*\*Out\*\*: …`.*이유/);
+  assert.doesNotMatch(section, /^\s*(?:[-*]|\d+\.)\s/m, '자리표시자는 목록 항목이 아니다');
+});
+
 // R1 원천 검토(cycle §4-1, task r1-source-review). 절은 목적 다음·설계 앞에 둔다 — Done evidence(R2 영역)와 떨어뜨린다.
 // interview 6단계는 이 절의 **목록 항목**만 읽는다: `- 없음 — …`/`- 검토 완료: …` 줄이 통과 기록이고, 목록 항목의
 // `(unresolved)`·`(open)`이 미해결이다. 갓 만든 템플릿이 통과 기록이나 미해결 마커를 목록으로 가지면 게이트가 뒤집힌다.

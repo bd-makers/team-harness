@@ -100,6 +100,11 @@ export function taskSpecTemplate(name) {
 답 없는 질문은 요구가 아니다 — \`## 참고\` 절에 \`- (open) …\`으로 남긴다.*
 
 
+## 범위 (In / Out)
+*\`- **In**: …\`에 이번 task가 바꾸는 것(파일·모듈·동작)을, \`- **Out**: …\`에 하지 않기로 한 것과 그 이유 한 줄을 쓴다 —
+요청하지 않은 기능·관련 없는 리팩터링이 섞이지 않게 긋는 경계다.*
+
+
 ## 원천 검토 (R1)
 *원천 문서(PRD·Figma·API 문서·기획서·정책서) 사이의 충돌·누락·모순을 Plan 전에 검토한다(\`/harness-interview\`).
 충돌·모순은 \`(unresolved)\`, 누락은 \`(open)\`으로 적고, \`→ 결정: …\`으로 해결한 뒤 재대조해 \`- 검토 완료: <날짜>\`로 닫는다.
@@ -721,19 +726,75 @@ function isTestPath(path) {
   return /(^|[._-])(test|spec)s?\.[^.]+$/i.test(base) || /(Test|Tests|Spec|Specs)\.[^.]+$/.test(base);
 }
 
+// git이 non-ASCII 경로를 C-quote("...")로 감싸 출력해도 분류가 깨지지 않게 벗긴다.
+function normalizeGitPath(raw) {
+  const unquoted = raw.startsWith('"') && raw.endsWith('"') ? raw.slice(1, -1) : raw;
+  return unquoted.replace(/\\/g, '/');
+}
+
 // 테스트 판정이 소스 판정보다 우선한다 — `foo.test.ts`는 소스 변경으로 세지 않는다.
 export function classifyChangedPaths(paths) {
   let source = false;
   let test = false;
   for (const raw of paths) {
-    // git이 non-ASCII 경로를 C-quote("...")로 감싸 출력해도 분류가 깨지지 않게 벗긴다.
-    const unquoted = raw.startsWith('"') && raw.endsWith('"') ? raw.slice(1, -1) : raw;
-    const path = unquoted.replace(/\\/g, '/');
+    const path = normalizeGitPath(raw);
     if (isTestPath(path)) { test = true; continue; }
     const ext = fileExtension(path);
     if (ext !== null && SOURCE_EXTENSIONS.has(ext)) source = true;
   }
   return { source, test };
+}
+
+// `git log --reverse --name-status -M` 출력을 경로별 **창 끝 상태**로 접는다. 경로 목록만 보면 삭제된 테스트도
+// "테스트 변경"으로 세어져, 실패하던 테스트를 지운 커밋이 증거가 됐다(2026-10-17). 커밋 단위로 보면 "고친 뒤 지움"이
+// 앞 커밋의 수정으로 증거가 남으므로 마지막 상태로 판정한다. 삭제 = 창 이전부터 있던 테스트 경로가 창 끝에 없고,
+// 그 내용이 이름 변경으로 옮겨 가 살아 있지도 않은 것. 출신은 경로 이름이 아니라 이름 변경을 따라가는 내용으로 본다 —
+// 이름으로 보면 창 안에서 만들고 지운 이름을 기존 테스트가 이어받아 지워질 때 놓친다(codex 리뷰 P2). 복사본은 새 파일이다.
+// live는 테스트 증거, live+deleted는 소스 판정(삭제한 소스도 소스 변경 — 종전 그대로), deletedTests는 차단 사유로 간다.
+const BORN_IN_WINDOW = new Set(['A', 'R+', 'C+']);
+
+export function foldNameStatus(stdout) {
+  const first = new Map();   // 경로 → 첫 등장 상태. BORN_IN_WINDOW면 창 안에서 생긴 경로다.
+  const last = new Map();    // 경로 → 창 끝 상태('D' 삭제, 'R-' 이름 변경으로 떠남)
+  const carries = new Map(); // 현재 경로 → 그 경로가 실어 나르는 창 이전 경로
+  const see = (path, state) => {
+    if (!first.has(path)) {
+      first.set(path, state);
+      if (!BORN_IN_WINDOW.has(state)) carries.set(path, path);
+    }
+    last.set(path, state);
+  };
+  for (const line of stdout.split('\n')) {
+    const [status = '', from, to] = line.split('\t');
+    if (!status || !from) continue;
+    const code = status[0];
+    if (code === 'R' && to) {
+      see(from, 'R-');
+      const origin = carries.get(from);
+      carries.delete(from);
+      see(to, 'R+');
+      if (origin === undefined) carries.delete(to); else carries.set(to, origin);
+    } else if (code === 'C' && to) {
+      see(to, 'C+');
+    } else {
+      see(from, code);
+      if (code === 'D' || code === 'A') carries.delete(from);
+    }
+  }
+  const live = [];
+  const deleted = [];
+  for (const [path, state] of last) {
+    if (state === 'D') deleted.push(path);
+    else if (state !== 'R-') live.push(path);
+  }
+  const survivors = new Set(live.map(p => carries.get(p)).filter(Boolean));
+  const deletedTests = [];
+  for (const [raw, state] of first) {
+    if (BORN_IN_WINDOW.has(state) || !['D', 'R-'].includes(last.get(raw)) || survivors.has(raw)) continue;
+    const path = normalizeGitPath(raw);
+    if (isTestPath(path)) deletedTests.push(path);
+  }
+  return { live, deleted, deletedTests };
 }
 
 // 계약은 ISO8601 — Date.parse는 '1'(→2000-12-31)이나 '9999'(→9999년) 같은 비계약 값도
@@ -1004,16 +1065,23 @@ async function collectDoneIssues(targetDir, active) {
       // 테스트 작성 체크 — 커밋 훅(pre-commit-check.sh)은 config 게이트를 *실행*하지만
       // *작성*은 강제하지 못하고, Claude Code 세션 밖(다른 에이전트 등)에서는 아예 걸리지 않는다.
       // 여기서는 git 이력만으로 판정하므로 어떤 드라이버가 커밋했든 동일하게 적용된다.
+      // `-M`을 명시한다 — 사용자 `diff.renames=false`면 테스트 파일 이동이 삭제+추가로 보여 정직한 이동을 막는다.
       if (evidence.tests === 'required') {
         try {
           const { stdout } = await pexec(
             'git',
-            ['-C', targetDir, '-c', 'core.quotepath=false', 'log', `--since=${windowStartIso}`, '--name-only', '--pretty=format:'],
+            ['-C', targetDir, '-c', 'core.quotepath=false', 'log', `--since=${windowStartIso}`, '--reverse', '--name-status', '-M', '--pretty=format:'],
             { maxBuffer: 8 * 1024 * 1024 },
           );
-          const changed = classifyChangedPaths(stdout.split('\n').map(l => l.trim()).filter(Boolean));
-          if (changed.source && !changed.test) {
+          const { live, deleted, deletedTests } = foldNameStatus(stdout);
+          const { source } = classifyChangedPaths([...live, ...deleted]);
+          const { test } = classifyChangedPaths(live);
+          if (source && !test) {
             issues.push('소스는 바뀌었는데 테스트 파일 변경이 없음 (테스트 미작성 — 불필요하면 spec에 `"tests": "skip"` 선언)');
+          }
+          if (deletedTests.length) {
+            const shown = deletedTests.slice(0, 5).join(', ') + (deletedTests.length > 5 ? ` 외 ${deletedTests.length - 5}개` : '');
+            issues.push(`기존 테스트 파일이 삭제됨: ${shown} (삭제된 테스트는 증거가 아니다 — 의도한 삭제면 \`harness-team done --force\`로 종결하고 사유를 artifact.md에 남길 것)`);
           }
         } catch { /* transient git error → don't fabricate a problem */ }
       }

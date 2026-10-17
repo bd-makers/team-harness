@@ -664,6 +664,14 @@
         </ul>
       </div>
       <div class="card card-accent-orange">
+        <h3><span class="hook-badge hook-pre">PreToolUse</span> block-dangerous-bash.sh</h3>
+        <p>Bash 도구의 git 밖 위험 명령을 차단한다 — <code>Bash(rm -rf *)</code> deny는 명령 문자열 매칭이라 철자 변형을 못 막는다 (문자열 휴리스틱, 경계가 필요하면 sandbox).</p>
+        <ul style="margin-top:0.6rem">
+          <li>재귀+강제 <code>rm</code>(<code>-rf</code>·<code>-fr</code>·<code>-r -f</code>·<code>--recursive --force</code>·<code>/bin/rm</code>·<code>sudo</code>), <code>find -delete</code>·<code>-exec rm</code>, <code>curl|wget … | sh</code>·<code>bash -c "$(curl …)"</code>, <code>.env</code>를 피연산자로 받는 <code>cp</code>·<code>mv</code>·<code>ln</code>·<code>rsync</code>·<code>scp</code></li>
+          <li><code>git rm</code>·<code>rm -r</code>(강제 없음)·<code>curl -o</code>·<code>.envrc</code>는 통과 · <code>cat .env</code>는 <code>Read(./.env)</code> deny가 Bash에도 적용돼 이 훅의 몫이 아니다</li>
+        </ul>
+      </div>
+      <div class="card card-accent-orange">
         <h3><span class="hook-badge hook-pre">PreToolUse</span> boundary-checkpoint.sh</h3>
         <p>활성 task plan의 checkbox를 완료로 바꾸는 Edit·Write 직전에 spec의 <code>## Boundary contracts</code>를 대조한다.</p>
         <ul style="margin-top:0.6rem">
@@ -703,6 +711,7 @@
             <tr><td><span class="hook-badge hook-pre">PreToolUse</span></td><td><code>Edit|Write</code></td><td><code>.claude/hooks/boundary-checkpoint.sh</code> — plan checkbox 완료 직전 <code>harness-team boundary checkpoint</code></td><td>10s</td></tr>
             <tr><td><span class="hook-badge hook-pre">PreToolUse</span></td><td><code>Bash</code></td><td><code>.claude/hooks/block-dangerous-git.sh</code></td><td>10s</td></tr>
             <tr><td><span class="hook-badge hook-pre">PreToolUse</span></td><td><code>Bash</code></td><td><code>.claude/hooks/pre-commit-check.sh</code></td><td>120s</td></tr>
+            <tr><td><span class="hook-badge hook-pre">PreToolUse</span></td><td><code>Bash</code></td><td><code>.claude/hooks/block-dangerous-bash.sh</code> — 별도 group(기존 설치의 init 병합이 기존 Bash group을 중복시키지 않게)</td><td>10s</td></tr>
             <tr><td><span class="hook-badge hook-pre">PreToolUse</span></td><td><code>*</code></td><td><code>.claude/hooks/observe-tools.mjs</code></td><td>10s</td></tr>
             <tr><td><span class="hook-badge hook-post">PostToolUse</span></td><td><code>Edit|Write</code></td><td><code>.claude/hooks/auto-format.sh</code></td><td>30s</td></tr>
             <tr><td><span class="hook-badge hook-post">PostToolUse</span></td><td><code>*</code></td><td><code>.claude/hooks/observe-tools.mjs</code></td><td>10s</td></tr>

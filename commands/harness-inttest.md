@@ -203,6 +203,7 @@ I3 [BLOCKER] mock 반향 테스트 없음 — mock 세팅값을 그대로 assert
 I4 [MAJOR] DB assert를 지우면 실패한다 — 부수효과 검증이 존재한다 (해당 시)
 I5 [MAJOR] msw 핸들러를 지우면 실패한다 — 아웃바운드 경로를 실제로 태운다 (해당 시)
 I6 [MAJOR] managed/unmanaged 구분 준수 — managed 의존성 목킹 없음
+I7 [BLOCKER] 기존 테스트 후퇴 없음 — 기존 테스트의 삭제, `.skip`·`xit`·`xdescribe`·`@Disabled`·`@Ignore` 등 비활성화, 기대값 완화·assert 제거가 diff에 없다 (의도한 삭제는 spec 근거를 인용해야 pass)
 End with a verdict that lists every fail. <focus arguments, if any>
 ```
 
