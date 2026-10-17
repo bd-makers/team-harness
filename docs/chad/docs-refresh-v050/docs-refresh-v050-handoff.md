@@ -71,3 +71,8 @@ docs/chad/docs-refresh-v050/docs-refresh-v050-context.md | 2 +-
  docs/chad/docs-refresh-v050/docs-refresh-v050-handoff.md | 8 ++++++++
  docs/chad/docs-refresh-v050/docs-refresh-v050-spec.md    | 2 +-
  3 files changed, 10 insertions(+), 2 deletions(-)
+
+## 2026-10-17T03:20:57.379Z — 267520f fix(release): 캐시 복사에서 .claude/worktrees 제외
+src/commands/release.mjs |  5 ++++-
+ tests/release.test.mjs   | 20 ++++++++++++++++++++
+ 2 files changed, 24 insertions(+), 1 deletion(-)
