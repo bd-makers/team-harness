@@ -717,6 +717,124 @@ test('소스 변경 + 테스트 동반 → 통과', async () => {
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+// 테스트 삭제는 "창 이전부터 있던 파일"이어야 재현된다 — 픽스처 커밋을 창 이전으로 백데이트하고
+// 그 위에 창 안 커밋을 쌓는다. move는 `git mv`라 이름 변경으로 기록된다.
+const BEFORE_WINDOW = () => ago(10 * 60_000);
+
+async function commitInWindow(dir, { files = {}, remove = [], move = [] } = {}) {
+  for (const [rel, content] of Object.entries(files)) {
+    const abs = join(dir, rel);
+    await mkdir(join(abs, '..'), { recursive: true });
+    await writeFile(abs, content);
+  }
+  for (const rel of remove) await pexec('git', ['-C', dir, 'rm', '-q', rel]);
+  for (const [from, to] of move) {
+    await mkdir(join(dir, to, '..'), { recursive: true });
+    await pexec('git', ['-C', dir, 'mv', from, to]);
+  }
+  await pexec('git', ['-C', dir, 'add', '-A']);
+  await pexec('git', ['-C', dir, 'commit', '-q', '-m', 'in-window']);
+}
+
+const PRE_EXISTING = { 'src/app.mjs': 'export const x = 1;\n', 'tests/app.test.mjs': 'import "node:test";\n' };
+
+// 회귀(2026-10-17): `--name-only`는 삭제된 경로도 그대로 내놓아, 실패하던 테스트를 지운 커밋이 테스트 증거로 세어졌다.
+test('소스 변경 + 기존 테스트 파일 삭제 → 차단 (삭제는 테스트 증거가 아니다)', async () => {
+  const { dir } = await makeEvidenceFixture({ files: PRE_EXISTING, commitDate: BEFORE_WINDOW() });
+  try {
+    await commitInWindow(dir, { files: { 'src/app.mjs': 'export const x = 2;\n' }, remove: ['tests/app.test.mjs'] });
+    const { logs, exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1, 'blocks');
+    assert.ok(logs.some(l => l.includes('테스트 파일 변경이 없음')), '남은 테스트 증거가 없다');
+    assert.ok(logs.some(l => l.includes('기존 테스트 파일이 삭제됨') && l.includes('tests/app.test.mjs')), '삭제를 이름으로 알린다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('테스트를 고친 뒤 다음 커밋에서 삭제 → 차단 (경로별 최종 상태로 판정)', async () => {
+  const { dir } = await makeEvidenceFixture({ files: PRE_EXISTING, commitDate: BEFORE_WINDOW() });
+  try {
+    await commitInWindow(dir, { files: { 'src/app.mjs': 'export const x = 2;\n', 'tests/app.test.mjs': 'import "node:test"; // edited\n' } });
+    await commitInWindow(dir, { remove: ['tests/app.test.mjs'] });
+    const { logs, exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1, '중간 커밋의 수정이 증거로 남으면 안 된다');
+    assert.ok(logs.some(l => l.includes('기존 테스트 파일이 삭제됨')), 'flags deletion');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 새 테스트의 내용은 지운 파일과 달라야 한다 — 같으면 `-M`이 이름 변경으로 짝짓는다(그건 아래 이름 변경 케이스다).
+test('기존 테스트 삭제 + 다른 테스트 추가 → 삭제만으로 차단', async () => {
+  const { dir } = await makeEvidenceFixture({ files: PRE_EXISTING, commitDate: BEFORE_WINDOW() });
+  try {
+    await commitInWindow(dir, {
+      files: { 'src/app.mjs': 'export const x = 2;\n', 'tests/other.test.mjs': 'import { test } from "node:test";\ntest("other", () => {});\n' },
+      remove: ['tests/app.test.mjs'],
+    });
+    const { logs, exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1, 'blocks');
+    assert.ok(!logs.some(l => l.includes('테스트 파일 변경이 없음')), '추가된 테스트는 증거다');
+    assert.ok(logs.some(l => l.includes('기존 테스트 파일이 삭제됨') && l.includes('tests/app.test.mjs')), 'flags deletion');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('테스트 파일 이름 변경 + 소스 변경 → 통과 (이름 변경은 삭제가 아니다)', async () => {
+  const { dir } = await makeEvidenceFixture({ files: PRE_EXISTING, commitDate: BEFORE_WINDOW() });
+  try {
+    await commitInWindow(dir, { files: { 'src/app.mjs': 'export const x = 2;\n' }, move: [['tests/app.test.mjs', 'tests/unit/app.test.mjs']] });
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds');
+    assert.ok(!logs.some(l => l.includes('기존 테스트 파일이 삭제됨')), 'no false positive');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('창 안에서 만들고 지운 테스트는 삭제로 세지 않는다', async () => {
+  const { dir } = await makeEvidenceFixture({ files: { 'src/app.mjs': 'export const x = 1;\n' }, commitDate: BEFORE_WINDOW() });
+  try {
+    await commitInWindow(dir, { files: { 'src/app.mjs': 'export const x = 2;\n', 'tests/scratch.test.mjs': 'import "node:test";\n' } });
+    await commitInWindow(dir, { files: { 'tests/app.test.mjs': 'import "node:test";\n' }, remove: ['tests/scratch.test.mjs'] });
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds');
+    assert.ok(!logs.some(l => l.includes('기존 테스트 파일이 삭제됨')), 'no false positive');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// codex 리뷰 P2(2026-10-17) — 이름 변경은 출신을 물려준다. 새 경로를 "기존 파일"로 보면 정직한 정리가 막힌다.
+test('창 안에서 만들고 옮긴 뒤 지운 테스트도 삭제로 세지 않는다', async () => {
+  const { dir } = await makeEvidenceFixture({ files: { 'src/app.mjs': 'export const x = 1;\n' }, commitDate: BEFORE_WINDOW() });
+  try {
+    await commitInWindow(dir, { files: { 'src/app.mjs': 'export const x = 2;\n', 'tests/scratch.test.mjs': 'import "node:test";\n' } });
+    await commitInWindow(dir, { move: [['tests/scratch.test.mjs', 'tests/unit/scratch.test.mjs']] });
+    await commitInWindow(dir, { files: { 'tests/app.test.mjs': 'import { test } from "node:test";\ntest("app", () => {});\n' }, remove: ['tests/unit/scratch.test.mjs'] });
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds');
+    assert.ok(!logs.some(l => l.includes('기존 테스트 파일이 삭제됨')), 'no false positive');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// codex 재검 P2(2026-10-17) — 출신을 경로 이름으로 보면, 창 안에서 만들고 지운 이름을 기존 테스트가 이어받아 지워질 때 놓친다.
+test('기존 테스트가 창 안에서 지운 이름으로 옮겨진 뒤 삭제 → 차단 (출신은 내용을 따라간다)', async () => {
+  const { dir } = await makeEvidenceFixture({ files: PRE_EXISTING, commitDate: BEFORE_WINDOW() });
+  try {
+    await commitInWindow(dir, { files: { 'src/app.mjs': 'export const x = 2;\n', 'tests/tmp.test.mjs': 'import { test } from "node:test";\ntest("tmp", () => {});\n' } });
+    await commitInWindow(dir, { remove: ['tests/tmp.test.mjs'] });
+    await commitInWindow(dir, { move: [['tests/app.test.mjs', 'tests/tmp.test.mjs']] });
+    await commitInWindow(dir, { files: { 'tests/other.test.mjs': 'import { test } from "node:test";\ntest("other", () => { /* different */ });\n' }, remove: ['tests/tmp.test.mjs'] });
+    const { logs, exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1, 'blocks');
+    assert.ok(logs.some(l => l.includes('기존 테스트 파일이 삭제됨') && l.includes('tests/app.test.mjs')), '옮겨 간 기존 테스트의 삭제를 원래 이름으로 알린다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// codex 리뷰 P2(2026-10-17) — 삭제를 테스트 증거에서 뺄 때 소스 판정까지 빼면 "소스만 지운 task"의 테스트 요구가 사라진다.
+test('소스 파일만 삭제 → 종전대로 테스트 변경을 요구한다', async () => {
+  const { dir } = await makeEvidenceFixture({ files: { 'src/app.mjs': 'export const x = 1;\n', 'src/old.mjs': 'export const y = 1;\n' }, commitDate: BEFORE_WINDOW() });
+  try {
+    await commitInWindow(dir, { remove: ['src/old.mjs'] });
+    const { logs, exitCode } = await runDoneCapture(dir);
+    assert.equal(exitCode, 1, 'blocks');
+    assert.ok(logs.some(l => l.includes('테스트 파일 변경이 없음')), '소스 삭제도 소스 변경이다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('문서만 변경된 task는 테스트 체크 미발동', async () => {
   const { dir } = await makeEvidenceFixture({ files: { 'docs/note.md': '# note\n' } });
   try {

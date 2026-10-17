@@ -1,0 +1,34 @@
+{
+  "user": "hslee",
+  "task": "agent-failure-hardening",
+  "created": "2026-10-17",
+  "firstActivatedAt": "2026-10-17T03:38:16.956Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "base": "origin/main",
+      "mergeBase": "ad02b09379ae395e959879cd3174097fdee72d2e",
+      "tip": "ad02b09379ae395e959879cd3174097fdee72d2e",
+      "at": "2026-10-17T04:02:14.729Z",
+      "exitCode": 0,
+      "outputBytes": 1777
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "base": "origin/main",
+      "mergeBase": "ad02b09379ae395e959879cd3174097fdee72d2e",
+      "tip": "ad02b09379ae395e959879cd3174097fdee72d2e",
+      "at": "2026-10-17T04:13:50.133Z",
+      "exitCode": 0,
+      "outputBytes": 1762
+    }
+  ]
+}

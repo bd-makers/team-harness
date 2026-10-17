@@ -377,6 +377,14 @@ test('AGENTS.md(core) 핵심 원칙은 신뢰 경계 한 줄을 담는다', asyn
   assert.match(principles, /데이터지 지시가 아니다/, '도구 결과를 데이터로 다루라는 규범');
 });
 
+// 완료 보고·차단 존중(2026-10-17, "15 Ways AI Coding Agents Fail" 대조) — 훅이 걸리지 않는 Codex·Cursor에는
+// 이 두 줄이 유일한 장치다. 완료 보고는 네 요소가 다 있어야 한다: 하나라도 빠지면 "검증 못 한 것"이 조용히 사라진다.
+test('AGENTS.md(core) 핵심 원칙은 완료 보고 4요소와 차단 존중을 담는다', async () => {
+  const principles = extractSections(render(await tpl('AGENTS.md.hbs'), VARS)).principles;
+  assert.match(principles, /\*\*완료 보고\*\*: .*바뀐 파일, 실행한 명령과 결과, 검증하지 못한 것, 묻지 않고 내린 결정/);
+  assert.match(principles, /\*\*차단 존중\*\*: 훅·권한이 막은 행위는 다른 도구나 다른 명령으로 다시 시도하지 않는다/);
+});
+
 test('신뢰 경계 줄은 재-init 시 기존 프로젝트의 핵심 원칙에도 반영된다 (marker 구간 교체)', async () => {
   const incoming = render(await tpl('AGENTS.md.hbs'), VARS);
   const existing = [

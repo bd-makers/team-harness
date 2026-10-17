@@ -167,6 +167,7 @@ T3 [BLOCKER] mock 반향 테스트 없음 — mock 세팅값을 그대로 assert
 T4 [MAJOR] 각 테스트가 죽일 수 있는 프로덕션 변이(mutation)를 최소 1개 지목할 수 있다
 T5 [MAJOR] GWT 3구획·서술형 테스트명·When 한 줄 규율 준수
 T6 [MAJOR] 구현 세부사항 assert 없음 — private/호출 순서/내부 상태 검증 부재
+T7 [BLOCKER] 기존 테스트 후퇴 없음 — 기존 테스트의 삭제, `.skip`·`xit`·`xdescribe`·`@Disabled`·`@Ignore` 등 비활성화, 기대값 완화·assert 제거가 diff에 없다 (의도한 삭제는 spec 근거를 인용해야 pass)
 End with a verdict that lists every fail. <focus arguments, if any>
 ```
 

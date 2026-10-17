@@ -274,7 +274,9 @@ export const CLAUDE_HOOK_FILES = [
 // Refreshed by the same stock-sha rule but outside the jq matrix (no fallback block):
 // the observability logger and the boundary checkpoint shim. Until they were listed
 // here a template fix to either file had no delivery path to an existing install.
-export const REFRESHABLE_HOOK_FILES = [...CLAUDE_HOOK_FILES, 'boundary-checkpoint.sh', 'observe-tools.mjs'];
+// block-dangerous-bash.sh는 폴백 블록을 갖지만 jq 시대 fixture 묶음(위 4개)보다 늦게 생겨 여기 둔다 — 아직 stock
+// 이력이 없어 지금은 갱신할 것이 없고, 이 훅을 처음 고칠 때 이 목록이 배달 경로·완전성 가드가 된다.
+export const REFRESHABLE_HOOK_FILES = [...CLAUDE_HOOK_FILES, 'boundary-checkpoint.sh', 'observe-tools.mjs', 'block-dangerous-bash.sh'];
 
 // sha256 of every template version ever shipped per hook, EXCLUDING the current
 // template (that case is compared directly). Provenance: git history of

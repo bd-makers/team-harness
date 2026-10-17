@@ -85,7 +85,7 @@ test('KNOWN_STOCK_HOOK_SHA256는 fixture의 실제 바이트와 일치한다 (�
 // 템플릿 수정이 기존 설치본에 도달할 경로가 없었다(observe-tools의 공백 경로 no-op이 그 예).
 test('audit-cleanup 이전 판(observe-tools·boundary-checkpoint·substring 패턴 훅)도 stock이면 갱신된다', async () => {
   const files = ['observe-tools.mjs', 'boundary-checkpoint.sh', 'block-dangerous-git.sh', 'protect-files.sh'];
-  assert.deepEqual(REFRESHABLE_HOOK_FILES.slice(CLAUDE_HOOK_FILES.length), ['boundary-checkpoint.sh', 'observe-tools.mjs']);
+  assert.deepEqual(REFRESHABLE_HOOK_FILES.slice(CLAUDE_HOOK_FILES.length), ['boundary-checkpoint.sh', 'observe-tools.mjs', 'block-dangerous-bash.sh']);
   const dir = await plantHooks(join(FIXTURES, 'pre-audit-cleanup'), files);
   try {
     assert.equal(await refreshClaudeHooks(ctxFor(dir)), true);
@@ -191,7 +191,15 @@ test('KNOWN_STOCK_HOOK_SHA256가 main의 실제 git 이력을 빠짐없이 담�
 
   for (const name of REFRESHABLE_HOOK_FILES) {
     const p = `templates/.claude/hooks/${name}`;
-    const cur = sha256(execFileSync('git', ['show', `HEAD:${p}`], { cwd: ROOT, maxBuffer: 1 << 26 }));
+    // 이번 변경이 새로 만든 훅은 HEAD에 없다 — 배포된 판이 없으니 테이블도 비어 있어야 한다. 예외로 죽게 두면
+    // 새 훅을 처음 커밋할 때 pre-commit 게이트가 이 테스트에 막힌다.
+    let head;
+    try { head = execFileSync('git', ['show', `HEAD:${p}`], { cwd: ROOT, maxBuffer: 1 << 26, stdio: ['pipe', 'pipe', 'ignore'] }); }
+    catch {
+      assert.deepEqual(KNOWN_STOCK_HOOK_SHA256[name] || [], [], `${name}: HEAD에 없는 새 훅인데 stock 이력이 있다`);
+      continue;
+    }
+    const cur = sha256(head);
     const commits = execFileSync('git', ['log', '--first-parent', '--format=%H', '--', p], { cwd: ROOT }).toString().trim().split('\n').filter(Boolean);
     const historical = new Set();
     for (const c of commits) {

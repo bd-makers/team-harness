@@ -9,6 +9,18 @@
 
 ## [Unreleased]
 
+### Fixed
+- **done 가드가 삭제된 테스트 파일을 테스트 증거로 세던 것** (task `agent-failure-hardening`). `tests: required` 검사는 판정 창의 `git log --name-only` 경로만 읽어, 소스를 고치고 실패하던 테스트 파일을 지운 커밋도 "테스트 변경"으로 통과시켰다. 이제 `--name-status -M`으로 경로별 창 끝 상태를 접어, 삭제된 경로는 증거에서 빠지고 **창 이전부터 있던 테스트 파일이 창 끝에 삭제 상태면 `기존 테스트 파일이 삭제됨: …`으로 차단**한다(다른 테스트를 추가해도 차단). 앞 커밋에서 고치고 다음 커밋에서 지운 경우도 잡는다. 이름 변경(`git mv`)과 창 안에서 만들고 지운 파일은 삭제가 아니다. 의도한 삭제는 `done --force`로 닫고 사유를 artifact에 남긴다(meta `forcedIssues`가 감사 흔적). 한계: 지운 테스트와 내용이 50% 이상 같은 새 파일은 이름 변경으로 짝지어진다 — 제자리 assert 약화와 같은 부류라 아래 루브릭 행이 맡는다. 또 판정 창은 종전처럼 `git log --since`라 창 안에 병합된 **다른 PR의 테스트 삭제도 이 task를 막는다**(종전엔 그런 경로가 증거를 늘리기만 했다) — main에서 `done`할 때 드물게 걸리며, 그때는 `--force`와 사유 기록으로 닫는다.
+
+### Added
+- **testcritic 루브릭 3종에 "기존 테스트 후퇴 없음" BLOCKER** — `T7`·`C7`·`I7`: 기존 테스트의 삭제, `.skip`·`xit`·`xdescribe`·`@Disabled`·`@Ignore` 등 비활성화, 기대값 완화·assert 제거가 diff에 없어야 pass(의도한 삭제는 spec 근거 인용). 기존 1–6행 번호는 그대로다. 커맨드 문서 미러(`/harness-unittest`·`/harness-comptest`·`/harness-inttest`)도 같다.
+- **`block-dangerous-bash.sh` — git 밖 위험 셸 명령 차단 훅** (Bash PreToolUse, jq 폴백 블록 공유). Claude Code의 Bash deny 규칙은 명령 문자열 매칭이라 `Bash(rm -rf *)`가 `rm -fr`·`rm -r -f`·`/bin/rm -rf`를 막지 못했고, `curl … | sh`와 `cp .env x`에는 규칙이 없었다. 재귀+강제 `rm`의 모든 철자, `find -delete`·`-exec rm`, `curl|wget … | sh`·`bash -c "$(curl …)"`·`bash <(curl …)`, `.env`·`.env.*`를 피연산자로 받는 `cp`·`mv`·`ln`·`rsync`·`scp`·`install`을 exit 2로 막는다 — `cp .env.example .env`도 막힌다. `cat .env`는 공식 문서상 `Read(./.env)` deny가 Bash의 `cat`·`head`·`tail`·`sed`·`tee`·리다이렉트에도 적용돼 다루지 않는다. 문자열 휴리스틱이라 `bash -c '…'`·스크립트 안 파일 접근은 못 보고, 따옴표 안의 `;`도 구분자로 봐 오탐(차단)한다(git 훅과 같은 fail-closed 수용 — 경계는 sandbox). settings에는 **별도 PreToolUse group**으로 걸어 기존 설치의 `init` 병합이 기존 Bash 훅을 중복시키지 않는다. **기존 설치는 `harness-team init`으로 받는다** — `migrate`는 없는 훅을 새로 깔지 않고, doctor는 이 훅이 없어도 optional로만 표시한다.
+- **AGENTS.md 핵심 원칙 2줄** — 완료 보고 4요소(바뀐 파일, 실행한 명령과 결과, 검증하지 못한 것, 묻지 않고 내린 결정)와 차단 존중(훅·권한이 막은 행위를 다른 도구로 재시도하지 않고 보고). 훅이 걸리지 않는 Codex·Cursor에는 이 문장이 유일한 장치다. 관리 절이라 **기존 프로젝트는 `migrate`가 아니라 `init --yes`로 받는다**.
+- **spec 템플릿 `## 범위 (In / Out)` 절** — 목적 다음에 이번 task가 바꾸는 것과 하지 않기로 한 것(이유 한 줄)을 쓴다. 새 task부터 적용되고 `/harness-spec`이 골격으로 채운다.
+
+### Changed
+- **`/harness-loop` "진전 없음"** — 실패 집합이 줄었어도 그 Dev 턴이 기존 테스트를 지우거나 skip·assert 약화로 줄였으면 진전이 아니라 멈춘다(판정: 그 턴의 `git diff HEAD`의 삭제된 테스트 파일·추가된 skip 표지·제거된 assert 줄). 멈춤 조건은 넷 그대로이고 횟수 상한은 여전히 두지 않는다.
+
 ## [0.50.0] - 2026-10-12
 
 ### Added

@@ -713,6 +713,14 @@ test('프레이밍 템플릿 8종 ↔ 커맨드 문서 마커 다음 text 블록
   assert.equal(markers, FRAMING_TEMPLATES.length, '문서에만 있는 고아 마커가 없다');
 });
 
+// done 가드는 테스트 파일 삭제만 본다 — skip 표지·assert 약화·내용 바꿔치기는 판단이 필요해 루브릭이 막는다(2026-10-17).
+test('testcritic 루브릭 3종은 모두 "기존 테스트 후퇴 없음"을 BLOCKER로 채점한다', () => {
+  for (const rubric of RUBRICS) {
+    const { template } = findFramingTemplate('testcritic', rubric).template;
+    assert.match(template, /^[TCI]7 \[BLOCKER\] 기존 테스트 후퇴 없음 — 기존 테스트의 삭제, `\.skip`/m, `${rubric}: 후퇴 행이 BLOCKER로 있다`);
+  }
+});
+
 test('findFramingTemplate: testcritic 은 --rubric 필수, 다른 프레이밍은 rubric 없이 하나로 결정된다', () => {
   assert.equal(findFramingTemplate('adversarial').template.framing, 'adversarial');
   assert.equal(findFramingTemplate('contrarian').template.target, 'task-docs');

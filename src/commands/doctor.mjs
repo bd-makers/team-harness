@@ -49,7 +49,7 @@ export const EXTERNAL_TOOLS = [
 // silently allows everything (fail-open). migrate refreshes known stock hooks — doctor
 // only reports, so the two never disagree about who fixes what.
 export const JQ_FALLBACK_MARKER = 'harness:jq-fallback';
-export const JQ_HOOK_FILES = ['block-dangerous-git.sh', 'protect-files.sh', 'pre-commit-check.sh', 'auto-format.sh'];
+export const JQ_HOOK_FILES = ['block-dangerous-git.sh', 'protect-files.sh', 'pre-commit-check.sh', 'auto-format.sh', 'block-dangerous-bash.sh'];
 
 // Installed jq-parsing hooks that lack the fallback marker. Absent files are not gaps
 // (nothing runs → nothing fails open; the CHECKS table already grades hook presence).
@@ -801,10 +801,11 @@ const CHECKS = [
   { path: '.claude/settings.json', required: true, json: true },
   { path: '.claude/hooks/protect-files.sh', executable: true },
   { path: '.claude/hooks/block-dangerous-git.sh', executable: true },
+  { path: '.claude/hooks/block-dangerous-bash.sh', executable: true },
   { path: '.claude/hooks/boundary-checkpoint.sh', executable: true },
   { path: '.claude/hooks/auto-format.sh', executable: true },
   { path: '.claude/hooks/pre-commit-check.sh', executable: true },
-  // Run by node, so no exec bit — but it is the sixth wired hook, and a missing copy
+  // Run by node, so no exec bit — but it is the seventh wired hook, and a missing copy
   // means observability silently records nothing.
   { path: '.claude/hooks/observe-tools.mjs' },
   { path: '.cursor/rules', required: false, dir: true },
