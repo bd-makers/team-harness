@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ docs-refresh-v050
 - ✅ task-folder-removal
 - ✅ wiki-compile
 - ✅ wiki-fence-nested

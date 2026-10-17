@@ -76,3 +76,21 @@ docs/chad/docs-refresh-v050/docs-refresh-v050-context.md | 2 +-
 src/commands/release.mjs |  5 ++++-
  tests/release.test.mjs   | 20 ++++++++++++++++++++
  2 files changed, 24 insertions(+), 1 deletion(-)
+
+## 2026-10-17T06:50:45.191Z — 4f65399 chore(release): 버전 0.51.0으로 범프
+.claude-plugin/marketplace.json       |   2 +-
+ .claude-plugin/plugin.json            |   2 +-
+ .codex-plugin/plugin.json             |   2 +-
+ CHANGELOG.md                          |   3 +
+ docs/harness-overview.html            |   8 +-
+ docs/harness-overview.template.html   |   8 +-
+ docs/harness-workflow-simulation.html |  12 +-
+ docs/index.html                       |   1 +
+ docs/what-changes-0.51.0.html         | 410 ++++++++++++++++++++++++++++++++++
+ docs/what-changes-latest-version.html | 169 +++++++++-----
+ package.json                          |   2 +-
+ 11 files changed, 556 insertions(+), 63 deletions(-)
+
+## 2026-10-17T11:38:48.444Z — 완료
+
+태스크 종료.

@@ -1,6 +1,7 @@
 # hslee — Tasks
 
 ## Open
+- agent-failure-hardening (created 2026-10-17)
 
 ## Completed
 - ✅ followups-22-23
