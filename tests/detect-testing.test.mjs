@@ -239,6 +239,30 @@ test('CLI: 깨진 package.json 은 매니페스트 수리를 안내하고 러너
   });
 });
 
+// 0.51.1 /harness-inttest 는 인프로세스 DB면 docker info 를 건너뛰는데, CLI 는 DB 신호만 보이면 docker info 를 권해
+// 에이전트가 받는 두 신호가 어긋났다. 드라이버가 전부 인프로세스일 때만 안내를 바꾸고, 모르면 종전대로 권한다.
+test('CLI: DB 드라이버가 전부 인프로세스일 때만 docker info 안내를 빼고, 서버형·혼합·ORM만이면 유지한다', async () => {
+  const cases = [
+    [{ 'better-sqlite3': '^11' }, false],
+    [{ pg: '^8' }, true],
+    [{ 'better-sqlite3': '^11', pg: '^8' }, true],
+    [{ 'drizzle-orm': '^0.30' }, true],
+  ];
+  for (const [deps, wantsDocker] of cases) {
+    await withProject({ 'package.json': { name: 'db', devDependencies: { vitest: '^2' }, dependencies: deps } }, async (dir) => {
+      const { stdout } = await cli(['stack', '--json', '--target', dir]);
+      const actions = JSON.parse(stdout).next_actions.join('\n');
+      const label = Object.keys(deps).join('+');
+      if (wantsDocker) {
+        assert.match(actions, /`docker info`/, `${label}: 서버형이거나 DB를 알 수 없으면 docker info 를 권한다`);
+      } else {
+        assert.doesNotMatch(actions, /`docker info`/, `${label}: 인프로세스 DB에 docker info 를 권하지 않는다`);
+        assert.match(actions, /인프로세스 DB/, `${label}: 건너뛰는 근거를 안내한다`);
+      }
+    });
+  }
+});
+
 // codex P2: readTextSafe 는 ENOENT 와 권한·EISDIR 같은 관측 실패를 모두 null 로 삼킨다.
 // 후자를 "매니페스트 없음"으로 부르면 고쳐야 할 프로젝트가 success 로 지나간다.
 // (디렉터리로 EISDIR 을 만든다 — chmod 와 달리 실행 uid 와 무관하게 재현된다.)

@@ -63,6 +63,9 @@ export function renderSummary(stack, testing) {
   return parts;
 }
 
+// 서버 프로세스 없이 테스트 프로세스 안에서 여는 드라이버. 드라이버 없이 ORM만 보이면 DB를 모르므로 서버형으로 친다.
+const IN_PROCESS_DB_DRIVERS = new Set(['better-sqlite3']);
+
 // 산문이 지시하던 나머지 절차. CLI가 못 하는 일을 호출자에게 그대로 넘긴다.
 function nextActions(testing) {
   if (!isJsProject(testing)) {
@@ -73,7 +76,9 @@ function nextActions(testing) {
   ];
   if (testing.manifest === 'unreadable') actions.unshift('package.json을 파싱할 수 없습니다 — 매니페스트를 먼저 고치세요');
   else if (!testing.runner) actions.unshift('러너 부재 분기: 권장 조합을 확인한 뒤 AskUserQuestion으로 1회 승인받아 설치하세요');
-  if (testing.orm.length || testing.dbDriver.length) {
+  if (testing.dbDriver.length && testing.dbDriver.every(d => IN_PROCESS_DB_DRIVERS.has(d))) {
+    actions.push(`인프로세스 DB(${testing.dbDriver.join('+')})라 testcontainers·docker 확인은 필요 없습니다 — 통합 테스트는 실물 DB 파일이나 :memory:로 돌리세요`);
+  } else if (testing.orm.length || testing.dbDriver.length) {
     actions.push('통합 테스트라면 `docker info`로 testcontainers 가용성을 직접 확인하세요');
   }
   return actions;
