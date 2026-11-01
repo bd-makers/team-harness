@@ -10,3 +10,6 @@ node_modules/
 .superpowers/
 tests/fixtures/**/actual/
 docs/*/*-handoff.md
+
+# claude plugin eval run output
+evals/results/

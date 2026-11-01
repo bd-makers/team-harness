@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: 03-active-task-slash
+context:
+  scaffold_script: fixture.sh
