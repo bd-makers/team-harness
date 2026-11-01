@@ -4,6 +4,7 @@
 
 ## Completed
 - ✅ eval-defect-triage
+- ✅ stack-inprocess-docker
 - ✅ agent-failure-hardening
 - ✅ followups-22-23
 - ✅ review-retry-hint
