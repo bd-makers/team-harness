@@ -10,7 +10,7 @@ eval 결함 후보 6건을 현재 소스로 판정하고, 확인된 것만 최�
 - [x] 3: contrarian 대화형이 외부 엔진 루브릭 형식과 선제 설계안을 쓰지 않게 고침 + pin 단언
 - [x] 5: interview 전부 pass일 때 "막지 않는 참고 질문" 우회로를 닫음 + pin 단언
 - [x] `npm run test` 통과
-- [ ] artifact 결과·리뷰 기록, 커밋(push 없음)
+- [x] artifact 결과·리뷰 기록, 커밋(push 없음)
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

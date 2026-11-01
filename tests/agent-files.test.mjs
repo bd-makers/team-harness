@@ -191,7 +191,8 @@ test('harness-inttest는 testcontainers가 필요할 때만 docker info를 돌�
   const doc = await readFile(join(ROOT, 'commands', 'harness-inttest.md'), 'utf8');
   assert.match(doc, /testcontainers가 필요할 때만 `docker info`/, 'docker info는 조건부');
   assert.match(doc, /DB가 인프로세스/, '인프로세스 DB면 건너뛴다');
-  assert.match(doc, /테스트 DB 전략을 이미 정했으면/, '팀 컨벤션이 정했으면 건너뛴다');
+  assert.match(doc, /Docker가 필요 없는 테스트 DB 전략을 정했으면/, 'Docker 없는 팀 전략이면 건너뛴다');
+  assert.match(doc, /팀 전략이 testcontainers면 건너뛰지 않는다/, 'testcontainers 전략은 확인 유지(codex 리뷰 P2)');
 });
 
 // 외부 엔진 루브릭이 같은 문서에 있어 대화형 응답으로 샌다(eval 10 WITH 3/3이 심각도 라벨, W/OUT 0/3).
