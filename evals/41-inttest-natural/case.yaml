@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: 41-inttest-natural
+context:
+  scaffold_script: fixture.sh
