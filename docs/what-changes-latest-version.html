@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Harness Aijient Team 0.51.1 — 무엇이 왜 달라졌나</title>
+  <title>Harness Aijient Team 0.51.2 — 무엇이 왜 달라졌나</title>
   <style>
     :root {
       --bg: #0f1117;
@@ -217,13 +217,10 @@
 </head>
 <body>
   <nav aria-label="문서 섹션">
-    <div class="nav-logo">Harness 0.51.1</div>
+    <div class="nav-logo">Harness 0.51.2</div>
     <div class="nav-links">
       <a href="#why">왜 patch인가</a>
-      <a href="#interview">interview</a>
-      <a href="#contrarian">contrarian</a>
-      <a href="#simplifier">simplifier</a>
-      <a href="#inttest">inttest</a>
+      <a href="#stack">stack 안내</a>
       <a href="#same">바뀌지 않은 것</a>
       <a href="#compat">소비자가 할 일</a>
     </div>
@@ -232,124 +229,73 @@
   <main>
     <header class="hero">
       <div class="eyebrow">Release note · 2026-11-01 · patch</div>
-      <h1>eval이 잡아낸 명령 문서 네 곳을<br><strong>지시대로 동작하게 고칩니다</strong></h1>
-      <p><code>claude plugin eval</code>로 플러그인이 있을 때(WITH)와 없을 때(WITHOUT)의 응답을 비교하는 스위트 23케이스를 만들어 돌렸습니다(#156).
-      그 응답 원문에서 <strong>명령 문서가 잘못된 동작을 지시하거나 유도한 곳 네 군데</strong>가 재현됐습니다.
-      0.51.1은 그 네 문서만 고칩니다. CLI 코드·템플릿·훅은 바뀌지 않았습니다.</p>
+      <h1><code>harness-team stack</code>이<br><strong>인프로세스 DB에 Docker를 권하지 않습니다</strong></h1>
+      <p>0.51.1의 <code>/harness-inttest</code>는 "DB가 인프로세스면 <code>docker info</code>를 건너뛴다"로 바뀌었는데,
+      같은 0단계에서 에이전트가 읽는 <code>harness-team stack</code>의 <code>next_actions</code>는 여전히 testcontainers 확인을 권했습니다.
+      0.51.2는 <strong>CLI 안내를 문서와 맞추는 수정 1건</strong>입니다. 0.51.1 릴리스 노트가 "남은 것"으로 적어 둔 바로 그 항목입니다.</p>
       <div class="tags">
-        <span class="tag tag-purple">0.51.0 → 0.51.1</span>
-        <span class="tag tag-orange">patch — 명령 문서 수정 4건</span>
-        <span class="tag tag-blue">PR #155 · #156</span>
+        <span class="tag tag-purple">0.51.1 → 0.51.2</span>
+        <span class="tag tag-orange">patch — CLI 안내 수정 1건</span>
+        <span class="tag tag-blue">PR #157</span>
         <span class="tag tag-green">소비자 조치 — 플러그인 갱신만</span>
       </div>
     </header>
 
     <dl class="release-brief" aria-label="릴리스 요약">
-      <div><dt>버전</dt><dd>0.51.1</dd></div>
+      <div><dt>버전</dt><dd>0.51.2</dd></div>
       <div><dt>날짜</dt><dd>2026-11-01</dd></div>
-      <div><dt>기준</dt><dd><code>v0.51.0..main</code> — #155(<code>2515cb1</code>, task <code>eval-defect-triage</code>), #156(<code>f4a09a7</code>, eval 스위트), <code>2dc1807</code>(task 집계). #156과 집계는 소비자 동작과 무관해 아래 "바뀌지 않은 것"에만 적습니다.</dd></div>
+      <div><dt>기준</dt><dd><code>v0.51.1..main</code> — #157(<code>ae86532</code>, task <code>stack-inprocess-docker</code>), <code>56b1afc</code>(task 집계). 집계는 소비자 동작과 무관해 아래 "바뀌지 않은 것"에만 적습니다.</dd></div>
     </dl>
 
     <section id="why">
-      <h2 class="section-title">왜 patch인가 — 에이전트 행동 표면의 수정</h2>
-      <p class="section-sub">MAINTAINING.md의 크기 기준에서 ① 에이전트 행동 표면(<code>commands/*.md</code>)의 <strong>수정</strong>은 patch입니다. 문서지만 에이전트가 그대로 실행하므로, 고칠 대상은 사람의 이해가 아니라 기계의 동작입니다. 새 명령·플래그·가드는 없고 제거된 것도 없습니다.</p>
+      <h2 class="section-title">왜 patch인가 — 안내 문구의 분기 수정</h2>
+      <p class="section-sub">새 명령·플래그·필드는 없습니다. <code>stack --json</code>의 envelope 형태와 다른 안내 문구는 그대로이고, <code>next_actions</code>의 DB 관련 한 줄이 감지 결과에 따라 갈라질 뿐입니다.</p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>명령</th><th>eval 근거</th><th>바뀐 지시</th></tr></thead>
+          <thead><tr><th>감지된 DB 신호</th><th>0.51.1</th><th>0.51.2</th></tr></thead>
           <tbody>
-            <tr><td><code>/harness-interview</code></td><td>all-pass 응답 5회 중 3회가 비차단 질문을 덧붙임</td><td>통과 선언 뒤 질문 금지 · 구멍이 보이면 fail로 고쳐 묻기</td></tr>
-            <tr><td><code>/harness-contrarian</code></td><td>eval 10 WITH 3/3 심각도 라벨(W/OUT 0/3)</td><td>대화형은 채점 스키마를 쓰지 않음 · 설계안은 수용 뒤</td></tr>
-            <tr><td><code>/harness-simplifier</code></td><td>eval 11 "파일 목록이 없어 파일 단위 검토 불가"</td><td>plan·spec을 읽고 spec 범위 In과 plan 단계로 파일을 특정</td></tr>
-            <tr><td><code>/harness-inttest</code></td><td>eval 41 Docker 금지 팀에서 <code>docker info</code> 실행</td><td>testcontainers가 필요할 때만 실행</td></tr>
+            <tr><td>드라이버가 전부 인프로세스(<code>better-sqlite3</code>)</td><td><code>docker info</code> 권함</td><td><strong>docker 확인 불필요</strong> 안내 · 실물 DB 파일이나 <code>:memory:</code></td></tr>
+            <tr><td>서버형 드라이버(<code>pg</code>·<code>mysql2</code>·<code>mongodb</code>) 포함 · 혼합 포함</td><td><code>docker info</code> 권함</td><td>그대로</td></tr>
+            <tr><td>드라이버 없이 ORM만</td><td><code>docker info</code> 권함</td><td>그대로 — DB를 알 수 없어 서버형으로 봅니다</td></tr>
+            <tr><td>DB 신호 없음</td><td>안내 없음</td><td>그대로</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <section id="interview">
-      <h2 class="section-title"><code>/harness-interview</code> — 통과를 선언했으면 질문하지 않는다</h2>
+    <section id="stack">
+      <h2 class="section-title"><code>stack</code> <code>next_actions</code> — 두 신호가 어긋나지 않게</h2>
       <div class="change-grid">
         <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Fixed · #155</div><h3>비차단 질문도 질문이다</h3></div>
+          <div class="card-head"><div class="kind">Fixed · #157</div><h3>인프로세스 드라이버만이면 docker 확인을 빼고 이유를 말한다</h3></div>
           <dl>
-            <div><dt>전</dt><dd>"모든 차원이 pass면 질문 없이 6번으로 간다"만 있어, pass를 선언한 뒤 "통과를 막지 않는" 참고 질문을 덧붙였습니다.</dd></div>
-            <div class="effect"><dt>후</dt><dd>차원 사이의 모순이나 정의되지 않은 경우가 보이면 그 차원을 pass로 두지 않고 <strong>fail로 고쳐 3번에서 묻습니다</strong>. 통과를 선언한 뒤에는 질문을 덧붙이지 않습니다.</dd></div>
+            <div><dt>전</dt><dd>ORM이나 DB 드라이버가 하나라도 감지되면 "통합 테스트라면 <code>docker info</code>로 testcontainers 가용성을 직접 확인하세요"를 냈습니다.</dd></div>
+            <div class="effect"><dt>후</dt><dd>감지된 드라이버가 전부 인프로세스면 "인프로세스 DB(<code>better-sqlite3</code>)라 testcontainers·docker 확인은 필요 없습니다"를 냅니다. 그 밖의 경우는 종전 문구 그대로입니다.</dd></div>
           </dl>
         </article>
         <article class="change-card maintenance">
-          <div class="card-head"><div class="kind">Why</div><h3>채점표가 질문의 조준경</h3></div>
+          <div class="card-head"><div class="kind">Why</div><h3>같은 0단계의 문서와 CLI</h3></div>
           <dl>
-            <div class="why"><dt>이유</dt><dd>pass 뒤의 질문은 채점표가 잡지 못한 구멍이 있다는 신호인데, 판정은 pass로 남아 체크박스 갱신과 어긋납니다. 질문할 근거가 있으면 판정부터 바꿔야 합니다.</dd></div>
+            <div class="why"><dt>이유</dt><dd><code>/harness-unittest</code>·<code>/harness-comptest</code>·<code>/harness-inttest</code>의 0단계는 <code>stack</code> 출력을 그대로 읽습니다. 문서는 건너뛰라 하고 CLI는 확인하라 하면, 에이전트는 둘 중 더 구체적인 쪽을 따르기 쉽습니다.</dd></div>
           </dl>
         </article>
       </div>
-    </section>
-
-    <section id="contrarian">
-      <h2 class="section-title"><code>/harness-contrarian</code> — 대화형은 채점하지 않는다</h2>
-      <div class="change-grid">
-        <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Fixed · #155</div><h3>외부 엔진 스키마가 새지 않게</h3></div>
-          <dl>
-            <div><dt>전</dt><dd>같은 문서 아래쪽의 외부 엔진 모드 루브릭(A1–A4 id·BLOCKER/MAJOR/MINOR·pass/fail)이 대화형 응답에도 쓰였고, 반론마다 대안 설계를 미리 붙였습니다.</dd></div>
-            <div class="effect"><dt>후</dt><dd>대화형 3번은 반론을 <strong>각도 이름과 근거(spec/plan 인용)</strong>로 제시하고 응답을 받습니다. 대안 설계는 사용자가 반론을 받아들인 뒤 4번에서 제안합니다.</dd></div>
-          </dl>
-        </article>
-        <article class="change-card maintenance">
-          <div class="card-head"><div class="kind">Note · 범위</div><h3>외부 엔진 모드는 그대로</h3></div>
-          <dl>
-            <div class="why"><dt>불변</dt><dd>엔진 인수를 준 외부 검증자 모드의 루브릭과 D6 finding 스키마는 바뀌지 않았습니다.</dd></div>
-          </dl>
-        </article>
-      </div>
-    </section>
-
-    <section id="simplifier">
-      <h2 class="section-title"><code>/harness-simplifier</code> — 템플릿에 없는 산출물을 전제하지 않는다</h2>
-      <div class="change-grid">
-        <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Fixed · #155</div><h3>바뀔 파일은 spec·plan이 지목한다</h3></div>
-          <dl>
-            <div><dt>전</dt><dd>1단계가 "plan.md와 변경 예정 파일 목록을 읽는다"였는데, task 템플릿에는 그런 절이 없어 "파일 단위로는 검토하지 못했다"고 보고했습니다.</dd></div>
-            <div class="effect"><dt>후</dt><dd><code>plan.md</code>와 <code>spec.md</code>를 읽고, 바뀔 파일·모듈은 spec <code>## 범위 (In / Out)</code>의 In과 plan 단계가 지목한 것으로 봅니다. 지목된 파일이 이미 있으면 그 파일도 읽습니다. 외부 엔진 모드의 리뷰 대상 문구도 같이 맞췄습니다.</dd></div>
-          </dl>
-        </article>
-      </div>
-    </section>
-
-    <section id="inttest">
-      <h2 class="section-title"><code>/harness-inttest</code> — <code>docker info</code>는 testcontainers가 필요할 때만</h2>
-      <div class="change-grid">
-        <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Fixed · #155</div><h3>0단계 2번의 조건</h3></div>
-          <dl>
-            <div><dt>전</dt><dd><code>docker info</code>를 무조건 실행해, <code>AGENTS.md</code>가 "Docker·testcontainers는 쓰지 않는다"고 정한 프로젝트에서도 Docker를 확인했습니다.</dd></div>
-            <div class="effect"><dt>후</dt><dd>testcontainers가 필요할 때만 실행합니다. DB가 인프로세스(<code>node:sqlite</code>·SQLite 파일·pglite 등)이거나 팀이 Docker가 필요 없는 테스트 DB 전략을 정했으면 건너뛰고 그 근거를 6번 요약에 적습니다. <strong>팀 전략이 testcontainers면 건너뛰지 않습니다</strong>(codex 리뷰 P2 반영).</dd></div>
-          </dl>
-        </article>
-        <article class="change-card maintenance">
-          <div class="card-head"><div class="kind">Note · 후속</div><h3>CLI 쪽은 아직</h3></div>
-          <dl>
-            <div class="why"><dt>남은 것</dt><dd><code>harness-team stack</code>의 <code>next_actions</code>는 인프로세스인 <code>better-sqlite3</code>에도 <code>docker info</code>를 권합니다. 이번 범위 밖이라 그대로 두었습니다.</dd></div>
-          </dl>
-        </article>
-      </div>
+      <div class="callout"><strong>감지 범위.</strong> 인프로세스로 아는 드라이버는 현재 감지 목록에 있는 <code>better-sqlite3</code> 하나입니다. 내장 <code>node:sqlite</code>는 의존성이 아니라 드라이버로 감지되지 않고, <code>sql.js</code>·<code>pglite</code>는 감지 목록에 없어 이 분기를 타지 않습니다 — 그런 프로젝트는 종전처럼 문서(<code>/harness-inttest</code> 0단계)의 판단을 따릅니다.</div>
     </section>
 
     <section id="same">
       <h2 class="section-title">바뀌지 않은 것</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>항목</th><th>0.51.1</th></tr></thead>
+          <thead><tr><th>항목</th><th>0.51.2</th></tr></thead>
           <tbody>
-            <tr><td>CLI 코드(<code>src/**</code>·<code>bin/**</code>)·<code>templates/**</code>·훅</td><td>그대로 — <code>init</code>·<code>migrate</code>가 쓰는 파일은 바뀌지 않았습니다</td></tr>
-            <tr><td><code>skills/*/SKILL.md</code> 설명 문구</td><td>그대로 — "Codex wrapper"를 중립 문구로 바꾸는 안을 eval로 측정했더니 라우팅은 같았지만 eval 14 WITH 품질이 재현성 있게 떨어져(5/12 실패, 원래 문구 0/9) 보류했습니다</td></tr>
-            <tr><td>eval 스위트(#156)</td><td><code>evals/</code> 23케이스 추가 — 저장소 루트에 있어 버전별 캐시에도 복사되지만 플러그인 로더는 읽지 않습니다. <code>claude plugin eval &lt;플러그인 경로&gt;</code>가 이 위치를 기대합니다</td></tr>
-            <tr><td><code>docs/task_summary.md</code>·<code>docs/hslee/hslee-task.md</code></td><td>task 종결 집계 갱신(<code>2dc1807</code>) — 생성물</td></tr>
+            <tr><td><code>commands/**</code>·<code>skills/**</code>·<code>templates/**</code>·훅</td><td>그대로 — <code>init</code>·<code>migrate</code>가 쓰는 파일은 바뀌지 않았습니다</td></tr>
+            <tr><td><code>stack --json</code> envelope</td><td>그대로 — <code>stack</code>·<code>testing</code>·<code>stackPin</code>·<code>repoShape</code> 필드와 <code>status</code> 판정이 같습니다</td></tr>
+            <tr><td><code>docs/task_summary.md</code>·<code>docs/hslee/hslee-task.md</code></td><td>task 종결 집계 갱신(<code>56b1afc</code>) — 생성물</td></tr>
           </tbody>
         </table>
       </div>
-      <div class="callout"><strong>검증 범위.</strong> 네 수정은 pin 테스트 4개로 문구가 고정됐고 <code>npm test</code>가 통과합니다. 다만 고친 문서가 eval 동작을 실제로 바꾸는지는 아직 다시 측정하지 않았습니다.</div>
+      <div class="callout"><strong>검증 범위.</strong> 새 CLI 테스트(<code>better-sqlite3</code>만·<code>pg</code>만·혼합·ORM만)가 수정 전 실패, 수정 후 통과하고 <code>npm test</code>가 통과합니다. eval 41의 fixture는 내장 <code>node:sqlite</code>라 이 분기를 타지 않아, 실제 에이전트 동작 변화는 측정하지 않았습니다.</div>
     </section>
 
     <section id="compat">
@@ -358,14 +304,14 @@
         <article class="change-card accuracy">
           <div class="card-head"><div class="kind">Do · 1</div><h3>플러그인 갱신</h3></div>
           <dl>
-            <div><dt>왜</dt><dd>바뀐 것은 플러그인 명령 문서뿐이라 플러그인 채널로만 닿습니다. <code>init</code>·<code>migrate</code>는 필요 없습니다.</dd></div>
-            <div class="effect"><dt>어떻게</dt><dd><code>/plugin marketplace update</code>(또는 clone에서 <code>git pull</code>). <code>harness-team --version</code>이 <code>0.51.1</code>이면 됩니다.</dd></div>
+            <div><dt>왜</dt><dd>바뀐 것은 CLI 코드뿐이라 플러그인 채널로만 닿습니다. <code>init</code>·<code>migrate</code>는 필요 없습니다.</dd></div>
+            <div class="effect"><dt>어떻게</dt><dd><code>/plugin marketplace update</code>(또는 clone에서 <code>git pull</code>). <code>harness-team --version</code>이 <code>0.51.2</code>이면 됩니다.</dd></div>
           </dl>
         </article>
       </div>
     </section>
 
-    <footer>Harness Aijient Team Plugin 0.51.1 · 2026-11-01 · 0.51.0 이후 변경 설명</footer>
+    <footer>Harness Aijient Team Plugin 0.51.2 · 2026-11-01 · 0.51.1 이후 변경 설명</footer>
   </main>
 </body>
 </html>

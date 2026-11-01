@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.51.2] - 2026-11-01
+
 ### Fixed
 - **`harness-team stack`이 인프로세스 DB만 쓰는 프로젝트에도 `docker info`를 권하던 것** (task `stack-inprocess-docker`). `next_actions`는 ORM이나 DB 드라이버가 하나라도 감지되면 testcontainers 확인을 안내해, 0.51.1의 `/harness-inttest`("인프로세스 DB면 `docker info`를 건너뛴다")와 어긋났다. 이제 감지된 드라이버가 전부 인프로세스(`better-sqlite3`)면 docker 확인이 필요 없다고 안내한다. 서버형 드라이버(`pg`·`mysql2`·`mongodb`)가 하나라도 있거나 드라이버 없이 ORM만 감지되면 종전 안내를 유지한다. envelope 형태는 그대로다.
 

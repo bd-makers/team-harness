@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.51.1</span>
+      <span class="tag tag-purple">v0.51.2</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.51.2 — <code>stack</code>이 인프로세스 DB에 Docker를 권하지 않는다:</strong>
+    <br>
+    <code>0.51.2</code> <strong><code>harness-team stack</code>의 <code>next_actions</code>가 감지된 DB 드라이버가 전부 인프로세스(<code>better-sqlite3</code>)면 <code>docker info</code> 대신 docker 확인이 필요 없다고 안내한다</strong> — 0.51.1의 <code>/harness-inttest</code> 0단계와 같은 판단이다. 서버형 드라이버가 하나라도 있거나 ORM만 보이면 종전 안내를 유지하고, envelope 형태는 그대로다. 소비자는 <strong>플러그인 갱신만</strong> 하면 된다.
+    <br><br>
     <strong>🆕 0.51.1 — eval이 잡아낸 명령 문서 네 곳을 고친다:</strong>
     <br>
     <code>0.51.1</code> <strong><code>claude plugin eval</code> 응답에서 재현된 결함대로 명령 문서 4개를 고쳤다</strong> — <code>/harness-interview</code>는 통과를 선언한 뒤 질문하지 않고(구멍이 보이면 fail로 고쳐 묻는다), <code>/harness-contrarian</code> 대화형은 외부 엔진 채점 스키마를 쓰지 않으며 설계안은 반론 수용 뒤에 낸다. <code>/harness-simplifier</code>는 템플릿에 없는 파일 목록 대신 spec 범위 In과 plan 단계로 파일을 특정하고, <code>/harness-inttest</code>는 testcontainers가 필요할 때만 <code>docker info</code>를 돌린다. <code>templates/</code>는 불변이라 소비자는 <strong>플러그인 갱신만</strong> 하면 된다.
@@ -2892,7 +2896,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.51.1 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.51.2 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
