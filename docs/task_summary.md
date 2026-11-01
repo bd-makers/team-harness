@@ -162,3 +162,4 @@
 | hslee | wiki-sources-all | ✅ done | 2026-10-11 |
 | chad | docs-refresh-v050 | ✅ done | 2026-10-12 |
 | hslee | agent-failure-hardening | ✅ done | 2026-10-17 |
+| hslee | eval-defect-triage | ✅ done | 2026-11-01 |

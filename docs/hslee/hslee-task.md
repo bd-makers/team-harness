@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ eval-defect-triage
 - ✅ agent-failure-hardening
 - ✅ followups-22-23
 - ✅ review-retry-hint
