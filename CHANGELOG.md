@@ -9,6 +9,15 @@
 
 ## [Unreleased]
 
+## [0.51.1] - 2026-11-01
+
+### Fixed
+- **슬래시 명령 문서 4개가 `claude plugin eval`에서 재현된 잘못된 동작을 지시하던 것** (#155, task `eval-defect-triage`). 새 eval 스위트(#156)의 WITH/WITHOUT 비교 응답 원문에서 확인한 결함만 고쳤다. 커맨드 문서만 바뀌어 소비자는 **플러그인 갱신만** 하면 된다.
+  - **`/harness-interview`** — 모든 차원이 pass인데 "통과를 막지 않는" 질문을 덧붙였다(all-pass 응답 5회 중 3회). 이제 비차단 참고 질문도 질문으로 본다. 모순이나 정의되지 않은 경우가 보이면 그 차원을 fail로 고쳐 3번에서 묻고, 통과를 선언한 뒤에는 질문하지 않는다.
+  - **`/harness-contrarian`** — 같은 문서의 외부 엔진 루브릭이 대화형 응답으로 샜다(eval 10 WITH 3/3이 심각도 라벨, W/OUT 0/3). 이제 대화형은 채점하지 않고(A1–A4 id·BLOCKER/MAJOR/MINOR·pass/fail 판정 없음), 대안 설계는 사용자가 반론을 받아들인 뒤 4번에서 제안한다.
+  - **`/harness-simplifier`** — task 템플릿에 없는 "변경 예정 파일 목록"을 1단계가 전제해 "파일 단위로는 검토하지 못했다"고 보고했다(eval 11). 이제 `plan.md`와 `spec.md`를 읽고, 바뀔 파일은 spec `## 범위 (In / Out)`의 In과 plan 단계가 지목한 것으로 본다.
+  - **`/harness-inttest`** — `AGENTS.md`가 "Docker·testcontainers는 쓰지 않는다"고 정했는데도 `docker info`를 실행했다(eval 41). 이제 testcontainers가 필요할 때만 실행한다. DB가 인프로세스(`node:sqlite`·SQLite 파일·pglite 등)이거나 Docker가 필요 없는 팀 전략이 있으면 건너뛰고 그 근거를 요약에 적는다. 팀 전략이 testcontainers면 건너뛰지 않는다.
+
 ## [0.51.0] - 2026-10-17
 
 ### Fixed
