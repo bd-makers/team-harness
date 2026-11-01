@@ -15,7 +15,9 @@ Raw slash-command 인수:
 
 ## 절차
 
-1. 활성 task의 `plan.md`와 변경 예정 파일 목록을 읽는다.
+1. 활성 task의 `plan.md`와 `spec.md`를 읽는다. 바뀔 파일·모듈은 spec `## 범위 (In / Out)`의 In과
+   plan 단계가 지목한 것이 전부다 — task 템플릿에는 별도의 파일 목록 절이 없으므로, 목록이 없다고
+   검토 범위가 줄었다고 보고하지 않는다. 지목된 파일이 이미 있으면 그 파일도 읽는다.
 2. 다음 체크리스트를 순회한다:
    - **YAGNI 위반** — 현재 요구사항에 없는데 미리 만든 코드가 있는가?
    - **단일 사용처 추상화** — 새 클래스/함수가 1곳에서만 호출되지 않는가?
@@ -29,7 +31,7 @@ Raw slash-command 인수:
 인수를 주면 위 체크리스트 순회를 **별도 컨텍스트의 read-only 검증자**가 수행한다. 엔진
 결정(preflight 포함)·엔진 runner 표·발견 검증·기록 절차는 `/harness-review`를 그대로
 쓰되, **scope 결정(2단계)은 쓰지 않는다** — 리뷰 대상이 git diff가 아니라 활성 task의
-plan.md(와 spec.md, 변경 예정 파일 목록)이기 때문이다. 리뷰 프롬프트는 아래 블록이다 — 정본은 `src/commands/review-prompts.mjs`의
+plan.md(와 spec.md, plan이 지목한 파일)이기 때문이다. 리뷰 프롬프트는 아래 블록이다 — 정본은 `src/commands/review-prompts.mjs`의
 `simplifier` 템플릿이고 이 블록은 미러다(pin 테스트가 동기화). 활성 task 문서의 **실제 경로**와
 focus는 CLI가 채운다. 루브릭 R1–R4는 D6 finding 스키마로 채점하고, 근거는 문서 문장
 인용이어야 하며 증거 없는 항목은 pass가 아니라 na다(D6 정직성 규칙).
