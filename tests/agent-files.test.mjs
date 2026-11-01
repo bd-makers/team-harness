@@ -169,6 +169,39 @@ test('harness-interview는 선행 채점이 질문 선별과 체크박스 갱신
   assert.match(doc, /채점표에 없는 근거로 체크박스를 바꾸지 않는다/, '체크박스 갱신은 채점표에만 근거');
 });
 
+// 이하 네 테스트는 2026-11-01 plugin eval(test/plugin-eval-interview)이 원문 응답에서 재현한 결함을 고정한다.
+// 전부 pass인 spec에 "통과를 막지 않는" 질문을 덧붙인 응답이 all-pass 5회 중 3회였다.
+test('harness-interview는 전부 pass면 통과 선언 뒤에 덧붙이는 질문도 막는다', async () => {
+  const doc = await readFile(join(ROOT, 'commands', 'harness-interview.md'), 'utf8');
+  assert.match(doc, /"통과를 막지 않는" 참고 질문·/, '비차단 참고 질문도 질문이다');
+  assert.match(doc, /fail로 고쳐 3번에서 묻는다/, '구멍이 보이면 pass를 fail로 고쳐 정식 질문 경로로');
+  assert.match(doc, /통과를 선언한 뒤에 질문을 덧붙이지 않는다/, '통과 선언 뒤 질문 금지');
+});
+
+// task plan 템플릿에는 파일 목록 절이 없다 — 1단계가 그걸 전제하면 "파일 단위 검토 불가"를 보고한다.
+test('harness-simplifier는 템플릿에 없는 변경 예정 파일 목록을 전제하지 않는다', async () => {
+  const doc = await readFile(join(ROOT, 'commands', 'harness-simplifier.md'), 'utf8');
+  assert.doesNotMatch(doc, /변경 예정 파일 목록/, '템플릿이 만들지 않는 산출물 전제 회귀 금지');
+  assert.match(doc, /`plan\.md`와 `spec\.md`를 읽는다/, 'plan과 spec을 함께 읽는다');
+  assert.match(doc, /`## 범위 \(In \/ Out\)`의 In/, '바뀔 파일은 spec 범위 In과 plan 단계가 지목');
+});
+
+// eval 41: AGENTS.md가 "Docker·testcontainers는 쓰지 않는다"고 했는데도 docker info를 돌렸다.
+test('harness-inttest는 testcontainers가 필요할 때만 docker info를 돌린다', async () => {
+  const doc = await readFile(join(ROOT, 'commands', 'harness-inttest.md'), 'utf8');
+  assert.match(doc, /testcontainers가 필요할 때만 `docker info`/, 'docker info는 조건부');
+  assert.match(doc, /DB가 인프로세스/, '인프로세스 DB면 건너뛴다');
+  assert.match(doc, /테스트 DB 전략을 이미 정했으면/, '팀 컨벤션이 정했으면 건너뛴다');
+});
+
+// 외부 엔진 루브릭이 같은 문서에 있어 대화형 응답으로 샌다(eval 10 WITH 3/3이 심각도 라벨, W/OUT 0/3).
+test('harness-contrarian 대화형은 외부 엔진 채점 스키마와 선제 설계안을 쓰지 않는다', async () => {
+  const doc = await readFile(join(ROOT, 'commands', 'harness-contrarian.md'), 'utf8');
+  assert.match(doc, /대화형은 채점하지 않는다/, '대화형은 채점 스키마를 쓰지 않는다');
+  assert.match(doc, /대안 설계는 반론에 미리 붙이지 않는다/, '반론에 설계안을 선제로 붙이지 않는다');
+  assert.match(doc, /4번에서 제안한다/, '제안은 반론 수용 뒤 4번');
+});
+
 test('CLAUDE.md(thin) §2는 컨텍스트 격리 서브에이전트는 유지, 병렬 작성·결정은 금지', async () => {
   const out = render(await tpl('CLAUDE.md.hbs'), VARS);
   assert.match(out, /컨텍스트 격리 서브에이전트/, '조사용 서브에이전트는 표준 실무로 유지');
