@@ -3,8 +3,8 @@
   "task": "eval-defect-triage",
   "created": "2026-11-01",
   "firstActivatedAt": "2026-11-01T05:07:14.810Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-11-01T08:11:58.899Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [
