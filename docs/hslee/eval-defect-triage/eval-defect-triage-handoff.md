@@ -15,3 +15,12 @@ commands/harness-contrarian.md                     |  4 +-
  .../eval-defect-triage/eval-defect-triage-spec.md  | 62 ++++++++++++++++++++++
  tests/agent-files.test.mjs                         | 33 ++++++++++++
  11 files changed, 195 insertions(+), 5 deletions(-)
+
+## 2026-11-01T05:13:59.292Z — 409d1df fix(inttest): docker info 생략 조건을 Docker 없는 팀 전략으로 좁힘 (codex 리뷰 P2)
+commands/harness-inttest.md                            |  3 ++-
+ .../eval-defect-triage/eval-defect-triage-artifact.md  | 18 ++++++++++++++++++
+ .../eval-defect-triage/eval-defect-triage-handoff.md   | 14 ++++++++++++++
+ .../eval-defect-triage/eval-defect-triage-meta.json    | 14 +++++++++++++-
+ .../eval-defect-triage/eval-defect-triage-plan.md      |  2 +-
+ tests/agent-files.test.mjs                             |  3 ++-
+ 6 files changed, 50 insertions(+), 4 deletions(-)
