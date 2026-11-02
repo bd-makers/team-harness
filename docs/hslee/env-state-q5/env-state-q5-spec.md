@@ -56,6 +56,8 @@ Q5의 다른 축(런타임 버전)과 Q1–Q4의 빈칸 보고는 답하지 않�
   npm 규칙만 lockfile에 `"node_modules/` 키가 있을 때 적용한다(`fileContains`, lockfileVersion 2·3의 `packages` 키 형식).
   pnpm(`node_modules/.modules.yaml`)·yarn classic(`node_modules/.yarn-integrity`)·yarn berry(`.pnp.cjs`·`.yarn/install-state.gz`)·
   uv(`.venv`)는 0개여도 흔적을 만들고, bun은 0개면 `bun.lock`을 쓰지 않는다 — 가드가 필요 없다. 이 저장소는 lockfile이 없어 판정하지 않는다.
+  실측 범위: 위 0개 의존성 표 전부와 npm의 의존성 있는 lockfile(로컬 링크 의존성, `"node_modules/` 키 1개 확인). pnpm·yarn·bun의
+  **의존성 있는** 설치가 같은 흔적을 남긴다는 것은 0개 실측과 각 도구의 기본 레이아웃에서 추론했다.
 - (open) D-3: yarn berry의 흔적. → 결정: `.yarn/install-state.gz`·`.pnp.cjs`·`node_modules` 중 하나(any-of). zero-install 저장소는
   `.pnp.cjs`를 커밋하므로 새 클론도 준비된 상태이고, `nodeLinker: node-modules`는 `node_modules`를 만든다.
 - (open) D-4: 이름. → 결정: 관측을 이름으로 쓴다 — 요약 축 `설치 흔적: 없음 (package-lock.json → node_modules)`, JSON `installTrace`,
