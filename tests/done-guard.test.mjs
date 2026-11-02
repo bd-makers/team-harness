@@ -437,7 +437,7 @@ test('plan 본문 인라인/설명 텍스트의 `- [ ]`는 미완으로 카운�
 test('parseDoneEvidenceDeclaration: 선언 없음 → not-configured + 기본값', () => {
   const r = parseDoneEvidenceDeclaration('# spec\n\n## 참고\n');
   assert.deepEqual(r, { status: 'not-configured', ...DONE_EVIDENCE_DEFAULT });
-  assert.equal(r.tests, 'required');
+  assert.equal(r.tests, 'optional');
   assert.equal(r.review, 'optional');
 });
 
@@ -452,7 +452,7 @@ test('parseDoneEvidenceDeclaration: 유효 선언 → configured + 부분 overri
   const r = parseDoneEvidenceDeclaration(spec);
   assert.equal(r.status, 'configured');
   assert.equal(r.review, 'required');
-  assert.equal(r.tests, 'required'); // 미지정 키는 기본값 유지
+  assert.equal(r.tests, 'optional'); // 미지정 키는 기본값 유지
 });
 
 test('parseDoneEvidenceDeclaration: 깨진 선언은 invalid (조용한 폴백 금지)', () => {
@@ -655,8 +655,34 @@ async function runDoneCapture(dir, flags = {}) {
   }
 }
 
-test('소스 변경 + 테스트 미변경 → 차단 (tests 기본 required)', async () => {
+// tests 가드는 옵트인이다(기본 optional, 2026-11-02 D11 정정) — 가드 자체를 검증하는 케이스는 required를 선언한다.
+const TESTS_REQUIRED_SPEC = '# demo — Spec\n\n## Done evidence\n\n```json\n{ "version": 1, "tests": "required" }\n```\n';
+
+test('spec 미선언 + 소스만 변경 → 통과 (tests 기본 optional)', async () => {
   const { dir } = await makeEvidenceFixture({ files: { 'src/app.mjs': 'export const x = 1;\n' } });
+  try {
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds — default does not check tests');
+    assert.ok(!logs.some(l => l.includes('테스트 파일 변경이 없음')), 'guard not triggered');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('spec 미선언 + 기존 테스트 삭제 → 통과 (삭제 가드도 required에서만)', async () => {
+  const { dir } = await makeEvidenceFixture({
+    files: { 'src/app.mjs': 'export const x = 1;\n', 'tests/app.test.mjs': 'import "node:test";\n' },
+    commitDate: new Date(Date.now() - 10 * 60_000).toISOString(),
+  });
+  try {
+    await pexec('git', ['-C', dir, 'rm', '-q', 'tests/app.test.mjs']);
+    await pexec('git', ['-C', dir, 'commit', '-q', '-m', 'in-window']);
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds');
+    assert.ok(!logs.some(l => l.includes('기존 테스트 파일이 삭제됨')), 'deletion guard not triggered');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('소스 변경 + 테스트 미변경 → 차단 (tests: required)', async () => {
+  const { dir } = await makeEvidenceFixture({ spec: TESTS_REQUIRED_SPEC, files: { 'src/app.mjs': 'export const x = 1;\n' } });
   try {
     const { logs, exitCode } = await runDoneCapture(dir);
     assert.equal(exitCode, 1, 'blocks');
@@ -668,7 +694,7 @@ test('소스 변경 + 테스트 미변경 → 차단 (tests 기본 required)', a
 // 오분류되면 소스만 바꾸고 테스트를 한 줄도 안 써도 가드가 통과한다 — 가드가 이름만 남는다.
 test('소스 변경 + 자기 spec.md만 동반 → 여전히 차단 (spec.md는 테스트 증거가 아니다)', async () => {
   const { dir } = await makeEvidenceFixture({
-    spec: '# demo — Spec\n\n## 목적 / 요구사항\n- 데모\n',
+    spec: '# demo — Spec\n\n## 목적 / 요구사항\n- 데모\n\n## Done evidence\n\n```json\n{ "version": 1, "tests": "required" }\n```\n',
     files: { 'src/app.mjs': 'export const x = 1;\n' },
   });
   try {
@@ -680,7 +706,7 @@ test('소스 변경 + 자기 spec.md만 동반 → 여전히 차단 (spec.md는 
 
 // 구멍 2 — 디렉터리 이름이 `specs/`인 문서. spec.md 규칙만 고치면 이 경로로 같은 오탐이 남는다.
 test('소스 변경 + specs/ 하위 문서만 동반 → 여전히 차단 (디렉터리 이름은 테스트 증거가 아니다)', async () => {
-  const { dir } = await makeEvidenceFixture({ files: {
+  const { dir } = await makeEvidenceFixture({ spec: TESTS_REQUIRED_SPEC, files: {
     'src/app.mjs': 'export const x = 1;\n',
     'docs/superpowers/specs/2026-04-23-design.md': '# design\n',
   } });
@@ -694,7 +720,7 @@ test('소스 변경 + specs/ 하위 문서만 동반 → 여전히 차단 (디�
 // codex 리뷰 P2 회귀 그물 — 화이트리스트 밖 확장자로 쓴 테스트도 증거로 인정되어야 한다.
 // 이게 깨지면 가드가 정직한 작업을 막고 `--force`를 표준 절차로 만든다.
 test('소스 변경 + tests/ 하위 비화이트리스트 확장자 테스트 → 통과', async () => {
-  const { dir } = await makeEvidenceFixture({ files: {
+  const { dir } = await makeEvidenceFixture({ spec: TESTS_REQUIRED_SPEC, files: {
     'src/app.ts': 'export const x = 1;\n',
     'tests/app.test.mts': 'import "node:test";\n',
   } });
@@ -706,7 +732,7 @@ test('소스 변경 + tests/ 하위 비화이트리스트 확장자 테스트 �
 });
 
 test('소스 변경 + 테스트 동반 → 통과', async () => {
-  const { dir } = await makeEvidenceFixture({ files: {
+  const { dir } = await makeEvidenceFixture({ spec: TESTS_REQUIRED_SPEC, files: {
     'src/app.mjs': 'export const x = 1;\n',
     'tests/app.test.mjs': 'import "node:test";\n',
   } });
@@ -740,7 +766,7 @@ const PRE_EXISTING = { 'src/app.mjs': 'export const x = 1;\n', 'tests/app.test.m
 
 // 회귀(2026-10-17): `--name-only`는 삭제된 경로도 그대로 내놓아, 실패하던 테스트를 지운 커밋이 테스트 증거로 세어졌다.
 test('소스 변경 + 기존 테스트 파일 삭제 → 차단 (삭제는 테스트 증거가 아니다)', async () => {
-  const { dir } = await makeEvidenceFixture({ files: PRE_EXISTING, commitDate: BEFORE_WINDOW() });
+  const { dir } = await makeEvidenceFixture({ spec: TESTS_REQUIRED_SPEC, files: PRE_EXISTING, commitDate: BEFORE_WINDOW() });
   try {
     await commitInWindow(dir, { files: { 'src/app.mjs': 'export const x = 2;\n' }, remove: ['tests/app.test.mjs'] });
     const { logs, exitCode } = await runDoneCapture(dir);
@@ -751,7 +777,7 @@ test('소스 변경 + 기존 테스트 파일 삭제 → 차단 (삭제는 테�
 });
 
 test('테스트를 고친 뒤 다음 커밋에서 삭제 → 차단 (경로별 최종 상태로 판정)', async () => {
-  const { dir } = await makeEvidenceFixture({ files: PRE_EXISTING, commitDate: BEFORE_WINDOW() });
+  const { dir } = await makeEvidenceFixture({ spec: TESTS_REQUIRED_SPEC, files: PRE_EXISTING, commitDate: BEFORE_WINDOW() });
   try {
     await commitInWindow(dir, { files: { 'src/app.mjs': 'export const x = 2;\n', 'tests/app.test.mjs': 'import "node:test"; // edited\n' } });
     await commitInWindow(dir, { remove: ['tests/app.test.mjs'] });
@@ -763,7 +789,7 @@ test('테스트를 고친 뒤 다음 커밋에서 삭제 → 차단 (경로별 �
 
 // 새 테스트의 내용은 지운 파일과 달라야 한다 — 같으면 `-M`이 이름 변경으로 짝짓는다(그건 아래 이름 변경 케이스다).
 test('기존 테스트 삭제 + 다른 테스트 추가 → 삭제만으로 차단', async () => {
-  const { dir } = await makeEvidenceFixture({ files: PRE_EXISTING, commitDate: BEFORE_WINDOW() });
+  const { dir } = await makeEvidenceFixture({ spec: TESTS_REQUIRED_SPEC, files: PRE_EXISTING, commitDate: BEFORE_WINDOW() });
   try {
     await commitInWindow(dir, {
       files: { 'src/app.mjs': 'export const x = 2;\n', 'tests/other.test.mjs': 'import { test } from "node:test";\ntest("other", () => {});\n' },
@@ -777,7 +803,7 @@ test('기존 테스트 삭제 + 다른 테스트 추가 → 삭제만으로 차�
 });
 
 test('테스트 파일 이름 변경 + 소스 변경 → 통과 (이름 변경은 삭제가 아니다)', async () => {
-  const { dir } = await makeEvidenceFixture({ files: PRE_EXISTING, commitDate: BEFORE_WINDOW() });
+  const { dir } = await makeEvidenceFixture({ spec: TESTS_REQUIRED_SPEC, files: PRE_EXISTING, commitDate: BEFORE_WINDOW() });
   try {
     await commitInWindow(dir, { files: { 'src/app.mjs': 'export const x = 2;\n' }, move: [['tests/app.test.mjs', 'tests/unit/app.test.mjs']] });
     const { logs } = await runDoneCapture(dir);
@@ -787,7 +813,7 @@ test('테스트 파일 이름 변경 + 소스 변경 → 통과 (이름 변경�
 });
 
 test('창 안에서 만들고 지운 테스트는 삭제로 세지 않는다', async () => {
-  const { dir } = await makeEvidenceFixture({ files: { 'src/app.mjs': 'export const x = 1;\n' }, commitDate: BEFORE_WINDOW() });
+  const { dir } = await makeEvidenceFixture({ spec: TESTS_REQUIRED_SPEC, files: { 'src/app.mjs': 'export const x = 1;\n' }, commitDate: BEFORE_WINDOW() });
   try {
     await commitInWindow(dir, { files: { 'src/app.mjs': 'export const x = 2;\n', 'tests/scratch.test.mjs': 'import "node:test";\n' } });
     await commitInWindow(dir, { files: { 'tests/app.test.mjs': 'import "node:test";\n' }, remove: ['tests/scratch.test.mjs'] });
@@ -799,7 +825,7 @@ test('창 안에서 만들고 지운 테스트는 삭제로 세지 않는다', a
 
 // codex 리뷰 P2(2026-10-17) — 이름 변경은 출신을 물려준다. 새 경로를 "기존 파일"로 보면 정직한 정리가 막힌다.
 test('창 안에서 만들고 옮긴 뒤 지운 테스트도 삭제로 세지 않는다', async () => {
-  const { dir } = await makeEvidenceFixture({ files: { 'src/app.mjs': 'export const x = 1;\n' }, commitDate: BEFORE_WINDOW() });
+  const { dir } = await makeEvidenceFixture({ spec: TESTS_REQUIRED_SPEC, files: { 'src/app.mjs': 'export const x = 1;\n' }, commitDate: BEFORE_WINDOW() });
   try {
     await commitInWindow(dir, { files: { 'src/app.mjs': 'export const x = 2;\n', 'tests/scratch.test.mjs': 'import "node:test";\n' } });
     await commitInWindow(dir, { move: [['tests/scratch.test.mjs', 'tests/unit/scratch.test.mjs']] });
@@ -812,7 +838,7 @@ test('창 안에서 만들고 옮긴 뒤 지운 테스트도 삭제로 세지 �
 
 // codex 재검 P2(2026-10-17) — 출신을 경로 이름으로 보면, 창 안에서 만들고 지운 이름을 기존 테스트가 이어받아 지워질 때 놓친다.
 test('기존 테스트가 창 안에서 지운 이름으로 옮겨진 뒤 삭제 → 차단 (출신은 내용을 따라간다)', async () => {
-  const { dir } = await makeEvidenceFixture({ files: PRE_EXISTING, commitDate: BEFORE_WINDOW() });
+  const { dir } = await makeEvidenceFixture({ spec: TESTS_REQUIRED_SPEC, files: PRE_EXISTING, commitDate: BEFORE_WINDOW() });
   try {
     await commitInWindow(dir, { files: { 'src/app.mjs': 'export const x = 2;\n', 'tests/tmp.test.mjs': 'import { test } from "node:test";\ntest("tmp", () => {});\n' } });
     await commitInWindow(dir, { remove: ['tests/tmp.test.mjs'] });
@@ -826,7 +852,7 @@ test('기존 테스트가 창 안에서 지운 이름으로 옮겨진 뒤 삭제
 
 // codex 리뷰 P2(2026-10-17) — 삭제를 테스트 증거에서 뺄 때 소스 판정까지 빼면 "소스만 지운 task"의 테스트 요구가 사라진다.
 test('소스 파일만 삭제 → 종전대로 테스트 변경을 요구한다', async () => {
-  const { dir } = await makeEvidenceFixture({ files: { 'src/app.mjs': 'export const x = 1;\n', 'src/old.mjs': 'export const y = 1;\n' }, commitDate: BEFORE_WINDOW() });
+  const { dir } = await makeEvidenceFixture({ spec: TESTS_REQUIRED_SPEC, files: { 'src/app.mjs': 'export const x = 1;\n', 'src/old.mjs': 'export const y = 1;\n' }, commitDate: BEFORE_WINDOW() });
   try {
     await commitInWindow(dir, { remove: ['src/old.mjs'] });
     const { logs, exitCode } = await runDoneCapture(dir);
@@ -836,7 +862,7 @@ test('소스 파일만 삭제 → 종전대로 테스트 변경을 요구한다'
 });
 
 test('문서만 변경된 task는 테스트 체크 미발동', async () => {
-  const { dir } = await makeEvidenceFixture({ files: { 'docs/note.md': '# note\n' } });
+  const { dir } = await makeEvidenceFixture({ spec: TESTS_REQUIRED_SPEC, files: { 'docs/note.md': '# note\n' } });
   try {
     const { logs } = await runDoneCapture(dir);
     assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds — no source change');
@@ -844,6 +870,16 @@ test('문서만 변경된 task는 테스트 체크 미발동', async () => {
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+test('spec이 tests: optional 선언 → 소스만 바뀌어도 통과', async () => {
+  const spec = '# demo — Spec\n\n## Done evidence\n\n```json\n{ "version": 1, "tests": "optional" }\n```\n';
+  const { dir } = await makeEvidenceFixture({ spec, files: { 'src/app.mjs': 'export const x = 1;\n' } });
+  try {
+    const { logs } = await runDoneCapture(dir);
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds — declared optional');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// skip은 optional 도입 전의 선언이다 — 같은 뜻으로 계속 받아야 기존 spec이 invalid가 되지 않는다.
 test('spec이 tests: skip 선언 → 소스만 바뀌어도 통과', async () => {
   const spec = '# demo — Spec\n\n## Done evidence\n\n```json\n{ "version": 1, "tests": "skip" }\n```\n';
   const { dir } = await makeEvidenceFixture({ spec, files: { 'src/app.mjs': 'export const x = 1;\n' } });
@@ -930,9 +966,9 @@ test('창이 넓어져도 창 안에 리뷰 마커가 없으면 여전히 차단
 });
 
 test('창이 넓어져도 창 안에 테스트 변경이 없으면 여전히 차단', async () => {
-  // spec 파일을 두지 않는다 — `demo-spec.md`의 basename이 test 경로 규칙(`-spec.md`)에
-  // 걸려 테스트 변경으로 오분류되기 때문(이 task 범위 밖의 별개 결함, artifact에 기록).
+  // 가드를 켜려면 spec이 필요하다 — `demo-spec.md`는 더 이상 테스트 증거로 오분류되지 않는다(위 spec.md 케이스).
   const { dir } = await makeEvidenceFixture({
+    spec: TESTS_REQUIRED_SPEC,
     firstActivatedAt: ago(2 * 3_600_000),
     files: { 'src/app.mjs': 'export const x = 1;\n' },
   });
@@ -1001,6 +1037,7 @@ test('구 task(firstActivatedAt 없음) → 리뷰 마커는 존재만 확인', 
 
 test('구 task(firstActivatedAt 없음) → 시각 기반 git 가드는 건너뜀', async () => {
   const { dir } = await makeEvidenceFixture({
+    spec: TESTS_REQUIRED_SPEC,
     firstActivatedAt: null,
     files: { 'src/app.mjs': 'export const x = 1;\n' },
   });

@@ -596,10 +596,11 @@ task는 그 만료 시각부터) 안의 증거를 결정론적으로
 검사합니다. 요구 수준은 spec의 `## Done evidence` 아래 JSON으로 선언합니다:
 
 ```json
-{ "version": 1, "review": "required", "verify": "required", "tests": "skip" }
+{ "version": 1, "review": "required", "verify": "required", "tests": "required" }
 ```
 
-- `tests` (기본 `required`) — 소스가 바뀌었으면 테스트 파일 변경도 요구
+- `tests` (기본 `optional`, 이전 기본값은 `required`) — `required`면 소스가 바뀌었을 때 테스트 파일 변경을 요구하고
+  기존 테스트 파일 삭제를 막습니다. `skip`은 `optional`과 같은 뜻으로 계속 받습니다.
 - `review` (기본 `optional`) — `required`면 판정 창 안의 리뷰 마커를 요구 (kind는 대조하지 않음)
 - `verify` (기본 `optional`, 0.20.0) — `required`면 **검증 프레이밍 kind** 마커(`-adversarial` ·
   `-testcritic` · `-shipcheck` · `-contrarian` · `-simplifier` · `-scenario` 접미사)만 증거로 인정합니다.

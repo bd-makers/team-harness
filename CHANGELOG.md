@@ -9,6 +9,9 @@
 
 ## [Unreleased]
 
+### Changed
+- **`done` 가드의 `tests` 증거 기본값을 `required`에서 `optional`로 내렸다** (task `done-tests-optional`, D11 정정). spec에 `## Done evidence`를 선언하지 않은 task는 이제 소스만 바뀌어도, 기존 테스트 파일을 지워도 `done`이 막지 않는다. 종전 기본값은 D11("강제는 PR의 task 문서 하나뿐")에 적히지 않은 두 번째 강제였고, 엄격도를 하네스 기본값으로 올리면 팀원의 자유도가 떨어진다. **종전 동작이 필요한 팀은 spec에 `{ "version": 1, "tests": "required" }`를 선언한다.** 허용값에 `optional`을 추가했고, `skip`은 같은 뜻으로 계속 받는다. 새 spec 템플릿의 주석과 예시도 이에 맞췄다. 이미 만들어 두고 채우지 않은 spec은 새 템플릿과 글자가 달라져 `pr-check`의 "템플릿 그대로" 판정에 걸리지 않는다.
+
 ## [0.51.2] - 2026-11-01
 
 ### Fixed
