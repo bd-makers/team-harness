@@ -1,0 +1,23 @@
+{
+  "user": "hslee",
+  "task": "capsule-cause",
+  "created": "2026-11-02",
+  "firstActivatedAt": "2026-11-02T16:35:04.131Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "a18749d050b17eda57376ede14624dd6157addde",
+      "tip": "63d7024da45e3f4a53f610832a259bb769eafa80",
+      "at": "2026-11-02T16:41:46.035Z",
+      "exitCode": 0,
+      "outputBytes": 1420
+    }
+  ]
+}

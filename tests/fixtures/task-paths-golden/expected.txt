@@ -40,8 +40,8 @@ next: artifact.md를 열어 학습 내용을 채우거나, 추가 메모는 `har
 $ context check (exit 0)
 context: valid
 path: <DIR>/docs/tester/demo/demo-context.md
-bytes: 490/6144
-nonblank-lines: 22/100
+bytes: 565/6144
+nonblank-lines: 23/100
 unresolved-failure-capsules: 0/3
 
 $ boundary check (exit 0)
@@ -84,6 +84,7 @@ $ session-context (exit 0)
 - Signal:
 - Tried:
 - Compact finding / current hypothesis:
+- Cause (intent | context | environment | verification | state | unknown):
 - Next discriminator:
 - Source (safe path or command):
 
@@ -171,6 +172,7 @@ null
 - Signal:
 - Tried:
 - Compact finding / current hypothesis:
+- Cause (intent | context | environment | verification | state | unknown):
 - Next discriminator:
 - Source (safe path or command):
 
@@ -327,6 +329,7 @@ null
 - Signal:
 - Tried:
 - Compact finding / current hypothesis:
+- Cause (intent | context | environment | verification | state | unknown):
 - Next discriminator:
 - Source (safe path or command):
 

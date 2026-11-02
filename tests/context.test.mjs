@@ -66,6 +66,14 @@ test('validateContextCard: verbatim template is valid and within both budgets', 
   assert.equal(result.metrics.failureCapsules, 0);
 });
 
+// D12 실패 귀인 칸: 권장 항목이다. 값 목록이 라벨 안에 있어 빈 stub은 capsule을 채우지 않는다.
+test('taskContextTemplate: the Cause line is an empty stub until a category is written', () => {
+  const stub = '- Cause (intent | context | environment | verification | state | unknown):';
+  assert.ok(taskContextTemplate('demo').includes(`${stub}\n`));
+  assert.equal(capsuleLineHasContent(stub), false);
+  assert.equal(capsuleLineHasContent(`${stub} environment`), true);
+});
+
 test('validateContextCard: empty capsules never consume the unresolved budget', () => {
   const template = taskContextTemplate('demo');
   const filled = template.replace('### F-001\n- Signal:', `${filledCapsule(1)}`);
