@@ -1,13 +1,13 @@
 # hslee — Tasks
 
 ## Open
-- env-state-q5 (created 2026-11-02)
 
 ## Completed
 - ✅ capsule-cause
 - ✅ done-scope-line
 - ✅ done-tests-optional
 - ✅ env-describe
+- ✅ env-state-q5
 - ✅ eval-defect-triage
 - ✅ stack-inprocess-docker
 - ✅ agent-failure-hardening
