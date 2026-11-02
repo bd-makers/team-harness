@@ -1,5 +1,5 @@
 // `harness-team stack` — read-only. 프로젝트의 stack profile(detect-stack)과 testing
-// profile(detect-testing)을 한 번에 돌려준다.
+// profile(detect-testing), 그리고 lockfile이 선언한 설치의 흔적(D12 정정 Q5의 설치 축)을 한 번에 돌려준다.
 //
 // 이 커맨드는 commands/harness-{unittest,comptest,inttest}.md의 0단계에서 **판단이 없는 부분**만
 // 넘겨받았다. 설치하지 않고, 러너를 추천하지 않고, 묻지 않는다 — 러너 부재 분기는 AskUserQuestion과
@@ -10,6 +10,7 @@ import { detectTesting } from '../detect-testing.mjs';
 import { detectRepoShape, describeShape } from '../repo-shape.mjs';
 import { loadRenderState } from '../render-state.mjs';
 import { buildEnvelope, emitObservation } from '../observation.mjs';
+import { detectInstallTrace } from '../presets.mjs';
 
 const NO_RUNNER_SUMMARY = '테스트 러너를 찾지 못했습니다 — 러너 부재 분기(문서 0단계)를 수행하세요';
 // 깨진 매니페스트를 "러너 없음"과 같은 문장으로 보고하면 envelope가 자기모순이 된다:
@@ -35,7 +36,10 @@ const isJsProject = (testing) => testing.manifest !== null;
 
 // 문서들이 요구하던 "스택 요약 5줄 이내"를 코드가 만든다. 빈 축은 줄 자체를 내지 않는다 —
 // `프로바이더: 없음` 같은 줄은 5줄 예산만 먹고 알려주는 게 없다.
-export function renderSummary(stack, testing) {
+// 흔적은 관측이지 판정이 아니다 — "설치 흔적: 있음"은 설치가 있었다는 뜻일 뿐 lockfile과 일치한다는 뜻이 아니다.
+const traceLabel = (trace) => `${trace.lockfile} → ${trace.trace.join('|')}`;
+
+export function renderSummary(stack, testing, installTrace = null) {
   const runnerLine = testing.manifest === 'unreadable'
     ? '러너: 불명 (package.json 파싱 실패)'
     : isJsProject(testing)
@@ -47,6 +51,7 @@ export function renderSummary(stack, testing) {
     `${stack.language} · ${stack.packageManager}`,
   ];
   if (stack.cmdBootstrap && stack.cmdBootstrap !== '(configure)') parts.push(`bootstrap: ${stack.cmdBootstrap}`);
+  if (installTrace) parts.push(`설치 흔적: ${installTrace.state === 'present' ? '있음' : '없음'} (${traceLabel(installTrace)})`);
   if (testing.testingLibrary.length) parts.push(`TL: ${testing.testingLibrary.join('+')}`);
   if (testing.domEnv) parts.push(`DOM: ${testing.domEnv}`);
   if (testing.rnPreset) parts.push(`preset: ${testing.rnPreset}`);
@@ -68,7 +73,7 @@ export function renderSummary(stack, testing) {
 const IN_PROCESS_DB_DRIVERS = new Set(['better-sqlite3']);
 
 // 산문이 지시하던 나머지 절차. CLI가 못 하는 일을 호출자에게 그대로 넘긴다.
-function nextActions(testing) {
+function testingActions(testing) {
   if (!isJsProject(testing)) {
     return ['package.json이 없어 testing profile은 비어 있습니다 — 이 스택의 테스트 관례는 저장소에서 직접 확인하세요'];
   }
@@ -82,6 +87,18 @@ function nextActions(testing) {
   } else if (testing.orm.length || testing.dbDriver.length) {
     actions.push('통합 테스트라면 `docker info`로 testcontainers 가용성을 직접 확인하세요');
   }
+  return actions;
+}
+
+// 흔적이 없으면 Q5 → Q4: 설치하지 않고 bootstrap 명령을 넘긴다(heliosent-profile, 2026-10-11). summary를 통째로
+// 바꾼 조치(매니페스트 수리·러너 부재 분기)가 있으면 그 뒤에 둔다 — summary와 next_actions[0]이 다른 조치를 가리키지 않게.
+function nextActions(testing, stack, installTrace, summaryNamesAction) {
+  const actions = testingActions(testing);
+  if (installTrace?.state !== 'absent') return actions;
+  const how = stack.cmdBootstrap !== '(configure)'
+    ? `준비 명령: \`${stack.cmdBootstrap}\``
+    : 'lockfile을 지키는 bootstrap 명령을 감지하지 못했습니다 — 설치 방법을 저장소에서 확인하세요';
+  actions.splice(summaryNamesAction ? 1 : 0, 0, `의존성 설치 흔적이 없습니다(${traceLabel(installTrace)}) — ${how}`);
   return actions;
 }
 
@@ -111,18 +128,20 @@ export async function runStack(ctx) {
   const stackPin = await readStackPin(ctx.targetDir);
   // 읽기 전용 미리보기 — 에이전트가 init --yes 전에 감지된 모양을 사용자에게 확인받는 근거다.
   const repoShape = await detectRepoShape(ctx.targetDir);
-  const summary = renderSummary(stack, testing);
+  const installTrace = await detectInstallTrace(ctx.targetDir, stack);
+  const summary = renderSummary(stack, testing, installTrace);
   const unreadable = testing.manifest === 'unreadable';
   const runnerMissing = isJsProject(testing) && !unreadable && !testing.runner;
-  const status = runnerMissing || unreadable ? 'warning' : 'success';
+  const status = runnerMissing || unreadable || installTrace?.state === 'absent' ? 'warning' : 'success';
+  const actions = nextActions(testing, stack, installTrace, unreadable || runnerMissing);
 
   if (json) {
     emitObservation(buildEnvelope({
       command: 'stack',
       status,
       summary: unreadable ? UNREADABLE_SUMMARY : runnerMissing ? NO_RUNNER_SUMMARY : summary.join(' · '),
-      nextActions: nextActions(testing),
-      extra: { stack, testing, stackPin, repoShape },
+      nextActions: actions,
+      extra: { stack, testing, stackPin, repoShape, installTrace },
     }));
     return;
   }
@@ -136,5 +155,5 @@ export async function runStack(ctx) {
   }
   if (repoShape.shape !== 'single') for (const line of describeShape(repoShape).split('\n')) console.log(`  ${line}`);
   console.log('');
-  for (const action of nextActions(testing)) console.log(`next: ${action}`);
+  for (const action of actions) console.log(`next: ${action}`);
 }

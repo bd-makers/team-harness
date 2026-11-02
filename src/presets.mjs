@@ -78,6 +78,27 @@ export async function firstHolding(dir, pkg, rules = []) {
   return null;
 }
 
+// The file a single-file condition reads. A Q5 report points at the declaration's path, never its
+// content (D12); a `when` that names no single file is a preset authoring error, not "no lockfile".
+function condFile(cond) {
+  if (cond?.file) return cond.file;
+  if (cond?.fileContains) return cond.fileContains[0];
+  throw new Error(`installTrace rule needs a single-file when: ${JSON.stringify(cond)}`);
+}
+
+// Q5's install axis (D12): does the install the lockfile declares exist on disk? Which lockfile
+// leaves which trace is the preset's `env.installTrace.<pm>`; any one trace path present counts.
+// null = no rule applies (no lockfile, or poetry, whose venv lives outside the repo). `present`
+// says only that an install happened, not that it matches the lockfile.
+export async function detectInstallTrace(dir, stack) {
+  const preset = selectPreset(await loadPresets(), stack.id);
+  const pkg = await readPkg(dir);
+  const rule = await firstHolding(dir, pkg, preset.env?.installTrace?.[stack.packageManager]);
+  if (!rule) return null;
+  const present = await holds(dir, pkg, rule.trace.map(file => ({ file })));
+  return { state: present ? 'present' : 'absent', lockfile: condFile(rule.when), trace: rule.trace };
+}
+
 // null when absent; throws on malformed JSON or a non-object top level so callers can tell
 // "not configured" from "configured wrong".
 export async function readGates(targetDir) {

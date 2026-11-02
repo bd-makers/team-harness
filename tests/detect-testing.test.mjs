@@ -359,3 +359,55 @@ test('CLI: render-state 고정은 감지·고정·유효 스택과 해제 방법
     assert.ok(stdout.includes(`pin: next (detected: node → effective: next) — unpin: ${env.stackPin.unpin}`), stdout);
   });
 });
+
+// Q5(D12 정정)의 설치 축. heliosent-profile(2026-10-11) 워크트리는 lockfile은 있고 node_modules가 없어 게이트 tsc가
+// 실패했는데, 에이전트는 환경이 준비되지 않았다는 것을 몰랐다. 흔적이 없으면 warning과 bootstrap 명령을 넘긴다.
+const NPM_LOCK = { lockfileVersion: 3, packages: { '': { name: 'web' }, 'node_modules/vitest': { version: '3.0.0' } } };
+
+test('CLI: lockfile의 설치 흔적이 없으면 warning과 bootstrap 안내를 내고, 흔적 경로가 생기면 success다', async () => {
+  await withProject({
+    'package.json': { name: 'web', devDependencies: { vitest: '3.0.0' }, scripts: { test: 'vitest run' } },
+    'package-lock.json': NPM_LOCK,
+  }, async (dir) => {
+    const env = JSON.parse((await cli(['stack', '--json', '--target', dir])).stdout);
+    assert.deepEqual(env.installTrace, { state: 'absent', lockfile: 'package-lock.json', trace: ['node_modules'] });
+    assert.equal(env.status, 'warning');
+    assert.match(env.summary, /설치 흔적: 없음 \(package-lock\.json → node_modules\)/);
+    assert.match(env.next_actions[0], /설치 흔적이 없습니다.*`npm ci`/);
+    assert.match((await cli(['stack', '--target', dir])).stdout, /설치 흔적: 없음/, 'text 요약에도 축이 있다');
+
+    await mkdir(join(dir, 'node_modules'));
+    const after = JSON.parse((await cli(['stack', '--json', '--target', dir])).stdout);
+    assert.equal(after.installTrace.state, 'present');
+    assert.equal(after.status, 'success');
+    assert.match(after.summary, /설치 흔적: 있음/);
+    assert.doesNotMatch(after.next_actions.join('\n'), /설치 흔적이 없습니다/);
+  });
+});
+
+// summary를 통째로 바꾸는 조치(러너 부재·매니페스트 수리)가 있으면 next_actions[0]이 그것이어야 envelope가 자기모순이 아니다.
+test('CLI: summary가 가리키는 러너 부재 조치가 먼저이고 bootstrap 안내는 그 바로 뒤다', async () => {
+  await withProject({ 'package.json': { name: 'bare' }, 'package-lock.json': NPM_LOCK }, async (dir) => {
+    const env = JSON.parse((await cli(['stack', '--json', '--target', dir])).stdout);
+    assert.match(env.summary, /러너 부재 분기/);
+    assert.match(env.next_actions[0], /러너 부재 분기/, 'summary가 가리키는 조치와 next_actions[0]이 같다');
+    assert.match(env.next_actions[1], /`npm ci`/);
+  });
+});
+
+// 의존성 0개이고 lockfile도 없는 이 저장소에는 묻지 않는다(D12 "해당 없으면 묻지 않는다").
+test('CLI: lockfile이 없는 저장소(이 저장소)는 installTrace가 null이고 축을 내지 않는다', async () => {
+  const env = JSON.parse((await cli(['stack', '--json', '--target', ROOT])).stdout);
+  assert.equal(env.installTrace, null);
+  assert.doesNotMatch(env.summary, /설치 흔적/);
+});
+
+// 비JS 저장소는 testing 안내가 조기 반환되는 별도 경로다 — heliosent의 Python 판(uv.lock은 있고 .venv가 없음).
+test('CLI: uv.lock은 있고 .venv가 없으면 warning과 `uv sync --locked` 안내를 낸다', async () => {
+  await withProject({ 'pyproject.toml': '[project]\nname = "x"\n', 'uv.lock': 'version = 1\n' }, async (dir) => {
+    const env = JSON.parse((await cli(['stack', '--json', '--target', dir])).stdout);
+    assert.equal(env.installTrace.state, 'absent');
+    assert.equal(env.status, 'warning');
+    assert.match(env.next_actions[0], /uv\.lock → \.venv.*`uv sync --locked`/);
+  });
+});

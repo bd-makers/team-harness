@@ -4,7 +4,7 @@ import { mkdtemp, writeFile, readFile, mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { resolveStack } from '../src/detect-stack.mjs';
-import { buildProposal, applyProposal, fingerprintDrift, readGates, describeProposal } from '../src/presets.mjs';
+import { buildProposal, applyProposal, fingerprintDrift, readGates, describeProposal, detectInstallTrace } from '../src/presets.mjs';
 import { detectRepoShape } from '../src/repo-shape.mjs';
 
 async function project(files) {
@@ -183,4 +183,36 @@ test('지문 drift: workspace 집합 변화는 잡고, 앱 수만 바뀐 모양 
   assert.equal(fingerprintDrift(base, { ...base, shape: 'monorepo' }), null);
   assert.match(fingerprintDrift(base, { ...base, workspaces: ['apps/web', 'apps/admin', 'packages/ui'] }), /\+workspace apps\/admin/);
   assert.match(fingerprintDrift(base, { preset: 'node', pm: 'npm', signals: [] }), /모양 app-packages → single/);
+});
+
+// Q5(D12 정정)의 설치 축: lockfile이 선언한 설치의 흔적이 디스크에 있는가. 의존성 0개 표는 2026-11-03 실측이다 —
+// npm만 0개면 node_modules를 만들지 않아 `"node_modules/` 키로 가드하고, poetry는 venv가 저장소 밖이라 판정하지 않는다.
+test('detectInstallTrace: pm의 lockfile이 선언한 설치 흔적을 present·absent로, 판정 규칙이 없으면 null로 돌려준다', async () => {
+  const pkg = { 'package.json': { name: 'a' } };
+  const npmLock = { lockfileVersion: 3, packages: { '': { name: 'a' }, 'node_modules/left-pad': { version: '1.3.0' } } };
+  const absent = (lockfile, trace = ['node_modules']) => ({ state: 'absent', lockfile, trace });
+  const present = (lockfile, trace = ['node_modules']) => ({ state: 'present', lockfile, trace });
+  const berry = ['.yarn/install-state.gz', '.pnp.cjs', 'node_modules'];
+  const cases = [
+    ['npm 미설치', { ...pkg, 'package-lock.json': npmLock }, absent('package-lock.json')],
+    ['npm 설치', { ...pkg, 'package-lock.json': npmLock, 'node_modules/.package-lock.json': '{}' }, present('package-lock.json')],
+    ['npm 의존성 0개', { ...pkg, 'package-lock.json': { lockfileVersion: 3, packages: { '': { name: 'a' } } } }, null],
+    ['pnpm 미설치', { ...pkg, 'pnpm-lock.yaml': "lockfileVersion: '9.0'\n" }, absent('pnpm-lock.yaml')],
+    ['yarn classic 미설치', { ...pkg, 'yarn.lock': '# yarn lockfile v1\n' }, absent('yarn.lock')],
+    ['yarn berry 미설치', { ...pkg, 'yarn.lock': '__metadata:\n  version: 8\n' }, absent('yarn.lock', berry)],
+    ['yarn berry PnP', { ...pkg, 'yarn.lock': '__metadata:\n  version: 8\n', '.pnp.cjs': '' }, present('yarn.lock', berry)],
+    ['bun 미설치', { ...pkg, 'bun.lock': '{}' }, absent('bun.lock')],
+    ['bun.lockb만', { ...pkg, 'bun.lockb': '' }, null],
+    ['lockfile 없음', pkg, null],
+    ['uv 미설치', { 'pyproject.toml': '[project]\nname = "a"\n', 'uv.lock': 'version = 1\n' }, absent('uv.lock', ['.venv'])],
+    ['uv 설치', { 'pyproject.toml': '[project]\nname = "a"\n', 'uv.lock': 'version = 1\n', '.venv/pyvenv.cfg': '' }, present('uv.lock', ['.venv'])],
+    ['poetry', { 'pyproject.toml': '[project]\nname = "a"\n', 'poetry.lock': '' }, null],
+    ['pip', { 'pyproject.toml': '[project]\nname = "a"\n' }, null],
+  ];
+  for (const [label, files, expected] of cases) {
+    const dir = await repoWith(files);
+    try {
+      assert.deepEqual(await detectInstallTrace(dir, await resolveStack(dir)), expected, label);
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  }
 });

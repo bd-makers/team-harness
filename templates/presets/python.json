@@ -10,6 +10,9 @@
     "bootstrap": {
       "uv":     [{ "when": { "file": "uv.lock" }, "run": "uv sync --locked" }],
       "poetry": [{ "when": { "file": "poetry.lock" }, "run": "poetry install" }]
+    },
+    "installTrace": {
+      "uv": [{ "when": { "file": "uv.lock" }, "trace": [".venv"] }]
     }
   },
   "commit": [
