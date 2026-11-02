@@ -135,7 +135,7 @@ export function taskSpecTemplate(name) {
 - [ ] **Ambiguity ≤ 0.2** — 위 항목 가중합 ≥ 0.8
 
 <!-- 선택 선언. 아래 주석을 벗기면 done 가드가 검사한다.
-     미선언 기본값: "tests": "required" (소스가 바뀌면 테스트 파일 변경을 요구), "review": "optional",
+     미선언 기본값: "tests": "optional" ("required"면 소스가 바뀔 때 테스트 파일 변경을 요구), "review": "optional",
      "verify": "optional" ("required"면 검증 프레이밍 kind 마커 — -adversarial 등 — 를 요구).
      R2(옵트인): "scenarios": [{ "id", "given", "when", "then", "test", "cmd" }] — 수용 기준을 Given/When/Then으로 쓰고
      증거(테스트 이름·명령)를 잇는다. \`harness-team scenario check\`가 cmd exit 0을, \`review <engine> --framing scenario\`가
@@ -143,7 +143,7 @@ export function taskSpecTemplate(name) {
 ## Done evidence
 <!--
 \`\`\`json
-{ "version": 1, "review": "required", "tests": "skip" }
+{ "version": 1, "review": "required", "tests": "required" }
 \`\`\`
 -->
 
@@ -605,13 +605,14 @@ const DONE_EVIDENCE_RE = /^## Done evidence[ \t]*\r?\n(?:[ \t]*\r?\n)*```json[ \
 // (템플릿처럼 섹션 전체가 <!-- --> 주석 안이면 ```json이 heading 바로 다음에 오지 않아 매치하지 않는다.)
 const DONE_EVIDENCE_OPEN_RE = /^## Done evidence[ \t]*\r?\n(?:[ \t]*\r?\n)*```json[ \t]*\r?\n/m;
 
-// tests는 git만으로 판정 가능하고 소스 변경이 있을 때만 발동하므로 기본 ON.
+// tests도 기본 OFF(2026-11-02, D11 정정) — 강제는 PR의 task 문서 하나뿐이고, 테스트 가드는 팀이 `required`로 켠다.
+// `skip`은 `optional`과 같은 뜻으로 남긴다 — 이미 선언된 spec을 invalid로 만들지 않기 위해서다.
 // review는 마커 신뢰 기반이라 부분 검증뿐이고, 전체 강제는 `--force` 훈련이 되므로 기본 OFF.
 // verify도 같은 이유로 기본 OFF — review와 달리 검증 프레이밍 kind 접미사 마커만 센다.
-export const DONE_EVIDENCE_DEFAULT = { tests: 'required', review: 'optional', verify: 'optional' };
+export const DONE_EVIDENCE_DEFAULT = { tests: 'optional', review: 'optional', verify: 'optional' };
 
 const DONE_EVIDENCE_VALUES = {
-  tests: ['required', 'skip'],
+  tests: ['required', 'optional', 'skip'],
   review: ['required', 'optional'],
   verify: ['required', 'optional'],
 };
@@ -937,7 +938,7 @@ async function collectDoneIssues(targetDir, active) {
   const meta = await readTaskMeta(targetDir, user, task);
   const { at: windowStart, iso: windowStartIso } = evidenceWindowStart(meta);
 
-  // spec 선언 — 없으면 기본값(tests 검사 / review 미검사), 깨져 있으면 그 자체가 차단 사유.
+  // spec 선언 — 없으면 기본값(tests·review·verify 모두 미검사), 깨져 있으면 그 자체가 차단 사유.
   let evidence = { status: 'not-configured', ...DONE_EVIDENCE_DEFAULT };
   try {
     const specPath = taskFilePath(targetDir, user, task, 'spec.md');
@@ -1077,7 +1078,7 @@ async function collectDoneIssues(targetDir, active) {
           const { source } = classifyChangedPaths([...live, ...deleted]);
           const { test } = classifyChangedPaths(live);
           if (source && !test) {
-            issues.push('소스는 바뀌었는데 테스트 파일 변경이 없음 (테스트 미작성 — 불필요하면 spec에 `"tests": "skip"` 선언)');
+            issues.push('소스는 바뀌었는데 테스트 파일 변경이 없음 (테스트 미작성 — 불필요하면 spec의 `"tests"`를 `"optional"`로)');
           }
           if (deletedTests.length) {
             const shown = deletedTests.slice(0, 5).join(', ') + (deletedTests.length > 5 ? ` 외 ${deletedTests.length - 5}개` : '');
