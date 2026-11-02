@@ -16,3 +16,7 @@ CHANGELOG.md                                       |  3 +
  tests/done-guard.test.mjs                          | 73 ++++++++++++++++------
  tests/fixtures/task-paths-golden/expected.txt      |  8 +--
  12 files changed, 207 insertions(+), 31 deletions(-)
+
+## 2026-11-02T15:09:11.346Z — 완료
+
+태스크 종료.
