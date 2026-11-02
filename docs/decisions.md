@@ -245,3 +245,64 @@ D7 이후는 플러그인 결정이라 이 저장소에만 둔다. `doctor`의 �
 
 **AGENTS.md 규범 목록에 넣지 않은 이유**: 에이전트가 매 세션 지킬 규칙이 아니라 메인테이너가 기능을 받을지 정하는 기준이다.
 eager 계층 예산 여유도 거의 없다(D9). 진입점은 이 로그와 `docs/harness-cycle.md`다.
+
+## D12 (2026-11-03) — 환경 하위 시스템: 서술은 제공하고, 갖춤은 요구하지 않는다
+
+**배경**: 하네스 5개 하위 시스템 모델(지시·도구·환경·상태·피드백 — walkinglabs `learn-harness-engineering` 에서
+환경은 "런타임: 의존성 / 서비스 / 버전"이며 원칙은 "환경 상태가 자기 서술적이도록" 하는 것이다. 0.51.2를 이 기준으로
+감사했다 — 환경을 다루는 장치는 lockfile로 패키지 매니저를 고르는 감지(`src/detect-stack.mjs`), testcontainers용
+`docker info` 안내(`stack`·`/harness-inttest`), `.env` 비밀 보호 훅·deny 셋뿐이다. 런타임 버전 파일·`engines`·
+devcontainer·Dockerfile은 어디서도 읽지 않고, 관리 절은 `Runtime: Node.js`처럼 이름만 적으며 install은 lockfile을
+무시하는 `npm install`로 렌더된다. Python은 `pyproject.toml`만 보면 pm이 `pip`으로 고정돼 uv·poetry 저장소에
+틀린 명령이 적힌다. 실사용 막힘도 있다 — 2026-10-11 `heliosent-profile`의 AO 워크트리에 `node_modules`가 없어
+커밋 게이트 tsc가 실패했고, 사람이 `bun install --frozen-lockfile`을 찾아 풀었다(`docs/harness-cycle.md` C1).
+lockfile은 있었다 — 빠진 것은 선언이 아니라 **에이전트가 읽는 곳의 올바른 부트스트랩 명령**이었다.
+
+**D11 판정 질문**: ① 사이클 위치 — S0 셋업, 그리고 가로축 "인계"(D5 worktree가 만드는 빈 환경). 비범위가 아니다.
+② 언어·도구 지식이 필요하다 — 버전 파일명·lockfile명·frozen install 명령은 **프리셋 데이터**(`templates/presets/*.json`,
+이미 있는 `pm` 표 옆)로 둔다. 훅·CLI에 언어 분기를 늘리지 않는다. ③ 다른 장치의 결함 때문인가 — 일부 그렇다
+(`pip` 고정, 관리 절의 비-frozen install). 2차 장치 규칙에 따라 새 명령을 만들지 않고 기존 장치(`stack`·관리 절·doctor)를 넓힌다.
+
+**결정 — 제공하는 것 (쓰든 말든 자유, D11)**
+1. **관리 절 `## 환경`**: init이 감지한 사실만 렌더한다 — 런타임과 버전 출처(`.nvmrc`·`.node-version`·`.tool-versions`·
+   `mise.toml`·`engines`·`.python-version`·`requires-python`), lockfile, **frozen install**(`npm ci`·
+   `pnpm install --frozen-lockfile`·`uv sync --locked` 등), 부트스트랩 명령(저장소에 `setup`/`bootstrap` 스크립트가 있으면 그것),
+   환경 변수 계약 파일, 서비스 정의 파일(compose·devcontainer). 감지되지 않은 항목은 `(configure)` — 추측해 적지 않는다.
+   강의의 지시 하위 시스템 항목("기술 스택과 버전", "첫 실행 명령어")도 이 절이 채운다.
+2. **`stack` envelope 확장**: 위 축을 read-only로 관측해 돌려준다. S0과 새 워크트리 시작 시 에이전트가 읽고 부트스트랩한다.
+3. **doctor soft warning**: 선언이 없을 때만 알린다 — 런타임 버전 선언 없음, 의존성이 있는데 lockfile이 없거나 미추적.
+   fail에 넣지 않는다. 의존성 0개 저장소(이 저장소 포함)에는 lockfile 경고를 내지 않는다.
+4. **실패 귀인 칸**: failure capsule(`### F-*`)에 원인 범주 한 줄(의도·컨텍스트·환경·검증·상태)을 권장한다.
+   "재현 불가능한 환경"을 코드 결함과 구분해 기록하게 하는 것이 목적이다. `context check` 필수 항목으로 만들지 않는다.
+
+**결정 — 요구하지 않는 것**: 버전 파일·lockfile·devcontainer·Docker의 존재. 커밋 게이트·`pr-check`·`done`은 환경을 보지 않는다
+(D11의 강제 범위는 PR의 task 문서 하나로 유지).
+
+**결정 — 소유하지 않는 것**
+- **환경 파일 생성** — init이 `.nvmrc` 등을 쓰지 않는다. 버전을 잘못 추측한 선언은 선언이 없는 것보다 해롭다.
+- **격리된 실행환경** — Docker·devcontainer·sandbox의 구성·운영은 D11의 "OS·네트워크 격리" 비소유를 유지한다.
+  단 재현성 서술은 격리가 아니다 — 저장소에 이미 있으면 **감지해 `## 환경`에 적는 것은 허용**한다.
+
+**결정 — `.env.*` 읽기 deny는 유지한다**: `templates/.claude/settings.json`의 `Read(./.env.*)`는
+`.env.example`·`.env.sample`까지 막지만 열지 않는다 — 실제 값을 넣어 두는 팀이 있어 비밀 보호 약화의 위험이 서술 이득보다 크다.
+1번의 환경 변수 계약 파일은 **경로만** 적고, 필요한 변수 이름은 사람이 AGENTS.md나 docs에 옮긴다.
+
+**미결 (spec에서 정한다)**
+- **관리 절 재렌더 영향**: `## 환경` 추가는 init을 다시 돌리는 모든 소비자에 diff를 만든다(D8 provenance refresh 범위 확인).
+- **detect-stack의 하드코딩 lockfile 판정**을 프리셋 데이터로 옮길지 — ②와 긴장 관계지만 이번 범위에 넣을지는 별도 판단.
+
+**진행 방식**: 가장 작은 end-to-end 단위부터 각각 별도 task·PR로 진행한다. 순서와 범위는 첫 task의 spec이 정한다.
+
+**기각한 대안**
+- **게이트로 요구(hard fail)** — D11의 단일 강제 원칙과 충돌하고, 의존성 0개·비JS 저장소에서 오탐이 난다.
+- **init이 버전 파일 자동 생성** — 위 "소유하지 않는 것" 참조.
+- **새 `harness-team env` 명령** — 2차 장치 규칙. `stack`이 이미 같은 자리(S0 관측, read-only envelope)에 있다.
+- **Docker·devcontainer 템플릿 제공** — 프로젝트마다 답이 다르고 유지비가 크며, 격리 비소유와 경계가 흐려진다.
+- **현상 유지** — lockfile→pm 감지는 강의 사례의 1단계 실패("npm vs yarn")를 이미 막고 있어 가치가 확인됐지만,
+  같은 실패가 Python에 남아 있고 새 워크트리 부트스트랩 막힘이 실측됐다.
+
+**재평가 신호**: 소비자 저장소에서 환경 원인 실패(귀인 칸 `환경`)가 반복되면 요구 수준을 다시 본다. 반대로 `## 환경`이
+`(configure)`로만 채워지는 저장소가 다수면 감지 범위가 잘못 잡힌 것이다.
+
+**AGENTS.md 규범 목록에 넣지 않은 이유**: 에이전트가 매 세션 지킬 규칙이 아니라 메인테이너의 기능 수용 기준이다(D11과 같음).
+에이전트가 볼 것은 규범이 아니라 렌더된 `## 환경` 절이다.
