@@ -5,6 +5,7 @@
 ## Completed
 - ✅ done-scope-line
 - ✅ done-tests-optional
+- ✅ env-describe
 - ✅ eval-defect-triage
 - ✅ stack-inprocess-docker
 - ✅ agent-failure-hardening

@@ -3,8 +3,8 @@
   "task": "env-describe",
   "created": "2026-11-02",
   "firstActivatedAt": "2026-11-02T15:24:43.221Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-11-02T16:25:00.956Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [
