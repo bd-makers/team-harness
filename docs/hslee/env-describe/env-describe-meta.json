@@ -1,0 +1,23 @@
+{
+  "user": "hslee",
+  "task": "env-describe",
+  "created": "2026-11-02",
+  "firstActivatedAt": "2026-11-02T15:24:43.221Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "936c103f07d36400d8d2e8daeb9aa751f74ba92f",
+      "tip": "936c103f07d36400d8d2e8daeb9aa751f74ba92f",
+      "at": "2026-11-02T15:40:50.127Z",
+      "exitCode": 0,
+      "outputBytes": 1035
+    }
+  ]
+}

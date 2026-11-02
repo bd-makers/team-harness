@@ -187,6 +187,15 @@ test('renderSummary: 빈 축은 줄을 만들지 않는다', async () => {
   });
 });
 
+test('renderSummary: bootstrap은 감지됐을 때만 축이 된다', async () => {
+  await withProject({ 'package.json': { name: 'plain' } }, async (dir) => {
+    const testing = await detectTesting(dir);
+    const stack = { stackLabel: 'Node.js', language: 'JavaScript', packageManager: 'npm' };
+    assert.ok(renderSummary({ ...stack, cmdBootstrap: 'npm ci' }, testing).includes('bootstrap: npm ci'));
+    assert.ok(!renderSummary({ ...stack, cmdBootstrap: '(configure)' }, testing).some(p => p.startsWith('bootstrap')));
+  });
+});
+
 test('CLI: stack --json 은 observation envelope 에 stack·testing 두 프로필을 싣는다', async () => {
   await withProject({
     'package.json': { name: 'web', devDependencies: { vitest: '3.0.0' }, scripts: { test: 'vitest run' } },

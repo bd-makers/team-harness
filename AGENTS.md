@@ -24,6 +24,7 @@
 
 ## 명령
 - install: `npm install`
+- bootstrap (lockfile 고정): `(configure)`
 - dev: `(configure)`
 - test: `npm run test`
 - lint: `(configure)`

@@ -1,5 +1,6 @@
 import { readFile, access } from 'node:fs/promises';
 import { join } from 'node:path';
+import { firstHolding, loadPresets, selectPreset } from './presets.mjs';
 
 async function exists(p) {
   try { await access(p); return true; } catch { return false; }
@@ -37,6 +38,29 @@ async function detectJsLanguage(dir, deps) {
   return Object.prototype.hasOwnProperty.call(deps, 'typescript') ? 'TypeScript' : 'JavaScript';
 }
 
+// Environment knowledge lives in the preset's `env` block (D11·D12); this only evaluates it.
+async function presetEnv(id) {
+  return selectPreset(await loadPresets(), id)?.env ?? {};
+}
+
+// The install that keeps the lockfile as it is, for the detected pm — what a fresh worktree needs
+// (heliosent-profile, 2026-10-11). Unknown stays '(configure)': a guessed command is worse than none.
+async function detectBootstrap(dir, pkg, id, pm) {
+  const rule = await firstHolding(dir, pkg, (await presetEnv(id)).bootstrap?.[pm]);
+  return rule?.run ?? '(configure)';
+}
+
+// Python's pm comes from its lockfile. Without one it stays pip, and an argument-less
+// `pip install` is not a command anyone can run, so install is left to configure.
+async function pythonProfile(dir) {
+  const rule = await firstHolding(dir, null, (await presetEnv('python')).packageManager);
+  const pm = rule?.id ?? 'pip';
+  return buildProfile({
+    id: 'python', label: 'Python', language: 'Python', pm,
+    install: rule?.install ?? '(configure)', bootstrap: await detectBootstrap(dir, null, 'python', pm),
+  });
+}
+
 export async function detectStack(dir) {
   const pkg = await readJson(join(dir, 'package.json'));
   const pm = await detectPackageManager(dir, pkg);
@@ -49,11 +73,9 @@ export async function detectStack(dir) {
       : has('next') ? 'next'
       : has('react') ? 'react'
       : 'node';
-    return buildProfile({ id, label: JS_LABELS[id], language, pm, pkg });
+    return buildProfile({ id, label: JS_LABELS[id], language, pm, pkg, bootstrap: await detectBootstrap(dir, pkg, id, pm) });
   }
-  if (await exists(join(dir, 'pyproject.toml'))) {
-    return buildProfile({ id: 'python', label: 'Python', language: 'Python', pm: 'pip' });
-  }
+  if (await exists(join(dir, 'pyproject.toml'))) return pythonProfile(dir);
   if (await exists(join(dir, 'go.mod'))) {
     return buildProfile({ id: 'go', label: 'Go', language: 'Go', pm: 'go' });
   }
@@ -71,14 +93,14 @@ export async function resolveStack(dir, forcedId) {
     const pkg = await readJson(join(dir, 'package.json'));
     const pm = await detectPackageManager(dir, pkg);
     const language = pkg ? await detectJsLanguage(dir, { ...pkg.dependencies, ...pkg.devDependencies }) : 'unknown';
-    return buildProfile({ id: forcedId, label: JS_LABELS[forcedId], language, pm, pkg });
+    return buildProfile({ id: forcedId, label: JS_LABELS[forcedId], language, pm, pkg, bootstrap: await detectBootstrap(dir, pkg, forcedId, pm) });
   }
-  if (forcedId === 'python') return buildProfile({ id: 'python', label: 'Python', language: 'Python', pm: 'pip' });
+  if (forcedId === 'python') return pythonProfile(dir);
   if (forcedId === 'go') return buildProfile({ id: 'go', label: 'Go', language: 'Go', pm: 'go' });
   return buildProfile({ id: 'generic', label: 'Generic', language: 'unknown', pm: null });
 }
 
-function buildProfile({ id, label, language, pm, pkg }) {
+function buildProfile({ id, label, language, pm, pkg, install, bootstrap }) {
   const scripts = pkg?.scripts ?? {};
   const run = (name) => pm && scripts[name] ? `${pm} ${pm === 'npm' ? 'run ' : ''}${name}` : '';
   return {
@@ -86,7 +108,8 @@ function buildProfile({ id, label, language, pm, pkg }) {
     stackLabel: label,
     language,
     packageManager: pm ?? '(none)',
-    cmdInstall: pm ? `${pm} install` : '(configure)',
+    cmdInstall: install ?? (pm ? `${pm} install` : '(configure)'),
+    cmdBootstrap: bootstrap ?? '(configure)',
     cmdDev: run('dev') || run('start') || '(configure)',
     cmdTest: run('test') || '(configure)',
     cmdLint: run('lint') || '(configure)',

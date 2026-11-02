@@ -42,6 +42,44 @@ test('bun.lock(텍스트 lockfile)도 bun으로 감지한다', async () => {
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+// A fresh worktree has no node_modules; without the lockfile-respecting command the agent
+// guessed (heliosent-profile, 2026-10-11). bun.lockb is left out: `--frozen-lockfile` does not
+// validate it, it converts it to bun.lock.
+test('cmdBootstrap은 pm의 lockfile에서 재현 install 명령을 고르고, 모르면 (configure)로 둔다', async () => {
+  const pkg = { name: 'a' };
+  const cases = [
+    [{ 'package-lock.json': '{}' }, 'npm ci'],
+    [{ 'pnpm-lock.yaml': 'lockfileVersion: 9\n' }, 'pnpm install --frozen-lockfile'],
+    [{ 'yarn.lock': '# yarn lockfile v1\n' }, 'yarn install --frozen-lockfile'],
+    [{ 'yarn.lock': '__metadata:\n  version: 8\n' }, 'yarn install --immutable'],
+    [{ 'bun.lock': '{}' }, 'bun install --frozen-lockfile'],
+    [{ 'bun.lockb': '' }, '(configure)'],
+    [{ 'bun.lockb': '', 'package-lock.json': '{}' }, '(configure)'],
+    [{}, '(configure)'],
+  ];
+  for (const [files, expected] of cases) {
+    const dir = await project({ 'package.json': pkg, ...files });
+    try {
+      assert.equal((await detectStack(dir)).cmdBootstrap, expected, Object.keys(files).join('+') || 'lockfile 없음');
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  }
+});
+
+test('Python pm은 lockfile로 감지한다 — uv·poetry, 그 외는 pip이며 인수 없는 pip install은 적지 않는다', async () => {
+  const cases = [
+    [{}, 'pip', '(configure)', '(configure)'],
+    [{ 'uv.lock': '' }, 'uv', 'uv sync', 'uv sync --locked'],
+    [{ 'poetry.lock': '' }, 'poetry', 'poetry install', 'poetry install'],
+  ];
+  for (const [files, pm, install, bootstrap] of cases) {
+    const dir = await project({ 'pyproject.toml': '[project]\nname = "a"\n', ...files });
+    try {
+      const s = await detectStack(dir);
+      assert.deepEqual([s.id, s.packageManager, s.cmdInstall, s.cmdBootstrap], ['python', pm, install, bootstrap]);
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  }
+});
+
 test('resolveStack: JS 계열 --stack은 감지된 패키지 매니저·스크립트를 유지한다', async () => {
   const dir = await project({ 'package.json': { name: 'a', scripts: { test: 'vitest', lint: 'eslint .' } } });
   try {
@@ -61,7 +99,7 @@ test('resolveStack: 감지 결과와 같은 id는 감지 프로필 그대로, py
     assert.deepEqual(await resolveStack(dir, 'next'), await detectStack(dir));
     const py = await resolveStack(dir, 'python');
     assert.equal(py.id, 'python');
-    assert.equal(py.cmdInstall, 'pip install');
+    assert.equal(py.cmdInstall, '(configure)', '인수 없는 pip install은 실행되지 않는다');
     const generic = await resolveStack(dir, 'generic');
     assert.equal(generic.packageManager, '(none)');
   } finally { await rm(dir, { recursive: true, force: true }); }

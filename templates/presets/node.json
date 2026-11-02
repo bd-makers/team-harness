@@ -14,6 +14,17 @@
     "yarn": { "exec": "yarn",      "run": "yarn run" },
     "bun":  { "exec": "bunx",      "run": "bun run" }
   },
+  "env": {
+    "bootstrap": {
+      "npm":  [{ "when": { "file": "package-lock.json" }, "run": "npm ci" }],
+      "pnpm": [{ "when": { "file": "pnpm-lock.yaml" }, "run": "pnpm install --frozen-lockfile" }],
+      "yarn": [
+        { "when": { "fileContains": ["yarn.lock", "__metadata"] }, "run": "yarn install --immutable" },
+        { "when": { "file": "yarn.lock" }, "run": "yarn install --frozen-lockfile" }
+      ],
+      "bun":  [{ "when": { "file": "bun.lock" }, "run": "bun install --frozen-lockfile" }]
+    }
+  },
   "delegate": [
     {
       "when": { "file": "turbo.json" }, "run": "{exec} turbo run {tasks} --filter=...[HEAD]", "confirm": true,

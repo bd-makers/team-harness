@@ -46,6 +46,7 @@ export function renderSummary(stack, testing) {
     `프레임워크: ${stack.stackLabel}`,
     `${stack.language} · ${stack.packageManager}`,
   ];
+  if (stack.cmdBootstrap && stack.cmdBootstrap !== '(configure)') parts.push(`bootstrap: ${stack.cmdBootstrap}`);
   if (testing.testingLibrary.length) parts.push(`TL: ${testing.testingLibrary.join('+')}`);
   if (testing.domEnv) parts.push(`DOM: ${testing.domEnv}`);
   if (testing.rnPreset) parts.push(`preset: ${testing.rnPreset}`);
