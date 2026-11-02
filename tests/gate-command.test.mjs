@@ -42,6 +42,29 @@ test('gate commit: 모든 명령이 통과하면 exit 0과 통과 문구', async
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+// exit 0 훅의 stderr는 사용자에게 보이지 않는다 — 통과와 그 보장 범위는 stdout systemMessage 한 줄로 낸다.
+test('gate commit: 통과하면 stdout systemMessage로 실행한 선언과 보장 범위를 알린다', async () => {
+  const cmds = ['node -e ""', 'node -e "1"', 'node -e "2"', 'node -e "3"'];
+  const dir = await fixture({ commit: cmds });
+  try {
+    const r = await capture(() => gate(dir, ['commit']));
+    assert.equal(r.exitCode, undefined, r.errs);
+    assert.equal(r.logs.length, 1, 'stdout은 JSON 한 줄뿐');
+    const { systemMessage } = JSON.parse(r.logs[0]);
+    assert.match(systemMessage, /선언 4개 실행\(node -e "", node -e "1", node -e "2" 외 1개\)/);
+    assert.match(systemMessage, /이 머신 환경 기준, 선언 밖 검사는 없음/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('gate commit: 차단되면 stdout에 통과 systemMessage를 내지 않는다', async () => {
+  const dir = await fixture({ commit: ['node -e "process.exit(3)"'] });
+  try {
+    const r = await capture(() => gate(dir, ['commit']));
+    assert.equal(r.exitCode, 2);
+    assert.deepEqual(r.logs, []);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('gate commit: 첫 실패에서 차단하고 다음 명령은 실행하지 않는다', async () => {
   const dir = await fixture({ commit: ['node -e "process.exit(3)"', 'node -e "require(\'fs\').writeFileSync(\'ran\', \'\')"'] });
   try {

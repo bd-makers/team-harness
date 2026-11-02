@@ -931,6 +931,26 @@ export function evidenceWindowStart(meta) {
   return { at: null, iso: null };
 }
 
+// 통과 출력의 보장 범위 한 줄. `done:`은 "테스트가 통과했다"로 읽히기 쉽지만 가드는 문서·커밋·(선언 시)
+// 파일 변경만 본다 — 이번 실행에서 실제로 돈 가드와 꺼진 가드를 나눠 적어 과신을 막는다. 차단하지 않는다(D11).
+export function describeDoneScope({ evidence, isGitRepo, windowKnown }) {
+  const checked = ['plan 체크박스', 'artifact 작성'];
+  const unchecked = [];
+  if (isGitRepo) checked.push('미커밋 변경');
+  else unchecked.push('git 신호(저장소 아님)');
+  const timed = isGitRepo && windowKnown;
+  if (isGitRepo && !windowKnown) unchecked.push('커밋·테스트 시각 가드(판정 창 없음)');
+  if (timed) checked.push('task 이후 커밋');
+  const labels = { tests: '테스트 파일 변경', review: '리뷰 실행 기록', verify: '검증 리뷰 기록' };
+  for (const [key, label] of Object.entries(labels)) {
+    const value = evidence[key] ?? DONE_EVIDENCE_DEFAULT[key];
+    if (value !== 'required') unchecked.push(`${label}(${key}: ${value})`);
+    else if (key !== 'tests' || timed) checked.push(label);
+  }
+  unchecked.push('테스트 실행 결과·리뷰 내용');
+  return `보장 범위 — 확인: ${checked.join(' · ')} | 확인 안 함: ${unchecked.join(' · ')}`;
+}
+
 async function collectDoneIssues(targetDir, active) {
   const { user, task } = active;
   const issues = [];
@@ -1089,7 +1109,7 @@ async function collectDoneIssues(targetDir, active) {
     }
   }
 
-  return issues;
+  return { issues, scope: describeDoneScope({ evidence, isGitRepo, windowKnown: Boolean(windowStartIso) }) };
 }
 
 export async function runDone(ctx) {
@@ -1097,7 +1117,7 @@ export async function runDone(ctx) {
   if (!active || !active.task) { console.log('no active task'); return; }
 
   const force = !!(ctx.flags && ctx.flags.force);
-  const issues = await collectDoneIssues(ctx.targetDir, active);
+  const { issues, scope } = await collectDoneIssues(ctx.targetDir, active);
 
   if (issues.length && !force) {
     process.exitCode = 1;
@@ -1152,6 +1172,7 @@ export async function runDone(ctx) {
 
   await writeActive(ctx.targetDir, null);
   console.log(`done: ${taskLabel(user, task)}`);
+  console.log(scope);
   console.log(`handoff updated: ${taskFileRel(user, task, 'handoff.md')}`);
   console.log(`handoff updated: ${userHandoffRel(user)}`);
 }
