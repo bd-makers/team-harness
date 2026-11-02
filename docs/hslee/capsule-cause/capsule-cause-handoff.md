@@ -36,13 +36,13 @@ AGENTS.md                                         |  3 ---
  templates/AGENTS.md.hbs                           |  3 ---
  8 files changed, 36 insertions(+), 17 deletions(-)
 
-## 2026-11-02T16:41:30.450Z — 6ea4b84 feat(task): TCC failure capsule에 원인 범주 Cause 줄(권장)
+## 2026-11-02T16:42:10.025Z — 4f260b9 feat(task): TCC failure capsule에 원인 범주 Cause 줄(권장)
 CHANGELOG.md                                       |   1 +
  docs/harness-overview.html                         |  10 ++
- docs/hslee/capsule-cause/capsule-cause-artifact.md |  13 +++
+ docs/hslee/capsule-cause/capsule-cause-artifact.md |  42 +++++++++
  docs/hslee/capsule-cause/capsule-cause-context.md  |  27 ++++++
- docs/hslee/capsule-cause/capsule-cause-handoff.md  |  37 ++++++++
- docs/hslee/capsule-cause/capsule-cause-meta.json   |  11 +++
+ docs/hslee/capsule-cause/capsule-cause-handoff.md  |  58 ++++++++++++
+ docs/hslee/capsule-cause/capsule-cause-meta.json   |  23 +++++
  docs/hslee/capsule-cause/capsule-cause-plan.md     |  22 +++++
  docs/hslee/capsule-cause/capsule-cause-spec.md     | 102 +++++++++++++++++++++
  src/commands/migrate.mjs                           |   2 +
@@ -52,7 +52,7 @@ CHANGELOG.md                                       |   1 +
  tests/context.test.mjs                             |   8 ++
  .../.claude/skills/fix-bug/SKILL.md                |  55 +++++++++++
  .../.claude/skills/new-feature/SKILL.md            |  53 +++++++++++
- tests/fixtures/stock-templates/README.md           |   5 +-
+ tests/fixtures/stock-templates/README.md           |   7 +-
  tests/fixtures/task-paths-golden/expected.txt      |   7 +-
  tests/migrate-templates.test.mjs                   |   2 +-
- 18 files changed, 353 insertions(+), 7 deletions(-)
+ 18 files changed, 416 insertions(+), 8 deletions(-)

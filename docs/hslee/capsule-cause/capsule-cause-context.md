@@ -2,8 +2,8 @@
 <!-- working set only; UTF-8 <= 6 KiB, nonblank lines <= 100 -->
 
 ## Now
-- Goal: capsule stub에 권장 `Cause` 줄, 스킬·AGENTS.md 안내 (check 동작 불변)
-- Current atomic step: npm test 전체 → codex 리뷰 → artifact Reviews
+- Goal: capsule stub에 권장 `Cause` 줄, fix-bug·new-feature 스킬 안내 (check 동작 불변)
+- Current atomic step: 완료 — 메인테이너의 푸시·PR 지시 대기
 - Stop / human-decision condition:
 
 ## Constraints and settled decisions
