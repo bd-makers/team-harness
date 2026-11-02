@@ -23,6 +23,15 @@
         { "when": { "file": "yarn.lock" }, "run": "yarn install --frozen-lockfile" }
       ],
       "bun":  [{ "when": { "file": "bun.lock" }, "run": "bun install --frozen-lockfile" }]
+    },
+    "installTrace": {
+      "npm":  [{ "when": { "fileContains": ["package-lock.json", "\"node_modules/"] }, "trace": ["node_modules"] }],
+      "pnpm": [{ "when": { "file": "pnpm-lock.yaml" }, "trace": ["node_modules"] }],
+      "yarn": [
+        { "when": { "fileContains": ["yarn.lock", "__metadata"] }, "trace": [".yarn/install-state.gz", ".pnp.cjs", "node_modules"] },
+        { "when": { "file": "yarn.lock" }, "trace": ["node_modules"] }
+      ],
+      "bun":  [{ "when": { "file": "bun.lock" }, "trace": ["node_modules"] }]
     }
   },
   "delegate": [
