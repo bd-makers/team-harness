@@ -164,3 +164,5 @@
 | hslee | agent-failure-hardening | ✅ done | 2026-10-17 |
 | hslee | eval-defect-triage | ✅ done | 2026-11-01 |
 | hslee | stack-inprocess-docker | ✅ done | 2026-11-01 |
+| hslee | done-scope-line | ✅ done | 2026-11-02 |
+| hslee | done-tests-optional | ✅ done | 2026-11-02 |

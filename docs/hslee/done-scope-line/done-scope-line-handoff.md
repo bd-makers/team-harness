@@ -17,3 +17,7 @@ CHANGELOG.md                                       |  3 ++
  tests/fixtures/task-paths-golden/expected.txt      |  1 +
  tests/gate-command.test.mjs                        | 23 +++++++++
  13 files changed, 232 insertions(+), 3 deletions(-)
+
+## 2026-11-02T15:09:21.344Z — 완료
+
+태스크 종료.

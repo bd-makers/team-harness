@@ -17,3 +17,8 @@
 
 
 ## Learnings
+- 2026-11-02: 쌓은 PR(#159, base `fix/done-tests-optional`)이 앞 PR(#158) 머지 11초 뒤 base를 바꾸지 않은 채 머지되어
+  변경이 main에 빠졌다 — #160으로 다시 올렸다. GitHub는 앞 PR의 head 브랜치가 **삭제될 때만** 쌓인 PR의 base를 main으로
+  돌린다(이 저장소는 머지 후 브랜치를 자동 삭제하지 않는다). 쌓은 PR은 본문 안내만으로 부족하다 — 앞 PR 머지 직후
+  base를 직접 바꾸거나, 의존이 작으면 처음부터 쌓지 말고 한 PR로 묶는다. 머지 보고를 받으면 `git merge-base --is-ancestor <sha> origin/main`으로 반영을 확인한다.
+- 리뷰: 두 task 모두 Codex 리뷰를 돌리지 않았다(사용자 "바로 PR" 결정).

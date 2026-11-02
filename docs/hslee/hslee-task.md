@@ -3,6 +3,8 @@
 ## Open
 
 ## Completed
+- ✅ done-scope-line
+- ✅ done-tests-optional
 - ✅ eval-defect-triage
 - ✅ stack-inprocess-docker
 - ✅ agent-failure-hardening
