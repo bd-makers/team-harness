@@ -59,6 +59,10 @@ async function gateCommit(ctx) {
     if (r.status !== 0) return block(`커밋 게이트 실패: ${cmd} (exit ${r.status ?? r.signal})`);
   }
   console.error('✅ 검증 통과. 커밋을 진행합니다.');
+  // 위 줄은 stderr라 exit 0 훅에서 사용자에게 보이지 않는다 — 보장 범위는 미설정 안내와 같은 stdout systemMessage로 낸다.
+  // 명령 출력은 전부 stderr로 보냈으므로 stdout에는 이 JSON 한 줄만 남는다.
+  const shown = list.slice(0, 3).join(', ') + (list.length > 3 ? ` 외 ${list.length - 3}개` : '');
+  console.log(JSON.stringify({ systemMessage: `✅ 커밋 게이트 통과 — ${GATES_REL} 선언 ${list.length}개 실행(${shown}) · 이 머신 환경 기준, 선언 밖 검사는 없음` }));
 }
 
 function isCommandList(list) {
