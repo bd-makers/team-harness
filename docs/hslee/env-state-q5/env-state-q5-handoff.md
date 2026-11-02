@@ -25,3 +25,14 @@ docs/hslee/env-state-q5/env-state-q5-artifact.md |  9 ++++++++-
  docs/hslee/env-state-q5/env-state-q5-handoff.md  | 17 +++++++++++++++++
  docs/hslee/env-state-q5/env-state-q5-spec.md     |  2 ++
  4 files changed, 30 insertions(+), 4 deletions(-)
+
+## 2026-11-02T17:00:48.839Z — f9af7d1 test(stack): codex 리뷰 반영 — 순서 테스트 summary 단언·이름 범위, optional-only 한계 문서화
+CHANGELOG.md                                     |  2 +-
+ docs/hslee/env-state-q5/env-state-q5-artifact.md | 38 ++++++++++++++++++++++++
+ docs/hslee/env-state-q5/env-state-q5-context.md  |  2 +-
+ docs/hslee/env-state-q5/env-state-q5-handoff.md  |  7 +++++
+ docs/hslee/env-state-q5/env-state-q5-meta.json   | 14 ++++++++-
+ docs/hslee/env-state-q5/env-state-q5-plan.md     |  2 +-
+ docs/hslee/env-state-q5/env-state-q5-spec.md     |  2 ++
+ tests/detect-testing.test.mjs                    |  5 ++--
+ 8 files changed, 66 insertions(+), 6 deletions(-)
