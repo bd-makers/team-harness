@@ -92,6 +92,7 @@ $ session-context (exit 0)
 
 $ done (exit 0)
 done: tester/demo
+보장 범위 — 확인: plan 체크박스 · artifact 작성 · 미커밋 변경 · task 이후 커밋 | 확인 안 함: 테스트 파일 변경(tests: optional) · 리뷰 실행 기록(review: optional) · 검증 리뷰 기록(verify: optional) · 테스트 실행 결과·리뷰 내용
 handoff updated: docs/tester/demo/demo-handoff.md
 handoff updated: docs/tester/tester-handoff.md
 

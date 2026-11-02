@@ -7,7 +7,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import {
   runDone, taskArtifactTemplate, taskPlanTemplate, taskSpecTemplate, parsePorcelainPaths,
-  parseDoneEvidenceDeclaration, classifyChangedPaths, parseReviewMarkers, DONE_EVIDENCE_DEFAULT,
+  parseDoneEvidenceDeclaration, classifyChangedPaths, parseReviewMarkers, DONE_EVIDENCE_DEFAULT, describeDoneScope,
   VERIFY_KIND_SUFFIXES, parseMetaReviews, isCheckboxOnlyChange,
 } from '../src/commands/task.mjs';
 
@@ -657,6 +657,46 @@ async function runDoneCapture(dir, flags = {}) {
 
 // tests 가드는 옵트인이다(기본 optional, 2026-11-02 D11 정정) — 가드 자체를 검증하는 케이스는 required를 선언한다.
 const TESTS_REQUIRED_SPEC = '# demo — Spec\n\n## Done evidence\n\n```json\n{ "version": 1, "tests": "required" }\n```\n';
+
+// 보장 범위 줄은 이번 실행에서 실제로 돈 가드만 "확인"에 둔다 — 꺼진 가드를 확인했다고 적으면 이 줄 자체가 오신호다.
+test('describeDoneScope: 기본값이면 증거 3종을 선언값과 함께 확인 안 함에 둔다', () => {
+  const line = describeDoneScope({ evidence: { ...DONE_EVIDENCE_DEFAULT }, isGitRepo: true, windowKnown: true });
+  assert.equal(line, '보장 범위 — 확인: plan 체크박스 · artifact 작성 · 미커밋 변경 · task 이후 커밋'
+    + ' | 확인 안 함: 테스트 파일 변경(tests: optional) · 리뷰 실행 기록(review: optional) · 검증 리뷰 기록(verify: optional) · 테스트 실행 결과·리뷰 내용');
+});
+
+test('describeDoneScope: required 선언은 확인에 오지만 실행 결과는 언제나 확인 안 함이다', () => {
+  const line = describeDoneScope({ evidence: { tests: 'required', review: 'required', verify: 'optional' }, isGitRepo: true, windowKnown: true });
+  const [checked, unchecked] = line.split(' | ');
+  assert.match(checked, /테스트 파일 변경/);
+  assert.match(checked, /리뷰 실행 기록/);
+  assert.match(unchecked, /검증 리뷰 기록\(verify: optional\)/);
+  assert.match(unchecked, /테스트 실행 결과·리뷰 내용/);
+});
+
+test('describeDoneScope: 판정 창이 없으면 tests: required여도 테스트 가드를 확인했다고 적지 않는다', () => {
+  const line = describeDoneScope({ evidence: { tests: 'required', review: 'optional', verify: 'optional' }, isGitRepo: true, windowKnown: false });
+  const [checked, unchecked] = line.split(' | ');
+  assert.doesNotMatch(checked, /테스트 파일 변경|task 이후 커밋/);
+  assert.match(unchecked, /커밋·테스트 시각 가드\(판정 창 없음\)/);
+});
+
+test('describeDoneScope: git 저장소가 아니면 git 신호를 확인 안 함에 둔다', () => {
+  const line = describeDoneScope({ evidence: { ...DONE_EVIDENCE_DEFAULT }, isGitRepo: false, windowKnown: true });
+  const [checked, unchecked] = line.split(' | ');
+  assert.doesNotMatch(checked, /미커밋 변경|task 이후 커밋/);
+  assert.match(unchecked, /git 신호\(저장소 아님\)/);
+});
+
+test('done 통과 출력: done: 다음 줄에 spec 선언을 반영한 보장 범위를 찍는다', async () => {
+  const { dir } = await makeEvidenceFixture({ spec: TESTS_REQUIRED_SPEC, files: { 'src/app.mjs': 'export const x = 1;\n', 'tests/app.test.mjs': 'import "node:test";\n' } });
+  try {
+    const { logs } = await runDoneCapture(dir);
+    const i = logs.findIndex(l => l.startsWith('done:'));
+    assert.ok(i >= 0, `proceeds: ${JSON.stringify(logs)}`);
+    assert.match(logs[i + 1], /^보장 범위 — 확인: .*테스트 파일 변경.* \| 확인 안 함: .*review: optional/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
 
 test('spec 미선언 + 소스만 변경 → 통과 (tests 기본 optional)', async () => {
   const { dir } = await makeEvidenceFixture({ files: { 'src/app.mjs': 'export const x = 1;\n' } });
