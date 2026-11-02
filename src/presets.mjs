@@ -71,6 +71,13 @@ export async function holds(dir, pkg, cond) {
   throw new Error(`unknown preset condition: ${JSON.stringify(cond)}`);
 }
 
+// First entry whose `when` holds, read top-down like a commit list. The env rules (D12) use it:
+// which lockfile means which package manager or bootstrap command is known only to the preset.
+export async function firstHolding(dir, pkg, rules = []) {
+  for (const rule of rules) if (await holds(dir, pkg, rule.when)) return rule;
+  return null;
+}
+
 // null when absent; throws on malformed JSON or a non-object top level so callers can tell
 // "not configured" from "configured wrong".
 export async function readGates(targetDir) {
