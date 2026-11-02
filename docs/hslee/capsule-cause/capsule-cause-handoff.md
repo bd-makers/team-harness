@@ -56,3 +56,7 @@ CHANGELOG.md                                       |   1 +
  tests/fixtures/task-paths-golden/expected.txt      |   7 +-
  tests/migrate-templates.test.mjs                   |   2 +-
  18 files changed, 416 insertions(+), 8 deletions(-)
+
+## 2026-11-02T23:55:56.852Z — 완료
+
+태스크 종료.

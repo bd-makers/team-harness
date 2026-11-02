@@ -1,8 +1,10 @@
 # hslee — Tasks
 
 ## Open
+- env-state-q5 (created 2026-11-02)
 
 ## Completed
+- ✅ capsule-cause
 - ✅ done-scope-line
 - ✅ done-tests-optional
 - ✅ env-describe

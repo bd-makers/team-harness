@@ -3,8 +3,8 @@
   "task": "capsule-cause",
   "created": "2026-11-02",
   "firstActivatedAt": "2026-11-02T16:35:04.131Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-11-02T23:55:56.852Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [
