@@ -11,7 +11,7 @@ D12 정정 Q5의 한 축 — lockfile이 선언한 의존성 설치의 흔적이
 - [x] `stack` envelope `installTrace`·요약 축·warning·bootstrap `next_actions`를 구현한다 (5줄 예산 유지)
 - [x] `npm test` 전체 fail 0과 `docs:check`를 확인한다
 - [x] scratchpad e2e — lockfile만 있는 미설치·설치된 프로젝트에서 `stack --target`을 확인한다
-- [ ] codex 리뷰를 실행하고 판별·조치를 artifact `## Reviews`에 기록한다
+- [x] codex 리뷰를 실행하고 판별·조치를 artifact `## Reviews`에 기록한다
 - [x] CHANGELOG `## [Unreleased]`와 `skills/harness-team/SKILL.md`의 `stack` 줄에 소비자 영향을 적는다
 
 ## Ontology 변경 로그

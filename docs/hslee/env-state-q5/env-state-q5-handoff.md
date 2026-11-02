@@ -18,3 +18,10 @@ CHANGELOG.md                                     |   1 +
  tests/detect-testing.test.mjs                    |  51 ++++++++
  tests/presets.test.mjs                           |  34 +++++-
  14 files changed, 366 insertions(+), 10 deletions(-)
+
+## 2026-11-02T16:53:24.638Z — 3faa1cf docs(task): env-state-q5 결과·실측 범위·TCC 갱신
+docs/hslee/env-state-q5/env-state-q5-artifact.md |  9 ++++++++-
+ docs/hslee/env-state-q5/env-state-q5-context.md  |  6 +++---
+ docs/hslee/env-state-q5/env-state-q5-handoff.md  | 17 +++++++++++++++++
+ docs/hslee/env-state-q5/env-state-q5-spec.md     |  2 ++
+ 4 files changed, 30 insertions(+), 4 deletions(-)

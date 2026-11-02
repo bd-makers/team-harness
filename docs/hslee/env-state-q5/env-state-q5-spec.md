@@ -32,6 +32,8 @@ Q5의 다른 축(런타임 버전)과 Q1–Q4의 빈칸 보고는 답하지 않�
 - **Out**: poetry — 기본 venv가 저장소 밖(캐시 디렉터리)이라 디스크에서 관측할 흔적이 없다. 규칙을 두지 않는다(→ null).
 - **Out**: `bun.lockb`·`npm-shrinkwrap.json`·npm lockfileVersion 1 — bootstrap 규칙과 같은 lockfile 집합만 판정한다.
   lockfileVersion 1은 `"node_modules/` 키가 없어 판정에서 빠진다(놓침이지 오탐이 아니다).
+- **알려진 한계(오탐)**: npm 의존성이 **전부** 현재 OS에서 빠지는 optional이면 설치가 성공해도 `node_modules`가 없어 `absent`가 남는다
+  (codex P2, 2026-11-03 실측 재현). 가르려면 lockfile 항목 단위 판정(새 조건 종류)이 필요한데 그런 저장소는 드물어 받아들인다 — soft warning이다.
 
 ## 원천 검토 (R1)
 *원천 문서(PRD·Figma·API 문서·기획서·정책서) 사이의 충돌·누락·모순을 Plan 전에 검토한다(`/harness-interview`).

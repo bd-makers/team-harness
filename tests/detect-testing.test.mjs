@@ -364,7 +364,7 @@ test('CLI: render-state 고정은 감지·고정·유효 스택과 해제 방법
 // 실패했는데, 에이전트는 환경이 준비되지 않았다는 것을 몰랐다. 흔적이 없으면 warning과 bootstrap 명령을 넘긴다.
 const NPM_LOCK = { lockfileVersion: 3, packages: { '': { name: 'web' }, 'node_modules/vitest': { version: '3.0.0' } } };
 
-test('CLI: lockfile의 설치 흔적이 없으면 warning과 bootstrap 안내를 내고, 설치되면 success다', async () => {
+test('CLI: lockfile의 설치 흔적이 없으면 warning과 bootstrap 안내를 내고, 흔적 경로가 생기면 success다', async () => {
   await withProject({
     'package.json': { name: 'web', devDependencies: { vitest: '3.0.0' }, scripts: { test: 'vitest run' } },
     'package-lock.json': NPM_LOCK,
@@ -389,7 +389,8 @@ test('CLI: lockfile의 설치 흔적이 없으면 warning과 bootstrap 안내를
 test('CLI: summary가 가리키는 러너 부재 조치가 먼저이고 bootstrap 안내는 그 바로 뒤다', async () => {
   await withProject({ 'package.json': { name: 'bare' }, 'package-lock.json': NPM_LOCK }, async (dir) => {
     const env = JSON.parse((await cli(['stack', '--json', '--target', dir])).stdout);
-    assert.match(env.next_actions[0], /러너 부재 분기/);
+    assert.match(env.summary, /러너 부재 분기/);
+    assert.match(env.next_actions[0], /러너 부재 분기/, 'summary가 가리키는 조치와 next_actions[0]이 같다');
     assert.match(env.next_actions[1], /`npm ci`/);
   });
 });
