@@ -260,6 +260,7 @@ export function taskContextTemplate(name) {
 - Signal:
 - Tried:
 - Compact finding / current hypothesis:
+- Cause (intent | context | environment | verification | state | unknown):
 - Next discriminator:
 - Source (safe path or command):
 

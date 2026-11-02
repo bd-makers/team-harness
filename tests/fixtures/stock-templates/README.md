@@ -16,11 +16,12 @@
 | `2026-05-15-75bd1b61` | fix-bug · new-feature | 새 task 인터페이스 반영판 |
 | `2026-07-02-c12adc5a` | fix-bug | Pocock git-guardrails·diagnosing-bugs 흡수판 |
 | `2026-07-30-2bf26aa1` | fix-bug · new-feature | Task Context Card 도입판 |
-| `2026-09-03-58b22848` | new-feature · rules 2종 | D7(OpenCode/Gemini 제외)·감사 수정판 |
+| `2026-09-03-58b22848` | fix-bug · new-feature · rules 2종 | D7(OpenCode/Gemini 제외)·감사 수정판 (fix-bug는 capsule 원인 범주 직전판) |
 | `2026-09-07-286ef8e9` | new-feature | **Pocock Phase 3 수직 슬라이스 규율 직전판** |
+| `2026-09-08-c9480a32` | new-feature | capsule 원인 범주 직전판 |
 
-마지막 era가 이 refresh 경로를 만든 이유다 — `186e436`이 Phase 3를 템플릿에 넣었지만
+`2026-09-07-286ef8e9` era가 이 refresh 경로를 만든 이유다 — `186e436`이 Phase 3를 템플릿에 넣었지만
 `copyStaticAssets`의 `skipExisting` 때문에 기존 설치에는 영영 도달하지 않았다.
 
 새 era를 추가하려면 픽스처 파일과 `KNOWN_STOCK_TEMPLATE_SHA256` 항목을 **같이** 넣어야 한다 —
-테이블 드리프트 가드 테스트가 개수(현재 20)와 sha 일치를 둘 다 검사한다.
+테이블 드리프트 가드 테스트가 개수(현재 22)와 sha 일치를 둘 다 검사한다.

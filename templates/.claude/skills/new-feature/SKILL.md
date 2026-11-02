@@ -39,7 +39,7 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash
    `/harness-unittest file <경로>`(순수 로직) · `/harness-comptest`(컴포넌트·화면) ·
    `/harness-inttest`(프로세스 경계). 인자를 생략하면 `session` 기본값이라 세션 변경분을 통째로
    태워 위 슬라이스 규율과 어긋난다. 뮤테이션 자가점검과 동어반복·mock 반향 게이트가 거기 있다.
-4. 재현 가능한 실패는 `<name>-context.md`의 failure capsule에 신호·시도·현재 가설·다음 판별법·
+4. 재현 가능한 실패는 `<name>-context.md`의 failure capsule에 신호·시도·현재 가설·원인 범주(`Cause`, 권장 — 의도·컨텍스트·환경·검증·상태, 모르면 `unknown`)·다음 판별법·
    안전한 source 위치만 압축해 기록한다(최대 3개). raw stderr, 토큰, 비밀값, 전체 HTTP payload는 복사하지 않는다.
    해소 시 capsule을 제거하고 재발 방지 가치가 있으면 artifact의 `## Learnings`에 남긴다.
 5. 중요한 변경은 `AGENTS.md`의 **코드 리뷰 기준** 확인
