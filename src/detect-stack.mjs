@@ -22,12 +22,12 @@ const JS_LABELS = {
   node: 'Node.js',
 };
 
+// Which lockfile means which pm is node.json `env.packageManager`, first match wins (bun has two:
+// `bun.lock`, text and the default since 1.2, and the older binary `bun.lockb`). Without a lockfile
+// a parsed package.json means npm — not a preset rule, since a `file` condition passes a broken one.
 async function detectPackageManager(dir, pkg) {
-  if (await exists(join(dir, 'pnpm-lock.yaml'))) return 'pnpm';
-  if (await exists(join(dir, 'yarn.lock'))) return 'yarn';
-  // Bun writes a text lockfile (`bun.lock`) by default since 1.2; `bun.lockb` is the older binary one.
-  if (await exists(join(dir, 'bun.lockb')) || await exists(join(dir, 'bun.lock'))) return 'bun';
-  return pkg ? 'npm' : null;
+  const rule = await firstHolding(dir, pkg, (await presetEnv('node')).packageManager);
+  return rule?.id ?? (pkg ? 'npm' : null);
 }
 
 // `language` follows evidence, not the presence of package.json: a tsconfig or a typescript

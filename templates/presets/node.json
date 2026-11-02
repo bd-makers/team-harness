@@ -15,6 +15,11 @@
     "bun":  { "exec": "bunx",      "run": "bun run" }
   },
   "env": {
+    "packageManager": [
+      { "when": { "file": "pnpm-lock.yaml" }, "id": "pnpm" },
+      { "when": { "file": "yarn.lock" }, "id": "yarn" },
+      { "when": [{ "file": "bun.lockb" }, { "file": "bun.lock" }], "id": "bun" }
+    ],
     "bootstrap": {
       "npm":  [{ "when": { "file": "package-lock.json" }, "run": "npm ci" }],
       "pnpm": [{ "when": { "file": "pnpm-lock.yaml" }, "run": "pnpm install --frozen-lockfile" }],

@@ -19,6 +19,7 @@
 - **Python 저장소의 패키지 매니저가 `pip`으로 고정되던 것** (task `env-describe`). `pyproject.toml`만 보면 pm=`pip`, install=`pip install`(인수 없는 `pip install`은 실행되지 않는다)이었다. 이제 `uv.lock`이면 `uv`·`uv sync`, `poetry.lock`이면 `poetry`·`poetry install`이고, 그 외에는 `pip`·`(configure)`다. **소비자 영향:** uv·poetry 저장소에서 커밋 게이트를 확정해 둔 경우 다음 doctor가 "패키지 매니저 pip → uv(poetry)" 드리프트를 한 번 보고한다 — Python 프리셋에는 pm별 명령이 없어 제안 자체는 같고, `harness-team gate suggest`로 다시 확정하면 사라진다.
 
 ### Changed
+- **JS lockfile→패키지 매니저 판정을 프리셋 데이터로 옮겼다** (task `js-pm-preset`, D11·D12 미결 항목). `src/detect-stack.mjs`에 하드코딩돼 있던 `pnpm-lock.yaml`→pnpm·`yarn.lock`→yarn·`bun.lockb`/`bun.lock`→bun 판정이 이제 `templates/presets/node.json`의 `env.packageManager`(`{ when, id }`, 위에서 아래로 첫 매치)에 있고, 코드는 Python과 같은 `firstHolding()` 평가만 한다. lockfile이 없을 때 파싱된 `package.json`이면 npm이라는 기본값은 코드에 남는다 — `file` 조건은 손상된 `package.json`도 통과시켜 판정이 바뀌기 때문이다. **소비자 영향 없음:** 감지 순서·`packageManager`·`cmdInstall`·`stack --json`·AGENTS.md 관리 절·커밋 게이트 fingerprint가 그대로라 init·`gate suggest` 재실행이 필요 없다.
 - **`done` 가드의 `tests` 증거 기본값을 `required`에서 `optional`로 내렸다** (task `done-tests-optional`, D11 정정). spec에 `## Done evidence`를 선언하지 않은 task는 이제 소스만 바뀌어도, 기존 테스트 파일을 지워도 `done`이 막지 않는다. 종전 기본값은 D11("강제는 PR의 task 문서 하나뿐")에 적히지 않은 두 번째 강제였고, 엄격도를 하네스 기본값으로 올리면 팀원의 자유도가 떨어진다. **종전 동작이 필요한 팀은 spec에 `{ "version": 1, "tests": "required" }`를 선언한다.** 허용값에 `optional`을 추가했고, `skip`은 같은 뜻으로 계속 받는다. 새 spec 템플릿의 주석과 예시도 이에 맞췄다. 이미 만들어 두고 채우지 않은 spec은 새 템플릿과 글자가 달라져 `pr-check`의 "템플릿 그대로" 판정에 걸리지 않는다.
 
 ## [0.51.2] - 2026-11-01
