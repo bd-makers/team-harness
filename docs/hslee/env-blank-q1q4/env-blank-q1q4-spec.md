@@ -87,6 +87,8 @@ D12 정정의 하네스 역할 ① **빈칸 보고**를 구현한다. Q1–Q4 �
 - (open) D-9: 병행 세션 충돌. → 결정: 병행 세션이 `node.json`에 `env.packageManager`를 더하고 `detectPackageManager`를 옮긴다. 이 task는 그 함수와
   그 블록을 건드리지 않고, `declare`를 `env` 블록 **끝**(`installTrace` 뒤)에 더해 hunk가 겹치지 않게 한다. Q2 후보는 pm과 무관하게 모든
   lockfile을 나열하므로 pm 판정이 바뀌어도 Q2 결과는 같다.
+- (open) §5-A escalation — 영향 소스 5개·새 조건 종류 `nonEmptyKey`·doctor warning 등급(init 직후 doctor가 green이 아닐 수 있음).
+  → 결정: 메인테이너가 **권장안대로 진행**을 골랐다(2026-11-03). 기각된 선택지: doctor `optional` 등급(green 유지), Q1·Q2만으로 축소.
 - 다이어그램: 옵트인하지 않음(2026-11-03).
 - 검토 완료: 2026-11-03
 

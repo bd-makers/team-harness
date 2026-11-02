@@ -54,6 +54,11 @@ export function selectPreset(presets, stackId) {
 
 async function readText(p) { try { return await readFile(p, 'utf8'); } catch { return null; } }
 async function exists(p) { try { await access(p); return true; } catch { return false; } }
+async function readJson(p) { try { return JSON.parse(await readFile(p, 'utf8')); } catch { return null; } }
+
+const nonEmpty = v => (Array.isArray(v) ? v.length > 0
+  : v && typeof v === 'object' ? Object.keys(v).length > 0
+  : typeof v === 'string' && v.length > 0);
 
 // The condition kinds are generic data lookups; which file or script means what is known
 // only to the preset JSON. An array is any-of.
@@ -68,6 +73,8 @@ export async function holds(dir, pkg, cond) {
   // Apps ship their framework in `dependencies`; libraries keep it in peer/dev dependencies.
   if (cond.runtimeDependency) return Object.hasOwn(pkg?.dependencies ?? {}, cond.runtimeDependency);
   if (cond.fileContains) return (await readText(join(dir, cond.fileContains[0])))?.includes(cond.fileContains[1]) ?? false;
+  // A substring cannot tell `"dependencies": {}` from a real list, and pnpm keeps a one-line package.json as it was.
+  if (cond.nonEmptyKey) return nonEmpty((await readJson(join(dir, cond.nonEmptyKey[0])))?.[cond.nonEmptyKey[1]]);
   throw new Error(`unknown preset condition: ${JSON.stringify(cond)}`);
 }
 
@@ -78,12 +85,65 @@ export async function firstHolding(dir, pkg, rules = []) {
   return null;
 }
 
-// The file a single-file condition reads. A Q5 report points at the declaration's path, never its
-// content (D12); a `when` that names no single file is a preset authoring error, not "no lockfile".
+// The file a single-file condition reads. A report points at the declaration's path, never its
+// content (D12); a condition that names no single file is a preset authoring error, not "no lockfile".
+// `script` reads package.json, as holds() does.
 function condFile(cond) {
   if (cond?.file) return cond.file;
   if (cond?.fileContains) return cond.fileContains[0];
-  throw new Error(`installTrace rule needs a single-file when: ${JSON.stringify(cond)}`);
+  if (cond?.nonEmptyKey) return cond.nonEmptyKey[0];
+  if (cond?.script) return 'package.json';
+  throw new Error(`preset condition needs a single file: ${JSON.stringify(cond)}`);
+}
+
+// What a reader would add to answer a blank: the file, or the key inside it.
+function condHint(cond) {
+  if (cond?.nonEmptyKey) return `${cond.nonEmptyKey[0]}#${cond.nonEmptyKey[1]}`;
+  if (cond?.script) return `package.json#scripts.${cond.script}`;
+  return condFile(cond);
+}
+
+// D12 정정의 자기 서술 계약 Q1–Q4. When a question is asked is the harness's (D12 "해당 없으면 묻지 않는다");
+// which file answers it is the preset's `env.declare`. Q1 covers only the runtime-version half — the tools a
+// repo needs have no closed set of declaration formats. Q3 is never reported blank: whether a repo needs
+// services cannot be read off its declarations, so it is pointed at only when declared.
+export const DECLARATION_QUESTIONS = [
+  { key: 'runtimeVersion', question: 'Q1', label: '런타임 버전', asks: 'always' },
+  { key: 'lockfile', question: 'Q2', label: 'lockfile', asks: 'hasDependencies' },
+  { key: 'serviceFiles', question: 'Q3', label: '서비스·환경 변수 계약 파일', asks: 'whenDeclared' },
+  { key: 'bootstrap', question: 'Q4', label: 'bootstrap', asks: 'hasDependencies' },
+];
+
+// Q4's machine-readable answer is the pm's lockfile-keeping bootstrap rule (env-describe), so its `when`s
+// come first; scripts and files the preset names answer it too.
+function answers(env, key, pm) {
+  const own = env.declare[key] ?? [];
+  return key === 'bootstrap' ? [...(env.bootstrap?.[pm] ?? []).map(r => r.when), ...own] : own;
+}
+
+// Role ① of the D12 correction: per question, the paths of the declarations that answer it, `blank` when it is
+// asked and nothing does, null when it is not asked. null overall = the preset declares nothing (go, generic).
+export async function detectDeclarations(dir, stack) {
+  const { env } = selectPreset(await loadPresets(), stack.id);
+  if (!env?.declare) return null;
+  const pkg = await readPkg(dir);
+  const hasDependencies = await holds(dir, pkg, env.declare.hasDependencies ?? []);
+  const out = {};
+  for (const { key, question, asks } of DECLARATION_QUESTIONS) {
+    const paths = [];
+    for (const cond of answers(env, key, stack.packageManager)) if (await holds(dir, pkg, cond)) paths.push(condFile(cond));
+    const unique = [...new Set(paths)];
+    const asked = asks === 'always' || (asks === 'hasDependencies' && hasDependencies) || (asks === 'whenDeclared' && unique.length);
+    out[key] = asked ? { question, state: unique.length ? 'declared' : 'blank', paths: unique } : null;
+  }
+  return out;
+}
+
+// key → the declarations that would answer it, for a blank's report.
+export async function declarationHints(stack) {
+  const { env } = selectPreset(await loadPresets(), stack.id);
+  if (!env?.declare) return null;
+  return Object.fromEntries(DECLARATION_QUESTIONS.map(({ key }) => [key, [...new Set(answers(env, key, stack.packageManager).map(condHint))]]));
 }
 
 // Q5's install axis (D12): does the install the lockfile declares exist on disk? Which lockfile

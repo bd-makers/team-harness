@@ -13,6 +13,27 @@
     },
     "installTrace": {
       "uv": [{ "when": { "file": "uv.lock" }, "trace": [".venv"] }]
+    },
+    "declare": {
+      "hasDependencies": [
+        { "fileContains": ["pyproject.toml", "dependencies = [\n"] }, { "fileContains": ["pyproject.toml", "dependencies = [\""] },
+        { "fileContains": ["pyproject.toml", "[dependency-groups]"] }, { "file": "requirements.txt" }
+      ],
+      "runtimeVersion": [
+        { "file": ".python-version" }, { "fileContains": [".tool-versions", "python"] },
+        { "fileContains": ["mise.toml", "python"] }, { "fileContains": [".mise.toml", "python"] },
+        { "fileContains": ["pyproject.toml", "requires-python"] }, { "fileContains": ["pyproject.toml", "\npython = "] }
+      ],
+      "lockfile": [
+        { "file": "uv.lock" }, { "file": "poetry.lock" }, { "file": "pdm.lock" }, { "file": "pylock.toml" },
+        { "file": "Pipfile.lock" }, { "fileContains": ["requirements.txt", "=="] }
+      ],
+      "serviceFiles": [
+        { "file": "compose.yaml" }, { "file": "compose.yml" }, { "file": "docker-compose.yml" }, { "file": "docker-compose.yaml" },
+        { "file": ".devcontainer/devcontainer.json" }, { "file": ".devcontainer.json" },
+        { "file": ".env.example" }, { "file": ".env.sample" }, { "file": ".env.template" }
+      ],
+      "bootstrap": [{ "file": "script/bootstrap" }, { "file": "script/setup" }, { "file": "bin/setup" }]
     }
   },
   "commit": [

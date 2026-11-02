@@ -1,5 +1,6 @@
 // `harness-team stack` — read-only. 프로젝트의 stack profile(detect-stack)과 testing
-// profile(detect-testing), 그리고 lockfile이 선언한 설치의 흔적(D12 정정 Q5의 설치 축)을 한 번에 돌려준다.
+// profile(detect-testing), lockfile이 선언한 설치의 흔적(D12 정정 Q5의 설치 축), 그리고 Q1–Q4 환경 선언의
+// 경로·빈칸(D12 정정 역할 ①)을 한 번에 돌려준다.
 //
 // 이 커맨드는 commands/harness-{unittest,comptest,inttest}.md의 0단계에서 **판단이 없는 부분**만
 // 넘겨받았다. 설치하지 않고, 러너를 추천하지 않고, 묻지 않는다 — 러너 부재 분기는 AskUserQuestion과
@@ -10,7 +11,7 @@ import { detectTesting } from '../detect-testing.mjs';
 import { detectRepoShape, describeShape } from '../repo-shape.mjs';
 import { loadRenderState } from '../render-state.mjs';
 import { buildEnvelope, emitObservation } from '../observation.mjs';
-import { detectInstallTrace } from '../presets.mjs';
+import { detectInstallTrace, detectDeclarations } from '../presets.mjs';
 
 const NO_RUNNER_SUMMARY = '테스트 러너를 찾지 못했습니다 — 러너 부재 분기(문서 0단계)를 수행하세요';
 // 깨진 매니페스트를 "러너 없음"과 같은 문장으로 보고하면 envelope가 자기모순이 된다:
@@ -39,7 +40,11 @@ const isJsProject = (testing) => testing.manifest !== null;
 // 흔적은 관측이지 판정이 아니다 — "설치 흔적: 있음"은 설치가 있었다는 뜻일 뿐 lockfile과 일치한다는 뜻이 아니다.
 const traceLabel = (trace) => `${trace.lockfile} → ${trace.trace.join('|')}`;
 
-export function renderSummary(stack, testing, installTrace = null) {
+// D12 정정 역할 ①: 답한 질문은 선언의 경로만, 묻는 질문인데 답이 없으면 빈칸. 묻지 않는 질문(null)은 싣지 않는다.
+const declarationsLabel = (declarations) => Object.values(declarations ?? {}).filter(Boolean)
+  .map(d => `${d.question} ${d.state === 'blank' ? '빈칸' : d.paths.join('+')}`).join(', ');
+
+export function renderSummary(stack, testing, installTrace = null, declarations = null) {
   const runnerLine = testing.manifest === 'unreadable'
     ? '러너: 불명 (package.json 파싱 실패)'
     : isJsProject(testing)
@@ -52,6 +57,8 @@ export function renderSummary(stack, testing, installTrace = null) {
   ];
   if (stack.cmdBootstrap && stack.cmdBootstrap !== '(configure)') parts.push(`bootstrap: ${stack.cmdBootstrap}`);
   if (installTrace) parts.push(`설치 흔적: ${installTrace.state === 'present' ? '있음' : '없음'} (${traceLabel(installTrace)})`);
+  const declared = declarationsLabel(declarations);
+  if (declared) parts.push(`환경 선언: ${declared}`);
   if (testing.testingLibrary.length) parts.push(`TL: ${testing.testingLibrary.join('+')}`);
   if (testing.domEnv) parts.push(`DOM: ${testing.domEnv}`);
   if (testing.rnPreset) parts.push(`preset: ${testing.rnPreset}`);
@@ -129,7 +136,10 @@ export async function runStack(ctx) {
   // 읽기 전용 미리보기 — 에이전트가 init --yes 전에 감지된 모양을 사용자에게 확인받는 근거다.
   const repoShape = await detectRepoShape(ctx.targetDir);
   const installTrace = await detectInstallTrace(ctx.targetDir, stack);
-  const summary = renderSummary(stack, testing, installTrace);
+  // 빈칸은 status·next_actions를 바꾸지 않는다 — 에이전트가 고칠 상태가 아니고(D12: 추측한 선언은 없는 것보다 해롭다),
+  // 선언이 없는 저장소가 대부분이라 status로 올리면 그 분기가 모두 뒤집힌다. soft warning은 doctor가 낸다.
+  const declarations = await detectDeclarations(ctx.targetDir, stack);
+  const summary = renderSummary(stack, testing, installTrace, declarations);
   const unreadable = testing.manifest === 'unreadable';
   const runnerMissing = isJsProject(testing) && !unreadable && !testing.runner;
   const status = runnerMissing || unreadable || installTrace?.state === 'absent' ? 'warning' : 'success';
@@ -141,7 +151,7 @@ export async function runStack(ctx) {
       status,
       summary: unreadable ? UNREADABLE_SUMMARY : runnerMissing ? NO_RUNNER_SUMMARY : summary.join(' · '),
       nextActions: actions,
-      extra: { stack, testing, stackPin, repoShape, installTrace },
+      extra: { stack, testing, stackPin, repoShape, installTrace, declarations },
     }));
     return;
   }

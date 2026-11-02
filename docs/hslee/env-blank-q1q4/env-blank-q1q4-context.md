@@ -3,8 +3,8 @@
 
 ## Now
 - Goal: D12 역할 ① 빈칸 보고 — stack `declarations`·요약 축, doctor soft warning. Q2·Q4는 hasDependencies일 때만.
-- Current atomic step: 메인테이너 escalation 답 대기(영향 소스 5개·새 조건 `nonEmptyKey`·doctor 등급).
-- Stop / human-decision condition: escalation 답 전에는 코드를 쓰지 않는다.
+- Current atomic step: codex 리뷰(`--scope diff --base 84dd9fc`) 판별·조치 → artifact `## Reviews`.
+- Stop / human-decision condition: 푸시·PR은 메인테이너 지시 후. escalation은 "권장안대로 진행"으로 답함(2026-11-03).
 
 ## Constraints and settled decisions
 - 파일→질문 지식은 프리셋 `env.declare`에만(D11). 질문 의미(언제 묻나)는 코드 표.
