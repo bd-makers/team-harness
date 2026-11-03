@@ -6,8 +6,7 @@
       "Edit",
       "Write",
       "Glob",
-      "Grep",
-      "Bash(codex:*)"
+      "Grep"
     ],
     "ask": [
       "Bash(git push *)",

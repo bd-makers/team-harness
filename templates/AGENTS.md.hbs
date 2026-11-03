@@ -43,7 +43,7 @@
 | 에이전트 | 역할 | 호출 방식 |
 |---|---|---|
 | **Claude Code** | 리드 프로그래머 (drive) | 주 세션 |
-| **Codex** | 리뷰어 (read-only) | Bash: `codex exec --sandbox read-only` |
+| **Codex** | 리뷰어 (read-only) | `harness-team review codex` |
 | **Cursor** | 보조 에디터 (IDE) | `.cursor/rules/*.mdc` 자동 적용 |
 
 > **결정 규범** — 전문·근거·이력은 `docs/decisions.md`가 정본이다.
