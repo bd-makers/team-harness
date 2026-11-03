@@ -8,7 +8,7 @@ import { resolveStack } from '../detect-stack.mjs';
 import { resolveShape } from '../repo-shape.mjs';
 import { loadRenderState } from '../render-state.mjs';
 import { confirm } from '../prompt.mjs';
-import { applyProposal, buildProposal, describeProposal, readGates, GATES_REL } from '../presets.mjs';
+import { applyProposal, buildProposal, describeProposal, detectInstallTrace, readGates, GATES_REL } from '../presets.mjs';
 
 const CONFIG_HINT = `${GATES_REL} 의 commit 을 고치거나 \`harness-team gate suggest\` 를 실행하세요.`;
 
@@ -56,13 +56,28 @@ async function gateCommit(ctx) {
     // Command output goes to stderr: that is the channel Claude reads when a PreToolUse hook exits 2.
     const r = spawnSync('/bin/sh', ['-c', cmd], { cwd: ctx.targetDir, stdio: ['ignore', 2, 2] });
     if (r.status === 127) return block(`설정 오류: 명령을 찾을 수 없습니다 — ${cmd}\n   → ${CONFIG_HINT}`);
-    if (r.status !== 0) return block(`커밋 게이트 실패: ${cmd} (exit ${r.status ?? r.signal})`);
+    if (r.status !== 0) return block(`커밋 게이트 실패: ${cmd} (exit ${r.status ?? r.signal})${await installHint(ctx.targetDir)}`);
   }
   console.error('✅ 검증 통과. 커밋을 진행합니다.');
   // 위 줄은 stderr라 exit 0 훅에서 사용자에게 보이지 않는다 — 보장 범위는 미설정 안내와 같은 stdout systemMessage로 낸다.
   // 명령 출력은 전부 stderr로 보냈으므로 stdout에는 이 JSON 한 줄만 남는다.
   const shown = list.slice(0, 3).join(', ') + (list.length > 3 ? ` 외 ${list.length - 3}개` : '');
   console.log(JSON.stringify({ systemMessage: `✅ 커밋 게이트 통과 — ${GATES_REL} 선언 ${list.length}개 실행(${shown}) · 이 머신 환경 기준, 선언 밖 검사는 없음` }));
+}
+
+// A failing gate looks like a code defect even when the install is missing (heliosent-profile,
+// 2026-10-11: no node_modules in a fresh worktree, tsc failed). The `stack` skill says to check
+// installTrace first, but that text is not loaded when the hook fires — so the block says it.
+// Only a hint: any error here leaves the block message as it was.
+async function installHint(targetDir) {
+  try {
+    const { stack: pin } = await loadRenderState(targetDir);
+    const stack = await resolveStack(targetDir, pin);
+    const trace = await detectInstallTrace(targetDir, stack);
+    if (trace?.state !== 'absent') return '';
+    const how = stack.cmdBootstrap !== '(configure)' ? `\`${stack.cmdBootstrap}\`` : '저장소의 설치 방법';
+    return `\n   ℹ️ 환경 원인일 수 있습니다 — ${trace.lockfile}은 있는데 설치 흔적(${trace.trace.join('|')})이 없습니다. 코드를 고치기 전에 ${how}로 준비하세요.`;
+  } catch { return ''; }
 }
 
 function isCommandList(list) {

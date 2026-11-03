@@ -75,6 +75,23 @@ test('gate commit: 첫 실패에서 차단하고 다음 명령은 실행하지 �
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+test('gate commit: 실패했는데 lockfile만 있고 설치 흔적이 없으면 환경 원인 단서와 bootstrap을 붙인다', async () => {
+  const dir = await fixture({ commit: ['node -e "process.exit(3)"'] });
+  try {
+    await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'x', dependencies: { a: '1' } }));
+    await writeFile(join(dir, 'pnpm-lock.yaml'), 'lockfileVersion: 9\n');
+    const r = await capture(() => gate(dir, ['commit']));
+    assert.equal(r.exitCode, 2);
+    assert.match(r.errs, /환경 원인일 수 있습니다 — pnpm-lock.yaml은 있는데 설치 흔적\(node_modules\)이 없습니다/);
+    assert.match(r.errs, /`pnpm install --frozen-lockfile`/);
+
+    await mkdir(join(dir, 'node_modules'));
+    const present = await capture(() => gate(dir, ['commit']));
+    assert.equal(present.exitCode, 2);
+    assert.doesNotMatch(present.errs, /환경 원인/, '설치 흔적이 있으면 단서를 내지 않는다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('gate commit: 명령을 찾을 수 없으면(127) 설정 오류로 차단한다', async () => {
   const dir = await fixture({ commit: ['definitely-not-a-cmd-xyz'] });
   try {
