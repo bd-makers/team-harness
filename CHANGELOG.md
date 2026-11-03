@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.53.0] - 2026-11-04
+
 ### Changed
 - **`/verify` 스킬이 커밋 게이트 목록을 정본으로 읽는다** (task `verify-gates-source`, 하위 시스템 감사 후보 A). 종전 `/verify`는 AGENTS.md `## 명령`의 typecheck·lint·test 세 줄만 읽었는데, 그 줄은 package.json 스크립트에서만 나오고 커밋 게이트(`.harness/gates.json`)는 프리셋 규칙에서 나와 둘이 갈렸다 — Python은 `## 명령` 세 줄이 늘 `(configure)`라 `/verify`가 "미설정"으로 건너뛰는데 게이트는 pytest·ruff를 돌렸다. 이제 `.harness/gates.json`이 있으면 `commit`의 명령(객체 형식이면 모든 workspace 목록을 중복 없이)을 저장소 루트에서 **전부** 실행해 명령마다 ✅/❌로 보고한다 — 첫 실패에서 멈추지 않는다. 파일이 깨졌거나 형식이 틀리면 "설정 오류"로 보고하고 `## 명령`으로 내려가지 않는다(게이트와 같은 원칙). gates.json이 없을 때만 종전처럼 `## 명령`을 쓴다. 실패가 있으면 코드를 고치기 전에 `harness-team stack --json`의 `installTrace`를 보라는 안내가 붙는다. `harness-team gate commit`을 그대로 부르지 않은 이유: workspace 객체 형식은 바뀐 파일이 없으면 아무것도 돌리지 않고, 첫 실패에서 멈춘다. AGENTS.md는 바뀌지 않는다(eager 0 B). **소비자 영향:** `harness-team migrate`의 템플릿 refresh가 갱신한다 — 직전 판을 stock으로 등록했으므로(`KNOWN_STOCK_TEMPLATE_SHA256`) 손대지 않은 설치본만 바뀌고, 고친 설치본은 "looks customized" 경고만 받는다. 플러그인 갱신만으로는 닿지 않는다.
 

@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.52.0</span>
+      <span class="tag tag-purple">v0.53.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.53.0 — 리뷰어 권한을 줄이고 검증과 게이트가 같은 목록을 본다:</strong>
+    <br>
+    <code>0.53.0</code> 나머지 네 하위 시스템(지시·도구·상태·피드백) 감사에서 나온 후보 셋이다. <strong>템플릿 settings의 <code>Bash(codex:*)</code>가 codex의 샌드박스 해제 플래그까지 승인 없이 허용해 뺐다</strong> — Bash 규칙은 명령 전체를 매칭하므로 접두로 좁혀도 뒤에 붙는 플래그를 막지 못한다. 리뷰는 <code>harness-team review codex</code>가 직접 실행하므로 영향이 없고, 기존 설치에서는 <code>migrate</code>가 정확히 그 문자열 하나만 지운다. <code>/verify</code>는 <code>.harness/gates.json</code>의 커밋 게이트 목록을 전부 돌려 명령마다 보고하고(없을 때만 <code>## 명령</code>), 게이트가 실패했는데 설치 흔적이 없으면 차단 메시지에 환경 원인 단서와 bootstrap 명령이 붙는다. 소비자는 <strong>플러그인 갱신 + <code>migrate</code> + <code>init --yes</code></strong>(역할 표)다.
+    <br><br>
     <strong>🆕 0.52.0 — 에이전트가 묻지 않고도 환경이 준비됐는지 안다:</strong>
     <br>
     <code>0.52.0</code> <strong><code>harness-team stack</code>·doctor가 저장소가 답하지 못한 환경 질문 Q1–Q4(런타임 버전·잠금·서비스 계약·bootstrap)를 알리고(<code>declarations</code>), lockfile이 선언한 의존성의 설치 흔적을 보고한다(<code>installTrace</code>, 없으면 <code>status: warning</code>과 bootstrap 명령 안내)</strong> — 선언 파일은 경로만 가리키고 하네스가 만들지 않는다. 규칙은 프리셋 <code>env</code>에만 있고(D11), JS lockfile→pm 판정도 그리로 옮겼다. AGENTS.md <code>## 명령</code>에 lockfile을 지키는 <code>bootstrap</code> 줄, Python은 uv·poetry를 감지한다. <code>done</code>은 통과 출력에 보장 범위 한 줄을 적고 <strong><code>tests</code> 증거 기본값이 <code>optional</code></strong>로 내려갔다(필요하면 spec에 <code>"tests": "required"</code>). failure capsule에 원인 범주 <code>Cause</code> 줄(권장). Q5 런타임 축(선언 대 실제 런타임)은 파일로 관측할 수 없어 만들지 않았다. 소비자는 <strong>플러그인 갱신 + <code>init --yes</code> + <code>migrate</code></strong>이고, doctor가 런타임 버전 선언 없는 저장소에서 새 warning을 낸다.
@@ -1089,7 +1093,7 @@
       </div>
       <div class="card card-accent-purple">
         <h3>✅ /verify</h3>
-        <p>완료 선언 전 검증 체크리스트 실행. typecheck · lint · test · 수동 확인 · 코드 리뷰 기준 대조.</p>
+        <p>완료 선언 전 검증 실행. <code>.harness/gates.json</code>의 커밋 게이트 목록을 전부 돌려 명령마다 보고하고(0.53.0), 파일이 없을 때만 AGENTS.md <code>## 명령</code>의 typecheck · lint · test.</p>
       </div>
     </div>
 
@@ -2915,7 +2919,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.52.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.53.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

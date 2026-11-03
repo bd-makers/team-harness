@@ -284,7 +284,7 @@
     <h1>Task Workflow Simulation</h1>
     <p>새로운 harness task 시스템의 전체 흐름 — init부터 완료, 세션 재개, task 전환까지의 시나리오별 시뮬레이션</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.52.0</span>
+      <span class="tag tag-purple">v0.53.0</span>
       <span class="tag tag-blue">post-commit 자동화</span>
       <span class="tag tag-green">증거 기반 종결 가드 7종</span>
       <span class="tag tag-orange">원장은 생성물</span>
@@ -293,7 +293,9 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #a78bfa;background:rgba(167,139,250,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
-    <strong>🆕 0.40.1–0.52.0 —user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키 · 폴더 없는 done task · PR 없는 위키 컴파일 · 리뷰 scope 판정 정정 · worktree 리뷰 범위 확장 · scope 오류 안내 정정 · pre-push가 무관 히스토리 브랜치를 건너뜀 · 소급 위키 컴파일 후보 목록 · eval 기반 명령 문서 정정 · stack 인프로세스 DB 안내 · done tests 기본 optional:</strong>
+    <strong>🆕 0.40.1–0.53.0 — user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키 · 폴더 없는 done task · PR 없는 위키 컴파일 · 리뷰 scope 판정 정정 · worktree 리뷰 범위 확장 · scope 오류 안내 정정 · pre-push가 무관 히스토리 브랜치를 건너뜀 · 소급 위키 컴파일 후보 목록 · eval 기반 명령 문서 정정 · stack 인프로세스 DB 안내 · done tests 기본 optional · 리뷰어 allow 제거:</strong>
+    <br>
+    <code>0.53.0</code> 템플릿 settings에서 <code>Bash(codex:*)</code>를 뺐고(<code>migrate</code>가 기존 설치에서 지운다) <code>/verify</code>가 커밋 게이트 목록을 정본으로 읽는다 — 아래 시나리오의 흐름·가드는 그대로다.
     <br>
     <code>0.52.0</code> 종결 가드 5번(테스트 증거)이 기본 OFF가 됐다 — spec이 <code>"tests": "required"</code>를 선언한 task에서만 돈다(아래 종결 가드 목록). <code>done</code> 통과 출력에 보장 범위 한 줄이 붙고, <code>stack</code>이 환경 빈칸·설치 흔적을 보고한다 — 나머지 흐름은 그대로다.
     <br>
@@ -1201,7 +1203,7 @@ login-bug
 </main>
 
 <footer>
-  harness-aijient-team-plugin v0.52.0 — Task Workflow Simulation &nbsp;·&nbsp; 2026-11-03
+  harness-aijient-team-plugin v0.53.0 — Task Workflow Simulation &nbsp;·&nbsp; 2026-11-04
 </footer>
 
 
