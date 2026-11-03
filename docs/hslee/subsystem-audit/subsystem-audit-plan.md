@@ -11,7 +11,7 @@
 - [x] spec에 감사표·판정·후보 task 기록
 - [x] artifact에 판정 요약·후보·측정값·학습 기록
 - [x] 검증 — `npm test` fail 0(1,299개 중 pass 1,298), `npm run docs:check` 최신
-- [ ] 감사 결과 커밋(push·PR 없음)
+- [x] 감사 결과 커밋(push·PR 없음) — 로컬 main `e5f2142`(커밋 위치는 메인테이너 선택)
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
