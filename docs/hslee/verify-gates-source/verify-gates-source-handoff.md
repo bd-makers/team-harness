@@ -17,3 +17,8 @@ CHANGELOG.md                                       |  3 ++
  tests/fixtures/stock-templates/README.md           |  4 +-
  tests/migrate-templates.test.mjs                   |  2 +-
  13 files changed, 197 insertions(+), 15 deletions(-)
+
+## 2026-11-03T16:26:50.236Z — a29ec7b chore(task): verify-gates-source handoff 갱신 + 검증·커밋 단계 체크
+.../verify-gates-source/verify-gates-source-handoff.md   | 16 ++++++++++++++++
+ .../verify-gates-source/verify-gates-source-plan.md      |  4 ++--
+ 2 files changed, 18 insertions(+), 2 deletions(-)
