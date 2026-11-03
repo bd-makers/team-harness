@@ -8,8 +8,8 @@
 - [x] 직전 판을 stock fixture로 보존(`2026-09-03-58b22848`)·`KNOWN_STOCK_TEMPLATE_SHA256` 등록
 - [x] 템플릿 `verify/SKILL.md` 갱신(안 ②)
 - [x] fixtures README·드리프트 가드 개수(22 → 23)·CHANGELOG `[Unreleased]`
-- [ ] 커밋 후 `npm test` fail 0(완전성 가드는 HEAD 기준), `docs:check` 최신
-- [ ] 커밋(브랜치 `feat/verify-gates-source`, push 없음)
+- [x] 커밋 후 `npm test` fail 0(1,302개 중 pass 1,301, 완전성 가드 포함), `docs:check` 최신
+- [x] 커밋(브랜치 `feat/verify-gates-source` `ff91954`, push 없음)
 
 ## Ontology 변경 로그
 - (none)
