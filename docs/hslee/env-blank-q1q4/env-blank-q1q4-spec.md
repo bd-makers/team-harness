@@ -25,7 +25,7 @@ D12 정정의 하네스 역할 ① **빈칸 보고**를 구현한다. Q1–Q4 �
 
 - **In**: 프리셋 `env.declare` — `templates/presets/node.json`·`python.json`. 키: `hasDependencies`(적용 조건),
   `runtimeVersion`(Q1)·`lockfile`(Q2)·`serviceFiles`(Q3)·`bootstrap`(Q4)의 답 후보 조건 목록.
-- **In**: `holds()`의 새 조건 종류 1개 `nonEmptyKey: [file, key]` — JSON 파일 최상위 키의 값이 비어 있지 않은가(D-2).
+- **In**: `holds()`의 새 조건 종류 1개 `nonEmptyKey: [file, ...keys]` — JSON 파일의 (중첩) 키 값이 비어 있지 않은가(D-2).
 - **In**: 평가기 `detectDeclarations(dir, stack)` — `src/presets.mjs`. `condFile()`을 일반화한다(`script` → `package.json`, `nonEmptyKey` → 그 파일).
 - **In**: `stack` envelope 최상위 `declarations`, 요약 축 1개 — `src/commands/stack.mjs`.
 - **In**: doctor 검사 `env declarations` — `src/commands/doctor.mjs`. init-smoke e2e의 "doctor green" 단언을 새 계약에 맞춘다(D-6).
@@ -36,9 +36,11 @@ D12 정정의 하네스 역할 ① **빈칸 보고**를 구현한다. Q1–Q4 �
 - **Out**: lockfile 미추적(gitignore) — git 상태가 필요하고 `stack --target`은 git 밖 디렉터리도 본다. 디스크 존재만 본다.
 - **Out**: go·generic — `generic.json`에 `declare`가 없어 묻지 않는다(`declarations: null`). go.mod `go` 지시자는 다음 단위.
 - **Out**: workspace별 판정(루트만), `detectStack` profile·AGENTS.md 관리 절 렌더(init·settings allowlist가 읽는다).
-- **알려진 한계**: 텍스트 needle은 형식에 기댄다 — pyproject는 `dependencies = [\n`·`dependencies = ["`·`[dependency-groups]`로 의존성을 보고
-  (CRLF·poetry 1의 `[tool.poetry.dependencies]`만 있는 저장소는 놓친다), `.tool-versions`·`mise.toml`은 `node`·`python` 부분 문자열로 본다
-  (다른 맥락의 같은 글자는 "답함"으로 센다). 놓침은 경고가 **안 나는** 쪽이다 — soft warning이라 오탐보다 덜 해롭다.
+- **알려진 한계**: 텍스트 needle은 형식에 기댄다 — pyproject는 따옴표가 바로 뒤따르는 `dependencies = ["`·`dependencies = [ "`·
+  `dependencies = [\n    "`(uv 표기)만 의존성으로 본다. 빈 목록의 어떤 표기도 의존성이 아니고, 다른 들여쓰기·CRLF·`[dependency-groups]`만 있는 저장소·
+  poetry 1의 `[tool.poetry.dependencies]`·`requirements.txt`만 있는 저장소는 놓친다. `requirements.txt`는 `--hash=`·pip-compile·uv 생성 헤더가 있을 때만
+  lock이다. `.tool-versions`·`mise.toml`은 `node`·`python` 부분 문자열로 본다(다른 맥락의 같은 글자는 "답함"으로 센다).
+  남은 놓침은 모두 경고가 **안 나는** 쪽이다 — 의존성 0개 오탐은 두지 않는다(codex P2, 2026-11-03 조치).
 
 ## 원천 검토 (R1)
 *원천 문서(PRD·Figma·API 문서·기획서·정책서) 사이의 충돌·누락·모순을 Plan 전에 검토한다(`/harness-interview`).
@@ -103,8 +105,8 @@ D12 정정의 하네스 역할 ① **빈칸 보고**를 구현한다. Q1–Q4 �
                       { "nonEmptyKey": ["package.json", "optionalDependencies"] }],
   "runtimeVersion": [{ "file": ".nvmrc" }, { "file": ".node-version" }, { "fileContains": [".tool-versions", "node"] },
                      { "fileContains": ["mise.toml", "node"] }, { "fileContains": [".mise.toml", "node"] },
-                     { "nonEmptyKey": ["package.json", "engines"] }, { "nonEmptyKey": ["package.json", "devEngines"] },
-                     { "nonEmptyKey": ["package.json", "volta"] }],
+                     { "nonEmptyKey": ["package.json", "engines", "node"] }, { "nonEmptyKey": ["package.json", "devEngines", "runtime"] },
+                     { "nonEmptyKey": ["package.json", "volta", "node"] }],
   "lockfile": [{ "file": "package-lock.json" }, { "file": "npm-shrinkwrap.json" }, { "file": "pnpm-lock.yaml" },
                { "file": "yarn.lock" }, { "file": "bun.lock" }, { "file": "bun.lockb" }],
   "serviceFiles": [{ "file": "compose.yaml" }, { "file": "compose.yml" }, { "file": "docker-compose.yml" }, { "file": "docker-compose.yaml" },
@@ -114,9 +116,9 @@ D12 정정의 하네스 역할 ① **빈칸 보고**를 구현한다. Q1–Q4 �
 }
 ```
 
-Python: `hasDependencies` = pyproject `dependencies = [\n`·`dependencies = ["`·`[dependency-groups]`·`requirements.txt` 존재,
+Python: `hasDependencies` = pyproject `dependencies = ["`·`dependencies = [ "`·`dependencies = [\n    "`,
 `runtimeVersion` = `.python-version`·`.tool-versions`∋`python`·`mise.toml`/`.mise.toml`∋`python`·pyproject∋`requires-python`·pyproject∋`\npython = `(poetry 1),
-`lockfile` = `uv.lock`·`poetry.lock`·`pdm.lock`·`pylock.toml`·`Pipfile.lock`·`requirements.txt`∋`==`, `serviceFiles`는 node와 같고,
+`lockfile` = `uv.lock`·`poetry.lock`·`pdm.lock`·`pylock.toml`·`Pipfile.lock`·`requirements.txt`∋(`--hash=`|pip-compile·uv 생성 헤더), `serviceFiles`는 node와 같고,
 `bootstrap` = `script/bootstrap`·`script/setup`·`bin/setup`.
 
 **코드(`src/presets.mjs`)**: 질문 표는 코드에 고정한다 — `[runtimeVersion, Q1, 언제나]`, `[lockfile, Q2, hasDependencies]`,

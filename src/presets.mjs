@@ -74,7 +74,11 @@ export async function holds(dir, pkg, cond) {
   if (cond.runtimeDependency) return Object.hasOwn(pkg?.dependencies ?? {}, cond.runtimeDependency);
   if (cond.fileContains) return (await readText(join(dir, cond.fileContains[0])))?.includes(cond.fileContains[1]) ?? false;
   // A substring cannot tell `"dependencies": {}` from a real list, and pnpm keeps a one-line package.json as it was.
-  if (cond.nonEmptyKey) return nonEmpty((await readJson(join(dir, cond.nonEmptyKey[0])))?.[cond.nonEmptyKey[1]]);
+  // [file, ...keys] walks nested keys — `engines` holding only `npm` is not a runtime version.
+  if (cond.nonEmptyKey) {
+    const [file, ...keys] = cond.nonEmptyKey;
+    return nonEmpty(keys.reduce((v, k) => v?.[k], await readJson(join(dir, file))));
+  }
   throw new Error(`unknown preset condition: ${JSON.stringify(cond)}`);
 }
 
@@ -98,7 +102,7 @@ function condFile(cond) {
 
 // What a reader would add to answer a blank: the file, or the key inside it.
 function condHint(cond) {
-  if (cond?.nonEmptyKey) return `${cond.nonEmptyKey[0]}#${cond.nonEmptyKey[1]}`;
+  if (cond?.nonEmptyKey) return `${cond.nonEmptyKey[0]}#${cond.nonEmptyKey.slice(1).join('.')}`;
   if (cond?.script) return `package.json#scripts.${cond.script}`;
   return condFile(cond);
 }

@@ -41,8 +41,8 @@
       "runtimeVersion": [
         { "file": ".nvmrc" }, { "file": ".node-version" }, { "fileContains": [".tool-versions", "node"] },
         { "fileContains": ["mise.toml", "node"] }, { "fileContains": [".mise.toml", "node"] },
-        { "nonEmptyKey": ["package.json", "engines"] }, { "nonEmptyKey": ["package.json", "devEngines"] },
-        { "nonEmptyKey": ["package.json", "volta"] }
+        { "nonEmptyKey": ["package.json", "engines", "node"] }, { "nonEmptyKey": ["package.json", "devEngines", "runtime"] },
+        { "nonEmptyKey": ["package.json", "volta", "node"] }
       ],
       "lockfile": [
         { "file": "package-lock.json" }, { "file": "npm-shrinkwrap.json" }, { "file": "pnpm-lock.yaml" },

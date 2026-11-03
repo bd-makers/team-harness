@@ -12,7 +12,7 @@ D12 정정 역할 ① 빈칸 보고 — `stack`·doctor가 Q1(런타임 버전)�
 - [x] doctor `env declarations` 검사를 구현하고 init-smoke e2e 단언을 새 계약에 맞춘다
 - [x] `npm test` 전체 fail 0과 `docs:check`를 확인한다
 - [x] scratchpad e2e — 선언 있는/없는 프로젝트를 `stack --target`·`doctor`로 확인한다
-- [ ] codex 리뷰를 실행하고 판별·조치를 artifact `## Reviews`에 기록한다
+- [x] codex 리뷰를 실행하고 판별·조치를 artifact `## Reviews`에 기록한다
 - [x] CHANGELOG `## [Unreleased]`와 `skills/harness-team/SKILL.md`의 `stack` 줄에 소비자 영향을 적는다
 
 ## Ontology 변경 로그

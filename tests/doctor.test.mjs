@@ -1374,7 +1374,7 @@ test('checkEnvDeclarations: 빈칸이면 후보와 함께 warning, 전부 답했
     await writeFile(join(dir, 'compose.yaml'), 'services: {}\n');
     const blank = await checkEnvDeclarations(dir);
     assert.equal(blank.status, 'warning');
-    assert.match(blank.detail, /Q1 런타임 버전\(후보: \.nvmrc, .*package\.json#engines/);
+    assert.match(blank.detail, /Q1 런타임 버전\(후보: \.nvmrc, .*package\.json#engines\.node/);
     assert.match(blank.detail, /Q2 lockfile\(후보: package-lock\.json/);
     assert.match(blank.detail, /Q4 bootstrap\(후보: package-lock\.json, .*package\.json#scripts\.setup/);
     assert.match(blank.detail, /추측해 선언 파일을 만들지 말고/);
