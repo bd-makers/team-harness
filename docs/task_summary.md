@@ -171,6 +171,7 @@
 | hslee | env-describe | ✅ done | 2026-11-02 |
 | hslee | env-state-q5 | ✅ done | 2026-11-02 |
 | hslee | js-pm-preset | ✅ done | 2026-11-02 |
+| hslee | codex-allow-scope | ✅ done | 2026-11-03 |
 | hslee | env-runtime-q5 | ✅ done | 2026-11-03 |
 | hslee | gate-fail-cause | ✅ done | 2026-11-03 |
 | hslee | subsystem-audit | 🔄 open | 2026-11-03 |

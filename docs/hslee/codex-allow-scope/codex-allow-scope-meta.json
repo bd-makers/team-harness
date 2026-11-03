@@ -3,8 +3,8 @@
   "task": "codex-allow-scope",
   "created": "2026-11-03",
   "firstActivatedAt": "2026-11-03T15:39:25.718Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-11-03T15:56:16.587Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": []
