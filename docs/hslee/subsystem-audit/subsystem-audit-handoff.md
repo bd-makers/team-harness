@@ -10,3 +10,8 @@
  docs/hslee/subsystem-audit/subsystem-audit-plan.md |  22 +++
  docs/hslee/subsystem-audit/subsystem-audit-spec.md | 207 +++++++++++++++++++++
  6 files changed, 317 insertions(+)
+
+## 2026-11-03T15:07:29.108Z — 2b78c74 chore(task): subsystem-audit handoff 갱신 + 커밋 단계 체크
+docs/hslee/subsystem-audit/subsystem-audit-handoff.md | 9 +++++++++
+ docs/hslee/subsystem-audit/subsystem-audit-plan.md    | 2 +-
+ 2 files changed, 10 insertions(+), 1 deletion(-)
