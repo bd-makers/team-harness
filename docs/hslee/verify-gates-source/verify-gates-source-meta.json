@@ -3,8 +3,8 @@
   "task": "verify-gates-source",
   "created": "2026-11-03",
   "firstActivatedAt": "2026-11-03T16:19:38.660Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-11-03T16:31:16.367Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": []
