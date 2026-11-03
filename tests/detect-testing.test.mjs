@@ -168,7 +168,12 @@ test('packSummary: 축이 몇 개든 5줄을 넘지 않는다', async () => {
     '.env.test': 'X=1\n',
   }, async (dir) => {
     const testing = await detectTesting(dir);
-    const parts = renderSummary({ stackLabel: 'Next.js', language: 'TypeScript', packageManager: 'npm' }, testing);
+    const trace = { state: 'absent', lockfile: 'package-lock.json', trace: ['node_modules'] };
+    const declarations = {
+      runtimeVersion: { question: 'Q1', state: 'blank', paths: [] }, lockfile: { question: 'Q2', state: 'declared', paths: ['package-lock.json'] },
+      serviceFiles: { question: 'Q3', state: 'declared', paths: ['compose.yaml', '.env.example'] }, bootstrap: { question: 'Q4', state: 'declared', paths: ['package-lock.json'] },
+    };
+    const parts = renderSummary({ stackLabel: 'Next.js', language: 'TypeScript', packageManager: 'npm', cmdBootstrap: 'npm ci' }, testing, trace, declarations);
     assert.ok(parts.length > SUMMARY_MAX_LINES, '이 fixture 는 축이 상한보다 많아야 의미가 있다');
     assert.ok(packSummary(parts).length <= SUMMARY_MAX_LINES);
     assert.equal(packSummary(parts).join(' · '), parts.join(' · '), '포장이 축을 잃거나 순서를 바꾸지 않는다');
@@ -410,4 +415,46 @@ test('CLI: uv.lock은 있고 .venv가 없으면 warning과 `uv sync --locked` �
     assert.equal(env.status, 'warning');
     assert.match(env.next_actions[0], /uv\.lock → \.venv.*`uv sync --locked`/);
   });
+});
+
+// D12 정정 역할 ① 빈칸 보고. 요약 축 하나로 답한 선언의 경로와 빈칸을 함께 보인다 — 묻지 않는 질문(null)은 축에 없다.
+test('renderSummary: 환경 선언 축은 묻는 질문만 경로|빈칸으로 싣고, 묻는 질문이 없으면 축을 내지 않는다', async () => {
+  await withProject({ 'package.json': { name: 'plain' } }, async (dir) => {
+    const testing = await detectTesting(dir);
+    const stack = { stackLabel: 'Node.js', language: 'JavaScript', packageManager: 'npm' };
+    const declarations = {
+      runtimeVersion: { question: 'Q1', state: 'declared', paths: ['.nvmrc', 'package.json'] },
+      lockfile: { question: 'Q2', state: 'blank', paths: [] }, serviceFiles: null, bootstrap: { question: 'Q4', state: 'blank', paths: [] },
+    };
+    assert.ok(renderSummary(stack, testing, null, declarations).includes('환경 선언: Q1 .nvmrc+package.json, Q2 빈칸, Q4 빈칸'));
+    const none = { runtimeVersion: null, lockfile: null, serviceFiles: null, bootstrap: null };
+    assert.ok(!renderSummary(stack, testing, null, none).some(p => p.startsWith('환경 선언')));
+    assert.ok(!renderSummary(stack, testing, null, null).some(p => p.startsWith('환경 선언')));
+  });
+});
+
+// 빈칸은 에이전트가 고칠 상태가 아니다(D12: 추측한 선언은 없는 것보다 해롭다) — stack의 status·next_actions는 그대로다.
+test('CLI: 선언 빈칸은 declarations와 요약 축으로만 보고하고 status·next_actions를 바꾸지 않는다', async () => {
+  await withProject({
+    'package.json': { name: 'web', devDependencies: { vitest: '3.0.0' }, scripts: { test: 'vitest run' } },
+  }, async (dir) => {
+    const env = JSON.parse((await cli(['stack', '--json', '--target', dir])).stdout);
+    assert.deepEqual(env.declarations, {
+      runtimeVersion: { question: 'Q1', state: 'blank', paths: [] }, lockfile: { question: 'Q2', state: 'blank', paths: [] },
+      serviceFiles: null, bootstrap: { question: 'Q4', state: 'blank', paths: [] },
+    });
+    assert.equal(env.status, 'success');
+    assert.match(env.summary, /환경 선언: Q1 빈칸, Q2 빈칸, Q4 빈칸/);
+    assert.doesNotMatch(env.next_actions.join('\n'), /환경 선언|빈칸/);
+    assert.match((await cli(['stack', '--target', dir])).stdout, /환경 선언: Q1 빈칸/, 'text 요약에도 축이 있다');
+  });
+});
+
+test('CLI: 이 저장소는 Q1만 묻고 package.json이 답한다 — Q2·Q4 오탐 없음', async () => {
+  const env = JSON.parse((await cli(['stack', '--json', '--target', ROOT])).stdout);
+  assert.deepEqual(env.declarations, {
+    runtimeVersion: { question: 'Q1', state: 'declared', paths: ['package.json'] }, lockfile: null, serviceFiles: null, bootstrap: null,
+  });
+  assert.match(env.summary, /환경 선언: Q1 package\.json/);
+  assert.doesNotMatch(env.summary, /빈칸/);
 });

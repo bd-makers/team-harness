@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import { mkdtemp, writeFile, readFile, mkdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { resolveStack } from '../src/detect-stack.mjs';
-import { buildProposal, applyProposal, fingerprintDrift, readGates, describeProposal, detectInstallTrace } from '../src/presets.mjs';
+import { buildProposal, applyProposal, fingerprintDrift, readGates, describeProposal, detectInstallTrace, detectDeclarations, declarationHints, holds, loadPresets } from '../src/presets.mjs';
 import { detectRepoShape } from '../src/repo-shape.mjs';
 
 async function project(files) {
@@ -215,4 +216,129 @@ test('detectInstallTrace: pm의 lockfile이 선언한 설치 흔적을 present·
       assert.deepEqual(await detectInstallTrace(dir, await resolveStack(dir)), expected, label);
     } finally { await rm(dir, { recursive: true, force: true }); }
   }
+});
+
+// D12 정정 역할 ①(빈칸 보고)의 적용 조건 "의존성을 선언했는가". fileContains로는 셋을 다 가를 수 없다 —
+// 압축 JSON(pnpm이 유지), 빈 {}(e2e bare-node), 키 없음(npm 11.9.0이 마지막 의존성을 지울 때·이 저장소).
+test('holds nonEmptyKey: JSON 최상위 키가 비어 있지 않을 때만 성립한다 (압축·빈 값·키 없음·깨진 파일)', async () => {
+  const cond = { nonEmptyKey: ['package.json', 'dependencies'] };
+  const cases = [
+    ['압축 JSON, 의존성 1개', '{"name":"a","dependencies":{"x":"1"}}', true],
+    ['빈 객체', '{"name":"a","dependencies":{}}', false],
+    ['키 없음', '{"name":"a"}', false],
+    ['빈 배열', '{"dependencies":[]}', false],
+    ['배열 1개', '{"dependencies":["x"]}', true],
+    ['빈 문자열', '{"dependencies":""}', false],
+    ['깨진 JSON', '{"dependencies":', false],
+    ['최상위 null', 'null', false],
+  ];
+  for (const [label, body, expected] of [
+    ['중첩 경로, npm만', '{"engines":{"npm":">=10"}}', false],
+    ['중첩 경로, node', '{"engines":{"node":">=22"}}', true],
+  ]) {
+    const dir = await project({ 'package.json': body });
+    try { assert.equal(await holds(dir, null, { nonEmptyKey: ['package.json', 'engines', 'node'] }), expected, label); }
+    finally { await rm(dir, { recursive: true, force: true }); }
+  }
+  for (const [label, body, expected] of cases) {
+    const dir = await project({ 'package.json': body });
+    try { assert.equal(await holds(dir, null, cond), expected, label); }
+    finally { await rm(dir, { recursive: true, force: true }); }
+  }
+  const empty = await project({});
+  try { assert.equal(await holds(empty, null, cond), false, '파일 없음'); }
+  finally { await rm(empty, { recursive: true, force: true }); }
+});
+
+// Q1 런타임 버전·Q2 lockfile·Q4 bootstrap은 묻는 질문이면 빈칸을 보고하고, Q3는 답이 있을 때만 경로를 가리킨다.
+// 의존성을 선언하지 않은 저장소에는 Q2·Q4를 묻지 않는다(null). 경로만 싣고 내용은 옮기지 않는다.
+test('detectDeclarations: 질문마다 답한 선언의 경로·빈칸·해당 없음(null)을 돌려준다', async () => {
+  const q = (question, ...paths) => ({ question, state: paths.length ? 'declared' : 'blank', paths });
+  const fmt = body => JSON.stringify(body, null, 2);
+  const npmLock = { lockfileVersion: 3, packages: { '': { name: 'a' } } };
+  const uvDeps = '[project]\nname = "a"\nrequires-python = ">=3.12"\ndependencies = [\n    "httpx",\n]\n';
+  const cases = [
+    ['node 의존성 있음·선언 없음', { 'package.json': { name: 'a', devDependencies: { vitest: '3' } } },
+      { runtimeVersion: q('Q1'), lockfile: q('Q2'), serviceFiles: null, bootstrap: q('Q4') }],
+    ['node 빈 dependencies {}', { 'package.json': fmt({ name: 'a', dependencies: {} }) },
+      { runtimeVersion: q('Q1'), lockfile: null, serviceFiles: null, bootstrap: null }],
+    ['node 전부 답함', {
+      'package.json': { name: 'a', engines: { node: '>=22' }, dependencies: { x: '1' } }, '.nvmrc': '22\n',
+      'package-lock.json': npmLock, 'compose.yaml': 'services: {}\n', '.env.example': 'API_KEY=\n',
+    }, {
+      runtimeVersion: q('Q1', '.nvmrc', 'package.json'), lockfile: q('Q2', 'package-lock.json'),
+      serviceFiles: q('Q3', 'compose.yaml', '.env.example'), bootstrap: q('Q4', 'package-lock.json'),
+    }],
+    ['node bun.lockb만 — lockfile은 있고 frozen bootstrap 규칙은 없다', {
+      'package.json': { name: 'a', dependencies: { x: '1' } }, 'bun.lockb': '',
+    }, { runtimeVersion: q('Q1'), lockfile: q('Q2', 'bun.lockb'), serviceFiles: null, bootstrap: q('Q4') }],
+    ['node setup 스크립트·.tool-versions', {
+      'package.json': { name: 'a', dependencies: { x: '1' }, scripts: { setup: './setup.sh' } }, '.tool-versions': 'nodejs 22.1.0\n',
+    }, { runtimeVersion: q('Q1', '.tool-versions'), lockfile: q('Q2'), serviceFiles: null, bootstrap: q('Q4', 'package.json') }],
+    ['python uv', { 'pyproject.toml': uvDeps, 'uv.lock': 'version = 1\n', '.devcontainer/devcontainer.json': '{}' },
+      { runtimeVersion: q('Q1', 'pyproject.toml'), lockfile: q('Q2', 'uv.lock'),
+        serviceFiles: q('Q3', '.devcontainer/devcontainer.json'), bootstrap: q('Q4', 'uv.lock') }],
+    ['python uv init 직후(dependencies = [])', { 'pyproject.toml': '[project]\nname = "a"\ndependencies = []\n', '.python-version': '3.12\n' },
+      { runtimeVersion: q('Q1', '.python-version'), lockfile: null, serviceFiles: null, bootstrap: null }],
+    ['python pip-compile requirements', {
+      'pyproject.toml': '[project]\nname = "a"\ndependencies = ["httpx"]\n',
+      'requirements.txt': '# This file is autogenerated by pip-compile\nhttpx==0.28.1\n',
+    }, { runtimeVersion: q('Q1'), lockfile: q('Q2', 'requirements.txt'), serviceFiles: null, bootstrap: q('Q4') }],
+    // codex P2(2026-11-03): 주석의 == 는 고정이 아니다 — 생성기 헤더·해시가 있을 때만 lock으로 센다.
+    ['python 손으로 쓴 requirements(주석에 ==)', {
+      'pyproject.toml': '[project]\nname = "a"\ndependencies = [ "httpx" ]\n', 'requirements.txt': '# pin with ==\nhttpx\n',
+    }, { runtimeVersion: q('Q1'), lockfile: q('Q2'), serviceFiles: null, bootstrap: q('Q4') }],
+    // codex P2: 빈 목록의 다른 표기는 의존성이 아니다(묻지 않음). 빈 requirements.txt도 마찬가지.
+    ['python 빈 목록 표기들', {
+      'pyproject.toml': '[project]\nname = "a"\ndependencies = [\n]\n\n[dependency-groups]\ndev = []\n', 'requirements.txt': '',
+    }, { runtimeVersion: q('Q1'), lockfile: null, serviceFiles: null, bootstrap: null }],
+    // codex P2: engines에 npm만 있으면 런타임 버전 선언이 아니다.
+    ['node engines.npm만', { 'package.json': { name: 'a', engines: { npm: '>=10' }, devEngines: { os: { name: 'darwin' } } } },
+      { runtimeVersion: q('Q1'), lockfile: null, serviceFiles: null, bootstrap: null }],
+    ['go — declare 없는 프리셋', { 'go.mod': 'module x\n\ngo 1.23\n' }, null],
+    ['manifest 없음(generic)', { 'README.md': '# x\n' }, null],
+  ];
+  for (const [label, files, expected] of cases) {
+    const dir = await repoWith(files);
+    try { assert.deepEqual(await detectDeclarations(dir, await resolveStack(dir)), expected, label); }
+    finally { await rm(dir, { recursive: true, force: true }); }
+  }
+});
+
+// 의존성 0개·lockfile 없는 이 저장소는 Q2·Q4를 묻지 않고, Q1은 package.json의 engines가 답한다(오탐 0).
+test('detectDeclarations: 이 저장소는 Q1만 묻고 package.json(engines)이 답한다', async () => {
+  const root = dirname(dirname(fileURLToPath(import.meta.url)));
+  assert.deepEqual(await detectDeclarations(root, await resolveStack(root)), {
+    runtimeVersion: { question: 'Q1', state: 'declared', paths: ['package.json'] },
+    lockfile: null, serviceFiles: null, bootstrap: null,
+  });
+});
+
+test('declarationHints: 빈칸을 채울 수 있는 선언 후보를 키까지 가리키고, Q4는 pm의 bootstrap 규칙 lockfile을 앞에 둔다', async () => {
+  const dir = await repoWith({ 'package.json': { name: 'a' } });
+  try {
+    const hints = await declarationHints(await resolveStack(dir));
+    assert.deepEqual(hints.runtimeVersion,
+      ['.nvmrc', '.node-version', '.tool-versions', 'mise.toml', '.mise.toml', 'package.json#engines.node', 'package.json#devEngines.runtime', 'package.json#volta.node']);
+    assert.equal(hints.bootstrap[0], 'package-lock.json');
+    assert.ok(hints.bootstrap.includes('package.json#scripts.setup'));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// D12: `.env.*`는 읽지 않는다 — 경로 존재(`file`)만 본다. 어떤 프리셋 조건도 `.env`로 시작하는 파일의 내용을 읽지 않는다.
+test('프리셋 가드: .env* 파일 내용을 읽는 조건(fileContains·nonEmptyKey)이 없다', async () => {
+  const readers = [];
+  const walk = (node) => {
+    if (Array.isArray(node)) { node.forEach(walk); return; }
+    if (!node || typeof node !== 'object') return;
+    for (const kind of ['fileContains', 'nonEmptyKey']) {
+      if (Array.isArray(node[kind]) && /^\.env/.test(node[kind][0])) readers.push(`${kind}:${node[kind][0]}`);
+    }
+    Object.values(node).forEach(walk);
+  };
+  const presets = await loadPresets();
+  presets.forEach(walk);
+  assert.deepEqual(readers, []);
+  const envFiles = presets.flatMap(p => p.env?.declare?.serviceFiles ?? []).filter(c => /^\.env/.test(c.file ?? ''));
+  assert.ok(envFiles.length > 0, '환경 변수 계약 파일은 존재로만 선언된다');
 });

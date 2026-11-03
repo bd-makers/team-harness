@@ -37,6 +37,31 @@
         { "when": { "file": "yarn.lock" }, "trace": ["node_modules"] }
       ],
       "bun":  [{ "when": { "file": "bun.lock" }, "trace": ["node_modules"] }]
+    },
+    "declare": {
+      "hasDependencies": [
+        { "nonEmptyKey": ["package.json", "dependencies"] }, { "nonEmptyKey": ["package.json", "devDependencies"] },
+        { "nonEmptyKey": ["package.json", "optionalDependencies"] }
+      ],
+      "runtimeVersion": [
+        { "file": ".nvmrc" }, { "file": ".node-version" }, { "fileContains": [".tool-versions", "node"] },
+        { "fileContains": ["mise.toml", "node"] }, { "fileContains": [".mise.toml", "node"] },
+        { "nonEmptyKey": ["package.json", "engines", "node"] }, { "nonEmptyKey": ["package.json", "devEngines", "runtime"] },
+        { "nonEmptyKey": ["package.json", "volta", "node"] }
+      ],
+      "lockfile": [
+        { "file": "package-lock.json" }, { "file": "npm-shrinkwrap.json" }, { "file": "pnpm-lock.yaml" },
+        { "file": "yarn.lock" }, { "file": "bun.lock" }, { "file": "bun.lockb" }
+      ],
+      "serviceFiles": [
+        { "file": "compose.yaml" }, { "file": "compose.yml" }, { "file": "docker-compose.yml" }, { "file": "docker-compose.yaml" },
+        { "file": ".devcontainer/devcontainer.json" }, { "file": ".devcontainer.json" },
+        { "file": ".env.example" }, { "file": ".env.sample" }, { "file": ".env.template" }
+      ],
+      "bootstrap": [
+        { "script": "setup" }, { "script": "bootstrap" },
+        { "file": "script/bootstrap" }, { "file": "script/setup" }, { "file": "bin/setup" }
+      ]
     }
   },
   "delegate": [

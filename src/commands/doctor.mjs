@@ -17,7 +17,7 @@ import { taskLabel, taskFilePath, USER_HANDOFF_IGNORE } from '../task-paths.mjs'
 import { checkRuleProvenance } from './rules.mjs';
 import { findStaleTemplates, isKnownStockTemplate } from './migrate.mjs';
 import { evaluateObserveVerdict, observeLoopbackNudge, tripWireDetail } from './observe.mjs';
-import { buildProposal, fingerprintDrift, readGates } from '../presets.mjs';
+import { buildProposal, fingerprintDrift, readGates, detectDeclarations, declarationHints, DECLARATION_QUESTIONS } from '../presets.mjs';
 import { detectRepoShape } from '../repo-shape.mjs';
 import { checkPrePushHook } from '../git-hooks.mjs';
 
@@ -339,6 +339,31 @@ export async function checkGateFingerprint(targetDir) {
   const now = (await buildProposal(targetDir, await resolveStack(targetDir, pin), { shape })).fingerprint;
   const drift = fingerprintDrift(gates.fingerprint, now);
   return drift ? `커밋 게이트 제안의 근거가 바뀌었습니다 (${drift}) — 갱신하려면: harness-team gate suggest` : null;
+}
+
+// D12 정정 역할 ① 빈칸 보고 — `stack`과 같은 판정(detectDeclarations)을 사람이 읽는 soft warning으로 낸다.
+// 요구가 아니라 보고다: 빈칸에는 채울 수 있는 후보를, 답한 질문에는 선언의 경로만 적고 내용은 옮기지 않는다.
+// → null(묻는 질문 없음 — go·generic) | { status: 'warning' | 'pass', detail }. 던지면 doctor가 envelope 전에
+// 죽으므로 예외는 null이다(checkObserveTripWires와 같은 계약).
+export async function checkEnvDeclarations(targetDir) {
+  try {
+    const { stack: pin } = await loadRenderState(targetDir);
+    const stack = await resolveStack(targetDir, pin);
+    const declarations = await detectDeclarations(targetDir, stack);
+    const asked = DECLARATION_QUESTIONS.filter(q => declarations?.[q.key]);
+    if (!asked.length) return null;
+    const declared = asked.filter(q => declarations[q.key].state === 'declared')
+      .map(q => `${q.question} ${declarations[q.key].paths.join('+')}`);
+    const blanks = asked.filter(q => declarations[q.key].state === 'blank');
+    if (!blanks.length) return { status: 'pass', detail: declared.join(' · ') };
+    const hints = await declarationHints(stack);
+    const missing = blanks.map(q => `${q.question} ${q.label}(후보: ${hints[q.key].join(', ')})`).join(', ');
+    return {
+      status: 'warning',
+      detail: `저장소가 답하지 못한 환경 질문: ${missing} — 선택 사항이다(D12): 추측해 선언 파일을 만들지 말고 팀이 정한다`
+        + (declared.length ? `; 답한 선언: ${declared.join(' · ')}` : ''),
+    };
+  } catch { return null; }
 }
 
 export async function checkSessionStartHook(targetDir) {
@@ -1029,6 +1054,15 @@ export async function runDoctor(ctx) {
       ? `\n⚠️ ${prePush.detail}`
       : `${prePush.status === 'pass' ? '✓' : '-'} pre-push hook (pr-check)  (${prePush.detail})`;
     add('pre-push hook (pr-check)', prePush.status, prePush.detail, human);
+  }
+
+  // Not gated on pluginDev: this repo is a node project too, and "no Q2/Q4 false positive on a zero-dependency
+  // repo" is exactly what must hold here. No warnActions entry — no command fills a blank, and a guessed
+  // declaration is worse than none (D12).
+  const envDeclarations = await checkEnvDeclarations(ctx.targetDir);
+  if (envDeclarations) {
+    const { status, detail } = envDeclarations;
+    add('env declarations', status, detail, status === 'warning' ? `\n⚠️ ${detail}` : `✓ env declarations  (${detail})`);
   }
 
   // Deliberately NOT gated on plugin-dev, unlike every check above. Those skip

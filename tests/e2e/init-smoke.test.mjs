@@ -45,7 +45,11 @@ for (const stack of STACKS) {
       const doc = await sb.cli(['doctor', '--json']);
       assert.equal(doc.code, 0, `doctor exit non-zero:\n${doc.stdout}\n${doc.stderr}`);
       const env = JSON.parse(doc.stdout);
-      assert.equal(env.status, 'success', `doctor status: ${env.status} — ${env.summary}`);
+      // 선언 빈칸(D12 정정 역할 ①)은 저장소에 대한 soft warning이지 설치 결함이 아니다 — fixture에는 .nvmrc·lockfile이 없다.
+      // 그 밖의 warning은 여전히 없어야 green이다.
+      const others = env.checks.filter(c => c.status === 'warning' && c.label !== 'env declarations');
+      assert.deepEqual(others, [], `doctor warnings: ${env.summary}`);
+      assert.ok(['success', 'warning'].includes(env.status), `doctor status: ${env.status} — ${env.summary}`);
     } finally {
       await sb.cleanup();
     }

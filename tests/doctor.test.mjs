@@ -6,7 +6,7 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, symlink, chmod } from 'node:fs
 import { tmpdir, homedir } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { classifyHookCommand, collectHookCommands, redactCommand, checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, checkActiveDoneOnMain, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, DECISION_HEADINGS, checkObserveTripWires, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER, findStaleManagedSections, compareVersions, harnessVersionReport, checkGateFingerprint } from '../src/commands/doctor.mjs';
+import { classifyHookCommand, collectHookCommands, redactCommand, checkCommand, checkSelfCli, checkHookCli, hookCliInstallCommand, HOOK_CLI_MARKETPLACE_DIR, checkActiveSpecGate, checkActiveDoneOnMain, detectLegacyStructure, checkSessionStartHook, checkBoundaryCheckpointHook, checkDecisionLog, DECISION_HEADINGS, checkObserveTripWires, checkEagerTierSize, globalClaudeMdPath, EAGER_TIER_MAX_BYTES, isPluginDevRepo, jqFallbackGaps, jqInstallAction, JQ_FALLBACK_MARKER, findStaleManagedSections, compareVersions, harnessVersionReport, checkGateFingerprint, checkEnvDeclarations } from '../src/commands/doctor.mjs';
 import { render } from '../src/render.mjs';
 import { detectStack } from '../src/detect-stack.mjs';
 import { sectionHashes } from '../src/render-state.mjs';
@@ -1364,4 +1364,38 @@ test('checkGateFingerprint 모양: shape 없는 기존 지문은 workspace가 �
     await writeTree(dir, { 'package.json': { name: 'x', scripts: { test: 'node --test' }, workspaces: ['apps/*'] }, 'apps/web/package.json': { name: 'web' } });
     assert.match(await checkGateFingerprint(dir), /모양 single → app-packages/);
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// D12 정정 역할 ① 빈칸 보고 — soft warning(fail 아님). 빈칸에는 채울 수 있는 후보를, 답한 질문에는 경로만 적는다.
+test('checkEnvDeclarations: 빈칸이면 후보와 함께 warning, 전부 답했으면 경로만 pass, declare 없는 스택은 null', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-doctor-envdecl-'));
+  try {
+    await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'a', dependencies: { x: '1' } }));
+    await writeFile(join(dir, 'compose.yaml'), 'services: {}\n');
+    const blank = await checkEnvDeclarations(dir);
+    assert.equal(blank.status, 'warning');
+    assert.match(blank.detail, /Q1 런타임 버전\(후보: \.nvmrc, .*package\.json#engines\.node/);
+    assert.match(blank.detail, /Q2 lockfile\(후보: package-lock\.json/);
+    assert.match(blank.detail, /Q4 bootstrap\(후보: package-lock\.json, .*package\.json#scripts\.setup/);
+    assert.match(blank.detail, /추측해 선언 파일을 만들지 말고/);
+    assert.match(blank.detail, /답한 선언: Q3 compose\.yaml/);
+
+    await writeFile(join(dir, '.nvmrc'), '22\n');
+    await writeFile(join(dir, 'package-lock.json'), JSON.stringify({ lockfileVersion: 3, packages: { '': { name: 'a' } } }));
+    assert.deepEqual(await checkEnvDeclarations(dir),
+      { status: 'pass', detail: 'Q1 .nvmrc · Q2 package-lock.json · Q3 compose.yaml · Q4 package-lock.json' });
+  } finally { await rm(dir, { recursive: true, force: true }); }
+
+  const go = await mkdtemp(join(tmpdir(), 'harness-doctor-envdecl-go-'));
+  try {
+    await writeFile(join(go, 'go.mod'), 'module x\n\ngo 1.23\n');
+    assert.equal(await checkEnvDeclarations(go), null);
+  } finally { await rm(go, { recursive: true, force: true }); }
+});
+
+// 이 저장소(의존성 0개·lockfile 없음)는 pluginDev여도 검사한다 — Q2·Q4 오탐이 없다는 것이 검사 대상이다.
+test('doctor --json: 이 저장소의 env declarations는 pass(Q1 package.json)이고 next_actions에 조치를 더하지 않는다', async () => {
+  const env = await doctorJson(ROOT);
+  assert.deepEqual(checkOf(env, 'env declarations'), { label: 'env declarations', status: 'pass', detail: 'Q1 package.json' });
+  assert.doesNotMatch(env.next_actions.join('\n'), /env|선언/);
 });
