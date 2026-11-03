@@ -10,7 +10,7 @@ JS lockfile→pm 판정을 `node.json` `env.packageManager`와 `firstHolding()`�
 - [x] 검증 — 표 테스트 green 유지, `npm test` fail 0, `docs:check` 최신, `stack --json` 기준선 diff 0
 - [x] codex 리뷰 판별·조치 → artifact `## Reviews`
 - [x] CHANGELOG `## [Unreleased]`(소비자 영향 없음)·artifact 결과
-- [ ] 커밋(푸시·PR은 메인테이너 지시 대기)
+- [x] 커밋(푸시·PR은 메인테이너 지시 대기)
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

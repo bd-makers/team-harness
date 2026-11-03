@@ -14,3 +14,7 @@ CHANGELOG.md                                     |   1 +
  templates/presets/node.json                      |   5 +
  tests/detect-stack.test.mjs                      |  28 +++++
  10 files changed, 296 insertions(+), 5 deletions(-)
+
+## 2026-11-03T00:10:29.247Z — 완료
+
+태스크 종료.

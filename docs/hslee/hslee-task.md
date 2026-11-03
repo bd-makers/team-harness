@@ -8,6 +8,7 @@
 - ✅ done-tests-optional
 - ✅ env-describe
 - ✅ env-state-q5
+- ✅ js-pm-preset
 - ✅ eval-defect-triage
 - ✅ stack-inprocess-docker
 - ✅ agent-failure-hardening
