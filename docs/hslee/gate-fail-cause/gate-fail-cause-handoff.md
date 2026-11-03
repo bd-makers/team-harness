@@ -18,3 +18,8 @@ docs/hslee/subsystem-audit/subsystem-audit-handoff.md |  5 +++++
  src/commands/gate.mjs                              | 19 ++++++++-
  tests/gate-command.test.mjs                        | 17 ++++++++
  8 files changed, 162 insertions(+), 2 deletions(-)
+
+## 2026-11-03T15:11:18.942Z — 3c35c0e chore(task): gate-fail-cause handoff 갱신 + 커밋 단계 체크
+docs/hslee/gate-fail-cause/gate-fail-cause-handoff.md | 11 +++++++++++
+ docs/hslee/gate-fail-cause/gate-fail-cause-plan.md    |  2 +-
+ 2 files changed, 12 insertions(+), 1 deletion(-)

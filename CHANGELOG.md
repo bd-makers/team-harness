@@ -9,6 +9,9 @@
 
 ## [Unreleased]
 
+### Added
+- **커밋 게이트가 실패하면 설치 흔적이 없는지 알린다** (task `gate-fail-cause`, 하위 시스템 감사 후보 C). 2026-10-11 `heliosent-profile` 워크트리의 tsc 실패는 원인이 `node_modules` 부재였지만, 차단 메시지는 `커밋 게이트 실패: <cmd> (exit N)`뿐이라 코드 결함처럼 보였다. "코드 탓 전에 `stack`의 `installTrace`를 본다"는 안내는 lazy 스킬에만 있어 훅이 막는 순간에는 로드되지 않는다. 이제 게이트 명령이 실패했을 때 `stack`과 같은 판정(0.52.0 `installTrace`)이 `absent`면 차단 메시지 끝에 `ℹ️ 환경 원인일 수 있습니다 — <lockfile>은 있는데 설치 흔적(<trace>)이 없습니다. 코드를 고치기 전에 <bootstrap>로 준비하세요.` 한 줄이 붙는다(bootstrap 명령을 모르면 "저장소의 설치 방법"). 흔적이 있거나 판정 규칙이 없으면 붙지 않고, 단서 계산이 실패해도 종전 메시지 그대로다. 판정·exit code는 바뀌지 않고, 명령을 찾지 못한 127 설정 오류 분기는 대상이 아니다. 오탐 범위는 `installTrace`와 같다(npm 의존성이 전부 optional이면 설치 뒤에도 단서가 붙는다). **소비자 영향:** 플러그인 갱신만으로 닿는다(CLI 코드). init·migrate는 필요 없다.
+
 ## [0.52.0] - 2026-11-03
 
 ### Added
