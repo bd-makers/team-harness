@@ -879,6 +879,37 @@ async function backfillTaskMeta(ctx) {
   return written.length > 0;
 }
 
+// --- 리뷰어 allow 제거 (Bash(codex:*) → 없음) ---
+//
+// 옛 템플릿의 `Bash(codex:*)` 는 codex 의 모든 인수(`--dangerously-bypass-approvals-and-sandbox` 포함)를
+// 승인 없이 허용했다. Bash 규칙은 명령 전체를 매칭하므로 접두로 좁혀도 뒤에 붙는 플래그를 막지 못한다 —
+// 빼는 것만 의미가 있다. 리뷰는 `harness-team review codex` 가 node 에서 spawn 하므로 이 allow 가 필요 없다.
+// init 의 배열 union 은 지우지 못하므로 여기서 정확히 그 문자열 하나만 지운다(다른 codex 규칙은 사용자 것, D8).
+export const LEGACY_CODEX_ALLOW = 'Bash(codex:*)';
+
+export async function migrateCodexAllow(ctx) {
+  const settingsPath = join(ctx.targetDir, '.claude/settings.json');
+  const raw = await readTextSafe(settingsPath);
+  if (raw === null) return false;
+  let settings;
+  try { settings = JSON.parse(raw); } catch {
+    console.log('  codex allow: settings.json parse 실패 — 건너뜀');
+    return false;
+  }
+  const allow = settings?.permissions?.allow;
+  if (!Array.isArray(allow) || !allow.includes(LEGACY_CODEX_ALLOW)) return false;
+
+  console.log(`\nFound ${LEGACY_CODEX_ALLOW} in .claude/settings.json permissions.allow:`);
+  console.log('  - codex 의 모든 인수(샌드박스 해제 플래그 포함)를 승인 없이 허용한다. 리뷰는 `harness-team review codex` 로 돈다.');
+  const ok = ctx.flags.yes || await confirm(`\nRemove ${LEGACY_CODEX_ALLOW}?`, { defaultYes: true });
+  if (!ok) { console.log(`Skipped ${LEGACY_CODEX_ALLOW} removal.`); return false; }
+
+  settings.permissions.allow = allow.filter(e => e !== LEGACY_CODEX_ALLOW);
+  await writeText(settingsPath, JSON.stringify(settings, null, 2) + '\n');
+  console.log(`  ✓ removed ${LEGACY_CODEX_ALLOW} from .claude/settings.json`);
+  return true;
+}
+
 // --- Codex SessionStart 훅에 `--codex-hook` 붙이기 (0.38.3) ---
 //
 // Codex 는 훅의 평문 stdout 을 주입하지 않는다(2026-09-12 실측). 그래서 플래그 없는 옛 하네스 훅은
@@ -1050,6 +1081,7 @@ export async function runMigrate(ctx) {
   const hookMigrated = await migrateSessionStartHook(ctx);
   const boundaryHookMigrated = await migrateBoundaryCheckpointHook(ctx);
   const codexFlagMigrated = await migrateCodexHookFlag(ctx);
+  const codexAllowRemoved = await migrateCodexAllow(ctx);
   const metaBackfilled = await backfillTaskMeta(ctx);
   // backfill 뒤에 둔다 — 방금 만들어진 meta 도 같은 실행에서 후보가 되게 한다.
   const reviewsAdopted = await adoptTaskReviews(ctx);
@@ -1060,7 +1092,7 @@ export async function runMigrate(ctx) {
     return;
   }
 
-  if (!managedBackedUp && !agentsMigrated && !taskMigrated && !taskUpgraded && !claudeHooksRefreshed && !claudeTemplatesRefreshed && !gatesProposed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated && !metaBackfilled && !reviewsAdopted && !codexFlagMigrated && !userHandoffUntrack) {
+  if (!managedBackedUp && !agentsMigrated && !taskMigrated && !taskUpgraded && !claudeHooksRefreshed && !claudeTemplatesRefreshed && !gatesProposed && !taskLabelsRenamed && !hookMigrated && !boundaryHookMigrated && !metaBackfilled && !reviewsAdopted && !codexFlagMigrated && !codexAllowRemoved && !userHandoffUntrack) {
     console.log('\nNothing to migrate — project is already up to date.');
     return;
   }

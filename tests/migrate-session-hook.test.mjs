@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, writeFile, readFile, rm, stat, lstat, chmod, symlink } 
 import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
-import { migrateSessionStartHook, migrateBoundaryCheckpointHook, runMigrate } from '../src/commands/migrate.mjs';
+import { migrateSessionStartHook, migrateBoundaryCheckpointHook, migrateCodexAllow, runMigrate } from '../src/commands/migrate.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ctxYes = (dir) => ({ targetDir: dir, root: ROOT, flags: { yes: true } });
@@ -223,4 +223,27 @@ test('migrate가 배선한 훅이 파일을 요구하면 그 파일이 존재한
       await stat(join(dir, rel)); // 없으면 throw → 테스트 실패
     }
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('migrateCodexAllow: 정확히 Bash(codex:*) 하나만 지우고 다른 항목·사용자 codex 규칙은 남긴다', async () => {
+  const dir = await fixture({ permissions: { allow: ['Read', 'Bash(codex:*)', 'Bash(codex exec --sandbox read-only *)'], deny: ['Read(./.env)'] } });
+  const cap = captureLogs();
+  try {
+    assert.equal(await migrateCodexAllow(ctxYes(dir)), true);
+    const s = await readSettings(dir);
+    assert.deepEqual(s.permissions.allow, ['Read', 'Bash(codex exec --sandbox read-only *)']);
+    assert.deepEqual(s.permissions.deny, ['Read(./.env)']);
+    assert.equal(await migrateCodexAllow(ctxYes(dir)), false, '두 번째 실행은 할 일이 없다');
+  } finally { cap.restore(); await rm(dir, { recursive: true, force: true }); }
+});
+
+test('migrateCodexAllow: settings.json 이 없거나 항목이 없으면 건드리지 않는다', async () => {
+  const none = await fixture();
+  const clean = await fixture({ permissions: { allow: ['Read'] } });
+  const cap = captureLogs();
+  try {
+    assert.equal(await migrateCodexAllow(ctxYes(none)), false);
+    assert.equal(await migrateCodexAllow(ctxYes(clean)), false);
+    assert.deepEqual((await readSettings(clean)).permissions.allow, ['Read']);
+  } finally { cap.restore(); await rm(none, { recursive: true, force: true }); await rm(clean, { recursive: true, force: true }); }
 });

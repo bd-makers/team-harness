@@ -12,6 +12,9 @@
 ### Added
 - **커밋 게이트가 실패하면 설치 흔적이 없는지 알린다** (task `gate-fail-cause`, 하위 시스템 감사 후보 C). 2026-10-11 `heliosent-profile` 워크트리의 tsc 실패는 원인이 `node_modules` 부재였지만, 차단 메시지는 `커밋 게이트 실패: <cmd> (exit N)`뿐이라 코드 결함처럼 보였다. "코드 탓 전에 `stack`의 `installTrace`를 본다"는 안내는 lazy 스킬에만 있어 훅이 막는 순간에는 로드되지 않는다. 이제 게이트 명령이 실패했을 때 `stack`과 같은 판정(0.52.0 `installTrace`)이 `absent`면 차단 메시지 끝에 `ℹ️ 환경 원인일 수 있습니다 — <lockfile>은 있는데 설치 흔적(<trace>)이 없습니다. 코드를 고치기 전에 <bootstrap>로 준비하세요.` 한 줄이 붙는다(bootstrap 명령을 모르면 "저장소의 설치 방법"). 흔적이 있거나 판정 규칙이 없으면 붙지 않고, 단서 계산이 실패해도 종전 메시지 그대로다. 판정·exit code는 바뀌지 않고, 명령을 찾지 못한 127 설정 오류 분기는 대상이 아니다. 오탐 범위는 `installTrace`와 같다(npm 의존성이 전부 optional이면 설치 뒤에도 단서가 붙는다). **소비자 영향:** 플러그인 갱신만으로 닿는다(CLI 코드). init·migrate는 필요 없다.
 
+### Security
+- **리뷰어 allow `Bash(codex:*)` 제거** (task `codex-allow-scope`, 하위 시스템 감사 후보 B). 템플릿 `.claude/settings.json`의 이 항목은 codex의 **모든** 인수를 승인 없이 허용했다 — `--sandbox danger-full-access`·`--dangerously-bypass-approvals-and-sandbox`·`--dangerously-bypass-hook-trust` 포함. D2의 "리뷰어 read-only"와 어긋난다. Claude Code의 Bash 규칙은 명령 전체를 매칭하고 `*`가 어떤 텍스트든 대신하므로(공식 permissions 문서) `Bash(codex exec --sandbox read-only *)`로 좁혀도 뒤에 붙는 위험 플래그는 통과한다 — 그래서 좁히지 않고 뺐다. 하네스의 리뷰는 `harness-team review codex`가 node에서 codex를 직접 실행하므로 이 allow가 필요 없다. 에이전트가 `codex`를 Bash로 직접 부르면 이제 승인을 묻는다. AGENTS.md 역할 표의 Codex 호출 방식도 `Bash: codex exec --sandbox read-only`에서 `harness-team review codex`로 바꿨다(eager −11 B). **소비자 영향:** settings 배열은 합집합으로 병합돼 `init`으로는 지워지지 않는다 — `harness-team migrate`가 `permissions.allow`에서 **정확히 `Bash(codex:*)` 문자열 하나만** 확인 후 지운다(다른 codex 규칙은 사용자 것이라 남긴다). 역할 표는 `roles` 관리 절이라 `harness-team init --yes`로 갱신된다(편집한 절은 init도 건너뛴다).
+
 ## [0.52.0] - 2026-11-03
 
 ### Added

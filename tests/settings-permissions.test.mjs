@@ -108,7 +108,8 @@ test('템플릿 settings.json에는 pm·RN 의존 항목이 없고 pm 무관 항
   const all = [...tpl.permissions.allow, ...tpl.permissions.deny];
   assert.ok(!all.some(e => /\b(pnpm|npm|yarn|bun|npx)\b/.test(e)), `pm 의존 항목이 남아 있음: ${all.filter(e => /\b(pnpm|npm|yarn|bun|npx)\b/.test(e)).join(', ')}`);
   assert.ok(!all.some(e => /expo|\.\/ios\/|\.\/android\//.test(e)), 'RN 전용 항목이 남아 있음');
-  for (const keep of ['Read', 'Edit', 'Write', 'Glob', 'Grep', 'Bash(codex:*)']) assert.ok(tpl.permissions.allow.includes(keep), `allow에 ${keep} 없음`);
+  for (const keep of ['Read', 'Edit', 'Write', 'Glob', 'Grep']) assert.ok(tpl.permissions.allow.includes(keep), `allow에 ${keep} 없음`);
+  assert.ok(!tpl.permissions.allow.includes('Bash(codex:*)'), 'codex 전체 허용은 접두로 좁혀도 위험 플래그가 통과한다 — 빼야 한다');
   for (const keep of ['Read(./.env)', 'Bash(rm -rf *)', 'Bash(git push --force*)']) assert.ok(tpl.permissions.deny.includes(keep), `deny에 ${keep} 없음`);
 });
 
@@ -142,7 +143,7 @@ test('planChanges: npm Node 프로젝트는 `npm run test` 등 실제 명령을 
     const { stack, settings } = await planSettings(dir);
     assert.equal(stack.packageManager, 'npm');
     const { allow, deny } = settings.permissions;
-    for (const e of ['Bash(npm install)', 'Bash(npm install *)', 'Bash(npm run test)', 'Bash(npm run test -- *)', 'Bash(npm run lint)', 'Bash(codex:*)']) {
+    for (const e of ['Bash(npm install)', 'Bash(npm install *)', 'Bash(npm run test)', 'Bash(npm run test -- *)', 'Bash(npm run lint)']) {
       assert.ok(allow.includes(e), `allow에 ${e} 없음: ${allow.join(', ')}`);
     }
     assert.ok(!allow.some(e => /pnpm|expo/.test(e)), `pnpm·Expo 항목 잔존: ${allow.join(', ')}`);
