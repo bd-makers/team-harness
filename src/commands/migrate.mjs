@@ -360,6 +360,7 @@ export const KNOWN_STOCK_TEMPLATE_SHA256 = {
   ],
   '.claude/skills/verify/SKILL.md': [
     '2628e8fe0d0073992d8059df5bf7e5572db4314526ec220f732d88437bb4ab51', // 7a7c188d 2026-04-16-6948aa73
+    '65a3f4692a0304ee7e828d50a55398cee98ee86fd26d5977713353039616c599', // 2026-09-03-58b22848 (gates.json 정본 이전)
   ],
   '.claude/rules/navigation.md': [
     'c87512d28d6fc4a26c39ab1d2ba581ff8b9c56972db18d88d2b54617e2df684f', // c15783ca 2026-04-16-6948aa73
