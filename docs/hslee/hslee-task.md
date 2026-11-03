@@ -1,9 +1,11 @@
 # hslee — Tasks
 
 ## Open
+- subsystem-audit (created 2026-11-03)
 
 ## Completed
 - ✅ env-runtime-q5
+- ✅ gate-fail-cause
 - ✅ capsule-cause
 - ✅ done-scope-line
 - ✅ done-tests-optional
