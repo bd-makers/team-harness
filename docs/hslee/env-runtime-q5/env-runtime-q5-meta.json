@@ -3,8 +3,8 @@
   "task": "env-runtime-q5",
   "created": "2026-11-03",
   "firstActivatedAt": "2026-11-03T11:24:17.375Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-11-03T12:23:29.423Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": []
