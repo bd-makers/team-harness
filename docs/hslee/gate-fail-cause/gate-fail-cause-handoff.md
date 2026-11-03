@@ -23,3 +23,8 @@ docs/hslee/subsystem-audit/subsystem-audit-handoff.md |  5 +++++
 docs/hslee/gate-fail-cause/gate-fail-cause-handoff.md | 11 +++++++++++
  docs/hslee/gate-fail-cause/gate-fail-cause-plan.md    |  2 +-
  2 files changed, 12 insertions(+), 1 deletion(-)
+
+## 2026-11-03T15:29:03.261Z — 134f1ec docs(changelog): gate-fail-cause Unreleased 항목
+CHANGELOG.md                                          | 3 +++
+ docs/hslee/gate-fail-cause/gate-fail-cause-handoff.md | 5 +++++
+ 2 files changed, 8 insertions(+)
