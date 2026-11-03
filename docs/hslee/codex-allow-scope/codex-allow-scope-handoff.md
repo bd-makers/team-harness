@@ -17,3 +17,8 @@ AGENTS.md                                          |  2 +-
  tests/migrate-session-hook.test.mjs                | 25 ++++++++-
  tests/settings-permissions.test.mjs                |  5 +-
  13 files changed, 207 insertions(+), 8 deletions(-)
+
+## 2026-11-03T15:45:54.609Z — 9c8f46c chore(task): codex-allow-scope handoff 갱신 + 커밋 단계 체크
+.../hslee/codex-allow-scope/codex-allow-scope-handoff.md | 16 ++++++++++++++++
+ docs/hslee/codex-allow-scope/codex-allow-scope-plan.md   |  2 +-
+ 2 files changed, 17 insertions(+), 1 deletion(-)
