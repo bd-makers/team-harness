@@ -8,7 +8,7 @@
 - [x] `gate.mjs` 실패 분기에 `installHint` 추가
 - [x] 테스트 추가(단서 있음·없음)
 - [x] `npm test` fail 0(1,300개 중 pass 1,299), `docs:check` 최신
-- [ ] 커밋(브랜치 `feat/gate-env-hint`, push 없음)
+- [x] 커밋(브랜치 `feat/gate-env-hint` `7282dd7`, push 없음)
 
 ## Ontology 변경 로그
 - (none)
