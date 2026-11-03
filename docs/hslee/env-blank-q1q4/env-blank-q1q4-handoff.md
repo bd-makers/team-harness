@@ -28,3 +28,17 @@ CHANGELOG.md                                       |   1 +
  tests/e2e/init-smoke.test.mjs                      |   6 +-
  tests/presets.test.mjs                             | 107 ++++++++++++++++++++-
  15 files changed, 376 insertions(+), 24 deletions(-)
+
+## 2026-11-03T00:01:55.631Z — 16be57d fix(stack): 빈칸 보고 적용 조건을 오탐 없는 쪽으로 좁힌다 (codex P2 3건)
+CHANGELOG.md                                       |  2 +-
+ .../env-blank-q1q4/env-blank-q1q4-artifact.md      | 52 ++++++++++++++++++++++
+ .../hslee/env-blank-q1q4/env-blank-q1q4-handoff.md | 18 ++++++++
+ docs/hslee/env-blank-q1q4/env-blank-q1q4-meta.json | 14 +++++-
+ docs/hslee/env-blank-q1q4/env-blank-q1q4-plan.md   |  2 +-
+ docs/hslee/env-blank-q1q4/env-blank-q1q4-spec.md   | 18 ++++----
+ src/presets.mjs                                    |  8 +++-
+ templates/presets/node.json                        |  4 +-
+ templates/presets/python.json                      |  7 +--
+ tests/doctor.test.mjs                              |  2 +-
+ tests/presets.test.mjs                             | 27 +++++++++--
+ 11 files changed, 132 insertions(+), 22 deletions(-)
