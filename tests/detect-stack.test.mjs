@@ -42,6 +42,34 @@ test('bun.lock(텍스트 lockfile)도 bun으로 감지한다', async () => {
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+// The lockfile→pm order lives in node.json `env.packageManager` (D11). npm is not a rule: it
+// follows a *parsed* package.json, which a `file` condition cannot tell from a broken one.
+test('JS pm은 lockfile 순서(pnpm → yarn → bun)로 정하고, lockfile이 없으면 파싱된 package.json만 npm이다', async () => {
+  const pkg = { name: 'a' };
+  const cases = [
+    ['detect', { 'package.json': pkg }, 'npm', 'npm install'],
+    ['detect', { 'package.json': pkg, 'pnpm-lock.yaml': '' }, 'pnpm', 'pnpm install'],
+    ['detect', { 'package.json': pkg, 'yarn.lock': '' }, 'yarn', 'yarn install'],
+    ['detect', { 'package.json': pkg, 'bun.lockb': '' }, 'bun', 'bun install'],
+    ['detect', { 'package.json': pkg, 'bun.lock': '{}' }, 'bun', 'bun install'],
+    ['detect', { 'package.json': pkg, 'bun.lockb': '', 'bun.lock': '{}' }, 'bun', 'bun install'],
+    ['detect', { 'package.json': pkg, 'pnpm-lock.yaml': '', 'yarn.lock': '' }, 'pnpm', 'pnpm install'],
+    ['detect', { 'package.json': pkg, 'yarn.lock': '', 'bun.lock': '{}' }, 'yarn', 'yarn install'],
+    ['detect', { 'package.json': pkg, 'bun.lock': '{}', 'package-lock.json': '{}' }, 'bun', 'bun install'],
+    // `--stack` JS override: same judgment, and a lockfile decides even without package.json.
+    ['react', { 'pnpm-lock.yaml': '' }, 'pnpm', 'pnpm install'],
+    ['react', {}, '(none)', '(configure)'],
+    ['react', { 'package.json': '{ broken' }, '(none)', '(configure)'],
+  ];
+  for (const [via, files, pm, install] of cases) {
+    const dir = await project(files);
+    try {
+      const s = via === 'detect' ? await detectStack(dir) : await resolveStack(dir, via);
+      assert.deepEqual([s.packageManager, s.cmdInstall], [pm, install], `${via}: ${Object.keys(files).join('+') || '빈 디렉터리'}`);
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  }
+});
+
 // A fresh worktree has no node_modules; without the lockfile-respecting command the agent
 // guessed (heliosent-profile, 2026-10-11). bun.lockb is left out: `--frozen-lockfile` does not
 // validate it, it converts it to bun.lock.

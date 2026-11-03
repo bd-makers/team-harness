@@ -1,0 +1,23 @@
+{
+  "user": "hslee",
+  "task": "js-pm-preset",
+  "created": "2026-11-02",
+  "firstActivatedAt": "2026-11-02T17:11:12.173Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "a18749d050b17eda57376ede14624dd6157addde",
+      "tip": "84dd9fc7846e5f59a4294c4df99fc8acd42267a7",
+      "at": "2026-11-02T22:40:24.159Z",
+      "exitCode": 0,
+      "outputBytes": 2001
+    }
+  ]
+}
