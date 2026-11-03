@@ -284,7 +284,7 @@
     <h1>Task Workflow Simulation</h1>
     <p>새로운 harness task 시스템의 전체 흐름 — init부터 완료, 세션 재개, task 전환까지의 시나리오별 시뮬레이션</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.51.2</span>
+      <span class="tag tag-purple">v0.52.0</span>
       <span class="tag tag-blue">post-commit 자동화</span>
       <span class="tag tag-green">증거 기반 종결 가드 7종</span>
       <span class="tag tag-orange">원장은 생성물</span>
@@ -293,7 +293,9 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #a78bfa;background:rgba(167,139,250,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
-    <strong>🆕 0.40.1–0.51.2 — user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키 · 폴더 없는 done task · PR 없는 위키 컴파일 · 리뷰 scope 판정 정정 · worktree 리뷰 범위 확장 · scope 오류 안내 정정 · pre-push가 무관 히스토리 브랜치를 건너뜀 · 소급 위키 컴파일 후보 목록 · eval 기반 명령 문서 정정 · stack 인프로세스 DB 안내:</strong>
+    <strong>🆕 0.40.1–0.52.0 —user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키 · 폴더 없는 done task · PR 없는 위키 컴파일 · 리뷰 scope 판정 정정 · worktree 리뷰 범위 확장 · scope 오류 안내 정정 · pre-push가 무관 히스토리 브랜치를 건너뜀 · 소급 위키 컴파일 후보 목록 · eval 기반 명령 문서 정정 · stack 인프로세스 DB 안내 · done tests 기본 optional:</strong>
+    <br>
+    <code>0.52.0</code> 종결 가드 5번(테스트 증거)이 기본 OFF가 됐다 — spec이 <code>"tests": "required"</code>를 선언한 task에서만 돈다(아래 종결 가드 목록). <code>done</code> 통과 출력에 보장 범위 한 줄이 붙고, <code>stack</code>이 환경 빈칸·설치 흔적을 보고한다 — 나머지 흐름은 그대로다.
     <br>
     <code>0.51.2</code> <code>harness-team stack</code>의 <code>next_actions</code>만 고쳤다(인프로세스 DB면 <code>docker info</code>를 권하지 않음) — 아래 시나리오의 흐름·가드는 그대로다.
     <br>
@@ -784,8 +786,8 @@
 cause: plan.md에 미완 체크박스(`- [ ]`)가 남아 있음
 cause: artifact.md가 템플릿 그대로임 (내용 없음)
 cause: 소스는 바뀌었는데 테스트 파일 변경이 없음
-       (테스트 미작성 — 불필요하면 spec에
-        `"tests": "skip"` 선언)
+       (테스트 미작성 — 불필요하면 spec의
+        `"tests"`를 `"optional"`로)
 retry: 위 항목을 해소한 뒤 다시 `harness-team done` 실행
 alternatives: `harness-team done --force` 로 가드를 무시하고 종결한다
               — 무시한 사유를 artifact.md 에 남길 것
@@ -794,27 +796,27 @@ stop: 가드가 지적한 증거가 실제로 없으면 종결하지 말 것
             </div>
             <div class="step-detail">"결과를 증명하지 않은 done"을 코드가 거부 — dogfooding이 입증한 강제 갭을 메움 (P0). <strong>0.9.5</strong>: 커밋 직후 post-commit 훅이 handoff를 더럽혀 <code>done</code>이 항상 <code>--force</code>를 요구하던 마찰을 가드 측에서 해소(<code>parsePorcelainPaths</code> 헬퍼) — handoff 외 실제 미커밋 작업이 있을 때만 차단.</div>
             <div class="tree" style="margin-top:0.6rem">
-<span class="tree-dir">가드 7종 + 선언 유효성 (가드 수는 0.21.0 이후 불변 — 증거 출처는 0.37.0, 7번이 세는 kind는 0.47.0, 5번의 테스트 증거 판정은 0.51.0에서 바뀜)</span>
+<span class="tree-dir">가드 7종 + 선언 유효성 (가드 수는 0.21.0 이후 불변 — 증거 출처는 0.37.0, 7번이 세는 kind는 0.47.0, 5번의 테스트 증거 판정은 0.51.0, 5번의 기본값은 0.52.0에서 바뀜)</span>
 1. plan.md에 미완 체크박스(- [ ])                 <span style="color:var(--border)"># 0.7~</span>
 2. artifact.md 미작성 / 템플릿 그대로              <span style="color:var(--border)"># 0.7~</span>
 3. 미커밋 변경 존재                                <span style="color:var(--border)"># handoff 제외 (0.9.5) · plan 체크박스만 켠 변경 제외 (0.44.0)</span>
 4. task 시작 이후 커밋 0개                         <span style="color:var(--border)"># 0.7~</span>
-5. 소스 변경 O + 테스트 변경 X                    <span style="color:var(--border)"># 0.18.1 · 기본 ON — 0.19.0에서 실제 발동 · 삭제는 증거 아님, 기존 테스트 삭제는 차단 (0.51.0)</span>
+5. spec이 tests: required인데 소스 변경 O + 테스트 변경 X <span style="color:var(--border)"># 0.18.1 · 0.19.0에서 실제 발동 · 삭제는 증거 아님, 기존 테스트 삭제는 차단 (0.51.0) · 기본 OFF, spec opt-in (0.52.0)</span>
 6. spec이 review: required인데 리뷰 증거 없음      <span style="color:var(--border)"># 0.18.1 · spec opt-in · 0.37.0부터 meta.reviews[]</span>
 7. spec이 verify: required인데 검증 프레이밍 증거 없음 <span style="color:var(--border)"># 0.20.0 · spec opt-in · 0.37.0부터 손으로 쓴 마커는 미인정 · scenarios 선언 시 -scenario만 (0.47.0)</span>
 
 <span class="tree-dir">그리고 선언 자체의 유효성</span>
 0. spec의 `## Done evidence` 선언이 깨져 있으면 그것만으로 차단
-   { "version": 1, "tests": "required|skip",
+   { "version": 1, "tests": "required|optional",
      "review": "required|optional", "verify": "required|optional",
      "scenarios": [{ "id", "given", "when", "then", "test", "cmd" }] }   <span style="color:var(--border)"># scenarios는 R2 옵트인 (0.47.0)</span>
-   미선언 = 기본값(tests: required · review·verify: optional). 조용한 폴백은 없다
+   미선언 = 기본값(tests·review·verify 모두 optional — tests는 0.52.0부터, skip은 optional과 같은 뜻). 조용한 폴백은 없다
    시나리오 키가 빠지거나 비었거나 id가 겹치면 선언 invalid (증거 미연결). done은 증거 명령을 실행하지 않는다 — scenario check 몫
 
 <span class="tree-dir">판정 창</span>
 증거를 찾는 창의 시작 = meta.json의 firstActivatedAt      <span style="color:var(--border)"># 0.19.0 — switchedAt 오탐 제거</span>
             </div>
-            <div class="step-detail" style="margin-top:0.5rem"><strong>5번</strong>은 <code>git log --name-only</code>로 task 기간의 변경을 분류하므로 <strong>문서·설정만 바뀐 task에는 발동하지 않는다</strong>. <strong>6·7번</strong>은 artifact의 <code>&lt;!-- harness:review kind=… at=… --&gt;</code> 마커를 찾는다 — <code>/harness-review</code> 계열이 기록 단계에서 append하는 한 줄이다. <strong>7번</strong>(0.20.0)은 kind가 검증 프레이밍 접미사(<code>-adversarial</code>·<code>-testcritic</code>·<code>-shipcheck</code>·<code>-contrarian</code>·<code>-simplifier</code>·<code>-scenario</code>)로 끝나는 마커만 인정한다 — 검증 마커는 review 증거를 겸하지만 역은 성립하지 않는다. spec이 <code>scenarios</code>를 선언했으면 <code>-scenario</code>(R2 루브릭) kind만 센다(0.47.0) — 다른 프레이밍은 "증거가 Then을 검증하는가"를 묻지 않기 때문이다. 이 가드들이 막는 것은 악의가 아니라 <strong>망각</strong>이며, 강도는 기존 4종과 같은 등급이다.</div>
+            <div class="step-detail" style="margin-top:0.5rem"><strong>5번</strong>은 spec이 <code>"tests": "required"</code>를 선언했을 때만 돌고(0.52.0부터 기본 OFF — 위 예시의 세 번째 cause는 그 선언이 있는 task다), task 기간의 변경을 분류하므로 <strong>문서·설정만 바뀐 task에는 발동하지 않는다</strong>. <strong>6·7번</strong>은 artifact의 <code>&lt;!-- harness:review kind=… at=… --&gt;</code> 마커를 찾는다 — <code>/harness-review</code> 계열이 기록 단계에서 append하는 한 줄이다. <strong>7번</strong>(0.20.0)은 kind가 검증 프레이밍 접미사(<code>-adversarial</code>·<code>-testcritic</code>·<code>-shipcheck</code>·<code>-contrarian</code>·<code>-simplifier</code>·<code>-scenario</code>)로 끝나는 마커만 인정한다 — 검증 마커는 review 증거를 겸하지만 역은 성립하지 않는다. spec이 <code>scenarios</code>를 선언했으면 <code>-scenario</code>(R2 루브릭) kind만 센다(0.47.0) — 다른 프레이밍은 "증거가 Then을 검증하는가"를 묻지 않기 때문이다. 이 가드들이 막는 것은 악의가 아니라 <strong>망각</strong>이며, 강도는 기존 4종과 같은 등급이다.</div>
           </div>
         </div>
       </div>
@@ -1199,7 +1201,7 @@ login-bug
 </main>
 
 <footer>
-  harness-aijient-team-plugin v0.51.2 — Task Workflow Simulation &nbsp;·&nbsp; 2026-11-01
+  harness-aijient-team-plugin v0.52.0 — Task Workflow Simulation &nbsp;·&nbsp; 2026-11-03
 </footer>
 
 

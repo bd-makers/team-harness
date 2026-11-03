@@ -201,7 +201,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.51.2</span>
+      <span class="tag tag-purple">v0.52.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -209,6 +209,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.52.0 — 에이전트가 묻지 않고도 환경이 준비됐는지 안다:</strong>
+    <br>
+    <code>0.52.0</code> <strong><code>harness-team stack</code>·doctor가 저장소가 답하지 못한 환경 질문 Q1–Q4(런타임 버전·잠금·서비스 계약·bootstrap)를 알리고(<code>declarations</code>), lockfile이 선언한 의존성의 설치 흔적을 보고한다(<code>installTrace</code>, 없으면 <code>status: warning</code>과 bootstrap 명령 안내)</strong> — 선언 파일은 경로만 가리키고 하네스가 만들지 않는다. 규칙은 프리셋 <code>env</code>에만 있고(D11), JS lockfile→pm 판정도 그리로 옮겼다. AGENTS.md <code>## 명령</code>에 lockfile을 지키는 <code>bootstrap</code> 줄, Python은 uv·poetry를 감지한다. <code>done</code>은 통과 출력에 보장 범위 한 줄을 적고 <strong><code>tests</code> 증거 기본값이 <code>optional</code></strong>로 내려갔다(필요하면 spec에 <code>"tests": "required"</code>). failure capsule에 원인 범주 <code>Cause</code> 줄(권장). Q5 런타임 축(선언 대 실제 런타임)은 파일로 관측할 수 없어 만들지 않았다. 소비자는 <strong>플러그인 갱신 + <code>init --yes</code> + <code>migrate</code></strong>이고, doctor가 런타임 버전 선언 없는 저장소에서 새 warning을 낸다.
+    <br><br>
     <strong>🆕 0.51.2 — <code>stack</code>이 인프로세스 DB에 Docker를 권하지 않는다:</strong>
     <br>
     <code>0.51.2</code> <strong><code>harness-team stack</code>의 <code>next_actions</code>가 감지된 DB 드라이버가 전부 인프로세스(<code>better-sqlite3</code>)면 <code>docker info</code> 대신 docker 확인이 필요 없다고 안내한다</strong> — 0.51.1의 <code>/harness-inttest</code> 0단계와 같은 판단이다. 서버형 드라이버가 하나라도 있거나 ORM만 보이면 종전 안내를 유지하고, envelope 형태는 그대로다. 소비자는 <strong>플러그인 갱신만</strong> 하면 된다.
@@ -1007,7 +1011,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.51.2 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.52.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
