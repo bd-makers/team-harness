@@ -29,3 +29,9 @@ CHANGELOG.md                                       |  2 +-
  scripts/generate-harness-overview.mjs              | 26 +++++++++-------
  tests/harness-overview-generation.test.mjs         | 12 ++++++--
  7 files changed, 77 insertions(+), 23 deletions(-)
+
+## 2026-11-04T13:25:39.755Z — 6d6e615 docs(task): overview-worktree-inventory 재검토 판별과 알려진 한계 기록
+.../overview-worktree-inventory-artifact.md        | 29 ++++++++++++++++++++++
+ .../overview-worktree-inventory-meta.json          | 11 ++++++++
+ .../overview-worktree-inventory-spec.md            |  2 ++
+ 3 files changed, 42 insertions(+)
