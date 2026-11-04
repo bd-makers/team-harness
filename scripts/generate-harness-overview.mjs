@@ -95,15 +95,19 @@ export function renderCommandTable(rows) {
     </div>`;
 }
 
-async function listTrackedSourceFiles(root) {
-  const { stdout } = await execFileAsync('git', [
-    '-C', root,
-    'ls-files',
-    '-z',
-    '--',
-    ...sourceTreeEntries,
+// 인벤토리는 `git add -A`가 스테이징할 트리다 — index만 보면 `git add` 전에 생성한 결과가
+// CI의 깨끗한 체크아웃과 갈린다. ignored 파일은 빠지고, 지웠지만 index에 남은 파일도 빠진다.
+async function listSourceFiles(root) {
+  const lsFiles = async (...flags) => {
+    const { stdout } = await execFileAsync('git', ['-C', root, 'ls-files', '-z', ...flags, '--', ...sourceTreeEntries]);
+    return stdout.split('\0').filter(Boolean);
+  };
+  const [present, deleted] = await Promise.all([
+    lsFiles('--cached', '--others', '--exclude-standard'),
+    lsFiles('--deleted'),
   ]);
-  return stdout.split('\0').filter(Boolean);
+  const removed = new Set(deleted);
+  return [...new Set(present)].filter((path) => !removed.has(path));
 }
 
 function fileType(path) {
@@ -144,7 +148,7 @@ function fileRole(path, commandDescriptions) {
 export async function buildFileRows(root = repositoryRoot, commandRows) {
   commandRows ??= await buildCommandRows(root);
   const commandDescriptions = new Map(commandRows.map((row) => [row.sourcePath, row.description]));
-  const paths = await listTrackedSourceFiles(root);
+  const paths = await listSourceFiles(root);
   return paths.sort().map((path) => ({
     path,
     type: fileType(path),

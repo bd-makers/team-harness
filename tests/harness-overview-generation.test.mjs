@@ -1,17 +1,22 @@
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
 import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import test from 'node:test';
 
 import {
   buildCommandRows,
+  buildFileRows,
   generateOverview,
   renderCommandTable,
 } from '../scripts/generate-harness-overview.mjs';
 
 const root = dirname(dirname(fileURLToPath(import.meta.url)));
+const pexec = promisify(execFile);
+const git = (dir, ...args) => pexec('git', ['-C', dir, ...args]);
 
 test('generated harness overview matches its sources', async () => {
   const [actual, generated, diagramFiles] = await Promise.all([
@@ -29,19 +34,29 @@ test('generated harness overview matches its sources', async () => {
   assert.doesNotMatch(actual, /병렬 작성/);
 });
 
-test('ignored and untracked source-root files do not change the generated overview', async () => {
-  const before = await generateOverview(root);
-  const fixture = await mkdtemp(join(root, 'tests/.harness-overview-'));
-  const ignoredPath = join(fixture, '.DS_Store');
-  const untrackedPath = join(fixture, 'untracked.mjs');
-
+test('file inventory is the tree `git add -A` would stage, regardless of index state', async () => {
+  const fixture = await mkdtemp(join(tmpdir(), 'harness-overview-git-'));
   try {
+    await git(fixture, 'init', '-q', '-b', 'main');
+    await git(fixture, 'config', 'user.email', 't@e.com');
+    await git(fixture, 'config', 'user.name', 't');
+    await mkdir(join(fixture, 'src'));
     await Promise.all([
-      writeFile(ignoredPath, 'ignored'),
-      writeFile(untrackedPath, 'untracked'),
+      writeFile(join(fixture, '.gitignore'), '.DS_Store\n'),
+      writeFile(join(fixture, 'src/kept.mjs'), 'kept'),
+      writeFile(join(fixture, 'src/gone.mjs'), 'gone'),
+    ]);
+    await git(fixture, 'add', '-A');
+    await git(fixture, 'commit', '-qm', 'base');
+
+    await Promise.all([
+      rm(join(fixture, 'src/gone.mjs')),
+      writeFile(join(fixture, 'src/new.mjs'), 'new'),
+      writeFile(join(fixture, 'src/.DS_Store'), 'ignored'),
     ]);
 
-    assert.equal(await generateOverview(root), before);
+    const paths = (await buildFileRows(fixture, [])).map((row) => row.path);
+    assert.deepEqual(paths, ['src/kept.mjs', 'src/new.mjs']);
   } finally {
     await rm(fixture, { recursive: true, force: true });
   }

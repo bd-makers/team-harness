@@ -9,6 +9,12 @@
 
 ## [Unreleased]
 
+### Fixed
+- **`docs:generate`의 파일 인벤토리가 `git add` 순서에 따라 달라지지 않는다.** 인벤토리는 `git ls-files`(index) 기준이었다. 그래서 새 파일을
+  `git add` 전에 생성하면 표에서 빠졌고, 지운 파일은 index에 남은 동안 계속 나왔다. 어느 쪽이든 CI의 `docs:check`만 깨졌다.
+  이제 기준은 `git add -A`가 스테이징할 트리다. ignored 파일은 그대로 빠진다. CI 결과는 같다. 저장소 전용이며 소비자 영향은 없다.
+  `MAINTAINING.md`의 eager 실측 수치는 낡아서 지우고 측정 명령만 남겼다.
+
 ## [0.53.0] - 2026-11-04
 
 ### Changed
