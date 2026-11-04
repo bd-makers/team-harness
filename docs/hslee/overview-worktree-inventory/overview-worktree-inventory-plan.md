@@ -9,7 +9,7 @@ overview 인벤토리를 `git add -A`가 스테이징할 트리 기준으로 바
 - [x] `MAINTAINING.md:39` 생성 순서 안내와 `:52` eager 수치 정리
 - [x] CHANGELOG `[Unreleased]` 항목
 - [x] 검증: `git add` 전 `docs:generate` → `git add -A` → `docs:check`, `npm test`
-- [ ] 커밋
+- [x] 커밋
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
