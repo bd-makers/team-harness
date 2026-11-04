@@ -14,3 +14,8 @@ CHANGELOG.md                                       |  6 +++
  scripts/generate-harness-overview.mjs              | 22 ++++----
  tests/harness-overview-generation.test.mjs         | 33 ++++++++----
  10 files changed, 182 insertions(+), 20 deletions(-)
+
+## 2026-11-04T00:14:13.595Z — 4f6c7d3 chore(task): overview-worktree-inventory handoff 갱신 + 커밋 단계 체크
+.../overview-worktree-inventory-handoff.md                  | 13 +++++++++++++
+ .../overview-worktree-inventory-plan.md                     |  2 +-
+ 2 files changed, 14 insertions(+), 1 deletion(-)
