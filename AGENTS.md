@@ -89,31 +89,13 @@
 `task`/`done`은 이 파일들을 건드리지 않으므로 브랜치를 병렬로 둬도 충돌하지 않는다.
 갱신은 기본 브랜치에서 `harness-team summary --write`로만 한다.
 
-### Task Context Card (TCC)
-`docs/<user>/<name>/<name>-context.md`는 현재 작업을 위한 작은 **비-SSOT cache/workpad**다.
-SSOT는 여전히 네 파일이며, TCC는 거기서 파생된 현재 working set만 담는다.
-
-- 한도: UTF-8 6 KiB 이하 · 비공백 100행 이하 · 미해결 failure capsule(`### F-*`) 최대 3개.
-- 갱신 시점: task 생성 직후 · 세션을 넘기기 전 · plan의 atomic step이 바뀔 때 · 실패가 생기거나 해소될 때.
-- raw stderr, 토큰, 비밀값, 전체 HTTP payload를 복사하지 않는다 — 안전한 요약과 source 위치만.
-- 검사는 `harness-team context check`가 결정론적으로 한다. 한도 계산의 세부는 외울 필요 없다 —
-  위반 시 check의 failure 메시지가 알려준다.
-
 ### 세션 시작 시 (반드시 수행)
 1. `docs/<user>/<user>-handoff.md` 읽기 — 현재 active task 확인
 2. 활성 task의 `<name>-plan.md` 읽기 — 현재 단계 파악
 3. 필요시 `<name>-spec.md`에서 맥락 보강
 
-### JIT retrieval 프로토콜
-1. 먼저 TCC의 `Current atomic step`과 `JIT retrieval map`을 읽는다.
-2. 단서가 있으면 식별자를 `Grep`, 해당 모듈을 좁은 `Glob`, 매치한 파일만 `Read` 한다.
-3. 단서가 없을 때만 plan의 현재 step에 맞춘 최소 검색으로 map을 채운다.
-4. 디렉터리 전체 덤프·무차별 파일 열기·원문 로그의 TCC 복사는 금지한다.
-5. retrieval map은 재개 비용을 낮추는 단서만 남기고, 오래된 경로는 제거한다.
-
 > **task-gate (자동):** SessionStart 훅이 `harness-team session-context`를 호출해
-> 활성 task 유무를 주입한다. 활성 task가 있으면 breadcrumb 다음에 유효한 TCC를 그대로 주입하고,
-> 카드가 없으면 `context init`, 읽을 수 없거나 유효하지 않으면 원문 대신 `context check` 안내만 내보낸다.
+> 활성 task 유무를 주입한다. 활성 task가 있으면 breadcrumb 다음에 plan의 첫 미완 단계를 한 줄 주입한다.
 > 활성 task가 없으면 첫 작업 프롬프트에서 `AskUserQuestion`으로
 > **재개 / 새 task / task 없이 진행**을 확인하라 — 이는 block이 아닌 nudge이며 판단은 Claude 몫.
 > 활성 task가 main에서 이미 `done`이면 "종결됨" nudge만 나온다 — harness-task 문서.

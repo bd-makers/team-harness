@@ -56,7 +56,7 @@ test('KNOWN_STOCK_TEMPLATE_SHA256는 fixture의 실제 바이트와 일치한다
       checked++;
     }
   }
-  assert.equal(checked, 23, `알려진 stock 버전 23개를 기대 — 실제: ${checked}`);
+  assert.equal(checked, 25, `알려진 stock 버전 25개를 기대 — 실제: ${checked}`);
 });
 
 test('테이블의 모든 키가 REFRESHABLE_TEMPLATE_FILES에 있고, 현재 템플릿 sha는 테이블에 없다', async () => {

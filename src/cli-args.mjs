@@ -73,13 +73,12 @@ export const COMMANDS = [
   { name: 'done', args: '[--force]', summary: 'Complete the active task (--force bypasses the completion guard)',
     flags: ['force'] },
   { name: 'handoff', args: '', summary: 'Update handoff from latest commit (post-commit hook)', flags: [] },
-  { name: 'context', args: '<init|check>', summary: "Initialize or validate the active task's Context Card", flags: [] },
   { name: 'boundary', args: 'check', summary: 'Compare declared JSON Schema producer/consumer boundaries', flags: [] },
   { name: 'scenario', args: 'check', summary: "Run each Done evidence scenario's evidence command and require exit 0 (R2 machine rows)", flags: [] },
   // `--codex-hook` wraps the same text in Codex's SessionStart envelope. Codex does not inject a
   // hook's plain stdout (measured 2026-09-12); only hookSpecificOutput.additionalContext reaches
   // the model. Claude reads plain stdout, so the default output is unchanged.
-  { name: 'session-context', args: '[--codex-hook]', summary: 'Emit bounded SessionStart Context Card or no-task nudge (--codex-hook wraps it in Codex\'s additionalContext envelope)', flags: ['codex-hook'] },
+  { name: 'session-context', args: '[--codex-hook]', summary: 'Emit SessionStart active-task breadcrumb and current plan step, or no-task nudge (--codex-hook wraps it in Codex\'s additionalContext envelope)', flags: ['codex-hook'] },
   { name: 'retro', args: '[text]', summary: "Append a dated Learnings entry to the active task's artifact.md", flags: [] },
   { name: 'review', args: '[codex|claude|custom] [--framing <suffix>] [--rubric unit|component|integration] [--prompt-file <path>] [--scope worktree|diff|task-docs] [--base <ref>] [focus ...]',
     summary: "Run a read-only review engine and record the evidence in the active task's meta.reviews + artifact (only exit 0 counts)",

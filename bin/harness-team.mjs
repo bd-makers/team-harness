@@ -16,7 +16,6 @@ import { runTask, runList, runDone, runHandoffAuto, runRetro } from '../src/comm
 import { runMigrate } from '../src/commands/migrate.mjs';
 import { runRelease } from '../src/commands/release.mjs';
 import { runSessionContext } from '../src/commands/session-context.mjs';
-import { runContext } from '../src/commands/context.mjs';
 import { runBoundary } from '../src/commands/boundary.mjs';
 import { runScenario } from '../src/commands/scenario.mjs';
 import { runSummary } from '../src/commands/summary.mjs';
@@ -80,7 +79,6 @@ async function main() {
     case 'observe': return runObserve(ctx);
     case 'done': return runDone(ctx);
     case 'handoff': return runHandoffAuto(ctx);
-    case 'context': return runContext(ctx);
     case 'boundary': return runBoundary(ctx);
     case 'scenario': return runScenario(ctx);
     case 'session-context': return runSessionContext(ctx);

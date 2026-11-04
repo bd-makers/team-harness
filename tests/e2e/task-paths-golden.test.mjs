@@ -70,7 +70,6 @@ test('golden: task 경로·파일 바이트·stdout 이 한 생애주기 동안 
     }
     assert.deepEqual(listed.stdout.trimEnd().split('\n').map(l => l.slice(2)), readdirOrder, 'list 는 readdir 순서를 따른다');
     await cli('retro', ['retro', 'golden learning']);
-    await cli('context check', ['context', 'check']);
     await cli('boundary check', ['boundary', 'check']);
     await cli('done (blocked: open plan box)', ['done']);
 

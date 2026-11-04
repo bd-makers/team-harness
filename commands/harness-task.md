@@ -121,7 +121,7 @@ area 는 `<name>-meta.json` 의 `area` 키에만 기록되고 task 는 여전히
 created: docs/<user>/<name>/
 ```
 
-- 판정은 `src/commands/remote-task.mjs` 한 곳이고 `session-context`(SessionStart, breadcrumb·TCC 대신 nudge만)와
+- 판정은 `src/commands/remote-task.mjs` 한 곳이고 `session-context`(SessionStart, breadcrumb·현재 단계 대신 nudge만)와
   `doctor`(`done on main` warning)가 같은 함수를 쓴다.
 - **침묵 조건**: 로컬 meta가 이미 `done`(재개 후보 판정이 처리) · 로컬 `reopenedAt`이 원격 `closedAt`보다 나중(고의 재개).
   따라서 정상 복구 경로는 **main을 가져온 뒤 `task <name>`** — 로컬 meta가 done이 되고, 다시 열면 `reopenedAt`이 생겨

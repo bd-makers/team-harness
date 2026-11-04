@@ -1250,8 +1250,7 @@
         spec --> plan : &lt;name&gt;-plan.md 생성
         plan --> handoff : &lt;name&gt;-handoff.md 생성
         handoff --> artifact : &lt;name&gt;-artifact.md 생성
-        artifact --> context : &lt;name&gt;-context.md 생성
-        context --> meta_json : &lt;name&gt;-meta.json 생성
+        artifact --> meta_json : &lt;name&gt;-meta.json 생성
         meta_json --> active_json : .harness/active.json 갱신
     }
 
@@ -1284,7 +1283,7 @@
     </div>
     <p class="diagram-label">Task 상태 다이어그램 — create → active(commit loop) → AskUserQuestion → done</p>
 
-    <p style="margin-top:1.5rem">task 파일 계약과 Context Card 규약은 scaffold 되는 <code>AGENTS.md</code>의 <strong>작업 프로토콜</strong>에서 확인합니다.</p>
+    <p style="margin-top:1.5rem">task 파일 계약은 scaffold 되는 <code>AGENTS.md</code>의 <strong>작업 프로토콜</strong>에서 확인합니다.</p>
 
     <div style="margin-top:1.5rem">
       <div class="diagram-wrap">
@@ -1296,7 +1295,6 @@
     DIR --> PL["auth-redesign-plan.md"]
     DIR --> HO["auth-redesign-handoff.md\n← post-commit 자동 갱신"]
     DIR --> AR["auth-redesign-artifact.md\n← done/retro append"]
-    DIR --> CX["auth-redesign-context.md\n비-SSOT working set"]
     DIR --> MT["auth-redesign-meta.json\n기계 상태 (0.16.0)"]
     MT -.-> SUMCMD["harness-team summary --write\ntask 디렉터리 스캔 · 기본 브랜치 전용"]
     SUMCMD --> IDX["docs/chad/chad-task.md\n생성물 — task/done은 쓰지 않음"]
@@ -1888,11 +1886,6 @@
             <td>harness-team config CLI 구현</td>
           </tr>
           <tr>
-            <td><code>src/commands/context.mjs</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
-            <td>harness-team context CLI 구현</td>
-          </tr>
-          <tr>
             <td><code>src/commands/diagram.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
             <td>harness-team diagram CLI 구현</td>
@@ -2268,11 +2261,6 @@
             <td>자동 회귀 검증</td>
           </tr>
           <tr>
-            <td><code>tests/context.test.mjs</code></td>
-            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
-            <td>자동 회귀 검증</td>
-          </tr>
-          <tr>
             <td><code>tests/cursor-rules-mirror.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
@@ -2574,6 +2562,16 @@
           </tr>
           <tr>
             <td><code>tests/fixtures/stock-templates/2026-09-08-c9480a32/.claude/skills/new-feature/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-11-03-4f260b93/.claude/skills/fix-bug/SKILL.md</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>Codex용 harness workflow 지침</td>
+          </tr>
+          <tr>
+            <td><code>tests/fixtures/stock-templates/2026-11-03-4f260b93/.claude/skills/new-feature/SKILL.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>Codex용 harness workflow 지침</td>
           </tr>

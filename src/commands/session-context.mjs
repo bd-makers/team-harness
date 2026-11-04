@@ -1,8 +1,7 @@
 import { readFile, stat } from 'node:fs/promises';
 import { exists } from '../fsx.mjs';
-import { readActive, planHasOpenBoxes } from './task.mjs';
+import { readActive, planHasOpenBoxes, firstOpenPlanStep } from './task.mjs';
 import { readTaskMeta } from './summary.mjs';
-import { contextCardPath, validateContextCard } from './context.mjs';
 import { evaluateObserveVerdict } from './observe.mjs';
 import { checkDoneOnMain, renderDoneOnMainNudge } from './remote-task.mjs';
 import { taskLabel, docsPath, taskFilePath, listTaskRefs } from '../task-paths.mjs';
@@ -17,6 +16,9 @@ export function settingsHasSessionGate(settings) {
 // "활성 task 없음" nudge는 task마다 한 줄을 찍는 유일한 무제한 주입 경로다 — SessionStart 출력을
 // lean하게 유지하기 위해 상한을 두고, 전체 목록은 `harness-team list`로 안내한다.
 export const SESSION_CONTEXT_MAX_TASKS = 8;
+
+// plan 한 줄이 SessionStart 출력을 키우지 않게 자른다. 전문은 breadcrumb가 가리키는 plan에 있다.
+export const PLAN_STEP_MAX_CHARS = 200;
 
 // 재개 가능 = 완료되지 않았고(meta.status) plan.md에 열린 체크박스가 남은 task.
 // (marker: <name>-spec.md, `list`와 동일 규약)
@@ -46,12 +48,12 @@ export async function listIncompleteTasks(targetDir) {
   return out;
 }
 
-// The task-gate half of the SessionStart injection (active-task breadcrumb + card, or the
-// "no active task" nudge). Untouched by observe surfacing — see buildSessionContext below.
+// The task-gate half of the SessionStart injection (active-task breadcrumb + current plan step,
+// or the "no active task" nudge). Untouched by observe surfacing — see buildSessionContext below.
 async function buildTaskGateContext(targetDir, { doneOnMain = checkDoneOnMain } = {}) {
   const active = await readActive(targetDir);
   if (active && active.task) {
-    // 원격 done 감지(done-on-main-nudge): 이 task가 origin/<default>에서 이미 종결됐으면 breadcrumb·TCC 대신
+    // 원격 done 감지(done-on-main-nudge): 이 task가 origin/<default>에서 이미 종결됐으면 breadcrumb·현재 단계 대신
     // nudge만 낸다 — 재개 여부가 먼저다. 판정은 fetch 없이 로컬 ref 기준이고, 어떤 실패도 기존 경로로 떨어진다
     // (SessionStart 출력은 판정 때문에 깨지지 않는다 — observe 표면화와 같은 계약).
     let verdict = null;
@@ -63,38 +65,14 @@ async function buildTaskGateContext(targetDir, { doneOnMain = checkDoneOnMain } 
       ].join('\n');
     }
     const breadcrumb = `[harness] 활성 task: ${taskLabel(active.user, active.task)} — 세션 시작 프로토콜대로 ${active.task}-plan.md 확인.`;
-    const path = contextCardPath(targetDir, active);
-    if (!(await exists(path))) {
-      return [
-        breadcrumb,
-        '[harness] Context Card가 없습니다.',
-        'next-action: harness-team context init',
-      ].join('\n');
-    }
-
-    let card;
+    // 읽히지 않는 plan은 task-gate를 막을 이유가 아니다 — breadcrumb만 낸다.
+    let step = null;
     try {
-      card = await readFile(path, 'utf8');
-    } catch {
-      return [
-        breadcrumb,
-        `[harness] Context Card를 읽을 수 없습니다: ${taskLabel(active.user, active.task)}.`,
-        'next-action: harness-team context check',
-      ].join('\n');
-    }
-
-    const validation = validateContextCard(card, active.task);
-    if (!validation.valid) {
-      const lines = [
-        breadcrumb,
-        `[harness] Context Card가 유효하지 않습니다: ${taskLabel(active.user, active.task)}.`,
-        ...validation.failures.map(failure => `failure: ${failure.code} | ${failure.message}`),
-        'next-action: harness-team context check',
-      ];
-      return lines.join('\n');
-    }
-
-    return `${breadcrumb}\n${card}`;
+      step = firstOpenPlanStep(await readFile(taskFilePath(targetDir, active.user, active.task, 'plan.md'), 'utf8'));
+    } catch { /* breadcrumb만 */ }
+    if (!step) return breadcrumb;
+    const shown = step.length > PLAN_STEP_MAX_CHARS ? `${step.slice(0, PLAN_STEP_MAX_CHARS)}…` : step;
+    return `${breadcrumb}\n[harness] 현재 단계: ${shown}`;
   }
   const incomplete = await listIncompleteTasks(targetDir);
   // Plain stdout (SessionStart injects it into context). No literal <system-reminder>

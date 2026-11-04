@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, readFile, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { taskSpecTemplate, taskPlanTemplate, taskArtifactTemplate, taskContextTemplate, runTask, runList, runDone } from '../src/commands/task.mjs';
+import { taskSpecTemplate, taskPlanTemplate, taskArtifactTemplate, runTask, runList, runDone } from '../src/commands/task.mjs';
 import { migrateTaskIndexLabels } from '../src/commands/migrate.mjs';
 import { collectTasks } from '../src/commands/summary.mjs';
 
@@ -75,7 +75,7 @@ test('artifact 템플릿은 Learnings 섹션을 포함한다', () => {
 
 // EOF 빈 줄은 새 task 를 커밋할 때마다 `git diff --check` 경고("new blank line at EOF")를 낸다.
 test('task 템플릿은 개행 하나로 끝난다 — EOF 빈 줄 없음', () => {
-  const templates = { spec: taskSpecTemplate, plan: taskPlanTemplate, artifact: taskArtifactTemplate, context: taskContextTemplate };
+  const templates = { spec: taskSpecTemplate, plan: taskPlanTemplate, artifact: taskArtifactTemplate };
   for (const [kind, render] of Object.entries(templates)) {
     const out = render('demo');
     assert.ok(out.endsWith('\n') && !out.endsWith('\n\n'), kind);
@@ -132,12 +132,11 @@ test('runTask 평문 재활성화 출력은 plan 현재 단계 힌트를 제공�
   }
 });
 
-test('runTask는 설계 계약 그대로 context.md를 생성한다', async () => {
+test('runTask는 Context Card를 만들지 않는다', async () => {
   const tmpDir = await mkdtemp(join(tmpdir(), 'harness-task-context-'));
   try {
     await runTask({ targetDir: tmpDir, flags: { member: 'tester' }, taskArgs: ['demo'] });
-    const contextPath = join(tmpDir, 'docs', 'tester', 'demo', 'demo-context.md');
-    assert.equal(await readFile(contextPath, 'utf8'), taskContextTemplate('demo'));
+    await assert.rejects(readFile(join(tmpDir, 'docs', 'tester', 'demo', 'demo-context.md'), 'utf8'), { code: 'ENOENT' });
   } finally {
     await rm(tmpDir, { recursive: true, force: true });
   }

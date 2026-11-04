@@ -231,7 +231,7 @@
           <!-- 구현 루프 rect -->
           <rect x="400" y="396" width="200" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
           <text x="500" y="420" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist','Noto Sans KR',sans-serif" text-anchor="middle">구현 루프</text>
-          <text x="500" y="436" fill="#4f5d75" font-size="9" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle">JIT · gate · boundary · handoff</text>
+          <text x="500" y="436" fill="#4f5d75" font-size="9" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle">검색 · gate · boundary · handoff</text>
 
           <!-- D3: plan 완료 -->
           <polygon points="500,476 600,528 500,580 400,528" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
@@ -327,7 +327,7 @@
           <text x="270" y="250" fill="#4f5d75" font-size="8" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle" letter-spacing="0.1em">요청</text>
 
           <rect x="422" y="252" width="72" height="12" rx="2" fill="#f5f5f5"/>
-          <text x="458" y="262" fill="#4f5d75" font-size="8" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle" letter-spacing="0.08em">TCC · SSOT</text>
+          <text x="458" y="262" fill="#4f5d75" font-size="8" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle" letter-spacing="0.08em">SSOT</text>
 
           <rect x="524" y="248" width="52" height="12" rx="2" fill="#f5f5f5"/>
           <text x="550" y="258" fill="#4f5d75" font-size="8" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle" letter-spacing="0.1em">COMMIT</text>
@@ -364,7 +364,7 @@
 
           <rect x="340" y="276" width="140" height="48" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
           <text x="410" y="298" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist','Noto Sans KR',sans-serif" text-anchor="middle">task 활성화</text>
-          <text x="410" y="312" fill="#4f5d75" font-size="8" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle">SSOT 4파일 · TCC</text>
+          <text x="410" y="312" fill="#4f5d75" font-size="8" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle">SSOT 4파일</text>
 
           <rect x="520" y="276" width="140" height="48" rx="6" fill="rgba(45,49,66,0.05)" stroke="#4f5d75" stroke-width="1"/>
           <text x="590" y="298" fill="#2d3142" font-size="11" font-weight="600" font-family="'Geist','Noto Sans KR',sans-serif" text-anchor="middle">post-commit · pre-push 훅</text>
@@ -436,7 +436,7 @@
           <rect x="844" y="384" width="8" height="40" fill="rgba(45,49,66,0.06)" stroke="#4f5d75" stroke-width="0.8"/>
 
           <!-- Messages -->
-          <!-- m1 self: JIT retrieval → 구현 -->
+          <!-- m1 self: 검색 → 구현 -->
           <path d="M 208 192 L 244 192 L 244 216 L 208 216" fill="none" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#sq-arrow)"/>
           <!-- m2 boundary check -->
           <line x1="204" y1="240" x2="432" y2="240" stroke="#4f5d75" stroke-width="1.2" marker-end="url(#sq-arrow)"/>
@@ -455,7 +455,7 @@
 
           <!-- Message labels -->
           <rect x="252" y="196" width="132" height="12" rx="2" fill="#f5f5f5"/>
-          <text x="318" y="206" fill="#4f5d75" font-size="8" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle" letter-spacing="0.04em">JIT RETRIEVAL → 구현</text>
+          <text x="318" y="206" fill="#4f5d75" font-size="8" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle" letter-spacing="0.04em">검색 → 구현</text>
 
           <rect x="264" y="224" width="104" height="12" rx="2" fill="#f5f5f5"/>
           <text x="316" y="234" fill="#4f5d75" font-size="8" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle" letter-spacing="0.06em">BOUNDARY 훅</text>
@@ -706,7 +706,7 @@
           <text x="520" y="96" class="node-name">Plan</text><text x="520" y="116" class="sublabel">atomic step 선택</text>
 
           <rect class="station" x="648" y="188" width="160" height="64" rx="6"/>
-          <text x="728" y="216" class="node-name">구현</text><text x="728" y="236" class="sublabel">JIT retrieval · commit</text>
+          <text x="728" y="216" class="node-name">구현</text><text x="728" y="236" class="sublabel">검색 · commit</text>
 
           <rect class="station focal" x="648" y="428" width="160" height="64" rx="6"/>
           <text x="728" y="456" class="node-name focal-name">리뷰</text><text x="728" y="476" class="sublabel">read-only 반박 · D6</text>

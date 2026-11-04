@@ -18,7 +18,6 @@ $ task other --json (exit 0)
     "docs/tester/other/other-plan.md",
     "docs/tester/other/other-handoff.md",
     "docs/tester/other/other-artifact.md",
-    "docs/tester/other/other-context.md",
     "docs/tester/other/other-meta.json"
   ],
   "error": null
@@ -36,13 +35,6 @@ $ list (exit 0)
 $ retro (exit 0)
 ✓ retro: docs/tester/demo/demo-artifact.md 에 ## Learnings (<DATE>) 추가
 next: artifact.md를 열어 학습 내용을 채우거나, 추가 메모는 `harness-team retro "<메모>"` 재실행
-
-$ context check (exit 0)
-context: valid
-path: <DIR>/docs/tester/demo/demo-context.md
-bytes: 565/6144
-nonblank-lines: 23/100
-unresolved-failure-capsules: 0/3
 
 $ boundary check (exit 0)
 boundary: not-configured
@@ -62,34 +54,6 @@ PLAN_COMPLETE
 
 $ session-context (exit 0)
 [harness] 활성 task: tester/demo — 세션 시작 프로토콜대로 demo-plan.md 확인.
-# demo — Context Card
-<!-- working set only; UTF-8 <= 6 KiB, nonblank lines <= 100 -->
-
-## Now
-- Goal:
-- Current atomic step:
-- Stop / human-decision condition:
-
-## Constraints and settled decisions
--
-
-## JIT retrieval map
-- Identifiers / symbols:
-- Narrow globs:
-- Read next:
-- Verification command:
-
-## Failure capsules (max 3 unresolved)
-### F-001
-- Signal:
-- Tried:
-- Compact finding / current hypothesis:
-- Cause (intent | context | environment | verification | state | unknown):
-- Next discriminator:
-- Source (safe path or command):
-
-## Resume checklist
--
 
 $ done (exit 0)
 done: tester/demo
@@ -147,37 +111,6 @@ null
 ## Learnings (<DATE>)
 
 - golden learning
-
-
-=== docs/tester/demo/demo-context.md
-# demo — Context Card
-<!-- working set only; UTF-8 <= 6 KiB, nonblank lines <= 100 -->
-
-## Now
-- Goal:
-- Current atomic step:
-- Stop / human-decision condition:
-
-## Constraints and settled decisions
--
-
-## JIT retrieval map
-- Identifiers / symbols:
-- Narrow globs:
-- Read next:
-- Verification command:
-
-## Failure capsules (max 3 unresolved)
-### F-001
-- Signal:
-- Tried:
-- Compact finding / current hypothesis:
-- Cause (intent | context | environment | verification | state | unknown):
-- Next discriminator:
-- Source (safe path or command):
-
-## Resume checklist
--
 
 
 === docs/tester/demo/demo-handoff.md
@@ -304,37 +237,6 @@ null
 
 
 ## Learnings
-
-
-=== docs/tester/other/other-context.md
-# other — Context Card
-<!-- working set only; UTF-8 <= 6 KiB, nonblank lines <= 100 -->
-
-## Now
-- Goal:
-- Current atomic step:
-- Stop / human-decision condition:
-
-## Constraints and settled decisions
--
-
-## JIT retrieval map
-- Identifiers / symbols:
-- Narrow globs:
-- Read next:
-- Verification command:
-
-## Failure capsules (max 3 unresolved)
-### F-001
-- Signal:
-- Tried:
-- Compact finding / current hypothesis:
-- Cause (intent | context | environment | verification | state | unknown):
-- Next discriminator:
-- Source (safe path or command):
-
-## Resume checklist
--
 
 
 === docs/tester/other/other-handoff.md

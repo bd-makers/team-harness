@@ -276,6 +276,8 @@ lockfile은 있었다 — 빠진 것은 선언이 아니라 **에이전트가 �
    fail에 넣지 않는다. 의존성 0개 저장소(이 저장소 포함)에는 lockfile 경고를 내지 않는다.
 4. **실패 귀인 칸**: failure capsule(`### F-*`)에 원인 범주 한 줄(의도·컨텍스트·환경·검증·상태)을 권장한다.
    "재현 불가능한 환경"을 코드 결함과 구분해 기록하게 하는 것이 목적이다. `context check` 필수 항목으로 만들지 않는다.
+   (2026-11-04 정정: Task Context Card를 폐지해 failure capsule의 자리가 artifact `## Failures`의 `### F-NNN`으로 옮겨졌다.
+   해소돼도 지우지 않는다 — 카드에서는 해소 시 지워서 귀인 기록이 남지 않았다. 근거는 task `tcc-removal` spec.)
 
 **결정 — 요구하지 않는 것**: 버전 파일·lockfile·devcontainer·Docker의 존재. 커밋 게이트·`pr-check`·`done`은 환경을 보지 않는다
 (D11의 강제 범위는 PR의 task 문서 하나로 유지).

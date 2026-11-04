@@ -68,7 +68,7 @@ Raw slash-command 인수:
      6번과 같은 예외), 그때는 **어느 뷰어에서 확인했는지와 판단 근거를 artifact에 남긴다.** 근거를
      남기지 않는 예외는 없다.
 
-   이미 파일이 있으면 새로 만들지 말고 갱신한다. plan 단계는 7번의 CLI가 닫는다. 산출물은 `<name>-meta.json`·`<name>-context.md`와
+   이미 파일이 있으면 새로 만들지 말고 갱신한다. plan 단계는 7번의 CLI가 닫는다. 산출물은 `<name>-meta.json`과
    마찬가지로 **SSOT 4파일이 아닌 생성물**이며, 없어도 task는 유효하다.
 
 7. **기록** — 실행했든 건너뛰었든 `harness-team diagram record`로 남긴다. 이 한 명령이 `<name>-artifact.md`

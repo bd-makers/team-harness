@@ -18,7 +18,7 @@ import { exists } from './fsx.mjs';
 export const DOCS_DIR = 'docs';
 
 export const taskDirRel = (user, task) => `${DOCS_DIR}/${user}/${task}`;
-// kind: 'spec.md' | 'plan.md' | 'handoff.md' | 'artifact.md' | 'context.md' | 'meta.json' | 'diagram.html'
+// kind: 'spec.md' | 'plan.md' | 'handoff.md' | 'artifact.md' | 'meta.json' | 'diagram.html'
 export const taskFileRel = (user, task, kind) => `${taskDirRel(user, task)}/${task}-${kind}`;
 export const userHandoffRel = (user) => `${DOCS_DIR}/${user}/${user}-handoff.md`;
 // user handoff 는 워크트리 로컬 렌더링이라 추적하지 않는다 — 내용이 전부 gitignore 된 active.json 과 그 워크트리의

@@ -174,22 +174,22 @@
       <div class="mermaid">
 flowchart TD
     S([세션 시작]) --> SC["SessionStart 훅<br/>harness-team session-context"]
-    SC -->|활성 task 있음| TCC["TCC 주입<br/>(breadcrumb + &lt;name&gt;-context.md)"]
-    SC -->|origin에서 이미 done| NUDGE["종결됨 nudge<br/>(breadcrumb·TCC 대신)"]
+    SC -->|활성 task 있음| STEP["현재 단계 주입<br/>(breadcrumb + plan 첫 미완 단계)"]
+    SC -->|origin에서 이미 done| NUDGE["종결됨 nudge<br/>(breadcrumb·현재 단계 대신)"]
     SC -->|활성 task 없음| GATE{"task-gate nudge<br/>재개 / 새 task / task 없이"}
     GATE -->|새 task| T["harness-team task &lt;name&gt;"]
-    GATE -->|재개| TCC
+    GATE -->|재개| STEP
     T -->|created| DIA{"다이어그램 옵트인?<br/>(1회만 질문)"}
     DIA -->|예: plan에 단계 추가| SPEC
     DIA -->|아니오| SPEC
-    TCC --> PLANREAD["plan.md 현재 단계 파악"] --> IMPL
+    STEP --> PLANREAD["plan.md 현재 단계 파악"] --> IMPL
     SPEC["spec.md — R1 원천 검토 · Ambiguity 자가진단"] -->|본문이 비면| SPECGEN["/harness-spec<br/>(Confluence·Figma·인터뷰)"]
     SPECGEN --> SPEC
     SPEC -->|R1 미해결 · 막히면| INT["/harness-interview<br/>R1 → Ambiguity 채점"] --> SPEC
     SPEC -->|R1 검토 완료 + Ambiguity 통과| PLAN["plan.md 단계별 체크리스트"] --> LOOPQ{"/harness-loop?<br/>(선택)"}
     LOOPQ -->|예| LOOP["Dev 1단계 → QA<br/>(gate · boundary · scenario check) → 로컬 커밋"] --> REV
     LOOPQ -->|아니오| IMPL
-    IMPL["구현 루프<br/>JIT retrieval: TCC → Grep → Glob → Read"] --> BC{"boundary checkpoint 훅<br/>(plan 체크 편집 직전)"}
+    IMPL["구현 루프<br/>Grep → Glob → Read"] --> BC{"boundary checkpoint 훅<br/>(plan 체크 편집 직전)"}
     BC -->|통과 / not-configured| CK["plan 체크박스 - [x]"] --> GC{"gate commit<br/>(pre-commit 훅 · gates.json)"}
     GC -->|통과| CM["git commit"]
     CM --> HK["post-commit 훅<br/>task handoff append (다음 커밋에 포함)"]
@@ -276,16 +276,16 @@ sequenceDiagram
     participant HK as hooks
     participant RV as 리뷰 엔진 (codex→claude · custom)
 
-    HK->>CC: SessionStart — session-context (TCC · task-gate nudge · 종결됨 nudge)
+    HK->>CC: SessionStart — session-context (현재 단계 · task-gate nudge · 종결됨 nudge)
     U->>CC: 작업 요청
     CC->>HT: harness-team task &lt;name&gt;
-    HT-->>CC: created — SSOT 4파일 + context.md + meta.json 생성
+    HT-->>CC: created — SSOT 4파일 + meta.json 생성
     CC->>U: 다이어그램 옵트인? (신규 task, 1회만)
     U-->>CC: 예 / 아니오
     CC->>CC: /harness-interview — R1 원천 검토 → Ambiguity 통과 → plan.md
 
     loop 구현 루프 (atomic step 단위 · /harness-loop는 선택)
-        CC->>CC: JIT retrieval (TCC → Grep → Glob → Read) → 구현
+        CC->>CC: Grep → Glob → Read → 구현
         CC->>HK: Edit — plan 체크 직전
         HK->>HT: boundary checkpoint
         CC->>HK: git commit 시도 (PreToolUse)

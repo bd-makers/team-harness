@@ -411,7 +411,7 @@ function buildSteps(){
 
 function buildAuto(){
   const A=[
-    ['SessionStart','harness-team session-context','활성 task 유무 + 유효한 TCC를 주입. 카드가 없으면 <code>context init</code>, 유효하지 않으면 <code>context check</code> 안내만'],
+    ['SessionStart','harness-team session-context','활성 task 유무 + plan의 첫 미완 단계를 주입'],
     ['SessionStart','observe-tools.mjs','<code>.harness/observability/</code> JSONL 기록 — 도구 이름·세션 id는 HMAC 참조'],
     ['PreToolUse Edit|Write','protect-files.sh','보호 경로 쓰기 차단'],
   ];
@@ -432,7 +432,6 @@ function buildFiles(){
     [`docs/&lt;member&gt;/${n}/${n}-artifact.md`,'실행 결과·학습·## Reviews — done·retro 시 append','h'],
   ];
   F.push([`docs/&lt;member&gt;/${n}/${n}-meta.json`,'기계 상태 — 손으로 고치지 않는다. 판정 창과 verify 증거 정본 <code>reviews[]</code>','m']);
-  F.push([`docs/&lt;member&gt;/${n}/${n}-context.md`,'TCC — 비-SSOT cache/workpad, 항상 생성되고 SessionStart가 주입. 6 KiB · 비공백 100행 · 미해결 F-* 3개 이하','h']);
   if(state.diagram && state.taskState==='new')
     F.push([`docs/&lt;member&gt;/${n}/${n}-diagram.html`,'자립형 inline SVG (Obsidian이 script를 제거한다) · SSOT 4파일 아님','h']);
   F.push(['.harness/active.json','활성 task 포인터','m']);
@@ -534,7 +533,7 @@ function updatePrompt(){
   L.push('- 팀 학습은 artifact.md가 SSOT다. 개인 메모리에는 개인 선호·머신 환경만 둔다.');
   if(state.isolation==='worktree') L.push('- 격리된 브랜치·worktree에서 작업하고 PR/MR로 병합한다(D5). 단 한 세션 안에서는 쓰기를 단일 스레드로 유지한다(D4).');
   else L.push('- 같은 워킹트리·브랜치 안에서 쓰기는 단일 스레드다(D4). 병렬 쓰기 에이전트를 두지 않는다.');
-  if(state.sessions==='multi') L.push('- 세션을 넘기기 전과 plan의 atomic step이 바뀔 때 TCC(`<name>-context.md`)를 갱신한다. 6 KiB · 비공백 100행 · 미해결 failure capsule 3개 이하.');
+  if(state.sessions==='multi') L.push('- 세션을 넘기기 전에 plan 체크박스를 갱신한다. 다음 세션이 첫 미완 단계를 주입받는다.');
   L.push('- `/harness-ship`은 `harness-team pr-check`를 통과한 뒤 준비 완료 보고에서 멈춘다. PR/MR 생성과 push는 내 지시를 받고 한다.');
   L.push('- done은 PR이 머지된 뒤 기본 브랜치에서 한다: 마지막 단계 체크 → `harness-team done` → (선택) `/harness-wiki` → `harness-team summary --write` → 종결 커밋 하나. `task`/`done`은 집계 파일을 건드리지 않는다.');
   L.push('');
