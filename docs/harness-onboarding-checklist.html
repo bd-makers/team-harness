@@ -200,7 +200,7 @@ const PHASES = [
   items:[
   { t:'task 생성', cmd:'/harness-task onboarding-<내이름>',
     ok:'<code>created:</code> 출력 · <code>.harness/active.json</code>이 이 task를 가리킨다 · 다이어그램 옵트인 질문은 온보딩에서는 건너뛴다',
-    fail:'<code>docs/&lt;member&gt;/&lt;name&gt;/</code>에 SSOT 4파일(spec·plan·handoff·artifact)과 파생 파일 2개(<code>context.md</code> 작업 카드·<code>meta.json</code> 기계 상태 — 손으로 고치지 않음)가 생겼는지 확인하세요.' },
+    fail:'<code>docs/&lt;member&gt;/&lt;name&gt;/</code>에 SSOT 4파일(spec·plan·handoff·artifact)과 <code>meta.json</code>(기계 상태 — 손으로 고치지 않음)이 생겼는지 확인하세요.' },
   { t:'spec.md — Ambiguity 자가진단 + Ontology를 직접 쓴다',
     cmd:'docs/<member>/onboarding-<내이름>/onboarding-<내이름>-spec.md',
     ok:'요구사항·자가진단·Ontology가 spec.md <b>본문에</b> 있다 · 원천 문서가 없으면 <code>## 원천 검토 (R1)</code>에 <code>- 없음 — &lt;사유&gt;</code> 한 줄',

@@ -18,7 +18,7 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash
 2. ```bash
    harness-team task <name>
    ```
-   - `docs/<user>/<name>/{<name>-spec,<name>-plan,<name>-handoff,<name>-artifact,<name>-context}.md` 생성 + active 설정
+   - `docs/<user>/<name>/{<name>-spec,<name>-plan,<name>-handoff,<name>-artifact}.md` 생성 + active 설정
 3. `<name>-spec.md`에 초기 요구사항 작성 — spec의 **Ambiguity 자가진단** 5항목을 채점하고, 3개 이상
    미체크면 구현에 들어가지 않는다: `/harness-spec`으로 초안을 만들고 막히면 `/harness-interview`로 돌아간다
    (작은 변경은 생략 가능 — `CLAUDE.md` §1).
@@ -39,9 +39,9 @@ allowed-tools: Read, Write, Edit, Grep, Glob, Bash
    `/harness-unittest file <경로>`(순수 로직) · `/harness-comptest`(컴포넌트·화면) ·
    `/harness-inttest`(프로세스 경계). 인자를 생략하면 `session` 기본값이라 세션 변경분을 통째로
    태워 위 슬라이스 규율과 어긋난다. 뮤테이션 자가점검과 동어반복·mock 반향 게이트가 거기 있다.
-4. 재현 가능한 실패는 `<name>-context.md`의 failure capsule에 신호·시도·현재 가설·원인 범주(`Cause`, 권장 — 의도·컨텍스트·환경·검증·상태, 모르면 `unknown`)·다음 판별법·
-   안전한 source 위치만 압축해 기록한다(최대 3개). raw stderr, 토큰, 비밀값, 전체 HTTP payload는 복사하지 않는다.
-   해소 시 capsule을 제거하고 재발 방지 가치가 있으면 artifact의 `## Learnings`에 남긴다.
+4. 재현 가능한 실패는 artifact의 `## Failures`(없으면 만든다)에 `### F-NNN`으로 신호·시도·현재 가설·원인 범주(`Cause`, 권장 — 의도·컨텍스트·환경·검증·상태, 모르면 `unknown`)·다음 판별법·
+   안전한 source 위치만 압축해 기록한다. raw stderr, 토큰, 비밀값, 전체 HTTP payload는 복사하지 않는다.
+   해소돼도 지우지 말고 `Resolved:` 한 줄을 붙인다. 재발 방지 가치가 있으면 artifact의 `## Learnings`에도 남긴다.
 5. 중요한 변경은 `AGENTS.md`의 **코드 리뷰 기준** 확인
 
 ### Phase 4: 완료

@@ -3,9 +3,8 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, rm, utimes } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { buildSessionContext, runSessionContext, SESSION_CONTEXT_MAX_TASKS } from '../src/commands/session-context.mjs';
-import { CONTEXT_MAX_BYTES } from '../src/commands/context.mjs';
-import { taskContextTemplate } from '../src/commands/task.mjs';
+import { buildSessionContext, runSessionContext, SESSION_CONTEXT_MAX_TASKS, PLAN_STEP_MAX_CHARS } from '../src/commands/session-context.mjs';
+import { firstOpenPlanStep, taskPlanTemplate } from '../src/commands/task.mjs';
 import { observeToolEvent } from '../templates/.claude/hooks/observe-tools.mjs';
 
 async function baseDir() {
@@ -22,11 +21,6 @@ async function writeTask(dir, user, name, plan) {
   await writeFile(join(td, `${name}-spec.md`), `# ${name} — Spec\n`);
   await writeFile(join(td, `${name}-plan.md`), plan);
 }
-async function writeCard(dir, user, name, content = taskContextTemplate(name)) {
-  const td = join(dir, 'docs', user, name);
-  await mkdir(td, { recursive: true });
-  await writeFile(join(td, `${name}-context.md`), content);
-}
 async function writeMeta(dir, user, name, meta) {
   const td = join(dir, 'docs', user, name);
   await mkdir(td, { recursive: true });
@@ -37,68 +31,69 @@ async function setPlanMtime(dir, user, name, date) {
   await utimes(planPath, date, date);
 }
 
-test('활성 task + valid card → breadcrumb 다음에 card 전체만 주입', async () => {
+const BREADCRUMB = '[harness] 활성 task: chad/demo — 세션 시작 프로토콜대로 demo-plan.md 확인.';
+
+test('활성 task + 미완 단계 → breadcrumb 다음에 첫 미완 단계만 주입', async () => {
   const dir = await baseDir();
   try {
     await writeActive(dir, { user: 'chad', task: 'demo', path: 'docs/chad/demo' });
-    const card = taskContextTemplate('demo');
-    await writeCard(dir, 'chad', 'demo', card);
-    const out = await buildSessionContext(dir);
-    assert.equal(out, `[harness] 활성 task: chad/demo — 세션 시작 프로토콜대로 demo-plan.md 확인.\n${card}`);
+    await writeTask(dir, 'chad', 'demo', '# demo — Plan\n- [x] 끝난 단계\n- [ ] 지금 단계\n- [ ] 다음 단계\n');
+    assert.equal(await buildSessionContext(dir), `${BREADCRUMB}\n[harness] 현재 단계: 지금 단계`);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('활성 task + missing card → breadcrumb와 context init 안내만 출력', async () => {
+test('활성 task + 생성 직후 plan → 빈 체크박스는 단계가 아니라 breadcrumb만 출력', async () => {
   const dir = await baseDir();
   try {
     await writeActive(dir, { user: 'chad', task: 'demo', path: 'docs/chad/demo' });
-    const out = await buildSessionContext(dir);
-    assert.match(out, /활성 task: chad\/demo/);
-    assert.match(out, /^next-action: harness-team context init$/m);
-    assert.doesNotMatch(out, /## Now/);
+    await writeTask(dir, 'chad', 'demo', taskPlanTemplate('demo'));
+    assert.equal(await buildSessionContext(dir), BREADCRUMB);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('활성 task + over-budget card → 원문을 자르거나 주입하지 않고 check 안내', async () => {
+test('활성 task + 전부 완료된 plan → breadcrumb만 출력', async () => {
   const dir = await baseDir();
   try {
     await writeActive(dir, { user: 'chad', task: 'demo', path: 'docs/chad/demo' });
-    const marker = 'DO_NOT_INJECT_OVER_BUDGET';
-    const card = `${taskContextTemplate('demo')}\n${marker.repeat(CONTEXT_MAX_BYTES)}\n`;
-    await writeCard(dir, 'chad', 'demo', card);
-    const out = await buildSessionContext(dir);
-    assert.match(out, /활성 task: chad\/demo — 세션 시작 프로토콜대로 demo-plan\.md 확인\./);
-    assert.match(out, /failure: size/);
-    assert.match(out, /harness-team context check/);
-    assert.doesNotMatch(out, new RegExp(marker));
-    assert.doesNotMatch(out, /## Now/);
+    await writeTask(dir, 'chad', 'demo', '# demo — Plan\n- [x] 끝\n');
+    assert.equal(await buildSessionContext(dir), BREADCRUMB);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('활성 task + malformed card → 원문을 주입하지 않고 check 안내', async () => {
+test('활성 task + plan 없음·읽기 실패 → breadcrumb는 유지한다', async () => {
   const dir = await baseDir();
   try {
     await writeActive(dir, { user: 'chad', task: 'demo', path: 'docs/chad/demo' });
-    const marker = 'MALFORMED_CARD_BODY';
-    await writeCard(dir, 'chad', 'demo', `# demo — Context Card\n${marker}\n`);
-    const out = await buildSessionContext(dir);
-    assert.match(out, /활성 task: chad\/demo — 세션 시작 프로토콜대로 demo-plan\.md 확인\./);
-    assert.match(out, /failure: required-headings/);
-    assert.match(out, /harness-team context check/);
-    assert.doesNotMatch(out, new RegExp(marker));
+    assert.equal(await buildSessionContext(dir), BREADCRUMB);
+    await mkdir(join(dir, 'docs', 'chad', 'demo', 'demo-plan.md'), { recursive: true });
+    assert.equal(await buildSessionContext(dir), BREADCRUMB);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('활성 task + 읽을 수 없는 card → breadcrumb는 유지하고 check 안내', async () => {
+test('긴 단계는 잘라서 SessionStart 출력을 짧게 유지한다', async () => {
   const dir = await baseDir();
   try {
     await writeActive(dir, { user: 'chad', task: 'demo', path: 'docs/chad/demo' });
-    await mkdir(join(dir, 'docs', 'chad', 'demo', 'demo-context.md'), { recursive: true });
+    await writeTask(dir, 'chad', 'demo', `# demo — Plan\n- [ ] ${'가'.repeat(PLAN_STEP_MAX_CHARS + 50)}\n`);
     const out = await buildSessionContext(dir);
-    assert.match(out, /활성 task: chad\/demo — 세션 시작 프로토콜대로 demo-plan\.md 확인\./);
-    assert.match(out, /^next-action: harness-team context check$/m);
-    assert.doesNotMatch(out, /## Now/);
+    assert.ok(out.endsWith(`현재 단계: ${'가'.repeat(PLAN_STEP_MAX_CHARS)}…`), out);
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 폐지 전에 만들어진 카드는 저장소에 이력으로 남는다 — 주입하지도, 없다고 안내하지도 않는다.
+test('남아 있는 옛 -context.md는 주입하지 않는다', async () => {
+  const dir = await baseDir();
+  try {
+    await writeActive(dir, { user: 'chad', task: 'demo', path: 'docs/chad/demo' });
+    await writeTask(dir, 'chad', 'demo', '# demo — Plan\n- [ ] 지금 단계\n');
+    await writeFile(join(dir, 'docs/chad/demo/demo-context.md'), '# demo — Context Card\nOLD_CARD_BODY\n');
+    assert.doesNotMatch(await buildSessionContext(dir), /OLD_CARD_BODY|Context Card/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('firstOpenPlanStep: 줄머리 체크박스만 보고 내용 없는 칸은 건너뛴다', () => {
+  assert.equal(firstOpenPlanStep('산문 - [ ] 인라인\n- [ ]\n  - [ ]   들여쓴 단계  \n- [ ] 다음\n'), '들여쓴 단계');
+  assert.equal(firstOpenPlanStep('- [x] 끝\n'), null);
 });
 
 test('활성 task 없음 + 미완 task → nudge에 재개 후보로 나열', async () => {
@@ -285,7 +280,7 @@ test('observe 표면화: 활성 task 분기 — tripped면 한 줄 추가, 아�
   try {
     await writeActive(dir, { user: 'u', task: 't' });
     await writeTask(dir, 'u', 't', '# t — Plan\n\n- [ ] a\n');
-    await writeCard(dir, 'u', 't');
+    await writeTask(dir, 'u', 't', '# t — Plan\n- [ ] 지금 단계\n');
     const before = await buildSessionContext(dir);
     assert.doesNotMatch(before, /observe 트립와이어/, '발화 없음 → 언급 없음');
     assert.equal(await buildSessionContext(dir), before, '재실행도 바이트 동일');
@@ -364,11 +359,11 @@ test('observe 표면화: 3일 전 실패도 창(7일) 안이면 표면화된다 
 
 // ---- 원격 done 감지 (done-on-main-nudge) ----
 
-test('활성 task 가 origin/<default> 에서 이미 done → breadcrumb·card 대신 nudge 만 주입', async () => {
+test('활성 task 가 origin/<default> 에서 이미 done → breadcrumb·현재 단계 대신 nudge 만 주입', async () => {
   const dir = await baseDir();
   try {
     await writeActive(dir, { user: 'chad', task: 'demo', path: 'docs/chad/demo' });
-    await writeCard(dir, 'chad', 'demo');
+    await writeTask(dir, 'chad', 'demo', '# demo — Plan\n- [ ] 지금 단계\n');
     const calls = [];
     const doneOnMain = async (targetDir, user, task) => { calls.push([targetDir, user, task]); return { ref: 'origin/main', closedAt: '2026-09-08T10:00:00.000Z' }; };
     const out = await buildSessionContext(dir, { doneOnMain });
@@ -376,7 +371,7 @@ test('활성 task 가 origin/<default> 에서 이미 done → breadcrumb·card �
     assert.match(out, /^\[harness\] ⚠ task chad\/demo 는 origin\/main 에서 2026-09-08T10:00:00\.000Z 에 이미 종결됨/);
     assert.match(out, /^next-action: /m);
     assert.doesNotMatch(out, /활성 task: chad\/demo — 세션 시작 프로토콜대로/);
-    assert.doesNotMatch(out, /## Now/);
+    assert.doesNotMatch(out, /현재 단계/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
@@ -384,12 +379,11 @@ test('원격 판정이 null 이면(비-git 디렉터리 포함) 출력은 종전
   const dir = await baseDir();
   try {
     await writeActive(dir, { user: 'chad', task: 'demo', path: 'docs/chad/demo' });
-    const card = taskContextTemplate('demo');
-    await writeCard(dir, 'chad', 'demo', card);
+    await writeTask(dir, 'chad', 'demo', '# demo — Plan\n- [ ] 지금 단계\n');
     const viaDefault = await buildSessionContext(dir); // tmpdir 은 git 저장소가 아니다 → 조용히 null
     const viaNull = await buildSessionContext(dir, { doneOnMain: async () => null });
     assert.equal(viaDefault, viaNull);
-    assert.equal(viaDefault, `[harness] 활성 task: chad/demo — 세션 시작 프로토콜대로 demo-plan.md 확인.\n${card}`);
+    assert.equal(viaDefault, `${BREADCRUMB}\n[harness] 현재 단계: 지금 단계`);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
@@ -397,7 +391,7 @@ test('원격 판정 중 예외 → SessionStart 출력은 판정 없을 때와 �
   const dir = await baseDir();
   try {
     await writeActive(dir, { user: 'chad', task: 'demo', path: 'docs/chad/demo' });
-    await writeCard(dir, 'chad', 'demo');
+    await writeTask(dir, 'chad', 'demo', '# demo — Plan\n- [ ] 지금 단계\n');
     const plain = await buildSessionContext(dir);
     const thrown = await buildSessionContext(dir, { doneOnMain: async () => { throw new Error('git exploded'); } });
     assert.equal(thrown, plain);

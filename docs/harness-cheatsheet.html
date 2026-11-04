@@ -140,7 +140,6 @@
         <tr><td class="k"><code>-handoff.md</code></td><td class="d"><b>하네스</b> · post-commit 훅이 갱신 → 다음 커밋에 담는다</td></tr>
         <tr><td class="k"><code>-artifact.md</code></td><td class="d"><b>사람</b> · 결과 · 학습 · <code>## Reviews</code> — 팀 학습의 SSOT</td></tr>
         <tr><td class="k"><code>-meta.json</code></td><td class="d"><b>하네스</b> · <em>손으로 고치지 않는다</em> · 판정 창 · <code>reviews[]</code></td></tr>
-        <tr><td class="k"><code>-context.md</code></td><td class="d">TCC(비-SSOT 카드) · 6 KiB · 100행 · <code>F-*</code> ≤ 3</td></tr>
       </table>
     </div>
 
@@ -196,7 +195,7 @@
     <div class="box">
       <h2><span class="n">6</span>자동으로 도는 것<span class="hint">내가 부르지 않는다</span></h2>
       <table>
-        <tr><td class="k">SessionStart</td><td class="d">활성 task + Context Card (main에서 done이면 nudge)</td></tr>
+        <tr><td class="k">SessionStart</td><td class="d">활성 task + plan 첫 미완 단계 (main에서 done이면 nudge)</td></tr>
         <tr><td class="k">Edit/Write 전</td><td class="d">보호 파일 차단 · boundary 대조</td></tr>
         <tr><td class="k">Bash 전</td><td class="d">위험 git 차단 · <code>gate commit</code></td></tr>
         <tr><td class="k">Edit/Write 후</td><td class="d"><code>gate format</code> (gates.json 선언분)</td></tr>

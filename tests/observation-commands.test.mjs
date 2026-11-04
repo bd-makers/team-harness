@@ -80,7 +80,7 @@ test('release --json: 에러(빈 dir → manifest 부재) → status error + err
   }
 });
 
-test('task --json: 생성 → status success + 4 SSOT 파일 + Context Card + meta artifacts', async () => {
+test('task --json: 생성 → status success + 4 SSOT 파일 + meta artifacts', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'harness-task-json-'));
   const cap = captureJson();
   try {
@@ -88,9 +88,8 @@ test('task --json: 생성 → status success + 4 SSOT 파일 + Context Card + me
     const env = cap.soleEnvelope();
     assert.equal(env.command, 'task');
     assert.equal(env.status, 'success');
-    assert.equal(env.artifacts.length, 6);
+    assert.equal(env.artifacts.length, 5);
     assert.ok(env.artifacts.some(a => a.endsWith('demo-spec.md')));
-    assert.ok(env.artifacts.some(a => a.endsWith('demo-context.md')));
     assert.ok(env.artifacts.some(a => a.endsWith('demo-meta.json')));
   } finally { cap.restore(); await rm(dir, { recursive: true, force: true }); }
 });

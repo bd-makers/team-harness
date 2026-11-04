@@ -39,7 +39,6 @@ Common commands:
 - `harness-team diagram record [--skipped] [note ...]`: record the diagram opt-in outcome — one dated line in the active task's artifact plus the plan checkbox closed (`--skipped` needs a reason; refuses when the plan has no diagram step). `/harness-diagram`, `/harness-task`, `/harness-ship` all call this instead of writing the line by hand.
 - `harness-team done`: complete the active task after the plan and artifact are complete.
 - `harness-team retro "<note>"`: append a learning to the active task artifact.
-- `harness-team context init` / `context check`: create or validate the active task's Context Card. Agents own this file — update it when the plan's atomic step changes or a reproducible failure appears or clears.
 - `harness-team release [patch|minor|major|x.y.z] [--dry-run] [--skip-cache]`: bump the four manifests together (plugin source repo only — run it as `node bin/harness-team.mjs release`). Run `--dry-run` first.
 
 `session-context` and `boundary checkpoint` are invoked by hooks — do not call them directly. `harness-team boundary check` is the user-facing form (compares the JSON Schema boundaries declared in the active spec).

@@ -1,0 +1,23 @@
+{
+  "user": "hslee",
+  "task": "tcc-removal",
+  "created": "2026-11-04",
+  "firstActivatedAt": "2026-11-04T14:52:44.074Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "base": "main",
+      "mergeBase": "706c3178055c6a592b04e7b2fbceb3e5c6d7caba",
+      "tip": "a5c2b030ceb36f5dcb9f651ce0bc0ba4f8ca9b0c",
+      "at": "2026-11-04T15:01:12.683Z",
+      "exitCode": 0,
+      "outputBytes": 705
+    }
+  ]
+}

@@ -109,7 +109,7 @@ harness-team doctor
 | Codex | SessionStart 1종 — **신뢰 2겹이 모두 있어야 실행**(아래) | 슬래시 커맨드는 없고 별도 `.codex-plugin` 설치 시 동명의 스킬 | 없음 — 하위 디렉터리 `AGENTS.md`로 대체 |
 | Cursor | 0 | `.cursor/rules/*.mdc` 규칙만 (RN 계열 stack) | `.mdc` `globs:` — `.claude/rules`에서 미러 |
 
-`init`은 Claude Code용 `.claude/settings.json` 훅과 Codex용 `.codex/hooks.json` SessionStart 훅을 설치합니다. 둘 다 `harness-team session-context`를 호출해 활성 task의 Context Card를 주입합니다 — 단 **Codex 쪽은 설치만으로 동작하지 않습니다.** Cursor는 훅 메커니즘이 없어 하네스 규칙이 결정론적 강제가 아니라 규범으로 적용됩니다.
+`init`은 Claude Code용 `.claude/settings.json` 훅과 Codex용 `.codex/hooks.json` SessionStart 훅을 설치합니다. 둘 다 `harness-team session-context`를 호출해 활성 task와 plan의 첫 미완 단계를 주입합니다 — 단 **Codex 쪽은 설치만으로 동작하지 않습니다.** Cursor는 훅 메커니즘이 없어 하네스 규칙이 결정론적 강제가 아니라 규범으로 적용됩니다.
 
 > **Codex 훅이 실제로 도는 조건 (2026-09-12 실측, codex-cli 0.153.4).** 두 가지가 **모두** 있어야 합니다 —
 > ① 프로젝트 신뢰(`~/.codex/config.toml`의 `[projects."<path>"] trust_level = "trusted"`)
@@ -472,7 +472,7 @@ contrarian·simplifier)은 이 명령의 절차·엔진 표를 재사용하며 `
 
 ### 디렉토리 구조
 
-task 디렉토리 구조와 파일 계약은 scaffold 되는 `AGENTS.md`의 **작업 프로토콜** 및 **Task Context Card (TCC)** 섹션이 정본입니다. `task_summary.md`·`<member>-task.md` 같은 docs 트리 인덱스는 `templates/docs/README.md`(설치 시 `docs/README.md`)가 정본입니다. 활성 task 포인터는 `.harness/active.json`에 보관되며, `harness-team context init` / `context check`로 카드를 생성·검사합니다(검사는 카드를 수정하지 않음).
+task 디렉토리 구조와 파일 계약은 scaffold 되는 `AGENTS.md`의 **작업 프로토콜** 섹션이 정본입니다. `task_summary.md`·`<member>-task.md` 같은 docs 트리 인덱스는 `templates/docs/README.md`(설치 시 `docs/README.md`)가 정본입니다. 활성 task 포인터는 `.harness/active.json`에 보관됩니다.
 
 ### member 식별 규칙
 

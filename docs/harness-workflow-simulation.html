@@ -455,7 +455,6 @@
 ├── <span class="tree-file">auth-redesign-plan.md</span>
 ├── <span class="tree-file">auth-redesign-handoff.md</span>
 ├── <span class="tree-file">auth-redesign-artifact.md</span> <span style="color:var(--border)"># 여기까지 SSOT</span>
-├── <span class="tree-new">auth-redesign-context.md</span>  <span style="color:var(--border)"># 비-SSOT cache/workpad</span>
 └── <span class="tree-new">auth-redesign-meta.json</span>   <span style="color:var(--border)"># harness 소유 기계 상태</span>
         </div>
       </div>
@@ -476,10 +475,6 @@
         <div class="card">
           <h3 style="color:#f5a623">[task]-artifact.md — 결과·학습</h3>
           <p>실행 결과와 학습/교정을 기록. <code>done</code>·<code>retro</code> 시 append. <strong>종결 가드</strong>가 이 파일 작성 여부를 done의 전제 조건으로 검사.</p>
-        </div>
-        <div class="card" style="margin-top:0.5rem">
-          <h3 style="color:var(--accent2)">[task]-context.md — 현재 working set</h3>
-          <p>현재 단계·제약·JIT 검색 단서·미해결 failure capsule만 담는 작은 비-SSOT cache. <code>context check</code>가 크기와 문법을 검사하며 원문을 자동 수정하지 않는다.</p>
         </div>
         <div class="card" style="margin-top:0.5rem">
           <h3 style="color:#f5566a">[task]-meta.json — 기계 상태 (0.16.0)</h3>
@@ -617,7 +612,6 @@
 ├── <span class="tree-new">login-bug-plan.md</span>      <span style="color:var(--border)"># 초안 작성</span>
 ├── <span class="tree-new">login-bug-handoff.md</span>   <span style="color:var(--border)"># 빈 파일 (post-commit 자동 갱신)</span>
 ├── <span class="tree-new">login-bug-artifact.md</span>  <span style="color:var(--border)"># 빈 scaffold (done/retro 시 기록)</span>
-├── <span class="tree-new">login-bug-context.md</span>   <span style="color:var(--border)"># 현재 working set cache</span>
 └── <span class="tree-new">login-bug-meta.json</span>    <span style="color:var(--border)"># created·firstActivatedAt·status·closedAt (기계 상태)</span>
 
 <span class="tree-new">.harness/active.json</span> → { "user": "chad", "task": "login-bug", "path": "docs/chad/login-bug", "switchedAt": "2026-08-22T03:41:52.000Z" }
@@ -878,9 +872,8 @@ stop: 가드가 지적한 증거가 실제로 없으면 종결하지 말 것
     </div>
 
     <div class="infobox">
-      <strong>SessionStart 주입 + rule:</strong> 훅이 활성 task breadcrumb와 유효한 Context Card를 주입하고,
+      <strong>SessionStart 주입 + rule:</strong> 훅이 활성 task breadcrumb와 plan의 첫 미완 단계를 주입하고,
       공유 코어 <code>AGENTS.md</code>는 사용자 handoff와 plan을 정본 진입점으로 유지합니다.
-      카드가 없거나 유효하지 않으면 원문 대신 <code>context init</code> 또는 <code>context check</code> 안내만 제공합니다.
     </div>
 
     <div class="steps">
@@ -905,7 +898,7 @@ login-bug
 ## Full Context
 → docs/chad/login-bug/login-bug-handoff.md
             </div>
-            <div class="step-detail">이 파일은 워크트리 로컬이다(0.44.4) — 새 워크트리·clone에는 없고, <code>task &lt;name&gt;</code> 활성화 때 곧바로 쓰인다. "다음에 할 일"은 여기가 아니라 plan·Context Card에 있다.</div>
+            <div class="step-detail">이 파일은 워크트리 로컬이다(0.44.4) — 새 워크트리·clone에는 없고, <code>task &lt;name&gt;</code> 활성화 때 곧바로 쓰인다. "다음에 할 일"은 여기가 아니라 plan에 있다.</div>
           </div>
         </div>
       </div>
@@ -914,7 +907,7 @@ login-bug
         <div class="step-body">
           <div class="step-actor actor-claude">Claude</div>
           <div class="step-content">
-            <p><code>login-bug-context.md</code>의 atomic step과 JIT map을 먼저 확인하고, 필요한 plan·spec 구간만 읽기</p>
+            <p>주입된 현재 단계에서 시작해 필요한 plan·spec 구간만 읽기</p>
           </div>
         </div>
       </div>
@@ -1167,10 +1160,6 @@ login-bug
       <div class="card card-accent-blue">
         <h3>harness-team stack <span style="font-size:0.68rem;color:var(--muted);font-weight:400">0.40.0</span></h3>
         <p>스택 감지 결과를 보여 준다. <code>init --stack X</code>로 고정한 스택이 있으면 <code>pin: &lt;고정&gt; (detected: &lt;감지&gt; → effective: &lt;고정&gt;) — unpin: &lt;해제 명령&gt;</code> 줄이 붙고, <code>--json</code>에는 <code>stackPin</code> 필드가 나온다(0.44.3).</p>
-      </div>
-      <div class="card card-accent-purple">
-        <h3>harness-team context init|check <span style="font-size:0.68rem;color:var(--muted);font-weight:400">0.12.0</span></h3>
-        <p>Task Context Card를 만들고 한도(6 KiB · 비공백 100행 · 미해결 capsule 3개)를 <strong>결정론적으로</strong> 검사한다. 자동 요약·삭제·LLM 편집은 없다 — 위반하면 실패 메시지가 무엇을 줄여야 하는지 알려준다.</p>
       </div>
       <div class="card card-accent-orange">
         <h3>harness-team boundary check <span style="font-size:0.68rem;color:var(--muted);font-weight:400">0.12.0</span></h3>

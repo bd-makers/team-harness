@@ -7,8 +7,7 @@ stateDiagram-v2
         spec --> plan : &lt;name&gt;-plan.md 생성
         plan --> handoff : &lt;name&gt;-handoff.md 생성
         handoff --> artifact : &lt;name&gt;-artifact.md 생성
-        artifact --> context : &lt;name&gt;-context.md 생성
-        context --> meta_json : &lt;name&gt;-meta.json 생성
+        artifact --> meta_json : &lt;name&gt;-meta.json 생성
         meta_json --> active_json : .harness/active.json 갱신
     }
 

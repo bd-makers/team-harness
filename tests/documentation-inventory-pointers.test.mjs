@@ -50,7 +50,7 @@ test('README points to SSOTs while overview exposes generated inventories', asyn
     assert.match(commands, new RegExp(`data-command-source="${entry.replace('./', '')}"`));
   }
   assert.doesNotMatch(commands, /17개의 slash command/);
-  assert.match(task, /task 파일 계약과 Context Card 규약은 scaffold 되는/);
+  assert.match(task, /task 파일 계약은 scaffold 되는/);
   assert.doesNotMatch(task, /class="card-grid"/);
   assert.match(files, /현재 소스 트리에서 생성됩니다/);
   assert.match(files, /<table data-generated="source-tree">/);

@@ -7,16 +7,9 @@
 
 ## 우선순위
 
-**남은 것: 25번.** 13–16번은 2026-10-06에, 20–24번은 2026-10-11에 닫았다(아래 괄호 기록). 새 후보가 생기면 이 절에 번호를 이어 붙인다(26번부터).
+**남은 것: 없다.** 13–16번은 2026-10-06에, 20–24번은 2026-10-11에, 25번은 2026-11-04에 닫았다(아래 괄호 기록). 새 후보가 생기면 이 절에 번호를 이어 붙인다(26번부터).
 
-### 25. TCC 가치 재검토 (감사 후보 E)
-- **맥락**: 추적 `docs/*/*/*-context.md` 144개 중 42개의 `Current atomic step`이 빈 칸이다(2026-11 측정, 종결 task 포함). 리뷰가 개별 사례를 세 번 잡았다.
-  이 수치는 커밋 시점에 규범이 지켜졌는지를 보여 줄 뿐, TCC의 재개 가치를 재지는 않는다.
-- **정본**: `docs/hslee/subsystem-audit/subsystem-audit-spec.md` 후보 E(상태 S2).
-- **결정할 것**: 감지를 붙이기 전에 축소부터 본다. 안은 task 생성 시 plan 첫 단계로 채우기, 필드 축소, 폐지하고 handoff로 대체다.
-  `context check`를 done 게이트로 쓰는 안은 기각돼 있다(아래 "이 목록에 없는 것").
-- **선행 조건**: 없다. 다만 재개 세션이 TCC 부재로 실제로 막힌 사례가 나오면 우선순위를 올린다.
-
+(25번은 2026-11-04 task `tcc-removal`로 올려 여기서 지웠다 — **폐지(사람 결정)**: 측정에서 재개 가치의 직접 증거가 나오지 않았고(재개 실사례 2건, 표본이 작다) 최대 소비자도 카드 68장 중 38장이 빈 채였다. SessionStart는 plan의 첫 미완 단계를 주입하고, 실패 기록은 artifact `## Failures`로 옮겼다. 측정과 기각안은 그 task spec.)
 (24번은 2026-10-11 task `wiki-sources-all`로 올려 여기서 지웠다 — **방향 B(사람 결정)**: 인수 없는 `wiki sources` 계약(활성 task, 없으면 exit 1)은 두고, 옵트인 `wiki sources --all` 이 task 전체를 라벨순으로 훑어 task 마다 컴파일 가능·이미 컴파일됨·막힘을 보인다(exit 0, 대상 0건도). 붙인 자리는 `list` 가 아니라 `wiki` 다 — D11 2차 장치 규칙 판정: `list` 는 `--json` 계약이 없고 위키 스캔·git 이력 읽기가 모든 task 목록에 결합되며 `wiki.mjs`→`task.mjs` import 와 순환한다. 곁가지(retry 의 "`task <name>` 으로 활성화")는 범위 안으로 고쳤다 — done task 를 reopen 하므로 retry 는 대상 지정만 남기고 `alternatives` 에 `--all` 을 싣는다. A·C 기각 사유는 그 task spec.)
 (22·23번은 2026-10-11 task `followups-22-23`으로 올려 여기서 지웠다 — 22번: `diff-failed` cause 를 git stderr 의 사유 줄(마지막 `fatal:`·`error:` 줄, 없으면 마지막 비어 있지 않은 줄 — 커밋 없는 HEAD 는 사용법 안내가 마지막이다)로 바꿔 `review`·`scope`·`pr-check` 가 git 의 사유를 싣고 절대경로·명령줄을 싣지 않는다. 23번: **방향 A(사람 결정)** — 기본 브랜치와 공통 조상이 없는 브랜치의 push 는 PR 을 열 수 없으므로 pre-push 검사 대상에서 뺀다(`git merge-base` exit 1 일 때만, 그 밖의 실패는 삼키지 않는다). gh-pages 를 **체크아웃한 채** push 하면 여전히 base 판정에서 #144 의 `diff-failed` 패킷이 난다 — 범위이며 근거는 그 task spec.)
 (20·21번은 2026-10-11 task `scope-error-hints`로 올려 여기서 지웠다 — `scope` 오류의 `alternatives` 와 `pr-check` base 오류의 `retry:` 를 #143 의 `errorKind` 로 고른다. 21번의 "pre-push 는 사실상 `default-base` 만 닿는다" 는 실측으로 틀렸다 — orphan 브랜치·커밋 없는 HEAD 를 체크아웃한 채 push 하면 `diff-failed` 가 닿아 pre-push 갈래도 종류별로 고쳤다.)
@@ -57,8 +50,6 @@ doctor post-commit 검사는 2차 장치 규칙으로 두지 않음(handoff 미�
 
 ## 이 목록에 없는 것 (의도적으로)
 
-- **context check를 done 게이트로**: 4요소 분석에서 한때 "약점"으로 꼽았다가 철회. TCC는 AGENTS.md가
-  **비-SSOT cache/workpad**로 정의하므로 cache 유효성으로 종결을 막으면 정의와 충돌한다. 다시 올리지 말 것.
 - **리뷰 마커 HMAC 서명**: `review-evidence-cli-owned` spec `### 왜 서명이 아니라 meta인가`에서 기각.
   머신별 키는 두 머신 작업을 깨고, 공유 키는 얻는 게 없으며, 위조는 가드의 위협 모델 밖.
 - **구버전 템플릿 그대로인 문서 판정**(옛 15번): 과거 템플릿 sha 목록은 두께다(D11 2차 장치 규칙). 2026-10-06 전수 검사 노출 0건.

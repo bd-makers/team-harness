@@ -226,7 +226,7 @@
       <a href="#prompting">프롬프팅</a>
       <a href="#spec">spec 작성</a>
       <a href="#plan">plan 작성</a>
-      <a href="#context">Context Card</a>
+      <a href="#resume">세션 재개</a>
       <a href="#llm">LLM 개발 규율</a>
       <a href="#auto">자동 vs 규범</a>
       <a href="#done">종결</a>
@@ -238,7 +238,7 @@
     <header class="hero">
       <div class="eyebrow">Developer guide · 기준 v0.50.0</div>
       <h1>하네스를 깔았다.<br>이제 어떻게 일하나</h1>
-      <p><code>init</code>이 끝난 프로젝트에서 <strong>첫 task를 만들어 닫을 때까지</strong>의 실제 절차와, 그 절차를 <strong>LLM과 함께</strong> 굴리는 방법을 담았습니다. 하네스는 런타임 오케스트레이터가 아니라 <em>설정·상태 하네스</em>입니다 — 대신 코딩해 주는 게 아니라, 작업의 입력(spec)·상태(plan·context)·출력(artifact)이 흩어지지 않게 붙잡아 둡니다. 하네스가 <strong>강제</strong>하는 것은 PR에 담긴 task 문서를 보는 <code>pr-check</code> 하나이고(D11), 나머지 게이트는 팀 개발 사이클을 돕는 제공 도구입니다 — plan 단계를 자동으로 돌려 주는 <code>/harness-loop</code>도 선택형입니다(0.47.0).</p>
+      <p><code>init</code>이 끝난 프로젝트에서 <strong>첫 task를 만들어 닫을 때까지</strong>의 실제 절차와, 그 절차를 <strong>LLM과 함께</strong> 굴리는 방법을 담았습니다. 하네스는 런타임 오케스트레이터가 아니라 <em>설정·상태 하네스</em>입니다 — 대신 코딩해 주는 게 아니라, 작업의 입력(spec)·상태(plan)·출력(artifact)이 흩어지지 않게 붙잡아 둡니다. 하네스가 <strong>강제</strong>하는 것은 PR에 담긴 task 문서를 보는 <code>pr-check</code> 하나이고(D11), 나머지 게이트는 팀 개발 사이클을 돕는 제공 도구입니다 — plan 단계를 자동으로 돌려 주는 <code>/harness-loop</code>도 선택형입니다(0.47.0).</p>
       <div class="tags">
         <span class="tag tag-purple">기준 v0.50.0</span>
         <span class="tag tag-blue">init 이후 온보딩</span>
@@ -413,12 +413,11 @@ active: chad/auth-refresh
             <tr><td><code>&lt;name&gt;-plan.md</code></td><td><strong>SSOT</strong></td><td>단계별 체크리스트 + Ontology 변경 로그</td></tr>
             <tr><td><code>&lt;name&gt;-handoff.md</code></td><td><strong>SSOT</strong></td><td>세션 인수인계 — post-commit 훅이 자동 append</td></tr>
             <tr><td><code>&lt;name&gt;-artifact.md</code></td><td><strong>SSOT</strong></td><td>결과 · <code>## Reviews</code> · <code>## Learnings</code></td></tr>
-            <tr><td><code>&lt;name&gt;-context.md</code></td><td>비-SSOT <em>캐시</em></td><td>지금 필요한 working set만 (Task Context Card, §5 참고)</td></tr>
             <tr><td><code>&lt;name&gt;-meta.json</code></td><td>비-SSOT <em>기계 상태</em> <span class="pill pill-auto">0.16.0</span></td><td><code>created</code>·<code>firstActivatedAt</code>·<code>status</code>·<code>closedAt</code>·<code>reopenedAt</code>·<code>forcedAt</code>·<code>forcedIssues</code>·<code>reviews[]</code>(+ <code>area</code>). harness가 소유하므로 <strong>손으로 고치지 않습니다</strong> — <code>reopenedAt || firstActivatedAt</code>은 <code>done</code> 가드가 증거를 찾는 <strong>판정 창의 시작점</strong>이고, <code>reviews[]</code>는 <code>harness-team review</code>가 쓰는 <strong>verify 증거의 정본</strong>입니다</td></tr>
           </tbody>
         </table>
       </div>
-      <p>영속 요구사항·결정은 spec/plan에, 결과·학습은 artifact에 씁니다. Context Card에 쓴 것은 <strong>언제든 버려도 되는 것</strong>이어야 합니다 — 이 구분이 흐려지면 재개할 때 무엇이 진실인지 알 수 없게 됩니다.</p>
+      <p>영속 요구사항·결정은 spec/plan에, 결과·학습은 artifact에 씁니다.</p>
       <div class="callout good">
         <div class="mark">🧾</div>
         <div>
@@ -455,7 +454,7 @@ harness-team summary --write   <span class="c"># 기본 브랜치에서만 — H
       <div class="grid2">
         <div class="card ok">
           <h4>① plan의 § 번호로 지시한다</h4>
-          <p>"§2 해줘"면 충분합니다. 요구사항을 프롬프트에 다시 쓰지 않는 것이 핵심 — SSOT가 spec/plan에 있으므로 프롬프트는 포인터가 됩니다. 재개 세션도 같습니다: SessionStart 훅이 Context Card를 주입하므로 <strong>"이어서 해줘"</strong>로 충분합니다.</p>
+          <p>"§2 해줘"면 충분합니다. 요구사항을 프롬프트에 다시 쓰지 않는 것이 핵심 — SSOT가 spec/plan에 있으므로 프롬프트는 포인터가 됩니다. 재개 세션도 같습니다: SessionStart 훅이 plan의 현재 단계를 주입하므로 <strong>"이어서 해줘"</strong>로 충분합니다.</p>
         </div>
         <div class="card note">
           <h4>② 리뷰는 커맨드로 부른다</h4>
@@ -582,47 +581,18 @@ boundary: not-configured</code></pre>
       <p>모든 박스가 <code>- [x]</code>가 되고 미완이 없어지면, commit 시 post-commit 훅이 <code>PLAN_COMPLETE</code>를 내보냅니다 — 종결 대화를 시작하라는 신호입니다.</p>
     </section>
 
-    <section id="context">
-      <h2 class="section-title">5. Task Context Card — 재개 비용을 낮추는 작은 작업판</h2>
-      <p class="section-sub"><code>&lt;name&gt;-context.md</code>는 SSOT가 아닙니다. spec·plan·handoff·artifact에서 <strong>파생된 현재 working set</strong>만 담는 캐시이자 workpad입니다.</p>
+    <section id="resume">
+      <h2 class="section-title">5. 세션 재개 — plan이 현재 단계를 알려 준다</h2>
+      <p class="section-sub">재개용 파일을 따로 유지하지 않습니다. 현재 단계는 <code>&lt;name&gt;-plan.md</code>에서 파생되므로, plan 체크박스만 갱신하면 됩니다.</p>
 
-      <div class="grid3">
-        <div class="card note">
-          <h4>예산이 정해져 있다</h4>
-          <p>UTF-8 <strong>6 KiB 이하</strong>, 비공백 <strong>100행 이하</strong>, 미해결 failure capsule <strong>최대 3개</strong>. 넘으면 <code>context check</code>가 잡습니다.</p>
-        </div>
-        <div class="card note">
-          <h4>섹션 구성</h4>
-          <p><code>## Now</code>(목표·현재 atomic step·중단 조건) · <code>## Constraints and settled decisions</code> · <code>## JIT retrieval map</code> · <code>## Failure capsules</code> · <code>## Resume checklist</code>.</p>
-        </div>
-        <div class="card no">
-          <h4>넣지 말 것</h4>
-          <p>raw stderr, 토큰·비밀값, 전체 HTTP payload. 안전한 요약과 <strong>원문 위치</strong>만 남깁니다.</p>
-        </div>
-      </div>
-
-      <h4 class="sub2">언제 갱신하나</h4>
-      <ul class="tight">
-        <li>task 생성 직후 / 세션을 넘기기 전</li>
-        <li>plan의 atomic step이 바뀔 때</li>
-        <li>재현 가능한 실패가 생기거나 해소될 때</li>
-      </ul>
-      <p>반복되는 상세 이력은 지우고, 가치 있는 학습은 artifact로 옮깁니다. 하네스는 <strong>검사만</strong> 합니다 — 자동 요약·삭제·LLM 편집을 하지 않으므로 갱신은 에이전트(당신 세션)의 일입니다.</p>
-
-      <pre><code>$ harness-team context check
-<span class="g">context: valid</span>
-path: docs/chad/auth-refresh/auth-refresh-context.md
-bytes: 489/6144
-nonblank-lines: 22/100
-unresolved-failure-capsules: 0/3</code></pre>
-
-      <h3 class="sub">세션 재개 — 훅이 카드를 먼저 밀어 넣는다</h3>
-      <p>SessionStart 훅이 <code>harness-team session-context</code>를 호출합니다. 활성 task가 있으면 breadcrumb 다음에 <strong>유효한 카드를 그대로</strong> 주입하고, 카드가 없으면 <code>context init</code>, 읽을 수 없거나 유효하지 않으면 원문 대신 <code>context check</code> 안내만 냅니다.</p>
+      <h3 class="sub">훅이 첫 미완 단계를 먼저 밀어 넣는다</h3>
+      <p>SessionStart 훅이 <code>harness-team session-context</code>를 호출합니다. 활성 task가 있으면 breadcrumb 다음에 <strong>plan의 첫 미완 단계</strong>를 한 줄 주입합니다. 미완 단계가 없거나 plan을 읽을 수 없으면 breadcrumb만 나옵니다.</p>
       <pre><code>$ harness-team session-context
 <span class="b">[harness] 활성 task: chad/auth-refresh — 세션 시작 프로토콜대로 auth-refresh-plan.md 확인.</span>
-# auth-refresh — Context Card
-## Now
-- Goal: …</code></pre>
+[harness] 현재 단계: 토큰 갱신 실패 경로 테스트</code></pre>
+
+      <h3 class="sub">재현 가능한 실패는 artifact에 남긴다</h3>
+      <p>artifact의 <code>## Failures</code>에 <code>### F-NNN</code>으로 신호·시도·가설·원인 범주(<code>Cause</code>)·다음 판별법·안전한 source 위치를 씁니다. 해소돼도 지우지 않고 <code>Resolved:</code> 한 줄을 붙입니다. raw stderr, 토큰·비밀값, 전체 HTTP payload는 넣지 않습니다.</p>
       <p>활성 task가 없으면 첫 작업 프롬프트에서 <strong>재개 / 새 task / task 없이 진행</strong>을 묻습니다. block이 아니라 nudge이므로 "task 없이 진행"도 선택지입니다 — 다만 그 선택을 <em>의식적으로</em> 하게 만드는 것이 목적입니다. 재개 후보는 <code>meta.status</code>가 done이 아니면서 plan에 열린 체크박스가 있는 task이고(0.32.0), 최근 활동순(<code>plan.md</code> mtime)으로 <strong>최대 8개</strong>만 나열되며 나머지는 <code>… 외 N개</code> 한 줄로 접힙니다(0.23.0). 접힌 것까지 전부 보려면 <code>harness-team list</code>를 쓰세요. 활성 task가 이미 origin 기본 브랜치에서 종결됐으면 breadcrumb·Context Card 대신 <strong>종결됨 nudge</strong>만 나오고(0.38.0), 발화한 observe 트립와이어는 한 줄로 붙습니다(0.35.0).</p>
     </section>
 
@@ -678,13 +648,11 @@ unresolved-failure-capsules: 0/3</code></pre>
       </figure>
       <p>서브에이전트의 값은 "일을 나눠서 빨리"가 아니라 <strong>메인 컨텍스트 윈도우를 더럽히지 않고 조사</strong>하는 데 있습니다. 서브에이전트당 조사 태스크는 하나로 좁히고, 결론만 받으세요.</p>
 
-      <h3 class="sub">6-2. JIT retrieval — 디렉터리를 덤프하지 않는다</h3>
+      <h3 class="sub">6-2. 좁게 찾기 — 디렉터리를 덤프하지 않는다</h3>
       <ol class="steps">
-        <li>Context Card의 <code>Current atomic step</code>과 <code>JIT retrieval map</code>을 먼저 읽는다.</li>
-        <li>단서가 있으면 <strong>식별자를 Grep</strong> → 해당 모듈만 <strong>좁은 Glob</strong> → <strong>매치한 파일만 Read</strong>.</li>
-        <li>단서가 없을 때만 현재 step에 맞춘 최소 검색으로 map을 채운다.</li>
+        <li>plan의 현재 단계에서 시작한다.</li>
+        <li><strong>식별자를 Grep</strong> → 해당 모듈만 <strong>좁은 Glob</strong> → <strong>매치한 파일만 Read</strong>.</li>
         <li>디렉터리 전체 덤프·무차별 파일 열기·원문 로그 복사는 금지.</li>
-        <li>map에는 재개 비용을 낮추는 단서만 남기고 오래된 경로는 제거한다.</li>
       </ol>
       <p>컨텍스트는 무한 자원이 아닙니다. "다 읽어서 안전하게"는 실제로는 <em>덜 정확하게</em>입니다 — 관련 없는 파일이 판단을 흐립니다.</p>
 
@@ -742,7 +710,7 @@ unresolved-failure-capsules: 0/3</code></pre>
         <table>
           <thead><tr><th>시점</th><th>무엇이 도는가</th><th>효과</th></tr></thead>
           <tbody>
-            <tr><td>SessionStart</td><td><code>harness-team session-context</code></td><td>활성 task breadcrumb + Context Card 주입 (없으면 task 확인 nudge) <span class="pill pill-auto">자동</span></td></tr>
+            <tr><td>SessionStart</td><td><code>harness-team session-context</code></td><td>활성 task breadcrumb + plan 첫 미완 단계 주입 (없으면 task 확인 nudge) <span class="pill pill-auto">자동</span></td></tr>
             <tr><td>Edit/Write 직전</td><td><code>protect-files.sh</code> · <code>boundary-checkpoint.sh</code></td><td>보호 파일 차단 · 체크박스 완료 직전 boundary 대조 <span class="pill pill-auto">자동</span></td></tr>
             <tr><td>Bash 직전</td><td><code>block-dangerous-git.sh</code> · <code>pre-commit-check.sh</code></td><td>위험한 git 조작 차단 · 커밋 게이트 — <code>pre-commit-check.sh</code>가 <code>harness-team gate commit</code>을 불러 커밋된 <code>.harness/gates.json</code>의 <code>commit</code> 목록을 실행(0.46.0) <span class="pill pill-auto">자동</span></td></tr>
             <tr><td>Edit/Write 직후</td><td><code>auto-format.sh</code></td><td><code>gate format &lt;file&gt;</code> — <code>gates.json</code>에 선언된 포맷터만 <span class="pill pill-auto">자동</span></td></tr>
@@ -750,7 +718,7 @@ unresolved-failure-capsules: 0/3</code></pre>
             <tr><td>push 직전 (git hook)</td><td><code>harness-team pr-check --pre-push</code></td><td>PR이 담은 task 문서 계약 검사 — 하네스의 유일한 강제(D11, 0.46.0). 기존 설치는 <code>harness-team sync</code>로 받는다 <span class="pill pill-auto">자동</span></td></tr>
             <tr><td><code>git push</code> · <code>gh pr create/merge</code></td><td><code>permissions.ask</code></td><td>실행 전 사용자 확인 프롬프트(0.29.0) <span class="pill pill-auto">자동</span></td></tr>
             <tr><td>모든 도구 호출 (성공·실패·거부)</td><td><code>observe-tools.mjs</code></td><td>빈도·시간·결과 크기만 허용목록 메타데이터로 기록 — 프롬프트·경로·자격증명 원문은 남기지 않음 <span class="pill pill-auto">자동</span></td></tr>
-            <tr><td>spec·plan 품질 / 리뷰 판별·조치 / Context Card 갱신</td><td>—</td><td>사람과 에이전트의 규율 (리뷰 실행 기록 자체는 CLI가 남긴다) <span class="pill pill-norm">규범</span></td></tr>
+            <tr><td>spec·plan 품질 / 리뷰 판별·조치</td><td>—</td><td>사람과 에이전트의 규율 (리뷰 실행 기록 자체는 CLI가 남긴다) <span class="pill pill-norm">규범</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -760,7 +728,7 @@ unresolved-failure-capsules: 0/3</code></pre>
         <div class="mark">🔌</div>
         <div>
           <h5>Codex는 예외입니다 — SessionStart 훅이 생겼습니다 (0.15.0)</h5>
-          <p><code>init</code>이 <code>.codex/hooks.json</code>을 함께 설치합니다. Claude 쪽과 동일하게 <code>harness-team session-context</code>를 불러 <strong>Codex 세션도 활성 task의 Context Card를 주입</strong>받습니다. 그래서 "훅은 Claude Code 전용"은 더 이상 정확하지 않습니다 — 정확한 표현은 <strong>"훅 표면의 넓이가 다르다"</strong>입니다(Claude는 위 표의 전 시점, Codex는 SessionStart 하나).</p>
+          <p><code>init</code>이 <code>.codex/hooks.json</code>을 함께 설치합니다. Claude 쪽과 동일하게 <code>harness-team session-context</code>를 불러 <strong>Codex 세션도 활성 task와 현재 단계를 주입</strong>받습니다. 그래서 "훅은 Claude Code 전용"은 더 이상 정확하지 않습니다 — 정확한 표현은 <strong>"훅 표면의 넓이가 다르다"</strong>입니다(Claude는 위 표의 전 시점, Codex는 SessionStart 하나).</p>
           <p>Codex 쪽은 <code>session-context --codex-hook</code>이 출력을 <code>additionalContext</code> 봉투로 감싸 주입합니다. 훅이 돌려면 <strong>신뢰 2겹</strong>이 모두 필요합니다 — 프로젝트 신뢰(<code>[projects."&lt;path&gt;"] trust_level = "trusted"</code>)와 훅 소스 신뢰(<code>~/.codex/config.toml</code>의 <code>[hooks.state]</code> 해시). <code>init</code> 이후 <strong>첫 대화형 Codex 세션에서 승인</strong>하세요. 훅 파일을 고치면 해시가 바뀌어 다시 승인이 필요하고, 기존 설치는 <code>migrate</code>로 훅을 갱신합니다. <code>doctor</code>의 <code>Codex hook trust</code> 검사가 이 상태를 보고합니다(0.38.3).</p>
         </div>
       </div>
@@ -828,14 +796,12 @@ stop: 가드가 지적한 증거가 실제로 없으면 종결하지 말 것</co
             <tr><td>훅이 조용히 아무 일도 안 한다</td><td>전역 <code>harness-team</code> CLI가 PATH에 없다</td><td><code>harness-team doctor</code> → 안내대로 재링크</td></tr>
             <tr><td><code>docs/&lt;user&gt;/new/</code>가 생겼다</td><td><code>/harness-task new feature X</code> 형태로 호출</td><td>디렉터리 삭제 후 <code>/harness-task &lt;name&gt;</code>로 재생성</td></tr>
             <tr><td>spec이 외부 문서만 가리킨다</td><td>포인터 껍데기 spec — 자가진단·Ontology가 없다</td><td>요구사항·자가진단·Ontology는 spec에 직접. 외부 문서는 보조 참조로만 (<code>doctor</code>가 경고)</td></tr>
-            <tr><td>재개할 때마다 처음부터 다시 읽는다</td><td>Context Card를 갱신하지 않았다</td><td>세션 넘기기 전 <code>## Now</code>·<code>JIT retrieval map</code> 갱신 → <code>context check</code></td></tr>
-            <tr><td>Context Card가 계속 커진다</td><td>이력·로그를 append만 했다</td><td>상세 이력 제거, 가치 있는 학습은 artifact로 이동 (6 KiB·100행·capsule 3)</td></tr>
             <tr><td>리뷰했는데 흔적이 없다</td><td>결과를 artifact에 남기지 않았다</td><td>엔진을 직접 돌리지 말고 <code>harness-team review</code>로 — CLI가 <code>meta.reviews[]</code>·<code>## Reviews</code>에 기록하고, 당신은 판별·조치를 쓴다. 없으면 안 한 것이고, spec이 <code>review: required</code>면 <code>done</code>도 막힌다</td></tr>
             <tr><td>병합했는데 <code>task_summary.md</code>가 그대로다</td><td>0.16.0부터 원장은 <strong>생성물</strong>이라 <code>task</code>·<code>done</code>이 쓰지 않는다</td><td>기본 브랜치에서 <code>harness-team summary --write</code> 실행 후 커밋</td></tr>
             <tr><td>피처 브랜치에서 <code>summary --write</code>가 거부됐다</td><td>가드가 기본 브랜치만 허용한다 — 의도된 동작</td><td>거부가 맞다. <code>--force</code>로 뚫지 말고 기본 브랜치에서 돌린다</td></tr>
             <tr><td><code>done</code>이 "테스트 파일 변경이 없음"으로 막힌다</td><td>0.18.1 테스트 증거 가드</td><td>테스트를 쓰거나, 정말 불필요하면 spec <code>## Done evidence</code>에 <code>"tests": "skip"</code> 선언</td></tr>
             <tr><td><code>/harness-codex-review</code>가 아무 반응이 없다</td><td>0.17.0에서 <code>/harness-review</code>로 재편, 옛 이름 alias는 <strong>제거됐다</strong></td><td>문서·브리프의 커맨드 이름을 <code>/harness-review</code>로 바꾼다</td></tr>
-            <tr><td>Codex 세션에 Context Card가 안 들어온다</td><td>신뢰 2겹(프로젝트 <code>trust_level</code> · 훅 <code>[hooks.state]</code> 해시) 중 하나가 없다</td><td>대화형 Codex 세션에서 둘 다 승인. <code>harness-team doctor</code>의 <code>Codex hook trust</code> 확인</td></tr>
+            <tr><td>Codex 세션에 현재 단계가 안 들어온다</td><td>신뢰 2겹(프로젝트 <code>trust_level</code> · 훅 <code>[hooks.state]</code> 해시) 중 하나가 없다</td><td>대화형 Codex 세션에서 둘 다 승인. <code>harness-team doctor</code>의 <code>Codex hook trust</code> 확인</td></tr>
             <tr><td>push가 <code>pr-check</code>로 막힌다</td><td>pre-push 훅(0.46.0) — PR 브랜치에 task 문서가 없거나 계약 위반</td><td>task 문서(spec·plan·artifact)를 채워 커밋한다. 우회(<code>--no-verify</code>)하지 않는다</td></tr>
             <tr><td>팀원의 <code>done</code>이 <code>scenarios</code>를 미지 키로 막는다</td><td>그 팀원의 CLI가 0.46.0 이하</td><td>전역 CLI를 0.47.0 이상으로 갱신 (doctor의 <code>harness version</code> 줄)</td></tr>
             <tr><td>task 이름 재사용이 거부된다</td><td>원장에 done으로 남았는데 폴더가 지워진 이름(0.48.0)</td><td>새 이름을 쓴다</td></tr>

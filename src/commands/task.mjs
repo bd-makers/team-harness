@@ -22,6 +22,16 @@ export function planHasOpenBoxes(content) {
   return /^\s*- \[ \]/m.test(content);
 }
 
+// plan의 "현재 단계" — 내용이 있는 첫 미완 체크박스 줄. 파생값이라 어디에도 저장하지 않는다.
+// 생성 직후 plan의 빈 `- [ ]`는 단계가 아니므로 건너뛴다.
+export function firstOpenPlanStep(content) {
+  for (const match of content.matchAll(/^\s*- \[ \][ \t]*(.*)$/gm)) {
+    const step = match[1].trim();
+    if (step) return step;
+  }
+  return null;
+}
+
 // 줄머리 체크박스를 켠(`- [ ]`→`- [x]`) 것 외에 바뀐 줄이 없는가. done 가드는 이 경우 plan.md를
 // 미커밋 작업으로 세지 않는다 — 머지 후 마지막 단계를 켜려고 커밋을 따로 만들 이유가 없다.
 // 끄기·줄 추가·산문 변경은 실제 작업이라 거부한다.
@@ -234,38 +244,6 @@ export function taskArtifactTemplate(name) {
 
 
 ## Learnings
-`;
-}
-
-export function taskContextTemplate(name) {
-  return `# ${name} — Context Card
-<!-- working set only; UTF-8 <= 6 KiB, nonblank lines <= 100 -->
-
-## Now
-- Goal:
-- Current atomic step:
-- Stop / human-decision condition:
-
-## Constraints and settled decisions
--
-
-## JIT retrieval map
-- Identifiers / symbols:
-- Narrow globs:
-- Read next:
-- Verification command:
-
-## Failure capsules (max 3 unresolved)
-### F-001
-- Signal:
-- Tried:
-- Compact finding / current hypothesis:
-- Cause (intent | context | environment | verification | state | unknown):
-- Next discriminator:
-- Source (safe path or command):
-
-## Resume checklist
--
 `;
 }
 
@@ -505,7 +483,6 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
   await writeText(taskFilePath(ctx.targetDir, user, name, 'plan.md'), taskPlanTemplate(name));
   await writeText(taskFilePath(ctx.targetDir, user, name, 'handoff.md'), taskHandoffTemplate(name));
   await writeText(taskFilePath(ctx.targetDir, user, name, 'artifact.md'), taskArtifactTemplate(name));
-  await writeText(taskFilePath(ctx.targetDir, user, name, 'context.md'), taskContextTemplate(name));
 
   // 판정 창의 시작점. 생성 시 1회만 찍고 meta에 굳힌다 — 재활성화(위 분기)는 `switchedAt`만
   // 갱신하고 이 값은 건드리지 않는다. 둘이 갈라지는 순간이 done 가드 오탐의 원인이었다.
@@ -529,7 +506,7 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
       status: 'success',
       summary: `created: ${taskDirRel(user, name)}/`,
       nextActions: [`/harness-spec으로 ${taskFileRel(user, name, 'spec.md')} 초안 생성 (또는 직접 작성, Ambiguity 자가진단 포함)`],
-      artifacts: ['spec.md', 'plan.md', 'handoff.md', 'artifact.md', 'context.md', 'meta.json']
+      artifacts: ['spec.md', 'plan.md', 'handoff.md', 'artifact.md', 'meta.json']
         .map(kind => taskFileRel(user, name, kind)),
       ...(doneOnMainVerdict ? { extra: { doneOnMain: doneOnMainVerdict } } : {}),
     }));

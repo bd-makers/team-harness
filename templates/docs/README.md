@@ -1,7 +1,7 @@
 # docs/ — 팀원·task별 작업 문서
 
 모든 작업 문서는 `docs/<user>/<name>/` 구조로 관리됩니다.
-task별 디렉토리 하나에 SSOT 4개 파일과 비-SSOT Context Card 1개가 들어가며,
+task별 디렉토리 하나에 SSOT 4개 파일이 들어가며,
 파일명은 `<name>-` 접두를 붙입니다.
 
 ```
@@ -15,7 +15,6 @@ docs/
         ├── <name>-plan.md            # 단계별 체크리스트
         ├── <name>-handoff.md         # 세션 인수인계 (post-commit hook 자동 갱신)
         ├── <name>-artifact.md        # 실행 결과 / 학습 (task done·retro 시 append)
-        ├── <name>-context.md         # Context Card — 현재 working set (비-SSOT)
         ├── <name>-diagram.html       # spec/plan 다이어그램 — 옵트인 산출물 (비-SSOT, 없을 수 있음)
         └── <name>-meta.json          # created / status — harness 내부 상태 (기계 소유)
 ```
@@ -30,8 +29,6 @@ harness-team summary --write  # 원장 파일 갱신 — 기본 브랜치에서�
 harness-team summary --check  # 원장이 최신인지 검사 (mutation 없음, CI용)
 harness-team done             # 활성 task 완료 처리 (artifact.md에 git log/diff 수집)
 harness-team retro "<메모>"    # 활성 task artifact.md에 학습/교정 내용 append
-harness-team context init     # 활성 task의 Context Card 생성 (없을 때만)
-harness-team context check    # 활성 task의 Context Card 검사 (수정하지 않음)
 ```
 
 활성 task의 정보는 `.harness/active.json`에 저장됩니다.
@@ -60,10 +57,7 @@ harness-team context check    # 활성 task의 Context Card 검사 (수정하지
 - **`<name>-plan.md`**: 어떻게. 세션 시작/종료마다 체크리스트(`- [ ]` → `- [x]`)를 갱신.
 - **`<name>-handoff.md`**: 세션 간 인수인계 메모. commit 시 post-commit hook이 자동 갱신.
 - **`<name>-artifact.md`**: 완료 후 남는 증거. `task done` 시 git diff/log/test 결과가,
-  `retro` 시 학습/교정 내용이 append 된다.
-- **`<name>-context.md`**: 위 네 파일에서 파생된 현재 working set. **SSOT 아님** — 여기에만 있는
-  요구사항·결정·학습은 없어야 한다. 예산·유지 규칙·failure capsule 규약은 `AGENTS.md`의
-  **Task Context Card (TCC)** 섹션이 정본이다.
+  `retro` 시 학습/교정 내용이 append 된다. 재현 가능한 실패는 `## Failures`에 남긴다.
 - **`<name>-diagram.html`**: spec/plan 단계 다이어그램. **옵트인이라 없는 task가 정상이다** —
   신규 task 생성 시 1회 묻고 "예"일 때만 `<name>-plan.md`에 그 단계가 생긴다(설정 키가 아니라
   plan.md가 상태다). **SSOT 아님.** 자립형 inline SVG로 쓴다 — Obsidian이 script를 제거하므로

@@ -645,8 +645,7 @@ export async function checkBoundaryCheckpointHook(targetDir) {
 // from the project subtotal alone — sizing a superset budget by a subset measurement is
 // the exact defect this check was widened to fix. This is a deterministic
 // size check only — the fix (moving procedure to lazy sources) is a human judgment call,
-// so it stays warning-only, mirroring the TCC 6 KiB budget philosophy (context.mjs
-// CONTEXT_MAX_BYTES).
+// so it stays warning-only.
 export const EAGER_TIER_MAX_BYTES = 24 * 1024;
 
 // Claude Code resolves its config home as `CLAUDE_CONFIG_DIR ?? ~/.claude`, and refuses a

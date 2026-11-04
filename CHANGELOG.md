@@ -9,6 +9,16 @@
 
 ## [Unreleased]
 
+### Removed
+- **BREAKING: Task Context Card(TCC)를 폐지했다** (task `tcc-removal`, 하위 시스템 감사 후보 E). `harness-team context init|check` 명령과 `<name>-context.md` 생성이 사라진다.
+  손으로 유지하는 캐시인데 재개에 쓰였다는 직접 증거가 없었고(재개 실사례 2건, 표본이 작다), 훅이 설치된 최대 소비자에서도 카드 68장 중 38장이 빈 채였다.
+  기존 `-context.md` 파일은 지우지 않는다. 읽는 코드만 없어진다. `AGENTS.md`의 TCC·JIT retrieval 절도 함께 지워 매 세션 로드량이 1,424 B 줄었다.
+  **소비자 조치**: `harness-team migrate`와 `init`을 돌려야 스킬과 `AGENTS.md`가 갱신된다. 그 전까지 옛 `AGENTS.md`는 없어진 `context` 명령을 안내한다.
+
+### Changed
+- **SessionStart가 plan의 첫 미완 단계를 주입한다.** 카드 대신 `[harness] 현재 단계: <줄>` 한 줄이 breadcrumb 뒤에 온다. 미완 단계가 없거나 plan을 읽을 수 없으면 breadcrumb만 나온다.
+- **재현 가능한 실패 기록이 artifact로 옮겨졌다** (D12 정정). `fix-bug`·`new-feature` 스킬이 failure capsule 대신 artifact `## Failures`의 `### F-NNN`을 안내한다. 해소돼도 지우지 않고 `Resolved:`를 붙이며, 3개 상한은 없다.
+
 ### Fixed
 - **`docs:generate`의 파일 인벤토리가 `git add` 순서에 따라 달라지지 않는다.** 인벤토리는 `git ls-files`(index) 기준이었다. 그래서 새 파일을
   `git add` 전에 생성하면 표에서 빠졌고, 지운 파일은 index에 남은 동안 계속 나왔다. 어느 쪽이든 CI의 `docs:check`만 깨졌다.

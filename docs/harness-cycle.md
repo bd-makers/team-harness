@@ -34,7 +34,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 | **S0 셋업** | AGENTS/CLAUDE, Codex 배선, **검증 프리셋** | — | ✓ init · ✓ 프리셋(`templates/presets/` — 커밋 게이트·RN rules) |
 | **S1 Spec** | `spec.md` (PRD·Figma·API 문서·기획서·정책서 소스) | **R1 소스 검토**(차단) | ✓ harness-spec · ✓ R1 원천 검토(interview 안 단계, 규범 차단 — task `r1-source-review`) |
 | **S2 Plan** | `plan.md` + **plan 다이어그램**(이해용) | 개발자 확인 | ✓ plan · △ 다이어그램 옵트인 |
-| **S3 구현** | 코드 · TCC(작업 카드) | — (자유) | ✓ 자유 · ✓ 기본 루프(`/harness-loop`, 선택형) |
+| **S3 구현** | 코드 | — (자유) | ✓ 자유 · ✓ 기본 루프(`/harness-loop`, 선택형) |
 | **S4 구현 검증** | spec 시나리오(Given/When/Then) ↔ 증거 | **R2 시나리오 대조**(기계 2 + 루브릭 2, §4-1b) | ✓ R2 시나리오 대조(옵트인 — `scenario check` + `review --framing scenario`, task `r2-scenario-evidence`) |
 | **S5 커밋** | — | **검증 프리셋 실행**(lint·tsc·test) | ✓ `gate commit` — 팀 파일 `.harness/gates.json`(프리셋 제안, workspace는 turbo·nx 위임 또는 디렉터리별) |
 | **S6 코드 리뷰** | 리뷰 기록(`## Reviews`·meta.reviews) | **R3 로컬 리뷰** (PR 전 필수) | △ spec이 required 선언할 때만 강제 |
@@ -57,7 +57,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 
 | 분류 | 구성요소 | 판정 |
 |---|---|---|
-| 단계에 봉사 | init·AGENTS/CLAUDE 렌더·Codex 배선·스킬 래퍼, task 4문서·meta, harness-spec·interview·contrarian·simplifier, plan·diagram, TCC·boundary, done 가드, pre-commit-check, harness-review·adversarial-review, ship, retro·promote, unit·comp·inttest | **유지** (일부 강화) |
+| 단계에 봉사 | init·AGENTS/CLAUDE 렌더·Codex 배선·스킬 래퍼, task 4문서·meta, harness-spec·interview·contrarian·simplifier, plan·diagram, boundary, done 가드, pre-commit-check, harness-review·adversarial-review, ship, retro·promote, unit·comp·inttest | **유지** (일부 강화) |
 | 가로축 | handoff·session-context, summary, protect-files·block-dangerous-git, observe, migrate, doctor | **유지** |
 | 단계 없음 | 백업 디렉터리 군(symlink·clone·delete·upgrade·backup, 참조 없는 `backup` CLI) | **제거** |
 | 정리 (§4-5·4-6) | sha 테이블·legacy 변환(유지비가 나면 삭제), 버전 stamp(설치 버전 표시만), docs 버전 drift 검사, auto-format(→ 프리셋 `format`), sim·codex-sim·release(→ 저장소 전용), D7–D11(→ 저장소 전용). cursor 미러는 **유지** | 결정됨 |

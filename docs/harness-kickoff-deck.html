@@ -185,7 +185,7 @@ const SLIDES = [
         <text x="64" y="29" text-anchor="middle" fill="#e2e6f0" font-size="19" font-weight="600" font-family="ui-monospace,Menlo,monospace">${n[0]}</text>
         <text x="64" y="50" text-anchor="middle" fill="#8a92ae" font-size="13">${n[1]}</text></g>
         ${i<6?`<line x1="${i*160+130}" y1="91" x2="${i*160+156}" y2="91" stroke="#3a4260" stroke-width="2" marker-end="url(#ar)"/>`:''}`).join('')}
-    <text x="0" y="165" fill="#8a92ae" font-size="14">SessionStart 훅이 활성 task와 Context Card를 주입</text>
+    <text x="0" y="165" fill="#8a92ae" font-size="14">SessionStart 훅이 활성 task와 현재 단계를 주입</text>
     <text x="640" y="165" fill="#8a92ae" font-size="14">post-commit 훅이 handoff 갱신</text>
     <text x="0" y="192" fill="#f5c451" font-size="14">ship은 “준비 완료 보고”에서 멈춘다 — PR·머지는 사람이 지시하고, done은 머지 후 기본 브랜치에서 판정한다</text>
   </svg></div>` },
@@ -226,7 +226,7 @@ const SLIDES = [
   html:`<div class="body"><h2>훅이 하는 일 vs 사람이 지키는 일</h2>
   <div class="cols">
     <div class="card good"><h3>자동 — 안 지킬 수가 없다</h3><p style="line-height:1.85">
-      SessionStart → 활성 task·Context Card 주입<br>
+      SessionStart → 활성 task·현재 단계 주입<br>
       Edit/Write 전 → 보호 파일 차단 · boundary 대조<br>
       Bash 전 → 위험 git 차단 · <code>gate commit</code>(gates.json)<br>
       Edit/Write 후 → <code>gate format</code><br>
