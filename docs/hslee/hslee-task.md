@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ tcc-removal
 - ✅ codex-allow-scope
 - ✅ env-runtime-q5
 - ✅ gate-fail-cause

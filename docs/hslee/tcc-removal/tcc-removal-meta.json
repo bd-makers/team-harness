@@ -3,8 +3,8 @@
   "task": "tcc-removal",
   "created": "2026-11-04",
   "firstActivatedAt": "2026-11-04T14:52:44.074Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-11-04T15:20:50.996Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [

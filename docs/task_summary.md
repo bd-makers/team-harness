@@ -177,3 +177,4 @@
 | hslee | overview-worktree-inventory | ✅ done | 2026-11-03 |
 | hslee | subsystem-audit | ✅ done | 2026-11-03 |
 | hslee | verify-gates-source | ✅ done | 2026-11-03 |
+| hslee | tcc-removal | ✅ done | 2026-11-04 |
