@@ -110,3 +110,8 @@ AGENTS.md                                          |  20 +-
  tests/session-context.test.mjs                     |  92 +++---
  tests/task-templates.test.mjs                      |   9 +-
  49 files changed, 509 insertions(+), 945 deletions(-)
+
+## 2026-11-04T15:03:02.542Z — 4e86cb9 docs(task): tcc-removal 가이드 잔여 표현 + handoff 갱신
+docs/harness-task-guide.html                  |  2 +-
+ docs/hslee/tcc-removal/tcc-removal-handoff.md | 52 +++++++++++++++++++++++++++
+ 2 files changed, 53 insertions(+), 1 deletion(-)
