@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { readFile, readdir, writeFile } from 'node:fs/promises';
+import { lstat, readFile, readdir, writeFile } from 'node:fs/promises';
 import { basename, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -95,15 +95,23 @@ export function renderCommandTable(rows) {
     </div>`;
 }
 
-async function listTrackedSourceFiles(root) {
+// 인벤토리는 `git add -A`가 스테이징할 트리다 — index만 보면 `git add` 전에 생성한 결과가
+// CI의 깨끗한 체크아웃과 갈린다. ignored 파일은 빠지고, index에만 남은 경로도 lstat으로 거른다
+// (`--deleted`는 파일이 같은 이름의 디렉터리로 바뀐 경우를 놓친다). sparse 체크아웃은 지원 범위 밖이다.
+async function listSourceFiles(root) {
   const { stdout } = await execFileAsync('git', [
     '-C', root,
     'ls-files',
     '-z',
+    '--cached',
+    '--others',
+    '--exclude-standard',
     '--',
     ...sourceTreeEntries,
   ]);
-  return stdout.split('\0').filter(Boolean);
+  const paths = [...new Set(stdout.split('\0').filter(Boolean))];
+  const stats = await Promise.all(paths.map((path) => lstat(join(root, path)).catch(() => null)));
+  return paths.filter((_, index) => stats[index] && !stats[index].isDirectory());
 }
 
 function fileType(path) {
@@ -144,7 +152,7 @@ function fileRole(path, commandDescriptions) {
 export async function buildFileRows(root = repositoryRoot, commandRows) {
   commandRows ??= await buildCommandRows(root);
   const commandDescriptions = new Map(commandRows.map((row) => [row.sourcePath, row.description]));
-  const paths = await listTrackedSourceFiles(root);
+  const paths = await listSourceFiles(root);
   return paths.sort().map((path) => ({
     path,
     type: fileType(path),

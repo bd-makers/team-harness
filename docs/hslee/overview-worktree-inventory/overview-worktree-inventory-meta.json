@@ -1,0 +1,34 @@
+{
+  "user": "hslee",
+  "task": "overview-worktree-inventory",
+  "created": "2026-11-03",
+  "firstActivatedAt": "2026-11-03T17:14:48.363Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "8f9be5a6830864d4a7426eaad017d2cbe0a70ffd",
+      "tip": "15e660cea315f8e0deafaf61ff942baa2da32201",
+      "at": "2026-11-04T13:00:38.446Z",
+      "exitCode": 0,
+      "outputBytes": 2232
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "8f9be5a6830864d4a7426eaad017d2cbe0a70ffd",
+      "tip": "2b011f6c319e0882c7ef3964265cd9974849efb6",
+      "at": "2026-11-04T13:15:19.277Z",
+      "exitCode": 0,
+      "outputBytes": 1647
+    }
+  ]
+}
