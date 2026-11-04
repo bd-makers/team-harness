@@ -3,8 +3,8 @@
   "task": "subsystem-audit",
   "created": "2026-11-03",
   "firstActivatedAt": "2026-11-03T14:41:49.982Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-11-04T14:19:27.120Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": []
