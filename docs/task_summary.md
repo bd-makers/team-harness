@@ -174,5 +174,6 @@
 | hslee | codex-allow-scope | ✅ done | 2026-11-03 |
 | hslee | env-runtime-q5 | ✅ done | 2026-11-03 |
 | hslee | gate-fail-cause | ✅ done | 2026-11-03 |
+| hslee | overview-worktree-inventory | ✅ done | 2026-11-03 |
 | hslee | subsystem-audit | 🔄 open | 2026-11-03 |
 | hslee | verify-gates-source | ✅ done | 2026-11-03 |

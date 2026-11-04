@@ -7,6 +7,7 @@
 - ✅ codex-allow-scope
 - ✅ env-runtime-q5
 - ✅ gate-fail-cause
+- ✅ overview-worktree-inventory
 - ✅ verify-gates-source
 - ✅ capsule-cause
 - ✅ done-scope-line
