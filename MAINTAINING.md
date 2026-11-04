@@ -36,7 +36,7 @@
 | `commands/<name>.md` | 슬래시 커맨드 정의 (프롬프트). frontmatter에 `description`·`phase` 필수 | `manifest-sync`, `generate-harness-overview` |
 | `skills/<name>/SKILL.md` | Codex command-equivalent 래퍼. `name: <name>` + `commands/<name>.md` 참조 필수 | `manifest-sync` |
 | `.claude-plugin/plugin.json` | 플러그인 커맨드 목록 (양방향 일치) | `manifest-sync` |
-| `docs/harness-overview.html` | `npm run docs:generate`로 재생성 — 인벤토리는 `git add -A`가 스테이징할 트리 기준이라 `git add` 순서와 무관하다. 단 커밋하지 않을 WIP 파일도 소스 디렉터리에 있으면 들어간다 | `docs:check`, `documentation-inventory-pointers` |
+| `docs/harness-overview.html` | `npm run docs:generate`로 재생성 — 인벤토리는 `git add -A`가 스테이징할 트리 기준이라 `git add` 순서와 무관하다. 단 커밋하지 않을 WIP 파일도 소스 디렉터리에 있으면 들어간다. sparse 체크아웃과 gitlink는 지원 범위 밖이다 | `docs:check`, `documentation-inventory-pointers` |
 | `README.md` | 명령어 레퍼런스 섹션 (전체 목록이 아니라 부분 안내) | — |
 | `bin/harness-team.mjs` | **CLI를 감싸는 커맨드만.** 에이전트 판단만 하는 커맨드는 CLI 서브커맨드가 없다 | `manifest-sync` |
 

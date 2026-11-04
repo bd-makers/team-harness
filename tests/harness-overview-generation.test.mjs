@@ -45,18 +45,26 @@ test('file inventory is the tree `git add -A` would stage, regardless of index s
       writeFile(join(fixture, '.gitignore'), '.DS_Store\n'),
       writeFile(join(fixture, 'src/kept.mjs'), 'kept'),
       writeFile(join(fixture, 'src/gone.mjs'), 'gone'),
+      writeFile(join(fixture, 'src/swapped'), 'file'),
     ]);
     await git(fixture, 'add', '-A');
     await git(fixture, 'commit', '-qm', 'base');
 
     await Promise.all([
       rm(join(fixture, 'src/gone.mjs')),
+      rm(join(fixture, 'src/swapped')),
       writeFile(join(fixture, 'src/new.mjs'), 'new'),
       writeFile(join(fixture, 'src/.DS_Store'), 'ignored'),
     ]);
+    await mkdir(join(fixture, 'src/swapped'));
+    await writeFile(join(fixture, 'src/swapped/inner.mjs'), 'inner');
 
-    const paths = (await buildFileRows(fixture, [])).map((row) => row.path);
-    assert.deepEqual(paths, ['src/kept.mjs', 'src/new.mjs']);
+    const inventory = async () => (await buildFileRows(fixture, [])).map((row) => row.path);
+    const expected = ['src/kept.mjs', 'src/new.mjs', 'src/swapped/inner.mjs'];
+    assert.deepEqual(await inventory(), expected);
+
+    await git(fixture, 'add', '-A');
+    assert.deepEqual(await inventory(), expected, '스테이징 뒤에도 같아야 한다');
   } finally {
     await rm(fixture, { recursive: true, force: true });
   }

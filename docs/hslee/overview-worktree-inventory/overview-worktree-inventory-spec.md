@@ -32,10 +32,12 @@
 - 검토 완료: 2026-11-04
 
 ## 설계 / 접근
-인벤토리 = **`git add -A`가 스테이징할 트리**. `git ls-files -z --cached --others --exclude-standard -- <entries>`에서 `git ls-files -z --deleted -- <entries>`를 뺀다.
+인벤토리 = **`git add -A`가 스테이징할 트리**. `git ls-files -z --cached --others --exclude-standard -- <entries>`의 결과에서, `lstat`으로 없는 경로와 디렉터리를 거른다.
+`--deleted`를 쓰지 않는 이유: 파일이 같은 이름의 디렉터리로 바뀐 경우를 놓친다(codex 리뷰 P2, 재현 확인). 같은 필터가 내장 저장소의 `src/vendor/` 행도 없앤다.
 JS `Set`으로 중복을 없앤다(충돌 중인 경로는 `--cached`에 여러 번 나온다). 함수 이름은 `listTrackedSourceFiles` → `listSourceFiles`로 바꾼다.
-테스트는 저장소 루트에 fixture를 만들지 않는다. 임시 `git init` 저장소에서 `buildFileRows(fixture, [])`로 세 경우를 본다.
-ignored → 없음, untracked → 있음, 작업 트리에서 지웠지만 index에 남은 파일 → 없음.
+테스트는 저장소 루트에 fixture를 만들지 않는다. 임시 `git init` 저장소에서 `buildFileRows(fixture, [])`로 네 경우를 본다.
+ignored → 없음, untracked → 있음, 지웠지만 index에 남은 파일 → 없음, 디렉터리로 바뀐 파일 → 안의 파일만 있음. `git add -A` 뒤에 같은 결과인지 다시 비교한다.
+**지원 범위 밖**: sparse 체크아웃(cone 밖 tracked 파일이 표에서 빠진다)과 gitlink(표에 나오지 않는다). 이 저장소는 sparse를 쓰지 않고 gitlink가 0개다.
 
 ## Ontology
 - **소스 인벤토리**: overview의 파일 표. 정의는 "`sourceTreeEntries` 아래에서 `git add -A`가 스테이징할 파일 집합"이다. 깨끗한 체크아웃에서는 `git ls-files`와 같다.
