@@ -38,6 +38,8 @@ JS `Set`으로 중복을 없앤다(충돌 중인 경로는 `--cached`에 여러 
 테스트는 저장소 루트에 fixture를 만들지 않는다. 임시 `git init` 저장소에서 `buildFileRows(fixture, [])`로 네 경우를 본다.
 ignored → 없음, untracked → 있음, 지웠지만 index에 남은 파일 → 없음, 디렉터리로 바뀐 파일 → 안의 파일만 있음. `git add -A` 뒤에 같은 결과인지 다시 비교한다.
 **지원 범위 밖**: sparse 체크아웃(cone 밖 tracked 파일이 표에서 빠진다)과 gitlink(표에 나오지 않는다). 이 저장소는 sparse를 쓰지 않고 gitlink가 0개다.
+**알려진 한계**: tracked 파일의 상위 디렉터리를 심볼릭 링크로 바꾸고 링크 대상에 같은 이름의 파일이 있으면, `git add` 전 표에 옛 경로가 남는다(codex 재검토 P2, 재현 확인).
+추적 중인 심볼릭 링크는 0개이고 이력에도 없다. 고치려면 경로마다 상위 체인을 검사해야 해서 메인테이너 결정으로 두었다. 사례가 생기면 재론한다.
 
 ## Ontology
 - **소스 인벤토리**: overview의 파일 표. 정의는 "`sourceTreeEntries` 아래에서 `git add -A`가 스테이징할 파일 집합"이다. 깨끗한 체크아웃에서는 `git ls-files`와 같다.
