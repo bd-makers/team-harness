@@ -19,3 +19,13 @@ CHANGELOG.md                                       |  6 +++
 .../overview-worktree-inventory-handoff.md                  | 13 +++++++++++++
  .../overview-worktree-inventory-plan.md                     |  2 +-
  2 files changed, 14 insertions(+), 1 deletion(-)
+
+## 2026-11-04T13:13:27.239Z — c02feac fix(docs): overview 인벤토리가 lstat으로 index에만 남은 경로를 거른다
+CHANGELOG.md                                       |  2 +-
+ MAINTAINING.md                                     |  2 +-
+ .../overview-worktree-inventory-artifact.md        | 36 +++++++++++++++++++---
+ .../overview-worktree-inventory-meta.json          | 14 ++++++++-
+ .../overview-worktree-inventory-spec.md            |  8 +++--
+ scripts/generate-harness-overview.mjs              | 26 +++++++++-------
+ tests/harness-overview-generation.test.mjs         | 12 ++++++--
+ 7 files changed, 77 insertions(+), 23 deletions(-)
