@@ -9,6 +9,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **`--stack`·`--scope` 값 검증을 파서로 옮겼다.** 플래그 이름에 묶인 `FLAG_CHOICES`가 검사하므로 커맨드에 복제해도 가드가 따라간다. `review --scope <오타>`는 이제 exit 1과 오류 패킷 대신 다른 플래그 오류처럼 exit 2와 stderr 안내를 낸다. `--json`이어도 envelope은 나오지 않는다.
+
 ### Fixed
 
 - **0.54.0 소비자 조치 보충: 설치된 `docs/README.md`는 손으로 고친다.** `migrate`와 `init --yes`는 이미 있는 이 파일을 갱신하지 않아, 없어진 `harness-team context init|check` 안내가 남는다. 프로젝트 내용을 덧붙이지 않았다면 파일을 지우고 `init --yes`를 다시 돌리면 새 판을 받는다. 덧붙였다면 Context Card 언급만 지운다. `doctor`는 이 잔여 안내를 경고하지 않는다.

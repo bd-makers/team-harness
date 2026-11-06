@@ -22,6 +22,12 @@ export const VALUE_FLAGS = new Set(['stack', 'shape', 'member', 'target', 'days'
 // to any subcommand without the registry having to enumerate it per command.
 export const GLOBAL_FLAGS = ['target', 'member', 'yes', 'json'];
 
+export const SCOPES = ['worktree', 'diff', 'task-docs'];
+
+// 값 계약은 커맨드가 아니라 플래그 이름에 묶는다. 커맨드마다 가드를 두면 플래그를 복제할 때 가드만 빠졌다 —
+// `stack --stack 오타`와 `scope --scope 오타`가 각각 성공한 판정으로 나왔다. 여기 있으면 COMMANDS 에 선언만 해도 검사된다.
+export const FLAG_CHOICES = { stack: KNOWN_STACK_IDS, scope: SCOPES };
+
 const INIT_FLAGS = ['stack', 'shape'];
 
 // Single source for the command table: `--help` renders from `summary`, flag
@@ -226,6 +232,17 @@ export function resolveInvocation(argv) {
       kind: 'error',
       code: 2,
       message: `${command.name}: unknown flag ${unknown.map(flag => `--${flag}`).join(', ')}`,
+      text: renderCommandHelp(command),
+    };
+  }
+
+  for (const [flag, choices] of Object.entries(FLAG_CHOICES)) {
+    const value = parsed.flags[flag];
+    if (value === undefined || choices.includes(value)) continue;
+    return {
+      kind: 'error',
+      code: 2,
+      message: `${command.name}: unknown --${flag} "${value}" (expected one of ${choices.join('|')})`,
       text: renderCommandHelp(command),
     };
   }
