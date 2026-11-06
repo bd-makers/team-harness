@@ -55,7 +55,7 @@ export const COMMANDS = [
   { name: 'scope', args: '[dir]', summary: 'Resolve the review/ship scope and base ref (read-only)', flags: ['scope', 'base'] },
   // Read-only. The one thing the harness enforces (D11): the task docs a PR carries. ship, the git
   // pre-push hook (`--pre-push` reads git's ref lines from stdin) and a team's CI all call this.
-  { name: 'pr-check', args: '[dir] [--base <ref>] [--pre-push]', summary: 'Check that the branch carries its task docs (spec/plan/handoff/artifact; diagram is advisory) for a PR (read-only; exit 1 when missing)', flags: ['base', 'pre-push'] },
+  { name: 'pr-check', args: '[dir] [--base <ref>] [--pre-push]', summary: 'Check that the branch carries its task docs (spec/plan/artifact; diagram is advisory) for a PR (read-only; exit 1 when missing)', flags: ['base', 'pre-push'] },
   // Owns the read-modify-write that harness-spec.md 4단계 used to describe in prose (preserve `user`,
   // refuse malformed JSON). Values are always strings; the judgment of *what* to ask stays in the doc.
   { name: 'config', args: 'get [<key>] | set <key> <value>', summary: 'Read or set one dotted key in .harness/config.json (read-modify-write; refuses malformed JSON)', flags: [] },
@@ -78,7 +78,7 @@ export const COMMANDS = [
     flags: ['write', 'check', 'force'] },
   { name: 'done', args: '[--force]', summary: 'Complete the active task (--force bypasses the completion guard)',
     flags: ['force'] },
-  { name: 'handoff', args: '', summary: 'Update handoff from latest commit (post-commit hook)', flags: [] },
+  { name: 'handoff', args: '', summary: 'Update the user handoff from the latest commit (post-commit hook)', flags: [] },
   { name: 'boundary', args: 'check', summary: 'Compare declared JSON Schema producer/consumer boundaries', flags: [] },
   { name: 'scenario', args: 'check', summary: "Run each Done evidence scenario's evidence command and require exit 0 (R2 machine rows)", flags: [] },
   // `--codex-hook` wraps the same text in Codex's SessionStart envelope. Codex does not inject a

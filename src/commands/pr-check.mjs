@@ -1,5 +1,5 @@
 // `harness-team pr-check` — read-only. 하네스가 강제하는 유일한 것(D11)을 판정한다: 이 브랜치가 PR로 담을
-// task 마다 spec·plan·handoff·artifact 가 템플릿이 아닌 채로 있는가. 다이어그램은 권장이라(2026-10-06 결정)
+// task 마다 spec·plan·artifact 가 템플릿이 아닌 채로 있는가. 다이어그램은 권장이라(2026-10-06 결정)
 // 없으면 막지 않고 안내(notes)만 낸다.
 //
 // 호출처는 셋이다(docs/harness-cycle.md §4-6): ship 준비 보고, init 이 설치하는 git pre-push 훅, 원하는 팀의 CI.
@@ -10,7 +10,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { resolveScope } from './review.mjs';
-import { taskSpecTemplate, taskPlanTemplate, taskHandoffTemplate, taskArtifactTemplate } from './task.mjs';
+import { taskSpecTemplate, taskPlanTemplate, taskArtifactTemplate } from './task.mjs';
 import { DIAGRAM_SKIPPED_PREFIX } from './diagram.mjs';
 import { DOCS_DIR, taskFileRel, taskLabel } from '../task-paths.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
@@ -29,8 +29,6 @@ async function showAt(targetDir, rev, rel) {
 const DOCS = [
   { kind: 'spec.md', template: taskSpecTemplate, hint: '요구사항·Ambiguity 자가진단을 채워 커밋' },
   { kind: 'plan.md', template: taskPlanTemplate, hint: '목표·단계를 채워 커밋' },
-  // post-commit 훅은 커밋 *뒤에* handoff 를 갱신한다 — 커밋 하나뿐인 브랜치에는 템플릿이 담긴다.
-  { kind: 'handoff.md', template: taskHandoffTemplate, hint: 'post-commit 훅이 갱신한 handoff 를 다음 커밋에 담기' },
   { kind: 'artifact.md', template: taskArtifactTemplate, hint: '결과·검증 증거를 채워 커밋' },
 ];
 
