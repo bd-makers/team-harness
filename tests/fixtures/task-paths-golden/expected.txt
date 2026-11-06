@@ -58,7 +58,6 @@ $ session-context (exit 0)
 $ done (exit 0)
 done: tester/demo
 보장 범위 — 확인: plan 체크박스 · artifact 작성 · 미커밋 변경 · task 이후 커밋 | 확인 안 함: 테스트 파일 변경(tests: optional) · 리뷰 실행 기록(review: optional) · 검증 리뷰 기록(verify: optional) · 테스트 실행 결과·리뷰 내용
-handoff updated: docs/tester/demo/demo-handoff.md
 handoff updated: docs/tester/tester-handoff.md
 
 $ done --force (exit 0)
@@ -116,13 +115,7 @@ null
 === docs/tester/demo/demo-handoff.md
 # demo — Handoff
 
-(세션 종료 시 post-commit hook이 자동 갱신합니다)
-
-## <ISO> — <SHA> feat: golden step
-
-## <ISO> — 완료
-
-태스크 종료.
+(선택 문서 — 다음 세션에 넘길 메모를 직접 적습니다. 커밋 이력은 `git log`로 봅니다)
 
 
 === docs/tester/demo/demo-meta.json
@@ -242,7 +235,7 @@ null
 === docs/tester/other/other-handoff.md
 # other — Handoff
 
-(세션 종료 시 post-commit hook이 자동 갱신합니다)
+(선택 문서 — 다음 세션에 넘길 메모를 직접 적습니다. 커밋 이력은 `git log`로 봅니다)
 
 
 === docs/tester/other/other-meta.json
@@ -350,5 +343,5 @@ null
 `demo` — done
 
 ## Full Context
-→ docs/tester/demo/demo-handoff.md
+→ docs/tester/demo/demo-plan.md
 

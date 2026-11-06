@@ -71,12 +71,13 @@ export async function createSandbox(stack) {
   await run('git', ['config', 'commit.gpgsign', 'false'], { cwd: dir, env });
 
   const cli = (args, extra = {}) => run('node', [BIN, ...args], { cwd: dir, env, ...extra });
+  const git = (args) => run('git', args, { cwd: dir, env });
   const gitCommit = async (msg) => {
-    await run('git', ['add', '-A'], { cwd: dir, env });
-    return run('git', ['commit', '-q', '-m', msg], { cwd: dir, env });
+    await git(['add', '-A']);
+    return git(['commit', '-q', '-m', msg]);
   };
   const cleanup = () => rm(dir, { recursive: true, force: true });
-  return { dir, env, cli, gitCommit, cleanup };
+  return { dir, env, cli, git, gitCommit, cleanup };
 }
 
 // Sandbox with the harness already installed non-interactively.

@@ -1,12 +1,5 @@
-// task handoff 의 **완료 마커** 하나만 소유하는 모듈. `runDone` 이 쓰고 `inferLegacyMeta` 가 읽는다.
-//
-// 왜 별도 모듈인가: 두 지점이 서로 다른 파일에서 같은 형식을 손으로 복사하고 있었고, 그 계약을
-// 지키는 테스트가 없었다. 실측 — 생산자의 em-dash 를 하이픈으로 바꾸면 meta.json 없는 레거시
-// task 가 `open` 으로 오분류되는데 609개 테스트가 전부 통과했다. 선언을 한 곳으로 모아야
-// 생산자 단독 변경이 테스트를 깬다.
-//
-// 범위는 완료 마커뿐이다. post-commit 훅이 쌓는 `## <ISO> — <sha oneline>` + diffstat 항목은
-// 파싱하는 코드가 하나도 없어(전수 확인) 형식을 고정할 이유가 없다.
+// 옛 task handoff 의 **완료 마커**를 읽는 모듈. 새 종결은 `meta.json` 만 쓰고 마커를 만들지 않는다.
+// `inferLegacyMeta` 가 meta.json 없는 옛 task 를 판정할 때만 읽는다.
 
 // 파서. 헤딩 줄이 `— 완료` 로 끝나는 것만 완료로 본다.
 //
@@ -18,12 +11,6 @@
 // 커밋 항목도 `## <시각> — <텍스트>` 모양이라, 커밋 메시지가 "…완료" 로 끝나는 것만으로
 // 종결로 읽히면 안 된다. 단순 포함 검사(`/완료/`)로 "정리" 하면 그 구분이 사라진다.
 const DONE_MARKER_RE = /^##\s.*—\s*완료\s*$/m;
-
-// 생산자. `appendFile` 에 그대로 넘길 수 있는 블록을 돌려준다 — 선행 개행까지 포함해
-// append-only 파일에서 이전 항목과 한 줄 띄는 것이 형식의 일부다.
-export function renderDoneMarker(isoTs) {
-  return `\n## ${isoTs} — 완료\n\n태스크 종료.\n`;
-}
 
 // 소비자. handoff 본문에 완료 마커가 있는가.
 export function hasDoneMarker(content) {

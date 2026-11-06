@@ -408,20 +408,20 @@ test('CLI scope: git 저장소가 아니면 worktree 로 degrade 한다', async 
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-// review 와 같은 판정이어야 한다 — post-commit 훅이 쓴 handoff 만 dirty 면 worktree 가 아니라 diff 다.
-test('scope: handoff-only dirty tree reports diff like review', async () => {
+// review 와 같은 판정이어야 한다 — 구 저장소의 추적 user handoff 만 dirty 면 worktree 가 아니라 diff 다.
+test('scope: user-handoff-only dirty tree reports diff like review', async () => {
   const dir = await repo('main');
   try {
     await mkdir(join(dir, '.harness'), { recursive: true });
     await writeFile(join(dir, '.harness', 'active.json'), JSON.stringify({ user: 'u', task: 't', path: 'docs/u/t' }));
     await writeFile(join(dir, '.gitignore'), '.harness/\n');
     await mkdir(join(dir, 'docs', 'u', 't'), { recursive: true });
-    await writeFile(join(dir, 'docs', 'u', 't', 't-handoff.md'), '# h\n');
+    await writeFile(join(dir, 'docs', 'u', 'u-handoff.md'), '# h\n');
     await git(dir, 'add', '-A'); await git(dir, 'commit', '-qm', 'task');
     await git(dir, 'checkout', '-qb', 'feature');
     await writeFile(join(dir, 'b.txt'), 'b\n');
     await git(dir, 'add', 'b.txt'); await git(dir, 'commit', '-qm', 'feat');
-    await writeFile(join(dir, 'docs', 'u', 't', 't-handoff.md'), '# h\n\n## entry\n');
+    await writeFile(join(dir, 'docs', 'u', 'u-handoff.md'), '# h\n\n## entry\n');
     const { code, stdout } = await cli(['scope', '--json', '--target', dir]);
     assert.equal(code, 0);
     assert.equal(JSON.parse(stdout).scope, 'diff');

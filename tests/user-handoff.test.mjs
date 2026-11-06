@@ -22,7 +22,7 @@ ${TASK}
 abc1234 work in progress
 
 ## Full Context
-→ docs/${USER}/${TASK}/${TASK}-handoff.md
+→ docs/${USER}/${TASK}/${TASK}-plan.md
 `;
 
 async function makeFixture({ plan, artifact, userHandoff = ACTIVE_SEED } = {}) {
@@ -122,13 +122,13 @@ test('done 성공 → 종결된 task 는 Last Completed Task 로 분리 표기�
 });
 
 // bbbc885 가 세운 형식 계약 — 훅이 더는 이 파일을 갱신하지 않으므로 고정 sha 를 박으면
-// 커밋 즉시 낡는다. 계속 갱신되는 task handoff 로 포인터를 돌린다.
-test('done 성공 → 고정 sha 없이 task handoff 포인터를 남긴다 (decay 방지)', async () => {
+// 커밋 즉시 낡는다. 낡지 않는 plan 으로 포인터를 돌린다.
+test('done 성공 → 고정 sha 없이 plan 포인터를 남긴다 (decay 방지)', async () => {
   const { dir, userHandoffPath } = await makeFixture(passing);
   try {
     await runDoneCapture(dir);
     const after = await readFile(userHandoffPath, 'utf8');
-    assert.match(after, new RegExp(`docs/${USER}/${TASK}/${TASK}-handoff\\.md`), 'task handoff 포인터');
+    assert.match(after, new RegExp(`docs/${USER}/${TASK}/${TASK}-plan\\.md`), 'plan 포인터');
     assert.ok(!after.includes('abc1234'), '활성 시절의 낡은 sha 가 남아 있으면 안 된다');
     assert.ok(!/\b[0-9a-f]{7,40}\b/.test(after), `종결 형태에 고정 sha 를 박으면 안 된다:\n${after}`);
   } finally { await rm(dir, { recursive: true, force: true }); }
@@ -243,7 +243,7 @@ test('연속 종결 → 사용자 handoff 의 마지막 종결 task 가 매번 �
       for (const prev of tasks.slice(0, tasks.indexOf(t))) {
         assert.ok(!new RegExp(`\\b${prev}\\b`).test(after), `${prev} 는 더 이상 등장하지 않는다`);
       }
-      assert.equal(sectionBody(after, '## Full Context'), `→ docs/${USER}/${t}/${t}-handoff.md`);
+      assert.equal(sectionBody(after, '## Full Context'), `→ docs/${USER}/${t}/${t}-plan.md`);
     }
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
@@ -257,7 +257,7 @@ test('renderUserHandoff: 활성 형태 — Active Task 와 Last Commit 을 담�
   assert.equal(sectionBody(out, '## Active Task'), TASK);
   assert.match(out, /## Last Commit \(2026-08-28\)/);
   assert.equal(sectionBody(out, '## Last Commit'), 'abc1234 work');
-  assert.equal(sectionBody(out, '## Full Context'), `→ docs/${USER}/${TASK}/${TASK}-handoff.md`);
+  assert.equal(sectionBody(out, '## Full Context'), `→ docs/${USER}/${TASK}/${TASK}-plan.md`);
   assert.equal(sectionBody(out, '## Last Completed Task'), null, '활성 형태에는 없다');
   assert.ok(out.endsWith('\n'), '개행으로 끝난다');
 });
@@ -270,7 +270,7 @@ test('renderUserHandoff: 종결 형태 — Active Task 는 비고 Last Completed
   assert.match(active, /harness-team task/, '다음 행동을 안내한다');
   assert.match(out, /## Last Completed Task \(2026-08-28\)/);
   assert.ok(namesTask(sectionBody(out, '## Last Completed Task')), '종결된 task 이름을 담는다');
-  assert.equal(sectionBody(out, '## Full Context'), `→ docs/${USER}/${TASK}/${TASK}-handoff.md`);
+  assert.equal(sectionBody(out, '## Full Context'), `→ docs/${USER}/${TASK}/${TASK}-plan.md`);
   assert.equal(sectionBody(out, '## Last Commit'), null, '종결 형태에는 낡지 않는 sha 가 없다');
 });
 
@@ -290,7 +290,7 @@ ${task}
 ${commitMsg}
 
 ## Full Context
-→ docs/${user}/${task}/${task}-handoff.md
+→ docs/${user}/${task}/${task}-plan.md
 `;
   assert.equal(renderUserHandoff({ user, task, date, commitMsg, closed: false }), before);
   // closed 를 생략해도 활성 형태가 기본값이다 (호출부가 빠뜨려도 형태가 뒤바뀌지 않는다)
@@ -304,6 +304,6 @@ test('renderUserHandoff: 두 형태가 같은 제목·같은 포인터를 공유
   const done = renderUserHandoff({ ...common, closed: true });
   for (const out of [open, done]) {
     assert.match(out, /^# Session Handoff\n/, '같은 문서 제목');
-    assert.equal(sectionBody(out, '## Full Context'), `→ docs/${USER}/${TASK}/${TASK}-handoff.md`);
+    assert.equal(sectionBody(out, '## Full Context'), `→ docs/${USER}/${TASK}/${TASK}-plan.md`);
   }
 });
