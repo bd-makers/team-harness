@@ -27,7 +27,7 @@ async function makeRepo({ plan = '- [ ] 구현\n' } = {}) {
   const bin = join(root, 'bin');
   await mkdir(dir);
   await mkdir(bin);
-  await writeFile(join(bin, 'harness-team'), `#!/bin/sh\nexec node ${JSON.stringify(BIN)} "$@"\n`);
+  await writeFile(join(bin, 'harness-team'), `#!/bin/sh\nexec ${JSON.stringify(process.execPath)} ${JSON.stringify(BIN)} "$@"\n`);
   await chmod(join(bin, 'harness-team'), 0o755);
   const env = { ...process.env, PATH: `${bin}:${process.env.PATH}` };
   const git = (...args) => pexec('git', ['-C', dir, ...args], { env });
