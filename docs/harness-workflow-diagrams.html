@@ -291,7 +291,7 @@ sequenceDiagram
         CC->>HK: git commit 시도 (PreToolUse)
         HK->>HT: gate commit (.harness/gates.json)
         HK-->>CC: 통과 → commit → post-commit
-        HK-->>CC: task handoff append (다음 커밋에 포함)
+        HK-->>CC: 로컬 user handoff 갱신
     end
 
     CC->>HT: harness-team review (중요 변경)

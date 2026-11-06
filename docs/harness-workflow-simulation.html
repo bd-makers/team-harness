@@ -1147,7 +1147,7 @@ login-bug
       </div>
       <div class="card card-accent-orange">
         <h3>harness-team handoff</h3>
-        <p>post-commit hook 전용 (git이 실제로 읽는 hooks 디렉터리 — <code>core.hooksPath</code>·워크트리 반영 — 의 <code>post-commit</code>에서 자동 실행). git log/diff 기반으로 <code>&lt;name&gt;-handoff.md</code>와 <code>&lt;user&gt;-handoff.md</code>를 갱신. <strong>활성 포인터가 없으면 조용히 no-op</strong>이다. 커밋 대상은 <code>&lt;name&gt;-handoff.md</code> 하나이고 다음 작업 커밋에 함께 담는다(0.42.1·0.44.4).</p>
+        <p>post-commit hook 전용 (git이 실제로 읽는 hooks 디렉터리 — <code>core.hooksPath</code>·워크트리 반영 — 의 <code>post-commit</code>에서 자동 실행). git log/diff 기반으로 gitignore된 워크트리 로컬 파일 <code>&lt;user&gt;-handoff.md</code>를 갱신. <strong>활성 포인터가 없으면 조용히 no-op</strong>이다. 추적 파일은 쓰지 않아 커밋 직후 트리는 깨끗하다.</p>
       </div>
       <div class="card card-accent-green">
         <h3>harness-team summary [--write|--check] <span style="font-size:0.68rem;color:var(--muted);font-weight:400">0.16.0</span></h3>
