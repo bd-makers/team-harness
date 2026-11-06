@@ -35,7 +35,7 @@ import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { STACKS } from '../e2e/sandbox.mjs';
+import { STACKS, doctorBlockers, isolationEnv } from '../e2e/sandbox.mjs';
 // 순수 채점 함수는 rule 층(rules.mjs)에 있다 — 이 파일에는 하네스(샌드박스·spawn·리포트 I/O)만 남는다.
 import {
   sig, manual, na, ICO, renderSignals, ambiguityCounts, forceAllChecked,
@@ -192,10 +192,7 @@ async function makeSandbox(name, { seed = false, pkg = null } = {}) {
   // Stack signature drives detect-stack → AGENTS.md stack section. Default keeps the
   // legacy generic/node shape so callers that omit `pkg` behave unchanged.
   await writeFile(join(dir, 'package.json'), JSON.stringify(pkg ?? { name, version: '0.0.0' }, null, 2));
-  // Pin the Claude config home at a sandbox path: doctor's eager-tier check otherwise
-  // sums the dev machine's real ~/.claude/CLAUDE.md and doctorGreen() goes red on a
-  // laptop with a large one, while CI (no such file) stays green.
-  const env = { ...process.env, PATH: `${binDir}:${process.env.PATH}`, CLAUDE_CONFIG_DIR: join(dir, '.claude-config-isolated') };
+  const env = { ...process.env, PATH: `${binDir}:${process.env.PATH}`, ...isolationEnv(dir) };
   await run('git', ['init', '-q'], { cwd: dir, env });
   await run('git', ['config', 'user.email', 'sim@harness.io'], { cwd: dir, env });
   await run('git', ['config', 'user.name', 'simbot'], { cwd: dir, env });
@@ -273,7 +270,7 @@ async function fileHas(path, needle) {
 }
 async function doctorGreen(dir, env) {
   const r = await run('node', [BIN, 'doctor', '--json', '--target', dir], { cwd: dir, env });
-  try { const j = JSON.parse(r.stdout); return j.status === 'success' && !(j.checks || []).some((c) => c.status === 'fail'); }
+  try { const j = JSON.parse(r.stdout); return ['success', 'warning'].includes(j.status) && doctorBlockers(j).length === 0; }
   catch { return false; }
 }
 
