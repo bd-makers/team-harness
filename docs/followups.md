@@ -37,7 +37,7 @@ task `codex-project-hooks-probe`·`codex-hook-injection-fix`(0.38.3)로 끝냈�
 (12번은 2026-10-06 task `prepush-existing-installs`로 닫았다 — 코드 없이 CHANGELOG·README가 기존 설치본에 `harness-team sync` 1회를 안내한다.
 migrate에 pre-push 설치를 넣는 안은 2차 장치 규칙으로 기각(doctor가 이미 sync를 처방) — 근거는 그 task spec.)
 (13번은 2026-10-06 task `post-commit-prepend`로 올려 여기서 지웠다 — post-commit도 맨 위 삽입 + 비-셸 skip, append 분기 삭제.
-doctor post-commit 검사는 2차 장치 규칙으로 두지 않음(handoff 미갱신은 pr-check가 잡는다) — 근거는 그 task spec.)
+doctor post-commit 검사는 2차 장치 규칙으로 두지 않음 — 근거는 그 task spec. 그 근거였던 "handoff 미갱신은 pr-check가 잡는다"는 2026-11-06 task `handoff-no-sweep`으로 사라졌다. 훅이 유실되면 세션 진입점만 낡고 경고는 없다. 잃는 것이 로컬 표시뿐이라 검사를 더하지 않는다.)
 (14·15·16번은 2026-10-06 task `followups-14-16-close`로 **코드 없이** 닫았다 — 실측 근거는 그 task spec.
 14번: fork 두 배치를 실측했다. origin=낡은 fork면 이미 머지된 upstream task까지 검사돼 안내 줄이 늘 뿐 통과하고, origin=원본이면 base가 정확하다.
 제안(훅이 `$1` 원격 HEAD를 base로)은 후자를 낡은 fork main으로 바꿔 더 나빠지므로 기각했다. fork를 쓰는 팀도 없다(메인테이너 확인).

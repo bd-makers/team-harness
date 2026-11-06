@@ -9,8 +9,8 @@
 - [x] `done`이 마커를 쓰지 않고 `meta.json`만 쓰게 한다
 - [x] `pr-check` 필수 문서에서 handoff를 뺀다
 - [x] `done`·`review` 제외 집합을 user handoff로 줄인다
-- [ ] 픽스처로 깨끗한 트리를 증명하고 변이로 테스트를 검증한다
-- [ ] D11·규칙표·문서·stock·CHANGELOG를 맞춘다
+- [x] 픽스처로 깨끗한 트리를 증명하고 변이로 테스트를 검증한다
+- [x] D11·규칙표·문서·stock·CHANGELOG를 맞춘다
 - [ ] read-only 리뷰 후 `npm test`·`docs:check`·`doctor`를 통과시킨다
 
 ## Ontology 변경 로그

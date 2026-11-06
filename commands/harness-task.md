@@ -149,8 +149,8 @@ created: docs/<user>/<name>/
 무시 줄만으로는 충돌이 남는다 — `doctor`가 경고하고 `migrate`가 `.gitignore` 줄을 보장한 뒤 `git rm --cached` 명령을
 **안내만** 한다(인덱스는 건드리지 않는다). 기본 브랜치에서 한 번 실행해 커밋한다.
 
-그런 저장소에서 훅은 이 파일을 쓰지 않는다 — 어떤 설치본에서도 훅은 추적 파일을 더럽히지 않는다. 활성화와 `done`은 여전히
-쓰므로 `done` 가드와 `review`·`scope`의 scope 자동 판정은 user handoff를 dirty에서 뺀다. scope 판정은 `review`가 쓰는
+그런 저장소와 무시 줄이 없는 저장소에서 훅은 이 파일을 쓰지 않는다 — 어떤 설치본에서도 훅은 트리를 더럽히지 않는다. 활성화와
+`done`은 진입점이 낡지 않게 여전히 쓰므로, 추적을 풀기 전까지는 그 변경이 트리에 남는다. `done` 가드와 `review`·`scope`의 scope 자동 판정은 user handoff를 dirty에서 뺀다. scope 판정은 `review`가 쓰는
 artifact·meta도 함께 빼지만 가드는 빼지 않는다 — 종결 커밋에 담겨야 하는 파일이다(`commands/harness-review.md` 2단계).
 
 ## 머지 후 종결 — 커밋 하나

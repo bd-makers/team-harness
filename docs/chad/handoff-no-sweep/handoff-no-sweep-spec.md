@@ -37,7 +37,7 @@ post-commit 훅이 추적되는 `<name>-handoff.md`에 `git log -1`과 `--stat` 
 
 데이터 구조는 이미 있다. `meta.json`이 `status`·`closedAt`을 들고 있고 `collectTasks`는 meta를 먼저 읽는다. 마커는 meta가 없을 때만 쓰이는 중복 표지였다. 이 변경은 대부분 삭제다.
 
-- 훅이 쓰는 것은 gitignore된 `<user>-handoff.md` 하나다. 그 파일이 아직 추적 중인 구 저장소에서는 쓰지 않는다. 그래서 "훅은 추적 파일을 쓰지 않는다"가 모든 설치본에서 성립한다.
+- 훅이 쓰는 것은 gitignore된 `<user>-handoff.md` 하나다. 그 파일이 추적 중이거나 무시 줄이 없는 구 저장소에서는 쓰지 않는다. 그래서 "훅은 트리를 더럽히지 않는다"가 모든 설치본에서 성립한다. 활성화와 `done`은 구 저장소에서도 쓴다. `done`까지 막으면 진입점이 종결된 task를 가리킨 채 얼어붙기 때문이다.
 - sweep 판정(`commitTouchesOnlyHandoff`)과 amend 교정(`amendCutPoint`)은 append 때문에만 있었으므로 함께 지운다.
 - `task`는 `<name>-handoff.md`를 계속 만든다. 의미는 자동 로그에서 선택 메모로 바뀐다.
 - D11의 필수 문서는 spec·plan·artifact다. 기각안과 근거는 `docs/decisions.md` D11 정정에 남긴다.

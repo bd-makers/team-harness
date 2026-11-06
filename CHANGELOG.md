@@ -11,12 +11,12 @@
 
 ### Changed
 
-- **post-commit 훅이 추적 파일을 쓰지 않는다** (task `handoff-no-sweep`, D11 정정). 커밋 직후 트리가 깨끗해서 handoff만 담는 커밋이 생기지 않는다. 훅은 gitignore된 `<user>-handoff.md`만 렌더하고, 그 파일을 아직 추적하는 저장소에서는 그것도 쓰지 않는다.
+- **post-commit 훅이 추적 파일을 쓰지 않는다** (task `handoff-no-sweep`, D11 정정). 커밋 직후 트리가 깨끗해서 handoff만 담는 커밋이 생기지 않는다. 훅은 gitignore된 `<user>-handoff.md`만 렌더하고, 그 파일이 추적 중이거나 무시 줄이 없는 저장소에서는 그것도 쓰지 않는다.
   - **D11의 필수 문서가 spec·plan·artifact로 줄었다.** `pr-check`는 `<name>-handoff.md`를 요구하지 않는다. `task`는 파일을 계속 만들고, 이제 직접 쓰는 선택 메모다.
   - **`done`은 handoff에 완료 마커를 쓰지 않는다.** 완료 표지는 `meta.json`의 `status`·`closedAt`이다. meta 없는 옛 task의 마커는 계속 읽는다.
   - **미커밋 task handoff는 이제 실제 변경이다.** `done` 가드가 막고 `review`·`scope`는 worktree로 판정한다. 업그레이드 시점에 옛 훅이 남긴 변경이 있으면 커밋한다.
   - `<user>-handoff.md`의 Full Context 포인터는 plan을 가리킨다.
-  - **소비자 조치**: `init --yes`로 `AGENTS.md`를 갱신한다. 설치된 `docs/README.md`의 handoff 설명은 자동으로 바뀌지 않으니 손으로 고친다.
+  - **소비자 조치**: PATH의 `harness-team`(마켓플레이스 clone)도 함께 갱신한다. 옛 CLI의 훅이 task handoff에 계속 쓰면 새 `done` 가드에 막힌다. `init --yes`로 `AGENTS.md`를 갱신한다. 설치된 `docs/README.md`의 handoff 설명은 자동으로 바뀌지 않으니 손으로 고친다.
 
 - **`--stack`·`--scope` 값 검증을 파서로 옮겼다.** 플래그 이름에 묶인 `FLAG_CHOICES`가 검사하므로 커맨드에 복제해도 가드가 따라간다. `review --scope <오타>`는 이제 exit 1과 오류 패킷 대신 다른 플래그 오류처럼 exit 2와 stderr 안내를 낸다. `--json`이어도 envelope은 나오지 않는다.
 
