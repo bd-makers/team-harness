@@ -51,7 +51,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const EXPECTED_LABEL = { node: 'Node.js', next: 'Next.js', 'react-native': 'React Native (Expo)' };
 const CANONICAL_STACK = STACKS.find((s) => s.id === 'node');
 const BIN = join(ROOT, 'bin', 'harness-team.mjs');
-const PG = resolve(ROOT, '..', 'harness-playground');
+const PG = process.env.SIM_PLAYGROUND ?? resolve(ROOT, '..', 'harness-playground');
 const TOKEN_FILE = join(homedir(), '.claude-sim-oauth-token');
 const PROJECTS_DIR = join(homedir(), '.claude', 'projects');
 
