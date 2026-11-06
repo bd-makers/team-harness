@@ -70,7 +70,7 @@
 각 task 디렉토리는 네 파일로 구성:
 - `<name>-spec.md` — 요구사항/설계 (Ambiguity 자가진단·Ontology 포함)
 - `<name>-plan.md` — 단계별 체크리스트 (완료 시 `- [x]`로 체크)
-- `<name>-handoff.md` — 세션 인수인계 (post-commit hook 자동 갱신)
+- `<name>-handoff.md` — 세션 메모 (선택, 직접 작성)
 - `<name>-artifact.md` — 실행 결과·학습 (`task done`·`retro` 시 append)
 
 이하 `spec.md`·`plan.md`·`artifact.md`처럼 접두 없이 부르는 이름은 위 `<name>-*.md`의 축약이다.
@@ -114,8 +114,7 @@
 - **시나리오 대조(R2, 옵트인)**: spec `## Done evidence`의 `scenarios`(Given/When/Then + 증거 `test`·`cmd`)를
   `harness-team scenario check`가 실행해 exit 0을 보고, `harness-team review <engine> --framing scenario`가
   증거가 Then을 실제로 검증하는지 채점한다. 선언이 없으면 `scenario: not-configured`다.
-- **commit 시**: post-commit hook이 task handoff를 갱신 — 다음 커밋에 담는다(예외: harness-task).
-  `<user>-handoff.md`도 함께 갱신되지만 워크트리 로컬(gitignore)이라 커밋하지 않는다
+- **commit 시**: post-commit hook은 워크트리 로컬(gitignore)인 `<user>-handoff.md`만 갱신한다 — 트리는 깨끗하다
 - **PR/MR 직전(ship)**: spec·plan·artifact를 최종 갱신하고 준비 완료를 보고한다 — 다이어그램
   갱신은 옵트인이며, 절차·산출물 계약은 ship 명령 문서가 정본이다(PR/MR 생성은 별도 지시).
 - **완료**: plan 전체 완료 감지 또는 사용자 신호 → AskUserQuestion → `harness-team done`

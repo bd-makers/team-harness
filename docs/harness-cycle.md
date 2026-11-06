@@ -9,7 +9,7 @@
 ## 1. 정체성
 
 **하나의 프로젝트에서 여러 팀원에게 같은 개발 사이클을 제공하는 하네스.**
-**강제하는 것은 하나뿐이다**: PR을 올릴 때 그 task의 문서 — spec·plan·handoff·artifact — 를 담는다. 다이어그램은 권장이다 — 로직·구조 변화가 있으면 담는다(2026-10-06 정정, §4-6).
+**강제하는 것은 하나뿐이다**: PR을 올릴 때 그 task의 문서 — spec·plan·artifact — 를 담는다. 다이어그램은 권장이다 — 로직·구조 변화가 있으면 담는다(2026-10-06 정정, §4-6).
 R1부터 PR 승인까지의 사이클(단계·산출물·게이트)은 기본으로 **제공**하지만, 개발 방식은 개발자마다 완전히 자유다(2026-10-05 메인테이너 설명).
 
 - 사람은 루프 **안**에 있다(in the loop). spec과 plan 단계에 개발자가 직접 참여해 무엇을, 어떻게 만들지 먼저 인지한다.
@@ -38,7 +38,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 | **S4 구현 검증** | spec 시나리오(Given/When/Then) ↔ 증거 | **R2 시나리오 대조**(기계 2 + 루브릭 2, §4-1b) | ✓ R2 시나리오 대조(옵트인 — `scenario check` + `review --framing scenario`, task `r2-scenario-evidence`) |
 | **S5 커밋** | — | **검증 프리셋 실행**(lint·tsc·test) | ✓ `gate commit` — 팀 파일 `.harness/gates.json`(프리셋 제안, workspace는 turbo·nx 위임 또는 디렉터리별) |
 | **S6 코드 리뷰** | 리뷰 기록(`## Reviews`·meta.reviews) | **R3 로컬 리뷰** (PR 전 필수) | △ spec이 required 선언할 때만 강제 |
-| **S7 PR** | spec·plan·handoff·artifact 커밋, **PR 다이어그램**(권장 — 실제 구조 + plan 대비 변화) | **`pr-check`**(4문서 차단, 다이어그램은 안내) | ✓ pr-check · pre-push 훅 · ship 연동 |
+| **S7 PR** | spec·plan·artifact 커밋, **PR 다이어그램**(권장 — 실제 구조 + plan 대비 변화) | **`pr-check`**(3문서 차단, 다이어그램은 안내) | ✓ pr-check · pre-push 훅 · ship 연동 |
 | **S8 지식화** | 최상위 **`wiki/`** 항목(기능·모듈 단위), task 폴더 삭제 | — | △ 위키 컴파일(`/harness-wiki` + `wiki sources`, 추가만 — C1, PR 없는 저장소는 커밋 출처) · 원장·nudge가 폴더 없는 done task를 기억(C2a) · ✗ task 폴더 삭제(C2b) |
 
 **가로축** (모든 단계에 걸침)
@@ -211,10 +211,10 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 ### 4-6. 남은 확인 (2026-10-05 전부 결정)
 - **강제 범위 (2026-10-05 확정)**: 순서는 기존대로 PR → 머지 → (기본 브랜치에서) `done`. `done` → PR로 바꾸는 안은 손볼 장치
   (머지 후 종결 절차·`remote-task.mjs`·done-on-main 안내)가 많아 기각. task 시작도 강제하지 않는다(지금의 SessionStart nudge 유지).
-  lint·tsc·PR 전 로컬 리뷰는 '제공'이다. **PR에 spec·plan·handoff·artifact를 담는 것만 필수**이며
-  (handoff는 커밋 훅이 자동 갱신하고, artifact는 머지 후 위키 컴파일(§4-4)의 재료다). 다이어그램은 권장이다(아래 다이어그램 결정).
+  lint·tsc·PR 전 로컬 리뷰는 '제공'이다. **PR에 spec·plan·artifact를 담는 것만 필수**이며
+  (artifact는 머지 후 위키 컴파일(§4-4)의 재료다. handoff는 2026-11-06 정정으로 선택 메모가 됐다 — `docs/decisions.md` D11). 다이어그램은 권장이다(아래 다이어그램 결정).
 - **PR 필수 문서 확인 (결정)**: 결정론적 CLI 검사 하나(`harness-team pr-check`)를 두고 호출처를 셋으로 한다.
-  검사: spec·plan·handoff·artifact가 있고 비어 있지 않으며 템플릿 그대로가 아님. 다이어그램 파일도 생략 기록도 없으면 막지 않고 권장 안내만 낸다.
+  검사: spec·plan·artifact가 있고 비어 있지 않으며 템플릿 그대로가 아님. 다이어그램 파일도 생략 기록도 없으면 막지 않고 권장 안내만 낸다.
   호출처: ① ship 준비 보고 ② init이 설치하는 git pre-push 훅(post-commit 훅과 같은 방식) ③ 원하는 팀의 CI(같은 명령).
   하네스가 강제하는 유일한 것이라 확인 장치를 하나로 모은다.
 - **다이어그램 (결정, 2026-10-06 정정)**: PR 다이어그램은 **권장**이다 — plan 단계에서 옵트인하지 않았어도 최종 변경이 로직·구조를 바꾸면 담는다.
@@ -235,7 +235,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 
 **D11 — 사이클에 봉사하는 것만 소유한다**
 
-- **강제한다**: PR에 담기는 task 문서 — spec·plan·handoff·artifact. 이것만 막는다. 다이어그램은 권장(로직·구조 변화가 있으면 담는다).
+- **강제한다**: PR에 담기는 task 문서 — spec·plan·artifact. 이것만 막는다. 다이어그램은 권장(로직·구조 변화가 있으면 담는다).
 - **제공한다**: 사이클 S0–S8의 산출물·게이트, 그리고 가로축(인계·팀 가시성·안전 가드·루프 건강·갱신 경로). 쓰든 말든 자유다.
 - **소유하지 않는다**
   - **언어별 로직을 코드에**: 언어·도구 지식은 프리셋 데이터로만 둔다. 훅·CLI에 언어 분기를 넣지 않는다.
@@ -268,7 +268,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 7. 위키 컴파일 + task 폴더 삭제(§4-4) — 위키 형태 입력은 2026-10-06에 받았다(§4-4)
 
 **진행 계획 (2026-10-06, 1–4는 0.46.0, A·B·C1은 0.47.0, C2a는 0.48.0, C1 커밋 출처 보강은 0.49.0으로 릴리스)** — 남은 단계를 의존성 순서로 묶고 묶음마다 릴리스한다.
-- **A** (병렬, 격리 워크트리 2개 — D5): A1 R2 시나리오·증거(task `r2-scenario-evidence`) · A2 R1 소스 검토(task `r1-source-review`). R2는 `Done evidence`와 같은 옵트인이다 — PR 강제는 D11대로 4문서뿐.
+- **A** (병렬, 격리 워크트리 2개 — D5): A1 R2 시나리오·증거(task `r2-scenario-evidence`) · A2 R1 소스 검토(task `r1-source-review`). R2는 `Done evidence`와 같은 옵트인이다 — PR 강제는 D11대로 task 문서뿐.
 - **B**: 기본 루프 스킬(task `default-loop-skill`) — QA가 R2를 쓰므로 A1 뒤. 착수 전 Codex 서브에이전트 지원 범위를 실측한다(§4-3). — 구현: task `default-loop-skill`
 - **C**: C1 위키 컴파일(추가만 — 구현: task `wiki-compile`, `/harness-wiki` + `harness-team wiki sources`) → C2a 원장·done-on-main·`list --remote`·이름 재사용 가드의 입력 이전(비파괴 — task `task-folder-removal`)
   → C2b task 폴더 삭제(호환성 파괴 — `wiki sources`의 `compiled`가 있는 task만 지우고(삭제 대상은 `wiki sources --all`(0.50.0)로 한 번에 본다), 레거시 폴더는 migrate 일회성 단계로 원하는 저장소만 정리한다.

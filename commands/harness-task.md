@@ -135,53 +135,28 @@ created: docs/<user>/<name>/
 - **종결된 이름의 재사용**: 로컬 `docs/task_summary.md`에 `<user>/<name>`이 `✅ done`이고 `docs/<user>/<name>/`이 없으면 `task <name>`은
   만들지 않고 exit 1로 멈춘다(다른 이름으로 다시 실행, 원문은 `git log -- docs/<user>/<name>`). 폴더가 있으면 종전대로 다시 연다(`reopened:`).
 
-## post-commit handoff — sweep 커밋에서는 침묵한다
+## post-commit handoff — 추적 파일을 쓰지 않는다
 
-`handoff`(post-commit 훅)는 커밋 **뒤에** `<name>-handoff.md`(항목 append)와 `<user>-handoff.md`(재작성)를
-쓴다. 커밋 대상은 **task handoff 하나**다 — `<user>-handoff.md`는 gitignore된 워크트리 로컬 파일이다
+`handoff`(post-commit 훅)는 커밋 **뒤에** `<user>-handoff.md`만 다시 쓴다. 이 파일은 gitignore된 워크트리 로컬 파일이다
 (내용이 전부 `.harness/active.json`과 그 워크트리의 `git log -1`에서 나온다. 추적하던 시절엔 같은 user의 병렬 PR이
-머지마다 이 파일에서 충돌했다). 그래도 커밋 직후 트리는 task handoff 때문에 dirty다.
+머지마다 이 파일에서 충돌했다). 그래서 커밋 직후 트리는 깨끗하고, handoff만 담을 커밋이 생기지 않는다.
 
-**그 변경만 담는 커밋을 따로 만들지 않는다.** 다음 작업 커밋에 함께 stage한다(`git add` 대상에
-task handoff를 포함). 커밋마다 sweep을 붙이면 이력의 약 4분의 1이 "handoff 반영" 커밋이 된다
-(2026-09-20~25 실측: 98커밋 중 23개). dirty handoff는 `done` 가드가 무시하므로 남겨 둬도 종결을 막지 않는다.
-**예외** — 푸시·브랜치 전환·워크트리 정리 직전에 남은 변경이 handoff뿐이면 그때 단독 sweep 커밋 하나를
-만든다. 보통 PR/MR당 한 번이지만 상한은 아니다 — 푸시 뒤 리뷰 대응 커밋이 생기면 다음 푸시 직전에 다시 한 번 쓴다.
+`<name>-handoff.md`는 사람이나 에이전트가 직접 쓰는 **선택 메모**다. 훅은 쓰지 않고 `pr-check`도 요구하지 않는다.
+커밋 이력은 `git log`로 본다. 손으로 고친 내용은 일반 작업 파일이다 — 다른 변경과 함께 커밋하고, 미커밋이면 `done` 가드가 막는다.
 
 `<user>-handoff.md`는 `task <name>` 활성화 때도 한 번 쓴다 — 추적하지 않으므로 새 워크트리·clone에는 없고,
 첫 커밋까지 세션 진입점이 비지 않게 하기 위해서다. 아직 이 파일을 **추적 중인** 저장소(gitignore 줄 도입 전)는
 무시 줄만으로는 충돌이 남는다 — `doctor`가 경고하고 `migrate`가 `.gitignore` 줄을 보장한 뒤 `git rm --cached` 명령을
 **안내만** 한다(인덱스는 건드리지 않는다). 기본 브랜치에서 한 번 실행해 커밋한다.
 
-단독 sweep 커밋이 **핸드오프 파일만** 바꿨다면 훅은 아무것도 쓰지 않는다 — 기록할 작업이 없고, 쓰면
-churn이 자기 자신을 먹여 트리가 깨끗해지는 지점이 사라지기 때문이다(0.38.1). 판정은 보수적이다:
-
-- **병합 커밋은 항상 기록한다.** `git diff-tree --name-only`는 병합에 아무 경로도 내지 않으므로,
-  "경로가 비었다"를 "핸드오프만 바뀌었다"로 읽으면 병합이 조용히 누락된다. 부모가 둘 이상이면 판정하지 않는다.
-- **빈 커밋도 기록한다** — 종전 동작 그대로.
-- **git이 없거나 실패하면 기록한다** — 판정 불가를 건너뜀으로 바꾸지 않는다.
-
-제외 경로 집합은 `done` 가드가 "훅 자신의 출력"으로 무시하는 것과 **같은 함수**(`handoffRelPaths`)에서 나온다.
-가드의 제외는 그대로 필요하다 — 실제 작업 커밋 뒤에는 여전히 dirty다. `review`·`scope`의 scope 자동 판정도 같은 집합을
-dirty에서 뺀다 — 세면 커밋 직후의 리뷰가 handoff만 보는 worktree scope가 된다. scope 판정은 `review`가 쓰는 artifact·meta도
-함께 빼지만 가드는 빼지 않는다 — 종결 커밋에 담겨야 하는 파일이다(`commands/harness-review.md` 2단계).
-
-**`--amend`는 마지막 항목을 교체한다(0.38.2).** amend는 훅을 다시 돌리므로 append만 하면 같은 논리 커밋에
-항목이 둘 남고, 첫 항목의 sha는 amend가 밀어낸 **없는 커밋**을 가리킨다. 두 조건이 **모두** 참일 때만 교체한다:
-
-- `git reflog -1 --format=%gs HEAD`가 `commit (amend)`로 시작한다(일반 커밋·병합·rebase·checkout과 구분된다).
-- 마지막 항목의 sha가 `git rev-parse HEAD@{1}`(amend 직전 HEAD)과 **같다**(항목에는 short sha가 들어가므로 접두 대조).
-  훅이 직전 커밋을 건너뛰었다면(sweep) 마지막 항목은 더 이전의 진짜 커밋이므로 지우면 안 된다.
-
-"현재 이력에 없다(ancestor 실패)"로는 판정하지 않는다 — 브랜치 전환·rebase 뒤 amend에서 **다른 브랜치에
-살아 있는** 커밋의 항목까지 지운다.
-
-판정 불가(git·reflog·형식 파싱 실패)는 append다 — 잃는 쪽이 아니라 남기는 쪽으로 틀린다.
+그런 저장소에서 훅은 이 파일을 쓰지 않는다 — 어떤 설치본에서도 훅은 추적 파일을 더럽히지 않는다. 활성화와 `done`은 여전히
+쓰므로 `done` 가드와 `review`·`scope`의 scope 자동 판정은 user handoff를 dirty에서 뺀다. scope 판정은 `review`가 쓰는
+artifact·meta도 함께 빼지만 가드는 빼지 않는다 — 종결 커밋에 담겨야 하는 파일이다(`commands/harness-review.md` 2단계).
 
 ## 머지 후 종결 — 커밋 하나
 
 PR/MR이 머지된 뒤 기본 브랜치에서: plan의 마지막 단계(보통 "커밋·PR")를 `- [x]`로 켠다 → `harness-team done`
-→ `harness-team summary --write` → **커밋 하나**(`chore(task): <name> 종결`)에 plan·meta·handoff·원장을 함께 담는다.
+→ `harness-team summary --write` → **커밋 하나**(`chore(task): <name> 종결`)에 plan·meta·원장을 함께 담는다.
 위키 컴파일은 선택이다 — `harness-team done` 다음, `summary --write` 전에 `/harness-wiki <user>/<task>`를 돌리면 위키 변경도
 같은 종결 커밋에 담긴다(`done`이 활성 task를 비우므로 대상을 명시한다, `commands/harness-wiki.md`).
 
