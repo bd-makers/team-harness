@@ -53,8 +53,7 @@ Raw slash-command 인수:
 
 5. **artifact 갱신** — `<name>-artifact.md`에 결과·검증 증거(실제 테스트 출력)·남은 리스크·
    후속 작업을 기록한다. 리뷰를 돌렸다면 `## Reviews`에 날짜와 함께 남긴다 — 기록 없는 리뷰는
-   안 한 것이다. 이 문서 갱신을 커밋할 때 트리에 남은 task handoff 변경도 **같은 커밋에** 담는다 —
-   handoff만의 커밋을 따로 만들지 않는다(`commands/harness-task.md` post-commit handoff 절).
+   안 한 것이다.
 
 6. **다이어그램 (옵트인)** — `--no-diagram`이 없으면 `AskUserQuestion`으로 **한 번만** 묻는다:
    "다이어그램을 갱신/생성할까요, 건너뛸까요?" 사용자가 직접 친 명령 안에서 한 번 묻는 것이므로
@@ -82,7 +81,7 @@ Raw slash-command 인수:
    HTML**이다 — task 문서는 Obsidian처럼 **script를 제거하는 뷰어**에서 열리는 경우가 많고, 그런
    뷰어에서는 mermaid JS 런타임이 렌더되지 않는다(이 저장소의 `docs/`가 그런 환경이다). 뷰어가
    script를 실행하는 것이 확실한 프로젝트라면 다른 형식을 써도 되지만, 판단 근거를 artifact에
-   남긴다. 이 파일은 **SSOT 4파일(spec·plan·handoff·artifact)이 아닌 생성물**이며, 없어도 task는
+   남긴다. 이 파일은 **task 문서 4종(spec·plan·handoff·artifact)이 아닌 생성물**이며, 없어도 task는
    유효하다.
 
 7. **정합 검증 — 적대적 검증 (옵트인, D6)** — ship은 PR 직전 마지막 게이트인데 문서↔diff
@@ -131,7 +130,7 @@ Raw slash-command 인수:
    harness-team pr-check --base "$BASE"   # 2번 출력의 base 가 null 이었다면 --base 없이
    ```
 
-   exit 1(spec·plan·handoff·artifact 중 없거나 비었거나 템플릿 그대로)이면 **"준비 완료"를 선언하지 않는다** —
+   exit 1(spec·plan·artifact 중 없거나 비었거나 템플릿 그대로)이면 **"준비 완료"를 선언하지 않는다** —
    pre-push 훅과 CI가 같은 검사로 막는다. `· 권장: 다이어그램 없음` 안내는 막지 않는다(다이어그램은 권장).
 
    그다음 사용자에게 아래를 한 화면으로 보고하고 멈춘다: 브랜치와 base, 변경 파일

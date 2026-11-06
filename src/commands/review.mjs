@@ -240,8 +240,7 @@ export async function resolveScope({ targetDir, scope, base }) {
   if (scope === 'task-docs') return { scope, tip };
 
   // 하네스가 스스로 쓴 기록 파일은 dirty 로 세지 않는다. 세면 리뷰가 구현 diff 대신 그 기록만 보는 worktree scope 가 된다:
-  // - post-commit 훅이 커밋 **뒤에** 다시 쓰는 handoff 두 파일(`handoffRelPaths` — done 가드와 같은 집합). 커밋 직후의
-  //   리뷰가 handoff 만 봤다(wiki-commit-provenance R2 1차 실행).
+  // - handoff 두 파일(`handoffRelPaths` — done 가드와 같은 집합).
   // - 이 명령이 성공마다 쓰는 `<name>-artifact.md`·`<name>-meta.json`. 커밋 없이 R2 → R3 를 이어 돌리면 두 번째가
   //   worktree 였다(followups 18). artifact 는 사람이 쓰는 SSOT 이기도 해서 손 편집만 있을 때도 diff 로 간다 —
   //   diff 는 커밋된 코드를 보므로 잃는 것이 작다. done 가드는 종결 커밋에 artifact 를 요구하므로 이 둘을 빼지 않는다.

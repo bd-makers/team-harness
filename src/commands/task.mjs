@@ -6,7 +6,6 @@ import { detectMember, sanitize } from '../member.mjs';
 import { exists, writeText } from '../fsx.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 import { readTaskMeta, writeTaskMeta, taskMetaTemplate, inferLegacyMeta, readLedger, parseSummaryRows, readTextOrNull } from './summary.mjs';
-import { renderDoneMarker } from '../handoff-marker.mjs';
 import { checkDoneOnMain, renderDoneOnMainNudge, listBranchOnlyTasks } from './remote-task.mjs';
 import { findCommand } from '../cli-args.mjs';
 import { userNameError } from '../user-config.mjs';
@@ -190,7 +189,6 @@ export function taskPlanTemplate(name) {
 //
 // 종결 형태에는 커밋 sha 를 담지 않는다. 종결 후에는 훅이 이 파일을 더는 갱신하지 않으므로
 // (활성이 null 이면 `runHandoffAuto` 는 즉시 반환한다) 박아 둔 sha 는 다음 커밋 즉시 낡는다.
-// 대신 계속 갱신되는 task handoff 를 가리킨다 — 커밋 이력의 정본은 그쪽이다.
 export function renderUserHandoff({ user, task, date, commitMsg = '', closed = false }) {
   const head = closed
     ? `## Active Task
@@ -211,7 +209,7 @@ ${commitMsg}
 
 ${head}
 ## Full Context
-→ ${taskFileRel(user, task, 'handoff.md')}
+→ ${taskFileRel(user, task, 'plan.md')}
 `;
 }
 
@@ -226,7 +224,7 @@ async function writeActivationHandoff(targetDir, user, task, date) {
 export function taskHandoffTemplate(name) {
   return `# ${name} — Handoff
 
-(세션 종료 시 post-commit hook이 자동 갱신합니다)
+(선택 문서 — 다음 세션에 넘길 메모를 직접 적습니다. 커밋 이력은 \`git log\`로 봅니다)
 `;
 }
 
@@ -796,8 +794,6 @@ const VERIFY_KIND_RE = new RegExp(`-(?:${VERIFY_KIND_SUFFIXES.join('|')})$`);
 
 // 가드 밖에서도 같은 판정이 필요하다 — `migrate --adopt-reviews` 가 "채택하면 잃는 검증 증거"를
 // 셀 때 이 함수를 쓴다. 정규식을 복제하면 접미사 열거가 바뀔 때 사용자가 보는 수와 가드가 세는 수가 갈라진다.
-// 훅(`runHandoffAuto`)이 **쓰는** 파일이자 `done` 가드가 **무시하는** 파일. 두 곳이 같은 집합을 봐야
-// 한다 — 갈라지면 가드는 무시하는데 훅은 계속 써서 churn 이 조용히 되살아난다.
 // 아직 **추적 중인** user handoff(전환 전 저장소). 무시 목록에 올려도 git 은 추적 중인 파일을 계속 추적하므로
 // `git rm --cached` 전까지 병렬 PR 충돌은 그대로다 — doctor 가 경고하고 migrate 가 안내하는 근거다.
 // 경로는 targetDir 기준이다(`-C targetDir` 의 pathspec·출력 모두 cwd 기준). git 이 없거나 저장소가 아니면 [].
@@ -826,6 +822,9 @@ export async function userHandoffIgnored(targetDir) {
   }
 }
 
+// `done` 가드와 scope 판정이 dirty 로 세지 않는 handoff 두 파일. user handoff 는 활성화·종결이 쓰는 로컬 렌더링이다.
+// task handoff 는 옛 CLI 의 post-commit 훅이 아직 쓴다 — PATH CLI 와 플러그인의 갱신 주체가 달라 버전이 갈리면 막히고,
+// 빠져나오는 길이 handoff 만 담는 커밋뿐이다. 임시 제외다: 옛 훅을 쓰는 설치가 없다고 판단되는 릴리스에서 지운다.
 export function handoffRelPaths(user, task) {
   return new Set([
     taskFileRel(user, task, 'handoff.md'),
@@ -1020,9 +1019,6 @@ async function collectDoneIssues(targetDir, active) {
   if (isGitRepo) {
     try {
       const { stdout } = await pexec('git', ['-C', targetDir, 'status', '--porcelain', '-z'], { maxBuffer: 1024 * 1024 });
-      // The post-commit hook (`harness-team handoff`) regenerates these handoff files
-      // after every commit, so they're ~always dirty at `done` time. Exclude them — the
-      // guard should block on real uncommitted work, not the hook's own auto-output.
       const prefix = await repoPrefix(targetDir);
       const handoffRels = new Set([...handoffRelPaths(user, task)].map(p => prefix + p));
       let realDirty = parsePorcelainPaths(stdout).filter(p => !handoffRels.has(p));
@@ -1118,10 +1114,7 @@ export async function runDone(ctx) {
   }
 
   const { user, task } = active;
-  const handoffPath = taskFilePath(ctx.targetDir, user, task, 'handoff.md');
   const ts = new Date().toISOString();
-
-  await appendFile(handoffPath, renderDoneMarker(ts));
 
   // 우회 감사 흔적. 판정 기준은 플래그가 아니라 **실제로 무시된 issue**다 — issue 가 없는
   // 종결에 `--force` 만 붙은 경우는 우회한 것이 없으므로 흔적을 남기지 않는다.
@@ -1151,7 +1144,6 @@ export async function runDone(ctx) {
   await writeActive(ctx.targetDir, null);
   console.log(`done: ${taskLabel(user, task)}`);
   console.log(scope);
-  console.log(`handoff updated: ${taskFileRel(user, task, 'handoff.md')}`);
   console.log(`handoff updated: ${userHandoffRel(user)}`);
 }
 
@@ -1211,110 +1203,27 @@ export async function runRetro(ctx) {
   }
 }
 
-// 이 커밋이 **핸드오프 파일만** 바꿨는가. 그렇다면 기록할 작업이 없다 — 훅 자신의 출력을 쓸어 담은
-// sweep 커밋이므로 여기서 또 항목을 만들면 churn 이 자기 자신을 먹여 트리가 깨끗해지지 않는다.
-//
-// 병합 커밋을 조심해야 한다: `diff-tree --name-only` 도 `show --name-only` 도 병합에는 **아무 경로도
-// 내지 않는다**(2026-09-11 실측). 경로가 비었다고 건너뛰면 병합이 기록에서 사라지므로, 부모가 둘 이상이면
-// 판정 자체를 하지 않는다. 빈 커밋도 빈 목록을 내지만 종전대로 기록한다(동작 불변).
-// git 이 없거나 실패하면 기록한다 — "판정 불가"를 "건너뜀"으로 바꾸지 않는다.
-async function commitTouchesOnlyHandoff(targetDir, handoffRels) {
-  try {
-    const { stdout: parents } = await pexec('git', ['-C', targetDir, 'rev-list', '--parents', '-n', '1', 'HEAD'], { maxBuffer: 1024 * 1024 });
-    if (parents.trim().split(/\s+/).length > 2) return false; // merge → 항상 기록
-    // `-z` 로 읽는다 — `core.quotepath=false` 로도 `"`·`\\`·개행이 든 경로는 따옴표로 감싸 나오므로
-    // 줄 단위 파싱은 그 경로에서 틀린다. (핸드오프 경로 자체는 user·task 이름이 `[\\w.-]` 로
-    // 제한돼 항상 안전하지만, 같은 커밋의 **다른** 경로까지 정확히 읽어야 판정이 맞는다.)
-    // `--ignore-submodules=none`: `submodule.<name>.ignore=all` 이 설정돼 있으면 gitlink 변경이 이 출력에서
-    // **사라진다**(2026-09-11 실측: submodule bump + handoff 커밋이 `[handoff.md]` 로만 보였다).
-    // 그러면 실제 작업 커밋을 sweep 으로 오인해 기록을 건너뛴다.
-    const { stdout } = await pexec('git', ['-C', targetDir, 'diff-tree', '--no-commit-id', '--name-only', '--ignore-submodules=none', '-r', '-z', 'HEAD'], { maxBuffer: 8 * 1024 * 1024 });
-    const paths = stdout.split('\0').filter(Boolean);
-    const prefix = await repoPrefix(targetDir);
-    const rootRels = new Set([...handoffRels].map(p => prefix + p));
-    return paths.length > 0 && paths.every(p => rootRels.has(p));
-  } catch {
-    return false;
-  }
-}
-
-// amend 는 post-commit 훅을 **다시** 돌린다. append 만 하면 같은 논리 커밋에 항목이 둘 남고, 첫 항목이
-// 가리키는 sha 는 amend 가 밀어낸 **없는 커밋**이다(고아 항목). 0.38.0 릴리스에서 실제로 그랬다.
-//
-// 두 조건이 **모두** 참일 때만 마지막 항목을 잘라낸다:
-//   1. reflog 주제가 `commit (amend)` 로 시작한다. 2026-09-12 실측으로 `commit: …`·`commit (initial): …`·
-//      `merge <b>: …`·`checkout: …`·`rebase (finish): …` 와 모두 구분된다.
-//   2. 마지막 항목의 sha 가 `git rev-parse HEAD@{1}`(amend 직전 HEAD)과 **같다**(항목은 short sha 라 접두 대조).
-//      훅이 직전 커밋을 건너뛰었다면(sweep) 마지막 항목은 더 이전의 **진짜** 커밋이므로 지우면 안 된다.
-// "현재 이력에 없다(ancestor 실패)" 로는 판정하지 않는다 — 브랜치 전환·rebase 뒤 amend 에서 **다른 브랜치에
-// 살아 있는** 커밋의 항목까지 지운다(0.38.1 에서 기각한 휴리스틱의 변형, 2026-09-12 codex P1).
-// 판정 불가(git 없음·reflog 없음·파싱 실패)는 append 로 남긴다 — 잃는 쪽이 아니라 남기는 쪽으로 틀린다.
-const HANDOFF_ENTRY_RE = /^## \d{4}-\d\d-\d\dT[^\n]*$/gm;
-
-export async function amendCutPoint(targetDir, content, deps = {}) {
-  const run = deps.git || ((...args) => pexec('git', ['-C', targetDir, ...args], { maxBuffer: 1024 * 1024 }));
-  try {
-    const { stdout } = await run('reflog', '-1', '--format=%gs', 'HEAD');
-    if (!stdout.trimStart().startsWith('commit (amend)')) return null;
-  } catch { return null; }
-
-  const headings = [...content.matchAll(HANDOFF_ENTRY_RE)];
-  if (!headings.length) return null;
-  const last = headings[headings.length - 1];
-  // `## <ISO> — <sha> <msg>` 의 첫 토큰만 읽는다(`git log --oneline` 형식). 메시지 안의 hex 는 보지 않는다.
-  const sha = /—\s+([0-9a-f]{7,40})\b/.exec(last[0]);
-  if (!sha) return null;
-
-  // amend 가 **밀어낸 바로 그 커밋**인지 정확히 대조한다. `HEAD@{1}` 은 amend 직전의 HEAD 다(실측).
-  // "HEAD 의 조상이 아니다" 로 판정하면 브랜치 전환·rebase 뒤의 amend 에서 **다른 브랜치에 살아 있는**
-  // 커밋의 항목까지 지운다 (2026-09-12 codex P1). 정확한 동일성만 교체 근거로 쓴다.
-  let previous;
-  try { previous = (await run('rev-parse', 'HEAD@{1}')).stdout.trim(); } catch { return null; }
-  if (!previous || !previous.startsWith(sha[1])) return null;
-  return last.index;
-}
-
+// post-commit 훅. **git 이 보는 파일을 쓰지 않는다** — 커밋 직후 트리가 깨끗해야 handoff 만 담은 커밋이 생길 이유가 없다.
+// 쓰는 것은 gitignore 된 user handoff 하나이고, 구 저장소처럼 그 파일이 추적 중이거나 무시 줄이 없으면 그것도 쓰지 않는다
+// (doctor 가 경고하고 migrate 가 무시 줄과 추적 해제를 맡는다). 저장소가 아니면(null) 쓴다.
 export async function runHandoffAuto(ctx) {
   const active = await readActive(ctx.targetDir);
   if (!active || !active.task) return;
 
   const { user, task } = active;
-  if (await commitTouchesOnlyHandoff(ctx.targetDir, handoffRelPaths(user, task))) return;
-  const ts = new Date().toISOString();
 
-  let commitMsg = '';
-  let diffStat = '';
+  const tracked = (await trackedUserHandoffs(ctx.targetDir)).includes(userHandoffRel(user));
+  if (!tracked && (await userHandoffIgnored(ctx.targetDir)) !== false) {
+    let commitMsg = '';
+    try {
+      const { stdout } = await pexec('git', ['-C', ctx.targetDir, 'log', '-1', '--oneline'], { maxBuffer: 1024 * 1024 });
+      commitMsg = stdout.trim();
+    } catch { /* continue with empty commitMsg */ }
 
-  try {
-    const { stdout } = await pexec('git', ['-C', ctx.targetDir, 'log', '-1', '--oneline'], { maxBuffer: 1024 * 1024 });
-    commitMsg = stdout.trim();
-  } catch { /* continue with empty commitMsg */ }
-
-  try {
-    const { stdout } = await pexec('git', ['-C', ctx.targetDir, 'diff', 'HEAD~1', '--stat'], { maxBuffer: 1024 * 1024 });
-    diffStat = stdout.trim();
-  } catch {}
-
-  const taskHandoffPath = taskFilePath(ctx.targetDir, user, task, 'handoff.md');
-  // No trailing blank line: entries are separated by the next entry's leading
-  // newline, and a blank line at EOF trips `git diff --check` on every commit.
-  const taskEntry = `\n## ${ts} — ${commitMsg}\n${diffStat ? diffStat + '\n' : ''}`;
-  const existing = await readFile(taskHandoffPath, 'utf8').catch(() => null);
-  const cut = existing === null ? null : await amendCutPoint(ctx.targetDir, existing);
-  if (cut === null) {
-    await appendFile(taskHandoffPath, taskEntry);
-  } else {
-    // 고아 항목을 잘라내고 그 자리에 새 항목을 쓴다. 앞부분의 끝 공백은 정리한다 —
-    // `taskEntry` 가 선행 개행을 들고 있어 항목 사이 간격이 append 경로와 같아진다.
-    // 앞부분은 **정확히 개행 하나**로 끝낸다 — `taskEntry` 의 선행 개행과 합쳐져 append 경로와 같은
-    // 빈 줄 구분이 된다. 끝 공백을 통째로 지우면 항목 사이 빈 줄이 사라진다 (codex P3).
-    const head = existing.slice(0, cut).replace(/\n+$/, '') + '\n';
-    await writeFile(taskHandoffPath, head + taskEntry);
+    await writeFile(userHandoffPath(ctx.targetDir, user), renderUserHandoff({
+      user, task, date: new Date().toISOString().slice(0, 10), commitMsg, closed: false,
+    }));
   }
-
-  await writeFile(userHandoffPath(ctx.targetDir, user), renderUserHandoff({
-    user, task, date: ts.slice(0, 10), commitMsg, closed: false,
-  }));
 
   try {
     const planPath = taskFilePath(ctx.targetDir, user, task, 'plan.md');

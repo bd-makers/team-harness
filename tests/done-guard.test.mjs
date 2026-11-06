@@ -78,11 +78,14 @@ test('--force → 경고만 하고 진행: done 처리됨', async () => {
     assert.ok(logs.some(l => l.startsWith('⚠️')), 'warns instead of blocking');
     assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds to done');
 
-    // active.json nulled out, handoff appended with 완료
+    // active.json nulled out, 완료 표지는 meta.json 에만 남는다
     const active = JSON.parse(await readFile(join(dir, '.harness/active.json'), 'utf8'));
     assert.equal(active, null, 'active cleared');
+    const meta = JSON.parse(await readFile(join(taskDir, 'demo-meta.json'), 'utf8'));
+    assert.equal(meta.status, 'done');
+    assert.ok(meta.closedAt, 'closedAt recorded');
     const handoff = await readFile(join(taskDir, 'demo-handoff.md'), 'utf8');
-    assert.ok(handoff.includes('완료'), 'handoff mutated');
+    assert.ok(!handoff.includes('완료'), 'handoff not mutated');
   } finally {
     restore();
     process.exitCode = prevExit;
@@ -236,15 +239,23 @@ async function makeGitFixture({ subdir } = {}) {
   return { dir, taskDir, root: repo };
 }
 
-test('handoff 파일만 미커밋이면 가드 통과 (post-commit 훅 마찰 제거)', async () => {
-  const { dir, taskDir } = await makeGitFixture();
-  // 훅이 하듯 handoff만 더럽힌다 — 실제 작업 변경은 없음.
-  await writeFile(join(taskDir, 'demo-handoff.md'), '# demo — Handoff\n\n## hook entry\n');
+// 구 저장소는 user handoff 를 아직 추적한다. 활성화·종결이 쓰는 로컬 렌더링이라 실제 작업이 아니다.
+async function trackUserHandoff(dir, root) {
+  const userHandoff = join(dir, 'docs/tester/tester-handoff.md');
+  await writeFile(userHandoff, '# Session Handoff\n');
+  await pexec('git', ['-C', root, 'add', '-A']);
+  await pexec('git', ['-C', root, 'commit', '-q', '-m', 'track user handoff']);
+  return userHandoff;
+}
+
+test('추적 중인 user handoff 만 미커밋이면 가드 통과', async () => {
+  const { dir, root } = await makeGitFixture();
+  await writeFile(await trackUserHandoff(dir, root), '# Session Handoff\n\n## Active Task\ndemo\n');
   const prevExit = process.exitCode;
   const { logs, restore } = captureLogs();
   try {
     await runDone({ targetDir: dir, flags: {} });
-    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds — handoff-only dirty excluded');
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds — user handoff dirty excluded');
     assert.ok(!logs.some(l => l.includes('커밋되지 않은 변경')), 'no uncommitted-change block');
     const active = JSON.parse(await readFile(join(dir, '.harness/active.json'), 'utf8'));
     assert.equal(active, null, 'active cleared');
@@ -255,9 +266,25 @@ test('handoff 파일만 미커밋이면 가드 통과 (post-commit 훅 마찰 �
   }
 });
 
-test('handoff 외 실제 변경이 미커밋이면 여전히 차단', async () => {
+// 옛 CLI 의 훅이 task handoff 를 쓰는 동안 막으면 handoff 만 담는 커밋을 강요하게 된다.
+test('옛 훅이 쓴 task handoff 만 미커밋이면 가드 통과', async () => {
   const { dir, taskDir } = await makeGitFixture();
-  await writeFile(join(taskDir, 'demo-handoff.md'), '# demo — Handoff\n\n## hook entry\n');
+  await writeFile(join(taskDir, 'demo-handoff.md'), '# demo — Handoff\n\n## 2026-11-06T00:00:00Z — abc1234 work\n');
+  const prevExit = process.exitCode;
+  const { logs, restore } = captureLogs();
+  try {
+    await runDone({ targetDir: dir, flags: {} });
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds — old hook output is not real work');
+  } finally {
+    restore();
+    process.exitCode = prevExit;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('handoff 외 실제 변경이 미커밋이면 여전히 차단', async () => {
+  const { dir, root } = await makeGitFixture();
+  await writeFile(await trackUserHandoff(dir, root), '# Session Handoff\n\n## Active Task\ndemo\n');
   await writeFile(join(dir, 'src-change.txt'), 'real uncommitted work\n');
   const prevExit = process.exitCode;
   const { logs, restore } = captureLogs();
@@ -355,11 +382,11 @@ test('plan.md의 mode 변경이 섞이면 체크박스만 켰어도 차단', asy
 
 // porcelain 경로는 저장소 루트 기준이고 제외·면제 대상은 targetDir 기준이다 — 하위 디렉터리 설치본에서도
 // 두 기준을 맞춰야 handoff 제외와 체크박스 면제가 작동한다.
-test('하위 디렉터리 설치본: handoff만 미커밋·plan 체크박스만 켰으면 가드 통과', async () => {
+test('하위 디렉터리 설치본: user handoff 만 미커밋·plan 체크박스만 켰으면 가드 통과', async () => {
   // 비ASCII·공백 접두 — `--show-prefix`와 porcelain `-z`가 같은 원문 바이트를 내는지까지 본다.
   const { dir, taskDir, root } = await makeGitFixture({ subdir: 'packages/앱 a' });
   await commitPlanWithOpenBox(root, taskDir);
-  await writeFile(join(taskDir, 'demo-handoff.md'), '# demo — Handoff\n\n## hook entry\n');
+  await writeFile(await trackUserHandoff(dir, root), '# Session Handoff\n\n## Active Task\ndemo\n');
   await writeFile(join(taskDir, 'demo-plan.md'), '# demo — Plan\n\n## 단계\n- [x] 구현\n- [x] 커밋·PR\n');
   const prevExit = process.exitCode;
   const { logs, restore } = captureLogs();
@@ -375,8 +402,8 @@ test('하위 디렉터리 설치본: handoff만 미커밋·plan 체크박스만 
 });
 
 test('하위 디렉터리 설치본: 설치 디렉터리 밖의 미커밋 변경은 여전히 차단', async () => {
-  const { dir, taskDir, root } = await makeGitFixture({ subdir: 'packages/app' });
-  await writeFile(join(taskDir, 'demo-handoff.md'), '# demo — Handoff\n\n## hook entry\n');
+  const { dir, root } = await makeGitFixture({ subdir: 'packages/app' });
+  await writeFile(await trackUserHandoff(dir, root), '# Session Handoff\n\n## Active Task\ndemo\n');
   await writeFile(join(root, 'outside.txt'), 'real uncommitted work\n');
   const prevExit = process.exitCode;
   const { logs, restore } = captureLogs();
@@ -1417,10 +1444,8 @@ test('무시한 issue 가 없는 --force 는 우회가 아니다 — 두 필드�
 // handoff 파일로의 rename 은 "핸드오프만 dirty" 처럼 보이지만 **원본의 삭제**가 실제 작업이다.
 // 목적지만 제외 대상과 대조하면 가드가 그 삭제를 놓친다 (2026-09-11 codex P2).
 test('parsePorcelainPaths: handoff 로 rename 된 원본은 제외 집합에 삼켜지지 않는다', async () => {
-  const { handoffRelPaths } = await import('../src/commands/task.mjs');
-  const rels = handoffRelPaths('tester', 'demo');
   const dirty = parsePorcelainPaths('R  docs/tester/tester-handoff.md\0src/real.md\0')
-    .filter(p => !rels.has(p));
+    .filter(p => p !== 'docs/tester/tester-handoff.md');
   assert.deepEqual(dirty, ['src/real.md'], '원본 삭제가 실제 dirty 로 남는다');
 });
 

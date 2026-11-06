@@ -374,7 +374,7 @@ harness-team doctor</code></pre>
 
           <!-- commit lane -->
           <path class="svg-lane" d="M946,240 L946,268 L20,268 L20,246" ></path>
-          <text class="svg-sub" x="480" y="284" text-anchor="middle">commit마다 post-commit 훅이 task handoff 갱신(다음 커밋에 담음) · user handoff는 로컬 · 전부 체크되면 PLAN_COMPLETE</text>
+          <text class="svg-sub" x="480" y="284" text-anchor="middle">commit마다 post-commit 훅이 로컬 user handoff 갱신 · 트리는 깨끗 · 전부 체크되면 PLAN_COMPLETE</text>
         </svg>
         <figcaption>10단계와 게이트. 점선은 게이트에 걸렸을 때의 복귀 경로다. 9 · ship(0.17.0 신설)은 PR/MR을 여는 경우에 밟는 <strong>문서 정합</strong> 단계이며, PR을 만들지는 않는다 — 대신 8단계에서 <code>pr-check</code>를 돌리고, push 때 pre-push 훅이 같은 검사를 한다. 10 · done은 <strong>PR이 머지된 뒤 기본 브랜치에서</strong> 돌린다(§8). 5단계에서 plan을 사람 대신 단계별로 돌리려면 선택형 <code>/harness-loop</code>(Dev → QA → 커밋, 0.47.0)를 쓴다. 사이클의 S0–S8·R1–R3 표기는 <code>docs/harness-cycle.md</code>가 정본이다. 4·6번 칸의 축약 이름은 각각 <code>/harness-contrarian</code>·<code>/harness-simplifier</code>, <code>/harness-unittest</code>·<code>/harness-comptest</code>·<code>/harness-inttest</code>다.</figcaption>
       </figure>
@@ -714,7 +714,7 @@ boundary: not-configured</code></pre>
             <tr><td>Edit/Write 직전</td><td><code>protect-files.sh</code> · <code>boundary-checkpoint.sh</code></td><td>보호 파일 차단 · 체크박스 완료 직전 boundary 대조 <span class="pill pill-auto">자동</span></td></tr>
             <tr><td>Bash 직전</td><td><code>block-dangerous-git.sh</code> · <code>pre-commit-check.sh</code></td><td>위험한 git 조작 차단 · 커밋 게이트 — <code>pre-commit-check.sh</code>가 <code>harness-team gate commit</code>을 불러 커밋된 <code>.harness/gates.json</code>의 <code>commit</code> 목록을 실행(0.46.0) <span class="pill pill-auto">자동</span></td></tr>
             <tr><td>Edit/Write 직후</td><td><code>auto-format.sh</code></td><td><code>gate format &lt;file&gt;</code> — <code>gates.json</code>에 선언된 포맷터만 <span class="pill pill-auto">자동</span></td></tr>
-            <tr><td>commit 직후 (git hook)</td><td><code>harness-team handoff</code></td><td>task handoff append(다음 작업 커밋에 함께 담는다 · handoff만 바꾼 sweep 커밋은 기록 안 함 · amend는 마지막 항목 교체) + 사용자 handoff 갱신(gitignore된 워크트리 로컬, 0.44.4), 전부 체크되면 <code>PLAN_COMPLETE</code> <span class="pill pill-auto">자동</span></td></tr>
+            <tr><td>commit 직후 (git hook)</td><td><code>harness-team handoff</code></td><td>사용자 handoff 갱신(gitignore된 워크트리 로컬, 추적 파일은 쓰지 않는다), 전부 체크되면 <code>PLAN_COMPLETE</code> <span class="pill pill-auto">자동</span></td></tr>
             <tr><td>push 직전 (git hook)</td><td><code>harness-team pr-check --pre-push</code></td><td>PR이 담은 task 문서 계약 검사 — 하네스의 유일한 강제(D11, 0.46.0). 기존 설치는 <code>harness-team sync</code>로 받는다 <span class="pill pill-auto">자동</span></td></tr>
             <tr><td><code>git push</code> · <code>gh pr create/merge</code></td><td><code>permissions.ask</code></td><td>실행 전 사용자 확인 프롬프트(0.29.0) <span class="pill pill-auto">자동</span></td></tr>
             <tr><td>모든 도구 호출 (성공·실패·거부)</td><td><code>observe-tools.mjs</code></td><td>빈도·시간·결과 크기만 허용목록 메타데이터로 기록 — 프롬프트·경로·자격증명 원문은 남기지 않음 <span class="pill pill-auto">자동</span></td></tr>
@@ -758,7 +758,7 @@ stop: 가드가 지적한 증거가 실제로 없으면 종결하지 말 것</co
           <tbody>
             <tr><td>미완 체크박스</td><td>실제로 끝냈으면 <code>- [x]</code>로. 안 할 항목이면 <strong>지우고 이유를 artifact에</strong> — 체크로 위장하지 않는다.</td></tr>
             <tr><td>artifact가 템플릿 그대로</td><td><code>## 결과</code>를 쓰고, 리뷰했다면 <code>## Reviews</code>, 배운 게 있으면 <code>/harness-retro</code>.</td></tr>
-            <tr><td>커밋되지 않은 변경</td><td>커밋하거나 되돌린다. 훅이 만드는 handoff 2개는 가드에서 제외되므로 그것만 dirty면 통과한다. plan 변경이 <strong>줄머리 체크박스를 켠 것뿐</strong>이면 미커밋으로 세지 않는다(0.44.0) — 머지 후 마지막 단계를 체크하고 바로 <code>done</code>할 수 있는 이유다.</td></tr>
+            <tr><td>커밋되지 않은 변경</td><td>커밋하거나 되돌린다. handoff 2개는 가드에서 제외되므로 그것만 dirty면 통과한다. plan 변경이 <strong>줄머리 체크박스를 켠 것뿐</strong>이면 미커밋으로 세지 않는다(0.44.0) — 머지 후 마지막 단계를 체크하고 바로 <code>done</code>할 수 있는 이유다.</td></tr>
             <tr><td>task 시작 이후 커밋 0개</td><td>작업이 정말 없었다면 task 자체가 필요했는지 되묻는다.</td></tr>
             <tr><td>소스 변경 O + 테스트 변경 X <span class="pill pill-auto">0.18.1</span></td><td>테스트를 쓴다. 정말 불필요한 task(문서·설정 전용은 애초에 발동하지 않는다)면 spec <code>## Done evidence</code>에 <code>"tests": "skip"</code>을 <strong>선언</strong>한다 — 선언하지 않고 <code>--force</code>로 넘기지 않는다.</td></tr>
             <tr><td>리뷰 기록 없음 <span class="pill pill-auto">0.18.1</span></td><td>spec이 <code>review: required</code>일 때만 나온다. <code>/harness-review</code>(<code>harness-team review</code>)를 돌린다 — CLI가 기록한다. <strong>엔진을 직접 돌리고 기록이 없으면 여기서 막힌다.</strong></td></tr>

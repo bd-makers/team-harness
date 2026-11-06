@@ -19,10 +19,9 @@ const git = (cwd, ...args) => pexec('git', ['-C', cwd, ...args]);
 const FILLED = {
   'spec.md': '# t — Spec\n\n## 목적 / 요구사항\n채움\n',
   'plan.md': '# t — Plan\n\n## 단계\n- [x] 1. 채움\n',
-  'handoff.md': '# t — Handoff\n\n## 2026-10-06 — abc 커밋\n',
   'artifact.md': '# t — Artifact\n\n## 결과\n\n- 채움\n\n## Reviews\n\n## Learnings\n',
 };
-const TEMPLATES = { 'spec.md': taskSpecTemplate, 'plan.md': taskPlanTemplate, 'handoff.md': taskHandoffTemplate, 'artifact.md': taskArtifactTemplate };
+const TEMPLATES = { 'spec.md': taskSpecTemplate, 'plan.md': taskPlanTemplate, 'artifact.md': taskArtifactTemplate };
 const SKIP_LINE = '- 다이어그램: 미실행 — 구조 변화 없음 (2026-10-06)';
 
 async function repo() {
@@ -111,6 +110,34 @@ test('pr-check: 빈 문서(0바이트·공백뿐)도 잡는다 → exit 1', asyn
       } finally { await rm(dir, { recursive: true, force: true }); }
     }
   }
+});
+
+// handoff 를 요구하면 그 파일만 담는 커밋이 다시 생긴다(규칙 커밋 685b744 뒤 78개). 선택 문서라 상태를 보지 않는다.
+test('pr-check: task handoff 는 선택 문서다 — 없음·템플릿·빈 문서 모두 통과', async () => {
+  for (const handoff of [null, taskHandoffTemplate('t'), '']) {
+    const dir = await repo();
+    try {
+      await writeTask(dir, 't');
+      if (handoff !== null) await writeFile(join(dir, 'docs/u/t/t-handoff.md'), handoff);
+      await commit(dir);
+      const r = await check(dir, 'HEAD');
+      assert.deepEqual(r.tasks.map(t => t.issues), [[]], JSON.stringify(handoff));
+      const { exitCode } = await capture(() => runPrCheck({ targetDir: dir, flags: { base: 'main' } }));
+      assert.equal(exitCode, undefined);
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  }
+});
+
+test('pr-check: handoff 만 남은 옛 task 디렉터리도 검사 대상이다', async () => {
+  const dir = await repo();
+  try {
+    await mkdir(join(dir, 'docs/u/t'), { recursive: true });
+    await writeFile(join(dir, 'docs/u/t/t-handoff.md'), '# t — Handoff\n');
+    await commit(dir);
+    const r = await check(dir, 'HEAD');
+    assert.equal(r.tasks.length, 1);
+    assert.equal(r.tasks[0].issues.length, 3, r.tasks[0].issues.join('\n'));
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
 test('pr-check: 다이어그램은 권장이다 — 없으면 막지 않고 안내만, 파일이나 생략 기록이 있으면 안내도 없다', async () => {

@@ -64,11 +64,11 @@
 |---|---|---|
 | 테스트는 `npm test` 계열로 돌린다. 파일 하나는 `node scripts/test-isolated.mjs --test tests/<file>`로 돌린다 | `scripts/test-isolated.mjs`, `tests/test-isolation.test.mjs` | 구조 |
 | 여러 커맨드가 쓰는 열거형 플래그의 값 계약은 `FLAG_CHOICES`에 둔다 | `src/cli-args.mjs`, `tests/cli-args.test.mjs` | 구조 |
+| post-commit 훅은 추적 파일을 쓰지 않는다. handoff만 담는 커밋이 생길 이유를 만들지 않는다 | `tests/handoff-hook-churn.test.mjs`(실제 커밋 뒤 빈 `git status`) | 구조 |
 | overview 인벤토리는 `git add` 순서에 기대지 않는다 | `tests/harness-overview-generation.test.mjs`, `docs:check` | 구조 |
 | stock 템플릿·훅 변경은 한 커밋에 모으고 이전 판 sha를 등록한다 | `tests/migrate-hooks.test.mjs`, `tests/migrate-templates.test.mjs` | 테스트 |
 | `AGENTS.md`·`CLAUDE.md`를 늘리기 전에 여유를 잰다 | `PROJECT_EAGER_MAX_BYTES`, `doctor` 예산 경고 | 테스트 |
 | 이 저장소의 CLI는 `node bin/harness-team.mjs`로 부른다 | `doctor` drift 경고만 | 경고 |
-| handoff만 담는 커밋을 푸시 직전 외에 만들지 않는다 | 없음 — 구조 변경 결정 대기(`docs/chad/correct-guards/correct-guards-artifact.md`) | 문서 |
 | 사실을 바꾸거나 지우면 같은 사실의 다른 자리를 전수 검색한다 | 없음 — 버전 표지만 `docs:check` | 판단 |
 | 보고된 사례가 아니라 그 문법·형제 경로 전체를 고치고 테스트한다 | 없음 | 판단 |
 | 검증은 산문이 아니라 명령과 출력으로 남긴다 | shipcheck S5(탐지만) | 판단 |

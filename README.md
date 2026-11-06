@@ -508,9 +508,7 @@ member를 추론(2~5)했는데 다른 member에 같은 이름의 task가 있으�
 # 활성 task 완료 — meta 상태를 done으로 (원장 갱신은 기본 브랜치에서 `harness-team summary --write`)
 /harness-task done
 
-# 활성 task의 handoff.md를 최신 커밋 정보로 갱신 (post-commit hook이 자동 호출)
-# 핸드오프 파일만 바꾼 커밋(sweep)에는 아무것도 쓰지 않는다 — 병합·빈 커밋·git 실패는 종전대로 기록 (0.38.1+)
-# --amend 는 마지막 항목을 교체한다 (고아 sha 항목을 남기지 않음, 0.38.2+)
+# 워크트리 로컬 <user>-handoff.md를 최신 커밋 정보로 갱신 (post-commit hook이 자동 호출, 추적 파일은 쓰지 않는다)
 /harness-task handoff
 
 # spec에 선언한 JSON Schema producer/consumer boundary 대조
@@ -522,8 +520,8 @@ harness-team scenario check
 
 ### PR 필수 문서 검사 — `harness-team pr-check`
 
-하네스가 강제하는 유일한 것(D11)은 PR에 그 task의 spec·plan·handoff·artifact를 담는 것입니다.
-`pr-check`는 base 대비 diff가 건드린 task(`docs/<user>/<task>/`)마다 네 문서가 **커밋에** 있고 템플릿 그대로가
+하네스가 강제하는 유일한 것(D11)은 PR에 그 task의 spec·plan·artifact를 담는 것입니다.
+`pr-check`는 base 대비 diff가 건드린 task(`docs/<user>/<task>/`)마다 세 문서가 **커밋에** 있고 템플릿 그대로가
 아닌지 판정합니다(없거나 비었거나 템플릿이면 exit 1). 다이어그램은 권장이라 없으면 막지 않고 안내만 냅니다.
 
 ```bash

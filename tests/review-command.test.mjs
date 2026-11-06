@@ -329,22 +329,17 @@ test('P2: 실제 git 저장소에서 scope 판정 — dirty→worktree, clean→
   } finally { restore(); await rm(dir, { recursive: true, force: true }); }
 });
 
-// post-commit 훅은 커밋 뒤에 활성 task 의 handoff 두 파일을 다시 쓴다. 그 변경을 dirty 로 세면 커밋 직후의 리뷰가
+// 구 저장소의 추적 user handoff 는 활성화·종결이 쓴다. 그 변경을 dirty 로 세면 리뷰가
 // 구현 diff 대신 handoff 만 보는 worktree scope 가 됐다(wiki-commit-provenance R2 1차 실행 "무효 범위").
-test('resolveScope: a tree dirty only from the post-commit handoff resolves to diff', async () => {
-  const { dir, taskDir } = await makeGitFixture();
+test('resolveScope: a tree dirty only from the tracked user handoff resolves to diff', async () => {
+  const { dir } = await makeGitFixture();
   const { restore } = captureLogs();
   try {
     // user handoff 는 gitignore 도입 전 구 저장소처럼 추적 상태로 둔다 — 그래야 status 에 나온다
-    const taskHandoff = join(taskDir, 'demo-handoff.md');
     const userHandoff = join(dir, 'docs', 'tester', 'tester-handoff.md');
-    await writeFile(taskHandoff, '# demo — Handoff\n');
     await writeFile(userHandoff, '# tester\n');
     await git(dir, 'add', '-A'); await git(dir, 'commit', '-qm', 'handoffs');
-    const hookWrites = async label => {
-      await writeFile(taskHandoff, `${await readFile(taskHandoff, 'utf8')}\n## 2026-10-10T00:00:00Z — ${label}\n`);
-      await writeFile(userHandoff, `# tester\nlast: ${label}\n`);
-    };
+    const hookWrites = label => writeFile(userHandoff, `# tester\nlast: ${label}\n`);
 
     // base 브랜치: 훅 출력만 dirty 면 handoff 를 worktree 로 리뷰하지 않는다 — 리뷰할 것 없음
     await hookWrites('handoffs');
@@ -394,18 +389,20 @@ test('resolveScope: consecutive reviews without a commit both resolve to diff', 
 test("resolveScope: only the active task's harness-written paths are excluded", async () => {
   const { dir, taskDir } = await makeGitFixture();
   try {
+    const artifact = join(taskDir, 'demo-artifact.md');
+    const otherArtifact = join(dir, 'docs', 'tester', 'other', 'other-artifact.md');
     const taskHandoff = join(taskDir, 'demo-handoff.md');
-    const otherHandoff = join(dir, 'docs', 'tester', 'other', 'other-handoff.md');
     await mkdir(join(dir, 'docs', 'tester', 'other'), { recursive: true });
+    await writeFile(artifact, '# a\n');
+    await writeFile(otherArtifact, '# o\n');
     await writeFile(taskHandoff, '# h\n');
-    await writeFile(otherHandoff, '# o\n');
     await git(dir, 'add', '-A'); await git(dir, 'commit', '-qm', 'handoffs');
     await git(dir, 'checkout', '-qb', 'feature');
     await writeFile(join(dir, 'b.txt'), 'b\n');
     await git(dir, 'add', 'b.txt'); await git(dir, 'commit', '-qm', 'feat');
-    await writeFile(taskHandoff, '# h\n\n## entry\n');
+    await writeFile(artifact, '# a\n\n## entry\n');
     const scope = async () => (await resolveScope({ targetDir: dir })).scope;
-    assert.equal(await scope(), 'diff', '전제: 훅 출력만 dirty');
+    assert.equal(await scope(), 'diff', '전제: 하네스 기록만 dirty');
 
     // (a) 추적 파일 수정 — 명시 --scope diff 는 dirty 와 무관하게 diff
     await writeFile(join(dir, 'a.txt'), 'changed\n');
@@ -418,17 +415,22 @@ test("resolveScope: only the active task's harness-written paths are excluded", 
     assert.equal(await scope(), 'worktree');
     await rm(join(dir, 'c.txt'));
 
-    // (c) 활성 task 없음 — 훅은 아무것도 쓰지 않으므로 제외할 것도 없다
+    // (c) 활성 task 없음 — 하네스는 아무것도 쓰지 않으므로 제외할 것도 없다
     const activePath = join(dir, '.harness', 'active.json');
     const active = await readFile(activePath, 'utf8');
     await rm(activePath);
     assert.equal(await scope(), 'worktree');
     await writeFile(activePath, active);
 
-    // (d) 활성 task 가 아닌 task 의 handoff 만 dirty
-    await git(dir, 'checkout', '--', taskHandoff);
-    await writeFile(otherHandoff, '# o\n\n## entry\n');
+    // (d) 활성 task 가 아닌 task 의 기록만 dirty
+    await git(dir, 'checkout', '--', artifact);
+    await writeFile(otherArtifact, '# o\n\n## entry\n');
     assert.equal(await scope(), 'worktree');
+    await git(dir, 'checkout', '--', otherArtifact);
+
+    // (e) 옛 CLI 의 훅이 쓴 task handoff 만 dirty — done 가드와 같은 제외
+    await writeFile(taskHandoff, '# h\n\n## entry\n');
+    assert.equal(await scope(), 'diff');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
