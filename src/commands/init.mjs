@@ -1,4 +1,4 @@
-import { detectStack, resolveStack, KNOWN_STACK_IDS } from '../detect-stack.mjs';
+import { detectStack, resolveStack } from '../detect-stack.mjs';
 import {
   planChanges, applyChanges, copyStaticAssets, formatDiff,
 } from '../harness.mjs';
@@ -12,13 +12,6 @@ import { resolveShape } from '../repo-shape.mjs';
 export async function runInit(ctx) {
   console.log(`harness-team init → ${ctx.targetDir}`);
   const forced = ctx.flags.stack;
-  if (forced !== undefined && !KNOWN_STACK_IDS.includes(forced)) {
-    // A typo used to pass straight through as the stack id and render an AGENTS.md
-    // naming a stack nothing recognizes. Refuse before anything is written.
-    console.error(`init: unknown --stack "${forced}" (expected one of ${KNOWN_STACK_IDS.join('|')})`);
-    process.exitCode = 2;
-    return;
-  }
   if (ctx.flags.shape !== undefined && ctx.flags.shape !== 'single') {
     // 모양은 감지가 정한다 — 플래그는 감지된 workspace 모양을 거절하는 용도뿐이다.
     console.error(`init: --shape 는 single 만 받습니다 (감지된 workspace 모양을 거절할 때) — 받은 값: "${ctx.flags.shape}"`);

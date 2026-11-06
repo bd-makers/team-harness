@@ -383,7 +383,7 @@ test('CLI scope: 알 수 없는 --scope 는 판정을 내지 않고 exit 2 로 �
     const { code, stdout, stderr } = await cli(['scope', '--json', '--scope', 'typo', '--target', dir]);
     assert.equal(code, 2);
     assert.equal(stdout, '', '거절했으면 관측을 내지 않는다');
-    assert.match(stderr, /알 수 없는 --scope "typo"/);
+    assert.match(stderr, /unknown --scope "typo"/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

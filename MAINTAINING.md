@@ -55,6 +55,29 @@
 
 ---
 
+## 반복 실수 규칙표
+
+메인테이너에게 교정받으면 실수를 고치고 여기에 규칙을 더합니다. 이미 있는 규칙이고 **강제**가 `없음`이면 재발이므로,
+같은 변경에서 구조·타입·테스트 중 가장 높은 수준으로 올립니다. 실수가 불가능해진 규칙은 지웁니다.
+
+| 규칙 | 강제 | 수준 |
+|---|---|---|
+| 테스트는 `npm test` 계열로 돌린다. 파일 하나는 `node scripts/test-isolated.mjs --test tests/<file>`로 돌린다 | `scripts/test-isolated.mjs`, `tests/test-isolation.test.mjs` | 구조 |
+| 여러 커맨드가 쓰는 열거형 플래그의 값 계약은 `FLAG_CHOICES`에 둔다 | `src/cli-args.mjs`, `tests/cli-args.test.mjs` | 구조 |
+| overview 인벤토리는 `git add` 순서에 기대지 않는다 | `tests/harness-overview-generation.test.mjs`, `docs:check` | 구조 |
+| stock 템플릿·훅 변경은 한 커밋에 모으고 이전 판 sha를 등록한다 | `tests/migrate-hooks.test.mjs`, `tests/migrate-templates.test.mjs` | 테스트 |
+| `AGENTS.md`·`CLAUDE.md`를 늘리기 전에 여유를 잰다 | `PROJECT_EAGER_MAX_BYTES`, `doctor` 예산 경고 | 테스트 |
+| 이 저장소의 CLI는 `node bin/harness-team.mjs`로 부른다 | `doctor` drift 경고만 | 경고 |
+| handoff만 담는 커밋을 푸시 직전 외에 만들지 않는다 | 없음 — 구조 변경 결정 대기(`docs/chad/correct-guards/correct-guards-artifact.md`) | 문서 |
+| 사실을 바꾸거나 지우면 같은 사실의 다른 자리를 전수 검색한다 | 없음 — 버전 표지만 `docs:check` | 판단 |
+| 보고된 사례가 아니라 그 문법·형제 경로 전체를 고치고 테스트한다 | 없음 | 판단 |
+| 검증은 산문이 아니라 명령과 출력으로 남긴다 | shipcheck S5(탐지만) | 판단 |
+| 테스트는 변이가 살아남지 않게 쓴다 | testcritic E1(탐지만) | 판단 |
+| 일어나지 않은 검증·재지 않은 수치를 task 문서에 쓰지 않는다 | shipcheck S2(탐지만) | 판단 |
+| 새 필수 요건은 메인테이너가 정한다. 기본값은 권장이다 | 없음 — D11 | 판단 |
+
+---
+
 ## 필수 검증
 
 릴리스 전에 아래 세 명령이 반드시 통과해야 합니다:

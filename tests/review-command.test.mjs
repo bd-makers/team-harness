@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
   runReview, buildPrompt, buildReviewKind, posixSingleQuote, fenceFor, truncateOutput,
-  renderReviewBlock, resolveEngine, REVIEW_PROMPT_TEMPLATE, REVIEW_OUTPUT_MAX_BYTES, SCOPES,
+  renderReviewBlock, resolveEngine, REVIEW_PROMPT_TEMPLATE, REVIEW_OUTPUT_MAX_BYTES,
 } from '../src/commands/review.mjs';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
@@ -171,14 +171,11 @@ test('공용 리뷰 프롬프트 상수 ↔ commands/harness-review.md text 블�
   assert.equal(custom, 'MY PROMPT\nf');
 });
 
-test('scope 값은 목록 안에서만, task-docs 는 --prompt-file 필수, 활성 task 없으면 실행 전 거부', async () => {
-  assert.deepEqual(SCOPES, ['worktree', 'diff', 'task-docs']);
+test('task-docs 는 --prompt-file 필수, 활성 task 없으면 실행 전 거부', async () => {
   const { dir, taskDir } = await makeFixture();
   const { logs, restore } = captureLogs();
   try {
-    let r = await withExit(() => runReview({ targetDir: dir, flags: { scope: 'nope' }, taskArgs: ['custom'] }));
-    assert.equal(r.exitCode, 1);
-    r = await withExit(() => runReview({ targetDir: dir, flags: { scope: 'task-docs' }, taskArgs: ['custom'] }));
+    let r = await withExit(() => runReview({ targetDir: dir, flags: { scope: 'task-docs' }, taskArgs: ['custom'] }));
     assert.equal(r.exitCode, 1);
     assert.ok(logs.some(l => l.includes('--prompt-file')));
     assert.deepEqual((await readTaskMeta(dir, 'tester', 'demo')).reviews, [], '거부 경로는 아무것도 쓰지 않는다');
