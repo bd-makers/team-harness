@@ -19,7 +19,7 @@ post-commit 훅은 이제 gitignore된 `<user>-handoff.md`만 쓴다. 그 파일
 
 - `summary`: 이 저장소의 실제 task 전체를 변경 전후로 렌더해 비교했다. 차이는 새 task 행 1줄뿐이다.
 - 변이 9개를 버리는 클론에서 돌렸고 모두 테스트가 잡았다: 훅 append 복원, 훅 무동작, 추적 user handoff 쓰기, 무시 줄 없는 저장소에 쓰기, `done` 마커 복원, `pr-check` handoff 요건 복원, `done` 가드의 task handoff 제외, `review`의 task handoff 제외, 옛 마커 읽기 삭제.
-- `npm test`: 1,283개 중 1,282개 통과, 실패 0, 건너뜀 1. perf 1개 통과. `npm run docs:check`와 `node bin/harness-team.mjs doctor` 통과. doctor 경고 1건은 이 변경과 무관한 Codex 훅 신뢰 안내다.
+- `npm test`: 1,284개 중 1,283개 통과, 실패 0, 건너뜀 1. perf 1개 통과. `npm run docs:check`와 `node bin/harness-team.mjs doctor` 통과. doctor 경고 1건은 이 변경과 무관한 Codex 훅 신뢰 안내다.
 
 ### 검증하지 못한 것
 

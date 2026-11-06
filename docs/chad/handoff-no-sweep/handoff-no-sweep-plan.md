@@ -11,7 +11,7 @@
 - [x] `done`·`review` 제외 집합을 user handoff로 줄인다
 - [x] 픽스처로 깨끗한 트리를 증명하고 변이로 테스트를 검증한다
 - [x] D11·규칙표·문서·stock·CHANGELOG를 맞춘다
-- [ ] read-only 리뷰 후 `npm test`·`docs:check`·`doctor`를 통과시킨다
+- [x] read-only 리뷰 후 `npm test`·`docs:check`·`doctor`를 통과시킨다
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
