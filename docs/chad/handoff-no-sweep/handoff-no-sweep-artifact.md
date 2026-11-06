@@ -28,6 +28,7 @@ post-commit 훅은 이제 gitignore된 `<user>-handoff.md`만 쓴다. 그 파일
 
 ### 결정
 
+- task handoff는 `done`·scope 판정에서 계속 뺀다. 옛 훅과 버전이 갈리면 handoff 단독 커밋을 강요하기 때문이다. 직접 쓴 메모가 미커밋이어도 막지 않는 것이 대가다.
 - `<name>-handoff.md`는 폐지하지 않고 선택 메모로 남겼다. 177개 중 10개에 직접 쓴 내용이 있고, 폐지는 task 문서 구조 전체를 바꾼다.
 - 구 저장소(user handoff 추적 중)에서는 활성화와 `done`이 쓴 변경이 트리에 남는다. `done`을 막으면 진입점이 종결된 task를 가리킨 채 얼어붙어서 막지 않았다. 옛 동작과 같고 `doctor`가 추적 해제를 안내한다.
 - 자동 병합에는 post-commit이 돌지 않아 user handoff가 병합 전 커밋을 가리킨다. 세션 진입점의 표시만 한 커밋 늦고 트리는 깨끗하다.
@@ -53,5 +54,24 @@ post-commit 훅은 이제 gitignore된 `<user>-handoff.md`만 쓴다. 그 파일
 | 업그레이드 과도기 버전 불일치 | 부분 인정. 재현하지 않음 | CHANGELOG 소비자 조치에 PATH CLI 갱신 추가 |
 | 이 task handoff의 옛 문구 | 진짜 | 새 문구로 교체. `migrate.mjs:99`는 동결된 0.6 경로라 둠 |
 
+
+### 2026-11-06 — `/code-review` high (로컬, `main...HEAD`)
+
+발견 10건을 버리는 픽스처로 판정했다. 외부 엔진 리뷰가 아니므로 `harness:review` 마커는 남기지 않는다.
+
+| 발견 | 판정 | 조치 |
+|---|---|---|
+| 옛 훅 + 새 `done`·`scope` 버전 불일치 | 진짜 | `handoffRelPaths` 복원. task handoff 제외는 옛 훅이 사라질 때까지 두는 임시 조치 |
+| 사용자 문서의 옛 훅 설명 | 진짜 | 온보딩·치트시트·킥오프·플레이그라운드·가이드·다이어그램·시뮬레이션 수정 |
+| CHANGELOG `BREAKING` 누락 | 진짜 | 첫 줄에 추가 |
+| "네 파일이 SSOT" 모순 | 진짜 | spec·plan·artifact를 SSOT로 정정 |
+| 완료 마커 주석 시제 | 진짜 | 옛 동작으로 정정 |
+| 활성화·훅 쓰기 조건 불일치 | 진짜·미반영 | 옛 동작과 같고 doctor가 경고 |
+| 구 저장소 진입점 낡음 | 진짜·미반영 | 잃는 것이 로컬 표시뿐 |
+| stock 스킬 문구 | 미반영 | user handoff에 대해 참 |
+| handoff 파일 생성 유지 | 미반영 | D11 정정에서 별도 결정으로 뺌 |
+| meta 유실 시 open 오판 | 미반영 | `done`과 `summary --write`가 한 커밋이라 정상 흐름에서 구간이 없음. 재현하지 않음 |
+
+재현: 옛 CLI `handoff`가 task handoff를 더럽힌 픽스처에서 수정 전 새 `done`은 "커밋되지 않은 변경이 있음"으로 막혔고 `scope`는 worktree였다. 수정 뒤 같은 절차에서 그 원인이 사라졌고 `scope`도 worktree로 판정하지 않았다.
 
 ## Learnings

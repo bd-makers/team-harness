@@ -81,7 +81,7 @@ Raw slash-command 인수:
    HTML**이다 — task 문서는 Obsidian처럼 **script를 제거하는 뷰어**에서 열리는 경우가 많고, 그런
    뷰어에서는 mermaid JS 런타임이 렌더되지 않는다(이 저장소의 `docs/`가 그런 환경이다). 뷰어가
    script를 실행하는 것이 확실한 프로젝트라면 다른 형식을 써도 되지만, 판단 근거를 artifact에
-   남긴다. 이 파일은 **SSOT 4파일(spec·plan·handoff·artifact)이 아닌 생성물**이며, 없어도 task는
+   남긴다. 이 파일은 **task 문서 4종(spec·plan·handoff·artifact)이 아닌 생성물**이며, 없어도 task는
    유효하다.
 
 7. **정합 검증 — 적대적 검증 (옵트인, D6)** — ship은 PR 직전 마지막 게이트인데 문서↔diff

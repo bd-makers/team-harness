@@ -75,7 +75,7 @@
 
 이하 `spec.md`·`plan.md`·`artifact.md`처럼 접두 없이 부르는 이름은 위 `<name>-*.md`의 축약이다.
 
-이 네 파일이 task의 **SSOT**다. 상세 설계를 외부 문서(docs 루트·`superpowers/plans` 등)로
+spec·plan·artifact가 task의 **SSOT**다(handoff는 선택 메모). 상세 설계를 외부 문서(docs 루트·`superpowers/plans` 등)로
 분리하더라도 `<name>-spec.md`를 외부를 가리키는 포인터 껍데기로 두지 말 것 —
 요구사항·자가진단·Ontology는 spec.md에 직접 쓰고, 외부 문서는 보조 참조로만 둔다.
 (doctor가 자가진단 없는 포인터 껍데기 spec을 경고한다.)

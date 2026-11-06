@@ -169,7 +169,7 @@ const SLIDES = [
   <table class="t"><tr>
     <td><code>spec.md</code></td><td>요구사항·설계<br><small>R1 원천 검토 · Ambiguity 자가진단 · Ontology · Boundary contracts · Done evidence</small></td>
     <td><code>plan.md</code></td><td>단계 체크리스트<br><small>줄머리 체크박스는 산문이 아니라 <b>기계 입력</b>이다</small></td></tr>
-  <tr><td><code>handoff.md</code></td><td>세션 인수인계<br><small>post-commit 훅이 자동 갱신(다음 커밋에 담는다) — 사람이 쓰지 않는다</small></td>
+  <tr><td><code>handoff.md</code></td><td>세션 메모<br><small>선택 문서 — 필요할 때 직접 쓴다. 훅은 쓰지 않는다</small></td>
     <td><code>artifact.md</code></td><td>실행 결과·학습·<code>## Reviews</code><br><small>팀 학습의 SSOT</small></td></tr>
   </table></div>` },
 
@@ -186,7 +186,7 @@ const SLIDES = [
         <text x="64" y="50" text-anchor="middle" fill="#8a92ae" font-size="13">${n[1]}</text></g>
         ${i<6?`<line x1="${i*160+130}" y1="91" x2="${i*160+156}" y2="91" stroke="#3a4260" stroke-width="2" marker-end="url(#ar)"/>`:''}`).join('')}
     <text x="0" y="165" fill="#8a92ae" font-size="14">SessionStart 훅이 활성 task와 현재 단계를 주입</text>
-    <text x="640" y="165" fill="#8a92ae" font-size="14">post-commit 훅이 handoff 갱신</text>
+    <text x="640" y="165" fill="#8a92ae" font-size="14">post-commit 훅이 로컬 진입점 갱신</text>
     <text x="0" y="192" fill="#f5c451" font-size="14">ship은 “준비 완료 보고”에서 멈춘다 — PR·머지는 사람이 지시하고, done은 머지 후 기본 브랜치에서 판정한다</text>
   </svg></div>` },
 
@@ -230,7 +230,7 @@ const SLIDES = [
       Edit/Write 전 → 보호 파일 차단 · boundary 대조<br>
       Bash 전 → 위험 git 차단 · <code>gate commit</code>(gates.json)<br>
       Edit/Write 후 → <code>gate format</code><br>
-      post-commit → task handoff 갱신<br>
+      post-commit → user handoff 갱신(로컬)<br>
       git push 전 → <code>pr-check</code>(pre-push)<br>
       모든 도구 → 관측 로그 · 트립와이어</p></div>
     <div class="card warn"><h3>규범 — 안 지켜도 아무도 안 막는다</h3><p style="line-height:1.85">

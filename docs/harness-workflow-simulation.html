@@ -464,7 +464,7 @@
         <div style="font-size:0.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem">파일별 역할</div>
         <div class="card" style="margin-bottom:0.5rem">
           <h3 style="color:var(--accent2)">chad-handoff.md — 세션 포인터</h3>
-          <p>어떤 task가 활성인지 + 마지막 커밋 한 줄. 상세 내용은 task별 handoff에 위임. <code>task</code> 활성화·post-commit hook·<code>done</code>이 다시 쓴다. <strong>추적하지 않는다</strong>(0.44.4) — 내용이 전부 gitignore된 <code>active.json</code>과 그 워크트리의 마지막 커밋에서 나오므로 워크트리마다 다르고, 추적하면 같은 user의 병렬 PR이 머지마다 충돌한다.</p>
+          <p>어떤 task가 활성인지 + 마지막 커밋 한 줄. 상세 내용은 task별 plan에 위임. <code>task</code> 활성화·post-commit hook·<code>done</code>이 다시 쓴다. <strong>추적하지 않는다</strong>(0.44.4) — 내용이 전부 gitignore된 <code>active.json</code>과 그 워크트리의 마지막 커밋에서 나오므로 워크트리마다 다르고, 추적하면 같은 user의 병렬 PR이 머지마다 충돌한다.</p>
         </div>
         <div class="card" style="margin-bottom:0.5rem">
           <h3 style="color:var(--accent3)">[task]-handoff.md — task 컨텍스트</h3>
@@ -612,7 +612,7 @@
 <span class="tree-new">docs/chad/login-bug/</span>
 ├── <span class="tree-new">login-bug-spec.md</span>      <span style="color:var(--border)"># 초안 (Ambiguity 자가진단 포함)</span>
 ├── <span class="tree-new">login-bug-plan.md</span>      <span style="color:var(--border)"># 초안 작성</span>
-├── <span class="tree-new">login-bug-handoff.md</span>   <span style="color:var(--border)"># 빈 파일 (post-commit 자동 갱신)</span>
+├── <span class="tree-new">login-bug-handoff.md</span>   <span style="color:var(--border)"># 선택 메모 (직접 작성, 훅은 쓰지 않음)</span>
 ├── <span class="tree-new">login-bug-artifact.md</span>  <span style="color:var(--border)"># 빈 scaffold (done/retro 시 기록)</span>
 └── <span class="tree-new">login-bug-meta.json</span>    <span style="color:var(--border)"># created·firstActivatedAt·status·closedAt (기계 상태)</span>
 
@@ -659,7 +659,7 @@
       <div class="scenario-num">3</div>
       <div>
         <div class="scenario-title">작업 중 → Commit</div>
-        <div class="scenario-desc">코드 수정 후 commit 시 post-commit hook이 자동으로 handoff 갱신 — 갱신분은 다음 작업 커밋에 담는다</div>
+        <div class="scenario-desc">코드 수정 후 commit 시 post-commit hook이 로컬 진입점만 갱신 — 트리는 깨끗하다</div>
       </div>
     </div>
 
@@ -686,22 +686,16 @@
           <div class="step-actor actor-hook">post-commit hook 자동 실행</div>
           <div class="step-content">
             <p><code>harness-team handoff</code></p>
-            <div class="step-detail">git log -1 --oneline, git diff HEAD~1 --stat 읽기 → handoff 갱신</div>
+            <div class="step-detail">git log -1 --oneline 읽기 → 로컬 진입점 갱신. 추적 파일은 쓰지 않는다</div>
             <div class="tree" style="margin-top:0.5rem">
-<span class="tree-new">docs/chad/login-bug/login-bug-handoff.md</span> — append   <span style="color:var(--border)"># 추적 — 다음 커밋에 담긴다</span>
-  ## 2026-05-15T06:12:03.481Z — 3f2a9c1 fix: 로그인 토큰 검증 로직 수정
-   src/auth/token.ts    | 12 ++++++------
-   src/auth/validate.ts |  8 +++++---
-
 <span class="tree-new">docs/chad/chad-handoff.md</span> — 재작성   <span style="color:var(--border)"># gitignore — 커밋 대상 아님 (0.44.4)</span>
   ## Active Task
   login-bug
   ## Last Commit (2026-05-15)
   3f2a9c1 fix: 로그인 토큰 검증 로직 수정
   ## Full Context
-  → docs/chad/login-bug/login-bug-handoff.md
+  → docs/chad/login-bug/login-bug-plan.md
             </div>
-            <div class="step-detail">커밋이 handoff 파일만 바꾼 sweep 커밋이면 훅은 아무것도 쓰지 않는다(0.38.1 — 자기 출력을 먹는 churn 차단). 병합·빈 커밋은 기록한다. <code>--amend</code>는 마지막 항목을 교체한다(0.38.2).</div>
           </div>
           <div class="auto-badge">⚡ 사용자 개입 없이 자동 완료</div>
         </div>
@@ -721,8 +715,8 @@
         <div class="step-body">
           <div class="step-actor actor-claude">Claude — 다음 커밋</div>
           <div class="step-content">
-            <p>커밋 직후 트리는 <code>login-bug-handoff.md</code> 때문에 dirty다. <strong>그 변경만 담는 커밋을 따로 만들지 않고</strong> 다음 작업 커밋에 함께 stage한다(0.42.1).</p>
-            <div class="step-detail">단독 sweep 커밋은 푸시·브랜치 전환·워크트리 정리 직전에 남은 변경이 handoff뿐일 때만 만든다 — 보통 PR/MR당 한 번이다. dirty handoff는 <code>done</code> 가드가 무시하므로 남겨 둬도 종결을 막지 않는다. <code>chad-handoff.md</code>는 gitignore라 stage 대상이 아니다 — <code>git add -f</code>로 억지로 담지 않는다.</div>
+            <p>커밋 직후 트리는 깨끗하다. handoff를 담을 커밋이 필요 없고 다음 작업으로 넘어간다.</p>
+            <div class="step-detail">다음 세션에 남길 말이 있으면 <code>login-bug-handoff.md</code>에 직접 적어 작업 커밋에 함께 담는다.</div>
           </div>
         </div>
       </div>
