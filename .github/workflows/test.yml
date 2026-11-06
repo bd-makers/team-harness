@@ -57,14 +57,6 @@ jobs:
           # ships instead of whenever the image catches up.
           check-latest: true
 
-      # e2e sandboxes set their own git identity, but done-guard and other
-      # tests run git in the checkout itself — give the runner a global one.
-      - name: Configure git identity
-        run: |
-          git config --global user.email "ci@harness.test"
-          git config --global user.name "harness-ci"
-          git config --global init.defaultBranch main
-
       # Zero runtime deps and no lockfile, so there is nothing to install —
       # run the suite directly (unit + e2e).
       #
