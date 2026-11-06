@@ -8,6 +8,7 @@
 - [x] 플래그 값 검증을 파서로 옮기고 인라인 가드 삭제
 - [x] `MAINTAINING.md` 규칙표 작성
 - [x] 전체 검증(`npm test`·`doctor`·`docs:check`)과 artifact 기록
+- [x] 리뷰 판정 4건 반영과 재검증
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

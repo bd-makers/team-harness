@@ -63,7 +63,7 @@
 | 규칙 | 강제 | 수준 |
 |---|---|---|
 | 테스트는 `npm test` 계열로 돌린다. 파일 하나는 `node scripts/test-isolated.mjs --test tests/<file>`로 돌린다 | `scripts/test-isolated.mjs`, `tests/test-isolation.test.mjs` | 구조 |
-| 열거형 플래그의 값 계약은 `FLAG_CHOICES`에 둔다 | `src/cli-args.mjs`, `tests/cli-args.test.mjs` | 구조 |
+| 여러 커맨드가 쓰는 열거형 플래그의 값 계약은 `FLAG_CHOICES`에 둔다 | `src/cli-args.mjs`, `tests/cli-args.test.mjs` | 구조 |
 | overview 인벤토리는 `git add` 순서에 기대지 않는다 | `tests/harness-overview-generation.test.mjs`, `docs:check` | 구조 |
 | stock 템플릿·훅 변경은 한 커밋에 모으고 이전 판 sha를 등록한다 | `tests/migrate-hooks.test.mjs`, `tests/migrate-templates.test.mjs` | 테스트 |
 | `AGENTS.md`·`CLAUDE.md`를 늘리기 전에 여유를 잰다 | `PROJECT_EAGER_MAX_BYTES`, `doctor` 예산 경고 | 테스트 |

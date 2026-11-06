@@ -10,7 +10,12 @@ import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const MACHINE_ENV = ['CLAUDE_CONFIG_DIR', 'CLAUDE_PLUGINS_ROOT', 'CODEX_HOME', 'XDG_CONFIG_HOME', 'GIT_CONFIG_GLOBAL'];
+// GIT_DIR·GIT_INDEX_FILE·GIT_WORK_TREE 가 남으면 픽스처의 git 명령이 실제 저장소의 index·config 를 덮어쓴다.
+// git 훅 안에서는 git 이 이 변수들을 export 한다.
+const MACHINE_ENV = [
+  'CLAUDE_CONFIG_DIR', 'CLAUDE_PLUGINS_ROOT', 'CODEX_HOME', 'XDG_CONFIG_HOME', 'GIT_CONFIG_GLOBAL',
+  'GIT_DIR', 'GIT_INDEX_FILE', 'GIT_WORK_TREE',
+];
 
 const home = realpathSync(mkdtempSync(join(tmpdir(), 'harness-test-home-')));
 writeFileSync(join(home, '.gitconfig'), `[user]

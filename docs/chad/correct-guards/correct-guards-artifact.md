@@ -47,8 +47,33 @@ main 직접 커밋은 이 수에 넣지 않았다.
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
 
 
+### 2026-11-06 — `/code-review` high (로컬, main...HEAD)
+
+발견 10건을 재현으로 판정했다. 외부 엔진 리뷰가 아니므로 `harness:review` 마커는 남기지 않는다.
+
+| 발견 | 판정 | 조치 |
+|---|---|---|
+| 격리 러너가 `GIT_*`를 지우지 않음 | 진짜 | `GIT_DIR`·`GIT_INDEX_FILE`·`GIT_WORK_TREE` 삭제 |
+| CI 가드 정규식이 `- run:` 형식을 놓침 | 진짜 | 앵커 제거 |
+| 하드코딩 쌍 목록이 새 커맨드에 실패 | 진짜 | `pairs.length > 0`로 교체 |
+| `SCOPES` 단언이 무관한 테스트에 남음 | 진짜 | `tests/cli-args.test.mjs`로 이동 |
+| `review --scope` 오류 형태 변경 | 유지 | 다른 파서 오류와 같고 정상 호출은 영향 없음. CHANGELOG에 기록됨 |
+| 시그널 시 임시 HOME 누수 | 진짜·미반영 | 남는 것은 임시 폴더 하나이고 실패는 가려지지 않음 |
+| `resolveScope` 폴백 | 오탐 | 호출부 3곳이 파서 값 또는 리터럴 |
+| `--shape`·`--rubric` 인라인 가드 | 미반영 | 고유 메시지와 조합 검사가 있음. 규칙표 문구만 좁힘 |
+| `--stack=` 빈 값 | 오탐 | 빈 값을 넘기는 호출이 없음 |
+| §5-A 패킷 누락 | 부분 인정 | `review` 계약 변경을 착수 질문에 적지 않았음. 코드 변경 없음 |
+
+재현(버리는 클론):
+
+```
+옛 러너 + GIT_DIR·GIT_INDEX_FILE·GIT_WORK_TREE → pass 1, fail 24, 로컬 user.name = t
+새 러너 + 같은 환경                            → pass 25, fail 0, 로컬 user 없음
+```
+
 ## Learnings
 
 - 게이트가 발동한 것은 재발이 아니다. 머지·배포까지 샌 것만 재발로 센다.
 - 이 세션 셸에는 `harness-team`이 PATH에 없어 post-commit 훅이 조용히 건너뛰었다(`2>/dev/null || true`). handoff는 `node bin/harness-team.mjs handoff`로 채웠고, `d3df815`·`19dfae3`의 항목은 없다.
+- 리뷰 판정 중 `GIT_DIR`를 실제 저장소로 지정해 테스트를 돌려 index와 로컬 `[user]`를 오염시켰다. 커밋·ref·훅·작업 트리는 무사했고 `git reset -q`와 `git config --local --remove-section user`로 복구했다. 저장소를 건드릴 수 있는 재현은 버리는 클론에서만 한다.
 - `review --scope` 오타의 exit 코드·envelope 변경은 ① 표면의 계약 변경이라 다음 릴리스는 minor다. `commands/`·`skills/`·`templates/`·`docs/*.html`에 옛 동작을 적은 곳은 없었다.

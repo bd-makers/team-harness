@@ -21,7 +21,8 @@ test('runner hides machine-global install state from the suite', () => {
     const { homedir } = require('node:os');
     console.log(JSON.stringify({
       home: homedir(),
-      vars: ['CLAUDE_CONFIG_DIR', 'CLAUDE_PLUGINS_ROOT', 'CODEX_HOME', 'XDG_CONFIG_HOME', 'GIT_CONFIG_GLOBAL']
+      vars: ['CLAUDE_CONFIG_DIR', 'CLAUDE_PLUGINS_ROOT', 'CODEX_HOME', 'XDG_CONFIG_HOME', 'GIT_CONFIG_GLOBAL',
+        'GIT_DIR', 'GIT_INDEX_FILE', 'GIT_WORK_TREE']
         .filter(name => process.env[name] !== undefined),
       gitEmail: execFileSync('git', ['config', '--global', 'user.email'], { encoding: 'utf8' }).trim(),
       branch: execFileSync('git', ['config', '--global', 'init.defaultBranch'], { encoding: 'utf8' }).trim(),
@@ -33,6 +34,9 @@ test('runner hides machine-global install state from the suite', () => {
     CODEX_HOME: '/real/codex',
     XDG_CONFIG_HOME: '/real/xdg',
     GIT_CONFIG_GLOBAL: '/real/gitconfig',
+    GIT_DIR: '/real/.git',
+    GIT_INDEX_FILE: '/real/.git/index',
+    GIT_WORK_TREE: '/real',
   });
   assert.equal(r.status, 0, r.stderr);
   const seen = JSON.parse(r.stdout);
@@ -60,6 +64,6 @@ test('every test entry point goes through the isolated runner, locally and in CI
   for (const workflow of ['test.yml', 'release.yml']) {
     const text = readFileSync(join(ROOT, '.github/workflows', workflow), 'utf8');
     assert.match(text, /npm test/, workflow);
-    assert.doesNotMatch(text, /^\s*(run: )?(node --test|git config --global)/m, `${workflow}: 환경은 scripts/test-isolated.mjs 가 준다`);
+    assert.doesNotMatch(text, /node --test|git config --global/, `${workflow}: 환경은 scripts/test-isolated.mjs 가 준다`);
   }
 });
