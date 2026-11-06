@@ -393,7 +393,7 @@ async function sc5Triggers(token, initDir, trials = 2) {
 // ── SC6 full task lifecycle (CLI-driven, deterministic, own sandbox) ──────────
 // SC3 stops at "created + 4 SSOT + active pointer". SC6 drives the REST of the
 // lifecycle: plan checkbox → commit → done-guard BLOCK → done COMPLETE → active
-// released → handoff DONE marker. done/done-guard/handoff are CLI machinery, so
+// released → meta status done. done/done-guard are CLI machinery, so
 // this is scored by direct `node BIN` calls + file/git evidence — NO agent, NO
 // auth needed (hand-proven auth-independent). It runs LAST and in its OWN applied
 // sandbox because it nulls active.json at the end (would pollute canon.dir which
@@ -439,14 +439,14 @@ async function sc6Lifecycle() {
   const openAfter = /^\s*- \[ \]/m.test(await readFile(planPath, 'utf8').catch(() => ''));
   const planProgressed = openBefore && !openAfter;
 
-  // real artifact + commit. The post-commit hook then rewrites ONLY the two handoff
-  // files (verified), which the guard excludes from "uncommitted" → clean done passes.
+  // real artifact + commit. The post-commit hook then rewrites ONLY the ignored user
+  // handoff, so the tree is clean and done passes.
   await writeFile(artifactPath, `# ${slug} — Artifact\n\n## 결과\nSC6 lifecycle — real content.\n\n## Learnings\n- lifecycle verified\n`);
   await gitc(['add', '-A']);
   await gitc(['commit', '-q', '-m', 'sim(life): work']);
 
   // done COMPLETE: try the clean path first (no --force). It SHOULD pass because
-  // the only dirty files are handoffs (guard-excluded). If it doesn't, fall back to
+  // nothing is dirty. If it doesn't, fall back to
   // --force and record that as a finding — never twist the lifecycle to force it.
   const done = await cli(['done']);
   let usedForce = false;
@@ -458,8 +458,9 @@ async function sc6Lifecycle() {
   }
   const releasedNull = activeAfter.trim() === 'null';
 
-  // handoff DONE marker written by runDone (not the post-commit hook).
-  const doneMarker = await fileHas(handoffPath, '완료');
+  const meta = JSON.parse(await readFile(join(dirname(handoffPath), `${slug}-meta.json`), 'utf8').catch(() => '{}'));
+  const closed = meta.status === 'done' && Boolean(meta.closedAt);
+  const handoffUntouched = !(await fileHas(handoffPath, '완료'));
 
   const signals = [
     sig('init installs harness (doctor green)', setupGreen),
@@ -468,8 +469,9 @@ async function sc6Lifecycle() {
     sig('done-guard detects all 4 conditions', missingCauses.length === 0, missingCauses.length ? `missing: ${missingCauses.join(', ')}` : ''),
     sig('done-guard preserves active.json', activePreserved),
     sig('plan 체크박스 진행 (open→closed)', planProgressed),
-    sig('done 완료 → active.json 해제(null)', releasedNull, usedForce ? '--force 필요' : '--force 불필요 (handoff 제외 로직)'),
-    sig('handoff done(완료) 마커 기록', doneMarker),
+    sig('done 완료 → active.json 해제(null)', releasedNull, usedForce ? '--force 필요' : '--force 불필요'),
+    sig('meta status done + closedAt 기록', closed),
+    sig('task handoff 에 완료 마커를 쓰지 않음', handoffUntouched),
     manual('AskUserQuestion done 휴먼 게이트', '헤드리스 재현 불가 — 머신러리만 검증'),
   ];
   return { signals, dir, usedForce };

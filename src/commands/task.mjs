@@ -1195,16 +1195,17 @@ export async function runRetro(ctx) {
   }
 }
 
-// post-commit 훅. **추적 파일을 쓰지 않는다** — 커밋 직후 트리가 깨끗해야 handoff 만 담은 커밋이 생길 이유가 없다.
-// 쓰는 것은 gitignore 된 user handoff 하나이고, 그 파일이 아직 추적 중인 구 저장소에서는 그것도 쓰지 않는다
-// (doctor 가 경고하고 migrate 가 추적 해제를 안내한다).
+// post-commit 훅. **git 이 보는 파일을 쓰지 않는다** — 커밋 직후 트리가 깨끗해야 handoff 만 담은 커밋이 생길 이유가 없다.
+// 쓰는 것은 gitignore 된 user handoff 하나이고, 구 저장소처럼 그 파일이 추적 중이거나 무시 줄이 없으면 그것도 쓰지 않는다
+// (doctor 가 경고하고 migrate 가 무시 줄과 추적 해제를 맡는다). 저장소가 아니면(null) 쓴다.
 export async function runHandoffAuto(ctx) {
   const active = await readActive(ctx.targetDir);
   if (!active || !active.task) return;
 
   const { user, task } = active;
 
-  if (!(await trackedUserHandoffs(ctx.targetDir)).includes(userHandoffRel(user))) {
+  const tracked = (await trackedUserHandoffs(ctx.targetDir)).includes(userHandoffRel(user));
+  if (!tracked && (await userHandoffIgnored(ctx.targetDir)) !== false) {
     let commitMsg = '';
     try {
       const { stdout } = await pexec('git', ['-C', ctx.targetDir, 'log', '-1', '--oneline'], { maxBuffer: 1024 * 1024 });
