@@ -822,6 +822,16 @@ export async function userHandoffIgnored(targetDir) {
   }
 }
 
+// `done` 가드와 scope 판정이 dirty 로 세지 않는 handoff 두 파일. user handoff 는 활성화·종결이 쓰는 로컬 렌더링이다.
+// task handoff 는 옛 CLI 의 post-commit 훅이 아직 쓴다 — PATH CLI 와 플러그인의 갱신 주체가 달라 버전이 갈리면 막히고,
+// 빠져나오는 길이 handoff 만 담는 커밋뿐이다. 임시 제외다: 옛 훅을 쓰는 설치가 없다고 판단되는 릴리스에서 지운다.
+export function handoffRelPaths(user, task) {
+  return new Set([
+    taskFileRel(user, task, 'handoff.md'),
+    userHandoffRel(user),
+  ]);
+}
+
 // git 이 내는 경로(`status --porcelain`·`diff-tree`)는 저장소 **루트** 기준이고 handoff·plan 경로는 targetDir
 // 기준이다. 하네스를 하위 디렉터리(모노레포 패키지)에 설치하면 둘이 영영 일치하지 않으므로, 비교 집합 쪽에
 // targetDir 의 루트 기준 접두를 붙인다(git 이 직접 계산 — realpath·symlink 차이를 타지 않는다).
@@ -1009,11 +1019,9 @@ async function collectDoneIssues(targetDir, active) {
   if (isGitRepo) {
     try {
       const { stdout } = await pexec('git', ['-C', targetDir, 'status', '--porcelain', '-z'], { maxBuffer: 1024 * 1024 });
-      // user handoff 는 활성화·종결이 쓰는 로컬 렌더링이다. 아직 추적 중인 구 저장소에서는 dirty 로 보이므로 뺀다.
-      // task handoff 는 사람이 쓰는 메모라 빼지 않는다 — 미커밋이면 실제 작업이다.
       const prefix = await repoPrefix(targetDir);
-      const userHandoff = prefix + userHandoffRel(user);
-      let realDirty = parsePorcelainPaths(stdout).filter(p => p !== userHandoff);
+      const handoffRels = new Set([...handoffRelPaths(user, task)].map(p => prefix + p));
+      let realDirty = parsePorcelainPaths(stdout).filter(p => !handoffRels.has(p));
       // 체크박스만 켠 plan.md는 종결 커밋에 함께 담는다(isCheckboxOnlyChange). index와 작업 트리를
       // **둘 다** 본다 — 작업 트리만 보면 산문을 stage한 뒤 작업 트리를 되돌려 가드를 우회할 수 있다.
       // `show`·`diff`의 `./<planRel>`은 cwd(targetDir) 기준이라 접두 없이 맞다.

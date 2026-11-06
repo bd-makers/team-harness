@@ -266,15 +266,15 @@ test('추적 중인 user handoff 만 미커밋이면 가드 통과', async () =>
   }
 });
 
-test('task handoff 는 사람이 쓰는 메모다 — 미커밋이면 차단', async () => {
+// 옛 CLI 의 훅이 task handoff 를 쓰는 동안 막으면 handoff 만 담는 커밋을 강요하게 된다.
+test('옛 훅이 쓴 task handoff 만 미커밋이면 가드 통과', async () => {
   const { dir, taskDir } = await makeGitFixture();
-  await writeFile(join(taskDir, 'demo-handoff.md'), '# demo — Handoff\n\n다음 세션 메모\n');
+  await writeFile(join(taskDir, 'demo-handoff.md'), '# demo — Handoff\n\n## 2026-11-06T00:00:00Z — abc1234 work\n');
   const prevExit = process.exitCode;
   const { logs, restore } = captureLogs();
   try {
     await runDone({ targetDir: dir, flags: {} });
-    assert.equal(process.exitCode, 1, 'blocks on an uncommitted handoff note');
-    assert.ok(logs.some(l => l.includes('커밋되지 않은 변경')), 'flags uncommitted change');
+    assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds — old hook output is not real work');
   } finally {
     restore();
     process.exitCode = prevExit;

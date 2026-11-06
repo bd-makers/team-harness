@@ -428,9 +428,9 @@ test("resolveScope: only the active task's harness-written paths are excluded", 
     assert.equal(await scope(), 'worktree');
     await git(dir, 'checkout', '--', otherArtifact);
 
-    // (e) task handoff 는 사람이 쓰는 메모다 — 하네스 기록이 아니다
-    await writeFile(taskHandoff, '# h\n\n메모\n');
-    assert.equal(await scope(), 'worktree');
+    // (e) 옛 CLI 의 훅이 쓴 task handoff 만 dirty — done 가드와 같은 제외
+    await writeFile(taskHandoff, '# h\n\n## entry\n');
+    assert.equal(await scope(), 'diff');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
