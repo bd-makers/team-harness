@@ -1,0 +1,686 @@
+<!doctype html>
+<html lang="ko" data-theme="midnight" data-layout="framed" data-density="reading" data-motion="none">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>팀 하네스 한눈에</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <!-- 테마 전환(T)을 쓰지 않을 덱은 선택한 테마가 쓰는 family만 남긴다 -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@800;900&family=Geist+Mono:wght@400;600;800&family=Instrument+Serif:ital@0;1&family=Noto+Serif+KR:wght@400;600;800&display=swap">
+  <style>
+    /* === 1. THEME TOKENS ===
+       모든 색·서체·반경·그림자는 여기서만 정한다. 컴포넌트 CSS에 hex를 쓰지 않는다. */
+    :root, [data-theme="midnight"] {
+      --stage-bg:#0f172a; --slide-bg:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);
+      --panel:rgba(30,41,59,.76); --card:rgba(51,65,85,.59); --inset:rgba(15,23,42,.38);
+      --border:rgba(148,163,184,.23); --border-strong:rgba(148,163,184,.5);
+      --text:#f8fafc; --text-2:#dce7f5; --muted:#a8b6c9;
+      --accent:#38bdf8; --accent-2:#06b6d4; --eyebrow:var(--accent);
+      --ok:#6ee7b7; --warn:#fcd34d; --info:#7dd3fc; --danger:#fda4af;
+      --font-body:"Pretendard",-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Segoe UI",sans-serif;
+      --font-display:var(--font-body); --font-mono:ui-monospace,SFMono-Regular,Menlo,Monaco,monospace;
+      --title-weight:800; --title-track:-.05em;
+      --radius:24px; --radius-md:16px; --radius-sm:10px;
+      --shadow:0 25px 50px -12px rgba(0,0,0,.45); --blur:blur(16px);
+      --glow-1:rgba(6,182,212,.13); --glow-2:rgba(56,189,248,.09);
+      --controls-bg:rgba(7,14,26,.83); --controls-ink:#e0f2fe;
+    }
+    /* paper(다크 그래파이트): 차가운 회색 단색, 세리프 제목 + 모노 eyebrow, 직각에 가까운 반경 */
+    [data-theme="paper"] {
+      --stage-bg:#0e1013; --slide-bg:linear-gradient(180deg,#1a1d21 0%,#15171b 100%);
+      --panel:#1d2025; --card:#24282e; --inset:#191c20;
+      --border:#343a42; --border-strong:#4b535e;
+      --text:#e8eaed; --text-2:#c9cdd2; --muted:#9aa1ab;
+      --accent:#d5d9df; --accent-2:#f1f3f5; --eyebrow:#8b939e; --link:#a9bdd6;
+      --ok:#86cf9f; --warn:#e5c07b; --info:#a9bdd6; --danger:#f08c7e;
+      --font-display:"Noto Serif KR",Georgia,serif; --font-mono:"Geist Mono",ui-monospace,monospace;
+      --title-weight:500; --title-track:-.03em;
+      --radius:4px; --radius-md:4px; --radius-sm:3px;
+      --shadow:none; --blur:none; --glow-1:transparent; --glow-2:transparent;
+      --controls-bg:#1d2025; --controls-ink:#e8eaed;
+    }
+    [data-theme="paper"] .eyebrow { font-family:var(--font-mono); font-weight:600; letter-spacing:.16em; }
+    [data-theme="paper"] .head { border-bottom-color:var(--border-strong); }
+    /* kami(다크 세피아): 따뜻한 먹색 면 · 양피지 글자 · 샌드 골드 단일 강조, 세리프 제목 + 산세리프 본문 */
+    [data-theme="kami"] {
+      --stage-bg:#0f0e0c; --slide-bg:#1a1815;
+      --panel:#201e1a; --card:#27241f; --inset:#1b1916;
+      --border:#3a352c; --border-strong:#574f41;
+      --text:#efe9dc; --text-2:#d9d1c1; --muted:#a39a88;
+      --accent:#d4b98a; --accent-2:#efe9dc; --eyebrow:#c2a878; --link:#e2cfa6;
+      --ok:#a3c49a; --warn:#e0b36a; --info:#a8bfd8; --danger:#e39a8c;
+      --font-display:"Noto Serif KR",Charter,Georgia,serif; /* 본문은 기본 Pretendard — 다크 면에서 세리프 본문은 획이 가늘어 가독성이 떨어진다 */
+      --title-weight:600; --title-track:-.02em;
+      --radius:6px; --radius-md:4px; --radius-sm:3px;
+      --shadow:none; --blur:none; --glow-1:transparent; --glow-2:transparent;
+      --controls-bg:#201e1a; --controls-ink:#efe9dc;
+    }
+    /* kami·paper·terminal·swiss 컨트롤: 알약·그림자·채운 버튼 대신 hairline 바 + 텍스트 버튼 */
+    [data-theme="kami"] .controls, [data-theme="paper"] .controls, [data-theme="terminal"] .controls, [data-theme="swiss"] .controls { gap:0; padding:4px; border-radius:var(--radius); border-color:var(--border-strong); background:var(--panel); box-shadow:none; backdrop-filter:none; }
+    [data-theme="kami"] .controls button, [data-theme="paper"] .controls button, [data-theme="terminal"] .controls button, [data-theme="swiss"] .controls button { background:none; color:var(--accent); font-weight:600; font-size:16px; padding:8px 16px; border-radius:var(--radius-sm); }
+    [data-theme="kami"] .controls button:hover, [data-theme="kami"] .controls button:focus-visible,
+    [data-theme="paper"] .controls button:hover, [data-theme="paper"] .controls button:focus-visible,
+    [data-theme="terminal"] .controls button:hover, [data-theme="terminal"] .controls button:focus-visible,
+    [data-theme="swiss"] .controls button:hover, [data-theme="swiss"] .controls button:focus-visible { background:var(--inset); }
+    [data-theme="kami"] .controls span, [data-theme="paper"] .controls span, [data-theme="terminal"] .controls span, [data-theme="swiss"] .controls span { padding:6px 16px; border-inline:1px solid var(--border); color:var(--muted); font:500 15px var(--font-body); letter-spacing:.04em; }
+    /* terminal: 블랙 면, 본문은 중성 그레이 · 인광 그린은 제목·ID·강조에만(그린 본문은 가독성이 떨어진다), 앰버 eyebrow, 옅은 스캔라인 */
+    [data-theme="terminal"] {
+      --stage-bg:#050505; --slide-bg:#0a0a0a;
+      --panel:#0a0a0a; --card:#0e120f; --inset:#0b0f0c;
+      --border:#1f3323; --border-strong:#2f7a3a;
+      --text:#d7ddd4; --text-2:#c3cabf; --muted:#8b9588;
+      --accent:#3ee65f; --accent-2:#3ee65f; --eyebrow:#ffb000; --link:#7fe89a;
+      --ok:#3ee65f; --warn:#ffb000; --info:#7fdbff; --danger:#ff5c5c;
+      --font-body:"Geist Mono",ui-monospace,Menlo,"Pretendard",monospace; --font-display:var(--font-body); --font-mono:var(--font-body);
+      --title-weight:700; --title-track:-.02em;
+      --radius:0; --radius-md:0; --radius-sm:0;
+      --shadow:none; --blur:none; --glow-1:transparent; --glow-2:transparent;
+      --controls-bg:rgba(10,10,10,.94); --controls-ink:#d7ddd4;
+    }
+    /* terminal·swiss는 직각만: 알약·원형 요소도 모서리를 없앤다 */
+    [data-theme="terminal"] .tag, [data-theme="terminal"] .toast, [data-theme="terminal"] .lint, [data-theme="terminal"] .flowlist li::before,
+    [data-theme="swiss"] .tag, [data-theme="swiss"] .toast, [data-theme="swiss"] .lint, [data-theme="swiss"] .flowlist li::before { border-radius:0; }
+    [data-theme="terminal"] .slide::after { inset:0; left:0; bottom:0; width:auto; height:auto; border-radius:0; background:repeating-linear-gradient(0deg,rgba(0,0,0,.10) 0 1px,transparent 1px 3px); z-index:2; }
+    /* corporate(다크): 딥 네이비 면 · 골드 강조, 상단 골드 바 */
+    [data-theme="corporate"] {
+      --stage-bg:#050d1a; --slide-bg:linear-gradient(180deg,#0b1a30 0%,#081427 100%);
+      --panel:#0e203a; --card:#122746; --inset:#0a1830;
+      --border:#1f3657; --border-strong:#33507a;
+      --text:#eef2f8; --text-2:#cdd6e4; --muted:#93a3ba;
+      --accent:#e0b84a; --accent-2:#c9d6ea; --eyebrow:#d4ad3f; --link:#f0cf74;
+      --ok:#5fcf94; --warn:#f0b85a; --info:#7fb2ff; --danger:#ff8a80;
+      --title-weight:800; --title-track:-.04em;
+      --radius:12px; --radius-md:10px; --radius-sm:8px;
+      --shadow:0 18px 40px -18px rgba(0,0,0,.6); --blur:none; --glow-1:transparent; --glow-2:transparent;
+      --controls-bg:rgba(14,32,58,.94); --controls-ink:#eef2f8;
+    }
+    [data-theme="corporate"] .frame { border-top:6px solid #c9a227; }
+    /* swiss(다크): 블랙 면 + 보이는 그리드, 화이트 + 레드 1색, 직각 */
+    [data-theme="swiss"] {
+      --stage-bg:#000000;
+      --slide-bg:linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px) 0 0/120px 120px,linear-gradient(0deg,rgba(255,255,255,.06) 1px,transparent 1px) 0 0/120px 120px,#0b0b0b;
+      --panel:#111111; --card:#161616; --inset:#0d0d0d;
+      --border:#3a3a3a; --border-strong:#f2f2f2;
+      --text:#f5f5f5; --text-2:#d6d6d6; --muted:#9a9a9a;
+      --accent:#ff3b1f; --accent-2:#f5f5f5; --eyebrow:#ff3b1f; --link:#ff7a5c;
+      --ok:#5fd08a; --warn:#ffb347; --info:#6aa8ff; --danger:#ff3b1f;
+      --font-display:"Archivo","Pretendard",sans-serif;
+      --title-weight:900; --title-track:-.03em;
+      --radius:0; --radius-md:0; --radius-sm:0;
+      --shadow:none; --blur:none; --glow-1:transparent; --glow-2:transparent;
+      --controls-bg:#111111; --controls-ink:#f5f5f5;
+    }
+    /* sky: 밝은 스카이 면 · 블루 강조 + 스카이 보조, 부드러운 글래스 패널 */
+    [data-theme="sky"] {
+      --stage-bg:#dbeafe; --slide-bg:linear-gradient(160deg,#f5faff 0%,#e6f1fd 100%);
+      --panel:rgba(255,255,255,.86); --card:#ffffff; --inset:#eff6ff;
+      --border:#cfe0f5; --border-strong:#93c5fd;
+      --text:#0b2545; --text-2:#1e3a5f; --muted:#52667f;
+      --accent:#1d4ed8; --accent-2:#0369a1; --eyebrow:#0284c7; --link:#1d4ed8;
+      --ok:#047857; --warn:#b45309; --info:#1d4ed8; --danger:#be123c;
+      --title-weight:800; --title-track:-.045em;
+      --radius:20px; --radius-md:14px; --radius-sm:10px;
+      --shadow:0 20px 40px -22px rgba(29,78,216,.28); --blur:blur(10px);
+      --glow-1:rgba(14,165,233,.18); --glow-2:rgba(29,78,216,.10);
+      --controls-bg:rgba(255,255,255,.92); --controls-ink:#0b2545;
+    }
+    /* 파생 토큰: 테마가 직접 정하지 않으면 강조색·경고색에서 계산한다 */
+    html {
+      --link:color-mix(in srgb,var(--accent) 45%,var(--text));
+      --note-ink:color-mix(in srgb,var(--warn) 60%,var(--text));
+    }
+
+    /* === 2. STAGE ENGINE (수정 금지) ===
+       1920×1080 고정 캔버스를 뷰포트에 균등 스케일. 전환은 visibility/opacity로만. */
+    * { box-sizing:border-box; }
+    html, body { width:100%; height:100%; margin:0; overflow:hidden; background:var(--stage-bg); }
+    .deck-viewport { position:fixed; inset:0; overflow:hidden; background:var(--stage-bg); }
+    .deck-stage { position:absolute; left:0; top:0; width:1920px; height:1080px; overflow:hidden; transform-origin:0 0; }
+    .slide { position:absolute; inset:0; width:1920px; height:1080px; overflow:hidden; display:block; visibility:hidden; opacity:0; pointer-events:none; }
+    .slide.active { visibility:visible; opacity:1; pointer-events:auto; z-index:1; }
+    img, video, canvas, svg { max-width:100%; max-height:100%; }
+    .deck-controls { position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:1000; }
+    .progress { position:fixed; top:0; left:0; height:3px; width:0; background:var(--accent); z-index:1001; transition:width .3s ease; }
+    .toast { position:fixed; top:18px; left:50%; transform:translateX(-50%); z-index:1002; padding:8px 14px; border-radius:999px; background:var(--controls-bg); color:var(--controls-ink); border:1px solid var(--border); font:600 13px var(--font-mono); opacity:0; transition:opacity .2s; pointer-events:none; }
+    .toast.show { opacity:1; }
+    .lint { position:fixed; top:14px; right:14px; z-index:1003; display:none; padding:8px 14px; border-radius:999px; border:1px solid var(--danger); background:var(--controls-bg); color:var(--danger); font:700 13px var(--font-mono); cursor:pointer; }
+    .lint.show { display:block; }
+
+    /* === 3. BASE COMPONENTS === */
+    body { color:var(--text); font-family:var(--font-body); }
+    .slide { background:var(--slide-bg); padding:64px 76px 68px; }
+    .slide::before { content:""; position:absolute; width:810px; height:810px; right:-315px; top:-340px; border-radius:50%; background:radial-gradient(circle,var(--glow-1),transparent 64%); pointer-events:none; }
+    .slide::after { content:""; position:absolute; width:700px; height:700px; left:-340px; bottom:-415px; border-radius:50%; background:radial-gradient(circle,var(--glow-2),transparent 66%); pointer-events:none; }
+    .frame { position:relative; z-index:1; width:100%; height:100%; padding:44px 50px 36px; border:1px solid var(--border); border-radius:var(--radius); background:var(--panel); box-shadow:var(--shadow); backdrop-filter:var(--blur); display:flex; flex-direction:column; min-width:0; }
+    .head { display:flex; align-items:flex-end; justify-content:space-between; gap:32px; padding-bottom:23px; margin-bottom:28px; border-bottom:1px solid var(--border); min-width:0; }
+    .eyebrow { color:var(--eyebrow); text-transform:uppercase; letter-spacing:.12em; font-weight:800; font-size:20px; margin-bottom:8px; }
+    h1,h2,h3,p,blockquote { margin:0; }
+    h1,h2 { font-family:var(--font-display); font-weight:var(--title-weight); letter-spacing:var(--title-track); }
+    h1 { font-size:65px; line-height:1.13; }
+    h2 { font-size:42px; line-height:1.18; }
+    h3 { font-size:25px; line-height:1.25; }
+    .sub { color:var(--muted); font-size:21px; line-height:1.45; margin-top:9px; }
+    .tag { flex:none; display:inline-flex; align-items:center; border:1px solid var(--border); border-radius:999px; background:var(--inset); padding:10px 16px; font-size:18px; color:var(--muted); font-weight:700; white-space:nowrap; }
+    .tag.sm { font-size:14px; padding:5px 9px; }
+    .tag.ok { color:var(--ok); border-color:color-mix(in srgb,var(--ok) 45%,transparent); }
+    .tag.warn { color:var(--warn); border-color:color-mix(in srgb,var(--warn) 45%,transparent); }
+    .tag.info { color:var(--info); border-color:color-mix(in srgb,var(--info) 45%,transparent); }
+    .tag.danger { color:var(--danger); border-color:color-mix(in srgb,var(--danger) 45%,transparent); }
+    .body { flex:1; min-height:0; display:flex; flex-direction:column; gap:19px; }
+    .body.center { justify-content:center; gap:34px; }
+    .grid2 { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; min-width:0; }
+    .grid3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:17px; min-width:0; }
+    .grid4 { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:15px; min-width:0; }
+    .card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius-md); padding:23px 25px; min-width:0; overflow:hidden; }
+    .card h3 { color:var(--accent-2); margin-bottom:15px; }
+    .card p,.card li { font-size:20px; line-height:1.44; }
+    .card p + p { margin-top:12px; }
+    .card ul,.card ol { margin:0; padding-left:24px; }
+    .card li + li { margin-top:10px; }
+    .muted { color:var(--muted); } .accent { color:var(--accent); }
+    .ok { color:var(--ok); } .warn { color:var(--warn); } .info { color:var(--info); } .danger { color:var(--danger); }
+    .mono { font-family:var(--font-mono); }
+    a { color:var(--link); }
+    .big { font-size:31px; line-height:1.34; font-weight:650; letter-spacing:-.025em; }
+    .intro { font-size:30px; line-height:1.46; color:var(--text-2); max-width:1330px; }
+    .pillrow { display:flex; flex-wrap:wrap; gap:11px; }
+    .pill { padding:9px 14px; border-radius:var(--radius-sm); background:color-mix(in srgb,var(--accent) 10%,transparent); border:1px solid color-mix(in srgb,var(--accent) 23%,transparent); font-size:19px; font-weight:650; }
+    .flow { display:flex; align-items:stretch; gap:15px; min-width:0; }
+    .flow .step { flex:1; min-width:0; border:1px solid var(--border); border-radius:15px; border-radius:var(--radius-md); padding:22px; background:var(--card); }
+    .flow .step.focal { border-color:var(--accent); }
+    .flow .arrow { display:flex; align-items:center; color:var(--accent); font-size:31px; }
+    .stepnum { color:var(--accent); font:800 18px var(--font-mono); margin-bottom:11px; }
+    .step h3 { color:var(--text); font-size:24px; }
+    .step p { color:var(--muted); margin-top:8px; font-size:18px; line-height:1.4; }
+    .note { background:color-mix(in srgb,var(--warn) 8%,transparent); border:1px solid color-mix(in srgb,var(--warn) 29%,transparent); border-radius:14px; border-radius:var(--radius-md); padding:17px 20px; color:var(--note-ink); font-size:19px; line-height:1.43; }
+    .footer { display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border); margin-top:20px; padding-top:17px; font-size:16px; color:var(--muted); gap:16px; }
+    .footbrand { color:var(--text-2); font-weight:700; letter-spacing:.04em; }
+    .slide-count { font:700 17px var(--font-mono); color:var(--accent); }
+    /* 상세(UseCase형) */
+    .split-main { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr); gap:20px; min-height:0; }
+    .meta { display:grid; grid-template-columns:1fr 1fr; gap:13px; margin-bottom:21px; }
+    .meta > div { background:var(--inset); border:1px solid var(--border); border-radius:12px; border-radius:var(--radius-sm); padding:14px 16px; }
+    .meta strong { display:block; color:var(--accent); font-size:15px; letter-spacing:.08em; margin-bottom:5px; }
+    .meta span { font-size:18px; line-height:1.4; }
+    .flowlist { list-style:none; padding:0 !important; }
+    .flowlist li { position:relative; padding-left:42px; margin-bottom:17px; }
+    .flowlist li::before { content:attr(data-n); position:absolute; left:0; top:0; width:28px; height:28px; display:grid; place-items:center; border-radius:50%; background:color-mix(in srgb,var(--accent) 18%,transparent); color:var(--accent); font:800 15px var(--font-mono); }
+    .feature { padding:10px 0; border-top:1px solid var(--border); display:grid; grid-template-columns:64px minmax(0,1fr); gap:13px; align-items:start; }
+    .feature:first-of-type { border-top:0; }
+    .feature .fid { color:var(--accent); font:800 19px var(--font-mono); }
+    .feature strong { display:block; font-size:20px; line-height:1.36; }
+    .feature small { display:block; color:var(--muted); font-size:17px; line-height:1.36; margin-top:4px; }
+    .callout { padding:13px 16px; background:color-mix(in srgb,var(--accent-2) 9%,transparent); border:1px solid color-mix(in srgb,var(--accent-2) 25%,transparent); border-radius:12px; border-radius:var(--radius-sm); font-size:17px; line-height:1.33; }
+    .callout strong { color:var(--accent-2); }
+    .callout.warn { background:color-mix(in srgb,var(--warn) 8%,transparent); border-color:color-mix(in srgb,var(--warn) 25%,transparent); }
+    .callout.warn strong { color:var(--warn); }
+    .evidence { margin-top:auto; border:1px solid var(--border); border-radius:14px; border-radius:var(--radius-md); padding:17px 20px; background:var(--inset); }
+    .evidence-title { color:var(--accent); font-size:17px; letter-spacing:.09em; font-weight:800; margin-bottom:11px; }
+    .links { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+    .links a { display:block; border:1px solid var(--border); background:var(--card); padding:10px 12px; border-radius:var(--radius-sm); color:var(--link); text-decoration:none; min-width:0; overflow-wrap:anywhere; }
+    .links a:hover,.links a:focus-visible { border-color:var(--accent); color:var(--text); }
+    .links b { display:block; font-size:15px; color:var(--muted); margin-bottom:5px; }
+    .links span { display:block; font-size:17px; line-height:1.27; }
+    /* 표 */
+    .tablebox { min-width:0; border-radius:14px; border-radius:var(--radius-md); border:1px solid var(--border); background:var(--card); overflow:hidden; }
+    table { border-collapse:collapse; width:100%; table-layout:fixed; }
+    th { background:var(--inset); color:var(--accent); text-transform:uppercase; letter-spacing:.06em; text-align:left; font-size:16px; padding:14px 17px; }
+    td { padding:13px 17px; border-top:1px solid var(--border); font-size:18px; line-height:1.32; vertical-align:top; overflow-wrap:anywhere; }
+    td strong { color:var(--text); }
+    .row-id { color:var(--accent); font:800 18px var(--font-mono); }
+    /* 타임라인 · 지표 · 목차 · 구분 · 인용 */
+    .timeline { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; }
+    .timeline .card { min-height:247px; }
+    .timeline .date { color:var(--accent); font:800 23px var(--font-mono); margin-bottom:10px; }
+    .timeline .card h3 { margin-bottom:9px; }
+    .timeline .card p { color:var(--text-2); font-size:18px; }
+    .stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:18px; }
+    .stat .num { font-family:var(--font-display); font-size:89px; line-height:1; font-weight:800; color:var(--accent); letter-spacing:-.06em; }
+    .stat .label { margin-top:14px; font-size:21px; font-weight:700; }
+    .stat .desc { margin-top:8px; color:var(--muted); font-size:17px; line-height:1.4; }
+    .agenda { list-style:none; padding:0; margin:0; display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px 40px; }
+    .agenda li { display:grid; grid-template-columns:84px minmax(0,1fr); gap:18px; padding:22px 0; border-top:1px solid var(--border); }
+    .agenda .num { font:800 40px var(--font-mono); color:var(--accent); line-height:1; }
+    .agenda strong { display:block; font-size:28px; letter-spacing:-.02em; }
+    .agenda small { display:block; color:var(--muted); font-size:19px; line-height:1.4; margin-top:6px; }
+    .section-num { font-family:var(--font-display); font-size:220px; line-height:.9; font-weight:var(--title-weight); color:var(--accent); letter-spacing:-.06em; }
+    .quote { font-family:var(--font-display); font-size:62px; line-height:1.22; letter-spacing:var(--title-track); font-weight:var(--title-weight); max-width:1500px; }
+    .quote::before { content:"“"; color:var(--accent); }
+    .quote::after { content:"”"; color:var(--accent); }
+    .cite { color:var(--muted); font-size:22px; }
+    /* 다이어그램 (diagram-design 규칙: 포컬 1–2개, 그림자 없음, 라벨은 선에서 띄움) */
+    .diagram { min-height:0; display:flex; align-items:center; justify-content:center; }
+    .diagram svg { width:100%; height:auto; display:block; overflow:visible; }
+    .d-node rect { fill:var(--card); stroke:var(--border-strong); stroke-width:1.5; }
+    .d-node.focal rect { fill:color-mix(in srgb,var(--accent) 14%,var(--panel)); stroke:var(--accent); stroke-width:2.2; }
+    .d-node.store rect { fill:var(--inset); stroke:var(--muted); }
+    .d-node.optional rect { stroke-dasharray:6 4; }
+    .d-name { fill:var(--text); font:600 22px var(--font-body); }
+    .d-sub { fill:var(--muted); font:500 15px var(--font-mono); }
+    .d-edge { stroke:var(--muted); stroke-width:1.6; fill:none; }
+    .d-edge.focal { stroke:var(--accent); stroke-width:2.2; }
+    .d-edge.dashed { stroke-dasharray:6 5; }
+    .d-label { fill:var(--muted); font:500 14px var(--font-mono); letter-spacing:.04em; }
+    .d-head { fill:var(--muted); } .d-head.focal { fill:var(--accent); }
+    /* 숨은 로직 상자(12번 사이클 장표): 보이는 명령 뒤에서 자동으로 도는 장치 */
+    .d-hide rect { fill:var(--inset); stroke:var(--border-strong); stroke-width:1.2; stroke-dasharray:4 4; }
+    .d-hk { font:700 13px var(--font-body); }
+    .d-hk.hook { fill:var(--warn); } .d-hk.guard { fill:var(--danger); } .d-hk.rubric { fill:var(--ok); } .d-hk.rule { fill:var(--info); }
+    .d-ht { fill:var(--text-2); font:500 14px var(--font-body); }
+    .d-cond { fill:var(--muted); font:600 12px var(--font-mono); }
+    .legend { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; max-width:560px; }
+    .code { margin:0; padding:22px 26px; background:var(--inset); border:1px solid var(--border); border-radius:var(--radius-md); font:500 19px/1.55 var(--font-mono); color:var(--text-2); white-space:pre-wrap; overflow:hidden; }
+    /* 컨트롤 */
+    .controls { display:flex; width:max-content; max-width:calc(100vw - 20px); gap:10px; align-items:center; background:var(--controls-bg); color:var(--controls-ink); border:1px solid var(--border); border-radius:999px; padding:7px 10px; backdrop-filter:blur(15px); box-shadow:0 10px 25px rgba(0,0,0,.25); }
+    .controls button { flex:none; white-space:nowrap; border:0; background:color-mix(in srgb,var(--accent) 17%,transparent); color:var(--controls-ink); font:750 15px var(--font-body); padding:10px 17px; border-radius:999px; cursor:pointer; }
+    .controls button:hover,.controls button:focus-visible { background:color-mix(in srgb,var(--accent) 38%,transparent); }
+    .controls span { flex:none; min-width:65px; text-align:center; font:700 15px var(--font-mono); }
+
+    /* === 4. LAYOUT VARIANTS (data-layout) === */
+    /* bleed: 프레임 패널 없이 슬라이드 전면 사용 */
+    [data-layout="bleed"] .slide { padding:84px 110px 60px; }
+    [data-layout="bleed"] .frame { border:0; border-radius:0; background:none; box-shadow:none; backdrop-filter:none; padding:0; }
+    /* split: 제목 레일(좌) + 본문(우) */
+    [data-layout="split"] .frame { display:grid; grid-template-columns:480px minmax(0,1fr); grid-template-rows:minmax(0,1fr) auto; column-gap:52px; }
+    [data-layout="split"] .head { grid-column:1; grid-row:1; flex-direction:column; align-items:flex-start; justify-content:flex-start; gap:22px; margin:0; padding:6px 40px 0 0; border-bottom:0; border-right:1px solid var(--border); }
+    [data-layout="split"] .head h2 { font-size:46px; }
+    [data-layout="split"] .body { grid-column:2; grid-row:1; }
+    [data-layout="split"] .footer { grid-column:1 / -1; grid-row:2; }
+    [data-layout="split"] .slide.bare .frame { display:flex; }
+    [data-layout="split"] .links, [data-layout="split"] .grid4, [data-layout="split"] .stats { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    [data-layout="split"] .timeline { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    [data-layout="split"] .timeline .card { min-height:0; }
+    /* editorial: 비대칭·큰 타이포·카드 대신 헤어라인 */
+    [data-layout="editorial"] .slide { padding:80px 120px 56px; }
+    [data-layout="editorial"] .frame { border:0; border-radius:0; background:none; box-shadow:none; backdrop-filter:none; padding:0; }
+    [data-layout="editorial"] .head { flex-direction:column; align-items:flex-start; gap:18px; border-bottom:2px solid var(--text); }
+    [data-layout="editorial"] .head h2 { font-size:64px; line-height:1.06; max-width:82%; }
+    [data-layout="editorial"] .eyebrow { font-family:var(--font-mono); font-weight:600; font-size:18px; }
+    [data-layout="editorial"] .card, [data-layout="editorial"] .flow .step { background:none; border:0; border-top:1px solid var(--border-strong); border-radius:0; padding:20px 4px 0; }
+    [data-layout="editorial"] .slide.bare h1 { font-size:112px; line-height:1.02; }
+    [data-layout="editorial"] .slide.bare .body.center { justify-content:flex-end; padding-bottom:36px; }
+
+    /* === 5. DENSITY · MOTION === */
+    [data-density="talk"] h1 { font-size:84px; }
+    [data-density="talk"] h2 { font-size:56px; }
+    [data-density="talk"] .sub { font-size:26px; }
+    [data-density="talk"] .card p, [data-density="talk"] .card li { font-size:26px; }
+    [data-density="talk"] .step p, [data-density="talk"] td { font-size:22px; }
+    [data-density="talk"] .intro { font-size:36px; }
+    [data-motion="reveal"] .slide.active .body > * { animation:hs-rise .55s cubic-bezier(.2,.7,.2,1) both; }
+    [data-motion="reveal"] .slide.active .body > *:nth-child(2) { animation-delay:.08s; }
+    [data-motion="reveal"] .slide.active .body > *:nth-child(3) { animation-delay:.16s; }
+    [data-motion="reveal"] .slide.active .body > *:nth-child(4) { animation-delay:.24s; }
+    [data-motion="reveal"] .slide.active .body > *:nth-child(n+5) { animation-delay:.32s; }
+    @keyframes hs-rise { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
+
+    /* === 6. PRINT · A11Y === */
+    @media print {
+      html, body { width:1920px; height:auto; overflow:visible; background:#fff; }
+      * { -webkit-print-color-adjust:exact; print-color-adjust:exact; animation:none !important; }
+      .deck-viewport { position:static; overflow:visible; background:#fff; }
+      .deck-stage { position:static; width:auto; height:auto; transform:none !important; }
+      .slide { position:relative; display:block !important; visibility:visible !important; opacity:1 !important; width:1920px; height:1080px; break-after:page; page-break-after:always; }
+      .slide:last-child { break-after:auto; page-break-after:auto; }
+      .deck-controls, .progress, .toast, .lint { display:none !important; }
+      @page { size:1920px 1080px; margin:0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration:.01ms !important; transition-duration:.2s !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" id="progress" aria-hidden="true"></div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <button class="lint" id="lint" type="button" title="넘친 슬라이드로 이동"></button>
+  <div class="deck-viewport"><main class="deck-stage" id="stage" aria-label="슬라이드"></main></div>
+  <nav class="deck-controls controls" aria-label="슬라이드 이동"><button id="prev" type="button" aria-label="이전 슬라이드" title="이전 (←)">←</button><span id="pager">1 / 1</span><button id="next" type="button" aria-label="다음 슬라이드" title="다음 (→)">→</button></nav>
+  <!-- 다이어그램 공용 화살표. 모든 inline SVG가 url(#hs-arrow)로 참조한다 -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <marker id="hs-arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path class="d-head" d="M0,0 L10,4 L0,8 z"/></marker>
+    <marker id="hs-arrow-focal" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path class="d-head focal" d="M0,0 L10,4 L0,8 z"/></marker>
+  </defs></svg>
+  <script>
+    /* === 7. HELPERS (수정 금지) ===
+       *Html 인자와 cover/closing의 title·intro는 작성자 HTML. 외부 데이터는 반드시 esc(). */
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const anchor = (url, label) => `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(label)}</a>`;
+    const tag = (text, tone = '', cls = '') => `<span class="tag ${tone} ${cls}">${esc(text)}</span>`;
+    const head = (eyebrow, title, sub = '', badgeHtml = '') => `<header class="head"><div><div class="eyebrow">${esc(eyebrow)}</div><h2>${esc(title)}</h2>${sub ? `<p class="sub">${esc(sub)}</p>` : ''}</div>${badgeHtml}</header>`;
+    const body = (...parts) => `<div class="body">${parts.join('')}</div>`;
+    const slide = (inner, { cls = '', notes = '' } = {}) => ({ inner, cls, notes });
+    const note = html => `<div class="note">${html}</div>`;
+    const cards = (items, cols = 3) => `<div class="grid${cols}">${items.map(c => `<div class="card"><h3>${esc(c.title)}</h3>${c.html ?? `<p>${esc(c.body)}</p>`}</div>`).join('')}</div>`;
+    const flow = steps => `<div class="flow">${steps.map((s, i) => `${i ? '<div class="arrow" aria-hidden="true">→</div>' : ''}<div class="step ${s.focal ? 'focal' : ''}"><div class="stepnum">${esc(s.num)}</div><h3>${esc(s.title)}</h3><p>${esc(s.body)}</p></div>`).join('')}</div>`;
+    const table = (cols, rows) => `<div class="tablebox"><table><thead><tr>${cols.map(c => `<th style="width:${c.w}">${esc(c.label)}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(cell => `<td>${cell}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    const stats = items => `<div class="stats">${items.map(s => `<div class="card stat"><div class="num">${esc(s.num)}</div><div class="label">${esc(s.label)}</div><div class="desc">${esc(s.desc ?? '')}</div></div>`).join('')}</div>`;
+    const timeline = items => `<div class="timeline">${items.map(t => `<div class="card"><div class="date">${esc(t.date)}</div><h3>${esc(t.title)}</h3><p>${esc(t.body)}</p>${t.linksHtml ? `<p style="margin-top:10px">${t.linksHtml}</p>` : ''}</div>`).join('')}</div>`;
+    const agenda = items => `<ol class="agenda">${items.map((a, i) => `<li><span class="num">${String(i + 1).padStart(2, '0')}</span><div><strong>${esc(a.title)}</strong><small>${esc(a.desc ?? '')}</small></div></li>`).join('')}</ol>`;
+    const links = (title, items, noteHtml = '') => `<div class="evidence"><div class="evidence-title">${esc(title)}</div><div class="links">${items.map(l => `<a href="${esc(l.url)}" target="_blank" rel="noopener noreferrer"><b>${esc(l.kind)}</b><span>${esc(l.label)}</span></a>`).join('')}</div>${noteHtml}</div>`;
+    const cover = ({ eyebrow, title, intro = '', pills = [], meta = '' }, o = {}) => slide(`<div class="body center"><div class="eyebrow">${esc(eyebrow)}</div><h1>${title}</h1>${intro ? `<p class="intro">${intro}</p>` : ''}${pills.length ? `<div class="pillrow">${pills.map(p => `<span class="pill">${esc(p)}</span>`).join('')}</div>` : ''}${meta ? `<p class="muted" style="font-size:19px">${meta}</p>` : ''}</div>`, { ...o, cls: `bare cover ${o.cls ?? ''}` });
+    const section = ({ num, title, sub = '' }, o = {}) => slide(`<div class="body center" style="gap:26px"><div class="section-num">${esc(num)}</div><h1>${esc(title)}</h1>${sub ? `<p class="intro">${esc(sub)}</p>` : ''}</div>`, { ...o, cls: `bare section ${o.cls ?? ''}` });
+    const statement = ({ eyebrow = '', quote, cite = '' }, o = {}) => slide(`<div class="body center" style="gap:30px">${eyebrow ? `<div class="eyebrow">${esc(eyebrow)}</div>` : ''}<blockquote class="quote">${esc(quote)}</blockquote>${cite ? `<p class="cite">— ${esc(cite)}</p>` : ''}</div>`, { ...o, cls: `bare statement ${o.cls ?? ''}` });
+    const closing = ({ eyebrow, title, intro = '', items = [], meta = '' }, o = {}) => slide(`<div class="body center" style="gap:30px"><div class="eyebrow">${esc(eyebrow)}</div><h1>${title}</h1>${intro ? `<p class="intro">${intro}</p>` : ''}${items.length ? cards(items, items.length === 4 ? 4 : 3) : ''}${meta ? `<p class="muted" style="font-size:19px">${meta}</p>` : ''}</div>`, { ...o, cls: `bare closing ${o.cls ?? ''}` });
+
+    /* === CONTENT START ===
+       새 덱은 이 구간(DECK + slides)만 교체한다. */
+    const DECK = { brand: 'TEAM HARNESS · 한눈에 보기 · v0.54.0' };
+    const slides = [];
+
+    slides.push(cover({
+      eyebrow: 'HARNESS-AIJIENT-TEAM · 팀 온보딩',
+      title: '팀 하네스,<br><span class="accent">왜 · 무엇 · 어떻게.</span>',
+      intro: 'Claude · Codex · Cursor가 같은 규칙을 읽고, 팀원 모두가 같은 개발 사이클을 밟게 하는 <b>설정·상태 하네스</b>입니다. 강제하는 것은 하나뿐이고, 나머지는 쓰든 말든 자유입니다.',
+      pills: ['AGENTS.md = SSOT', 'Claude drive · Codex review', 'S0–S8 사이클', 'PR에 task 문서 3종'],
+      meta: '근거: <span class="mono">README.md</span> · <span class="mono">docs/decisions.md</span> D2·D4·D5·D6·D11 · <span class="mono">docs/harness-cycle.md</span>'
+    }, { notes: '표지. 이 덱은 네 질문에 답한다: 왜 만들었나, 무슨 역할인가, SSOT 문서는 코드 리뷰가 필요한가, 실제로 어떻게 작업하나.' }));
+
+    slides.push(slide(`${head('AGENDA', '네 가지 질문에 답합니다')}${body(agenda([
+      { title: '왜 만들었나', desc: '에이전트마다 다른 설정 파일 · 사라지는 작업 맥락' },
+      { title: '무슨 역할을 하나', desc: 'AGENTS.md 단일 소스 · 역할 분담 · 강제/제공/비소유' },
+      { title: 'SSOT 문서는 코드 리뷰가 필요한가', desc: '문서 3종(+선택 1)과 각각을 검사하는 장치' },
+      { title: '실제로 어떻게 작업하나', desc: 'S1 Spec → S8 위키 · 명령 순서 · 지킬 것' }
+    ]))}`, { notes: '목차. 질문 순서대로 진행한다.' }));
+
+    slides.push(slide(`${head('01 · WHY', '에이전트마다 읽는 파일이 다르다', '각자 관리하면 동기화 지옥 — 한 곳을 고치면 모두가 같은 내용을 읽게 만든다.')}${body(table(
+      [{ label: '에이전트', w: '18%' }, { label: '읽는 파일', w: '34%' }, { label: '하네스가 맞추는 방법', w: '48%' }],
+      [
+        ['<span class="row-id">Claude Code</span>', '<span class="mono">CLAUDE.md</span> · <span class="mono">.claude/</span>', '<span class="mono">CLAUDE.md</span>는 <span class="mono">@AGENTS.md</span>를 import하는 얇은 파일 + Claude 전용 레버'],
+        ['<span class="row-id">Codex</span>', '<span class="mono">AGENTS.md</span> · <span class="mono">.codex/hooks.json</span>', '<span class="mono">AGENTS.md</span>를 네이티브로 읽음 · SessionStart 훅 1종'],
+        ['<span class="row-id">Cursor</span>', '<span class="mono">AGENTS.md</span> · <span class="mono">.cursor/rules/*.mdc</span>', '<span class="mono">.claude/rules</span>를 <span class="mono">.mdc</span>로 자동 미러 (RN 계열 프리셋일 때)']
+      ]
+    ), cards([
+      { title: '니즈 ① 컨텍스트 스냅샷', body: '팀원이 무엇을, 어떻게, 어디를 바꿨는지가 task 문서라는 산출물로 남는다.' },
+      { title: '니즈 ② 비슷한 결과물', body: '모두 같은 지시 파일을 읽으니 에이전트 결과물의 스타일이 비슷해진다.' },
+      { title: '니즈 ③ 작성자 ≠ 리뷰어', body: '독립 리뷰어의 가치는 작성자와의 분리에서 나온다 — Claude가 쓰고 Codex가 본다 (D2).' }
+    ]))}`, { notes: '출발점은 설정 drift. 원래 니즈 두 가지(컨텍스트 스냅샷, 같은 스타일)는 harness-cycle.md §1, 작성자·리뷰어 분리는 D2.' }));
+
+    slides.push(statement({
+      eyebrow: '정체성 · D11 범위 헌장',
+      quote: '강제하는 것은 하나뿐이다. PR을 올릴 때 그 task의 spec · plan · artifact를 담는다.',
+      cite: '사이클은 제공하고, 개발 방식은 개발자마다 자유 — docs/harness-cycle.md §1'
+    }, { notes: '가장 중요한 한 문장. 나머지(리뷰, 커밋 게이트, 루프)는 전부 제공이지 강제가 아니다.' }));
+
+    slides.push(section({ num: '02', title: '무슨 역할을 하나', sub: '규칙은 한 곳에, 역할은 분리해서, 강제는 최소로.' }, { notes: '섹션 구분.' }));
+
+    slides.push(slide(`${head('02 · ROLES', '하나의 규칙 파일, 세 에이전트', 'AGENTS.md(오픈 표준)가 공유 코어 — 복제하지 않고 import·네이티브 읽기·미러로 퍼진다.', tag('SSOT', 'info'))}${body(`<div class="card diagram" style="flex:1"><svg viewBox="0 0 1600 480" role="img" aria-label="AGENTS.md에서 Claude Code, Codex, Cursor로 규칙이 전달되는 구조">
+      <g class="d-node focal"><rect x="40" y="185" width="330" height="110" rx="8"/><text class="d-name" x="205" y="233" text-anchor="middle">AGENTS.md</text><text class="d-sub" x="205" y="262" text-anchor="middle">공유 코어 · SSOT</text></g>
+      <g class="d-node"><rect x="560" y="25" width="330" height="110" rx="8"/><text class="d-name" x="725" y="73" text-anchor="middle">CLAUDE.md</text><text class="d-sub" x="725" y="102" text-anchor="middle">import + Claude 전용 절</text></g>
+      <g class="d-node optional"><rect x="560" y="345" width="330" height="110" rx="8"/><text class="d-name" x="725" y="393" text-anchor="middle">.claude/rules</text><text class="d-sub" x="725" y="422" text-anchor="middle">경로 스코프 규칙 · 선택</text></g>
+      <g class="d-node"><rect x="1220" y="25" width="340" height="110" rx="8"/><text class="d-name" x="1390" y="73" text-anchor="middle">Claude Code</text><text class="d-sub" x="1390" y="102" text-anchor="middle">리드 · drive (작성)</text></g>
+      <g class="d-node"><rect x="1220" y="185" width="340" height="110" rx="8"/><text class="d-name" x="1390" y="233" text-anchor="middle">Codex</text><text class="d-sub" x="1390" y="262" text-anchor="middle">리뷰어 · read-only</text></g>
+      <g class="d-node"><rect x="1220" y="345" width="340" height="110" rx="8"/><text class="d-name" x="1390" y="393" text-anchor="middle">Cursor</text><text class="d-sub" x="1390" y="422" text-anchor="middle">보조 IDE · 규범 적용</text></g>
+      <path class="d-edge" d="M205 185 V80 H552" marker-end="url(#hs-arrow)"/>
+      <text class="d-label" x="380" y="64" text-anchor="middle">@AGENTS.md import</text>
+      <path class="d-edge" d="M890 80 H1212" marker-end="url(#hs-arrow)"/>
+      <text class="d-label" x="1050" y="64" text-anchor="middle">로드</text>
+      <path class="d-edge focal" d="M370 240 H1212" marker-end="url(#hs-arrow-focal)"/>
+      <text class="d-label" x="790" y="224" text-anchor="middle">네이티브로 읽음</text>
+      <path class="d-edge focal" d="M1090 240 V375 H1212" marker-end="url(#hs-arrow-focal)"/>
+      <path class="d-edge dashed" d="M890 425 H1212" marker-end="url(#hs-arrow)"/>
+      <text class="d-label" x="1010" y="452" text-anchor="middle">.mdc 미러</text>
+    </svg></div>`, note('<b>쓰기는 한 명만</b> — 같은 워킹트리·브랜치에서는 어떤 세션·에이전트도 동시에 쓰지 않는다(D4). 병렬이 필요하면 각자 브랜치·git worktree에서 작업하고 PR로 합친다(D5).'))}`, { notes: 'Codex를 리뷰어로 두는 이유는 기술 제약이 아니라 D2(작성자·리뷰어 분리). Codex 훅은 SessionStart 하나로 고정(D9). .claude/rules는 RN 계열 프리셋일 때만 설치되고 Codex는 보지 않는다 — 리뷰 기준은 AGENTS.md에 둔다.' }));
+
+    slides.push(slide(`${head('02 · SCOPE', '강제 · 제공 · 소유하지 않음', '하네스가 막는 것은 하나, 건네는 것은 많고, 손대지 않는 것도 분명하다.', tag('D11', 'info'))}${body(cards([
+      { title: '강제한다 — 1개', html: '<ul><li>PR에 그 task의 <b>spec · plan · artifact</b>를 담는다</li><li>검사는 <span class="mono">harness-team pr-check</span> 하나 — ship · pre-push 훅 · (원하면) CI가 같은 검사를 부른다</li><li>다이어그램은 권장 — 없으면 막지 않고 안내만</li></ul>' },
+      { title: '제공한다 — 쓰든 말든 자유', html: '<ul><li>검토 지점 R1 원천 검토 · R2 시나리오 대조 · R3 코드 리뷰</li><li>커밋 게이트 (<span class="mono">.harness/gates.json</span>)</li><li>선택형 루프 <span class="mono">/harness-loop</span></li><li>인계 · 팀 가시성 · 안전 가드 · 관측 · 갱신 경로</li></ul>' },
+      { title: '소유하지 않는다', html: '<ul><li>코드 안의 언어별 로직 → 프리셋 데이터로만</li><li>구현 방식 강제</li><li>서비스형 런타임 오케스트레이터 · OS/네트워크 격리</li><li>개인 도구 · 서드파티 오케스트레이터 의존</li></ul>' }
+    ]), note('사람은 루프 <b>안</b>에 선다 — spec과 plan은 개발자가 직접 만든다. 티켓만 넣으면 끝까지 도는 완전 자동 루프는 목표가 아니고, 선택지로만 제공한다.'))}`, { notes: 'D11 범위 헌장 요약. "제공"은 팀이 원하면 조일 수 있다 — 예: spec에 review: required를 선언하면 done 가드가 리뷰 기록을 요구한다.' }));
+
+    slides.push(section({ num: '03', title: 'SSOT 문서는 코드 리뷰가 필요한가', sub: '먼저 바로잡을 것: PR에 필요한 문서는 이제 4종이 아니라 3종입니다.' }, { notes: '섹션 구분. 질문의 전제(4종)를 먼저 정정한다.' }));
+
+    slides.push(slide(`${head('03 · DOCS', 'task 문서 — 무엇을 담고, 무엇이 검사하나', '위치: docs/<user>/<task>/ · 이름은 <task>-spec.md 처럼 접두가 붙는다.', tag('PR 필수 = 3종', 'info'))}${body(table(
+      [{ label: '문서', w: '13%' }, { label: '담는 것', w: '30%' }, { label: '누가 쓰나', w: '15%' }, { label: 'PR', w: '9%' }, { label: '무엇이 검사하나', w: '33%' }],
+      [
+        ['<span class="row-id">spec</span>', '요구사항 · 원천 검토(R1) · Ambiguity 자가진단 · Ontology · Done evidence', '개발자 (<span class="mono">/harness-spec</span> 초안)', tag('필수', 'ok', 'sm'), 'R1 원천 검토 + Ambiguity 게이트(<span class="mono">/harness-interview</span>) · 선택 contrarian'],
+        ['<span class="row-id">plan</span>', '단계 체크리스트 · Ontology 변경 로그', '개발자', tag('필수', 'ok', 'sm'), '개발자 확인 · <span class="mono">done</span>이 미완 <span class="mono">- [ ]</span>을 막음 · 선택 simplifier'],
+        ['<span class="row-id">artifact</span>', '실행 결과 · <span class="mono">## Reviews</span> · Learnings · Failures', '하네스 + 개발자', tag('필수', 'ok', 'sm'), '리뷰 결과가 <b>쌓이는 곳</b> · 머지 후 위키 컴파일의 재료'],
+        ['<span class="row-id">handoff</span>', '세션 메모', '개발자 (원하면)', tag('선택', 'warn', 'sm'), '없음'],
+        ['<span class="row-id">meta.json</span>', '판정 창 · 완료 상태 (SSOT 아님)', '하네스 CLI', '—', '손으로 고치지 않는다']
+      ]
+    ), `<div class="callout warn"><strong>4종 → 3종 (2026-11-06)</strong> · 훅이 추적되는 handoff에 git log 사본을 쓰고 pr-check가 그 커밋을 요구해, 병합된 브랜치 70개에 handoff 전용 커밋 78개가 생겼다. 이제 훅은 추적 파일을 쓰지 않고 handoff는 직접 쓰는 선택 메모다.</div>`)}`, { notes: 'AGENTS.md 작업 프로토콜은 여전히 "네 파일"로 설명하지만 handoff는 선택 메모로 바뀌었다(D11 정정, task handoff-no-sweep). pr-check가 요구하는 것은 spec·plan·artifact.' }));
+
+    slides.push(slide(`${head('03 · REVIEW', '답: 문서는 코드 리뷰 대상이 아니다', '문서는 리뷰의 기준(spec · plan)이자 기록(artifact)이다. 문서를 보는 검토는 단계마다 따로 있다.')}${body(flow([
+      { num: 'S1–S2 · 작성 중', title: 'R1 원천 검토', body: 'PRD · Figma · 정책서 사이의 충돌·누락을 spec에 기록. 미해결이면 interview가 통과를 선언하지 않는다' },
+      { num: 'S1–S2 · 선택', title: 'contrarian · simplifier', body: 'spec · plan의 가정과 군더더기를 read-only로 반박 (scope=task-docs)' },
+      { num: 'S4 · 옵트인', title: 'R2 시나리오 대조', body: 'spec의 Given/When/Then마다 증거 테스트가 Then을 실제로 검증하나' },
+      { num: 'S6 · 제공', title: 'R3 코드 리뷰', body: '대상은 git diff — 코드. 결과는 artifact ## Reviews에 기록', focal: true },
+      { num: 'S7 · 강제', title: 'pr-check', body: '3종이 있고, 비어 있지 않고, 템플릿 그대로가 아닌지만 — 내용 품질은 안 본다' }
+    ]), cards([
+      { title: '그래서 실무에서는', html: '<p>문서를 코드처럼 줄 단위로 리뷰할 필요는 없습니다. spec · plan은 <b>쓰는 단계</b>에서 검토하고, PR에서는 리뷰어가 "코드가 문서대로인가"를 보는 기준으로 씁니다. PR 직전 정합이 걱정되면 <span class="mono">/harness-ship</span>의 선택 단계 shipcheck가 문서 ↔ diff를 대조합니다.</p>' },
+      { title: '주의 — R3도 기본은 "제공"', html: '<p>R3 리뷰를 하지 않아도 하네스는 막지 않습니다. 팀이 spec <span class="mono">## Done evidence</span>에 <span class="mono">"review": "required"</span>를 선언했을 때만 <span class="mono">done</span> 가드가 리뷰 기록을 요구합니다. 반대로 실행한 리뷰가 artifact에 남지 않았다면 "안 한 것"으로 봅니다.</p>' }
+    ], 2))}`, { notes: 'R3 기본 프롬프트는 git diff만 보라고 지시한다(문서를 먼저 읽으라는 지시는 R2 scenario·shipcheck·contrarian·simplifier 프레이밍에 있다). pr-check는 결정론적 형식 검사라 내용 품질은 사람·검증자 몫(D6).' }));
+
+    slides.push(section({ num: '04', title: '실제로 어떻게 작업하나', sub: '사람은 spec과 plan에 직접 서고, 구현부터는 자유롭게.' }, { notes: '섹션 구분.' }));
+
+    /* 12번 장표의 숨은 로직 상자. rows = [종류, 문장, 선언 시에만 작동?] — 종류가 빈 문자열이면 윗줄의 이어짐 */
+    const HIDE_KIND = { 훅: 'hook', 가드: 'guard', 루브릭: 'rubric', 규약: 'rule' };
+    const hideBox = (x, y, rows) => `<g class="d-hide"><rect x="${x}" y="${y}" width="360" height="148" rx="6"/>${rows.map(([k, t, cond], i) => `<text y="${y + 24 + i * 22}">${k ? `<tspan class="d-hk ${HIDE_KIND[k]}" x="${x + 12}">${esc(k)}</tspan>` : ''}<tspan class="d-ht" x="${x + 62}">${esc(t)}</tspan>${cond ? '<tspan class="d-cond" dx="8">선언 시</tspan>' : ''}</text>`).join('')}</g>`;
+    const legend = `<div class="legend">${tag('훅 · 자동 실행', 'warn', 'sm')}${tag('가드 · CLI 판정', 'danger', 'sm')}${tag('루브릭 · 검증자 채점', 'ok', 'sm')}${tag('규약 · 통과 선언 거부', 'info', 'sm')}${tag('선언 시 · 팀이 설정했을 때만', '', 'sm')}</div>`;
+    slides.push(slide(`${head('04 · CYCLE', '한 task의 사이클 — 명령 뒤의 숨은 로직', '실선 = 직접 부르는 단계 · 점선 = 그 뒤에서 자동으로 도는 로직. 강제는 pr-check 하나 — 다른 차단은 안전장치이거나 선언했을 때만 작동한다.', legend)}${body(`<div class="card diagram" style="flex:1"><svg viewBox="0 0 1600 580" style="height:100%" role="img" aria-label="S1 Spec부터 S8 지식화까지의 개발 사이클과 단계마다 자동으로 도는 훅·가드·루브릭·규약">
+      <g class="d-node"><rect x="20" y="24" width="360" height="72" rx="8"/><text class="d-name" x="200" y="56" text-anchor="middle">S1 Spec</text><text class="d-sub" x="200" y="82" text-anchor="middle">/harness-spec → /harness-interview</text></g>
+      <g class="d-node"><rect x="420" y="24" width="360" height="72" rx="8"/><text class="d-name" x="600" y="56" text-anchor="middle">S2 Plan</text><text class="d-sub" x="600" y="82" text-anchor="middle">개발자 · plan.md 확정</text></g>
+      <g class="d-node"><rect x="820" y="24" width="360" height="72" rx="8"/><text class="d-name" x="1000" y="56" text-anchor="middle">S3 구현</text><text class="d-sub" x="1000" y="82" text-anchor="middle">자유 · 또는 /harness-loop</text></g>
+      <g class="d-node"><rect x="1220" y="24" width="360" height="72" rx="8"/><text class="d-name" x="1400" y="56" text-anchor="middle">S4 구현 검증</text><text class="d-sub" x="1400" y="82" text-anchor="middle">R2 시나리오 ↔ 증거 · 옵트인</text></g>
+      <g class="d-node"><rect x="1220" y="300" width="360" height="72" rx="8"/><text class="d-name" x="1400" y="332" text-anchor="middle">S5 커밋</text><text class="d-sub" x="1400" y="358" text-anchor="middle">커밋 게이트 · gates.json</text></g>
+      <g class="d-node"><rect x="820" y="300" width="360" height="72" rx="8"/><text class="d-name" x="1000" y="332" text-anchor="middle">S6 코드 리뷰</text><text class="d-sub" x="1000" y="358" text-anchor="middle">R3 · /harness-review</text></g>
+      <g class="d-node focal"><rect x="420" y="300" width="360" height="72" rx="8"/><text class="d-name" x="600" y="332" text-anchor="middle">S7 PR</text><text class="d-sub" x="600" y="358" text-anchor="middle">/harness-ship · pr-check</text></g>
+      <g class="d-node optional"><rect x="20" y="300" width="360" height="72" rx="8"/><text class="d-name" x="200" y="332" text-anchor="middle">done · S8 지식화</text><text class="d-sub" x="200" y="358" text-anchor="middle">머지 뒤 · /harness-wiki 선택</text></g>
+      <path class="d-edge focal" d="M380 60 H412" marker-end="url(#hs-arrow-focal)"/>
+      <text class="d-label" x="400" y="16" text-anchor="middle">R1 통과</text>
+      <path class="d-edge" d="M780 60 H812" marker-end="url(#hs-arrow)"/>
+      <text class="d-label" x="800" y="16" text-anchor="middle">확정</text>
+      <path class="d-edge" d="M1180 60 H1212" marker-end="url(#hs-arrow)"/>
+      <path class="d-edge" d="M1580 60 H1594 V336 H1588" marker-end="url(#hs-arrow)"/>
+      <path class="d-edge" d="M1220 336 H1188" marker-end="url(#hs-arrow)"/>
+      <path class="d-edge" d="M820 336 H788" marker-end="url(#hs-arrow)"/>
+      <path class="d-edge dashed" d="M420 336 H388" marker-end="url(#hs-arrow)"/>
+      ${hideBox(20, 104, [
+        ['규약', 'R1 원천 검토가 채점보다 먼저'],
+        ['', '미해결(unresolved·open) → 통과 거부'],
+        ['루브릭', 'Ambiguity 5차원 pass/fail/na'],
+        ['', '인용 근거 없으면 na · ≤ 0.2면 통과'],
+        ['루브릭', 'contrarian A1–A4 (선택)'],
+        ['', 'A1 fail → 구현 진입 금지']
+      ])}
+      ${hideBox(420, 104, [
+        ['루브릭', 'simplifier 4행 (선택)'],
+        ['', 'YAGNI·1회용 추상화·중복·죽은 옵션'],
+        ['규약', '다이어그램 옵트인 · 생성 직후 1회만'],
+        ['가드', '미완 - [ ] 이 남으면 done이 막음'],
+        ['규약', '개념이 바뀌면 Ontology 로그 1줄']
+      ])}
+      ${hideBox(820, 104, [
+        ['훅', 'protect-files · 보호 파일 Edit 차단'],
+        ['훅', 'boundary-checkpoint · plan [x] 직전', true],
+        ['', '경계 계약 JSON Schema 대조 → 차단'],
+        ['훅', 'auto-format · gates.json format', true],
+        ['규약', 'loop: Dev → QA(gate·boundary·'],
+        ['', 'scenario·R3) → 커밋 · 멈춤 4조건']
+      ])}
+      ${hideBox(1220, 104, [
+        ['가드', 'scenario check — 기계 2행', true],
+        ['', '증거가 연결됐나 · 명령이 exit 0인가'],
+        ['루브릭', '--framing scenario — 루브릭 2행'],
+        ['', '증거가 Then을 검증? · spec 밖 동작?'],
+        ['루브릭', 'testcritic unit · component · integration'],
+        ['', '/harness-unittest · comptest · inttest']
+      ])}
+      ${hideBox(1220, 380, [
+        ['훅', 'pre-commit-check → gate commit', true],
+        ['', 'Claude Bash의 git commit에서만 돈다'],
+        ['', '(git pre-commit 훅 아님 · 터미널 커밋 X)'],
+        ['훅', 'post-commit(git) → user handoff만 갱신'],
+        ['가드', 'doctor · gates 지문 drift 경고']
+      ])}
+      ${hideBox(820, 380, [
+        ['루브릭', 'R3 프롬프트: git diff만 · P1/P2/P3'],
+        ['루브릭', 'adversarial-review (선택)'],
+        ['가드', '마커 자동 기록 → artifact ## Reviews'],
+        ['', '+ meta.reviews · 안 남으면 "안 한 것"'],
+        ['가드', 'review: required면 done이 요구', true]
+      ])}
+      ${hideBox(420, 380, [
+        ['가드', 'pr-check — 하네스의 유일한 강제'],
+        ['', '3종 존재 · 비어 있지 않음 · 템플릿 아님'],
+        ['훅', 'pre-push(git)가 같은 pr-check 실행'],
+        ['루브릭', 'shipcheck 5행 (ship 선택 단계)'],
+        ['', '요구사항↔diff · [x]↔커밋 · 스코프 밖'],
+        ['규약', '다이어그램이 없으면 막지 않고 안내']
+      ])}
+      ${hideBox(20, 380, [
+        ['가드', 'done: 미완 체크박스 · 미커밋 변경 차단'],
+        ['가드', 'Done evidence review · tests', true],
+        ['가드', 'main에서 이미 done → 첫 줄 nudge'],
+        ['가드', 'wiki sources — compiled 감지 · 추가만'],
+        ['규약', 'retro → artifact · 3회 반복 → promote']
+      ])}
+      <path class="d-edge dashed" d="M820 268 H1580"/>
+      <text class="d-label" x="1200" y="288" text-anchor="middle">S3–S6 · /harness-loop가 맡을 수 있는 구간 (Dev → QA → 커밋)</text>
+      <text class="d-label" x="400" y="288" text-anchor="middle">S1–S2 · 사람이 직접 (in the loop)</text>
+      <g class="d-hide"><rect x="20" y="538" width="1560" height="42" rx="6"/>
+        <text y="564"><tspan class="d-hk rule" x="34">항상</tspan><tspan class="d-hk hook" dx="14">훅</tspan><tspan class="d-ht" dx="6">SessionStart session-context — 활성 task·첫 미완 단계 주입, 없으면 재개/새 task/없이 진행 nudge (Codex도)</tspan><tspan class="d-hk hook" dx="16">훅</tspan><tspan class="d-ht" dx="6">block-dangerous-git·bash</tspan><tspan class="d-hk hook" dx="16">훅</tspan><tspan class="d-ht" dx="6">observe-tools → 트립와이어</tspan><tspan class="d-hk guard" dx="16">권한</tspan><tspan class="d-ht" dx="6">.env·force push deny · push·PR ask</tspan></text>
+      </g>
+    </svg></div>`)}`, { notes: '실선 상자는 사람이 부르는 단계, 점선 상자는 그 뒤에서 자동으로 도는 장치다. 훅 = Claude Code PreToolUse/PostToolUse/SessionStart 또는 git post-commit·pre-push(templates/.claude/settings.json, src/git-hooks.mjs). Codex는 SessionStart 하나만 받는다(D9). 가드 = 결정론적 CLI 판정(pr-check·done·boundary·scenario·doctor). 루브릭 = read-only 검증자가 id·심각도·pass/fail/na로 채점(src/commands/review-prompts.mjs: scenario·contrarian·simplifier·shipcheck·adversarial·testcritic 3종). 규약 = 기계 차단 없이 에이전트가 통과를 선언하지 않는 방식(interview R1·Ambiguity, D11). "선언 시"는 gates.json·Boundary contracts·scenarios·Done evidence를 팀이 선언했을 때만 작동한다는 뜻 — 강제는 여전히 pr-check 하나. simplifier 4행·shipcheck 5행의 원래 id(R1–R4·S1–S5)는 단계 기호와 겹쳐 쓰지 않았다. 종결 순서는 PR → 머지 → 기본 브랜치에서 done.' }));
+
+    const COMMANDS = [
+      '# 셋업 — 사람마다: 플러그인 설치 + CLI 링크 · 프로젝트마다 1회: /harness-init',
+      '/harness-task user-auth       # task 생성·활성화 → docs/<user>/user-auth/',
+      '/harness-spec                 # spec 초안 (Confluence · Figma · 인터뷰)',
+      '/harness-interview            # R1 원천 검토 + Ambiguity 게이트',
+      '#  plan.md 직접 작성·확정',
+      '/harness-loop                 # 선택: 단계마다 Dev → QA → 커밋 (아니면 직접 구현)',
+      'git commit                    # Claude가 커밋할 때만 커밋 게이트(gates.json) · 터미널 커밋엔 안 돎',
+      '/harness-review               # R3 read-only 리뷰 → artifact ## Reviews',
+      '/harness-ship                 # 문서를 코드 현실에 맞추고 pr-check → 준비 보고',
+      'git push → PR → 머지           # pre-push 훅이 pr-check',
+      '/harness-task done            # 머지 후, 기본 브랜치에서 종결',
+      '/harness-wiki <user>/<task>   # 선택: 결정·학습을 wiki/로 컴파일'
+    ].join('\n');
+    slides.push(slide(`${head('04 · COMMANDS', '명령 순서 — task 하나를 열고 닫기까지', 'PR 생성·push는 하네스가 대신하지 않는다 — ship은 준비 완료 보고에서 멈춘다.')}${body(`<pre class="code">${esc(COMMANDS)}</pre>`, cards([
+      { title: '사람이 정하는 것', body: 'spec과 plan의 내용, 구현 방식(직접 · 루프), 리뷰를 몇 번 할지, PR 승인.' },
+      { title: '하네스가 해 주는 것', body: '세션 시작 시 활성 task 주입, 커밋 게이트 실행, 리뷰 기록·마커, PR 문서 검사.' }
+    ], 2))}`, { notes: 'task를 안 열고 프롬프트부터 시작해도 SessionStart 훅이 재개/새 task/task 없이 진행을 물어본다(nudge, 차단 아님). 셋업 3채널은 독립이라 init만으로 슬래시 커맨드가 생기지 않는다. 커밋 게이트는 git pre-commit 훅이 아니라 Claude Code PreToolUse 훅(pre-commit-check)이라 Claude의 Bash가 부르는 git commit에만 걸린다 — 설치되는 git 훅은 post-commit·pre-push 둘뿐(src/git-hooks.mjs).' }));
+
+    slides.push(slide(`${head('04 · RULES', '지킬 것 네 가지', '하네스가 결정론적으로 막지는 않지만, 어기면 충돌·재작업으로 돌아온다.')}${body(cards([
+      { title: '같은 워킹트리는 한 명만 쓴다', html: '<p>병렬이 필요하면 각자 브랜치·git worktree에서 작업하고 PR로 합친다(D4·D5). 조사용 서브에이전트는 예외 — 읽고 요약만 돌려준다.</p>' },
+      { title: '하지 않은 단계를 미리 [x] 하지 않는다', html: '<p>plan의 체크박스는 산문이 아니라 <span class="mono">done</span> 가드의 입력이다. 개념이 바뀌면 Ontology 변경 로그에 한 줄 남긴다.</p>' },
+      { title: '생성물·기계 상태는 손대지 않는다', html: '<p><span class="mono">task_summary.md</span> · <span class="mono">&lt;user&gt;-task.md</span>는 기본 브랜치에서 <span class="mono">summary --write</span>로만, <span class="mono">meta.json</span>은 CLI 소유.</p>' },
+      { title: '리뷰는 기록해야 "한 것"', html: '<p>리뷰 결과는 artifact <span class="mono">## Reviews</span>에 날짜와 함께 남긴다. 검증자의 발견은 주장이다 — 작성 세션이 재현·판별한 뒤 반영한다(D6).</p>' }
+    ], 2))}`, { notes: 'AGENTS.md 작업 프로토콜과 D4·D5·D6에서 뽑은 실무 규칙. 막히는 지점이 아니라 실수가 잦은 지점이다.' }));
+
+    slides.push(closing({
+      eyebrow: '정리',
+      title: '기억할 것은<br><span class="accent">세 문장</span>입니다.',
+      items: [
+        { title: '① 강제는 하나', body: 'PR에 그 task의 spec · plan · artifact를 담는다. 나머지는 제공이다.' },
+        { title: '② 문서는 리뷰의 기준', body: '코드 리뷰 대상이 아니라, 코드를 판단하는 기준과 리뷰의 기록이다.' },
+        { title: '③ 사람은 루프 안에', body: 'spec과 plan은 직접 쓰고, 구현은 직접 하든 루프에 맡기든 자유다.' }
+      ],
+      meta: '더 보기: <span class="mono">docs/harness-task-guide.html</span> · <span class="mono">docs/harness-cycle.md</span> · <span class="mono">docs/decisions.md</span>'
+    }, { notes: '마무리. 처음 쓰는 팀원은 harness-task-guide.html로 첫 task를 열고 닫아 보면 된다.' }));
+    /* === CONTENT END === */
+
+    /* === 8. RENDER · NAVIGATION (수정 금지) ===
+       IIFE로 감싸 CONTENT 구간의 식별자(root, stage, total 등)와 충돌하지 않게 한다. */
+    (() => {
+    const VARIANTS = { theme: ['midnight', 'sky', 'paper', 'kami', 'terminal', 'corporate', 'swiss'], layout: ['framed', 'bleed', 'split', 'editorial'], density: ['reading', 'talk'], motion: ['none', 'reveal'] };
+    const root = document.documentElement;
+    const baked = { ...root.dataset };
+    const params = new URLSearchParams(location.search);
+    for (const k of Object.keys(VARIANTS)) { const v = params.get(k); if (VARIANTS[k].includes(v)) root.dataset[k] = v; }
+
+    const stage = document.getElementById('stage');
+    const total = slides.length;
+    const footer = i => `<footer class="footer"><span class="footbrand">${esc(DECK.brand)}</span><span class="slide-count">${String(i + 1).padStart(2, '0')} / ${String(total).padStart(2, '0')}</span></footer>`;
+    stage.innerHTML = slides.map((s, i) => `<section class="slide ${s.cls}" aria-roledescription="slide" aria-label="${i + 1} / ${total}" data-notes="${esc(s.notes)}"><div class="frame">${s.inner}${footer(i)}</div></section>`).join('');
+    const els = [...document.querySelectorAll('.slide')];
+    let current = 0, wheelLocked = false, touchStart = null, toastTimer = null, notesWindow = null;
+
+    function resize() { const scale = Math.min(innerWidth / 1920, innerHeight / 1080); stage.style.transform = `translate(${(innerWidth - 1920 * scale) / 2}px, ${(innerHeight - 1080 * scale) / 2}px) scale(${scale})`; }
+    function syncUrl() {
+      const p = new URLSearchParams();
+      for (const k of Object.keys(VARIANTS)) if (root.dataset[k] !== baked[k]) p.set(k, root.dataset[k]);
+      const q = p.toString();
+      history.replaceState(null, '', `${q ? `?${q}` : location.pathname}#slide-${current + 1}`);
+    }
+    function show(n) {
+      current = Math.max(0, Math.min(els.length - 1, n));
+      els.forEach((el, i) => { const on = i === current; el.classList.toggle('active', on); el.setAttribute('aria-hidden', String(!on)); el.inert = !on; });
+      document.getElementById('pager').textContent = `${current + 1} / ${els.length}`;
+      document.getElementById('progress').style.width = `${els.length > 1 ? current / (els.length - 1) * 100 : 100}%`;
+      syncUrl(); updateNotes();
+    }
+    function toast(text) { const t = document.getElementById('toast'); t.textContent = text; t.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1400); }
+    function cycle(k) { const list = VARIANTS[k]; root.dataset[k] = list[(list.indexOf(root.dataset[k]) + 1) % list.length]; toast(`${k}: ${root.dataset[k]}`); syncUrl(); relint(); }
+    /* 자동 넘침 검사: 카드는 overflow:hidden이라 넘친 글자가 조용히 잘린다. 로드·변형 전환마다 검사해
+       우상단 배지로 알리고, 결과를 루트 요소의 data-overflow="7,9"에 남긴다(빈 값 = 넘침 없음). */
+    /* scrollHeight는 padding을 포함한다. 내용이 padding 영역을 조금 먹는 것은 잘림이 아니므로,
+       padding box 가장자리(= overflow:hidden이 자르는 선)를 넘을 때만 넘침으로 본다. */
+    function clipped(el) {
+      const cs = getComputedStyle(el);
+      return el.scrollHeight - parseFloat(cs.paddingBottom) > el.clientHeight + 1 || el.scrollWidth - parseFloat(cs.paddingRight) > el.clientWidth + 1;
+    }
+    function lint() {
+      const bad = els.map((s, i) => [...s.querySelectorAll('.frame,.body,.card,.tablebox,.step,.head,.split-main,.links a')]
+        .some(clipped) ? i + 1 : 0).filter(Boolean);
+      root.dataset.overflow = bad.join(',');
+      const badge = document.getElementById('lint');
+      badge.textContent = `⚠ 넘침 · 슬라이드 ${bad.join(', ')}`;
+      badge.classList.toggle('show', bad.length > 0);
+      if (bad.length) console.warn('[hs-slide] overflow on slides', bad);
+    }
+    function relint() { requestAnimationFrame(() => requestAnimationFrame(lint)); }
+    function toggleFullscreen() { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); }
+    function toggleNotes() {
+      if (notesWindow && !notesWindow.closed) { notesWindow.close(); notesWindow = null; return; }
+      notesWindow = window.open('', 'SpeakerNotes', 'width=560,height=460,top=80,left=80');
+      if (!notesWindow) { toast('팝업이 차단되었습니다'); return; }
+      /* 스크립트 안에 문서 태그 문자열(html·head·body 여닫기)을 두지 않는다 — Lavish 등 리뷰 도구가 첫 body 닫는 태그 앞에 SDK를 주입해 JS가 잘린다 */
+      const d = notesWindow.document;
+      d.title = 'Speaker Notes';
+      const st = d.createElement('style');
+      st.textContent = '*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,"Apple SD Gothic Neo",sans-serif;background:#16181d;color:#e6e6e6;padding:24px}.n{font:12px ui-monospace,monospace;color:#8b93a1;margin-bottom:14px}.l{font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#6b7280;margin:0 0 8px}.t{font-size:17px;line-height:1.75;color:#d4d7dd;margin-bottom:22px;white-space:pre-wrap}.x{font-size:14px;color:#9aa3af}';
+      d.head.appendChild(st);
+      d.body.innerHTML = '<div class="n" id="n"></div><div class="l">Notes</div><div class="t" id="t"></div><div class="l">Next</div><div class="x" id="x"></div>';
+      updateNotes();
+    }
+    function updateNotes() {
+      if (!notesWindow || notesWindow.closed) return;
+      try {
+        const d = notesWindow.document, next = els[current + 1];
+        d.getElementById('n').textContent = `Slide ${current + 1} / ${els.length}`;
+        d.getElementById('t').textContent = els[current].dataset.notes || '(노트 없음)';
+        d.getElementById('x').textContent = next ? (next.querySelector('h1,h2,blockquote')?.textContent ?? '') : '— 마지막 슬라이드';
+      } catch (e) {}
+    }
+
+    document.getElementById('prev').addEventListener('click', () => show(current - 1));
+    document.getElementById('next').addEventListener('click', () => show(current + 1));
+    document.getElementById('lint').addEventListener('click', () => { const first = Number(root.dataset.overflow.split(',')[0]); if (first) show(first - 1); });
+    addEventListener('resize', resize);
+    addEventListener('keydown', e => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if ((e.key === ' ' || e.key === 'Enter') && e.target.closest?.('button,a')) return;
+      if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); show(current + 1); return; }
+      if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); show(current - 1); return; }
+      if (e.key === 'Home') return show(0);
+      if (e.key === 'End') return show(els.length - 1);
+      /* 글자 단축키는 입력된 글자(e.key)로 판별한다 — 한글 입력 상태('ㅅ' 등)에서는 의도적으로 동작하지 않는다 */
+      const action = { f: toggleFullscreen, s: toggleNotes, t: () => cycle('theme'), l: () => cycle('layout'), d: () => cycle('density'), m: () => cycle('motion') }[e.key.toLowerCase()];
+      if (action) action();
+    });
+    addEventListener('wheel', e => { if (Math.abs(e.deltaY) < 8 || wheelLocked) return; wheelLocked = true; show(current + (e.deltaY > 0 ? 1 : -1)); setTimeout(() => wheelLocked = false, 450); }, { passive: true });
+    addEventListener('touchstart', e => { touchStart = e.touches[0]?.clientX ?? null; }, { passive: true });
+    addEventListener('touchend', e => { if (touchStart === null) return; const d = (e.changedTouches[0]?.clientX ?? touchStart) - touchStart; if (Math.abs(d) > 45) show(current + (d < 0 ? 1 : -1)); touchStart = null; }, { passive: true });
+    resize();
+    const hash = Number(location.hash.replace('#slide-', ''));
+    show(Number.isInteger(hash) && hash > 0 ? hash - 1 : 0);
+    document.fonts.ready.then(relint);
+    })();
+  </script>
+</body>
+</html>
