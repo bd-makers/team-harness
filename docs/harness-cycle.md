@@ -37,7 +37,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 | **S3 구현** | 코드 | — (자유) | ✓ 자유 · ✓ 기본 루프(`/harness-loop`, 선택형) |
 | **S4 구현 검증** | spec 시나리오(Given/When/Then) ↔ 증거 | **R2 시나리오 대조**(기계 2 + 루브릭 2, §4-1b) | ✓ R2 시나리오 대조(옵트인 — `scenario check` + `review --framing scenario`, task `r2-scenario-evidence`) |
 | **S5 커밋** | — | **검증 프리셋 실행**(lint·tsc·test) | ✓ `gate commit` — 팀 파일 `.harness/gates.json`(프리셋 제안, workspace는 turbo·nx 위임 또는 디렉터리별) |
-| **S6 코드 리뷰** | 리뷰 기록(`## Reviews`·meta.reviews) | **R3 로컬 리뷰** (PR 전 필수) | △ spec이 required 선언할 때만 강제 |
+| **S6 코드 리뷰** | 리뷰 기록(`## Reviews`·meta.reviews) | **R3 로컬 리뷰** (PR 전 권장; spec에 `review: required` 선언 시 `done` 강제) | △ spec이 required 선언할 때만 강제 |
 | **S7 PR** | spec·plan·handoff·artifact 커밋, **PR 다이어그램**(권장 — 실제 구조 + plan 대비 변화) | **`pr-check`**(4문서 차단, 다이어그램은 안내) | ✓ pr-check · pre-push 훅 · ship 연동 |
 | **S8 지식화** | 최상위 **`wiki/`** 항목(기능·모듈 단위), task 폴더 삭제 | — | △ 위키 컴파일(`/harness-wiki` + `wiki sources`, 추가만 — C1, PR 없는 저장소는 커밋 출처) · 원장·nudge가 폴더 없는 done task를 기억(C2a) · ✗ task 폴더 삭제(C2b) |
 
@@ -72,7 +72,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
   R1은 spec에 점수를 매기는 대신 **이 원천 문서들 사이의 충돌·누락·모순**을 근본적으로 검토한다.
   문제가 발견되면 사용자에게 고지하고, **해결된 뒤에만** Plan으로 넘어간다(해결 후 재검토).
 - **R2 — 시나리오 ↔ 증거 대조 (§4-1b).** "Done evidence로 흡수"라는 이전 권장은 철회한다(피드백: R2에도 평가 방법이 있어야 한다).
-- **R3 — PR 전 코드 리뷰 루브릭, 필수.** D2의 작성자·리뷰어 분리 그 자체다.
+- **R3 — PR 전 코드 리뷰 루브릭은 권장이다.** spec에 `review: required`를 선언하면 `done`에서 강제한다. 중요 변경 기준은 [AGENTS.md 코드 리뷰 기준](../AGENTS.md#코드-리뷰-기준)을 따르며, 작성자·리뷰어 분리는 [D2](decisions.md#d2-2026-06-11--drive리뷰어-역할-분리)다.
 - 현재와의 차이: Ambiguity 게이트와 contrarian(A1–A4)은 **spec 문서 자체**를 본다. 원천 문서끼리의 정합성 검토는 아직 없다.
 - **구현 (2026-10-06, task `r1-source-review`)**: `/harness-interview`가 채점 전에 R1을 돈다. 기록은 spec의 `## 원천 검토 (R1)` 절이다.
   충돌·모순은 `(unresolved)`, 누락은 `(open)`으로 적고 `→ 결정:`과 재대조 뒤 `검토 완료`로 닫는다. 미해결이 남으면 interview가 통과를 선언하지 않는다 —

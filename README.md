@@ -158,7 +158,8 @@ cd my-project
 
 > **task-gate (자동):** 3번을 건너뛰고 그냥 프롬프트로 작업을 시작해도, 세션 시작 시
 > `SessionStart` 훅이 활성 task 유무를 감지해 **재개 / 새 task / task 없이 진행** 중 하나를
-> 물어봅니다(block이 아닌 nudge — 판단은 Claude). "task로 시작" 규율을 강제가 아니라
+> 물어봅니다(block이 아닌 nudge — 판단은 Claude). 파일 변경은 규모와 무관하게 task로 진행하고,
+> task 없이 진행은 파일 변경 없는 질문·탐색·리뷰에만 씁니다. "task로 시작" 규율을 강제가 아니라
 > 부드럽게 상기시킵니다.
 
 ---

@@ -593,7 +593,7 @@ boundary: not-configured</code></pre>
 
       <h3 class="sub">재현 가능한 실패는 artifact에 남긴다</h3>
       <p>artifact의 <code>## Failures</code>에 <code>### F-NNN</code>으로 신호·시도·가설·원인 범주(<code>Cause</code>)·다음 판별법·안전한 source 위치를 씁니다. 해소돼도 지우지 않고 <code>Resolved:</code> 한 줄을 붙입니다. raw stderr, 토큰·비밀값, 전체 HTTP payload는 넣지 않습니다.</p>
-      <p>활성 task가 없으면 첫 작업 프롬프트에서 <strong>재개 / 새 task / task 없이 진행</strong>을 묻습니다. block이 아니라 nudge이므로 "task 없이 진행"도 선택지입니다 — 다만 그 선택을 <em>의식적으로</em> 하게 만드는 것이 목적입니다. 재개 후보는 <code>meta.status</code>가 done이 아니면서 plan에 열린 체크박스가 있는 task이고(0.32.0), 최근 활동순(<code>plan.md</code> mtime)으로 <strong>최대 8개</strong>만 나열되며 나머지는 <code>… 외 N개</code> 한 줄로 접힙니다(0.23.0). 접힌 것까지 전부 보려면 <code>harness-team list</code>를 쓰세요. 활성 task가 이미 origin 기본 브랜치에서 종결됐으면 breadcrumb·Context Card 대신 <strong>종결됨 nudge</strong>만 나오고(0.38.0), 발화한 observe 트립와이어는 한 줄로 붙습니다(0.35.0).</p>
+      <p>활성 task가 없으면 첫 작업 프롬프트에서 <strong>재개 / 새 task / task 없이 진행</strong>을 묻습니다. 파일 변경은 규모와 무관하게 task로 진행하고, "task 없이 진행"은 파일 변경 없는 질문·탐색·리뷰에만 씁니다. block이 아니라 nudge입니다. 재개 후보는 <code>meta.status</code>가 done이 아니면서 plan에 열린 체크박스가 있는 task이고(0.32.0), 최근 활동순(<code>plan.md</code> mtime)으로 <strong>최대 8개</strong>만 나열되며 나머지는 <code>… 외 N개</code> 한 줄로 접힙니다(0.23.0). 접힌 것까지 전부 보려면 <code>harness-team list</code>를 쓰세요. 활성 task가 이미 origin 기본 브랜치에서 종결됐으면 breadcrumb·Context Card 대신 <strong>종결됨 nudge</strong>만 나오고(0.38.0), 발화한 observe 트립와이어는 한 줄로 붙습니다(0.35.0).</p>
     </section>
 
     <section id="llm">

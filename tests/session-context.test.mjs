@@ -105,7 +105,8 @@ test('활성 task 없음 + 미완 task → nudge에 재개 후보로 나열', as
     assert.ok(out.includes('활성 task가 없습니다'), 'emits nudge');
     assert.ok(out.includes('재개: chad/wip'), 'lists incomplete task');
     assert.ok(out.includes('새 task 생성'), 'offers new task');
-    assert.ok(out.includes('task 없이 진행'), 'offers escape hatch');
+    assert.ok(out.includes('task 없이 진행 (파일 변경 없는 질문·탐색·리뷰)'), 'offers no-file-change option');
+    assert.ok(out.includes('파일 변경은 규모와 무관하게 task'), 'states every file change needs a task');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

@@ -97,7 +97,7 @@
 > **task-gate (자동):** SessionStart 훅이 `harness-team session-context`를 호출해
 > 활성 task 유무를 주입한다. 활성 task가 있으면 breadcrumb 다음에 plan의 첫 미완 단계를 한 줄 주입한다.
 > 활성 task가 없으면 첫 작업 프롬프트에서 `AskUserQuestion`으로
-> **재개 / 새 task / task 없이 진행**을 확인하라 — 이는 block이 아닌 nudge이며 판단은 Claude 몫.
+> **재개 / 새 task / task 없이 진행**을 확인하라 — 파일을 바꾸는 일은 크기와 무관하게 task로 진행하고, task 없이 진행은 파일을 바꾸지 않는 질문·탐색·리뷰에만 쓴다. 이는 block이 아닌 nudge이며 판단은 Claude 몫.
 > 활성 task가 main에서 이미 `done`이면 "종결됨" nudge만 나온다 — harness-task 문서.
 
 ### task 워크플로우
