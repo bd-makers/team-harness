@@ -201,7 +201,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.54.0</span>
+      <span class="tag tag-purple">v0.55.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -209,6 +209,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.55.0 — 커밋 직후 트리가 깨끗하다:</strong>
+    <br>
+    <code>0.55.0</code> <strong>post-commit 훅이 추적 파일을 쓰지 않는다(BREAKING).</strong> 훅은 gitignore된 <code>&lt;user&gt;-handoff.md</code>만 렌더하므로 handoff만 담는 커밋이 생기지 않는다. task handoff는 직접 쓰는 선택 메모가 됐고, D11의 필수 문서는 spec·plan·artifact로 줄었으며, <code>done</code>은 handoff에 완료 마커를 쓰지 않는다(정본은 <code>meta.json</code>). <code>done</code>의 보장 범위 줄은 리뷰 증거·커밋 게이트 유무를 함께 보이고, <code>--stack</code>·<code>--scope</code> 값 검증이 파서로 옮겨져 <code>review --scope &lt;오타&gt;</code>는 exit 2다. 소비자는 <strong>플러그인 갱신(PATH CLI 포함) + <code>init --yes</code></strong>이고, 설치된 <code>docs/README.md</code>는 손으로 고친다.
+    <br><br>
     <strong>🆕 0.54.0 — 손으로 유지하던 카드를 없애고 plan이 현재 단계를 알려 준다:</strong>
     <br>
     <code>0.54.0</code> <strong>Task Context Card를 폐지했다.</strong> 재개에 쓰였다는 직접 증거를 찾지 못했고(재개 실사례 2건, 표본이 작다) 훅이 설치된 저장소에서도 카드 68장 중 38장이 빈 채였다. <code>context</code> 명령과 <code>&lt;name&gt;-context.md</code> 생성이 사라지고, SessionStart는 plan의 첫 미완 단계를 주입한다. 재현 가능한 실패 기록은 artifact <code>## Failures</code>로 옮겼고, 매 세션 로드량이 1,424 B 줄었다. 기존 카드 파일은 지우지 않는다. 소비자는 <code>migrate</code>와 <code>init --yes</code>로 받는다.
@@ -1019,7 +1023,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.54.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.55.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

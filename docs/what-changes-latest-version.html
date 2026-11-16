@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Harness Aijient Team 0.54.0 — 무엇이 왜 달라졌나</title>
+  <title>Harness Aijient Team 0.55.0 — 무엇이 왜 달라졌나</title>
   <style>
     :root {
       --bg: #0f1117;
@@ -217,13 +217,13 @@
 </head>
 <body>
   <nav aria-label="문서 섹션">
-    <div class="nav-logo">Harness 0.54.0</div>
+    <div class="nav-logo">Harness 0.55.0</div>
     <div class="nav-links">
       <a href="#why">왜 minor인가</a>
-      <a href="#tcc">TCC 폐지</a>
-      <a href="#step">현재 단계 주입</a>
-      <a href="#failures">실패 기록</a>
-      <a href="#docs">문서 인벤토리</a>
+      <a href="#hook">훅과 handoff</a>
+      <a href="#done">done 정보 줄</a>
+      <a href="#parser">플래그 검증</a>
+      <a href="#docs">문서·eval</a>
       <a href="#same">바뀌지 않은 것</a>
       <a href="#compat">소비자가 할 일</a>
     </div>
@@ -231,104 +231,108 @@
 
   <main>
     <header class="hero">
-      <div class="eyebrow">Release note · 2026-11-05 · minor</div>
-      <h1>손으로 유지하던 카드를 없애고<br><strong>plan이 현재 단계를 알려 줍니다</strong></h1>
-      <p>Task Context Card(TCC)는 재개 비용을 낮추려고 만든 비-SSOT 캐시였습니다. 재개에 쓰였다는 직접 증거를 찾지 못했고, 훅이 설치된 저장소에서도 카드 절반 이상이 빈 채였습니다.
-      그래서 감지 장치를 붙이는 대신 <strong>장치를 뺐습니다.</strong> 현재 단계는 이제 plan에서 파생됩니다.</p>
+      <div class="eyebrow">Release note · 2026-11-16 · minor</div>
+      <h1>커밋 직후 트리가 깨끗합니다<br><strong>훅은 추적 파일을 쓰지 않습니다</strong></h1>
+      <p>post-commit 훅이 추적되는 task handoff를 커밋마다 고쳐 써서, 커밋 직후에도 트리가 더러웠고 handoff만 담는 커밋이 계속 생겼습니다.
+      규범(0.42.1)으로 그 커밋을 줄이려 했지만 원인은 훅이었습니다. 그래서 <strong>훅이 git이 보는 파일을 쓰지 않게</strong> 했습니다.</p>
       <div class="tags">
-        <span class="tag tag-purple">0.53.0 → 0.54.0</span>
-        <span class="tag tag-orange">minor — <code>context</code> 명령 제거</span>
-        <span class="tag tag-blue">PR #173 · #174 · #175</span>
-        <span class="tag tag-green">소비자 조치 — 플러그인 갱신 + migrate + init</span>
+        <span class="tag tag-purple">0.54.0 → 0.55.0</span>
+        <span class="tag tag-orange">minor — BREAKING: 훅 동작·필수 문서 변경</span>
+        <span class="tag tag-blue">PR #176 – #182</span>
+        <span class="tag tag-green">소비자 조치 — 플러그인·PATH CLI 갱신 + init --yes</span>
       </div>
     </header>
 
     <dl class="release-brief" aria-label="릴리스 요약">
-      <div><dt>버전</dt><dd>0.54.0</dd></div>
-      <div><dt>날짜</dt><dd>2026-11-05</dd></div>
-      <div><dt>기준</dt><dd><code>v0.53.0..main</code> — #173(<code>4503424</code>, overview-worktree-inventory), #174(<code>1aa29da</code>, eval 실행 절차 README), #175(<code>1426685</code>, tcc-removal).</dd></div>
+      <div><dt>버전</dt><dd>0.55.0</dd></div>
+      <div><dt>날짜</dt><dd>2026-11-16</dd></div>
+      <div><dt>기준</dt><dd><code>v0.54.0..main</code> — #176·#177(0.54.0 문서 보충), #178(<code>ca79c52</code>, correct-guards), #179(<code>d52c889</code>, handoff-no-sweep), #180(<code>2b55c9e</code>, task-gate·R3 문구), #181(<code>87f3c67</code>, done 정보 줄·eval), #182(task 종결).</dd></div>
     </dl>
 
     <section id="why">
-      <h2 class="section-title">왜 minor인가 — 명령 하나가 사라졌다</h2>
-      <p class="section-sub">MAINTAINING.md의 크기 기준에서 ① 표면의 제거·호환성 파괴는 minor입니다. <code>harness-team context init|check</code>가 사라지고, 새 task에 <code>&lt;name&gt;-context.md</code>가 생기지 않습니다.</p>
+      <h2 class="section-title">왜 minor인가 — 훅 동작과 PR 필수 문서가 바뀌었다</h2>
+      <p class="section-sub">MAINTAINING.md의 크기 기준에서 ① 표면의 계약 변경·호환성 파괴는 minor입니다. 훅이 task handoff를 더 이상 쓰지 않고, <code>pr-check</code>가 handoff를 요구하지 않으며, <code>review --scope</code> 오타의 exit 코드가 1에서 2로 바뀝니다.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>표면</th><th>경로</th><th>도달 경로</th><th>소비자 영향</th></tr></thead>
           <tbody>
-            <tr><td>CLI 동작</td><td><code>src/commands/session-context.mjs</code>·<code>task.mjs</code></td><td>플러그인 갱신</td><td><code>context</code> 명령 제거, 현재 단계 주입, 카드 생성 중단</td></tr>
-            <tr><td>관리 절</td><td><code>templates/AGENTS.md.hbs</code>(<code>protocol</code>)</td><td><code>init --yes</code></td><td>TCC·JIT retrieval 절 삭제, task-gate 설명 갱신</td></tr>
-            <tr><td>설치 스킬</td><td><code>fix-bug</code>·<code>new-feature</code></td><td><code>migrate</code>(템플릿 refresh)</td><td>실패 기록 위치가 artifact <code>## Failures</code>로</td></tr>
-            <tr><td>설치 문서</td><td><code>templates/docs/README.md</code></td><td>닿지 않음</td><td>기존 <code>docs/README.md</code>는 카드 설명이 남습니다. 동작에는 영향이 없습니다</td></tr>
+            <tr><td>CLI 동작</td><td><code>src/commands/task.mjs</code>·<code>pr-check.mjs</code>·<code>cli-args.mjs</code></td><td>플러그인 갱신 + PATH CLI(clone) 갱신</td><td>훅은 user handoff만 렌더, 필수 문서 3종, done 정보 줄, 플래그 검증 위치</td></tr>
+            <tr><td>관리 절</td><td><code>templates/AGENTS.md.hbs</code></td><td><code>init --yes</code></td><td>handoff를 선택 메모로, commit 시 설명, task-gate 문구</td></tr>
+            <tr><td>명령 문서</td><td><code>commands/harness-task·ship·review·loop·retro.md</code></td><td>플러그인 갱신</td><td>handoff 단독 커밋 안내 삭제, retro는 done 전에</td></tr>
+            <tr><td>설치 문서</td><td><code>templates/docs/README.md</code></td><td>닿지 않음</td><td>기존 <code>docs/README.md</code>는 손으로 고칩니다</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <section id="tcc">
-      <h2 class="section-title">Task Context Card 폐지</h2>
+    <section id="hook">
+      <h2 class="section-title">post-commit 훅이 추적 파일을 쓰지 않는다</h2>
       <div class="change-grid">
         <article class="change-card breaking">
-          <div class="card-head"><div class="kind danger">Removed · #175</div><h3><code>context</code> 명령과 카드 생성이 사라진다</h3></div>
+          <div class="card-head"><div class="kind danger">BREAKING · #179</div><h3>훅은 gitignore된 user handoff만 렌더한다</h3></div>
           <dl>
-            <div><dt>무엇</dt><dd><code>harness-team context init|check</code>, 새 task의 <code>&lt;name&gt;-context.md</code>, <code>AGENTS.md</code>의 TCC·JIT retrieval 절을 지웠습니다. 호출하면 unknown command로 exit 1입니다.</dd></div>
-            <div class="why"><dt>왜</dt><dd>세션 시작 프로토콜(handoff → plan → spec)에 TCC가 없었고, 관측된 재개는 plan과 handoff로 갔습니다. 2차 장치 규칙(D11)대로 감지를 붙이기 전에 빼는 안을 먼저 봤습니다.</dd></div>
-            <div class="effect"><dt>효과</dt><dd>매 세션 로드되는 프로젝트 지시가 17,256 B에서 15,832 B로 1,424 B 줄었습니다. 상한까지 여유가 244 B였습니다.</dd></div>
+            <div><dt>무엇</dt><dd>훅이 <code>&lt;name&gt;-handoff.md</code>에 append하지 않습니다. 쓰는 것은 gitignore된 <code>&lt;user&gt;-handoff.md</code> 하나이고, 그 파일이 추적 중이거나 무시 줄이 없는 저장소에서는 그것도 쓰지 않습니다.</dd></div>
+            <div class="why"><dt>왜</dt><dd>커밋마다 추적 파일이 바뀌면 트리가 늘 더럽고, <code>done</code>·scope 판정과 handoff 단독 커밋 규범이 그 부산물을 처리하느라 복잡해졌습니다. 부산물을 규범으로 관리하는 대신 만들지 않는 쪽을 택했습니다.</dd></div>
+            <div class="effect"><dt>효과</dt><dd>커밋 직후 트리가 깨끗합니다. task handoff는 <code>task</code>가 계속 만들지만 이제 다음 세션에 남길 말을 직접 쓰는 선택 메모입니다.</dd></div>
           </dl>
         </article>
-        <article class="change-card maintenance">
-          <div class="card-head"><div class="kind">Evidence · 측정</div><h3>쓰였다는 증거가 없었다</h3></div>
+        <article class="change-card breaking">
+          <div class="card-head"><div class="kind danger">BREAKING · D11 정정</div><h3>필수 문서는 spec·plan·artifact</h3></div>
           <dl>
-            <div><dt>카드</dt><dd>이 저장소 149장 중 빈 스캐폴드 45장, 커밋 1회뿐 112장. 훅이 설치된 <code>hs-react-monorepo</code> 68장 중 빈 스캐폴드 38장, 커밋 1회뿐 57장.</dd></div>
-            <div><dt>세션</dt><dd>훅이 돈 Claude 세션 46개 중 카드 주입 13개, 재개 실사례 2건, 카드 내용을 반영한 직접 증거 0건, 낡은 카드 사고 0건, 카드가 없어 막힌 사례 0건.</dd></div>
-            <div class="why"><dt>한계</dt><dd>재개 실사례가 2건뿐입니다. 이 수치는 "안 쓰였다는 증명"이 아니라 "쓰였다는 증거가 없다"입니다.</dd></div>
+            <div><dt>pr-check</dt><dd>PR이 건드린 task마다 spec·plan·artifact만 요구합니다. handoff가 없거나 템플릿 그대로여도 막지 않습니다.</dd></div>
+            <div><dt>done</dt><dd>handoff에 완료 마커를 쓰지 않습니다. 완료 표지는 <code>meta.json</code>의 <code>status</code>·<code>closedAt</code>입니다. meta 없는 옛 task의 마커는 계속 읽습니다.</dd></div>
+            <div class="why"><dt>임시 유지</dt><dd>미커밋 task handoff는 <code>done</code>과 scope 판정에서 계속 뺍니다. 옛 CLI의 훅이 아직 쓰는 설치에서 막으면 handoff 단독 커밋을 강요하기 때문입니다. <strong>제거 조건</strong>: 옛 훅을 쓰는 설치가 없다고 판단되는 릴리스.</dd></div>
           </dl>
         </article>
       </div>
     </section>
 
-    <section id="step">
-      <h2 class="section-title">SessionStart가 plan의 첫 미완 단계를 주입한다</h2>
+    <section id="done">
+      <h2 class="section-title"><code>done</code> 보장 범위 줄에 정보 항목</h2>
       <div class="change-grid">
         <article class="change-card feature">
-          <div class="card-head"><div class="kind">Changed · #175</div><h3>저장하지 않는 파생값</h3></div>
+          <div class="card-head"><div class="kind">Added · #181</div><h3>리뷰 증거·커밋 게이트 유무를 보인다</h3></div>
           <dl>
-            <div><dt>이제</dt><dd>활성 task가 있으면 breadcrumb 다음에 <code>[harness] 현재 단계: &lt;줄&gt;</code>이 옵니다. 내용이 있는 첫 <code>- [ ]</code> 줄이고 200자에서 자릅니다. Codex 봉투도 같은 내용을 받습니다.</dd></div>
-            <div><dt>없을 때</dt><dd>미완 단계가 없거나 plan을 읽을 수 없으면 breadcrumb만 나옵니다. 남아 있는 옛 카드는 주입하지 않습니다.</dd></div>
-            <div class="why"><dt>왜 plan</dt><dd>task handoff는 post-commit 커밋 로그라 다음 단계가 없습니다. 생성 시점의 plan은 빈 <code>- [ ]</code>뿐이라 카드를 미리 채울 수도 없습니다. 읽는 시점에 파생하면 낡을 일이 없습니다.</dd></div>
+            <div><dt>이제</dt><dd>줄 끝에 <code>정보: 리뷰 증거 있음|없음 · 커밋 게이트 .harness/gates.json 있음|없음</code>이 붙습니다. 차단하지 않습니다.</dd></div>
+            <div class="why"><dt>왜</dt><dd>리뷰를 선언하지 않은 task가 증거 없이 닫히는 것과, 커밋 게이트가 없어 테스트가 어디서도 돌지 않는 것을 종결 시점에 보이기 위해서입니다.</dd></div>
           </dl>
         </article>
       </div>
     </section>
 
-    <section id="failures">
-      <h2 class="section-title">재현 가능한 실패 기록은 artifact로</h2>
+    <section id="parser">
+      <h2 class="section-title">플래그 값 검증이 파서로 옮겨졌다</h2>
       <div class="change-grid">
-        <article class="change-card maintenance">
-          <div class="card-head"><div class="kind">Changed · D12 정정</div><h3>failure capsule이 <code>## Failures</code>로 옮겨졌다</h3></div>
+        <article class="change-card accuracy">
+          <div class="card-head"><div class="kind">Changed · #178</div><h3><code>--stack</code>·<code>--scope</code>는 이름에 묶여 검사된다</h3></div>
           <dl>
-            <div><dt>이제</dt><dd><code>fix-bug</code>·<code>new-feature</code> 스킬이 artifact <code>## Failures</code>의 <code>### F-NNN</code>에 신호·시도·가설·원인 범주(<code>Cause</code>)·다음 판별법·안전한 source를 남기라고 안내합니다. 절이 없으면 만듭니다.</dd></div>
-            <div class="why"><dt>왜</dt><dd>카드에서는 해소 시 capsule을 지웠습니다. D12의 실패 귀인은 환경 원인과 코드 결함을 가려 기록하는 것이 목적이라, 해소 뒤에도 남는 artifact가 맞습니다. 이 이유는 추론이고, 0.52.0에 도입된 <code>Cause</code>의 사용량은 아직 판단할 데이터가 없습니다.</dd></div>
-            <div class="effect"><dt>규약</dt><dd>해소돼도 지우지 않고 <code>Resolved:</code> 한 줄을 붙입니다. 카드 예산에서 온 3개 상한은 없앴습니다. raw stderr와 비밀값 금지는 그대로입니다.</dd></div>
+            <div><dt>무엇</dt><dd>플래그 이름에 묶인 <code>FLAG_CHOICES</code>가 검사하므로 커맨드에 복제해도 가드가 따라갑니다.</dd></div>
+            <div class="effect"><dt>달라진 출력</dt><dd><code>review --scope &lt;오타&gt;</code>는 exit 1과 오류 패킷 대신 다른 플래그 오류처럼 <strong>exit 2와 stderr 안내</strong>를 냅니다. <code>--json</code>이어도 envelope은 나오지 않습니다. exit 1을 기대하는 스크립트는 고쳐야 합니다.</dd></div>
           </dl>
         </article>
       </div>
     </section>
 
     <section id="docs">
-      <h2 class="section-title">문서 인벤토리와 eval 안내</h2>
+      <h2 class="section-title">문서·eval·테스트</h2>
       <div class="change-grid">
         <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Fixed · #173</div><h3><code>docs:generate</code>가 <code>git add</code> 순서에 흔들리지 않는다</h3></div>
+          <div class="card-head"><div class="kind">Fixed · #180</div><h3>task-gate·R3 문구를 결정 로그에 맞췄다</h3></div>
           <dl>
-            <div><dt>무엇</dt><dd>파일 인벤토리 기준을 <code>git ls-files</code>(index)에서 <code>git add -A</code>가 스테이징할 트리로 바꿨습니다. 저장소 유지보수 도구의 변경이라 소비자 영향은 없습니다.</dd></div>
-            <div class="why"><dt>왜</dt><dd>새 파일을 <code>git add</code> 전에 생성하면 표에서 빠져 CI의 <code>docs:check</code>만 깨졌습니다. 같은 학습이 9회 반복됐습니다.</dd></div>
+            <div><dt>무엇</dt><dd>파일을 바꾸는 일은 규모와 무관하게 task로 진행하고, task 없이 진행은 질문·탐색·리뷰에만 씁니다. R3는 PR 전 권장이고 spec의 <code>review: required</code> 선언 시 <code>done</code>에서 강제합니다. <code>harness-retro</code>는 <code>done</code> 전에 돌리라고 안내하고, README의 슬래시 명령 수를 21개로 고쳤습니다.</dd></div>
           </dl>
         </article>
         <article class="change-card maintenance">
-          <div class="card-head"><div class="kind">Docs · #174</div><h3>plugin eval 실행 절차</h3></div>
+          <div class="card-head"><div class="kind">Added · #181</div><h3>규범 준수 eval 4건</h3></div>
           <dl>
-            <div><dt>무엇</dt><dd>실행 절차를 <code>evals/README.md</code>로 옮겼습니다.</dd></div>
+            <div><dt>무엇</dt><dd><code>evals/50</code>–<code>53</code>이 스킬 라우팅이 아니라 AGENTS 규범(task-gate 질문, plan 선체크 금지, 완료 보고 4항목, PR 전 리뷰 기록) 준수를 잽니다.</dd></div>
+            <div class="why"><dt>기준선</dt><dd>첫 측정에서 50번(task-gate)이 0/3이었습니다. 이 규범은 아직 지켜지지 않고 있다는 뜻입니다.</dd></div>
+          </dl>
+        </article>
+        <article class="change-card maintenance">
+          <div class="card-head"><div class="kind">Maintenance · #178</div><h3><code>npm test</code>가 격리 러너 하나로 돈다</h3></div>
+          <dl>
+            <div><dt>무엇</dt><dd><code>scripts/test-isolated.mjs</code>가 <code>GIT_*</code> 환경을 지우고 테스트를 돌려 CI의 git 설정이 필요 없어졌습니다. 저장소 유지보수 도구라 소비자 영향은 없습니다.</dd></div>
           </dl>
         </article>
       </div>
@@ -338,12 +342,12 @@
       <h2 class="section-title">바뀌지 않은 것</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>항목</th><th>0.54.0</th></tr></thead>
+          <thead><tr><th>항목</th><th>0.55.0</th></tr></thead>
           <tbody>
-            <tr><td>기존 <code>-context.md</code> 파일</td><td>그대로 — 지우지 않습니다. 읽는 코드만 없어집니다</td></tr>
-            <tr><td>task의 SSOT 네 파일과 <code>pr-check</code>·<code>done</code> 가드</td><td>그대로 — 카드는 원래 검사 대상이 아니었습니다</td></tr>
-            <tr><td><code>taskArtifactTemplate</code></td><td>그대로 — <code>## Failures</code>는 필요할 때 만듭니다</td></tr>
-            <tr><td>활성 task 없음 nudge, 종결됨 nudge, observe 표면화</td><td>그대로</td></tr>
+            <tr><td><code>task</code>가 만드는 파일</td><td>그대로 — handoff 파일도 계속 만듭니다</td></tr>
+            <tr><td>user handoff 렌더(<code>task</code> 활성화·훅·<code>done</code>)</td><td>그대로</td></tr>
+            <tr><td>plan 완료 시 훅의 <code>PLAN_COMPLETE</code> 신호</td><td>그대로</td></tr>
+            <tr><td>기존 task handoff 파일과 옛 완료 마커 읽기</td><td>그대로 — 지우지 않습니다</td></tr>
           </tbody>
         </table>
       </div>
@@ -353,35 +357,35 @@
       <h2 class="section-title">소비자가 할 일</h2>
       <div class="change-grid">
         <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Do · 1</div><h3>플러그인 갱신</h3></div>
+          <div class="card-head"><div class="kind">Do · 1</div><h3>플러그인과 PATH CLI 갱신</h3></div>
           <dl>
-            <div><dt>왜</dt><dd>현재 단계 주입과 <code>context</code> 제거는 CLI 코드라 플러그인 채널로 닿습니다.</dd></div>
-            <div class="effect"><dt>어떻게</dt><dd><code>/plugin marketplace update</code>(또는 clone에서 <code>git pull</code>). <code>harness-team --version</code>이 <code>0.54.0</code>이면 됩니다.</dd></div>
+            <div><dt>왜</dt><dd>훅은 PATH의 <code>harness-team</code>(마켓플레이스 clone)을 부릅니다. 플러그인만 갱신하고 clone이 옛 버전이면 훅이 계속 task handoff를 더럽힙니다.</dd></div>
+            <div class="effect"><dt>어떻게</dt><dd><code>/plugin marketplace update</code>(또는 clone에서 <code>git pull</code>). <code>harness-team --version</code>이 <code>0.55.0</code>이면 됩니다.</dd></div>
           </dl>
         </article>
         <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Do · 2</div><h3><code>harness-team migrate</code></h3></div>
+          <div class="card-head"><div class="kind">Do · 2</div><h3><code>harness-team init --yes</code></h3></div>
           <dl>
-            <div><dt>무엇</dt><dd><code>fix-bug</code>·<code>new-feature</code> 스킬을 갱신합니다. 직전 판을 stock으로 등록했으므로 손대지 않은 설치본만 바뀌고, 고친 설치본은 "looks customized" 경고만 받습니다.</dd></div>
+            <div><dt>무엇</dt><dd><code>AGENTS.md</code> 관리 절에서 handoff 설명이 선택 메모로, commit 시 설명이 "트리는 깨끗하다"로 바뀝니다. <strong><code>migrate</code>는 관리 절을 렌더하지 않습니다.</strong> 편집한 절은 init도 건너뜁니다.</dd></div>
           </dl>
         </article>
         <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Do · 3</div><h3><code>harness-team init --yes</code></h3></div>
+          <div class="card-head"><div class="kind">Do · 3</div><h3><code>docs/README.md</code> 손으로 고치기</h3></div>
           <dl>
-            <div><dt>무엇</dt><dd>AGENTS.md <code>protocol</code> 관리 절에서 TCC·JIT 절이 빠집니다. <strong><code>migrate</code>는 관리 절을 렌더하지 않습니다.</strong> 편집한 절은 init도 건너뜁니다.</dd></div>
+            <div><dt>무엇</dt><dd><code>migrate</code>와 <code>init --yes</code>는 이미 있는 이 파일을 갱신하지 않습니다. 프로젝트 내용을 덧붙이지 않았다면 파일을 지우고 <code>init --yes</code>를 다시 돌리면 새 판을 받습니다.</dd></div>
           </dl>
         </article>
         <article class="change-card breaking">
           <div class="card-head"><div class="kind danger">Check</div><h3>그 전까지 옛 안내가 남는다</h3></div>
           <dl>
-            <div><dt>영향</dt><dd>2·3번 전까지 옛 <code>AGENTS.md</code>와 스킬은 없어진 <code>context</code> 명령과 <code>-context.md</code>를 안내합니다. 에이전트가 부르면 unknown command로 실패합니다.</dd></div>
+            <div><dt>영향</dt><dd>2번 전까지 옛 <code>AGENTS.md</code>는 "훅이 task handoff를 갱신하니 다음 커밋에 담으라"고 안내합니다. 동작은 깨지지 않지만 에이전트가 없는 변경을 찾습니다.</dd></div>
             <div><dt>미검증</dt><dd>이 업그레이드 경로는 실제 소비자 저장소에서 돌려 보지 않았습니다.</dd></div>
           </dl>
         </article>
       </div>
     </section>
 
-    <footer>Harness Aijient Team Plugin 0.54.0 · 2026-11-05 · 0.53.0 이후 변경 설명</footer>
+    <footer>Harness Aijient Team Plugin 0.55.0 · 2026-11-16 · 0.54.0 이후 변경 설명</footer>
   </main>
 </body>
 </html>
