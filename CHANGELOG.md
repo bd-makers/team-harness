@@ -9,7 +9,15 @@
 
 ## [Unreleased]
 
+### Added
+
+- **`done` 보장 범위 줄에 정보 항목을 더했다** (task `notebooklm-review-followups`). 줄 끝에 `정보: 리뷰 증거 있음|없음 · 커밋 게이트 .harness/gates.json 있음|없음`을 붙인다. 리뷰를 선언하지 않은 task가 증거 없이 닫히는 것과, 커밋 게이트가 없어 테스트가 어디서도 돌지 않는 것을 종결 시점에 보인다. 차단하지 않는다.
+- **규범 준수 eval 4건을 추가했다**(`evals/50`–`53`). 스킬 라우팅이 아니라 AGENTS 규범(task-gate 질문, plan 선체크 금지, 완료 보고 4항목, PR 전 리뷰 기록) 준수를 잰다. 첫 기준선에서 50번(task-gate)이 0/3이었다.
+
 ### Changed
+
+- `commands/harness-retro.md`가 retro를 `done` 전에 실행하라고 안내한다. `done`이 활성 task를 해제해 이후 retro는 실패한다.
+- README의 슬래시 명령 개수를 실제 21개로 고쳤다(25개·19개로 적혀 있었다).
 
 - **BREAKING: post-commit 훅이 추적 파일을 쓰지 않는다** (task `handoff-no-sweep`, D11 정정). 커밋 직후 트리가 깨끗해서 handoff만 담는 커밋이 생기지 않는다. 훅은 gitignore된 `<user>-handoff.md`만 렌더하고, 그 파일이 추적 중이거나 무시 줄이 없는 저장소에서는 그것도 쓰지 않는다.
   - **D11의 필수 문서가 spec·plan·artifact로 줄었다.** `pr-check`는 `<name>-handoff.md`를 요구하지 않는다. `task`는 파일을 계속 만들고, 이제 직접 쓰는 선택 메모다.

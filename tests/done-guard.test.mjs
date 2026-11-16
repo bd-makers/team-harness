@@ -196,7 +196,7 @@ test('비-git 디렉토리는 git 체크를 skip (degradation, 오차단 없음)
   try {
     await runDone({ targetDir: dir, flags: {} });
     assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds — git checks skipped');
-    assert.ok(!logs.some(l => l.includes('커밋')), 'no fabricated commit issue');
+    assert.ok(!logs.some(l => l.startsWith('cause:') && l.includes('커밋')), 'no fabricated commit issue');
   } finally {
     restore();
     process.exitCode = prevExit;
@@ -689,7 +689,8 @@ const TESTS_REQUIRED_SPEC = '# demo — Spec\n\n## Done evidence\n\n```json\n{ "
 test('describeDoneScope: 기본값이면 증거 3종을 선언값과 함께 확인 안 함에 둔다', () => {
   const line = describeDoneScope({ evidence: { ...DONE_EVIDENCE_DEFAULT }, isGitRepo: true, windowKnown: true });
   assert.equal(line, '보장 범위 — 확인: plan 체크박스 · artifact 작성 · 미커밋 변경 · task 이후 커밋'
-    + ' | 확인 안 함: 테스트 파일 변경(tests: optional) · 리뷰 실행 기록(review: optional) · 검증 리뷰 기록(verify: optional) · 테스트 실행 결과·리뷰 내용');
+    + ' | 확인 안 함: 테스트 파일 변경(tests: optional) · 리뷰 실행 기록(review: optional) · 검증 리뷰 기록(verify: optional) · 테스트 실행 결과·리뷰 내용'
+    + ' | 정보: 리뷰 증거 없음 · 커밋 게이트 .harness/gates.json 없음');
 });
 
 test('describeDoneScope: required 선언은 확인에 오지만 실행 결과는 언제나 확인 안 함이다', () => {
@@ -724,6 +725,37 @@ test('done 통과 출력: done: 다음 줄에 spec 선언을 반영한 보장 �
     assert.match(logs[i + 1], /^보장 범위 — 확인: .*테스트 파일 변경.* \| 확인 안 함: .*review: optional/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+for (const [hasReview, hasGates, expected] of [
+  [false, false, '정보: 리뷰 증거 없음 · 커밋 게이트 .harness/gates.json 없음'],
+  [false, true, '정보: 리뷰 증거 없음 · 커밋 게이트 .harness/gates.json 있음'],
+  [true, false, '정보: 리뷰 증거 있음 · 커밋 게이트 .harness/gates.json 없음'],
+  [true, true, '정보: 리뷰 증거 있음 · 커밋 게이트 .harness/gates.json 있음'],
+]) {
+  test(`done 통과 출력: ${expected} — optional이어도 기간 내 증거·설정 존재를 표시`, async () => {
+    const stale = '2026-08-25T00:00:00Z';
+    const fresh = '2026-08-26T00:00:00Z';
+    const markerAt = hasReview && !hasGates ? fresh : stale;
+    const { dir, taskDir } = await makeFixture({
+      plan: '# demo — Plan\n- [x] 완료\n',
+      artifact: `# 결과\n<!-- harness:review kind=codex at=${markerAt} -->\n`,
+    });
+    try {
+      await writeFile(join(taskDir, 'demo-meta.json'), JSON.stringify({
+        user: 'tester', task: 'demo', status: 'open',
+        firstActivatedAt: '2026-08-24T00:00:00Z', reopenedAt: fresh,
+        reviews: [{ kind: 'codex', at: hasReview && hasGates ? fresh : stale }],
+      }));
+      // 존재만 표시한다 — 설정 내용 검증·명령 실행은 done의 보장 범위 밖이다.
+      if (hasGates) await writeFile(join(dir, '.harness/gates.json'), 'not JSON');
+      const { logs, exitCode } = await runDoneCapture(dir);
+      assert.equal(exitCode ?? 0, 0, '정보 때문에 차단하지 않는다');
+      const i = logs.findIndex(l => l.startsWith('done:'));
+      assert.ok(i >= 0, `proceeds: ${JSON.stringify(logs)}`);
+      assert.equal(logs[i + 1].split(' | ').at(-1), expected);
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  });
+}
 
 test('spec 미선언 + 소스만 변경 → 통과 (tests 기본 optional)', async () => {
   const { dir } = await makeEvidenceFixture({ files: { 'src/app.mjs': 'export const x = 1;\n' } });
