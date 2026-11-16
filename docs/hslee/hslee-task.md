@@ -3,6 +3,8 @@
 ## Open
 
 ## Completed
+- ✅ notebooklm-review-followups
+- ✅ notebooklm-review-fixes
 - ✅ tcc-removal
 - ✅ codex-allow-scope
 - ✅ env-runtime-q5

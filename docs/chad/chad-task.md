@@ -1,6 +1,8 @@
 # chad — Tasks
 
 ## Open
+- correct-guards (created 2026-11-06)
+- handoff-no-sweep (created 2026-11-06)
 
 ## Completed
 - ✅ docs-refresh-v050

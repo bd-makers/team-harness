@@ -3,8 +3,8 @@
   "task": "notebooklm-review-followups",
   "created": "2026-11-16",
   "firstActivatedAt": "2026-11-16T13:28:12.964Z",
-  "status": "open",
-  "closedAt": null,
+  "status": "done",
+  "closedAt": "2026-11-16T14:21:16.927Z",
   "forcedAt": null,
   "forcedIssues": null,
   "reviews": [

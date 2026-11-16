@@ -32,3 +32,7 @@ CHANGELOG.md                                       |  8 +++
  tests/done-guard.test.mjs                          | 36 +++++++++++-
  tests/fixtures/task-paths-golden/expected.txt      |  2 +-
  28 files changed, 400 insertions(+), 18 deletions(-)
+
+## 2026-11-16T14:21:16.741Z — bc0cec6 chore(task): notebooklm-review-fixes 종결
+docs/hslee/notebooklm-review-fixes/notebooklm-review-fixes-meta.json | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
