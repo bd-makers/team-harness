@@ -30,6 +30,8 @@
 
 ### Fixed
 
+- **task-gate와 R3 설명을 결정 로그에 맞췄다.** 모든 파일 변경은 규모와 무관하게 task로 진행하며, task 없이 진행은 파일을 바꾸지 않는 질문·탐색·리뷰에만 쓴다. R3는 PR 전 권장이고 spec의 `review: required` 선언 시 `done`에서 강제한다.
+
 - **0.54.0 소비자 조치 보충: 설치된 `docs/README.md`는 손으로 고친다.** `migrate`와 `init --yes`는 이미 있는 이 파일을 갱신하지 않아, 없어진 `harness-team context init|check` 안내가 남는다. 프로젝트 내용을 덧붙이지 않았다면 파일을 지우고 `init --yes`를 다시 돌리면 새 판을 받는다. 덧붙였다면 Context Card 언급만 지운다. `doctor`는 이 잔여 안내를 경고하지 않는다.
 
 ## [0.54.0] - 2026-11-05

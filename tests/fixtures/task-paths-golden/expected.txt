@@ -81,8 +81,8 @@ $ session-context (no active: resume candidates) (exit 0)
 반드시 AskUserQuestion으로 다음 중 하나를 확인하세요:
   · 재개: tester/other   (plan 미완)
   · 새 task 생성
-  · task 없이 진행
-(단순 질문·조회·잡일이면 무시.)
+  · task 없이 진행 (파일 변경 없는 질문·탐색·리뷰)
+(파일 변경은 규모와 무관하게 task; nudge이며 block 아님.)
 
 === .harness/active.json
 null

@@ -89,8 +89,8 @@ async function buildTaskGateContext(targetDir, { doneOnMain = checkDoneOnMain } 
     lines.push(`  · … 외 ${incomplete.length - SESSION_CONTEXT_MAX_TASKS}개 (harness-team list로 전체 확인)`);
   }
   lines.push('  · 새 task 생성');
-  lines.push('  · task 없이 진행');
-  lines.push('(단순 질문·조회·잡일이면 무시.)');
+  lines.push('  · task 없이 진행 (파일 변경 없는 질문·탐색·리뷰)');
+  lines.push('(파일 변경은 규모와 무관하게 task; nudge이며 block 아님.)');
   return lines.join('\n');
 }
 
