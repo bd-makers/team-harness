@@ -3,37 +3,13 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { renderDoneMarker, hasDoneMarker } from '../src/handoff-marker.mjs';
+import { hasDoneMarker } from '../src/handoff-marker.mjs';
 import { runDone, taskArtifactTemplate } from '../src/commands/task.mjs';
 import { collectTasks } from '../src/commands/summary.mjs';
 
-// task handoff 의 완료 마커는 **파일에 남는 완료 증거**다. meta.json 이 없는 레거시 task 에서는
-// `inferLegacyMeta` 가 원장과 함께 이것만 보고 done 을 판정한다.
-//
-// 이 파일이 생기기 전에는 생산자(`runDone`)와 소비자(`inferLegacyMeta`)가 서로 다른 모듈에
-// 손으로 복사한 리터럴로만 묶여 있었다. 실측: 생산자의 em-dash 를 하이픈으로 바꾸면
-// 완료된 레거시 task 가 `open` 으로 오분류되는데 609개 테스트가 전부 통과했다.
-//
-// 아래 테스트는 두 방향의 드리프트를 각각 막는다 —
-// 왕복/바이트 모양은 **생산자** 드리프트를, 동결 fixture 는 **소비자** 드리프트를 잡는다.
-
-test('왕복: 렌더러가 만든 마커를 파서가 반드시 알아본다', () => {
-  assert.ok(hasDoneMarker(renderDoneMarker('2026-01-01T00:00:00.000Z')));
-});
-
-test('왕복: 어떤 ISO 타임스탬프에도 성립한다', () => {
-  for (const ts of [
-    '2026-01-01T00:00:00.000Z',
-    '2026-09-06T11:22:45.611Z',
-    '1999-12-31T23:59:59.999Z',
-  ]) {
-    assert.ok(hasDoneMarker(renderDoneMarker(ts)), ts);
-  }
-});
-
-// 아래 두 fixture 는 **렌더러에서 생성하지 않는다.** 이미 디스크에 쓰인 과거 형태를 그대로
-// 못박아 두는 것이 목적이므로, 렌더러가 바뀌어도 이 리터럴은 따라 바뀌면 안 된다.
-// 파서를 좁히면(예: ISO 형태만 허용) 여기서 깨진다 — 그것이 지금 고치려는 사고와 같은 사고다.
+// 옛 task handoff 의 완료 마커는 meta.json 이 없는 레거시 task 의 완료 증거다. 새 종결은 마커를 쓰지 않으므로
+// 파서는 이미 디스크에 쓰인 형태만 읽으면 된다. 아래 fixture 는 그 과거 형태를 그대로 못박는다.
+// 파서를 좁히면(예: ISO 형태만 허용) 여기서 깨진다.
 
 test('동결 fixture: ISO 형태의 과거 마커를 계속 읽는다', () => {
   const historical = '# demo — Handoff\n\n## 2026-01-01T00:00:00.000Z — 완료\n\n태스크 종료.\n';
@@ -62,19 +38,6 @@ test('본문에 완료라는 단어가 있어도 헤딩이 아니면 완료가 �
   assert.equal(hasDoneMarker('# demo — Handoff\n\n이 단계는 완료\n'), false);
 });
 
-// append-only 파일에 과거 항목과 섞여 쌓이므로 출력 바이트가 바뀌면 이력이 어긋난다.
-// `renderUserHandoff` 의 바이트 모양 테스트와 같은 이유로 못박는다.
-test('바이트 모양: 오늘의 출력을 그대로 고정한다', () => {
-  const ts = '2026-01-01T00:00:00.000Z';
-  assert.equal(renderDoneMarker(ts), '\n## 2026-01-01T00:00:00.000Z — 완료\n\n태스크 종료.\n');
-});
-
-// ─────────────────────────────────────────────────────────────────────────────
-// 위 테스트들은 **모듈의 계약**만 고정한다 — 호출부가 helper 를 버리고 제 문자열을 쓰거나
-// 판정을 그만두면 전부 통과한다 (2026-09-06 Codex 리뷰 P2 2건, 뮤테이션으로 재현 확인).
-// 아래 두 개가 그 구멍을 막는다: 생산자·소비자를 **실제로 실행해** 계약을 확인한다.
-// ─────────────────────────────────────────────────────────────────────────────
-
 const HANDOFF_HEAD = '# demo — Handoff\n';
 
 // non-git tmpdir 이라 done 가드의 git 검사는 degrade 되어 건너뛴다 — plan/artifact 신호만으로 통과.
@@ -100,22 +63,17 @@ function captureLogs() {
   return { logs, restore: () => { console.log = orig; } };
 }
 
-// 생산자 통합: `runDone` 이 **실제로 append 하는 바이트**가 렌더러 출력과 같아야 한다.
-// runDone 이 helper 를 버리고 비호환 리터럴을 직접 쓰면 여기서 깨진다.
-test('생산자 통합: runDone 이 append 하는 바이트가 renderDoneMarker 출력과 같다', async () => {
+test('runDone 은 handoff 에 마커를 쓰지 않고 meta.json 만으로 완료를 남긴다', async () => {
   const { dir, taskDir } = await makeDoneFixture();
+  await writeFile(join(taskDir, 'demo-spec.md'), '# demo — Spec\n');
   const prevExit = process.exitCode;
   const { restore } = captureLogs();
   try {
     await runDone({ targetDir: dir, flags: {} });
-    const content = await readFile(join(taskDir, 'demo-handoff.md'), 'utf8');
-
-    assert.ok(hasDoneMarker(content), 'runDone 의 출력이 파서에 잡혀야 한다');
-
-    const appended = content.slice(HANDOFF_HEAD.length);
-    const ts = appended.match(/^\n## (\S+) /)?.[1];
-    assert.ok(ts, `append 된 블록에서 시각을 못 읽었다: ${JSON.stringify(appended)}`);
-    assert.equal(appended, renderDoneMarker(ts));
+    assert.equal(await readFile(join(taskDir, 'demo-handoff.md'), 'utf8'), HANDOFF_HEAD);
+    const demo = (await collectTasks(dir)).find(t => t.task === 'demo');
+    assert.equal(demo.status, 'done');
+    assert.ok(demo.closedAt, '종결 시각이 meta 에 있다');
   } finally {
     restore();
     process.exitCode = prevExit;

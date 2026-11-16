@@ -43,12 +43,6 @@ jobs:
 
       # A `v*` tag can be pushed from any commit, so the tag being green is not
       # inherited from main — verify it here rather than assume it.
-      - name: Configure git identity
-        run: |
-          git config --global user.email "ci@harness.test"
-          git config --global user.name "harness-ci"
-          git config --global init.defaultBranch main
-
       - name: Run tests
         run: |
           printf '::notice::runtime %s\n' "$(node -v)"

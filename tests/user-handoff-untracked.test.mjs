@@ -2,8 +2,8 @@
 // 과 그 워크트리의 `git log -1` 에서 나온다. 추적하던 시절에는 같은 user 의 병렬 PR 이 머지될 때마다 이 파일에서
 // 반드시 충돌했다(3323c6f·fdcffbc·a7c8354). 여기서는 추적 해제 이후의 계약을 고정한다:
 //   - init 이 쓰는 .gitignore 가 깊이 2 의 user handoff 만 무시하고 task handoff 는 추적한다
-//   - 병렬 브랜치가 각자 커밋·sweep 한 뒤 머지해도 충돌하지 않는다
-//   - sweep(#105)·done 가드(#109)가 무시 파일을 "훅 출력" 으로 올바로 다룬다
+//   - 병렬 브랜치가 각자 커밋한 뒤 머지해도 충돌하지 않는다
+//   - 훅이 쓰는 무시 파일은 트리를 더럽히지 않고 done 가드(#109)를 막지 않는다
 //   - task 활성화가 user handoff 를 곧바로 써서 새 워크트리에 공백이 없다
 //   - 아직 추적 중인 저장소는 doctor 가 경고하고 migrate 는 인덱스를 건드리지 않고 안내만 한다
 import { test } from 'node:test';
@@ -52,7 +52,7 @@ async function startTask(dir, name) {
   finally { q.restore(); }
 }
 
-// 실제 작업 커밋 → post-commit 훅 → 다음 커밋에 남은 변경을 담는 흐름(#105)을 그대로 밟는다.
+// 실제 작업 커밋 → post-commit 훅.
 async function commitWithHook(dir, msg) {
   await git(dir, 'add', '-A');
   await git(dir, 'commit', '-qm', msg);
@@ -82,25 +82,23 @@ test('task 생성·재활성화가 곧바로 user handoff 를 쓴다 — 새 워
     await startTask(dir, 'alpha');
     const after = await readFile(userHandoff, 'utf8');
     assert.match(after, /## Active Task\nalpha\n/, '재활성화도 포인터를 옮긴다');
-    assert.match(after, /→ docs\/tester\/alpha\/alpha-handoff\.md/);
+    assert.match(after, /→ docs\/tester\/alpha\/alpha-plan\.md/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('같은 user 의 병렬 브랜치가 각자 커밋·sweep 후 머지해도 충돌하지 않는다', async () => {
+test('같은 user 의 병렬 브랜치가 각자 커밋 후 머지해도 충돌하지 않는다', async () => {
   const dir = await makeRepo();
   try {
     await git(dir, 'switch', '-qc', 'feat-a');
     await startTask(dir, 'alpha');
     await writeFile(join(dir, 'a.txt'), 'a\n');
     await commitWithHook(dir, 'feat: a');
-    await commitWithHook(dir, 'chore(handoff): sweep');
 
     await git(dir, 'switch', '-q', 'main');
     await git(dir, 'switch', '-qc', 'feat-b');
     await startTask(dir, 'beta');
     await writeFile(join(dir, 'b.txt'), 'b\n');
     await commitWithHook(dir, 'feat: b');
-    await commitWithHook(dir, 'chore(handoff): sweep');
 
     await git(dir, 'switch', '-q', 'main');
     await git(dir, 'merge', '-q', '--no-ff', '-m', 'merge a', 'feat-a');
@@ -110,18 +108,16 @@ test('같은 user 의 병렬 브랜치가 각자 커밋·sweep 후 머지해도 
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('sweep(#105): 작업 커밋 뒤 남는 변경은 task handoff 하나이고, 그것만 담은 커밋에서 훅은 침묵한다', async () => {
+test('작업 커밋 뒤 트리에 남는 변경이 없다 — handoff 만 담을 커밋이 생기지 않는다', async () => {
   const dir = await makeRepo();
   try {
     await startTask(dir, 'alpha');
     await commitWithHook(dir, 'feat: work');
-    assert.equal(await porcelain(dir), 'M docs/tester/alpha/alpha-handoff.md', '무시 파일은 dirty 로 보이지 않는다');
-    await commitWithHook(dir, 'chore(handoff): sweep');
-    assert.equal(await porcelain(dir), '', 'sweep 뒤 트리가 깨끗하다 — 루프가 끝난다');
+    assert.equal(await porcelain(dir), '', '무시 파일은 dirty 로 보이지 않는다');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-test('done 가드(#109): 무시된 user handoff 와 dirty task handoff 만 남으면 종결을 막지 않는다', async () => {
+test('done 가드(#109): 무시된 user handoff 는 종결을 막지 않는다', async () => {
   const dir = await makeRepo();
   try {
     await startTask(dir, 'alpha');

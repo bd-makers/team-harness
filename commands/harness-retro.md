@@ -9,6 +9,8 @@ append 로직은 CLI(`harness-team retro`)가 소유한다 — 이 래퍼는 그
 
 ## 실행 절차
 
+`retro`는 task가 활성 상태인 `harness-team done` 전에 실행한다 — `done`은 활성 task를 해제하므로 이후에는 append 대상을 찾을 수 없다.
+
 1. **이번 세션에서 교정받거나 학습한 내용이 무엇인지** 사용자에게 한 문장으로 확인한다.
    - 이미 `$ARGUMENTS`로 요약이 전달된 경우 그대로 사용한다.
 

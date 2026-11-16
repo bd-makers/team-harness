@@ -9,6 +9,25 @@
 
 ## [Unreleased]
 
+### Added
+
+- **`done` 보장 범위 줄에 정보 항목을 더했다** (task `notebooklm-review-followups`). 줄 끝에 `정보: 리뷰 증거 있음|없음 · 커밋 게이트 .harness/gates.json 있음|없음`을 붙인다. 리뷰를 선언하지 않은 task가 증거 없이 닫히는 것과, 커밋 게이트가 없어 테스트가 어디서도 돌지 않는 것을 종결 시점에 보인다. 차단하지 않는다.
+- **규범 준수 eval 4건을 추가했다**(`evals/50`–`53`). 스킬 라우팅이 아니라 AGENTS 규범(task-gate 질문, plan 선체크 금지, 완료 보고 4항목, PR 전 리뷰 기록) 준수를 잰다. 첫 기준선에서 50번(task-gate)이 0/3이었다.
+
+### Changed
+
+- `commands/harness-retro.md`가 retro를 `done` 전에 실행하라고 안내한다. `done`이 활성 task를 해제해 이후 retro는 실패한다.
+- README의 슬래시 명령 개수를 실제 21개로 고쳤다(25개·19개로 적혀 있었다).
+
+- **BREAKING: post-commit 훅이 추적 파일을 쓰지 않는다** (task `handoff-no-sweep`, D11 정정). 커밋 직후 트리가 깨끗해서 handoff만 담는 커밋이 생기지 않는다. 훅은 gitignore된 `<user>-handoff.md`만 렌더하고, 그 파일이 추적 중이거나 무시 줄이 없는 저장소에서는 그것도 쓰지 않는다.
+  - **D11의 필수 문서가 spec·plan·artifact로 줄었다.** `pr-check`는 `<name>-handoff.md`를 요구하지 않는다. `task`는 파일을 계속 만들고, 이제 직접 쓰는 선택 메모다.
+  - **`done`은 handoff에 완료 마커를 쓰지 않는다.** 완료 표지는 `meta.json`의 `status`·`closedAt`이다. meta 없는 옛 task의 마커는 계속 읽는다.
+  - **미커밋 task handoff는 `done`과 scope 판정에서 계속 뺀다.** 옛 CLI의 훅이 쓰는 동안 막으면 handoff 단독 커밋을 강요하기 때문이다. 옛 훅을 쓰는 설치가 없다고 판단되면 지운다.
+  - `<user>-handoff.md`의 Full Context 포인터는 plan을 가리킨다.
+  - **소비자 조치**: PATH의 `harness-team`(마켓플레이스 clone)도 함께 갱신한다. 옛 CLI의 훅은 task handoff를 계속 더럽힌다. `init --yes`로 `AGENTS.md`를 갱신한다. 설치된 `docs/README.md`의 handoff 설명은 자동으로 바뀌지 않으니 손으로 고친다.
+
+- **`--stack`·`--scope` 값 검증을 파서로 옮겼다.** 플래그 이름에 묶인 `FLAG_CHOICES`가 검사하므로 커맨드에 복제해도 가드가 따라간다. `review --scope <오타>`는 이제 exit 1과 오류 패킷 대신 다른 플래그 오류처럼 exit 2와 stderr 안내를 낸다. `--json`이어도 envelope은 나오지 않는다.
+
 ### Fixed
 
 - **task-gate와 R3 설명을 결정 로그에 맞췄다.** 모든 파일 변경은 규모와 무관하게 task로 진행하며, task 없이 진행은 파일을 바꾸지 않는 질문·탐색·리뷰에만 쓴다. R3는 PR 전 권장이고 spec의 `review: required` 선언 시 `done`에서 강제한다.

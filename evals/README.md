@@ -12,6 +12,12 @@
 | 20–23 | harness-spec |
 | 30–33 | review 라우팅 |
 | 40–43 | test-writer(unittest·inttest·comptest) |
+| 50–53 | norm compliance (task gate·plan·completion report·review record) |
+
+### Norm compliance (50–53)
+
+이 그룹은 skill routing이 아니라 `AGENTS.md`에 적힌 작업 규범 준수 여부를 측정한다.
+케이스별 harness 상태를 `fixture.sh`가 재현하며, 변경이 필요한 사례는 Write/Edit 도구를 허용해 실행한다.
 
 케이스는 `prompt.md`와 `graders/*.md`로 이뤄지고, 프로젝트 상태가 필요하면 `case.yaml`의 `scaffold_script`로
 `fixture.sh`를 지정한다. 이름에 `neg`가 붙은 케이스는 스킬이 발화하지 않아야 하는 경우를 잰다.
@@ -40,6 +46,7 @@ claude plugin eval <임시경로>/eval-plugin --case '1[0-4]-*' --scaffold --jud
 - `--judge-model sonnet`: 기본값은 haiku다. 전후 비교는 같은 모델로 맞춘다.
 - `--no-publish`: 빼면 HTML 리포트가 claude.ai로 게시될 수 있다.
 - 파일을 쓰는 test-writer 케이스는 `--allow-tools Write Edit "Bash(node:*)"`로 돌렸다.
+- 파일 변경을 요구하는 norm compliance 케이스는 `--allow-tools Write Edit`를 추가한다.
 - 플래그는 명령에 직접 적는다. zsh는 `$flags` 변수를 단어로 나누지 않는다.
 
 기본값은 케이스당 3회, WITH(플러그인)와 W/OUT(플러그인 없음) 두 갈래다. `--ablation none`은 WITH만 돈다.

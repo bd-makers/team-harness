@@ -13,7 +13,7 @@ docs/
     └── <name>/                       # task 디렉토리
         ├── <name>-spec.md            # 요구사항 / 설계 (사람이 먼저 작성)
         ├── <name>-plan.md            # 단계별 체크리스트
-        ├── <name>-handoff.md         # 세션 인수인계 (post-commit hook 자동 갱신)
+        ├── <name>-handoff.md         # 세션 메모 (선택, 직접 작성)
         ├── <name>-artifact.md        # 실행 결과 / 학습 (task done·retro 시 append)
         ├── <name>-diagram.html       # spec/plan 다이어그램 — 옵트인 산출물 (비-SSOT, 없을 수 있음)
         └── <name>-meta.json          # created / status — harness 내부 상태 (기계 소유)
@@ -55,7 +55,7 @@ harness-team retro "<메모>"    # 활성 task artifact.md에 학습/교정 내�
   목적 절은 문제(오늘 무엇이 안 되는가) → 영향받는 사용자·시스템 → 기대 결과 → 제약 순으로 쓴다.
   답 없는 질문은 `## 참고` 절에 `- (open) …`으로 남기고, 게이트 통과 전에 답하거나 `(open → <대상>)`으로 이월한다.
 - **`<name>-plan.md`**: 어떻게. 세션 시작/종료마다 체크리스트(`- [ ]` → `- [x]`)를 갱신.
-- **`<name>-handoff.md`**: 세션 간 인수인계 메모. commit 시 post-commit hook이 자동 갱신.
+- **`<name>-handoff.md`**: 세션 간 인수인계 메모. 필요할 때 직접 쓰는 선택 문서다. 커밋 이력은 `git log`로 본다.
 - **`<name>-artifact.md`**: 완료 후 남는 증거. `task done` 시 git diff/log/test 결과가,
   `retro` 시 학습/교정 내용이 append 된다. 재현 가능한 실패는 `## Failures`에 남긴다.
 - **`<name>-diagram.html`**: spec/plan 단계 다이어그램. **옵트인이라 없는 task가 정상이다** —

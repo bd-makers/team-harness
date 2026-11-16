@@ -418,7 +418,7 @@ function buildAuto(){
   if(state.boundary) A.push(['PreToolUse Edit|Write','boundary-checkpoint.sh','plan 체크박스를 완료로 바꾸기 직전 <code>harness-team boundary checkpoint</code> 실행 — LLM이 아니라 결정론적 CLI']);
   A.push(['PreToolUse Bash','block-dangerous-git.sh · pre-commit-check.sh','위험 git 차단 + 커밋 게이트 <code>harness-team gate commit</code> (<code>.harness/gates.json</code>의 commit 목록, 없으면 안내 후 통과)']);
   A.push(['PostToolUse Edit|Write','auto-format.sh','<code>harness-team gate format</code> — gates.json에 선언된 포맷터만']);
-  A.push(['post-commit','harness-team handoff','<code>&lt;name&gt;-handoff.md</code> append(다음 작업 커밋에 담는다) · <code>&lt;user&gt;-handoff.md</code>는 gitignore된 로컬 — 핸드오프만 바꾼 sweep 커밋에는 쓰지 않는다']);
+  A.push(['post-commit','harness-team handoff','<code>&lt;user&gt;-handoff.md</code>만 갱신 — gitignore된 로컬이라 트리는 깨끗하다']);
   A.push(['pre-push','harness-team pr-check --pre-push','PR이 담은 task 문서 계약 — 하네스의 유일한 강제(D11)']);
   A.push(['PermissionDenied / PostToolUseFailure','observe-tools.mjs','실패·거부율 트립와이어 입력']);
   return A;
@@ -428,7 +428,7 @@ function buildFiles(){
   const n=state.taskName, F=[
     [`docs/&lt;member&gt;/${n}/${n}-spec.md`,'요구사항·설계 · Ambiguity 자가진단 · Ontology · Boundary contracts · Done evidence','h'],
     [`docs/&lt;member&gt;/${n}/${n}-plan.md`,'단계 체크리스트 — 줄머리 체크박스는 기계 입력이다','h'],
-    [`docs/&lt;member&gt;/${n}/${n}-handoff.md`,'세션 인수인계 — post-commit 훅이 갱신','m'],
+    [`docs/&lt;member&gt;/${n}/${n}-handoff.md`,'세션 메모 — 선택 문서, 직접 쓴다','m'],
     [`docs/&lt;member&gt;/${n}/${n}-artifact.md`,'실행 결과·학습·## Reviews — done·retro 시 append','h'],
   ];
   F.push([`docs/&lt;member&gt;/${n}/${n}-meta.json`,'기계 상태 — 손으로 고치지 않는다. 판정 창과 verify 증거 정본 <code>reviews[]</code>','m']);

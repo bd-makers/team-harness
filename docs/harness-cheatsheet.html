@@ -137,7 +137,7 @@
       <table>
         <tr><td class="k"><code>-spec.md</code></td><td class="d"><b>사람</b> · 요구사항 · R1 · Ambiguity · Ontology · Boundary · Done evidence</td></tr>
         <tr><td class="k"><code>-plan.md</code></td><td class="d"><b>사람</b> · 단계 체크리스트 — 산문이 아니라 <b>기계 입력</b></td></tr>
-        <tr><td class="k"><code>-handoff.md</code></td><td class="d"><b>하네스</b> · post-commit 훅이 갱신 → 다음 커밋에 담는다</td></tr>
+        <tr><td class="k"><code>-handoff.md</code></td><td class="d"><b>사람</b> · 선택 메모, 훅은 쓰지 않는다</td></tr>
         <tr><td class="k"><code>-artifact.md</code></td><td class="d"><b>사람</b> · 결과 · 학습 · <code>## Reviews</code> — 팀 학습의 SSOT</td></tr>
         <tr><td class="k"><code>-meta.json</code></td><td class="d"><b>하네스</b> · <em>손으로 고치지 않는다</em> · 판정 창 · <code>reviews[]</code></td></tr>
       </table>
@@ -199,7 +199,7 @@
         <tr><td class="k">Edit/Write 전</td><td class="d">보호 파일 차단 · boundary 대조</td></tr>
         <tr><td class="k">Bash 전</td><td class="d">위험 git 차단 · <code>gate commit</code></td></tr>
         <tr><td class="k">Edit/Write 후</td><td class="d"><code>gate format</code> (gates.json 선언분)</td></tr>
-        <tr><td class="k">post-commit</td><td class="d">task handoff 갱신 (user handoff는 로컬)</td></tr>
+        <tr><td class="k">post-commit</td><td class="d">user handoff 갱신 (gitignore된 로컬)</td></tr>
         <tr><td class="k">pre-push</td><td class="d"><code>pr-check</code> — clone 후 <code>harness-team sync</code></td></tr>
         <tr><td class="k">모든 도구</td><td class="d">관측 로그 · 트립와이어 (<code>/harness-observe</code>)</td></tr>
       </table>

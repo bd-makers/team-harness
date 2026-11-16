@@ -26,9 +26,6 @@ import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } f
 const pexec = promisify(execFile);
 
 export const ENGINES = ['codex', 'claude', 'custom'];
-// worktree·diff는 harness-review.md 2단계, task-docs는 페르소나 외부 엔진 모드(contrarian·simplifier)의
-// scope 값 — 가드는 scope를 목록 대조하지 않지만 CLI는 아는 값만 받는다(오타를 조용히 기록하지 않는다).
-export const SCOPES = ['worktree', 'diff', 'task-docs'];
 // probe 폴백 체인. custom은 명시 호출 전용이라 체인에 없다.
 export const PROBE_CHAIN = ['codex', 'claude'];
 // artifact에 넣는 출력 상한. 초과분은 잘라내고 잘랐다고 적는다 — 조용한 절단은 "다 봤다"로 읽힌다.
@@ -243,8 +240,7 @@ export async function resolveScope({ targetDir, scope, base }) {
   if (scope === 'task-docs') return { scope, tip };
 
   // 하네스가 스스로 쓴 기록 파일은 dirty 로 세지 않는다. 세면 리뷰가 구현 diff 대신 그 기록만 보는 worktree scope 가 된다:
-  // - post-commit 훅이 커밋 **뒤에** 다시 쓰는 handoff 두 파일(`handoffRelPaths` — done 가드와 같은 집합). 커밋 직후의
-  //   리뷰가 handoff 만 봤다(wiki-commit-provenance R2 1차 실행).
+  // - handoff 두 파일(`handoffRelPaths` — done 가드와 같은 집합).
   // - 이 명령이 성공마다 쓰는 `<name>-artifact.md`·`<name>-meta.json`. 커밋 없이 R2 → R3 를 이어 돌리면 두 번째가
   //   worktree 였다(followups 18). artifact 는 사람이 쓰는 SSOT 이기도 해서 손 편집만 있을 때도 diff 로 간다 —
   //   diff 는 커밋된 코드를 보므로 잃는 것이 작다. done 가드는 종결 커밋에 artifact 를 요구하므로 이 둘을 빼지 않는다.
@@ -435,14 +431,6 @@ export async function runReview(ctx, deps = {}) {
     }));
   }
 
-  if (flags.scope !== undefined && !SCOPES.includes(flags.scope)) {
-    return emitError(json, `알 수 없는 scope "${flags.scope}"`, buildErrorPacket({
-      cause: `--scope ${flags.scope} 은 허용 값(${SCOPES.join('|')}) 밖`,
-      retry: '허용 값 중 하나로 다시 실행',
-      safeDefault: '엔진을 실행하지 않았고 어느 파일도 바뀌지 않았다',
-      stop: 'scope 값을 지어내지 말 것 — 가드는 scope를 대조하지 않지만 기록은 정확해야 한다',
-    }));
-  }
   // --rubric 은 testcritic 의 루브릭 선택자다. 열거 밖·다른 프레이밍과의 조합은 엔진을 고르기 전에 거른다.
   const rubric = flags.rubric;
   if (rubric !== undefined) {

@@ -93,7 +93,7 @@ git은 **하드 요구사항이 아닙니다.** 없어도 CLI는 실행되지만
 |---|---|---|
 | 사용자 이름 감지 (`docs/<user>/` 경로) | `$USER` → `unknown`으로 폴백 | `src/member.mjs` `detectMember` |
 | post-commit handoff 자동 갱신 | 훅이 설치되지 않음 (git 저장소가 아니면 조용히 return; 저장소면 `git rev-parse --git-path hooks`로 `core.hooksPath`·worktree까지 따라간다) | `src/git-hooks.mjs` `installPostCommitHook` |
-| `harness-team handoff`의 커밋 메시지·diff | 빈 값으로 계속 진행 | `src/commands/task.mjs` |
+| `harness-team handoff`의 커밋 메시지 | 빈 값으로 계속 진행 | `src/commands/task.mjs` |
 | `harness-team summary`의 기본 브랜치 감지 | 감지 실패 | `src/commands/summary.mjs` |
 
 실전에서는 task 문서·handoff·summary가 전부 커밋 흐름에 얹혀 있으므로 **git 저장소에서 쓰는

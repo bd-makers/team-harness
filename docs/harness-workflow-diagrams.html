@@ -192,7 +192,7 @@ flowchart TD
     IMPL["구현 루프<br/>Grep → Glob → Read"] --> BC{"boundary checkpoint 훅<br/>(plan 체크 편집 직전)"}
     BC -->|통과 / not-configured| CK["plan 체크박스 - [x]"] --> GC{"gate commit<br/>(pre-commit 훅 · gates.json)"}
     GC -->|통과| CM["git commit"]
-    CM --> HK["post-commit 훅<br/>task handoff append (다음 커밋에 포함)"]
+    CM --> HK["post-commit 훅<br/>로컬 user handoff 갱신"]
     HK -->|다음 atomic step| IMPL
     HK -->|중요 변경 완료| REV["R3 — harness-team review<br/>probe: codex → claude"]
     REV --> ART["CLI가 meta.reviews[]·마커 기록<br/>발견 재현·판별 후 단일 스레드 반영"]

@@ -4,6 +4,7 @@
 
 > 공유 코어는 위 `@AGENTS.md` 에서 import 합니다 (역할·프로토콜·원칙·스택).
 > 이 파일은 Claude Code 전용 워크플로우 레버만 담습니다.
+> 이 저장소를 고칠 때는 `MAINTAINING.md`의 "반복 실수 규칙표"를 따르고, 교정받으면 거기에 규칙을 더합니다.
 
 <!-- harness:section="workflow" begin -->
 ## 워크플로우 오케스트레이션

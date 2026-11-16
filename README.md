@@ -83,10 +83,10 @@ OS/네트워크 격리는 이 플러그인의 스코프 밖입니다 — devcont
 | 채널 | 대상/시점 | 제공하는 것 |
 |---|---|---|
 | `init` | 프로젝트당 1회 (재실행은 갱신) | hooks·rules·AGENTS/CLAUDE·docs 구조·`.codex/hooks.json`·`.cursor/rules`(RN 계열만) |
-| Claude Code 플러그인 설치 | 사람·머신마다 | `/harness-*` 슬래시 커맨드 25개 |
+| Claude Code 플러그인 설치 | 사람·머신마다 | `/harness-*` 슬래시 커맨드 21개 |
 | 전역 `harness-team` CLI 링크 | 사람마다 | 터미널과 훅이 호출하는 `harness-team` CLI |
 
-**`init`만으로는 `/harness-*` 슬래시 커맨드가 설치되지 않습니다.** `init`은 `commands/*.md` 25개를 프로젝트에 복사하지 않으며, 해당 명령은 Claude Code 플러그인 설치 채널에서 제공됩니다.
+**`init`만으로는 `/harness-*` 슬래시 커맨드가 설치되지 않습니다.** `init`은 `commands/*.md` 21개를 프로젝트에 복사하지 않으며, 해당 명령은 Claude Code 플러그인 설치 채널에서 제공됩니다.
 
 이 패키지는 **npm 공개 저장소에 배포되지 않습니다** — 전역 CLI는 `/plugin install`이 만든
 로컬 마켓플레이스 클론을 `npm i -g`로 링크해 얻습니다. 이미 하네스가 적용된 저장소를 clone한
@@ -105,7 +105,7 @@ harness-team doctor
 
 | 에이전트 | hooks | 커맨드/적용 표면 | 경로 스코프 규칙 |
 |---|---|---|---|
-| Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 19개 슬래시 커맨드 | `.claude/rules` `paths:` — 매칭 파일 **Read 시** 로드 |
+| Claude Code | 5개 이벤트 / 스크립트 6종 | 플러그인 설치 시 21개 슬래시 커맨드 | `.claude/rules` `paths:` — 매칭 파일 **Read 시** 로드 |
 | Codex | SessionStart 1종 — **신뢰 2겹이 모두 있어야 실행**(아래) | 슬래시 커맨드는 없고 별도 `.codex-plugin` 설치 시 동명의 스킬 | 없음 — 하위 디렉터리 `AGENTS.md`로 대체 |
 | Cursor | 0 | `.cursor/rules/*.mdc` 규칙만 (RN 계열 stack) | `.mdc` `globs:` — `.claude/rules`에서 미러 |
 
@@ -509,9 +509,7 @@ member를 추론(2~5)했는데 다른 member에 같은 이름의 task가 있으�
 # 활성 task 완료 — meta 상태를 done으로 (원장 갱신은 기본 브랜치에서 `harness-team summary --write`)
 /harness-task done
 
-# 활성 task의 handoff.md를 최신 커밋 정보로 갱신 (post-commit hook이 자동 호출)
-# 핸드오프 파일만 바꾼 커밋(sweep)에는 아무것도 쓰지 않는다 — 병합·빈 커밋·git 실패는 종전대로 기록 (0.38.1+)
-# --amend 는 마지막 항목을 교체한다 (고아 sha 항목을 남기지 않음, 0.38.2+)
+# 워크트리 로컬 <user>-handoff.md를 최신 커밋 정보로 갱신 (post-commit hook이 자동 호출, 추적 파일은 쓰지 않는다)
 /harness-task handoff
 
 # spec에 선언한 JSON Schema producer/consumer boundary 대조
@@ -523,8 +521,8 @@ harness-team scenario check
 
 ### PR 필수 문서 검사 — `harness-team pr-check`
 
-하네스가 강제하는 유일한 것(D11)은 PR에 그 task의 spec·plan·handoff·artifact를 담는 것입니다.
-`pr-check`는 base 대비 diff가 건드린 task(`docs/<user>/<task>/`)마다 네 문서가 **커밋에** 있고 템플릿 그대로가
+하네스가 강제하는 유일한 것(D11)은 PR에 그 task의 spec·plan·artifact를 담는 것입니다.
+`pr-check`는 base 대비 diff가 건드린 task(`docs/<user>/<task>/`)마다 세 문서가 **커밋에** 있고 템플릿 그대로가
 아닌지 판정합니다(없거나 비었거나 템플릿이면 exit 1). 다이어그램은 권장이라 없으면 막지 않고 안내만 냅니다.
 
 ```bash

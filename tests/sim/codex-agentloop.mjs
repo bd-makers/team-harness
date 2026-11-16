@@ -370,7 +370,7 @@ async function sc4PostCommitHook(sb, task) {
   const hookPath = join(sb.dir, '.git', 'hooks', 'post-commit');
   const hookStat = await stat(hookPath).catch(() => null);
   const hookInstalled = await fileHas(hookPath, 'harness-team handoff');
-  const handoffPath = join(task.taskDir, `${task.slug}-handoff.md`);
+  const handoffPath = join(handoffRoot, 'simbot-handoff.md');
   const handoffBefore = await readFile(handoffPath, 'utf8').catch(() => '');
   const before = await newestMtime(handoffRoot);
   const subject = 'sim: codex dummy';

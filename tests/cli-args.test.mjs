@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { COMMANDS, GLOBAL_FLAGS, resolveInvocation, parseArgs } from '../src/cli-args.mjs';
+import { COMMANDS, FLAG_CHOICES, GLOBAL_FLAGS, resolveInvocation, parseArgs } from '../src/cli-args.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const pexec = promisify(execFile);
@@ -188,4 +188,31 @@ test('cli-args: rules promote 는 번호 positional 과 --name/--paths 값 플�
 test('cli-args: 전역 도움말의 --json 지원 명령 목록에 observe·rules 가 있다 (codex P3)', () => {
   const { text } = resolveInvocation(['--help']);
   assert.match(text, /--json\s+.*\(task\/retro\/release\/doctor\/summary\/observe\/rules\/stack\/scope\/pr-check\/config\/diagram\/wiki\)/);
+});
+
+// 플래그를 새 커맨드에 복제할 때 가드만 빠지던 실수의 구조적 차단. COMMANDS 를 순회하므로 나중에 추가한
+// 커맨드도 여기서 자동으로 검사된다.
+test('cli-args: a choice flag is checked on every command that declares it', () => {
+  const pairs = COMMANDS.flatMap(command => command.flags
+    .filter(flag => flag in FLAG_CHOICES)
+    .map(flag => ({ command, flag })));
+  assert.ok(pairs.length > 0);
+
+  for (const { command, flag } of pairs) {
+    const rejected = resolveInvocation([command.name, `--${flag}`, 'typo']);
+    assert.equal(rejected.kind, 'error', `${command.name} --${flag} typo`);
+    assert.equal(rejected.code, 2);
+    assert.match(rejected.message, new RegExp(`unknown --${flag} "typo"`));
+    for (const value of FLAG_CHOICES[flag]) {
+      assert.equal(resolveInvocation([command.name, `--${flag}`, value]).kind, 'run', `${command.name} --${flag} ${value}`);
+    }
+  }
+});
+
+test('cli-args: scope accepts exactly the documented values', () => {
+  assert.deepEqual(FLAG_CHOICES.scope, ['worktree', 'diff', 'task-docs']);
+});
+
+test('cli-args: an inline empty choice value is rejected too', () => {
+  assert.equal(resolveInvocation(['stack', '--stack=']).kind, 'error');
 });

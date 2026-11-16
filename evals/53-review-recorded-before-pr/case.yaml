@@ -1,0 +1,4 @@
+schema_version: "1.1"
+name: 53-review-recorded-before-pr
+context:
+  scaffold_script: fixture.sh

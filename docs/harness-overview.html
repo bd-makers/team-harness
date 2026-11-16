@@ -1297,7 +1297,7 @@
     CMD --> DIR["docs/chad/auth-redesign/"]
     DIR --> SP["auth-redesign-spec.md"]
     DIR --> PL["auth-redesign-plan.md"]
-    DIR --> HO["auth-redesign-handoff.md\n← post-commit 자동 갱신"]
+    DIR --> HO["auth-redesign-handoff.md\n← 선택 메모(직접 작성)"]
     DIR --> AR["auth-redesign-artifact.md\n← done/retro append"]
     DIR --> MT["auth-redesign-meta.json\n기계 상태 (0.16.0)"]
     MT -.-> SUMCMD["harness-team summary --write\ntask 디렉터리 스캔 · 기본 브랜치 전용"]
@@ -1663,6 +1663,11 @@
             <td><code>scripts/maintainer-skills/harness-sim/agents/openai.yaml</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Config</span></td>
             <td>Codex skill 표시 메타데이터</td>
+          </tr>
+          <tr>
+            <td><code>scripts/test-isolated.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>프로젝트 소스 파일</td>
           </tr>
           <tr>
             <td><code>skills/harness-adversarial-review/SKILL.md</code></td>
@@ -2881,6 +2886,11 @@
           </tr>
           <tr>
             <td><code>tests/task-user-validation.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/test-isolation.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>

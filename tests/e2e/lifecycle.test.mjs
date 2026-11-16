@@ -1,5 +1,5 @@
 // L2 — task lifecycle: create a task (4 SSOT files), commit (post-commit hook
-// updates handoff), hit the done guard, then force-complete (active.json cleared).
+// updates the user handoff), hit the done guard, then force-complete (active.json cleared).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { access, readFile } from 'node:fs/promises';
@@ -21,11 +21,13 @@ for (const stack of STACKS) {
       const active = JSON.parse(await readFile(join(sb.dir, '.harness/active.json'), 'utf8'));
       assert.equal(active.task, 'demo');
 
-      // commit → post-commit hook appends the commit message to the task handoff
+      // commit → post-commit hook renders the commit into the ignored user handoff only
       const committed = await sb.gitCommit('feat: scaffold harness and task');
       assert.equal(committed.code, 0, committed.stderr);
-      const handoff = await readFile(join(sb.dir, 'docs/tester/demo/demo-handoff.md'), 'utf8');
-      assert.match(handoff, /feat: scaffold harness and task/, 'post-commit hook should record the commit in handoff');
+      const handoff = await readFile(join(sb.dir, 'docs/tester/tester-handoff.md'), 'utf8');
+      assert.match(handoff, /feat: scaffold harness and task/, 'post-commit hook should record the commit in the user handoff');
+      const status = await sb.git(['status', '--porcelain']);
+      assert.equal(status.stdout.trim(), '', 'the hook leaves no tracked change behind');
 
       // done guard fires on template artifact / uncommitted backup churn
       const guarded = await sb.cli(['done']);

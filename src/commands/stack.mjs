@@ -6,7 +6,7 @@
 // 넘겨받았다. 설치하지 않고, 러너를 추천하지 않고, 묻지 않는다 — 러너 부재 분기는 AskUserQuestion과
 // 웹 검색이 필요해 CLI가 볼 수 없는 입력에 의존하고, 그래서 산문(커맨드 문서)에 남아 있다.
 // 여기서 할 수 있는 최선은 "러너가 없다"는 관측을 warning으로 올려 그 분기를 에이전트에게 넘기는 것이다.
-import { detectStack, resolveStack, KNOWN_STACK_IDS } from '../detect-stack.mjs';
+import { detectStack, resolveStack } from '../detect-stack.mjs';
 import { detectTesting } from '../detect-testing.mjs';
 import { detectRepoShape, describeShape } from '../repo-shape.mjs';
 import { loadRenderState } from '../render-state.mjs';
@@ -123,13 +123,6 @@ async function readStackPin(targetDir) {
 export async function runStack(ctx) {
   const json = !!(ctx.flags && ctx.flags.json);
   const forced = ctx.flags.stack;
-  // `init` 과 같은 가드. 오타가 그대로 통과하면 실제 Node 프로젝트를 `generic`/`success` 로
-  // 보고해, 감지 실패를 감지 결과처럼 보이게 한다(codex P2).
-  if (forced && !KNOWN_STACK_IDS.includes(forced)) {
-    console.error(`stack: unknown --stack "${forced}" (expected one of ${KNOWN_STACK_IDS.join('|')})`);
-    process.exitCode = 2;
-    return;
-  }
   const stack = await resolveStack(ctx.targetDir, forced);
   const testing = await detectTesting(ctx.targetDir);
   const stackPin = await readStackPin(ctx.targetDir);
