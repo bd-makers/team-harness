@@ -179,6 +179,6 @@
 | hslee | verify-gates-source | ✅ done | 2026-11-03 |
 | hslee | tcc-removal | ✅ done | 2026-11-04 |
 | chad | correct-guards | ✅ done | 2026-11-06 |
-| chad | handoff-no-sweep | 🔄 open | 2026-11-06 |
+| chad | handoff-no-sweep | ✅ done | 2026-11-06 |
 | hslee | notebooklm-review-fixes | ✅ done | 2026-11-15 |
 | hslee | notebooklm-review-followups | ✅ done | 2026-11-16 |

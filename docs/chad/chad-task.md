@@ -1,10 +1,10 @@
 # chad — Tasks
 
 ## Open
-- handoff-no-sweep (created 2026-11-06)
 
 ## Completed
 - ✅ correct-guards
+- ✅ handoff-no-sweep
 - ✅ docs-refresh-v050
 - ✅ task-folder-removal
 - ✅ wiki-compile
