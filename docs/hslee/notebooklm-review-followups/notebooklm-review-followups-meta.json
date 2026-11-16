@@ -1,0 +1,23 @@
+{
+  "user": "hslee",
+  "task": "notebooklm-review-followups",
+  "created": "2026-11-16",
+  "firstActivatedAt": "2026-11-16T13:28:12.964Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "d52c8893d92c1ff38755cacc9e433d77985ffdd0",
+      "tip": "d52c8893d92c1ff38755cacc9e433d77985ffdd0",
+      "at": "2026-11-16T13:42:33.223Z",
+      "exitCode": 0,
+      "outputBytes": 1040
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { detectMember, sanitize } from '../member.mjs';
 import { exists, writeText } from '../fsx.mjs';
+import { GATES_REL } from '../presets.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 import { readTaskMeta, writeTaskMeta, taskMetaTemplate, inferLegacyMeta, readLedger, parseSummaryRows, readTextOrNull } from './summary.mjs';
 import { checkDoneOnMain, renderDoneOnMainNudge, listBranchOnlyTasks } from './remote-task.mjs';
@@ -910,7 +911,7 @@ export function evidenceWindowStart(meta) {
 
 // 통과 출력의 보장 범위 한 줄. `done:`은 "테스트가 통과했다"로 읽히기 쉽지만 가드는 문서·커밋·(선언 시)
 // 파일 변경만 본다 — 이번 실행에서 실제로 돈 가드와 꺼진 가드를 나눠 적어 과신을 막는다. 차단하지 않는다(D11).
-export function describeDoneScope({ evidence, isGitRepo, windowKnown }) {
+export function describeDoneScope({ evidence, isGitRepo, windowKnown, hasReviewEvidence = false, hasCommitGates = false }) {
   const checked = ['plan 체크박스', 'artifact 작성'];
   const unchecked = [];
   if (isGitRepo) checked.push('미커밋 변경');
@@ -925,7 +926,8 @@ export function describeDoneScope({ evidence, isGitRepo, windowKnown }) {
     else if (key !== 'tests' || timed) checked.push(label);
   }
   unchecked.push('테스트 실행 결과·리뷰 내용');
-  return `보장 범위 — 확인: ${checked.join(' · ')} | 확인 안 함: ${unchecked.join(' · ')}`;
+  return `보장 범위 — 확인: ${checked.join(' · ')} | 확인 안 함: ${unchecked.join(' · ')}`
+    + ` | 정보: 리뷰 증거 ${hasReviewEvidence ? '있음' : '없음'} · 커밋 게이트 ${GATES_REL} ${hasCommitGates ? '있음' : '없음'}`;
 }
 
 async function collectDoneIssues(targetDir, active) {
@@ -973,22 +975,23 @@ async function collectDoneIssues(targetDir, active) {
     }
   }
 
-  // 리뷰·검증 증거 — spec이 명시적으로 required를 선언한 task만 검사한다.
+  // 리뷰·검증 증거 — 존재는 통과 출력에도 쓰되, required를 선언한 task만 차단한다.
   // 증거 출처는 둘이다. (1) `meta.reviews[]` — `harness-team review`가 성공한 실행마다 쓰는
   // harness 소유 기록. (2) artifact 마커 — 에이전트가 손으로 남기던 종전 방식.
   // meta에 `reviews` 키가 있으면(CLI가 한 번이라도 썼거나 새 템플릿) verify는 (1)만 센다 —
   // "리뷰를 안 돌리고 마커만 쓰기"를 절차 안의 지름길에서 harness 상태를 손대는 고의로 옮긴다.
   // 키가 없는 구 task는 종전대로 (2)로 판정한다. review는 어느 쪽이든 인정한다(손으로 돌린
   // 리뷰의 산문 기록을 계속 받는다). 리뷰 "품질"은 여전히 검증하지 않는다 — 실행됐다는 사실뿐이다.
+  const markers = artifactContent ? parseReviewMarkers(artifactContent) : [];
+  const cliOwned = Boolean(meta && Array.isArray(meta.reviews));
+  const cliReviews = cliOwned ? parseMetaReviews(meta.reviews) : [];
+  // 창을 모르면(구 task) 시각 비교를 포기하고 존재만 본다.
+  const inWindow = m => windowStart === null || m.at >= windowStart;
+  const freshMarkers = markers.filter(inWindow);
+  const freshCli = cliReviews.filter(inWindow);
+  const hasReviewEvidence = freshMarkers.length > 0 || freshCli.length > 0;
   if (evidence.review === 'required' || evidence.verify === 'required') {
-    const markers = artifactContent ? parseReviewMarkers(artifactContent) : [];
-    const cliOwned = Boolean(meta && Array.isArray(meta.reviews));
-    const cliReviews = cliOwned ? parseMetaReviews(meta.reviews) : [];
-    // 창을 모르면(구 task) 시각 비교를 포기하고 존재만 본다.
-    const inWindow = m => windowStart === null || m.at >= windowStart;
-    const freshMarkers = markers.filter(inWindow);
-    const freshCli = cliReviews.filter(inWindow);
-    if (evidence.review === 'required' && !freshMarkers.length && !freshCli.length) {
+    if (evidence.review === 'required' && !hasReviewEvidence) {
       issues.push('spec이 `review: required`인데 이 task 기간의 리뷰 마커가 artifact에 없음 (meta.reviews에도 없음 — `harness-team review` 실행)');
     }
     // verify는 검증 프레이밍 kind만 센다 — 검증 마커는 review도 겸하지만 역은 성립하지 않는다.
@@ -1083,7 +1086,8 @@ async function collectDoneIssues(targetDir, active) {
     }
   }
 
-  return { issues, scope: describeDoneScope({ evidence, isGitRepo, windowKnown: Boolean(windowStartIso) }) };
+  const hasCommitGates = await exists(join(targetDir, GATES_REL));
+  return { issues, scope: describeDoneScope({ evidence, isGitRepo, windowKnown: Boolean(windowStartIso), hasReviewEvidence, hasCommitGates }) };
 }
 
 export async function runDone(ctx) {
