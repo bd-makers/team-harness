@@ -10,7 +10,7 @@
 - [x] #4 규범 준수 eval 50–53 추가, `evals/README.md` 표 갱신, 기준선 1회 실행
 - [x] 통합 검증: `npm test`, `npm run docs:check`
 - [x] Codex 리뷰 실행 후 artifact `## Reviews`에 기록, P2 두 건 판별·조치(50·51 grader 보정, 재측정)
-- [ ] PR 생성
+- [x] PR 생성 (#181)
 
 ## Ontology 변경 로그
 - 2026-11-16: "보장 범위 줄"에 정보 항목 추가, "규범 준수 eval" 개념 추가
