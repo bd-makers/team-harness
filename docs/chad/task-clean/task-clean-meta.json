@@ -1,0 +1,45 @@
+{
+  "user": "chad",
+  "task": "task-clean",
+  "created": "2026-11-17",
+  "firstActivatedAt": "2026-11-17T13:11:32.283Z",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "1d78aa5594d876c5258b29c480065fc931e14a71",
+      "tip": "1d78aa5594d876c5258b29c480065fc931e14a71",
+      "at": "2026-11-17T13:22:51.470Z",
+      "exitCode": 0,
+      "outputBytes": 1762
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "1d78aa5594d876c5258b29c480065fc931e14a71",
+      "tip": "1d78aa5594d876c5258b29c480065fc931e14a71",
+      "at": "2026-11-17T13:28:55.165Z",
+      "exitCode": 0,
+      "outputBytes": 1156
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "scope": "worktree",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "1d78aa5594d876c5258b29c480065fc931e14a71",
+      "tip": "1d78aa5594d876c5258b29c480065fc931e14a71",
+      "at": "2026-11-17T13:35:06.304Z",
+      "exitCode": 0,
+      "outputBytes": 1622
+    }
+  ]
+}

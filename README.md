@@ -509,6 +509,9 @@ member를 추론(2~5)했는데 다른 member에 같은 이름의 task가 있으�
 # 활성 task 완료 — meta 상태를 done으로 (원장 갱신은 기본 브랜치에서 `harness-team summary --write`)
 /harness-task done
 
+# done 전에 task 를 시작 전 상태로 되돌리기 — 기본 dry-run, --yes 는 refs/harness/trash 백업 뒤 reset (로컬만, 원격은 안내)
+/harness-task clean
+
 # 워크트리 로컬 <user>-handoff.md를 최신 커밋 정보로 갱신 (post-commit hook이 자동 호출, 추적 파일은 쓰지 않는다)
 /harness-task handoff
 

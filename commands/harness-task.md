@@ -1,19 +1,20 @@
 ---
-description: "task 관리 (task/list/done/handoff) — docs/<user>/<name>/ 구조"
+description: "task 관리 (task/list/done/clean/handoff) — docs/<user>/<name>/ 구조"
 phase: Workflow
-argument-hint: '<name> [--area <area>] | list [--area <area>] [--remote] | done [--force] | handoff'
+argument-hint: '<name> [--area <area>] | list [--area <area>] [--remote] | done [--force] | clean [<name>] [--base <ref>] | handoff'
 ---
 
-`$ARGUMENTS`의 **첫 토큰**으로 분기한다. `list`·`done`·`handoff`는 `task`의 인자가 아니라 **별개 하위명령**이다 —
+`$ARGUMENTS`의 **첫 토큰**으로 분기한다. `list`·`done`·`clean`·`handoff`는 `task`의 인자가 아니라 **별개 하위명령**이다 —
 `task done`처럼 넘기면 CLI가 명령 이름이라며 거부한다(exit 1, 아무것도 쓰지 않음) — 그 이름의 task가 이미 있을 때만 활성화된다.
 다른 member의 task를 이어서 하려면 `task <name> --member <그 member>` — `--member`는 `.harness/config.json`의 user보다 우선한다.
 결정된 user가 `docs/<user>/` 한 세그먼트가 아니면(빈 값·`/`·`\`·선행 `.`·제어문자) `task`는 exit 1로 거부하고 아무것도 쓰지 않는다 —
 config를 고치라는 안내를 그대로 사용자에게 전하고, user를 임의로 바꿔 재시도하지 않는다.
 
 ```bash
-# 첫 토큰이 list | done | handoff → task 없이 그 하위명령을 그대로 실행
+# 첫 토큰이 list | done | clean | handoff → task 없이 그 하위명령을 그대로 실행
 node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" list
 node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" done [--force]
+node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" clean [<name>] [--base <ref>]   # dry-run — --yes 는 아래 절의 승인 뒤에만
 node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" handoff
 
 # 그 외 → task 생성 또는 활성화 (모노레포 area 는 아래 절)
@@ -24,9 +25,31 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name> [--area <area>]
 - `harness-team task auth-redesign`   # 생성 또는 활성화
 - `harness-team list`                 # 전체 task 목록
 - `harness-team done`                 # 활성 task 완료 처리 (meta 상태만 — 원장은 `summary --write`)
+- `harness-team clean`                # 활성 task 를 시작 전 상태로 되돌리기 (dry-run, 아래 절)
 - `harness-team task web-next-login --area web-next`   # 모노레포 area task 생성 또는 활성화
 - `harness-team list --area web-next`  # 그 area 의 task 만
 - `harness-team list --remote`        # + 머지되지 않은 origin 브랜치에만 있는 task
+
+## task 되돌리기 (`clean`)
+
+task 를 시작했는데 방향이 틀렸거나 결과가 마음에 들지 않으면, `done` 하기 전에 그 task 를 **시작 전 상태로** 되돌린다.
+상태를 남기지 않는다(`dropped` 같은 status 없음) — 코드·task 문서를 시작점으로 되돌리고 활성 포인터를 비우는 것이 전부다.
+폴더가 사라진 open task 는 원장에 남지 않고, 같은 이름을 다시 쓸 수 있다.
+
+- **기본은 dry-run** — 시작점, 버릴 커밋, 버릴 미커밋·untracked 변경 목록만 보여 주고 아무것도 쓰지 않는다.
+- **`--yes`** — ① 작업 트리 전체(untracked 포함, gitignore 제외)를 `refs/harness/trash/<user>/<task>/<ts>` 커밋으로 백업
+  (둘째 부모 = 인덱스, reset 이 덮어쓸 ignored 파일도 포함) ② `git reset --hard <시작점>` 후 백업 시점의 untracked 파일만 지운다
+  (`git clean`을 쓰지 않는다 — ignored 파일은 지우지 않는다) ③ `active.json`이 이 task 를 가리키면 비우고
+  `<user>-handoff.md`를 "활성 없음"으로 쓴다. 복구 명령·백업 목록 명령을 출력한다.
+- **시작점**: `--base <ref>`(그 ref 와의 merge-base) → meta `baseSha`(task 생성 시점 HEAD) → 둘 다 없는 구 task 는 기본 브랜치와의 merge-base.
+- **거부(exit 1, 아무것도 쓰지 않음)**: git 이 아님 · 기본 브랜치·detached HEAD · `done`된 task(머지된 변경은 `git revert`) ·
+  재개된 task 에 `--base` 없음 · `baseSha`가 HEAD 의 조상이 아님(rebase 등 — `--base`로 지정) · 시작점 이후 **다른 task 폴더**가 바뀜.
+- **원격에는 쓰지 않는다** — push 된 브랜치·열린 MR/PR 은 그대로다. upstream 이 있으면 정리 명령(`git push <remote> --delete <branch>`
+  또는 `--force-with-lease`)을 안내만 한다.
+
+**에이전트 규칙 — `--yes`는 사용자가 붙이게 한다.** 에이전트는 먼저 dry-run 을 실행해 그 목록을 사용자에게 그대로 보여 주고,
+**그 목록에 대한 명시적 승인**을 받은 뒤에만 `--yes`로 다시 실행한다. "진행해" 같은 일반 승인이나 이전 대화의 승인은
+`reset --hard` 승인이 아니다. 목록에 task 와 무관해 보이는 미커밋 변경이 있으면 그 사실을 따로 짚는다 — 백업 ref 가 유일한 복구 경로다.
 
 ## 원격 브랜치에만 있는 task (`list --remote`)
 
@@ -169,7 +192,7 @@ PR/MR이 머지된 뒤 기본 브랜치에서: plan의 마지막 단계(보통 "
 ## `<name>-meta.json`과 판정 창
 
 `<name>-meta.json`은 harness가 소유하는 **기계 상태**다(`created`·`firstActivatedAt`·`status`·
-`closedAt`·`reopenedAt`·`forcedAt`·`forcedIssues`·`reviews`). SSOT 4파일에 포함되지 않으며 **손으로
+`closedAt`·`reopenedAt`·`forcedAt`·`forcedIssues`·`reviews`, 그리고 git 저장소에서 만든 task 의 `baseSha`). SSOT 4파일에 포함되지 않으며 **손으로
 고치지 않는다** — `done` 가드가 증거를 찾는 판정 창의 시작점과, `verify: required`가 세는 리뷰 증거
 (`reviews[]`, `harness-team review`가 성공한 실행마다 append)가 여기 있기 때문이다. `reviews` 키가
 없는 구 task는 종전대로 artifact 마커로 판정한다 — 상세는 harness-review 명령 문서 5단계.

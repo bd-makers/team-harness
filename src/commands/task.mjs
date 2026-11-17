@@ -16,6 +16,14 @@ import {
 
 const pexec = promisify(execFile);
 
+// git 이 아니거나 커밋이 없으면(unborn HEAD) null — 그때 meta 에 `baseSha` 를 쓰지 않는다.
+export async function headSha(targetDir) {
+  try {
+    const { stdout } = await pexec('git', ['-C', targetDir, 'rev-parse', '--verify', '--quiet', 'HEAD^{commit}']);
+    return stdout.trim() || null;
+  } catch { return null; }
+}
+
 // "미완"의 단일 정의 — done-guard와 session-task-gate가 공유.
 // 줄 시작 체크박스만 매칭(인라인/산문 `- [ ]`는 미완 아님).
 export function planHasOpenBoxes(content) {
@@ -72,7 +80,7 @@ export async function readActive(targetDir) {
   return active;
 }
 
-async function writeActive(targetDir, data) {
+export async function writeActive(targetDir, data) {
   const p = join(targetDir, '.harness/active.json');
   await mkdir(join(targetDir, '.harness'), { recursive: true });
   await writeFile(p, JSON.stringify(data, null, 2) + '\n');
@@ -82,7 +90,7 @@ async function writeActive(targetDir, data) {
 // 다른 member 의 task 를 가리킬 방법이 없다. `explicit` 은 다른 member 와의 이름 충돌 가드를 끌지 정한다.
 // `error` 는 결정된 user 가 `docs/<user>/` 한 세그먼트가 아닐 때의 사유다 — 출처(config·--member·폴백)와 무관하게
 // 여기서 판정해야 손으로 고친 config 나 `config set user` 도 막힌다.
-async function resolveUser(targetDir, flags) {
+export async function resolveUser(targetDir, flags) {
   let resolved;
   if (flags.member) resolved = { user: await detectMember(targetDir, flags), explicit: true };
   else {
@@ -477,6 +485,9 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
     return;
   }
 
+  // `clean` 의 시작점. 템플릿 파일을 쓰기 **전** HEAD 다 — 생성 1회만 찍고 재활성화·reopen 은 meta 를 펼쳐 쓰므로 밀리지 않는다.
+  const baseSha = await headSha(ctx.targetDir);
+
   await mkdir(dir, { recursive: true });
   await writeText(taskFilePath(ctx.targetDir, user, name, 'spec.md'), taskSpecTemplate(name));
   await writeText(taskFilePath(ctx.targetDir, user, name, 'plan.md'), taskPlanTemplate(name));
@@ -497,7 +508,7 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
   // Per-task state only. The shared ledger (docs/task_summary.md and the user index)
   // is rendered by `harness-team summary`; writing it here is what made every parallel
   // branch collide on the same line.
-  await writeText(taskFilePath(ctx.targetDir, user, name, 'meta.json'), taskMetaTemplate(user, name, date, firstActivatedAt, area));
+  await writeText(taskFilePath(ctx.targetDir, user, name, 'meta.json'), taskMetaTemplate(user, name, date, firstActivatedAt, area, baseSha));
 
   if (json) {
     emitObservation(buildEnvelope({
