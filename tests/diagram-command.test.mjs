@@ -418,15 +418,17 @@ test('record (--view 없음): 레거시 파일도 없는 view-only plan 에서�
 });
 
 // codex P2: plan 쓰기 실패 뒤 재실행 안내가 --view·--skipped 를 잃지 않는다.
-test('record --view --skipped: plan 쓰기 실패 패킷의 재실행 안내가 같은 플래그를 담는다', async () => {
+test('record --view --skipped: plan 쓰기 실패 패킷의 재실행 안내가 같은 플래그를 담는다',
+  { skip: process.getuid?.() === 0 ? 'root 는 권한 비트를 무시한다' : false }, async () => {
   const dir = await fixture({ plan: MIXED_PLAN });
   const planPath = join(dir, 'docs', 'tester', 'demo', 'demo-plan.md');
   try {
     const { chmod } = await import('node:fs/promises');
     await chmod(planPath, 0o444);
-    const { exitCode, logs } = await capture(() => run(dir, ['record', '도구', '없음'], { view: 'module', skipped: true }));
+    const { exitCode, logs } = await capture(() => run(dir, ['record', "it's", '$HOME'], { view: 'module', skipped: true }));
     assert.equal(exitCode, 1);
-    assert.match(logs.join('\n'), /harness-team diagram record --view module --skipped "도구 없음"/);
+    // 사유는 POSIX 단일 인용 — `'`·`$` 가 복사한 명령의 의미를 바꾸지 않는다.
+    assert.ok(logs.join('\n').includes(`harness-team diagram record --view module --skipped 'it'\\''s $HOME'`), logs.join('\n'));
   } finally {
     const { chmod } = await import('node:fs/promises');
     await chmod(planPath, 0o644).catch(() => {});

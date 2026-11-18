@@ -10,7 +10,7 @@
 import { readFile } from 'node:fs/promises';
 import { exists, writeText } from '../fsx.mjs';
 import { readActive, taskArtifactTemplate } from './task.mjs';
-import { insertBeforeHeading } from './review.mjs';
+import { insertBeforeHeading, posixSingleQuote } from './review.mjs';
 import { taskFileRel, taskFilePath, diagramKind } from '../task-paths.mjs';
 import { DIAGRAM_VIEWS } from '../cli-args.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
@@ -163,7 +163,7 @@ async function runRecord(ctx, json, noteTokens) {
   const planRel = taskFileRel(user, task, 'plan.md');
   const outcome = skipped ? 'skipped' : 'produced';
   // 재실행 안내는 이번 호출의 플래그를 그대로 담는다 — 빠지면 레거시 단계를 닫거나 생략을 생성으로 바꾼다(codex P2).
-  const rerun = `harness-team diagram record${view ? ` --view ${view}` : ''}${skipped ? ` --skipped "${note}"` : ''}`;
+  const rerun = `harness-team diagram record${view ? ` --view ${view}` : ''}${skipped ? ` --skipped ${posixSingleQuote(note)}` : ''}`;
   const viewHint = `뷰 단계(\`spec/plan 다이어그램(<view>)\`)라면 \`--view ${DIAGRAM_VIEWS.join('|')}\` 로 다시 실행`;
 
   // 없는 산출물을 "생성" 으로 남기는 것이 산문이 막으려던 거짓 기록이다.

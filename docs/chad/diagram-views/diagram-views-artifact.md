@@ -57,4 +57,33 @@ Reviewed all 21 changed files against `origin/main` with `git status` and `git d
 - 리뷰 시점 메모: review-only라 리뷰 실행 중에는 고치지 않았다. 수정안 — 재실행 안내를 실제 플래그(`--view`·`--skipped "<사유>"`)로 조립,
   파일 없음 패킷에 뷰 단계 안내 추가(또는 plan 검사를 앞으로), 레거시 파일 없는 view-only fixture 테스트 추가.
 
+### 2026-11-18T09:31:45.132Z — codex (harness-team review)
+
+- engine: codex · scope: diff · base: origin/main · mergeBase: 5993b270c4b51ce1daaca1ece4e73c2522108b04 · tip: cb9da53b3a2186f5e03eed7d6faef5cb8f30c21d · exit 0 · 1058 B
+
+```text
+- **P1 blocking** — `CHANGELOG.md:10` — The `[Unreleased]` section conflicts with the spec-question marker entry on `origin/main`, blocking a clean merge.
+- **P2 should-fix** — `src/commands/diagram.mjs:166` — The suggested retry drops `--target`, so running it from the original directory can update the wrong task’s plan and artifact.
+- **P2 should-fix** — `src/commands/diagram.mjs:166` — The suggested retry inserts the skip reason into shell double quotes without escaping it, so quotes or shell expansions can change its meaning when copied.
+- **P3 nit** — `tests/diagram-command.test.mjs:426` — `chmod(0o444)` does not force a write failure when tests run as root, so the test can fail in root-run containers.
+
+Reviewed `git status` and the diff against local `origin/main`. `git diff --check`, `npm run docs:check`, and 43 targeted tests passed. The full suite requires writable fixtures and was skipped. No files changed.
+
+**Verdict — Block merge until the changelog conflict is resolved and the retry command is safe to copy.**
+```
+
+<!-- harness:review kind=codex scope=diff tip=cb9da53b3a2186f5e03eed7d6faef5cb8f30c21d at=2026-11-18T09:31:45.132Z -->
+
+판별(작성 세션, 2026-11-18):
+- P1 (CHANGELOG `[Unreleased]` 충돌) — **진짜**(코드 결함은 아님). origin/main이 PR #185(A4, `eb1de72`)를 머지해 앞서 나갔고
+  `git merge-tree HEAD origin/main`이 `CONFLICT (content): Merge conflict in CHANGELOG.md`를 낸다. 설계 "2단계 순서"가 예고한
+  머지 순서 rebase 대상이다. 조치: origin/main 위로 rebase하며 두 항목을 모두 남긴다.
+- P2 (재실행 안내에 `--target` 없음) — **유효하나 이번 범위 밖**. 이 CLI의 모든 오류 패킷 재실행 안내가 `--target`을 싣지 않는다
+  (diagram 기존 안내 포함). 패킷 하나만 바꾸면 관례가 갈린다. 조치 없음 — 필요하면 별도 task.
+- P2 (`--skipped "${note}"` 미이스케이프) — **진짜 결함**(이번 커밋이 만든 것). 사유에 `"`·`$`·백틱이 있으면 복사한 명령의
+  의미가 바뀐다. 조치: `review.mjs`의 `posixSingleQuote`로 감싼다.
+- P3 (root에서 `chmod 0o444`가 쓰기를 막지 못함) — **진짜**(root 컨테이너 한정). 선례 `tests/rules.test.mjs:403`처럼
+  `process.getuid?.() === 0`이면 skip한다.
+- 조치(사용자 "진행해"): 사유를 `posixSingleQuote`로 감싸고 테스트에 `it's $HOME` 사유를 넣어 고정, 쓰기 실패 테스트는 root면 skip. CHANGELOG는 origin/main rebase로 해결.
+
 ## Learnings
