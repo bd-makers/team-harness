@@ -93,6 +93,7 @@ Raw slash-command 인수:
    plan에 다이어그램 단계가 없으면 CLI가 exit 1로 거부한다 — 2번(단계 추가)을 건너뛴 것이다. 6번의 예외
    (script를 실행하는 뷰어)를 택했으면 뷰어와 근거를 `record`의 메모 인자로 넘긴다:
    `harness-team diagram record "Confluence 뷰어에서 확인 — script 실행됨"`.
+   뷰 단계면 `--view <view>`를 붙인다: `harness-team diagram record --view sequence "Confluence 뷰어에서 확인 — script 실행됨"`.
 
 8. **보고** — 산출물 경로(또는 미실행 사유), 무엇을 드러낸 다이어그램인지, plan 단계 처리 결과를
    한 화면으로 보고하고 멈춘다.

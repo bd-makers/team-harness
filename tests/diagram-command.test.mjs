@@ -428,7 +428,7 @@ test('record --view --skipped: plan 쓰기 실패 패킷의 재실행 안내가 
     const { exitCode, logs } = await capture(() => run(dir, ['record', "it's", '$HOME'], { view: 'module', skipped: true }));
     assert.equal(exitCode, 1);
     // 사유는 POSIX 단일 인용 — `'`·`$` 가 복사한 명령의 의미를 바꾸지 않는다.
-    assert.ok(logs.join('\n').includes(`harness-team diagram record --view module --skipped 'it'\\''s $HOME'`), logs.join('\n'));
+    assert.ok(logs.join('\n').includes(`harness-team diagram record --view module --skipped -- 'it'\\''s $HOME'`), logs.join('\n'));
   } finally {
     const { chmod } = await import('node:fs/promises');
     await chmod(planPath, 0o644).catch(() => {});

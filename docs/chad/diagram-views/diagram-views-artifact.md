@@ -86,4 +86,29 @@ Reviewed `git status` and the diff against local `origin/main`. `git diff --chec
   `process.getuid?.() === 0`이면 skip한다.
 - 조치(사용자 "진행해"): 사유를 `posixSingleQuote`로 감싸고 테스트에 `it's $HOME` 사유를 넣어 고정, 쓰기 실패 테스트는 root면 skip. CHANGELOG는 origin/main rebase로 해결.
 
+### 2026-11-18T10:00:00.176Z — codex (harness-team review)
+
+- engine: codex · model: default · scope: diff · base: origin/main · mergeBase: 19a7c6ea532ec71fdb95c64281b57aa9ebe206e3 · tip: 0a2a4a108f1f47f198a21e514666e28d95a8479e · exit 0 · 1571 B
+
+```text
+- **P2 should-fix** [src/commands/diagram.mjs:166](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/optimistic-jepsen-777479/src/commands/diagram.mjs:166>) The generated retry drops `--target`, so copying it can update the active task in the wrong worktree.
+- **P2 should-fix** [src/commands/diagram.mjs:166](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/optimistic-jepsen-777479/src/commands/diagram.mjs:166>) The retry omits the `--` separator before the skip reason, so a valid reason such as `--help` is parsed as a CLI option and leaves the plan step open.
+- **P3 nit** [commands/harness-diagram.md:95](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/optimistic-jepsen-777479/commands/harness-diagram.md:95>) The viewer-exception example omits `--view <view>`, so it cannot record the required rationale for a view-only plan.
+
+Reviewed the tracked diff against local `origin/main` using `git status` and `git diff`. `git diff --check`, `npm run docs:check`, `pr-check --base origin/main`, and 36 targeted tests passed. Both retry issues were reproduced in memory. The full suite requires writable fixtures and was skipped. Five untracked files were outside the diff. No files were modified.
+
+**Verdict** — No P1 blockers. Fix both retry issues before merging.
+```
+
+<!-- harness:review kind=codex scope=diff tip=0a2a4a108f1f47f198a21e514666e28d95a8479e at=2026-11-18T10:00:00.176Z -->
+
+판별(작성 세션, 2026-11-18):
+- P2 (재실행 안내에 `--target` 없음) — 2차와 같은 지적. **유효하나 범위 밖** 판단 유지(CLI 전 오류 안내의 관례).
+- P2 (사유 앞 `--` 없음) — **진짜 결함**. `--help`처럼 `--`로 시작하는 사유는 안내를 복사하면 플래그로 파싱된다
+  (`diagram record --skipped '--help'` → 사용법 출력, 기록 없음 — 재현). 조치안: 사유 앞에 ` -- `를 넣는다.
+- P3 (`commands/harness-diagram.md` 뷰어 예외 예시에 `--view` 없음) — **진짜**(문서). 뷰 단계만 있는 plan이면 그 예시는 exit 1이다.
+  조치안: 뷰 단계면 `--view <view>`를 붙인다고 한 줄 더한다.
+- 리뷰 대상 밖: 작업 트리에 `* 2.md`·`* 2.json` untracked 5개가 있다(iCloud 동기화 충돌 사본으로 보임, 이 세션이 만들지 않음). 건드리지 않았다.
+- 조치(사용자 "고쳐줘"): 재실행 안내가 사유를 `--skipped -- '<사유>'`로 낸다(`resolveInvocation`으로 `--help` 사유가 positional로 파싱됨을 확인), 테스트 기대값 갱신. `commands/harness-diagram.md` 7단계 뷰어 예외에 `--view` 예시 추가.
+
 ## Learnings
