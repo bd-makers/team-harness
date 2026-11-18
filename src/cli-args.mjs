@@ -78,6 +78,8 @@ export const COMMANDS = [
     flags: ['write', 'check', 'force'] },
   { name: 'done', args: '[--force]', summary: 'Complete the active task (--force bypasses the completion guard)',
     flags: ['force'] },
+  { name: 'clean', args: '[<name>] [--base <ref>] [--yes]', summary: 'Roll a task back to before it started: dry-run by default, --yes backs up to refs/harness/trash then resets (local only)',
+    flags: ['base'] },
   { name: 'handoff', args: '', summary: 'Update the user handoff from the latest commit (post-commit hook)', flags: [] },
   { name: 'boundary', args: 'check', summary: 'Compare declared JSON Schema producer/consumer boundaries', flags: [] },
   { name: 'scenario', args: 'check', summary: "Run each Done evidence scenario's evidence command and require exit 0 (R2 machine rows)", flags: [] },

@@ -9,6 +9,14 @@
 
 ## [Unreleased]
 
+### Added
+
+- **`harness-team clean [<name>] [--base <ref>] [--yes]` — task 를 시작 전 상태로 되돌린다** (task `task-clean`). 방향이 틀렸거나 결과가 마음에 들지 않을 때 `done` 전에 쓴다. 상태(`dropped` 등)를 남기지 않는다.
+  - 기본은 dry-run(시작점·버릴 커밋·버릴 미커밋 목록). `--yes`는 작업 트리 전체(untracked 포함, ignored 제외)를 `refs/harness/trash/<user>/<task>/<ts>`에 백업한 뒤(둘째 부모 = 인덱스) `reset --hard`하고 백업 시점의 untracked 파일만 지우고 활성 포인터를 비운다. ignored 파일은 지우지 않는다. 복구 명령을 출력한다.
+  - 기본 브랜치·detached HEAD·`done`된 task·다른 task 폴더가 섞인 범위에서는 거부한다. 원격(push 된 브랜치·MR)에는 쓰지 않고 정리 명령만 안내한다.
+  - 에이전트는 dry-run 목록을 사용자에게 보여 주고 명시적 승인 뒤에만 `--yes`를 붙인다(`commands/harness-task.md`).
+- **task meta 에 `baseSha`(생성 시점 HEAD)를 기록한다** — `clean`의 시작점. 생성 때 1회만 쓰고 재활성화·reopen 은 바꾸지 않는다. 키가 없는 구 task 는 기본 브랜치와의 merge-base 로 대신한다.
+
 ## [0.55.0] - 2026-11-16
 
 ### Added

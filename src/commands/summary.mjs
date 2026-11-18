@@ -46,9 +46,10 @@ const isForced = (t) => Boolean(t.forcedAt || t.forcedRecovered);
 // `verify: required`는 이 배열만 읽고 artifact 마커를 세지 않는다. 키가 없는 구 meta는
 // 종전대로 마커로 판정한다(소급하면 이미 닫힌 증거가 무효가 돼 가드가 `--force` 훈련기가 된다).
 // `area`는 `task --area`로 만든 task에만 있다 — 키 부재가 "area 없음"이다(무설정 설치본의 meta 바이트 불변).
-export function taskMetaTemplate(user, task, created, firstActivatedAt, area) {
+// `baseSha`는 생성 시점 HEAD — `clean`이 되돌아갈 시작점이다. git 이 아니거나 unborn HEAD 면 키가 없다(키 부재 = merge-base 폴백).
+export function taskMetaTemplate(user, task, created, firstActivatedAt, area, baseSha) {
   return JSON.stringify(
-    { user, task, ...(area === undefined ? {} : { area }), created, firstActivatedAt, status: 'open', closedAt: null, forcedAt: null, forcedIssues: null, reviews: [] },
+    { user, task, ...(area === undefined ? {} : { area }), created, firstActivatedAt, ...(baseSha ? { baseSha } : {}), status: 'open', closedAt: null, forcedAt: null, forcedIssues: null, reviews: [] },
     null, 2,
   ) + '\n';
 }

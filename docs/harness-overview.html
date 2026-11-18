@@ -707,7 +707,7 @@
           <tr data-command-source="commands/harness-task.md">
             <td><span class="cmd">/harness-task</span></td>
             <td><code>commands/harness-task.md</code></td>
-            <td>task 관리 (task/list/done/handoff) — docs/&lt;user&gt;/&lt;name&gt;/ 구조</td>
+            <td>task 관리 (task/list/done/clean/handoff) — docs/&lt;user&gt;/&lt;name&gt;/ 구조</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
           </tr>
           <tr data-command-source="commands/harness-ship.md">
@@ -1556,7 +1556,7 @@
           <tr>
             <td><code>commands/harness-task.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
-            <td>task 관리 (task/list/done/handoff) — docs/&lt;user&gt;/&lt;name&gt;/ 구조</td>
+            <td>task 관리 (task/list/done/clean/handoff) — docs/&lt;user&gt;/&lt;name&gt;/ 구조</td>
           </tr>
           <tr>
             <td><code>commands/harness-unittest.md</code></td>
@@ -1892,6 +1892,11 @@
             <td><code>src/commands/boundary.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
             <td>harness-team boundary CLI 구현</td>
+          </tr>
+          <tr>
+            <td><code>src/commands/clean.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>harness-team clean CLI 구현</td>
           </tr>
           <tr>
             <td><code>src/commands/config.mjs</code></td>
@@ -2240,6 +2245,11 @@
           </tr>
           <tr>
             <td><code>tests/changelog-section.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/clean.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>
