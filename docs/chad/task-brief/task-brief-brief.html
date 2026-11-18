@@ -74,7 +74,9 @@ JSON escape를 푸는 것은 엔티티를 푸는 것과 같은 표현 변환이�
 → 결정(2026-11-18): 뺀다. <code>--stage</code>는 <code>spec</code>만 받는다 — 값 계약은 <code>FLAG_CHOICES</code>(MAINTAINING 규칙표)에 두고, 하는 일 없는 값을 광고하지 않는다.
 <code>ship</code>을 더하는 것은 하위 호환 변경이다(플래그 없음 = <code>spec</code>).</li><li><strong>A5와의 순서</strong> — 설계 PR 분할은 &quot;②는 ① 뒤&quot;인데 사용자가 병렬 시작을 택했다. <code>brief</code>는 게이트 단계에 기대지 않는다(spec만 읽는다).
 → 결정(2026-11-18): <code>commands/harness-task.md</code>에는 게이트와 독립된 짧은 절만 둔다. A5 머지 뒤 rebase 때 게이트 절이 이 절을 부르게 맞춘다.
-<code>src/commands/task.mjs</code>는 고치지 않는다(A5가 <code>taskPlanTemplate</code>을 고친다 — 충돌 최소화, <code>readActive</code>·<code>parseDoneEvidenceDeclaration</code>은 import만).</li><li><strong>생성물의 git 상태</strong> — 브리프를 만들고 두면 미추적 파일이라 <code>done</code>의 미커밋 가드가 막는다(codex 1차 P2). gitignore는 init·migrate 표면(소비자 <code>.gitignore</code>)을 늘리고,
+<code>src/commands/task.mjs</code>는 고치지 않는다(A5가 <code>taskPlanTemplate</code>을 고친다 — 충돌 최소화, <code>readActive</code>·<code>parseDoneEvidenceDeclaration</code>은 import만).
+→ 후속(2026-11-18): A5가 main에 머지됐다(PR #191, <code>bef05f1</code>). rebase하면서 독립 절을 게이트 절의 &quot;검토용 슬라이드(<code>brief</code>)&quot; 항목으로 옮기고,
+artifact 승인 줄의 슬라이드 칸이 <code>brief</code>가 쓴 경로를 가리키게 했다. 충돌은 CHANGELOG 한 곳(두 항목 모두 유지).</li><li><strong>생성물의 git 상태</strong> — 브리프를 만들고 두면 미추적 파일이라 <code>done</code>의 미커밋 가드가 막는다(codex 1차 P2). gitignore는 init·migrate 표면(소비자 <code>.gitignore</code>)을 늘리고,
 가드 면제는 <code>task.mjs</code>(A5와 충돌)를 고친다.
 → 결정(2026-11-18): 브리프는 검토한 시점의 스냅샷이라 <strong>task 문서와 함께 커밋한다</strong>(다이어그램과 같다). spec을 고쳐 다시 검토하면 다시 만들어 커밋한다.
 커밋하지 않을 거면 지운다. 문서(<code>commands/harness-task.md</code>·<code>templates/docs/README.md</code>)에 적는다.</li><li><strong>없는 절</strong> — 이전 spec에는 R1 절 같은 절이 없을 수 있다.
@@ -90,7 +92,7 @@ Done evidence <code>scenarios</code>(선언됐을 때만 — 시나리오마다 
 spec의 <code>&lt;script&gt;</code>는 글자다.</li><li><strong>산출물</strong>: <code>&lt;!doctype html&gt;</code> 한 파일. 인라인 <code>&lt;style&gt;</code> 하나(고정 문자열 — spec과 무관), script 0, <code>src</code>·<code>href</code>·<code>url(</code>·<code>@import</code> 0,
 system font stack, <code>html { scroll-snap-type: y mandatory }</code>·<code>.slide { scroll-snap-align: start; min-height: 100vh }</code>, 다크 모드, 인쇄(<code>break-after: page</code>).</li><li><strong>명령 표면</strong>: CLI 서브커맨드 <code>brief</code>(<code>bin/harness-team.mjs</code> router·<code>taskCmds</code>, <code>cli-args.mjs</code> COMMANDS·<code>VALUE_FLAGS</code>·<code>FLAG_CHOICES.stage</code>).
 슬래시 명령은 새로 만들지 않는다 — <code>commands/harness-task.md</code>의 절이 <code>harness-team brief</code>를 부른다.</li><li><strong>형제 경로</strong>: <code>clean.mjs</code> <code>TASK_FILE</code> kind에 <code>brief</code>(확장자 그룹은 이미 <code>html</code>), <code>task-paths.mjs</code> kind 주석, <code>templates/docs/README.md</code> 트리
-(생성물·비-SSOT — docs seed는 migrate refresh 대상이 아니라 sha 등록 없음, A1·A2 선례).</li><li><strong>문서 정본</strong>: <code>commands/harness-task.md</code> &quot;검토용 슬라이드&quot; 절(게이트와 독립 — A5 머지 뒤 게이트 절과 연결). README 명령어 블록,
+(생성물·비-SSOT — docs seed는 migrate refresh 대상이 아니라 sha 등록 없음, A1·A2 선례).</li><li><strong>문서 정본</strong>: <code>commands/harness-task.md</code> 구현 전 사람 검토 게이트 절의 &quot;검토용 슬라이드(<code>brief</code>)&quot; 항목(A5 머지 뒤 rebase에서 독립 절을 옮김). README 명령어 블록,
 Codex <code>skills/harness-team/SKILL.md</code> 한 줄.</li><li><strong>테스트</strong>: <code>tests/brief-command.test.mjs</code> — 새 사실 0(텍스트 노드 ⊂ spec — 표본과 이 저장소의 모든 task spec, 음성 대조: 남의 문자열 하나를 넣으면 판정이 실패),
 외부 참조 0(태그·속성·style만 본다 — 본문 텍스트의 URL 언급은 허용), escape(<code>&lt;script&gt;</code>·링크 문법), 주석·안내 문단 제외, 열린 항목(맨 글자/백틱,
 마커 종류), scenarios(configured만), 결정론(두 번 실행 바이트 동일), 없는 절 생략·전부 없으면 exit 1·쓰지 않음, 활성 task 없음.

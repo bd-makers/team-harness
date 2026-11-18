@@ -80,6 +80,8 @@
 - **A5와의 순서** — 설계 PR 분할은 "②는 ① 뒤"인데 사용자가 병렬 시작을 택했다. `brief`는 게이트 단계에 기대지 않는다(spec만 읽는다).
   → 결정(2026-11-18): `commands/harness-task.md`에는 게이트와 독립된 짧은 절만 둔다. A5 머지 뒤 rebase 때 게이트 절이 이 절을 부르게 맞춘다.
   `src/commands/task.mjs`는 고치지 않는다(A5가 `taskPlanTemplate`을 고친다 — 충돌 최소화, `readActive`·`parseDoneEvidenceDeclaration`은 import만).
+  → 후속(2026-11-18): A5가 main에 머지됐다(PR #191, `bef05f1`). rebase하면서 독립 절을 게이트 절의 "검토용 슬라이드(`brief`)" 항목으로 옮기고,
+  artifact 승인 줄의 슬라이드 칸이 `brief`가 쓴 경로를 가리키게 했다. 충돌은 CHANGELOG 한 곳(두 항목 모두 유지).
 - **생성물의 git 상태** — 브리프를 만들고 두면 미추적 파일이라 `done`의 미커밋 가드가 막는다(codex 1차 P2). gitignore는 init·migrate 표면(소비자 `.gitignore`)을 늘리고,
   가드 면제는 `task.mjs`(A5와 충돌)를 고친다.
   → 결정(2026-11-18): 브리프는 검토한 시점의 스냅샷이라 **task 문서와 함께 커밋한다**(다이어그램과 같다). spec을 고쳐 다시 검토하면 다시 만들어 커밋한다.
@@ -108,7 +110,7 @@
   슬래시 명령은 새로 만들지 않는다 — `commands/harness-task.md`의 절이 `harness-team brief`를 부른다.
 - **형제 경로**: `clean.mjs` `TASK_FILE` kind에 `brief`(확장자 그룹은 이미 `html`), `task-paths.mjs` kind 주석, `templates/docs/README.md` 트리
   (생성물·비-SSOT — docs seed는 migrate refresh 대상이 아니라 sha 등록 없음, A1·A2 선례).
-- **문서 정본**: `commands/harness-task.md` "검토용 슬라이드" 절(게이트와 독립 — A5 머지 뒤 게이트 절과 연결). README 명령어 블록,
+- **문서 정본**: `commands/harness-task.md` 구현 전 사람 검토 게이트 절의 "검토용 슬라이드(`brief`)" 항목(A5 머지 뒤 rebase에서 독립 절을 옮김). README 명령어 블록,
   Codex `skills/harness-team/SKILL.md` 한 줄.
 - **테스트**: `tests/brief-command.test.mjs` — 새 사실 0(텍스트 노드 ⊂ spec — 표본과 이 저장소의 모든 task spec, 음성 대조: 남의 문자열 하나를 넣으면 판정이 실패),
   외부 참조 0(태그·속성·style만 본다 — 본문 텍스트의 URL 언급은 허용), escape(`<script>`·링크 문법), 주석·안내 문단 제외, 열린 항목(맨 글자/백틱,

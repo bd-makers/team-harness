@@ -40,7 +40,7 @@
   - 열린 항목은 목록 항목에 맨 글자로 붙은 `(open)`·`(open → <대상>)`·`(unresolved)`·`(ask:<역할>)`·`(asked:<역할> …)`·`(answered …)`를 spec 어디서든 모은다(백틱 안은 언급이라 제외).
   - 산출물: script 0·외부 자산 0·system font stack·CSS scroll-snap 한 파일. 마크다운은 문단·목록·굵게·인라인 코드·표·코드 펜스·제목만 렌더하고 링크·이미지는 글자 그대로다. `--stage`는 `spec`만 받는다(`ship`은 후속).
   - 브리프는 검토한 시점의 스냅샷으로 task 문서와 함께 커밋한다 — 미추적으로 두면 `done`의 미커밋 가드가 막는다.
-  - 열람은 로컬 브라우저다 — Obsidian은 `.html`을 네이티브로 열지 않는다. 슬래시 명령은 없고 `/harness-task` 문서의 검토용 슬라이드 절이 부른다. `clean`은 다른 task 폴더의 `<task>-brief.html`(그 확장자만)도 보호한다. 새 task 이름으로 `brief`는 쓸 수 없다(명령 이름).
+  - 열람은 로컬 브라우저다 — Obsidian은 `.html`을 네이티브로 열지 않는다. 슬래시 명령은 없고 `/harness-task`의 구현 전 사람 검토 게이트 절이 spec을 보여 줄 때 부르며, 그 경로가 artifact `- 검토 승인: … · 슬라이드 <경로>` 칸에 들어간다. `clean`은 다른 task 폴더의 `<task>-brief.html`(그 확장자만)도 보호한다. 새 task 이름으로 `brief`는 쓸 수 없다(명령 이름).
 
 ### Changed
 

@@ -24,7 +24,10 @@
   - `npm test` → exit 0 — tests 1385 · pass 1384 · fail 0 · skipped 1(CI 전용 기존 skip), perf 1/1. codex 1차 반영 뒤 재실행: tests 1388 · pass 1387 · fail 0 · skipped 1, perf 1/1.
   - `npm run docs:check` → "harness overview 생성 상태가 최신입니다."
   - `node bin/harness-team.mjs doctor` → 1 warning(`.codex/hooks.json` 신뢰 없음 — 이 머신의 Codex 훅 승인 상태, 이 변경과 무관).
-
+- A5 머지 뒤 rebase(2026-11-18): `origin/main` `bef05f1`(PR #191) 위로 rebase. 충돌은 CHANGELOG `[Unreleased] ### Added` 한 곳 — A5·A3 항목 둘 다 유지.
+  `cli-args.mjs`(A5 `--no-review-gate`)·`clean.mjs`·`harness-task.md`·`bin`은 자동 병합. 독립 절 "검토용 슬라이드 (`brief`)"를 게이트 절 항목으로 옮기고
+  승인 줄 슬라이드 칸이 `brief` 경로를 가리키게 했다. 재검증: `npm test` exit 0 — tests 1399 · pass 1398 · fail 0 · skipped 1, perf 1/1. `docs:check` 최신,
+  doctor 1 warning(동일·무관), `pr-check --base origin/main` 아래 커밋 뒤 확인.
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
