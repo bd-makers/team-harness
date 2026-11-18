@@ -119,8 +119,8 @@ area 는 `<name>-meta.json` 의 `area` 키에만 기록되고 task 는 여전히
    뷰를 골랐으면 위 한 줄 대신 **고른 뷰마다** 한 줄을 넣는다(뷰 열거의 정본은 CLI `FLAG_CHOICES.view`):
 
    ```markdown
-   - [ ] spec/plan 다이어그램(sequence) 작성 → docs/<user>/<name>/<name>-diagram-sequence.html
-   - [ ] spec/plan 다이어그램(module) 작성 → docs/<user>/<name>/<name>-diagram-module.html
+   - [ ] spec/plan 다이어그램(sequence) 작성 → docs/<user>/<name>/<name>-diagram-sequence.svg
+   - [ ] spec/plan 다이어그램(module) 작성 → docs/<user>/<name>/<name>-diagram-module.svg
    ```
 
    이름 없는 첫 형식이 레거시 뷰이며 계속 유효하다. 레거시 단계와 뷰 단계가 한 plan에 함께 있어도 된다 —
@@ -148,14 +148,17 @@ area 는 `<name>-meta.json` 의 `area` 키에만 기록되고 task 는 여전히
    "plan.md에 미완 체크박스가 남아 있음"으로 완료를 막는다.
 
 5. **산출물** — `docs/<user>/<name>/<name>-diagram.html`(레거시), 뷰 단계면 뷰마다
-   `docs/<user>/<name>/<name>-diagram-<view>.html` — 파일 하나 = 뷰 하나. 자립형 **inline SVG**로 쓴다 —
+   `docs/<user>/<name>/<name>-diagram-<view>.svg` — 파일 하나 = 뷰 하나. 레거시는 자립형 **inline SVG**로 쓴다 —
    `docs/`는 Obsidian 볼트에서 열리고 Obsidian은 script를 제거하므로 mermaid 같은 런타임 JS
-   다이어그램은 볼트에서 렌더되지 않는다. 이 파일은 `<name>-meta.json`과 마찬가지로 SSOT 4파일이
+   다이어그램은 볼트에서 렌더되지 않는다. 뷰는 **단독 SVG** 하나다 — PR/MR 리뷰어와 Obsidian이 이미지로 보도록
+   HTML을 두지 않는다. 스타일은 `<svg>` 안에 두고 외부 자산은 0이다(제약 목록은 `commands/harness-diagram.md` 6번,
+   판정은 아래 6번의 `record --view`). 이 파일은 `<name>-meta.json`과 마찬가지로 SSOT 4파일이
    아니다.
 
 6. **기록** — `harness-team diagram record`(건너뛰었으면 `--skipped "<사유>"`)가 `<name>-artifact.md`에
    날짜 한 줄을 남기고 위 4번의 plan 단계를 함께 닫는다. 형식은 CLI가 정본이다. 뷰 단계는
-   `--view <view>`를 붙여 뷰마다 기록한다 — 그 뷰의 파일·단계만 다루고, `--view` 없는 호출은 레거시 단계만 닫는다. 기록하지 않으면 나중에
+   `--view <view>`를 붙여 뷰마다 기록한다 — 그 뷰의 파일·단계만 다루고, `--view` 없는 호출은 레거시 단계만 닫는다.
+   생성 기록이면 `--view`가 SVG 자립성을 검사한다 — 위반이면 exit 1이고 아무것도 쓰지 않는다. 기록하지 않으면 나중에
    "묻지 않은 것"과 "묻고 건너뛴 것"을 구분할 수 없다.
 
 7. **실행은 `/harness-diagram`이 담당한다** — 위 4~6번(probe·degrade·산출물·기록)을 실제로 수행하는

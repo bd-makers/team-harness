@@ -1,0 +1,25 @@
+{
+  "user": "chad",
+  "task": "diagram-svg",
+  "created": "2026-11-18",
+  "firstActivatedAt": "2026-11-18T11:45:07.236Z",
+  "baseSha": "74aa5bb2d7782d92511eae17553bf0c80ec1e9e4",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "model": null,
+      "scope": "diff",
+      "base": "origin/main",
+      "mergeBase": "74aa5bb2d7782d92511eae17553bf0c80ec1e9e4",
+      "tip": "724ec0af1d78376c74a7a2fb358458a758a493ca",
+      "at": "2026-11-18T12:06:32.445Z",
+      "exitCode": 0,
+      "outputBytes": 3849
+    }
+  ]
+}

@@ -16,7 +16,7 @@ docs/
         ├── <name>-handoff.md         # 세션 메모 (선택, 직접 작성)
         ├── <name>-artifact.md        # 실행 결과 / 학습 (task done·retro 시 append)
         ├── <name>-diagram.html       # spec/plan 다이어그램 — 옵트인 산출물 (비-SSOT, 없을 수 있음)
-        ├── <name>-diagram-<view>.html # 뷰별 다이어그램(sequence·module) — 옵트인, 뷰 하나 = 파일 하나
+        ├── <name>-diagram-<view>.svg # 뷰별 다이어그램(sequence·module) — 옵트인 단독 SVG, 뷰 하나 = 파일 하나
         └── <name>-meta.json          # created / status — harness 내부 상태 (기계 소유)
 ```
 
@@ -64,5 +64,6 @@ harness-team retro "<메모>"    # 활성 task artifact.md에 학습/교정 내�
 - **`<name>-diagram.html`**: spec/plan 단계 다이어그램. **옵트인이라 없는 task가 정상이다** —
   신규 task 생성 시 1회 묻고 "예"일 때만 `<name>-plan.md`에 그 단계가 생긴다(설정 키가 아니라
   plan.md가 상태다). **SSOT 아님.** 자립형 inline SVG로 쓴다 — Obsidian이 script를 제거하므로
-  런타임 JS 다이어그램은 볼트에서 렌더되지 않는다. 뷰를 나눠 그리면 `<name>-diagram-<view>.html`
-  (`sequence`·`module`)이 뷰마다 하나씩 생기고, plan 단계도 `spec/plan 다이어그램(<view>)`로 뷰마다 있다.
+  런타임 JS 다이어그램은 볼트에서 렌더되지 않는다. 뷰를 나눠 그리면 단독 SVG `<name>-diagram-<view>.svg`
+  (`sequence`·`module`)가 뷰마다 하나씩 생기고, plan 단계도 `spec/plan 다이어그램(<view>)`로 뷰마다 있다.
+  뷰 SVG는 PR/MR 본문에 링크해 리뷰어가 이미지로 본다 — 외부 자산이 없어야 한다(`diagram record --view`가 검사).

@@ -10,8 +10,8 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { resolveScope } from './review.mjs';
-import { taskSpecTemplate, taskPlanTemplate, taskArtifactTemplate } from './task.mjs';
-import { DIAGRAM_SKIPPED_PREFIX } from './diagram.mjs';
+import { taskSpecTemplate, taskPlanTemplate, taskArtifactTemplate, repoPrefix } from './task.mjs';
+import { DIAGRAM_SKIPPED_PREFIX, svgSelfContainmentViolations } from './diagram.mjs';
 import { DOCS_DIR, taskFileRel, taskLabel, diagramKind } from '../task-paths.mjs';
 import { DIAGRAM_VIEWS } from '../cli-args.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
@@ -57,11 +57,15 @@ async function changedTaskRefs(targetDir, rev, paths) {
   return refs.sort((a, b) => taskLabel(a.user, a.task).localeCompare(taskLabel(b.user, b.task)));
 }
 
-async function anyDiagramAt(targetDir, rev, user, task) {
+// rev 에 있는 다이어그램 파일 — 레거시 HTML 과 뷰 SVG(`<task>-diagram-<view>.svg`). 권장 판정과 PR 링크 안내가 같은 목록을 쓴다.
+async function diagramsAt(targetDir, rev, user, task) {
+  const present = [];
   for (const view of [null, ...DIAGRAM_VIEWS]) {
-    if ((await showAt(targetDir, rev, taskFileRel(user, task, diagramKind(view)))) !== null) return true;
+    const rel = taskFileRel(user, task, diagramKind(view));
+    const content = await showAt(targetDir, rev, rel);
+    if (content !== null) present.push({ view, rel, content });
   }
-  return false;
+  return present;
 }
 
 async function taskFindings(targetDir, rev, { user, task }) {
@@ -79,9 +83,21 @@ async function taskFindings(targetDir, rev, { user, task }) {
   }
   const diagramRel = taskFileRel(user, task, diagramKind());
   const skipped = (artifact ?? '').split('\n').some(line => line.startsWith(DIAGRAM_SKIPPED_PREFIX) && line.length > DIAGRAM_SKIPPED_PREFIX.length);
-  // 레거시 파일이나 뷰 파일(`<task>-diagram-<view>.html`) 중 하나라도 있으면 다이어그램이 있는 것이다.
-  if (!skipped && !(await anyDiagramAt(targetDir, rev, user, task))) {
-    notes.push(`권장: 다이어그램 없음 — 로직·구조 변화가 있으면 /harness-diagram 으로 ${diagramRel}(또는 뷰별 ${task}-diagram-<view>.html) 을 만들어 커밋`);
+  const diagrams = await diagramsAt(targetDir, rev, user, task);
+  // 레거시 파일이나 뷰 SVG 중 하나라도 있으면 다이어그램이 있는 것이다.
+  if (!skipped && !diagrams.length) {
+    notes.push(`권장: 다이어그램 없음 — 로직·구조 변화가 있으면 /harness-diagram 으로 ${diagramRel}(또는 뷰별 ${task}-diagram-<view>.svg) 을 만들어 커밋`);
+  }
+  // 뷰 SVG 는 PR 리뷰어가 이미지로 볼 수 있다 — 본문에 걸 경로를 알린다(막지 않음, diagram-svg). 레거시 HTML 은 forge 가 소스로
+  // 보이므로 안내하지 않는다. 경로는 저장소 **루트** 기준이다(모노레포 하위 설치 — codex 1차 P2) — forge URL 로 바꾸는 것은
+  // ship 6단계의 몫이다. 커밋된 SVG 가 자립성 검사에 걸리면 링크하지 않고 그 사실을 알린다(codex 1차 P2 — 깨진 그림을 걸지 않는다).
+  const prefix = diagrams.some(d => d.view) ? await repoPrefix(targetDir) : '';
+  for (const d of diagrams) {
+    if (!d.view) continue;
+    const violations = svgSelfContainmentViolations(d.content);
+    notes.push(violations.length
+      ? `뷰 SVG 가 자립형이 아님 — 링크하지 않음: ${prefix}${d.rel} (${violations[0]}${violations.length > 1 ? ` 외 ${violations.length - 1}` : ''}; \`harness-team diagram record --view ${d.view}\` 로 확인)`
+      : `PR 본문에 링크: ${prefix}${d.rel}`);
   }
   return { issues, notes };
 }

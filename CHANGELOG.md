@@ -18,10 +18,15 @@
   - `.harness/reviewers.json`에 `profiles`(`{ "<name>": { "engine", "model"? } }`)·`default`를 더했다. 기존 `custom.command`와 공존한다. 엔진 결정 우선순위: 엔진 위치 인자 > task 프로필 > `default` > probe 체인(codex → claude, 불변). 고른 프로필의 엔진이 없거나 설정이 깨졌으면 조용히 내려가지 않고 error다.
   - `harness-team task <name> --reviewer <profile>` — 새 task의 spec Done evidence에 `{ "version": 1, "reviewer": "<profile>" }` 블록을 쓴다. 기존 task에는 거부한다(spec은 손으로 고친다). Done evidence 파서가 `reviewer`(비어 있지 않은 문자열)를 받는다 — 가드 판정은 바꾸지 않는다.
   - `meta.reviews[]` 새 항목에 `model`(`null` = 엔진 기본 모델, 키 없음 = 이전 기록), artifact `- engine:` 줄에 `· model: <id|default>`. 리뷰 마커·kind·verify 판정은 바꾸지 않는다. 기존 기록은 소급하지 않는다.
-- **뷰별 다이어그램(옵트인) — `<name>-diagram-<view>.html`과 `diagram record --view sequence|module`** (task `diagram-views`, 회고 A1). 한 파일에 시간 순 상호작용과 구성요소 관계를 섞지 않도록 뷰마다 파일 하나·plan 단계 하나(`- [ ] spec/plan 다이어그램(<view>) 작성 → …`)를 둔다. 뷰 열거의 정본은 `FLAG_CHOICES.view`다.
+- **뷰별 다이어그램(옵트인) — `<name>-diagram-<view>.svg`와 `diagram record --view sequence|module`** (task `diagram-views`, 회고 A1). 한 파일에 시간 순 상호작용과 구성요소 관계를 섞지 않도록 뷰마다 파일 하나·plan 단계 하나(`- [ ] spec/plan 다이어그램(<view>) 작성 → …`)를 둔다. 뷰 열거의 정본은 `FLAG_CHOICES.view`다.
   - `record --view <v>`는 그 뷰의 파일 존재·plan 단계·artifact 줄만 다룬다. 생략 줄은 `- 다이어그램: 미실행 — [<view>] <사유> (날짜)`이고, 뷰 단계는 `- [x] spec/plan 다이어그램(<view>) — 미실행(<사유>)`로 닫힌다.
   - `pr-check`는 레거시 파일이나 뷰 파일 중 하나라도 있으면 다이어그램 권장 안내를 내지 않는다. `clean`은 다른 task 폴더의 뷰 파일도 보호한다.
-  - **호환**: 레거시 `<name>-diagram.html`·레거시 단계·`--view` 없는 `record`는 종전 그대로다. `--view` 없는 `record`는 이제 뷰 단계를 닫지 않는다. **뷰 단계를 쓰는 plan은 팀 전원이 이 버전 이상이어야 한다** — 옛 CLI의 `record`는 뷰 단계를 레거시 단계로 닫는다. doctor·`AGENTS.md`는 바뀌지 않는다. 뷰 SVG는 후속 A2다.
+  - **호환**: 레거시 `<name>-diagram.html`·레거시 단계·`--view` 없는 `record`는 종전 그대로다. `--view` 없는 `record`는 이제 뷰 단계를 닫지 않는다. **뷰 단계를 쓰는 plan은 팀 전원이 이 버전 이상이어야 한다** — 옛 CLI의 `record`는 뷰 단계를 레거시 단계로 닫는다. doctor·`AGENTS.md`는 바뀌지 않는다.
+- **뷰 다이어그램은 단독 SVG 하나 — PR/MR 리뷰어가 이미지로 본다** (task `diagram-svg`, 회고 A2·결정 A2-1). 뷰 산출물은 `<name>-diagram-<view>.svg`이고 HTML·SVG 이중화는 없다. 상류 다이어그램 스킬이 SVG를 직접 쓰고, 하네스는 그리지도 HTML에서 떼어 내지도 않는다.
+  - `diagram record --view <v>`(생성 기록 — 첫 기록·갱신)가 SVG 자립성을 결정론으로 검사한다: 루트 `<svg xmlns="http://www.w3.org/2000/svg">`, 루트가 닫힘(잘린 파일 거부), `<script>`·`on…=` 이벤트 속성·`<foreignObject>`·`@import`·DTD `<!ENTITY` 없음, `href`·`xlink:href`·CSS `url()`은 `#id`·`data:`만(숫자 문자 참조를 풀어서 본다). 텍스트 안의 `url(…)`도 걸리는 보수적 검사다. 위반이면 exit 1이고 위반 목록을 내며 아무것도 쓰지 않는다. `--skipped`와 레거시 HTML은 검사하지 않는다.
+  - `pr-check`는 레거시 HTML이나 뷰 SVG가 있으면 다이어그램이 있는 것으로 보고, 있는 뷰 SVG마다 `· PR 본문에 링크: <path>.svg`(저장소 루트 기준)를 낸다(막지 않음). 커밋된 SVG가 자립성 검사에 걸리면 링크 대신 `· 뷰 SVG 가 자립형이 아님 — 링크하지 않음: …`을 낸다. `clean`은 다른 task 폴더의 `.svg`도 보호한다.
+  - 문서: `/harness-diagram` 6단계에 단독 SVG 제약(`<svg>` 안 스타일·system font stack·외부 자산 0), `/harness-ship` 6단계에 "PR 본문에 SVG 링크"(PR head 브랜치의 파일 URL). 뷰 SVG에는 script 뷰어 예외가 없다.
+  - **미검증**: GitLab self-managed·Obsidian에서의 `.svg` 렌더 실측, PR/MR 본문의 저장소 상대 경로 해석.
 
 ### Changed
 

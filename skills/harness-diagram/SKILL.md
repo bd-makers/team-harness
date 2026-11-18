@@ -20,10 +20,14 @@ Use this skill as the Codex equivalent of Claude Code `/harness-diagram`.
   - `AskUserQuestion` means asking the user once, in plain text, and waiting for the answer.
   - `/diagram-design:diagram-design` means whatever diagram skill this session exposes, if any.
 - Output is one file in the active task directory, named after the task with a `-diagram.html`
-  suffix — or, when the plan has per-view steps (`spec/plan 다이어그램(<view>)`), one file per view with a
-  `-diagram-<view>.html` suffix, recorded per view with `harness-team diagram record --view <view>`. Self-contained inline SVG with no external assets is the requirement, not a default — the
+  suffix — or, when the plan has per-view steps (`spec/plan 다이어그램(<view>)`), one standalone SVG per view with a
+  `-diagram-<view>.svg` suffix, recorded per view with `harness-team diagram record --view <view>`. A view SVG
+  is written directly by the upstream skill (styles inside the `<svg>`, system font stack, no external assets) and
+  `record --view` rejects one that is not self-contained; never cut the `<svg>` out of an HTML output.
+  Self-contained inline SVG with no external assets is the requirement, not a default — the
   docs tree is opened in viewers that strip script, so a runtime-JS diagram does not render there.
-  The command contract allows one exception, for a project whose viewer is known to run script, and
-  only when the reasoning and the viewer checked are recorded in the artifact.
+  The command contract allows one exception for the legacy HTML only, for a project whose viewer is known
+  to run script, and only when the reasoning and the viewer checked are recorded in the artifact. A view SVG
+  has no such exception.
 - Record the outcome in the active task's artifact with a date, whether the diagram was produced or
   skipped. An unrecorded run cannot be told apart from a run that never happened.

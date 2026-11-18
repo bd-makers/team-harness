@@ -279,15 +279,41 @@ test('commands/harness-task.md는 created/activated를 구분하고 건너뛴 �
 // diagram-views: 뷰별 단계·경로·기록 호출의 정본도 같은 절이다. 레거시 형식(위 테스트)은 그대로 남고 뷰는 옵트인으로 더해진다.
 test('commands/harness-task.md는 뷰별 다이어그램 단계·경로·기록(--view)을 옵트인으로 정의한다', async () => {
   const doc = await readFile(join(ROOT, 'commands', 'harness-task.md'), 'utf8');
-  assert.match(doc, /- \[ \] spec\/plan 다이어그램\(sequence\) 작성 → docs\/<user>\/<name>\/<name>-diagram-sequence\.html/, '뷰 단계 형식');
+  assert.match(doc, /- \[ \] spec\/plan 다이어그램\(sequence\) 작성 → docs\/<user>\/<name>\/<name>-diagram-sequence\.svg/, '뷰 단계 형식');
   assert.match(doc, /- \[x\] spec\/plan 다이어그램\(sequence\) — 미실행\(도구 없음\)/, '뷰 단계의 생략 종결 형식');
-  assert.match(doc, /docs\/<user>\/<name>\/<name>-diagram-<view>\.html/, '뷰 산출물 경로');
+  assert.match(doc, /docs\/<user>\/<name>\/<name>-diagram-<view>\.svg/, '뷰 산출물 경로');
   assert.match(doc, /`--view <view>`/, '뷰 기록 호출');
   assert.match(doc, /뷰는 옵트인이다/, '뷰는 옵트인');
   assert.match(doc, /FLAG_CHOICES\.view/, '뷰 열거의 정본은 CLI');
   const diagram = await readFile(join(ROOT, 'commands', 'harness-diagram.md'), 'utf8');
   assert.match(diagram, /harness-team diagram record --view sequence/, 'harness-diagram 7단계 예시');
-  assert.match(diagram, /<name>-diagram-<view>\.html/, 'harness-diagram 6단계 출력 파일');
+  assert.match(diagram, /<name>-diagram-<view>\.svg/, 'harness-diagram 6단계 출력 파일');
+});
+
+// diagram-svg: 뷰 산출물은 단독 SVG 하나다(결정 A2-1). 뷰 HTML 경로가 문서에 되살아나지 않게, 상류 스킬에 싣는 제약과
+// ship 의 PR 링크 안내가 빠지지 않게 고정한다.
+test('뷰 다이어그램 문서는 단독 SVG·자립성 검사·PR 본문 링크를 정의한다', async () => {
+  const read = (...p) => readFile(join(ROOT, ...p), 'utf8');
+  const [task, diagram, ship, skill, readme] = await Promise.all([
+    read('commands', 'harness-task.md'), read('commands', 'harness-diagram.md'), read('commands', 'harness-ship.md'),
+    read('skills', 'harness-diagram', 'SKILL.md'), read('templates', 'docs', 'README.md'),
+  ]);
+  for (const [name, doc] of Object.entries({ task, diagram, ship, skill, readme })) {
+    assert.doesNotMatch(doc, /-diagram-(?:<view>|sequence|module)\.html/, `${name}: 뷰 HTML 경로 없음`);
+    assert.match(doc, /-diagram-(?:<view>|sequence)\.svg/, `${name}: 뷰 SVG 경로`);
+  }
+  assert.match(task, /뷰는 \*\*단독 SVG\*\* 하나다/, '옵트인 절(정본): 뷰 산출물 형식');
+  assert.match(task, /`--view`가 SVG 자립성을 검사한다 — 위반이면 exit 1이고 아무것도 쓰지 않는다/, '옵트인 절: 기록 시 검사');
+  assert.match(diagram, /\*\*system font stack\*\*/, 'harness-diagram 6단계: system font stack');
+  assert.match(diagram, /\*\*외부 자산 0\*\*: `href`·`xlink:href`·CSS `url\(\)`은 문서 안\(`#id`\)이나 `data:`만, `@import` 없음/, '6단계: 외부 자산 0');
+  assert.match(diagram, /`<script>`·`on…=` 이벤트 속성·`<foreignObject>`\(HTML 섞기\) 금지/, '6단계: script·foreignObject 금지');
+  assert.match(diagram, /\*\*HTML 산출물에서 `<svg>`만 떼어 내지 않는다\*\*/, '6단계: 추출 금지(A2-1)');
+  assert.match(diagram, /위반이면 exit 1이고 artifact·plan 어느 것도 쓰지 않는다/, '7단계: record --view 검사');
+  assert.doesNotMatch(diagram, /record --view \w+ "Confluence/, '뷰에는 script 예외가 없다');
+  assert.match(ship, /\*\*PR 본문에 SVG 링크\*\*/, 'ship 6단계: PR 본문에 SVG 링크');
+  assert.match(ship, /`· PR 본문에 링크: <path>\.svg`/, 'ship 6단계: pr-check 안내 문구');
+  assert.match(ship, /\*\*PR head 브랜치의 파일 URL\(blob\)\*\*/, 'ship 6단계: 링크 형태');
+  assert.match(skill, /never cut the `<svg>` out of an HTML output/, 'SKILL: 추출 금지');
 });
 
 // 완료 만료(reopen)가 세 번째 출력 동사를 만들었다. 문서가 created/activated 둘로만 갈리면
