@@ -28,6 +28,9 @@ test('spec 템플릿 목적 절은 문제→기대 결과 안내문을 담고, �
   assert.match(section, /\*문제\(오늘 무엇이 안 되는가\)/);
   assert.match(section, /기대 결과/);
   assert.match(section, /`## 참고` 절에 `- \(open\) …`/);
+  // A4(task spec-ask-markers): 다른 역할에 묻는 질문의 3상태 안내 — 이월 문법 `(open → <대상>)`과 섞지 않는다.
+  assert.match(section, /`- \(ask:<역할>\) …` → `\(asked:<역할> <날짜> <링크>\)` → `\(answered <링크>\)`/);
+  assert.doesNotMatch(section, /open → ask:/, '이월 문법에 ask 대상을 싣지 않는다');
   // sim 출처 태그 규칙(tests/sim/rules.mjs)은 요구사항 절의 **목록 항목**만 센다 —
   // 안내문이 목록이면 "태그 없는 요구"로 오탐된다.
   assert.doesNotMatch(section, /^\s*(?:[-*]|\d+\.)\s/m);
@@ -61,10 +64,11 @@ test('spec 템플릿은 목적 다음에 R1 원천 검토 절을 두고, 안내�
   assert.match(section, /### 발견/);
   assert.match(section, /`\(unresolved\)`/, '충돌·모순 표기 안내');
   assert.match(section, /`\(open\)`/, '누락 표기 안내');
+  assert.match(section, /`\(ask:<역할>\)`/, '다른 역할에 물을 누락의 표기 안내');
   assert.match(section, /`- 없음 — <사유>`/, '원천 없는 task의 한 줄 안내');
   const items = section.split('\n').filter(l => /^\s*(?:[-*]|\d+\.)\s/.test(l));
   assert.ok(!items.some(l => /^\s*- (?:없음 —|검토 완료:)/.test(l)), '템플릿 자체가 R1 통과 기록을 갖지 않는다');
-  assert.ok(!items.some(l => /\((?:unresolved|open)\)/.test(l)), '템플릿 자체가 미해결 발견을 갖지 않는다');
+  assert.ok(!items.some(l => /\((?:unresolved|open|ask:|asked:|answered)/.test(l)), '템플릿 자체가 미해결 발견을 갖지 않는다');
   assert.doesNotMatch(section, /10_ssot/, '위키 분류 체계를 템플릿에 박지 않는다(D11)');
 });
 
