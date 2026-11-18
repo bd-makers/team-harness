@@ -276,6 +276,20 @@ test('commands/harness-task.md는 created/activated를 구분하고 건너뛴 �
   assert.doesNotMatch(doc, /"다이어그램 미실행 — 도구 없음"을 날짜와 함께 한 줄 남긴다/, '손으로 쓰는 문구 회귀 금지');
 });
 
+// diagram-views: 뷰별 단계·경로·기록 호출의 정본도 같은 절이다. 레거시 형식(위 테스트)은 그대로 남고 뷰는 옵트인으로 더해진다.
+test('commands/harness-task.md는 뷰별 다이어그램 단계·경로·기록(--view)을 옵트인으로 정의한다', async () => {
+  const doc = await readFile(join(ROOT, 'commands', 'harness-task.md'), 'utf8');
+  assert.match(doc, /- \[ \] spec\/plan 다이어그램\(sequence\) 작성 → docs\/<user>\/<name>\/<name>-diagram-sequence\.html/, '뷰 단계 형식');
+  assert.match(doc, /- \[x\] spec\/plan 다이어그램\(sequence\) — 미실행\(도구 없음\)/, '뷰 단계의 생략 종결 형식');
+  assert.match(doc, /docs\/<user>\/<name>\/<name>-diagram-<view>\.html/, '뷰 산출물 경로');
+  assert.match(doc, /`--view <view>`/, '뷰 기록 호출');
+  assert.match(doc, /뷰는 옵트인이다/, '뷰는 옵트인');
+  assert.match(doc, /FLAG_CHOICES\.view/, '뷰 열거의 정본은 CLI');
+  const diagram = await readFile(join(ROOT, 'commands', 'harness-diagram.md'), 'utf8');
+  assert.match(diagram, /harness-team diagram record --view sequence/, 'harness-diagram 7단계 예시');
+  assert.match(diagram, /<name>-diagram-<view>\.html/, 'harness-diagram 6단계 출력 파일');
+});
+
 // 완료 만료(reopen)가 세 번째 출력 동사를 만들었다. 문서가 created/activated 둘로만 갈리면
 // `reopened:`를 본 에이전트에게 규칙이 없다 — plan.md가 곧 옵트인 상태이므로 재개도 묻지 않는다.
 test('commands/harness-task.md는 reopened(완료 만료 후 재개)도 재질문 금지 쪽으로 분류한다', async () => {

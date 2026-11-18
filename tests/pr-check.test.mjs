@@ -158,6 +158,27 @@ test('pr-check: 다이어그램은 권장이다 — 없으면 막지 않고 안�
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+// diagram-views: 뷰별 파일(`<task>-diagram-<view>.html`) 하나만 있어도 다이어그램이 있는 것이다. 모르는 뷰 이름은 세지 않는다.
+test('pr-check: 뷰별 다이어그램 파일 하나만 있어도 권장 안내를 내지 않는다', async () => {
+  const dir = await repo();
+  try {
+    await writeTask(dir, 't', { diagram: false });
+    await writeFile(join(dir, 'docs/u/t/t-diagram-unknown.html'), '<svg></svg>');
+    await commit(dir);
+    const none = (await check(dir, 'HEAD')).tasks[0].notes.join('\n');
+    assert.match(none, /권장: 다이어그램 없음/);
+    assert.match(none, /t-diagram-<view>\.html/, '뷰별 경로도 안내한다');
+
+    for (const view of ['sequence', 'module']) {
+      await rm(join(dir, 'docs/u/t'), { recursive: true, force: true });
+      await writeTask(dir, 't', { diagram: false });
+      await writeFile(join(dir, `docs/u/t/t-diagram-${view}.html`), '<svg></svg>');
+      await commit(dir, view);
+      assert.deepEqual((await check(dir, 'HEAD')).tasks[0].notes, [], `${view} 뷰 파일`);
+    }
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('pr-check: diff 가 건드린 task 를 모두 검사하고, 사용자 handoff·spec 없는 디렉터리는 task 가 아니다', async () => {
   const dir = await repo();
   try {

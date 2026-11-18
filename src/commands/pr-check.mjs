@@ -12,7 +12,8 @@ import { promisify } from 'node:util';
 import { resolveScope } from './review.mjs';
 import { taskSpecTemplate, taskPlanTemplate, taskArtifactTemplate } from './task.mjs';
 import { DIAGRAM_SKIPPED_PREFIX } from './diagram.mjs';
-import { DOCS_DIR, taskFileRel, taskLabel } from '../task-paths.mjs';
+import { DOCS_DIR, taskFileRel, taskLabel, diagramKind } from '../task-paths.mjs';
+import { DIAGRAM_VIEWS } from '../cli-args.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 
 const pexec = promisify(execFile);
@@ -56,6 +57,13 @@ async function changedTaskRefs(targetDir, rev, paths) {
   return refs.sort((a, b) => taskLabel(a.user, a.task).localeCompare(taskLabel(b.user, b.task)));
 }
 
+async function anyDiagramAt(targetDir, rev, user, task) {
+  for (const view of [null, ...DIAGRAM_VIEWS]) {
+    if ((await showAt(targetDir, rev, taskFileRel(user, task, diagramKind(view)))) !== null) return true;
+  }
+  return false;
+}
+
 async function taskFindings(targetDir, rev, { user, task }) {
   const issues = [];
   const notes = [];
@@ -69,10 +77,11 @@ async function taskFindings(targetDir, rev, { user, task }) {
     else if (content.trim() === doc.template(task).trim()) issues.push(`${rel} 가 템플릿 그대로 — ${doc.hint}`);
     if (doc.kind === 'artifact.md') artifact = content;
   }
-  const diagramRel = taskFileRel(user, task, 'diagram.html');
+  const diagramRel = taskFileRel(user, task, diagramKind());
   const skipped = (artifact ?? '').split('\n').some(line => line.startsWith(DIAGRAM_SKIPPED_PREFIX) && line.length > DIAGRAM_SKIPPED_PREFIX.length);
-  if (!skipped && (await showAt(targetDir, rev, diagramRel)) === null) {
-    notes.push(`권장: 다이어그램 없음 — 로직·구조 변화가 있으면 /harness-diagram 으로 ${diagramRel} 을 만들어 커밋`);
+  // 레거시 파일이나 뷰 파일(`<task>-diagram-<view>.html`) 중 하나라도 있으면 다이어그램이 있는 것이다.
+  if (!skipped && !(await anyDiagramAt(targetDir, rev, user, task))) {
+    notes.push(`권장: 다이어그램 없음 — 로직·구조 변화가 있으면 /harness-diagram 으로 ${diagramRel}(또는 뷰별 ${task}-diagram-<view>.html) 을 만들어 커밋`);
   }
   return { issues, notes };
 }

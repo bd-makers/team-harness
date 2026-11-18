@@ -49,6 +49,8 @@ Raw slash-command 인수:
 3. **입력 수집** — `<name>-spec.md`(요구사항·Ontology·경계)와 `<name>-plan.md`(단계)를 읽는다.
    다이어그램은 spec의 모호성을 드러내는 도구이므로, 그리기 전에 **무엇을 드러내려는지**를 한 줄로
    정한다: 구성요소 관계인가, 상태 전이인가, 단계 흐름인가. 정하지 못하면 그리지 말고 사용자에게 묻는다.
+   plan에 뷰 단계(`spec/plan 다이어그램(<view>)`)가 있으면 **뷰마다** 한 줄씩 정한다 — `sequence`는 시간 순
+   상호작용, `module`은 구성요소·의존 관계가 기본 관점이다. 한 파일에 두 관점을 섞지 않는다.
 
 4. **Probe** — 다이어그램 스킬(`/diagram-design:diagram-design` 등)이 이 세션에 노출되는지 확인한다.
    설치 명령을 단정해 안내하지 않는다 — 해당 플러그인이 이 머신에 설치·활성화되어 있는지 확인하도록
@@ -59,7 +61,9 @@ Raw slash-command 인수:
 
 6. **생성** — 스킬이 있으면 호출하되, 프롬프트에 아래 하네스 제약을 **명시적으로 실어** 보낸다.
    상류 스킬은 하네스 규약을 모른다:
-   - 출력 파일: `docs/<user>/<name>/<name>-diagram.html` (활성 task 기준, 파일 하나)
+   - 출력 파일: `docs/<user>/<name>/<name>-diagram.html` (활성 task 기준, 파일 하나). 뷰 단계면 뷰마다
+     `docs/<user>/<name>/<name>-diagram-<view>.html` 한 파일씩 — 호출도 뷰마다 따로 하고, 한 뷰를 갱신할 때
+     다른 뷰 파일은 건드리지 않는다.
    - 형식: **자립형 inline SVG HTML**. 런타임 JS 다이어그램(mermaid 등) 금지 — `docs/`는 Obsidian
      볼트에서 열리고 Obsidian은 script를 제거하므로 볼트에서 렌더되지 않는다.
    - 외부 자산 참조 금지(CDN 스크립트·원격 이미지·외부 폰트). 한 파일로 열려야 한다.
@@ -79,11 +83,17 @@ Raw slash-command 인수:
    ```bash
    harness-team diagram record                      # 산출물이 있을 때 — 없으면 exit 1
    harness-team diagram record --skipped "도구 없음"  # 사유 필수
+   harness-team diagram record --view sequence      # 뷰 단계 — 그 뷰의 파일·단계만 다룬다
+   harness-team diagram record --view module --skipped "도구 없음"
    ```
+
+   뷰 단계는 뷰마다 `--view <view>`로 기록한다. `--view` 없는 호출은 레거시 단계(`spec/plan 다이어그램 작성 → …`)만
+   닫고 뷰 단계는 건드리지 않는다 — 뷰 단계만 있는 plan에서는 exit 1로 `--view`를 안내한다.
 
    plan에 다이어그램 단계가 없으면 CLI가 exit 1로 거부한다 — 2번(단계 추가)을 건너뛴 것이다. 6번의 예외
    (script를 실행하는 뷰어)를 택했으면 뷰어와 근거를 `record`의 메모 인자로 넘긴다:
    `harness-team diagram record "Confluence 뷰어에서 확인 — script 실행됨"`.
+   뷰 단계면 `--view <view>`를 붙인다: `harness-team diagram record --view sequence "Confluence 뷰어에서 확인 — script 실행됨"`.
 
 8. **보고** — 산출물 경로(또는 미실행 사유), 무엇을 드러낸 다이어그램인지, plan 단계 처리 결과를
    한 화면으로 보고하고 멈춘다.

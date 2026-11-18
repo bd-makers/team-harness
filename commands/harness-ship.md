@@ -69,7 +69,8 @@ Raw slash-command 인수:
      그러면 옵트인의 의미가 사라진다.
    - **Record** — 실행했든 건너뛰었든 `harness-team diagram record`(건너뛰었으면 `--skipped "<사유>"`)로
      남긴다 — artifact 한 줄과 plan 단계 닫기를 한 명령이 한다. 예: `harness-team diagram record --skipped
-     "diagram-design 스킬이 이 머신에 없음"`.
+     "diagram-design 스킬이 이 머신에 없음"`. 뷰 단계면 `--view <view>`를 붙여 뷰마다 기록한다
+     (예: `harness-team diagram record --view sequence --skipped "…"`).
 
    실제 생성·갱신은 `/harness-diagram`(`commands/harness-diagram.md`)이 담당한다 — 그 어댑터가
    산출물 경로·자립형 inline SVG 제약·artifact 기록을 상류 스킬 호출에 실어 준다. 위 세 단계는
@@ -77,7 +78,9 @@ Raw slash-command 인수:
    호출한다 — 이미 여기서 한 번 물었으므로 어댑터가 다시 묻지 않게 한다(어댑터는 `--force`에서도
    plan 단계는 그대로 추가한다).
 
-   산출물은 `docs/<user>/<name>/<name>-diagram.html` 하나이며, 기본값은 **자립형 inline SVG
+   산출물은 plan의 다이어그램 단계마다 그 경로의 파일 하나다 — 레거시 단계면 `docs/<user>/<name>/<name>-diagram.html`,
+   뷰 단계면 `<name>-diagram-<view>.html`. 한 plan에 둘이 함께 있어도 되고, 단계마다 따로 기록한다
+   (레거시는 `diagram record`, 뷰는 `diagram record --view <view>`). 기본값은 **자립형 inline SVG
    HTML**이다 — task 문서는 Obsidian처럼 **script를 제거하는 뷰어**에서 열리는 경우가 많고, 그런
    뷰어에서는 mermaid JS 런타임이 렌더되지 않는다(이 저장소의 `docs/`가 그런 환경이다). 뷰어가
    script를 실행하는 것이 확실한 프로젝트라면 다른 형식을 써도 되지만, 판단 근거를 artifact에

@@ -18,6 +18,10 @@
   - `.harness/reviewers.json`에 `profiles`(`{ "<name>": { "engine", "model"? } }`)·`default`를 더했다. 기존 `custom.command`와 공존한다. 엔진 결정 우선순위: 엔진 위치 인자 > task 프로필 > `default` > probe 체인(codex → claude, 불변). 고른 프로필의 엔진이 없거나 설정이 깨졌으면 조용히 내려가지 않고 error다.
   - `harness-team task <name> --reviewer <profile>` — 새 task의 spec Done evidence에 `{ "version": 1, "reviewer": "<profile>" }` 블록을 쓴다. 기존 task에는 거부한다(spec은 손으로 고친다). Done evidence 파서가 `reviewer`(비어 있지 않은 문자열)를 받는다 — 가드 판정은 바꾸지 않는다.
   - `meta.reviews[]` 새 항목에 `model`(`null` = 엔진 기본 모델, 키 없음 = 이전 기록), artifact `- engine:` 줄에 `· model: <id|default>`. 리뷰 마커·kind·verify 판정은 바꾸지 않는다. 기존 기록은 소급하지 않는다.
+- **뷰별 다이어그램(옵트인) — `<name>-diagram-<view>.html`과 `diagram record --view sequence|module`** (task `diagram-views`, 회고 A1). 한 파일에 시간 순 상호작용과 구성요소 관계를 섞지 않도록 뷰마다 파일 하나·plan 단계 하나(`- [ ] spec/plan 다이어그램(<view>) 작성 → …`)를 둔다. 뷰 열거의 정본은 `FLAG_CHOICES.view`다.
+  - `record --view <v>`는 그 뷰의 파일 존재·plan 단계·artifact 줄만 다룬다. 생략 줄은 `- 다이어그램: 미실행 — [<view>] <사유> (날짜)`이고, 뷰 단계는 `- [x] spec/plan 다이어그램(<view>) — 미실행(<사유>)`로 닫힌다.
+  - `pr-check`는 레거시 파일이나 뷰 파일 중 하나라도 있으면 다이어그램 권장 안내를 내지 않는다. `clean`은 다른 task 폴더의 뷰 파일도 보호한다.
+  - **호환**: 레거시 `<name>-diagram.html`·레거시 단계·`--view` 없는 `record`는 종전 그대로다. `--view` 없는 `record`는 이제 뷰 단계를 닫지 않는다. **뷰 단계를 쓰는 plan은 팀 전원이 이 버전 이상이어야 한다** — 옛 CLI의 `record`는 뷰 단계를 레거시 단계로 닫는다. doctor·`AGENTS.md`는 바뀌지 않는다. 뷰 SVG는 후속 A2다.
 
 ### Changed
 

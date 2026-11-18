@@ -110,7 +110,9 @@ async function resolveAnchor(targetDir, meta, base) {
 // (모노레포의 `pkg/docs/…`)를 놓친다(codex 2·3차 P2). `<…>/docs/<u>/<t>/<t>-spec.md` 가 인덱스·시작점·바뀐 경로 어디에든
 // 있으면 그 폴더 전체가 보호 대상이다.
 const SPEC_PATH = /^((?:.*\/)?docs\/[^/]+\/([^/]+))\/\2-spec\.md$/;
-const TASK_FILE = /^((?:.*\/)?docs\/[^/]+\/([^/]+))\/\2-(spec|plan|handoff|artifact|meta|diagram)\.(md|json|html)$/;
+// `diagram-<view>` 는 뷰별 다이어그램(diagram-views) — 알려진 뷰만(cli-args `DIAGRAM_VIEWS` 와 같은 값; 뷰를 더하면 여기도).
+// 비포획 그룹이라 `\2` 역참조 번호가 그대로다.
+const TASK_FILE = /^((?:.*\/)?docs\/[^/]+\/([^/]+))\/\2-(spec|plan|handoff|artifact|meta|diagram(?:-(?:sequence|module))?)\.(md|json|html)$/;
 
 async function otherTaskPaths(targetDir, user, task, paths, anchor) {
   const own = `${await repoPrefix(targetDir)}${taskDirRel(user, task)}`;
