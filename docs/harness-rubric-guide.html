@@ -604,7 +604,7 @@
           <tbody>
             <tr><td><strong>codex</strong></td><td><code>codex exec --sandbox read-only "…" &lt; /dev/null</code></td><td>vendor 분리</td><td><code>&lt; /dev/null</code> 생략 금지 — stdin이 열려 있으면 무한 블로킹</td></tr>
             <tr><td><strong>claude</strong></td><td><code>claude -p --permission-mode plan "…"</code></td><td><strong>컨텍스트 분리만</strong></td><td>sunk-cost 편향은 제거되지만 같은 모델의 맹점은 공유 — 폴백 체인의 마지막인 이유</td></tr>
-            <tr><td><strong>custom</strong></td><td><code>.harness/reviewers.json</code>의 <code>custom.command</code> 템플릿</td><td>설정에 따름</td><td>명시 호출 전용 — 폴백 체인에 포함되지 않음. read-only 요건은 사용자 책임</td></tr>
+            <tr><td><strong>custom</strong></td><td><code>.harness/reviewers.json</code>의 <code>custom.command</code> 템플릿</td><td>설정에 따름</td><td>엔진 인자나 custom 프로필로만 선택 — 폴백 체인에 포함되지 않음. read-only 요건은 사용자 책임</td></tr>
           </tbody>
         </table>
       </div>

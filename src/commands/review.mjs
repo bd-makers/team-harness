@@ -27,7 +27,7 @@ import { ENGINES, REVIEWERS_REL, modelIssue, loadReviewersConfig, findProfile } 
 const pexec = promisify(execFile);
 
 export { ENGINES };
-// probe 폴백 체인. custom은 명시 호출 전용이라 체인에 없다.
+// probe 폴백 체인. custom은 체인에 없다 — 엔진 인자나 custom 프로필(task·default)로만 고른다.
 export const PROBE_CHAIN = ['codex', 'claude'];
 // artifact에 넣는 출력 상한. 초과분은 잘라내고 잘랐다고 적는다 — 조용한 절단은 "다 봤다"로 읽힌다.
 export const REVIEW_OUTPUT_MAX_BYTES = 16 * 1024;
