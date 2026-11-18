@@ -166,4 +166,36 @@ Reviewed `git status` and the branch diff against `origin/main`. `git diff --che
 - 수렴 판단: 새 지적 중 이번 변경이 만든 결함은 P3 문서 1건뿐이고 나머지는 반복 또는 기존 동작이다.
 - 조치(사용자 "고쳐줘"): `harness-ship.md` 6단계 Record 예시 뒤에 뷰 단계의 `--view` 기록 예시를 더했다.
 
+### 2026-11-18T10:39:27.874Z — codex (harness-team review)
+
+- engine: codex · model: default · scope: diff · base: origin/main · mergeBase: 19a7c6ea532ec71fdb95c64281b57aa9ebe206e3 · tip: a0ec1e0448526f94e0815081b900a6a0273bb768 · exit 0 · 2186 B
+
+```text
+**P1 blocking** — None found.
+
+**P2 should-fix**
+
+- [src/commands/diagram.mjs:170](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/optimistic-jepsen-777479/src/commands/diagram.mjs:170>) — The retry command drops `--target`, so copying it after a plan write failure can update the active task in the wrong worktree.
+- [src/commands/diagram.mjs:41](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/optimistic-jepsen-777479/src/commands/diagram.mjs:41>) — A fenced Markdown example under `## 단계` can be mistaken for an opted-in view, causing `record --skipped` to rewrite the example and report success.
+- [src/commands/diagram.mjs:174](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/optimistic-jepsen-777479/src/commands/diagram.mjs:174>), [src/commands/pr-check.mjs:62](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/optimistic-jepsen-777479/src/commands/pr-check.mjs:62>) — A directory named `*-diagram-sequence.html` satisfies both checks, so `record` can mark the view complete and `pr-check` can suppress its advisory without an HTML file.
+
+**P3 nit**
+
+- [src/commands/clean.mjs:114](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/optimistic-jepsen-777479/src/commands/clean.mjs:114>) — The expanded pattern can block cleanup for unrelated files such as `report-diagram-layout.json` in a directory with no task spec.
+
+Reviewed `git status` and both the direct and merge-base diffs against `origin/main`. `git diff --check`, the docs check, `pr-check`, and 40 focused tests passed. The full suite requires writable fixtures and was skipped. Five untracked files were outside the Git diff. No files were modified.
+
+**Verdict** — Request changes before merging.
+```
+
+<!-- harness:review kind=codex scope=diff tip=a0ec1e0448526f94e0815081b900a6a0273bb768 at=2026-11-18T10:39:27.874Z -->
+
+판별(작성 세션, 2026-11-18):
+- P2 3건(`--target`·fence 오인·디렉터리 통과) — 2~5차와 같은 지적. 범위 밖·기존 동작 판단 유지(근거는 위 판별).
+- P3 (`clean` `TASK_FILE`의 `diagram(?:-[a-z]+)?`가 spec 없는 폴더의 `<폴더명>-diagram-layout.json` 같은 파일도 보호) — **유효(과보호)**.
+  폴더명을 접두로 가진 파일만 걸리고, 결과는 clean이 거부하는 쪽(fail-closed)이라 데이터 손실은 없다. 레거시
+  `<폴더명>-diagram.json`도 이전부터 같은 성질이다. 조치안: 알려진 뷰로 좁힌다 — `diagram(?:-(?:sequence|module))?`(설계는 `[a-z]+`였다).
+- 수렴 판단: 이번 변경에 귀속되는 새 지적은 P3 1건이고, 반복 지적만 남았다.
+- 조치(사용자 "고쳐줘"): `TASK_FILE`을 `diagram(?:-(?:sequence|module))?`로 좁히고, 뷰가 아닌 꼬리 파일은 막지 않음·정규식 뷰 목록 = `DIAGRAM_VIEWS`를 테스트로 고정. spec 설계 절도 맞춰 고침.
+
 ## Learnings

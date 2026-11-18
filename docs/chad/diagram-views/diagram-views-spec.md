@@ -70,7 +70,7 @@
 - **pr-check**: `pr-check.mjs:72–76` — 레거시 HTML이나 뷰 HTML(`DIAGRAM_VIEWS` 각각) 중 하나라도 rev에 있으면 권장 안내를 내지
   않는다. 판정은 기존 `showAt`(rev의 git 객체, `./` 기준)으로 한다. 안내 문구의 `권장: 다이어그램 없음` 머리는 유지한다.
 - **doctor**: 바꾸지 않는다(결정 A1-2).
-- **형제 경로**: `clean.mjs:113` `TASK_FILE`의 kind에 `diagram(?:-[a-z]+)?`(비포획 — `\2` 역참조 유지). `task-paths.mjs:21` kind 주석.
+- **형제 경로**: `clean.mjs:113` `TASK_FILE`의 kind에 `diagram(?:-(?:sequence|module))?`(알려진 뷰만 — codex 6차, 비포획 — `\2` 역참조 유지). `task-paths.mjs:21` kind 주석.
 - **문서 정본**: `commands/harness-task.md` 옵트인 절(단계 형식·경로·기록) — 정본. `commands/harness-diagram.md` 3단계(뷰마다
   "드러낼 것 한 가지"), 6단계(출력 파일), 7단계(`--view`). `commands/harness-ship.md` 6단계 산출물 서술.
   `skills/harness-diagram/SKILL.md`. `templates/docs/README.md`(sha 등록 없음 — R1). `templates/AGENTS.md.hbs`·`AGENTS.md`는 바꾸지 않는다.
