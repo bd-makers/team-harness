@@ -13,8 +13,9 @@ Use this skill as the Codex equivalent of Claude Code `/harness-review`.
 - Follow that command contract, plus `AGENTS.md` review protocol and active task docs when present.
 - The engine runner table in that command is the single source for how each engine
   (codex, claude, custom) is invoked — do not depend on other plugin internals.
-- When no engine argument is given, apply the probe fallback chain defined in that
-  command with `command -v` (the command document is the single source of the order).
+- When no engine argument is given, the order is the task reviewer profile → `.harness/reviewers.json`
+  `default` → the probe fallback chain with `command -v`, as defined in that command (the command document
+  is the single source of the order). `--model <id>` goes with an explicit `codex`/`claude` engine only.
 - Translate Claude-only references for Codex:
   - `${CLAUDE_PLUGIN_ROOT}` means this installed plugin root or this repository root.
   - Bash background execution means running the review without blocking and collecting the output afterwards.

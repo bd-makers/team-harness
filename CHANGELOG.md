@@ -9,6 +9,16 @@
 
 ## [Unreleased]
 
+- **호환 주의: spec에 `reviewer`를 쓰면 팀 전원이 이 버전 이상이어야 한다** — `reviewer` 키를 모르는 옛 CLI의 `done`은 Done evidence 선언을 `알 수 없는 키: reviewer`(invalid)로 보고 막힌다.
+
+### Added
+
+- **`harness-team review --model <id>`와 리뷰 프로필 — 엔진과 모델을 분리한다** (task `review-model`, 설계 A6·결정 A6-1).
+  - `review codex|claude --model <id>`가 모델을 엔진 CLI에 넘긴다(codex `-m <id>`, claude `--model <id>`). 모델을 고르지 않은 실행의 argv는 그대로다. `custom`과 함께, 엔진 위치 인자 없이, 빈 값·공백·선행 `-` 값이면 실행 전에 거부한다.
+  - `.harness/reviewers.json`에 `profiles`(`{ "<name>": { "engine", "model"? } }`)·`default`를 더했다. 기존 `custom.command`와 공존한다. 엔진 결정 우선순위: 엔진 위치 인자 > task 프로필 > `default` > probe 체인(codex → claude, 불변). 고른 프로필의 엔진이 없거나 설정이 깨졌으면 조용히 내려가지 않고 error다.
+  - `harness-team task <name> --reviewer <profile>` — 새 task의 spec Done evidence에 `{ "version": 1, "reviewer": "<profile>" }` 블록을 쓴다. 기존 task에는 거부한다(spec은 손으로 고친다). Done evidence 파서가 `reviewer`(비어 있지 않은 문자열)를 받는다 — 가드 판정은 바꾸지 않는다.
+  - `meta.reviews[]` 새 항목에 `model`(`null` = 엔진 기본 모델, 키 없음 = 이전 기록), artifact `- engine:` 줄에 `· model: <id|default>`. 리뷰 마커·kind·verify 판정은 바꾸지 않는다. 기존 기록은 소급하지 않는다.
+
 ### Changed
 
 - **spec 외부 질의 마커 — 다른 역할에 묻는 질문의 상태를 적는다** (task `spec-ask-markers`, 설계 A4-1·A4-2). `- (ask:<역할>) <질문>` → `- (asked:<역할> <YYYY-MM-DD> <링크>) …` → `- (answered <링크>) …` 순으로 상태를 적고, 답을 spec에 반영하면 마커를 지운다. 상태 전이는 사람이 적는다.

@@ -1,7 +1,7 @@
 ---
 description: "task 관리 (task/list/done/clean/handoff) — docs/<user>/<name>/ 구조"
 phase: Workflow
-argument-hint: '<name> [--area <area>] | list [--area <area>] [--remote] | done [--force] | clean [<name>] [--base <ref>] | handoff'
+argument-hint: '<name> [--area <area>] [--reviewer <profile>] | list [--area <area>] [--remote] | done [--force] | clean [<name>] [--base <ref>] | handoff'
 ---
 
 `$ARGUMENTS`의 **첫 토큰**으로 분기한다. `list`·`done`·`clean`·`handoff`는 `task`의 인자가 아니라 **별개 하위명령**이다 —
@@ -17,8 +17,8 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" done [--force]
 node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" clean [<name>] [--base <ref>]   # dry-run — --yes 는 아래 절의 승인 뒤에만
 node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" handoff
 
-# 그 외 → task 생성 또는 활성화 (모노레포 area 는 아래 절)
-node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name> [--area <area>]
+# 그 외 → task 생성 또는 활성화 (모노레포 area·리뷰 프로필은 아래 절)
+node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name> [--area <area>] [--reviewer <profile>]
 ```
 
 예시:
@@ -28,6 +28,7 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name> [--area <area>]
 - `harness-team clean`                # 활성 task 를 시작 전 상태로 되돌리기 (dry-run, 아래 절)
 - `harness-team task web-next-login --area web-next`   # 모노레포 area task 생성 또는 활성화
 - `harness-team list --area web-next`  # 그 area 의 task 만
+- `harness-team task auth-redesign --reviewer deep`   # 새 task 의 리뷰 프로필을 spec 에 기록 (생성 때만)
 - `harness-team list --remote`        # + 머지되지 않은 origin 브랜치에만 있는 task
 
 ## task 되돌리기 (`clean`)
@@ -82,6 +83,20 @@ area 는 `<name>-meta.json` 의 `area` 키에만 기록되고 task 는 여전히
   원장(`summary`)은 area 를 가진 task 가 하나라도 있을 때만 `Area` 열을 **맨 뒤에** 추가한다.
   `--area` 를 한 번도 쓰지 않은 저장소의 출력·파일은 종전과 같다.
 - **언제 쓰지 않나:** 앱들이 한 제품이면(담당·릴리스가 같으면) area 없이 이름만으로 충분하다.
+
+## task 리뷰 프로필 (`--reviewer`)
+
+엔진을 생략한 `harness-team review`(loop QA 6·7 포함)가 이 task에서 쓸 리뷰어를 정한다 — `.harness/reviewers.json`의
+`profiles` 이름 하나(스키마는 harness-review 명령 문서 custom 절). 우선순위는 엔진 인자 > 이 task 프로필 > `default` > probe 체인이다.
+
+- **생성 때만 쓴다.** `task <새 이름> --reviewer <profile>`은 spec `## Done evidence` 바로 아래에 새 블록
+  `{ "version": 1, "reviewer": "<profile>" }`을 쓴다. 템플릿의 주석 예시는 벗기지 않는다(벗기면 의도하지 않은 `required`가 켜진다).
+  요건 키(`tests`·`review`·`verify`)는 이 블록에 같이 적으면 된다 — `reviewer`는 요건이 아니라 가드 판정을 바꾸지 않는다.
+- **프로필은 지금 있어야 한다.** `reviewers.json`에 그 이름이 없거나 파일이 깨졌으면 거부한다(exit 1, 아무것도 쓰지 않음).
+- **기존 task에는 거부한다**(exit 1, spec·meta·활성 포인터 모두 그대로). CLI는 사람이 쓴 spec을 고치지 않는다 — 바꾸려면 spec의
+  Done evidence JSON에 `"reviewer": "<profile>"`을 손으로 넣거나 고친다. 값은 비어 있지 않은 문자열이어야 하고, 아니면 `done`이
+  선언 invalid로 막힌다. 프로필이 실제로 있는지는 `review`가 실행 때 본다.
+- **팀 전원이 이 키를 아는 버전이어야 한다.** `reviewer`를 모르는 옛 CLI의 `done`은 `알 수 없는 키`로 막힌다(CHANGELOG).
 
 ## spec/plan 다이어그램 옵트인
 

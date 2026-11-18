@@ -16,16 +16,17 @@ import { readFile, access, constants } from 'node:fs/promises';
 import { spawn, execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { exists, writeText } from '../fsx.mjs';
-import { readActive, taskArtifactTemplate, VERIFY_KIND_SUFFIXES, handoffRelPaths, parsePorcelainPaths, repoPrefix } from './task.mjs';
+import { readActive, taskArtifactTemplate, VERIFY_KIND_SUFFIXES, handoffRelPaths, parsePorcelainPaths, repoPrefix, parseDoneEvidenceDeclaration } from './task.mjs';
 import { readTaskMeta, writeTaskMeta } from './summary.mjs';
 import { RUBRICS, findFramingTemplate } from './review-prompts.mjs';
 import { resolveDefaultRef } from './remote-task.mjs';
 import { taskFileRel, taskFilePath } from '../task-paths.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
+import { ENGINES, REVIEWERS_REL, modelIssue, loadReviewersConfig, findProfile } from '../reviewers-config.mjs';
 
 const pexec = promisify(execFile);
 
-export const ENGINES = ['codex', 'claude', 'custom'];
+export { ENGINES };
 // probe 폴백 체인. custom은 명시 호출 전용이라 체인에 없다.
 export const PROBE_CHAIN = ['codex', 'claude'];
 // artifact에 넣는 출력 상한. 초과분은 잘라내고 잘랐다고 적는다 — 조용한 절단은 "다 봤다"로 읽힌다.
@@ -117,14 +118,15 @@ export function renderReviewMarker({ kind, scope, tip, at }) {
   return `<!-- harness:review kind=${kind} scope=${scope} tip=${tip} at=${at} -->`;
 }
 
-export function renderReviewBlock({ kind, engine, scope, base, mergeBase, tip, at, output, rubric }) {
+// model: 키가 없으면(구 호출) 표기하지 않고, null 은 엔진 기본 모델이라 `default` 로 적는다.
+export function renderReviewBlock({ kind, engine, model, scope, base, mergeBase, tip, at, output, rubric }) {
   const { text, bytes, truncated } = truncateOutput(output);
   const fence = fenceFor(text);
   return [
     '',
     `### ${at} — ${kind} (harness-team review)`,
     '',
-    `- engine: ${engine} · scope: ${scope}${base !== undefined ? ` · base: ${base ?? 'none'}${mergeBase ? ` · mergeBase: ${mergeBase}` : ''}` : ''}${rubric ? ` · rubric: ${rubric}` : ''} · tip: ${tip} · exit 0 · ${bytes} B${truncated ? ' (artifact에는 앞부분만)' : ''}`,
+    `- engine: ${engine}${model !== undefined ? ` · model: ${model ?? 'default'}` : ''} · scope: ${scope}${base !== undefined ? ` · base: ${base ?? 'none'}${mergeBase ? ` · mergeBase: ${mergeBase}` : ''}` : ''}${rubric ? ` · rubric: ${rubric}` : ''} · tip: ${tip} · exit 0 · ${bytes} B${truncated ? ' (artifact에는 앞부분만)' : ''}`,
     '',
     fence + 'text',
     text.trimEnd(),
@@ -224,6 +226,41 @@ export async function resolveEngine(requested, { targetDir, which: probe = which
     if (await probe(candidate, process.env, targetDir)) return { engine: candidate, probed: true };
   }
   return { error: `probe 폴백 체인(${PROBE_CHAIN.join(' → ')})에서 가용 엔진을 찾지 못함` };
+}
+
+// 리뷰어 결정 — harness-review.md 1단계의 우선순위. ① 위치 인자 엔진(+ `--model`)은 완전 명시라 프로필을 읽지 않는다.
+// ② task 프로필(spec Done evidence `"reviewer"`) ③ reviewers.json `"default"` ④ probe 체인(D2 불변).
+// ②·③ 은 사람이 고른 것이라 엔진이 PATH 에 없거나 설정이 깨졌으면 error 다 — 조용히 ④ 로 내려가면 "이 task 는 이 리뷰어"가
+// 거짓이 된다(위치 인자 엔진과 같은 규칙). `resolveEngine` 의 반환 모양은 그대로 두고 그 위에 얹는다.
+// spec: 활성 task 의 spec 본문(없으면 null). 반환: { engine, command?, model, profile?, source?, probed? } 또는 { error, profileError? }.
+export async function resolveReviewer({ requested, model = null, spec = null, targetDir, which: probe = which } = {}) {
+  if (requested) {
+    const resolved = await resolveEngine(requested, { targetDir, which: probe });
+    return resolved.error ? resolved : { ...resolved, model };
+  }
+  let taskProfile;
+  if (spec !== null) {
+    const evidence = parseDoneEvidenceDeclaration(spec);
+    if (evidence.status === 'invalid') {
+      return { error: `spec 의 \`## Done evidence\` 선언이 올바르지 않아 task 프로필을 판정할 수 없음 (${evidence.reason})`, profileError: true };
+    }
+    taskProfile = evidence.reviewer;
+  }
+  const loaded = await loadReviewersConfig(targetDir);
+  if (loaded.error) return { error: loaded.error, profileError: true };
+  const source = taskProfile !== undefined ? 'task' : loaded.config && loaded.config.default !== undefined ? 'default' : null;
+  if (!source) {
+    const resolved = await resolveEngine(undefined, { targetDir, which: probe });
+    return resolved.error ? resolved : { ...resolved, model: null };
+  }
+  const name = source === 'task' ? taskProfile : loaded.config.default;
+  const profile = findProfile(loaded.config, name);
+  if (!profile) {
+    return { error: `task spec 이 고른 리뷰 프로필 "${name}" 이 ${REVIEWERS_REL} profiles 에 없음`, profileError: true };
+  }
+  const resolved = await resolveEngine(profile.engine, { targetDir, which: probe });
+  if (resolved.error) return { error: `프로필 "${name}"(${source}): ${resolved.error}` };
+  return { ...resolved, model: profile.model ?? null, profile: name, source };
 }
 
 // env 는 호출 하나에만 준다 — 기본값(undefined)은 process.env 그대로다.
@@ -377,10 +414,16 @@ function run(cmd, args, { cwd }) {
   });
 }
 
-// 엔진 runner 표 — commands/harness-review.md 그대로.
-export async function runEngine({ engine, command, prompt, targetDir }) {
-  if (engine === 'codex') return run('codex', ['exec', '--sandbox', 'read-only', prompt], { cwd: targetDir });
-  if (engine === 'claude') return run('claude', ['-p', '--permission-mode', 'plan', prompt], { cwd: targetDir });
+// 엔진 runner 표 — commands/harness-review.md 그대로(pin 테스트). model 이 null 이면 모델 인자를 넣지 않는다 —
+// 모델을 고르지 않은 실행의 argv 는 이 기능 이전과 바이트 단위로 같다. 값은 `modelIssue` 를 통과한 것만 온다.
+export function engineArgv(engine, { prompt, model = null }) {
+  if (engine === 'codex') return ['exec', '--sandbox', 'read-only', ...(model ? ['-m', model] : []), prompt];
+  if (engine === 'claude') return ['-p', '--permission-mode', 'plan', ...(model ? ['--model', model] : []), prompt];
+  throw new Error(`engineArgv: argv 를 만드는 엔진이 아님 — ${engine}`);
+}
+
+export async function runEngine({ engine, command, prompt, model = null, targetDir }) {
+  if (engine === 'codex' || engine === 'claude') return run(engine, engineArgv(engine, { prompt, model }), { cwd: targetDir });
   // custom: {prompt} 를 POSIX 단일 인용 리터럴로 치환해 sh -c. 치환 외의 문자열은 추가·해석하지 않는다.
   return run('sh', ['-c', command.split('{prompt}').join(posixSingleQuote(prompt))], { cwd: targetDir });
 }
@@ -452,14 +495,43 @@ export async function runReview(ctx, deps = {}) {
     }
   }
 
-  const resolved = await resolveEngine(requestedEngine, { targetDir: ctx.targetDir, which: deps.which });
+  // --model 은 위치 인자 엔진에 붙는다(우선순위 ①). 모델 id 는 벤더별이라 probe·프로필이 고른 엔진에 붙이면 다른 벤더로
+  // 갈 수 있고, custom 은 셸 템플릿에 실을 자리가 없다. 값은 argv 한 칸으로 엔진에 가므로 실행 전에 검사한다.
+  const model = flags.model;
+  if (model !== undefined) {
+    const cause = requestedEngine === 'custom'
+      ? '--model 은 custom 엔진과 함께 쓸 수 없음 — 셸 템플릿(custom.command)에 모델을 실을 자리가 없다'
+      : !requestedEngine
+        ? '--model 은 엔진 위치 인자(codex|claude)와 함께만 쓴다 — 모델 id 는 엔진마다 달라 probe·프로필이 고른 엔진에 붙이지 않는다'
+        : modelIssue(model) && `--model ${JSON.stringify(model)} 은 ${modelIssue(model)}`;
+    if (cause) {
+      return emitError(json, '--model 을 쓸 수 없음', buildErrorPacket({
+        cause,
+        retry: '`harness-team review codex|claude --model <id>` 형식으로 다시 실행하거나 --model 을 뺀다',
+        alternatives: [`엔진·모델을 팀 기본으로 두려면 ${REVIEWERS_REL} 의 profiles·default 를 쓴다`],
+        safeDefault: '엔진을 실행하지 않았고 어느 파일도 바뀌지 않았다',
+        stop: '모델 값을 고쳐 지어내지 말 것',
+      }));
+    }
+  }
+
+  // 엔진 생략 경로만 spec 을 읽는다(task 프로필). 위치 인자 엔진은 프로필을 보지 않는다.
+  let spec = null;
+  if (!requestedEngine) {
+    try { spec = await readFile(taskFilePath(ctx.targetDir, active.user, active.task, 'spec.md'), 'utf8'); } catch { /* spec 없음 → task 프로필 없음 */ }
+  }
+  const resolved = await resolveReviewer({ requested: requestedEngine, model: model ?? null, spec, targetDir: ctx.targetDir, which: deps.which });
   if (resolved.error) {
     return emitError(json, '엔진을 결정할 수 없음', buildErrorPacket({
       cause: resolved.error,
-      retry: '엔진 CLI를 설치·인증하거나 `.harness/reviewers.json` 을 설정한 뒤 다시 실행',
-      alternatives: ['다른 엔진을 명시한다: `harness-team review claude`'],
+      retry: resolved.profileError
+        ? `${REVIEWERS_REL} 의 profiles·default 또는 spec 의 Done evidence "reviewer" 를 고친 뒤 다시 실행`
+        : `엔진 CLI를 설치·인증하거나 \`${REVIEWERS_REL}\` 을 설정한 뒤 다시 실행`,
+      alternatives: [requestedEngine
+        ? '다른 엔진을 명시한다: `harness-team review claude`'
+        : '엔진을 위치 인자로 명시하면 프로필을 보지 않는다: `harness-team review codex` (또는 claude)'],
       safeDefault: '엔진을 실행하지 않았고 어느 파일도 바뀌지 않았다',
-      stop: '가용 엔진이 없으면 리뷰를 건너뛰지 말고 사용자에게 알릴 것',
+      stop: '가용 엔진이 없으면 리뷰를 건너뛰지 말고 사용자에게 알릴 것 — 고른 프로필을 다른 엔진으로 바꿔 돌리지 말 것',
     }));
   }
   const { engine, command } = resolved;
@@ -553,7 +625,7 @@ export async function runReview(ctx, deps = {}) {
 
   let result;
   try {
-    result = await (deps.runEngine || runEngine)({ engine, command, prompt, targetDir: ctx.targetDir });
+    result = await (deps.runEngine || runEngine)({ engine, command, prompt, model: resolved.model, targetDir: ctx.targetDir });
   } catch (err) {
     result = { exitCode: 1, stdout: '', stderr: err.message };
   }
@@ -593,7 +665,8 @@ export async function runReview(ctx, deps = {}) {
   // (base ref 는 움직이고 머지 뒤 merge-base 는 재계산할 수 없다). degrade 는 null 이지 생략이 아니다: 두 키가 없는 worktree
   // 항목은 "넓어지기 전의 과거 기록(미커밋만)"의 표지라 겹치면 안 된다. task-docs 는 git 범위가 아니라 넣지 않는다.
   const range = scope === 'task-docs' ? {} : { base: base ?? null, mergeBase: mergeBase ?? null };
-  const entry = { kind, engine, scope, ...range, tip, at, exitCode: 0, outputBytes, ...(rubric !== undefined ? { rubric } : {}) };
+  // model 은 null 이지 생략이 아니다 — null 은 엔진 기본 모델, 키 없음은 이 필드 이전의 기록이다(base·mergeBase 선례).
+  const entry = { kind, engine, model: resolved.model, scope, ...range, tip, at, exitCode: 0, outputBytes, ...(rubric !== undefined ? { rubric } : {}) };
 
   // meta 에 `reviews` 키가 있는 task(새 템플릿)만 meta 에 쓴다 — 가드의 verify 정본이고, artifact
   // 쓰기가 실패해도 증거는 남도록 먼저 쓴다. 키가 없는 구 task 에는 키를 **만들지 않는다**: 여기서
@@ -619,10 +692,12 @@ export async function runReview(ctx, deps = {}) {
     emitObservation(buildEnvelope({
       command: 'review', status: 'success', summary, nextActions,
       artifacts: cliOwned ? [artifactRel, metaFileRel] : [artifactRel],
-      extra: { ...entry, probed: !!resolved.probed, recorded: true, metaRecorded: cliOwned },
+      extra: { ...entry, probed: !!resolved.probed, ...(resolved.profile ? { profile: resolved.profile, profileSource: resolved.source } : {}), recorded: true, metaRecorded: cliOwned },
     }));
   } else {
-    console.log(`review: ${summary}${resolved.probed ? ` — probe 체인이 ${engine} 선택` : ''}`);
+    const chosenBy = resolved.probed ? ` — probe 체인이 ${engine} 선택`
+      : resolved.profile ? ` — 프로필 ${resolved.profile}(${resolved.source === 'task' ? 'task spec' : 'reviewers.json default'})이 ${engine}${resolved.model ? ` · ${resolved.model}` : ''} 선택` : '';
+    console.log(`review: ${summary}${chosenBy}`);
     console.log(cliOwned
       ? `recorded: ${artifactRel} · meta.reviews[${meta.reviews.length}]`
       : `recorded: ${artifactRel} (구 task — meta 에 reviews 키가 없어 artifact 마커만, 판정도 종전 그대로; 옮기려면 \`harness-team migrate --adopt-reviews\`)`);

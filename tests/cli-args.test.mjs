@@ -216,3 +216,24 @@ test('cli-args: scope accepts exactly the documented values', () => {
 test('cli-args: an inline empty choice value is rejected too', () => {
   assert.equal(resolveInvocation(['stack', '--stack=']).kind, 'error');
 });
+
+// A6(review-model): `--model` 은 review 의 값 플래그, `--reviewer` 는 task 의 값 플래그다. 다른 커맨드에는 없다 —
+// 값 검증(빈 값·공백·선행 `-`)은 플래그 이름이 아니라 review 가 한다(argv 주입 방지는 실행 직전 판정).
+test('cli-args: review --model and task --reviewer are value flags of exactly those commands', () => {
+  const review = resolveInvocation(['review', 'codex', '--model', 'gpt-5.5', 'focus']);
+  assert.equal(review.kind, 'run');
+  assert.equal(review.flags.model, 'gpt-5.5');
+  assert.deepEqual(review.positional, ['codex', 'focus'], '값은 focus 로 새지 않는다');
+  assert.equal(resolveInvocation(['review', '--model']).kind, 'error', '값 없는 --model');
+  assert.match(resolveInvocation(['review', '--model']).message, /--model requires a value/);
+
+  const task = resolveInvocation(['task', 'demo', '--reviewer', 'fast']);
+  assert.equal(task.kind, 'run');
+  assert.equal(task.flags.reviewer, 'fast');
+  assert.match(resolveInvocation(['task', '--reviewer']).message, /--reviewer requires a value/);
+
+  assert.match(resolveInvocation(['done', '--model', 'x']).message, /unknown flag --model/);
+  assert.match(resolveInvocation(['review', '--reviewer', 'x']).message, /unknown flag --reviewer/);
+  assert.match(resolveInvocation(['help', 'review']).text, /--model <id>/);
+  assert.match(resolveInvocation(['help', 'task']).text, /--reviewer <profile>/);
+});

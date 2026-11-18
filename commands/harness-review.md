@@ -1,7 +1,7 @@
 ---
 description: "엔진 중립 read-only 외부 리뷰(codex·claude·custom)를 로컬 git 상태에 실행하고 결과를 활성 task의 artifact 'Reviews' 절에 기록"
 phase: Workflow
-argument-hint: '[codex|claude|custom] [--base <ref>] [focus ...]'
+argument-hint: '[codex|claude|custom] [--model <id>] [--base <ref>] [focus ...]'
 ---
 
 이 명령은 AGENTS.md 리뷰 프로토콜의 실행 절차를 하네스가 직접 소유한다.
@@ -20,19 +20,27 @@ Raw slash-command 인수:
 `$ARGUMENTS`
 
 인수 해석: 첫 토큰이 `codex`·`claude`·`custom`이면 엔진으로 소비한다.
-`--base <ref>`는 브랜치 리뷰의 기준 ref, 나머지 토큰은 리뷰 focus 문구로
+`--model <id>`는 그 엔진의 모델(`codex`·`claude`만), `--base <ref>`는 브랜치 리뷰의 기준 ref, 나머지 토큰은 리뷰 focus 문구로
 공용 리뷰 프롬프트 끝에 그대로 전달한다.
 
 ## 실행 절차
 
-1. **엔진 결정** —
-   - 엔진 인자가 있으면 그 엔진을 쓴다. `codex`·`claude`는 `command -v <cli>`로
+1. **엔진 결정** — 우선순위는 ① 엔진 인자(+ `--model`) ② task 프로필 ③ `reviewers.json` `default` ④ probe 폴백 체인이다.
+   - **① 엔진 인자**가 있으면 그 엔진을 쓰고 프로필은 읽지도 검사하지도 않는다(완전 명시). `--model <id>`는 이 엔진에 붙는다 —
+     `codex`·`claude`에서만 쓰고, `custom`과 함께면 거부한다(셸 템플릿에 실을 자리가 없다). 엔진 인자 없이 `--model`만 주면 거부한다 —
+     모델 id는 벤더마다 달라 probe·프로필이 고른 엔진에 붙이지 않는다. 값은 엔진 CLI의 argv 한 칸으로 가므로 빈 값·공백·제어문자·
+     선행 `-`를 실행 전에 거부한다(argv 주입 방지). `codex`·`claude`는 `command -v <cli>`로
      존재를 확인하고, 없으면 설치 명령을 단정해 안내하지 말고(#17의 404 안내 결함 재발 방지)
      해당 CLI의 설치·인증 상태를 공식 문서로 확인하도록 안내하고 종료한다.
      `custom`의 preflight는 CLI probe가 아니라 설정이다 — `.harness/reviewers.json`을 읽어
      `custom.command` 키를 확인하고, 그 템플릿의 **첫 토큰**을 `command -v`로 확인한다.
      둘 중 하나라도 없으면 아래 custom 절의 스키마로 안내하고 종료한다.
-   - 엔진 인자가 없으면 **probe 폴백 체인**: `command -v`로 **codex → claude** 순서로
+   - **② task 프로필** — 엔진 인자가 없으면 활성 task spec의 `## Done evidence` JSON `"reviewer": "<profile>"`을 본다
+     (`harness-team task <name> --reviewer <profile>`이 생성 때 쓴다 — harness-task 명령 문서). **③ `default`** — task 프로필이 없으면
+     `.harness/reviewers.json`의 `"default"`. 둘 다 아래 custom 절 스키마의 `profiles`에서 `{engine, model}`을 찾는다.
+     ②·③은 사람이 고른 것이라 **조용히 ④로 내려가지 않는다** — 프로필이 없거나, 그 엔진이 PATH에 없거나, `reviewers.json`·
+     Done evidence가 깨졌으면 error로 멈춘다(엔진 인자와 같은 규칙). 막히면 엔진을 위치 인자로 명시한다 — ①은 프로필을 보지 않는다.
+   - **④** 엔진 인자도 프로필도 없으면 **probe 폴백 체인**: `command -v`로 **codex → claude** 순서로
      탐지해 첫 가용 엔진을 쓴다. claude는 Claude Code 환경에서 항상 존재하므로
      이 체인은 어느 머신에서든 리뷰어를 보장한다. vendor 분리 리뷰어(codex)를
      우선하고, 컨텍스트 분리만 제공하는 claude가 마지막이다(엔진 표의 한계 참조).
@@ -98,13 +106,15 @@ Raw slash-command 인수:
 
 5. **기록** — 기록의 기계 판독 부분은 3단계의 CLI가 이미 남겼다. 성공한 실행마다 두 곳에 쓴다:
 
-   - **`<name>-meta.json`의 `reviews[]`** — `{ kind, engine, scope, base, mergeBase, tip, at, exitCode, outputBytes }`.
+   - **`<name>-meta.json`의 `reviews[]`** — `{ kind, engine, model, scope, base, mergeBase, tip, at, exitCode, outputBytes }`.
      harness 소유 기계 상태이며 `verify: required` 가드의 **정본**이다. 손으로 고치지 않는다.
      `base`·`mergeBase`는 git scope(worktree·diff)일 때 **둘 다** 남는다 — `mergeBase`..`tip`(+ worktree면 그 시점 미커밋)이
      리뷰 범위의 사후 증명이다(base ref는 움직이고 머지 뒤 merge-base는 다시 계산할 수 없다). worktree 해석: 두 값이 있으면
      merge-base 이후 커밋 + 미커밋, 둘 다 `null`이면 내려간 실행(미커밋만), **두 키가 없으면** 이 규칙 이전의 기록(미커밋만)이다.
      과거 기록도 증거 자격은 그대로다 — 가드는 scope를 보지 않고, 소급하지 않는다.
-   - **artifact `## Reviews`** — `### <at> — <kind> (harness-team review)` 헤딩, 엔진·scope·base·mergeBase·tip·크기 한 줄,
+     `model`은 실행에 넘긴 모델 id이고, `null`이면 모델을 고르지 않은 실행(엔진 기본 모델, `custom` 포함)이다 — **키가 없으면** 이 필드 이전의
+     기록이다(`null`이지 생략이 아니다). kind에는 들어가지 않는다 — kind는 엔진과 프레이밍만이고 verify 판정도 그대로다.
+   - **artifact `## Reviews`** — `### <at> — <kind> (harness-team review)` 헤딩, 엔진·모델(`null`이면 `default`)·scope·base·mergeBase·tip·크기 한 줄,
      엔진 출력(상한 초과분은 잘라내고 잘랐다고 표기), 그리고 종전 형식의 마커 한 줄:
 
    ```text
@@ -161,12 +171,15 @@ Raw slash-command 인수:
 
 ## 엔진 runner 표
 
-이 표가 정본이고 `harness-team review`가 그대로 구현한다(`src/commands/review.mjs`). 행을 바꾸면 코드도 바꾼다.
+이 표가 정본이고 `harness-team review`가 그대로 구현한다(`src/commands/review.mjs`의 `engineArgv` — pin 테스트가 아래 행과 대조한다).
+행을 바꾸면 코드도 바꾼다. 모델(`--model <id>` 또는 프로필 `model`)이 없으면 첫 행, 있으면 둘째 행이다 — 모델을 고르지 않은 실행의
+argv는 모델 기능 이전과 같다.
 
 ### codex
 
 ```bash
 codex exec --sandbox read-only "<공용 리뷰 프롬프트>" < /dev/null
+codex exec --sandbox read-only -m <id> "<공용 리뷰 프롬프트>" < /dev/null
 ```
 
 > **`< /dev/null` 은 생략하지 말 것.** `codex exec` 는 프롬프트를 인자로 받고도 stdin 이
@@ -178,6 +191,7 @@ codex exec --sandbox read-only "<공용 리뷰 프롬프트>" < /dev/null
 
 ```bash
 claude -p --permission-mode plan "<공용 리뷰 프롬프트>"
+claude -p --permission-mode plan --model <id> "<공용 리뷰 프롬프트>"
 ```
 
 `plan` 모드가 read-only를 강제한다 — 쓰기 도구는 차단되고 read-only git 명령은 프롬프트 없이 실행된다.
@@ -220,6 +234,30 @@ gitignore 대상이 아니다)에서 커맨드 템플릿을 읽어 `{prompt}`를
 안내하고 종료한다. 커스텀 리뷰어도 read-only여야 한다 — 쓰기 가능한 커맨드를
 등록하는 것은 사용자 책임이지만, 안내 시 read-only 요건을 명시한다.
 
+### 리뷰 프로필 — `profiles`·`default`
+
+같은 파일에 이름 붙은 `{engine, model}` 프로필과 팀 기본값을 둔다. `custom` 키와 공존한다:
+
+```json
+{
+  "custom": { "command": "mycli review --readonly {prompt}" },
+  "profiles": {
+    "deep": { "engine": "codex", "model": "<id>" },
+    "fast": { "engine": "claude", "model": "<id>" },
+    "mine": { "engine": "custom" }
+  },
+  "default": "deep"
+}
+```
+
+- `engine`은 `codex`·`claude`·`custom` 중 하나, `model`은 선택이다(없으면 엔진 기본 모델). `custom` 프로필은 `model`을 갖지 않는다 —
+  실행은 위 `custom.command`다. 프로필 안의 키는 `engine`·`model`뿐이다(오타가 조용히 엔진 기본 모델로 도는 것을 막는다).
+  `model` 값은 `--model`과 같은 규칙으로 검사한다.
+- `default`는 `profiles`에 있는 이름이다. 최상위의 다른 키는 검사하지 않는다.
+- 스키마 검사는 프로필을 고르는 경로(엔진 인자 생략)와 `task --reviewer`에서만 한다 — 깨져 있으면 실행 전에 error 패킷이다.
+  엔진 인자를 준 실행은 이 키들을 보지 않는다.
+- kind에는 프로필이 들어가지 않는다 — 어떤 모델로 돌았는지는 5단계의 `model` 필드가 남긴다.
+
 ## R2 시나리오 대조 — `--framing scenario`
 
 spec의 `## Done evidence`에 `scenarios`(Given/When/Then + 증거 `test`·`cmd`)를 선언한 task의 R2
@@ -249,11 +287,14 @@ End with a verdict that lists every fail. <focus arguments, if any>
 ## 예시
 
 ```bash
-# 엔진 자동 (probe 체인: codex → claude)
+# 엔진 자동 (task 프로필 → reviewers.json default → probe 체인: codex → claude)
 /harness-review
 
 # claude-only 머신에서 명시 호출, origin/develop 대비 브랜치 리뷰
 /harness-review claude --base origin/develop
+
+# 엔진과 모델을 명시 (프로필 무시)
+/harness-review codex --model <id>
 
 # codex로 보안 focus 리뷰
 /harness-review codex security and input validation
