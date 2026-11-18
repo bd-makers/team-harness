@@ -182,3 +182,4 @@
 | chad | handoff-no-sweep | ✅ done | 2026-11-06 |
 | hslee | notebooklm-review-fixes | ✅ done | 2026-11-15 |
 | hslee | notebooklm-review-followups | ✅ done | 2026-11-16 |
+| chad | task-clean | ✅ done | 2026-11-17 |

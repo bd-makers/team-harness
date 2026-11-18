@@ -12,7 +12,7 @@
 - [x] 문서: `commands/harness-task.md`(에이전트 `--yes` 규칙 포함)·README·CHANGELOG·overview
 - [x] `npm test` · `doctor` 통과
 - [x] 리뷰(`harness-team review`) 기록
-- [ ] 커밋·PR
+- [x] 커밋·PR
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*

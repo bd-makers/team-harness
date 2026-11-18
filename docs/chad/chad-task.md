@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ task-clean
 - ✅ correct-guards
 - ✅ handoff-no-sweep
 - ✅ docs-refresh-v050
