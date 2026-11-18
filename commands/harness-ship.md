@@ -90,7 +90,8 @@ Raw slash-command 인수:
 
    **PR 본문에 SVG 링크** — 뷰 SVG는 PR/MR 리뷰어가 이미지로 볼 수 있다. 8번의 `pr-check`가
    `· PR 본문에 링크: <path>.svg`를 내면 PR/MR을 만들 때 본문에 그 파일을 링크한다(이미지 Markdown이나 링크).
-   경로는 저장소 상대이므로 **PR head 브랜치의 파일 URL(blob)**로 바꿔 건다 — PR 본문의 저장소 상대 경로는
+   커밋된 SVG가 자립성 검사에 걸리면 pr-check는 링크 대신 `· 뷰 SVG 가 자립형이 아님 — 링크하지 않음: …`을 낸다 —
+   걸지 말고 `diagram record --view <view>`로 위반을 보고 고친다. 경로는 저장소 루트 기준이므로 **PR head 브랜치의 파일 URL(blob)**로 바꿔 건다 — PR 본문의 저장소 상대 경로는
    저장소 안 Markdown처럼 풀린다는 보장이 없다(GitHub·GitLab 모두 이 하네스에서 확인하지 않았다).
    MR diff는 SVG를 텍스트로 보일 수 있으므로 diff 뷰에 기대지 않는다. 레거시 HTML은 forge가 소스로 보이므로 링크하지 않는다.
 

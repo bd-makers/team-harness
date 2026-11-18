@@ -484,11 +484,20 @@ const SVG_VIOLATIONS = [
   ['자식의 xmlns 만', `<svg viewBox="0 0 1 1"><g ${NS}/></svg>`, /^루트 <svg> 에 xmlns=/],
   ['HTML 루트', `<html><body><svg ${NS}></svg></body></html>`, /^루트 요소가 <svg> 가 아님: <html>/],
   ['빈 파일', '', /^루트 요소가 <svg> 가 아님: \(빈 파일\)$/],
+  // codex 1차 리뷰
+  ['잘린 파일', `<svg ${NS}><rect width="1"`, /^루트 <svg> 가 닫히지 않음/],
+  ['문자 참조로 숨긴 url()', `<svg ${NS}><rect fill="u&#114;l(p.svg#g)"/></svg>`, /^외부 url\(\): p\.svg#g$/],
+  ['16진 문자 참조로 숨긴 href', `<svg ${NS}><image href="&#x68;ttps://x/y.png"/></svg>`, /^외부 href: https:\/\/x\/y\.png$/],
+  ['따옴표 안 > 뒤의 이벤트 속성', `<svg ${NS}><rect aria-label="A > B" onload="x()"/></svg>`, /^이벤트 핸들러 속성\(스크립트\): onload$/],
+  ['DTD 엔티티', `<!DOCTYPE svg [<!ENTITY u "x">]>\n<svg ${NS}/>`, /^DTD 엔티티 선언: <!ENTITY$/],
 ];
 
 test('svgSelfContainmentViolations: 허용되는 비슷한 것들을 모은 SVG 는 통과한다', () => {
   assert.deepEqual(svgSelfContainmentViolations(LOOKALIKES_SVG), []);
   assert.deepEqual(svgSelfContainmentViolations(MIN_SVG), []);
+  // 문서 안 참조를 문자 참조로 쓴 것(`&#35;g` = `#g`), 스스로 닫는 루트, 끝의 공백·주석은 허용(codex 1차)
+  assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><use href="&#35;g"/><rect aria-label="a &gt; b" fill="url(&#x23;g)"/></svg>\n<!-- end -->\n`), []);
+  assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS} viewBox="0 0 1 1"/>`), []);
 });
 
 test('svgSelfContainmentViolations: 규칙마다 위반 표본이 그 규칙 하나만 건다', () => {

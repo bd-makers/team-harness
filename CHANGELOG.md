@@ -23,8 +23,8 @@
   - `pr-check`는 레거시 파일이나 뷰 파일 중 하나라도 있으면 다이어그램 권장 안내를 내지 않는다. `clean`은 다른 task 폴더의 뷰 파일도 보호한다.
   - **호환**: 레거시 `<name>-diagram.html`·레거시 단계·`--view` 없는 `record`는 종전 그대로다. `--view` 없는 `record`는 이제 뷰 단계를 닫지 않는다. **뷰 단계를 쓰는 plan은 팀 전원이 이 버전 이상이어야 한다** — 옛 CLI의 `record`는 뷰 단계를 레거시 단계로 닫는다. doctor·`AGENTS.md`는 바뀌지 않는다.
 - **뷰 다이어그램은 단독 SVG 하나 — PR/MR 리뷰어가 이미지로 본다** (task `diagram-svg`, 회고 A2·결정 A2-1). 뷰 산출물은 `<name>-diagram-<view>.svg`이고 HTML·SVG 이중화는 없다. 상류 다이어그램 스킬이 SVG를 직접 쓰고, 하네스는 그리지도 HTML에서 떼어 내지도 않는다.
-  - `diagram record --view <v>`(생성 기록 — 첫 기록·갱신)가 SVG 자립성을 결정론으로 검사한다: 루트 `<svg xmlns="http://www.w3.org/2000/svg">`, `<script>`·`on…=` 이벤트 속성·`<foreignObject>`·`@import` 없음, `href`·`xlink:href`·CSS `url()`은 `#id`·`data:`만. 위반이면 exit 1이고 위반 목록을 내며 아무것도 쓰지 않는다. `--skipped`와 레거시 HTML은 검사하지 않는다.
-  - `pr-check`는 레거시 HTML이나 뷰 SVG가 있으면 다이어그램이 있는 것으로 보고, 있는 뷰 SVG마다 `· PR 본문에 링크: <path>.svg`를 낸다(막지 않음). `clean`은 다른 task 폴더의 `.svg`도 보호한다.
+  - `diagram record --view <v>`(생성 기록 — 첫 기록·갱신)가 SVG 자립성을 결정론으로 검사한다: 루트 `<svg xmlns="http://www.w3.org/2000/svg">`, 루트가 닫힘(잘린 파일 거부), `<script>`·`on…=` 이벤트 속성·`<foreignObject>`·`@import`·DTD `<!ENTITY` 없음, `href`·`xlink:href`·CSS `url()`은 `#id`·`data:`만(숫자 문자 참조를 풀어서 본다). 텍스트 안의 `url(…)`도 걸리는 보수적 검사다. 위반이면 exit 1이고 위반 목록을 내며 아무것도 쓰지 않는다. `--skipped`와 레거시 HTML은 검사하지 않는다.
+  - `pr-check`는 레거시 HTML이나 뷰 SVG가 있으면 다이어그램이 있는 것으로 보고, 있는 뷰 SVG마다 `· PR 본문에 링크: <path>.svg`(저장소 루트 기준)를 낸다(막지 않음). 커밋된 SVG가 자립성 검사에 걸리면 링크 대신 `· 뷰 SVG 가 자립형이 아님 — 링크하지 않음: …`을 낸다. `clean`은 다른 task 폴더의 `.svg`도 보호한다.
   - 문서: `/harness-diagram` 6단계에 단독 SVG 제약(`<svg>` 안 스타일·system font stack·외부 자산 0), `/harness-ship` 6단계에 "PR 본문에 SVG 링크"(PR head 브랜치의 파일 URL). 뷰 SVG에는 script 뷰어 예외가 없다.
   - **미검증**: GitLab self-managed·Obsidian에서의 `.svg` 렌더 실측, PR/MR 본문의 저장소 상대 경로 해석.
 

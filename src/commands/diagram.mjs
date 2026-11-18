@@ -88,25 +88,35 @@ export function closeDiagramStep(plan, { outcome, note = '', view = null }) {
 
 // 뷰 SVG 의 자립성(diagram-svg R1). 뷰어가 SVG 를 `<img>` 로 보이면(Markdown 이미지·Obsidian) 외부 자원을 불러오지 않고
 // 스크립트를 돌리지 않는다 — 그림이 오류 없이 조용히 깨진다. 그래서 거부 목록이 아니라 **허용 목록**이다: `href`·`url()` 값은
-// 문서 안(`#…`)·`data:`·빈 값만. http 만 막으면 상대 경로·`//`·`javascript:` 가 같은 이유로 샌다. 주석 안도 본다(보수적 —
-// 오탐 비용은 주석 한 줄, 미탐 비용은 PR 에서 깨진 그림). `xmlns`·DOCTYPE 의 URI 는 참조가 아니라 식별자라 보지 않는다.
+// 문서 안(`#…`)·`data:`·빈 값만. http 만 막으면 상대 경로·`//`·`javascript:` 가 같은 이유로 샌다. 주석·텍스트 안도 본다(보수적 —
+// `<text>url(x)</text>` 같은 글자도 걸린다. 오탐 비용은 한 줄 수정, 미탐 비용은 PR 에서 깨진 그림). `xmlns`·DOCTYPE 의 URI 는 참조가 아니라 식별자라 보지 않는다.
 // HTML 에서 `<svg>` 를 떼어 낸 파일은 여기를 통과해도 문서 스타일을 잃는다 — 그것은 검사가 아니라 문서(6단계)가 막는다.
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const LOCAL_REF_RE = /^(?:#|data:|$)/i;
 // XML 선언·처리 지시·주석·DOCTYPE(내부 subset 포함)·공백 — 루트 요소 앞에 올 수 있는 것.
 const PROLOG_RE = /^(?:\s+|<\?[\s\S]*?\?>|<!--[\s\S]*?-->|<!DOCTYPE(?:[^>[]|\[[\s\S]*?\])*>)*/i;
+// 속성 하나 — 따옴표 안의 `>` 를 태그 끝으로 보지 않게 값을 통째로 건너뛴다(codex 1차 P2).
+const ATTR = `\\s+[^\\s=/>]+(?:\\s*=\\s*(?:"[^"]*"|'[^']*'|[^\\s"'>]+))?`;
 const ALWAYS_BAD = [
   [/<((?:[\w-]+:)?script)\b/i, '스크립트 요소'],
   [/<((?:[\w-]+:)?foreignObject)\b/i, 'foreignObject(HTML 섞기)'],
   // 태그 안의 `on<이름>=` 만 — 텍스트 노드의 "online = …" 은 태그 밖이라 맞지 않는다.
-  [/<[a-z][^>]*?\s(on[a-z]+)\s*=/i, '이벤트 핸들러 속성(스크립트)'],
+  [new RegExp(`<[a-z][\\w:.-]*(?:${ATTR})*?\\s+(on[a-z]+)\\s*=`, 'i'), '이벤트 핸들러 속성(스크립트)'],
   [/(@import)\b/i, '외부 스타일'],
+  // 내부 subset 의 엔티티는 `&x;` 뒤에 참조를 숨길 수 있다 — 다이어그램에 필요 없다.
+  [/(<!ENTITY)\b/i, 'DTD 엔티티 선언'],
 ];
 const REF_RULES = [
   [/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi, '외부 href'],
   [/\burl\(\s*(?:"([^"]*)"|'([^']*)'|([^)"']*))\s*\)/gi, '외부 url()'],
 ];
 const excerpt = (text) => (text.length > 60 ? `${text.slice(0, 57)}...` : text);
+// 숫자 문자 참조(`&#114;`·`&#x72;`)와 `&amp;` 를 푼다 — XML 은 속성 값에서 이것을 풀어 읽으므로 `u&#114;l(x.svg)` 가
+// `url(x.svg)` 로, `&#35;g` 가 `#g` 로 해석된다(codex 1차 P2). `&lt;` 등은 풀지 않는다 — 텍스트의 `&lt;script` 는 글자다.
+const decodeRefs = (text) => text
+  .replace(/&#x([0-9a-f]+);/gi, (m, h) => { const c = parseInt(h, 16); return c <= 0x10ffff ? String.fromCodePoint(c) : m; })
+  .replace(/&#([0-9]+);/g, (m, d) => { const c = Number(d); return c <= 0x10ffff ? String.fromCodePoint(c) : m; })
+  .replace(/&amp;/g, '&');
 
 // 위반 설명 목록(없으면 빈 배열). 파서가 아니라 문자열 검사다 — 결정론이고 의존성이 없다.
 export function svgSelfContainmentViolations(text) {
@@ -115,15 +125,23 @@ export function svgSelfContainmentViolations(text) {
   const root = body.match(/^<svg(?=[\s/>])[^>]*>/);
   if (!root) {
     violations.push(`루트 요소가 <svg> 가 아님: ${excerpt(body.split('\n')[0].trim()) || '(빈 파일)'}`);
-  } else if (!new RegExp(`\\sxmlns\\s*=\\s*(["'])${escapeRe(SVG_NS)}\\1`).test(root[0])) {
-    violations.push(`루트 <svg> 에 xmlns="${SVG_NS}" 없음`);
+  } else {
+    if (!new RegExp(`\\sxmlns\\s*=\\s*(["'])${escapeRe(SVG_NS)}\\1`).test(root[0])) {
+      violations.push(`루트 <svg> 에 xmlns="${SVG_NS}" 없음`);
+    }
+    // 잘린 파일(상류 출력이 중간에 끊김)은 이미지로 그려지지 않는다 — 끝이 루트를 닫는지만 본다(codex 1차 P1).
+    const tail = body.replace(/(?:\s+|<!--[\s\S]*?-->)*$/, '');
+    if (!(root[0].endsWith('/>') && tail === root[0]) && !tail.endsWith('</svg>')) {
+      violations.push('루트 <svg> 가 닫히지 않음 — 파일이 잘렸는지 확인');
+    }
   }
+  const decoded = decodeRefs(text);
   for (const [re, label] of ALWAYS_BAD) {
-    const m = text.match(re);
+    const m = decoded.match(re);
     if (m) violations.push(`${label}: ${m[1]}`);
   }
   for (const [re, label] of REF_RULES) {
-    for (const m of text.matchAll(re)) {
+    for (const m of decoded.matchAll(re)) {
       const value = (m[1] ?? m[2] ?? m[3]).trim();
       if (!LOCAL_REF_RE.test(value)) violations.push(`${label}: ${excerpt(value)}`);
     }

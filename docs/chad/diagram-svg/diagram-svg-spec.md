@@ -62,12 +62,14 @@
   같은 문법의 형제가 빠져 있다: 상대 경로·`file:`·`javascript:` href, `url(//…)`·`url(font.woff)`, 이벤트 핸들러 속성(`onload=` — 스크립트), HTML 문서를 `.svg`로
   이름만 바꾼 경우. SVG를 `<img>`로 보이는 뷰어(Markdown 이미지·Obsidian)는 외부 자원을 불러오지 않으므로 http만 막으면 나머지는 조용히 깨진다.
   → 결정(2026-11-18, MAINTAINING "문법·형제 경로 전체"): 거부 목록이 아니라 허용 목록으로 검사한다 — `href`·`url()` 값은 `#…`(문서 안)·`data:`·빈 값만 허용.
-  `<script`·`<foreignObject`(접두사 포함, 대소문자 무시)·태그 안 `on<이름>=` 속성·`@import`는 언제나 위반. 루트는 XML 선언·주석·DOCTYPE 뒤 첫 요소가
-  `<svg`이고 그 시작 태그에 `xmlns="http://www.w3.org/2000/svg"`. `xmlns`·DOCTYPE의 URI는 참조가 아니라 식별자라 검사하지 않는다. 주석 안도 검사한다
+  `<script`·`<foreignObject`(접두사 포함, 대소문자 무시)·태그 안 `on<이름>=` 속성(따옴표 값은 건너뜀)·`@import`·DTD `<!ENTITY`는 언제나 위반. 숫자 문자 참조·`&amp;`는
+  풀어서 본다(XML이 속성 값을 그렇게 읽는다 — codex 1차). 루트는 XML 선언·주석·DOCTYPE 뒤 첫 요소가
+  `<svg`이고 그 시작 태그에 `xmlns="http://www.w3.org/2000/svg"`, 파일 끝이 루트를 닫는다(잘린 파일 거부 — codex 1차). `xmlns`·DOCTYPE의 URI는 참조가 아니라 식별자라 검사하지 않는다. 주석 안도 검사한다
   (보수적 — 오탐 비용은 주석 한 줄 수정, 미탐 비용은 PR에서 조용히 깨진 그림).
 - **PR 본문 링크의 형태** — 설계는 `pr-check` notes `· PR 본문에 링크: <path>.svg`다. GitHub PR 본문의 저장소 상대 경로는 저장소 파일의 Markdown처럼 풀리지
   않는 것으로 알고 있으나 여기서 확인하지 않았다. GitLab MR 설명의 상대 경로 해석도 확인하지 않았다.
-  → 결정(2026-11-18): `pr-check`는 저장소 상대 경로만 낸다(forge를 모른다 — 출력이 결정론). ship 문서가 "PR head의 파일 URL(blob)로 건다"를 안내하고
+  → 결정(2026-11-18): `pr-check`는 저장소 루트 기준 경로만 낸다(forge를 모른다 — 출력이 결정론, 하위 디렉터리 설치는 `rev-parse --show-prefix` 접두 — codex 1차).
+  커밋된 SVG가 자립성 검사에 걸리면 링크하지 않고 그 사실을 note로 낸다(codex 1차). ship 문서가 "PR head의 파일 URL(blob)로 건다"를 안내하고
   상대 경로 해석은 미검증으로 남긴다.
 - **상류 스킬의 형식** — 동반 플러그인 diagram-design(핀 `0ab077f`)은 inline SVG HTML을 내고 예시 자산이 문서 `<style>`의 CSS 변수(`var(--…)`)를 쓴다.
   거기서 `<svg>`만 떼면 자립성 검사는 통과해도 스타일 없이 그려진다(A2-1이 CLI 추출을 기각한 이유와 같다).

@@ -26,7 +26,8 @@ Use this skill as the Codex equivalent of Claude Code `/harness-diagram`.
   `record --view` rejects one that is not self-contained; never cut the `<svg>` out of an HTML output.
   Self-contained inline SVG with no external assets is the requirement, not a default — the
   docs tree is opened in viewers that strip script, so a runtime-JS diagram does not render there.
-  The command contract allows one exception, for a project whose viewer is known to run script, and
-  only when the reasoning and the viewer checked are recorded in the artifact.
+  The command contract allows one exception for the legacy HTML only, for a project whose viewer is known
+  to run script, and only when the reasoning and the viewer checked are recorded in the artifact. A view SVG
+  has no such exception.
 - Record the outcome in the active task's artifact with a date, whether the diagram was produced or
   skipped. An unrecorded run cannot be told apart from a run that never happened.
