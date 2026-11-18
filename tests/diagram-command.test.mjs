@@ -405,3 +405,31 @@ test('record --view <모르는 값>: 직접 호출도 exit 2 이고 쓰지 않�
     assert.equal(await readTask(dir, 'plan.md'), MIXED_PLAN);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+// codex P2(diagram-views 리뷰): 레거시 파일이 없는 view-only plan 에서도 bare record 는 --view 를 안내한다.
+test('record (--view 없음): 레거시 파일도 없는 view-only plan 에서도 --view 를 안내한다', async () => {
+  const dir = await fixture({ plan: VIEW_PLAN });
+  try {
+    const { exitCode, logs } = await capture(() => run(dir, ['record']));
+    assert.equal(exitCode, 1);
+    assert.match(logs.join('\n'), /--view sequence\|module/);
+    assert.equal(await readTask(dir, 'plan.md'), VIEW_PLAN);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// codex P2: plan 쓰기 실패 뒤 재실행 안내가 --view·--skipped 를 잃지 않는다.
+test('record --view --skipped: plan 쓰기 실패 패킷의 재실행 안내가 같은 플래그를 담는다', async () => {
+  const dir = await fixture({ plan: MIXED_PLAN });
+  const planPath = join(dir, 'docs', 'tester', 'demo', 'demo-plan.md');
+  try {
+    const { chmod } = await import('node:fs/promises');
+    await chmod(planPath, 0o444);
+    const { exitCode, logs } = await capture(() => run(dir, ['record', '도구', '없음'], { view: 'module', skipped: true }));
+    assert.equal(exitCode, 1);
+    assert.match(logs.join('\n'), /harness-team diagram record --view module --skipped "도구 없음"/);
+  } finally {
+    const { chmod } = await import('node:fs/promises');
+    await chmod(planPath, 0o644).catch(() => {});
+    await rm(dir, { recursive: true, force: true });
+  }
+});

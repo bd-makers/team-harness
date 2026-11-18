@@ -162,13 +162,19 @@ async function runRecord(ctx, json, noteTokens) {
   const artifactRel = taskFileRel(user, task, 'artifact.md');
   const planRel = taskFileRel(user, task, 'plan.md');
   const outcome = skipped ? 'skipped' : 'produced';
+  // 재실행 안내는 이번 호출의 플래그를 그대로 담는다 — 빠지면 레거시 단계를 닫거나 생략을 생성으로 바꾼다(codex P2).
+  const rerun = `harness-team diagram record${view ? ` --view ${view}` : ''}${skipped ? ` --skipped "${note}"` : ''}`;
+  const viewHint = `뷰 단계(\`spec/plan 다이어그램(<view>)\`)라면 \`--view ${DIAGRAM_VIEWS.join('|')}\` 로 다시 실행`;
 
   // 없는 산출물을 "생성" 으로 남기는 것이 산문이 막으려던 거짓 기록이다.
   if (outcome === 'produced' && !(await exists(taskFilePath(ctx.targetDir, user, task, kind)))) {
     emitError(json, `${diagramRel} 이 없어 생성으로 기록할 수 없음`, buildErrorPacket({
       cause: `${diagramRel} 이 없음`,
       retry: '다이어그램을 그 경로에 만든 뒤 다시 실행',
-      alternatives: [`만들지 못했으면 \`harness-team diagram record${view ? ` --view ${view}` : ''} --skipped "<사유>"\` 로 미실행을 기록`],
+      alternatives: [
+        `만들지 못했으면 \`harness-team diagram record${view ? ` --view ${view}` : ''} --skipped "<사유>"\` 로 미실행을 기록`,
+        ...(view ? [] : [viewHint]),
+      ],
       safeDefault: 'artifact·plan 어느 파일도 바뀌지 않았다',
       stop: '산출물 없이 생성을 기록하지 말 것',
     }));
@@ -187,7 +193,7 @@ async function runRecord(ctx, json, noteTokens) {
       alternatives: [
         view
           ? '다른 뷰나 레거시 단계라면 그 단계에 맞는 `--view`(레거시는 생략)로 다시 실행'
-          : `뷰 단계(\`spec/plan 다이어그램(<view>)\`)라면 \`--view ${DIAGRAM_VIEWS.join('|')}\` 로 다시 실행`,
+          : viewHint,
         '옵트인하지 않은 task 면 기록할 것이 없다 — 아무것도 하지 않는다(task.md 3번)',
       ],
       safeDefault: 'artifact·plan 어느 파일도 바뀌지 않았다',
@@ -215,7 +221,7 @@ async function runRecord(ctx, json, noteTokens) {
       emitError(json, `${planRel} 쓰기 실패 — artifact 에는 기록됐고 plan 단계는 열린 채다`, buildErrorPacket({
         cause: err.message,
         retry: `${planRel} 의 다이어그램 단계를 손으로 닫는다 — \`- [x] …\` (task.md 4번 형식)`,
-        alternatives: ['원인을 고친 뒤 `harness-team diagram record` 를 다시 실행하면 artifact 에 갱신 줄이 하나 더 남고 plan 이 닫힌다'],
+        alternatives: [`원인을 고친 뒤 \`${rerun}\` 를 다시 실행하면 artifact 에 줄이 하나 더 남고 plan 이 닫힌다`],
         safeDefault: `${artifactRel} 에는 이번 줄이 남아 있다: ${line}`,
         stop: 'plan 이 열린 채로는 `harness-team done` 이 막는다 — 그것이 의도다',
       }));

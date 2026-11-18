@@ -28,5 +28,33 @@
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
 
+### 2026-11-18T08:59:09.646Z — codex (harness-team review)
+
+- engine: codex · scope: diff · base: origin/main · mergeBase: 5993b270c4b51ce1daaca1ece4e73c2522108b04 · tip: 148f3ab30045cdb2ef39d6b2c88b62c1aca8be51 · exit 0 · 1149 B
+
+```text
+- **P2 — [src/commands/diagram.mjs:218](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/optimistic-jepsen-777479/src/commands/diagram.mjs:218>)** After a plan write fails, the suggested retry drops `--view` and `--skipped`, so it can close the legacy step while leaving the intended view open.
+- **P2 — [src/commands/diagram.mjs:167](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/optimistic-jepsen-777479/src/commands/diagram.mjs:167>)** On a view-only plan, bare `diagram record` tells the user to create legacy HTML before checking the plan, so it misses the documented `--view` hint.
+
+Reviewed all 21 changed files against `origin/main` with `git status` and `git diff`. `git diff --check`, `npm run docs:check`, and 34 targeted tests passed. Both findings were reproduced in memory. The full suite was skipped because it creates fixtures. No files were modified.
+
+**Verdict** — No P1 blockers. Address both P2 findings before merging.
+```
+
+<!-- harness:review kind=codex scope=diff tip=148f3ab30045cdb2ef39d6b2c88b62c1aca8be51 at=2026-11-18T08:59:09.646Z -->
+
+판별(작성 세션, 2026-11-18):
+- P2-1 (`diagram.mjs` plan 쓰기 실패 패킷의 재실행 안내) — **진짜 결함**. alternatives가 고정 문자열
+  `harness-team diagram record`라 `--view`·`--skipped`를 잃는다. 뷰 기록 뒤 그대로 재실행하면 레거시 단계를 닫거나
+  missing으로 끝나 의도한 뷰 단계는 열린 채다. 코드 대조로 확인(실패 경로라 실측 재현은 안 함).
+  `--skipped`가 빠지는 부분은 이 변경 이전부터 있던 결함이다.
+- P2-2 (뷰 단계만 있는 plan에서 bare `record`) — **진짜 결함**. 임시 저장소에서 재현: 레거시 파일 검사가 plan 검사보다 먼저 돌아
+  `d-diagram.html 이 없음`만 내고 `--view` 안내가 없다(exit 1, 쓰기 없음). `commands/harness-diagram.md` 7단계의
+  "뷰 단계만 있는 plan에서는 exit 1로 `--view`를 안내한다"와 어긋난다. 내 테스트는 레거시 파일을 둔 fixture라 이 경로를 놓쳤다.
+- 조치(같은 날, 사용자 지시 "고쳐줘"): 재실행 안내를 이번 호출의 플래그(`--view`·`--skipped "<사유>"`)로 조립하고, 파일 없음
+  패킷에도 `--view` 안내를 붙였다(검사 순서는 유지 — 레거시 오류 문구 불변). 테스트 2건 추가(view-only·레거시 파일 없음, 읽기 전용
+  plan으로 쓰기 실패 유도). `npm test` exit 0 — `tests 1328 / pass 1327 / fail 0`, perf 1/1, `docs:check` 최신.
+- 리뷰 시점 메모: review-only라 리뷰 실행 중에는 고치지 않았다. 수정안 — 재실행 안내를 실제 플래그(`--view`·`--skipped "<사유>"`)로 조립,
+  파일 없음 패킷에 뷰 단계 안내 추가(또는 plan 검사를 앞으로), 레거시 파일 없는 view-only fixture 테스트 추가.
 
 ## Learnings
