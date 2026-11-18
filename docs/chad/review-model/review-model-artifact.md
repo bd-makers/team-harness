@@ -50,7 +50,7 @@ Reviewed `git status` and `git diff` against `refs/remotes/origin/main`. All 30 
   엔진 없는 `review`가 `sh -c`로 그 명령을 돈다(테스트 `custom 프로필은 custom.command 로 돈다`가 바로 이 경로). 다만 설계 A6가 `engine`을 `ENGINES`
   전체(custom 포함)로 승인했고, 같은 브랜치의 `.harness/gates.json`·npm scripts·scenario `cmd`도 같은 신뢰 수준이다. **조치**: 설계를 바꾸지 않고
   `commands/harness-review.md` 프로필 절에 신뢰 수준과 "검토하지 않은 브랜치에서는 엔진을 위치 인자로 명시" 규칙을 적었다(scenario `cmd` 선례).
-  프로필에서 custom을 금지할지는 **메인테이너 결정으로 남긴다** (open → 사용자).
+  → 결정(2026-11-18, 사용자 = 메인테이너): custom 프로필 **허용 유지**, 문서 경고로 충분하다.
 - **P2 (spec 읽기 오류를 "없음"으로 삼킴)** — **진짜 결함.** EISDIR·EACCES면 task 프로필을 건너뛰고 default로 돌았다. **조치**: ENOENT만 "없음",
   나머지는 error 패킷(위치 인자 엔진 탈출구 안내). 테스트 `spec 을 읽지 못하면(ENOENT 아님) default 로 내려가지 않고 error`.
 - **P2 (harness-review.md 3단계 실행 문장에 `--model` 누락)** — **진짜 결함(문서).** **조치**: 3단계 호출 형태와 "그대로 넘긴다" 목록에 `--model`을 넣었다.
