@@ -11,8 +11,8 @@
 - [x] 4. `pr-check.mjs` — 게이트 줄을 뺀 뒤 템플릿 그대로 판정
 - [x] 5. 문서 — `commands/harness-task.md`(게이트 절·통합 질문·인자), `commands/harness-loop.md`(진입·Dev·승인 필요), `docs/harness-cycle.md` §2, `CHANGELOG.md`
 - [x] 6. 테스트 — task-templates·pr-check·cli-args·loop-command·agent-files
-- [ ] 7. 검증 — `npm test`·`npm run docs:check`·doctor·`pr-check --base origin/main`
-- [ ] 8. Codex 리뷰 1회 — 발견 판별·반영, artifact Reviews 기록
+- [x] 7. 검증 — `npm test`·`npm run docs:check`·doctor·`pr-check --base origin/main`
+- [x] 8. Codex 리뷰 1회 — 발견 판별·반영, artifact Reviews 기록
 - [ ] 9. 로컬 커밋 (push·PR은 사용자)
 
 ## Ontology 변경 로그

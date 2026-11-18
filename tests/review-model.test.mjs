@@ -374,6 +374,7 @@ test('task <existing> --reviewer: 사람이 쓴 spec 을 고치지 않고, 활�
     assert.equal(r.exitCode, 1);
     assert.ok(r.logs.some(l => l.includes('새 task 를 만들 때만')), r.logs.join('\n'));
     assert.ok(r.logs.some(l => l.includes('"reviewer": "deep"')), 'spec 손 편집을 안내한다');
+    assert.ok(r.logs.some(l => l.includes('`harness-team task web-feat --member tester` 으로 활성화')), '같은 member 로 재실행을 안내한다(codex P2, human-review-gate)');
     assert.equal(await readFile(join(dir, 'docs/tester/web-feat/web-feat-spec.md'), 'utf8'), specBefore);
     assert.equal(await readFile(join(dir, '.harness/active.json'), 'utf8'), activeBefore, '활성 포인터 불변');
     assert.equal(await readFile(join(dir, 'docs/tester/web-feat/web-feat-meta.json'), 'utf8'), metaBefore, 'area 채택 meta 쓰기도 없다');

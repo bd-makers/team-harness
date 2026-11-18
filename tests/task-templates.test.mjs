@@ -312,7 +312,45 @@ test('review gate: 기존 task 에 --no-review-gate 는 plan·meta·활성 포�
     const r = await runQuiet(dir, 'web-feat', { 'no-review-gate': true, area: 'web' });
     assert.equal(r.exitCode, 1);
     assert.ok(r.logs.includes('✗ task: --no-review-gate 는 새 task 를 만들 때만 쓸 수 있음'), r.logs.join('\n'));
-    assert.ok(r.logs.some(l => l.includes('[사람] spec 검토 승인') && l.includes('손으로 지우')), '손 편집을 안내한다');
+    assert.ok(r.logs.some(l => l.includes('[사람] spec 검토 승인') && l.includes('손으로 지우')
+      && l.includes('`harness-team task web-feat --member tester` 으로 활성화')), '손 편집과 같은 member 의 재실행을 안내한다(codex P2)');
     assert.deepEqual(await Promise.all(files.map(f => readFile(f, 'utf8'))), before, 'plan·meta(area 채택 포함)·active 불변');
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// codex 리뷰(2026-11-18) P2: 파서는 `--no-review-gate=false` 를 문자열 "false" 로 준다 — truthy 라 기본 게이트가 조용히 빠졌다.
+test('review gate: --no-review-gate 에 값을 주면 아무것도 만들지 않고 exit 1', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-review-gate-value-'));
+  try {
+    for (const value of ['false', 'true', '']) {
+      const r = await runQuiet(dir, 'demo', { 'no-review-gate': value });
+      assert.equal(r.exitCode, 1, value);
+      assert.ok(r.logs.includes('✗ task: --no-review-gate 는 값을 받지 않음'), r.logs.join('\n'));
+    }
+    await assert.rejects(readFile(planPath(dir, 'demo')), /ENOENT/);
+    await assert.rejects(readFile(join(dir, '.harness/active.json')), /ENOENT/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 거부 안내의 재실행 명령은 member 를 명시했을 때만 `--member` 를 싣는다 — config user 로 고른 task 는 그대로 가리킨다.
+test('review gate: config user 로 고른 기존 task 의 거부 안내에는 --member 가 없다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-review-gate-config-user-'));
+  const logs = [];
+  const original = console.log;
+  const before = process.exitCode;
+  try {
+    await mkdir(join(dir, '.harness'), { recursive: true });
+    await writeFile(join(dir, '.harness/config.json'), JSON.stringify({ user: 'tester' }));
+    console.log = (...args) => logs.push(args.join(' '));
+    process.exitCode = undefined;
+    await runTask({ targetDir: dir, flags: {}, taskArgs: ['demo'] }, quiet);
+    await runTask({ targetDir: dir, flags: { 'no-review-gate': true }, taskArgs: ['demo'] }, quiet);
+    assert.equal(process.exitCode, 1);
+    assert.ok(logs.some(l => l.includes('`harness-team task demo` 으로 활성화')), logs.join('\n'));
+    assert.ok(!logs.some(l => l.includes('--member')), logs.join('\n'));
+  } finally {
+    console.log = original;
+    process.exitCode = before;
+    await rm(dir, { recursive: true, force: true });
+  }
 });

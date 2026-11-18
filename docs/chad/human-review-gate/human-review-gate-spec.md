@@ -23,6 +23,7 @@
 - **In**: `src/commands/task.mjs`(게이트 단계 한 줄의 단일 정본 `reviewGateStep`, `taskPlanTemplate` 옵션, `runTask` 생성 경로·
   `--no-review-gate` 거부), `src/cli-args.mjs`(task 플래그), `src/commands/pr-check.mjs`(게이트가 든 plan의 템플릿 그대로 판정),
   `commands/harness-task.md`(게이트 절·통합 생성 질문·인자), `commands/harness-loop.md`(진입·Dev·`[사람]` 단계),
+  `commands/harness-interview.md`(plan writer 인계 — Codex 리뷰 P2),
   `docs/harness-cycle.md` §2 S2 "현재" 열, `CHANGELOG.md` `[Unreleased]`, 관련 테스트.
 - **Out**:
   - A3 `harness-team brief` 슬라이드 CLI — 별도 PR ②(`task-brief`). 이 PR의 artifact 기록은 늘 `슬라이드 없음`이고 문서는 `brief`를 호출 가능한 것으로 쓰지 않는다.
@@ -73,7 +74,7 @@
 
 - **게이트 단계**: 신규 task 생성(`created:`)이면 `harness-team task`가 `## 단계` **맨 위**에 `- [ ] [사람] spec 검토 승인 — <user>`를
   기본으로 넣는다(`runTask` 생성 경로 → `taskPlanTemplate(name, { reviewGateUser: user })`). `<user>`는 task의 user(`docs/<user>/`).
-  `task <name> --no-review-gate`면 넣지 않는다. 기존 task·`activated:`·`reopened:`에는 손대지 않는다(소급 없음).
+  `task <name> --no-review-gate`면 넣지 않는다(맨 플래그만 — `--no-review-gate=<값>`은 거부, Codex 리뷰 P2). 기존 task·`activated:`·`reopened:`에는 손대지 않는다(소급 없음).
   새 meta 필드·새 Done evidence 키 없음 — "plan.md가 곧 상태".
 - **단일 정본**: 게이트 줄은 `reviewGateStep(user)`(`task.mjs` export) 하나가 만든다 — 템플릿·pr-check·테스트가 같이 쓴다.
   `taskPlanTemplate(name)`(옵션 없음)의 출력은 바이트 단위로 종전과 같다 — done-guard·session-context·pr-check 테스트가 그 형태에 기댄다.
@@ -88,7 +89,9 @@
 - **생성 시 질문 통합**: 다이어그램(옵트인)과 게이트(기본 — 뺄 수 있음)를 `AskUserQuestion` 한 번(multiSelect)으로 묻는다 —
   정본은 `commands/harness-task.md` 옵트인 절. 시점·빼기 방식은 위 R1 결정.
 - **출력**: 생성 평문 출력에 `review gate: <plan 경로> 첫 단계 — 사용자 승인 뒤에만 [x]` 한 줄. JSON envelope은 그대로(plan이 상태).
-- **pr-check**: plan 대조 전에 `reviewGateStep(user)`와 그 `[x]` 형태의 줄을 빼고 게이트 없는 템플릿과 비교한다.
+- **pr-check**: plan의 `reviewGateStep(user)`와 그 `[x]` 형태의 줄을 뺀 본문으로 빈 문서·템플릿 그대로를 판정한다.
+- **거부 안내**: 기존 task 거부(`--reviewer`·`--no-review-gate`)의 재실행 명령은 member를 명시했을 때 `--member <user>`를 싣는다(Codex 리뷰 P2).
+- **plan writer**: `commands/harness-interview.md` 인계가 게이트 단계를 지우지 말라고 말하고, 순서를 "plan 작성 → 사람 검토 승인 → 구현"으로 둔다(Codex 리뷰 P2).
 - **문서 정본**: `commands/harness-task.md`(게이트 절·승인 규칙·통합 질문·인자), `commands/harness-loop.md` 진입·Dev·멈춤 조건 "승인 필요",
   `docs/harness-cycle.md` §2 S2 "현재" 열(△ → ✓ 게이트), `CHANGELOG.md` `[Unreleased]`.
 - **호환**: 기존 task 불변. 옛 CLI는 게이트 줄을 평범한 체크박스로 본다(최소 버전 없음). 새 plan은 이 단계를 켤 때까지 `done`이 막힌다 — CHANGELOG에 적는다.
@@ -130,7 +133,8 @@
 
 - 테스트: `tests/task-templates.test.mjs`(게이트 줄·삽입 위치·`--no-review-gate`·재활성화 불변·기존 task 거부·`firstOpenPlanStep`),
   `tests/pr-check.test.mjs`(게이트 변형 차단), `tests/cli-args.test.mjs`(boolean·task 전용·help), `tests/loop-command.test.mjs`(진입·Dev·승인 필요),
-  `tests/agent-files.test.mjs`(harness-task 게이트 절).
+  `tests/agent-files.test.mjs`(harness-task 게이트 절), `tests/review-model.test.mjs`(`--reviewer` 거부 안내의 `--member`).
+- 후속(범위 밖): 다른 boolean 플래그도 `--flag=false`를 truthy 문자열로 받는다(파서 공통) — 이 task는 `--no-review-gate`만 거부한다.
 - 후속(범위 밖): `--reviewer`로 만든 spec(`taskSpecTemplate(task, { reviewer })`)을 손대지 않고 커밋하면 pr-check가 템플릿 그대로로 잡지 못한다 — A6의 같은 부류.
 - 다이어그램 옵트인: 2026-11-18 생성 시 — 묻지 않고 건너뜀(plan에 단계 없음). 사유: 템플릿 한 줄·플래그·문서 변경이라 구조 변화가 없다. 완료 보고에 명시.
 - 이 task의 plan에는 게이트 단계가 없다 — 이 기능 전의 CLI로 만들었고(소급 없음), 설계 승인은 상위 task plan의 `[사람]` 단계에 있다.
