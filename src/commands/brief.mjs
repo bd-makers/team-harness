@@ -29,9 +29,9 @@ const SECTIONS = [
 ];
 
 // 열린 항목 — 목록 항목에 **맨 글자로** 붙은 표기(commands/harness-interview.md 표기/언급 구분). 백틱 안은 언급이라 먼저 걷어 낸다.
-// 태그 모양만 센다 — `(open)`·`(open → <대상>)`. "(open 아님, …)" 같은 산문은 태그가 아니다.
+// 태그 모양만 센다 — `(open)`·`(open → <대상>)`, 외부 질의는 역할이 있어야 한다(`(ask:)` 는 태그가 아니다). "(open 아님, …)" 같은 산문은 태그가 아니다.
 // `(open…)` 은 이월 `(open → <대상>)` 도 포함한다 — 게이트는 통과하지만 답은 아직 없어, 검토자가 보고 승인해야 한다(spec R1).
-const OPEN_MARK_RE = /\((?:open(?=\)|\s*→)|unresolved\)|[^()]*,\s*unresolved\)|ask:|asked:|answered(?=[\s)]))/;
+const OPEN_MARK_RE = /\((?:open(?=\)|\s*→)|unresolved\)|[^()]*,\s*unresolved\)|ask:[^\s)]+\)|asked:[^\s)]+[\s)]|answered(?=[\s)]))/;
 
 const LIST_ITEM_RE = /^(\s*)([-*+]|\d{1,9}[.)])\s+(.*)$/;
 const HEADING_RE = /^(#{1,6})\s+(.*?)\s*$/;
@@ -39,7 +39,7 @@ const TABLE_SEPARATOR_RE = /^\s*\|?\s*:?-+:?\s*(?:\|\s*:?-+:?\s*)*\|?\s*$/;
 // 백틱 info string 에는 백틱이 올 수 없다(CommonMark) — "```x```" 한 줄은 펜스가 아니라 인라인 코드다.
 const FENCE_OPEN_RE = /^\s*(`{3,}(?=[^`]*$)|~{3,})/;
 const CODE_SPAN_RE = /(?<!`)(`+)(?!`)([\s\S]*?[^`])\1(?!`)/g;
-const BOLD_RE = /\*\*(?=[^\s*])([\s\S]*?\S)\*\*/g;
+const BOLD_RE = /(?<!\\)\*\*(?=[^\s*])([\s\S]*?\S)\*\*/g;
 // 템플릿 안내 문단: 단일 `*` 로 시작하고 단일 `*` 로 끝난다(`**굵게**` 로 시작·끝나는 문단은 아니다).
 const GUIDE_RE = /^\*(?!\*)[\s\S]*[^*]\*$/;
 
@@ -89,8 +89,8 @@ function fenceMask(lines) {
   return mask;
 }
 
-// 줄머리에서 시작하는 HTML 주석 블록을 걷어 낸다(코드 펜스 안은 글자다). 닫는 `-->` 뒤에 글자가 남으면 그 꼬리는 남긴다 —
-// 원문 줄의 접미사라 부분 문자열 판정을 깨지 않는다. 줄 중간의 주석은 글자 그대로 둔다(걷어 내면 앞뒤 글자가 붙어 원문에 없는 문자열이 된다).
+// 줄머리에서 시작하는 HTML 주석 블록을 걷어 낸다(코드 펜스 안은 글자다). 걷은 자리는 빈 줄로 남긴다 — 앞뒤 줄이 한 문단으로 붙으면
+// 원문에 없는 문자열이 된다(codex 1차 P1). 닫는 `-->` 뒤에 글자가 남으면 그 꼬리는 남긴다 — 원문 줄의 접미사라 판정을 깨지 않는다. 줄 중간의 주석은 글자 그대로 둔다(걷어 내면 앞뒤 글자가 붙어 원문에 없는 문자열이 된다).
 export function stripComments(lines) {
   const out = [];
   let fence = null;
@@ -100,6 +100,7 @@ export function stripComments(lines) {
       const end = line.indexOf('-->');
       if (end === -1) continue;
       inComment = false;
+      out.push('');
       const tail = line.slice(end + 3);
       if (tail.trim()) out.push(tail);
       continue;
@@ -114,6 +115,7 @@ export function stripComments(lines) {
     if (/^\s*<!--/.test(line)) {
       const end = line.indexOf('-->', line.indexOf('<!--') + 4);
       if (end === -1) { inComment = true; continue; }
+      out.push('');
       const tail = line.slice(end + 3);
       if (tail.trim()) out.push(tail);
       continue;
@@ -139,8 +141,10 @@ export function splitDocument(lines) {
   return doc;
 }
 
+// GFM: 구분 줄의 칸 수가 헤더와 같아야 표다 — 아니면 글자 그대로 둔다(codex 1차 P2).
 function isTableStart(lines, i) {
-  return lines[i].trim().startsWith('|') && i + 1 < lines.length && lines[i + 1].includes('-') && TABLE_SEPARATOR_RE.test(lines[i + 1]);
+  return lines[i].trim().startsWith('|') && i + 1 < lines.length && lines[i + 1].includes('-') && TABLE_SEPARATOR_RE.test(lines[i + 1])
+    && splitRow(lines[i]).length === splitRow(lines[i + 1]).length;
 }
 
 function splitRow(line) {
@@ -162,13 +166,25 @@ function parseList(lines, start, mask) {
   const stack = [{ indent: first[1].length, list: root }];
   let last = null;
   let i = start;
+  const rootIndent = first[1].length;
   for (; i < lines.length; i++) {
     const line = lines[i];
-    if (!line.trim()) break;
+    if (!line.trim()) {
+      // 빈 줄 뒤에도 목록이 이어진다: 같은 종류의 다음 항목, 또는 첫 항목보다 들여 쓴 줄(하위 목록·항목 안 문단) — CommonMark 의 느슨한 목록.
+      let j = i + 1;
+      while (j < lines.length && !lines[j].trim()) j++;
+      if (j >= lines.length || mask[j] || startsBlock(lines, j, mask)) break;
+      const next = lines[j].match(LIST_ITEM_RE);
+      const indent = (next ? next[1] : lines[j].match(/^\s*/)[0]).length;
+      if (indent > rootIndent || (next && indent === rootIndent && /\d/.test(next[2]) === root.ordered)) { i = j - 1; continue; }
+      break;
+    }
     const m = mask[i] ? null : line.match(LIST_ITEM_RE);
     if (m) {
       const indent = m[1].length;
       while (stack.length > 1 && indent < stack[stack.length - 1].indent) stack.pop();
+      // 맨 위 수준에서 글머리표 ↔ 번호가 바뀌면 새 목록이다.
+      if (stack.length === 1 && indent <= rootIndent && /\d/.test(m[2]) !== root.ordered) break;
       if (indent > stack[stack.length - 1].indent && last) {
         last.children = { type: 'list', ordered: /\d/.test(m[2]), items: [] };
         stack.push({ indent, list: last.children });
@@ -183,7 +199,7 @@ function parseList(lines, start, mask) {
   return { block: root, next: i };
 }
 
-// 블록 목록으로 바꾼다. 안내 문단은 여기서 버린다.
+// 블록 목록으로 바꾼다. 절 첫 블록인 안내 문단은 여기서 버린다.
 export function parseBlocks(lines) {
   const mask = fenceMask(lines);
   const blocks = [];
@@ -220,7 +236,8 @@ export function parseBlocks(lines) {
     const para = [line.trim()];
     for (i++; i < lines.length && lines[i].trim() && !LIST_ITEM_RE.test(lines[i]) && !startsBlock(lines, i, mask); i++) para.push(lines[i].trim());
     const text = para.join('\n');
-    if (!GUIDE_RE.test(text)) blocks.push({ type: 'paragraph', text });
+    // 안내 문단은 절 첫 블록(제목 바로 아래 — 템플릿이 넣는 자리)일 때만 버린다. 본문 중간의 기울임 문단은 작성자 글이다(codex 1차 P2).
+    if (!(blocks.length === 0 && GUIDE_RE.test(text))) blocks.push({ type: 'paragraph', text });
   }
   return blocks;
 }

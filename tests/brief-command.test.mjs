@@ -24,9 +24,11 @@ function textNodes(html) {
 }
 
 // spec 에 없는 텍스트 노드 목록 — 비어 있어야 한다.
+// JSON 을 푼 키·값도 원문으로 센다 — escape 를 푸는 것은 엔티티를 푸는 것과 같은 표현 변환이다(spec R1, codex 1차 P1).
 function newFacts(html, spec) {
   const declaration = parseDoneEvidenceDeclaration(spec);
-  const sources = [spec, ...(declaration.scenarios ?? []).flatMap(s => Object.values(s))].map(squash);
+  const decoded = declaration.scenarios ? ['scenarios', ...declaration.scenarios.flatMap(s => [...Object.keys(s), ...Object.values(s)])] : [];
+  const sources = [spec, ...decoded].map(squash);
   return textNodes(html).filter(t => !sources.some(src => src.includes(t)));
 }
 
@@ -65,9 +67,11 @@ const SPEC = [
   '  2. 순서 둘',
   '- 위험 문자 <script>alert(1)</script> 와 [링크](https://example.com/x) 는 글자다.',
   '',
-  '## 범위 (In / Out)',
-  '**굵게로 시작하는 문단은 안내가 아니다**',
+  '주석 앞 문단',
+  '<!-- 줄 사이 주석 -->',
+  '주석 뒤 문단',
   '',
+  '## 범위 (In / Out)',
   '**굵게** 로 시작하고 *기울임* 으로 끝나는 문단도 안내가 아니다 *',
   '',
   '- **In**: 브리프 렌더러',
@@ -89,6 +93,8 @@ const SPEC = [
   '| 구분 줄이 없으면 - 표가 아니다',
   '| 둘째 - 줄도 글자다',
   '',
+  '*본문 중간의 기울임 문단은 작성자 글이다*',
+  '',
   '### 렌더러',
   '| 요소 | 렌더 |',
   '|---|:---:|',
@@ -105,6 +111,8 @@ const SPEC = [
   '  - 중첩 하위 (ask:디자이너) 색상 토큰은?',
   '',
   '## Ontology',
+  '**굵게로 시작하는 문단은 안내가 아니다**',
+  '',
   '- **브리프**: 슬라이드다',
   '- 코드 안 `a**b` 와 `c**d` 는 굵게가 아니다',
   '',
@@ -129,6 +137,7 @@ const SPEC = [
   '- 참고의 일반 항목은 슬라이드에 없다',
   '- (openness) 는 태그가 아니다',
   '- (open 아님, 의도적 제외) 산문이다',
+  '- (ask:) 역할 없는 태그는 태그가 아니다',
   '',
 ].join('\n');
 
@@ -221,6 +230,8 @@ test('brief: 마크다운 부분집합 — 목록 중첩·이음 줄·굵게 안
   assert.ok(html.includes('<pre><code>const x = &quot;&lt;b&gt;코드 펜스&lt;/b&gt;&quot;;\n## 펜스 안 제목은 제목이 아니다</code></pre>'), '펜스 안 # 은 제목이 아니다');
   assert.ok(html.includes('<h3>작은 제목</h3><ul><li>중첩 상위<ul><li>중첩 하위 (ask:디자이너) 색상 토큰은?</li></ul></li></ul>'), '작은 제목·중첩');
   assert.ok(html.includes('<p>| 구분 줄이 없으면 - 표가 아니다\n| 둘째 - 줄도 글자다</p>'), '구분 줄 없는 파이프 줄은 표가 아니다 — 둘째 줄을 잃지 않는다');
+  assert.ok(html.includes('<p>주석 앞 문단</p><p>주석 뒤 문단</p>'), '걷은 주석 자리는 문단 경계다 — 앞뒤 줄이 붙지 않는다');
+  assert.ok(html.includes('<p>*본문 중간의 기울임 문단은 작성자 글이다*</p>'), '안내 문단은 절 첫 블록일 때만 버린다');
   assert.ok(html.includes('<li>코드 안 <code>a**b</code> 와 <code>c**d</code> 는 굵게가 아니다</li>'), '코드 안 ** 는 굵게 짝이 아니다');
 });
 
@@ -245,6 +256,25 @@ test('brief: 열린 항목이 없으면 그 슬라이드도 없다', () => {
   const result = renderBrief('# x\n\n## 목적 / 요구사항\n- 백틱 안 `(open)` 은 언급이다\n');
   assert.equal(result.openItems, 0);
   assert.deepEqual(result.titles, ['목적 / 요구사항']);
+});
+
+// codex 1차 리뷰 회귀 — 각 항목이 고친 동작 하나를 고정한다.
+test('brief: 느슨한 목록·목록 종류 전환·칸 수가 다른 구분 줄·escape 된 굵게', () => {
+  const md = (body) => renderBrief(`# x\n\n## Ontology\n${body}\n`).html;
+  assert.ok(md('- 상위\n\n  - 빈 줄 뒤 하위\n\n- 같은 목록 다음 항목').includes('<ul><li>상위<ul><li>빈 줄 뒤 하위</li></ul></li><li>같은 목록 다음 항목</li></ul>'));
+  assert.ok(md('- 상위\n\n  항목 안 문단').includes('<ul><li>상위\n항목 안 문단</li></ul>'));
+  assert.ok(md('- 글머리\n1. 번호').includes('<ul><li>글머리</li></ul><ol><li>번호</li></ol>'));
+  assert.ok(md('- 앞 목록\n\n뒤 문단').includes('<ul><li>앞 목록</li></ul><p>뒤 문단</p>'));
+  assert.ok(md('| a | b |\n|---|\n| c | d |').includes('<p>| a | b |\n|---|\n| c | d |</p>'), '구분 줄 칸 수가 다르면 표가 아니다');
+  assert.ok(!md('\\**글자 그대로**').includes('<strong>'), '\\** 는 굵게를 열지 않는다');
+});
+
+test('brief: JSON escape 로 쓴 scenarios 키·값도 판정은 푼 문자열을 원문으로 센다', () => {
+  const spec = '# x\n\n## Done evidence\n\n```json\n{ "version": 1, "\\u0073cenarios": [{ "id": "S1", "\\u0067iven": "a\\u0020b", "when": "w", "then": "t", "test": "x", "cmd": "true" }] }\n```\n';
+  const { html, scenarios } = renderBrief(spec);
+  assert.equal(scenarios, 1);
+  assert.ok(html.includes('<th>given</th><td>a b</td>'));
+  assert.deepEqual(newFacts(html, spec), []);
 });
 
 // ---- scenarios ----
@@ -284,8 +314,8 @@ test('brief: 슬라이드는 CSS scroll-snap 이고 글꼴은 system font stack 
 });
 
 test('stripComments: 줄머리 주석 블록만 걷고 꼬리는 남긴다 — 펜스 안·줄 중간 주석은 글자다', () => {
-  assert.deepEqual(stripComments(['a', '<!-- x', 'y --> 꼬리', 'b']), ['a', ' 꼬리', 'b']);
-  assert.deepEqual(stripComments(['  <!-- 한 줄 -->', 'b']), ['b']);
+  assert.deepEqual(stripComments(['a', '<!-- x', 'y --> 꼬리', 'b']), ['a', '', ' 꼬리', 'b']);
+  assert.deepEqual(stripComments(['  <!-- 한 줄 -->', 'b']), ['', 'b']);
   assert.deepEqual(stripComments(['```', '<!-- 펜스 안 -->', '```']), ['```', '<!-- 펜스 안 -->', '```']);
   assert.deepEqual(stripComments(['글 <!-- 중간 --> 뒤']), ['글 <!-- 중간 --> 뒤']);
 });

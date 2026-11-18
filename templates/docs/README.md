@@ -70,4 +70,5 @@ harness-team retro "<메모>"    # 활성 task artifact.md에 학습/교정 내�
   뷰 SVG는 PR/MR 본문에 링크해 리뷰어가 이미지로 본다 — 외부 자산이 없어야 한다(`diagram record --view`가 검사).
 - **`<name>-brief.html`**: 구현 전 검토용 슬라이드. `harness-team brief`가 spec의 정해진 절만 그대로 렌더한 **생성물**이다
   (SSOT 아님, 매번 덮어씀) — 슬라이드의 텍스트는 모두 spec에 있으므로 틀렸으면 spec을 고치고 다시 만든다.
+  검토한 시점의 스냅샷으로 task 문서와 함께 커밋한다(미추적으로 두면 `done`이 막는다).
   로컬 브라우저로 연다(Obsidian은 `.html`을 네이티브로 열지 않는다).

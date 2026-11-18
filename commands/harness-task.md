@@ -210,6 +210,7 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" brief   # → docs/<user>/<nam
   없거나 빈 절은 슬라이드 없이 출력에만 알린다.
 - **새 사실 0** — 에이전트가 슬라이드를 쓰지 않는다. CLI가 spec 글자를 그대로 렌더하므로 슬라이드의 텍스트는 모두 spec에 있다.
   슬라이드가 틀렸으면 **spec을 고치고 다시 생성한다** — 생성물·비-SSOT이고 매번 덮어쓴다.
+- **커밋** — 검토한 시점의 스냅샷이라 task 문서와 함께 커밋한다. 미추적으로 두면 `done`의 미커밋 가드가 막는다 — 커밋하지 않을 거면 지운다.
 - **열람** — 로컬 브라우저로 연다(script 0·외부 자산 0, 한 장씩 스크롤 스냅). Obsidian은 `.html`을 네이티브로 열지 않는다.
 
 ## 원격 done nudge (`task`·`session-context`·`doctor` 공통)

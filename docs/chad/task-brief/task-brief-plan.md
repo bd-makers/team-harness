@@ -12,7 +12,7 @@
 - [x] 5. 테스트 — brief-command(새 사실 0·외부 참조 0·escape·제외 글자·열린 항목·scenarios·결정론·오류)·cli-args·clean
 - [x] 6. 문서 — harness-task 검토용 슬라이드 절·templates/docs/README·README 명령어·SKILL, CHANGELOG
 - [x] 7. 로컬 브라우저 scroll-snap 실측(내장 브라우저, 이 task spec으로 생성)
-- [ ] 8. 검증 — `npm test`·`npm run docs:check`·doctor·`pr-check --base origin/main`, Codex 리뷰 1회 판별, 로컬 커밋
+- [x] 8. 검증 — `npm test`·`npm run docs:check`·doctor·`pr-check --base origin/main`, Codex 리뷰 1회 판별, 로컬 커밋
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
