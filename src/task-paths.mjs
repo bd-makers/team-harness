@@ -18,7 +18,7 @@ import { exists } from './fsx.mjs';
 export const DOCS_DIR = 'docs';
 
 export const taskDirRel = (user, task) => `${DOCS_DIR}/${user}/${task}`;
-// kind: 'spec.md' | 'plan.md' | 'handoff.md' | 'artifact.md' | 'meta.json' | 'diagram.html' | 'diagram-<view>.svg'
+// kind: 'spec.md' | 'plan.md' | 'handoff.md' | 'artifact.md' | 'meta.json' | 'brief.html' | 'diagram.html' | 'diagram-<view>.svg'
 // (뷰 열거는 cli-args `DIAGRAM_VIEWS` — 다이어그램 kind 는 `diagramKind` 로 만든다)
 export const taskFileRel = (user, task, kind) => `${taskDirRel(user, task)}/${task}-${kind}`;
 // 뷰 없음 = 이름 없는 레거시 뷰 `<task>-diagram.html`. 뷰 산출물은 단독 SVG 하나다(diagram-svg, 결정 A2-1 —

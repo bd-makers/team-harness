@@ -187,7 +187,7 @@ test('cli-args: rules promote 는 번호 positional 과 --name/--paths 값 플�
 
 test('cli-args: 전역 도움말의 --json 지원 명령 목록에 observe·rules 가 있다 (codex P3)', () => {
   const { text } = resolveInvocation(['--help']);
-  assert.match(text, /--json\s+.*\(task\/retro\/release\/doctor\/summary\/observe\/rules\/stack\/scope\/pr-check\/config\/diagram\/wiki\)/);
+  assert.match(text, /--json\s+.*\(task\/retro\/release\/doctor\/summary\/observe\/rules\/stack\/scope\/pr-check\/config\/diagram\/brief\/wiki\)/);
 });
 
 // 플래그를 새 커맨드에 복제할 때 가드만 빠지던 실수의 구조적 차단. COMMANDS 를 순회하므로 나중에 추가한
@@ -222,6 +222,21 @@ test('cli-args: diagram --view accepts exactly the documented views and takes a 
   assert.deepEqual(inv.positional, ['record', '도구', '없음']);
   assert.equal(resolveInvocation(['diagram', 'record', '--view']).kind, 'error', '--view 는 값이 필요하다');
   assert.equal(resolveInvocation(['review', '--view', 'module']).kind, 'error', 'diagram 외 커맨드는 --view 를 받지 않는다');
+});
+
+// task-brief: `--stage` 는 brief 의 값 플래그다. `ship` 은 첫 PR 에서 뺐다 — 하는 일 없는 값을 받지 않는다(spec R1).
+test('cli-args: brief --stage accepts exactly spec, takes a value, and only brief declares it', () => {
+  assert.deepEqual(FLAG_CHOICES.stage, ['spec']);
+  const inv = resolveInvocation(['brief', '--stage', 'spec']);
+  assert.equal(inv.kind, 'run');
+  assert.equal(inv.cmd, 'brief');
+  assert.equal(inv.flags.stage, 'spec');
+  assert.equal(resolveInvocation(['brief']).kind, 'run', '플래그 없음 = spec');
+  const ship = resolveInvocation(['brief', '--stage', 'ship']);
+  assert.equal(ship.kind, 'error');
+  assert.equal(ship.code, 2);
+  assert.equal(resolveInvocation(['brief', '--stage']).kind, 'error', '--stage 는 값이 필요하다');
+  assert.deepEqual(COMMANDS.filter(c => c.flags.includes('stage')).map(c => c.name), ['brief']);
 });
 
 test('cli-args: an inline empty choice value is rejected too', () => {
