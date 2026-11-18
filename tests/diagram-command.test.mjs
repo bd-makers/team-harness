@@ -435,3 +435,12 @@ test('record --view --skipped: plan 쓰기 실패 패킷의 재실행 안내가 
     await rm(dir, { recursive: true, force: true });
   }
 });
+
+// codex 4차 P2: 레거시 거부는 알려진 뷰 꼬리만 — 손으로 쓴 괄호 레거시 단계는 종전대로 닫힌다.
+test('closeDiagramStep: 알려진 뷰가 아닌 괄호 꼬리는 레거시 단계로 닫힌다', () => {
+  const custom = PLAN.replace(OPEN_STEP, '- [ ] spec/plan 다이어그램(선택) 작성 → docs/tester/demo/demo-diagram.html');
+  const r = closeDiagramStep(custom, { outcome: 'produced' });
+  assert.equal(r.status, 'closed');
+  assert.match(r.plan, /^- \[x\] spec\/plan 다이어그램\(선택\) 작성 → /m);
+  assert.equal(closeDiagramStep(custom, { outcome: 'produced', view: 'sequence' }).status, 'missing');
+});

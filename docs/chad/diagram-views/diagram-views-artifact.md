@@ -111,4 +111,32 @@ Reviewed the tracked diff against local `origin/main` using `git status` and `gi
 - 리뷰 대상 밖: 작업 트리에 `* 2.md`·`* 2.json` untracked 5개가 있다(iCloud 동기화 충돌 사본으로 보임, 이 세션이 만들지 않음). 건드리지 않았다.
 - 조치(사용자 "고쳐줘"): 재실행 안내가 사유를 `--skipped -- '<사유>'`로 낸다(`resolveInvocation`으로 `--help` 사유가 positional로 파싱됨을 확인), 테스트 기대값 갱신. `commands/harness-diagram.md` 7단계 뷰어 예외에 `--view` 예시 추가.
 
+### 2026-11-18T10:15:02.476Z — codex (harness-team review)
+
+- engine: codex · model: default · scope: diff · base: origin/main · mergeBase: 19a7c6ea532ec71fdb95c64281b57aa9ebe206e3 · tip: c014b790404358fd91ae9acff9d4fbe10280aa99 · exit 0 · 1014 B
+
+```text
+No P1 blockers found.
+
+- **P2 · `src/commands/diagram.mjs:36`** — The legacy matcher now rejects any label followed by `(`, so existing steps such as `spec/plan 다이어그램(선택)` can no longer be closed with `diagram record`.
+- **P2 · `commands/harness-ship.md:80`** — Ship describes legacy and per-view outputs as mutually exclusive, so following it on a supported mixed plan can leave an opted-in step open and block `done`.
+- **P2 · `src/commands/diagram.mjs:171`, `src/commands/pr-check.mjs:62`** — A directory named `*-diagram-sequence.html` satisfies both checks, allowing `record` to close the step and `pr-check` to suppress its advisory without an HTML file.
+
+Reviewed the tracked branch diff against `origin/main` using `git status` and `git diff`. `git diff --check`, 12 focused tests, the docs check, and `pr-check` passed. The five untracked files were outside the diff. The full suite requires writable fixtures and was not run. No files were modified.
+
+**Verdict: Request changes.**
+```
+
+<!-- harness:review kind=codex scope=diff tip=c014b790404358fd91ae9acff9d4fbe10280aa99 at=2026-11-18T10:15:02.476Z -->
+
+판별(작성 세션, 2026-11-18):
+- P2 (레거시 정규식이 `다이어그램(` 전체를 거부) — **유효(회귀 위험)**. 문서화된 레거시 형식(`작성 → …`, `— 미실행(…)`)에는 `(`가
+  붙지 않고 이 저장소 plan 11개에도 `spec/plan 다이어그램(` 형식은 없다(`git grep`). 다만 소비자가 손으로 쓴 `(선택)` 같은 단계는
+  이번 변경으로 닫히지 않게 된다. 조치안: 거부를 알려진 뷰로 좁힌다 — `(?!\((?:sequence|module)\))`.
+- P2 (`commands/harness-ship.md` 6단계가 레거시·뷰 산출물을 양자택일로 서술) — **진짜(문서)**. `harness-task.md`는 한 plan에
+  둘이 함께 있어도 된다고 정한다. 조치안: "단계마다 그 경로의 파일, 각자 기록"으로 고친다.
+- P2 (`*-diagram-<view>.html` 이름의 디렉터리가 파일로 통과) — **이번 범위 밖**. `exists`(stat)·`showAt`(git show)의 성질이라
+  레거시 경로에도 이전부터 같다. 의도적으로 디렉터리를 만들어야 생기는 경우다. 조치 없음.
+- 조치(사용자 "고쳐줘"): 레거시 거부를 `(?!\((?:sequence|module)\))`로 좁히고 `(선택)` 꼬리 레거시 단계 테스트 추가, `harness-ship.md` 6단계를 단계별 산출물·기록으로 고침. 디렉터리 건은 조치 없음.
+
 ## Learnings

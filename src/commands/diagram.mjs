@@ -33,7 +33,10 @@ const escapeRe = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 export const diagramStepLabel = (view) => (view ? `spec/plan 다이어그램(${view})` : 'spec/plan 다이어그램');
 
 function stepPatterns(view) {
-  const label = view ? escapeRe(diagramStepLabel(view)) : `${escapeRe(diagramStepLabel())}(?!\\()`;
+  // 레거시는 **알려진 뷰** 꼬리만 거부한다 — 손으로 쓴 `spec/plan 다이어그램(선택)` 같은 레거시 단계는 종전대로 닫힌다(codex 4차 P2).
+  const label = view
+    ? escapeRe(diagramStepLabel(view))
+    : `${escapeRe(diagramStepLabel())}(?!\\((?:${DIAGRAM_VIEWS.map(escapeRe).join('|')})\\))`;
   return {
     open: new RegExp(`^(\\s*)- \\[ \\] (${label}.*)$`, 'm'),
     closed: new RegExp(`^\\s*- \\[x\\] ${label}`, 'm'),
