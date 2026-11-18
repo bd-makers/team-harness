@@ -17,6 +17,8 @@
 - 검증(2026-11-18): `npm test` 1차 — tests 1373 · pass 1371 · fail 1(golden, 의도된 출력 변화) → golden 갱신 후 그 파일 pass 1 · fail 0.
   `npm run docs:check` exit 0("harness overview 생성 상태가 최신입니다."). `node bin/harness-team.mjs doctor` — 경고 1건(기존 `.codex/hooks.json` 훅 신뢰, 이 변경과 무관).
   `node bin/harness-team.mjs pr-check --base origin/main`(커밋 `15aab2e`) — `✓ pr-check HEAD: chad/human-review-gate`, exit 0(다이어그램 권장 안내 1줄).
+- 강도 실측(2026-11-18): 빈 저장소에 `task demo --member tester` 후 `node bin/harness-team.mjs session-context --target <dir> --member tester` →
+  `[harness] 현재 단계: [사람] spec 검토 승인 — tester`, exit 0. `done`의 `review: required` 판정은 판정 창 안 시각만 본다(`inWindow`) — 리뷰 뒤 수정 커밋(`87a2e2a`)이 증거를 무효로 만들지 않는다.
 - Codex 리뷰 반영 뒤(2026-11-18): `npm test` exit 0 — tests 1375 · pass 1374 · fail 0 · skipped 1, perf 단계 tests 1 · pass 1. `npm run docs:check` exit 0.
 
 

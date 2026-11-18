@@ -13,7 +13,7 @@
 - [x] 6. 테스트 — task-templates·pr-check·cli-args·loop-command·agent-files
 - [x] 7. 검증 — `npm test`·`npm run docs:check`·doctor·`pr-check --base origin/main`
 - [x] 8. Codex 리뷰 1회 — 발견 판별·반영, artifact Reviews 기록
-- [ ] 9. 로컬 커밋 (push·PR은 사용자)
+- [x] 9. 로컬 커밋 (push·PR은 사용자) — `15aab2e`·`87a2e2a`
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
