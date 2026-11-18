@@ -74,7 +74,10 @@ test('golden: task 경로·파일 바이트·stdout 이 한 생애주기 동안 
     await cli('done (blocked: open plan box)', ['done']);
 
     const planPath = join(dir, 'docs/tester/demo/demo-plan.md');
-    await writeFile(planPath, (await readFile(planPath, 'utf8')).replace('- [ ]', '- [x] step one'));
+    // 새 plan 은 사람 검토 게이트(human-review-gate)와 빈 단계 하나로 시작한다 — 둘 다 켜야 plan 이 끝난다.
+    await writeFile(planPath, (await readFile(planPath, 'utf8'))
+      .replace('- [ ] [사람] spec 검토 승인 — tester', '- [x] [사람] spec 검토 승인 — tester')
+      .replace(/^- \[ \]$/m, '- [x] step one'));
     await git(['add', '-A']);
     await git(['commit', '-q', '-m', 'feat: golden step']);
     await cli('handoff', ['handoff']);

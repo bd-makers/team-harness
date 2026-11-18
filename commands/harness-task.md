@@ -1,7 +1,7 @@
 ---
 description: "task 관리 (task/list/done/clean/handoff) — docs/<user>/<name>/ 구조"
 phase: Workflow
-argument-hint: '<name> [--area <area>] [--reviewer <profile>] | list [--area <area>] [--remote] | done [--force] | clean [<name>] [--base <ref>] | handoff'
+argument-hint: '<name> [--area <area>] [--reviewer <profile>] [--no-review-gate] | list [--area <area>] [--remote] | done [--force] | clean [<name>] [--base <ref>] | handoff'
 ---
 
 `$ARGUMENTS`의 **첫 토큰**으로 분기한다. `list`·`done`·`clean`·`handoff`는 `task`의 인자가 아니라 **별개 하위명령**이다 —
@@ -17,8 +17,8 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" done [--force]
 node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" clean [<name>] [--base <ref>]   # dry-run — --yes 는 아래 절의 승인 뒤에만
 node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" handoff
 
-# 그 외 → task 생성 또는 활성화 (모노레포 area·리뷰 프로필은 아래 절)
-node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name> [--area <area>] [--reviewer <profile>]
+# 그 외 → task 생성 또는 활성화 (모노레포 area·리뷰 프로필·검토 게이트는 아래 절)
+node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name> [--area <area>] [--reviewer <profile>] [--no-review-gate]
 ```
 
 예시:
@@ -29,6 +29,7 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name> [--area <area>] [-
 - `harness-team task web-next-login --area web-next`   # 모노레포 area task 생성 또는 활성화
 - `harness-team list --area web-next`  # 그 area 의 task 만
 - `harness-team task auth-redesign --reviewer deep`   # 새 task 의 리뷰 프로필을 spec 에 기록 (생성 때만)
+- `harness-team task auth-redesign --no-review-gate`   # 새 task 를 구현 전 사람 검토 단계 없이 생성 (생성 때만)
 - `harness-team list --remote`        # + 머지되지 않은 origin 브랜치에만 있는 task
 
 ## task 되돌리기 (`clean`)
@@ -98,6 +99,36 @@ area 는 `<name>-meta.json` 의 `area` 키에만 기록되고 task 는 여전히
   선언 invalid로 막힌다. 프로필이 실제로 있는지는 `review`가 실행 때 본다.
 - **팀 전원이 이 키를 아는 버전이어야 한다.** `reviewer`를 모르는 옛 CLI의 `done`은 `알 수 없는 키`로 막힌다(CHANGELOG).
 
+## 구현 전 사람 검토 게이트 (`--no-review-gate`)
+
+구현에 들어가기 전에 사용자가 spec을 한 번 검토하는 절차가 **기본**이다(사이클 S2 게이트 — `docs/harness-cycle.md` §2).
+검토자는 그 task의 user 본인이다.
+
+- **단계** — `task` 출력이 `created:`면 plan `## 단계` **맨 위**에 아래 한 줄이 들어 있고, 출력에 `review gate:` 줄이 붙는다.
+  `<user>`는 task의 user(`docs/<user>/`)다. 형식은 CLI가 정본이다(`reviewGateStep`).
+
+  ```markdown
+  - [ ] [사람] spec 검토 승인 — <user>
+  ```
+
+- **켜는 조건 — 사용자의 명시적 승인뿐.** 에이전트는 spec(경로와 요지)을 보여 주고 사용자가 **그 spec을** 승인한다고 말한 뒤에만
+  `- [x]`로 바꾼다. 다른 작업에 대한 "진행해"·이전 대화의 승인은 이 승인이 아니다. 켤 때 artifact `## 결과`에 그 단계의 증거로 한 줄을 남긴다:
+
+  ```markdown
+  - 검토 승인: <YYYY-MM-DD> · 슬라이드 <경로|없음>
+  ```
+
+  슬라이드 칸은 검토용 슬라이드를 만들어 보여 줬으면 그 경로, 아니면 `없음`이다.
+- **승인 전에는 task 문서(`docs/<user>/<name>/`) 밖 파일을 고치지 않는다.** spec·plan을 다듬는 것은 된다 — 그것이 검토 대상이다.
+- **강도는 프롬프트 수준이다** — 커밋·쓰기 차단은 없다. SessionStart는 plan 첫 미완 단계로 이 단계를 보여 주고,
+  `/harness-loop`는 다음 단계가 `[사람]` 단계면 들어가지 않는다. 끝내 켜지 않으면 `done` 가드가 미완 체크박스로 막는다(늦은 안전망).
+- **`[사람]` 단계는 사람이 하는 일의 기록이다** — Dev·루프 오케스트레이터는 구현하지도 켜지도 않는다.
+- **빼기** — 생성 시 질문(아래 옵트인 절 1번)에서 **게이트 빼기**를 고르면 방금 만든 plan에서 그 한 줄을 지운다. 사용자가 생성 **전에**
+  이미 빼라고 했거나 스크립트로 만들면 `task <새 이름> --no-review-gate`로 처음부터 넣지 않는다(값은 받지 않는다 — `--no-review-gate=false`는 거부).
+  plan에 그 줄이 없다는 사실이 곧 옵트아웃이다. 그 밖의 이유로는 지우지 않는다 — plan을 다시 쓸 때도 `## 단계` 맨 위에 둔다.
+- **기존 task에는 손대지 않는다** — `activated:`·`reopened:`는 plan을 그대로 두고(소급 없음), 기존 task에 `--no-review-gate`를 주면
+  거부한다(exit 1, plan·meta·활성 포인터 모두 그대로). 빼려면 plan의 그 줄을 손으로 지운다.
+
 ## spec/plan 다이어그램 옵트인
 
 `task` 출력이 `created:`(신규 생성)일 때만 아래를 **1회** 수행한다. `activated:`(기존 task
@@ -106,9 +137,10 @@ area 는 `<name>-meta.json` 의 `area` 키에만 기록되고 task 는 여전히
 옵트인 상태는 plan.md에 그 단계가 있는지로 이미 남아 있고, 재개는 그 계획을 이어받는 것이지
 새로 세우는 것이 아니다.
 
-1. **질문** — `AskUserQuestion`으로 한 번만 묻는다: 이 task의 spec/plan 단계에서 다이어그램을
-   함께 만들까? 사용자가 건너뛰면 그대로 진행한다. 다시 묻지 않는다. 같은 질문에서 뷰를 나눠 그릴지
-   (`sequence` 시간 순 상호작용 · `module` 구성요소·의존 관계, 복수 선택)를 함께 고르게 할 수 있다 — 뷰는 옵트인이다.
+1. **질문** — `AskUserQuestion`으로 한 번만 묻는다(multiSelect, 위 검토 게이트와 **한 질문**): 이 task의 spec/plan 단계에서
+   다이어그램을 함께 만들까, 그리고 구현 전 사람 검토를 뺄까? 선택지는 넷이다 — 다이어그램(레거시 한 장) · `sequence`(시간 순 상호작용) ·
+   `module`(구성요소·의존 관계) · **게이트 빼기**. 뷰는 복수 선택이다 — 뷰는 옵트인이다. 게이트는 기본이라 "빼기"로 묻는다 —
+   아무것도 고르지 않으면 다이어그램 없이 게이트가 남는다. 다시 묻지 않는다. `--no-review-gate`로 만들었으면 게이트 선택지는 뺀다.
 
 2. **"예" → plan에 단계 추가** — `<name>-plan.md`의 `## 단계`에 체크박스를 더한다:
 

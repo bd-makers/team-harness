@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { collectPrCheck, runPrCheck, prePushTargets, branchName } from '../src/commands/pr-check.mjs';
-import { taskSpecTemplate, taskPlanTemplate, taskHandoffTemplate, taskArtifactTemplate } from '../src/commands/task.mjs';
+import { taskSpecTemplate, taskPlanTemplate, taskHandoffTemplate, taskArtifactTemplate, reviewGateStep } from '../src/commands/task.mjs';
 import { installPrePushHook } from '../src/git-hooks.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -94,6 +94,31 @@ test('pr-check: 문서마다 없음·템플릿 그대로를 각각 잡는다 →
         assert.equal(exitCode, 1);
       } finally { await rm(dir, { recursive: true, force: true }); }
     }
+  }
+});
+
+// human-review-gate: 새 plan 은 게이트 줄을 품고 생긴다. 게이트 없는 템플릿과만 대조하면 손대지 않은 plan 과 게이트만 켠 plan 이
+// "채워진 문서"로 통과했다. 게이트 줄은 빼고 대조하되, 진짜 단계가 있는 plan 은 통과해야 한다(과잉 차단 금지).
+test('pr-check: 게이트가 든 plan 도 템플릿 그대로면 잡고, 게이트 외 단계가 있으면 통과한다', async () => {
+  const gated = taskPlanTemplate('t', { reviewGateUser: 'u' });
+  const TEMPLATE = ['docs/u/t/t-plan.md 가 템플릿 그대로 — 목표·단계를 채워 커밋'];
+  const EMPTY = ['docs/u/t/t-plan.md 가 비어 있음 — 목표·단계를 채워 커밋'];
+  const cases = [
+    ['게이트 미완 그대로', gated, TEMPLATE],
+    ['게이트만 켬', gated.replace(reviewGateStep('u'), reviewGateStep('u').replace('- [ ]', '- [x]')), TEMPLATE],
+    // codex 리뷰(2026-11-18) P2: 빈 문서 판정이 게이트를 빼기 전에 돌아 게이트 줄만 남은 plan 이 통과했다.
+    ['게이트 줄만 남음', `${reviewGateStep('u')}\n`, EMPTY],
+    ['게이트 + 채운 단계', gated.replace('\n- [ ]\n', '\n- [x] 1. 채움\n'), []],
+    ['사람이 더한 다른 [사람] 단계는 빼지 않는다', gated.replace('\n- [ ]\n', '\n- [ ]\n- [ ] [사람] PR 승인\n'), []],
+  ];
+  for (const [label, plan, want] of cases) {
+    const dir = await repo();
+    try {
+      await writeTask(dir, 't', { files: { 'plan.md': plan } });
+      await commit(dir);
+      const r = await check(dir, 'HEAD');
+      assert.deepEqual(r.tasks[0].issues, want, label);
+    } finally { await rm(dir, { recursive: true, force: true }); }
   }
 });
 

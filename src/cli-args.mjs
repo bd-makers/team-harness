@@ -76,7 +76,8 @@ export const COMMANDS = [
   { name: 'wiki', args: 'sources [<user>/<task>] [--pr <N>] | sources --all', summary: "Report a merged task's wiki compile inputs: provenance, marker, existing compiles, wiki/90_system rules; --all lists every task as compilable, compiled or blocked (read-only)", flags: ['pr', 'all'] },
   // `--reviewer` writes the spec's Done evidence block, so it is accepted only when the task is created —
   // the CLI never edits a spec a human already owns (runTask rejects it for an existing task).
-  { name: 'task', args: '<name> [--area <area>] [--reviewer <profile>]', summary: 'Create or activate a task (--area records its monorepo app/service in meta; --reviewer records a .harness/reviewers.json profile in a new spec)', flags: ['area', 'reviewer'] },
+  // `--no-review-gate` is creation-only for the same reason: the gate is a plan line, and an existing plan is human-owned.
+  { name: 'task', args: '<name> [--area <area>] [--reviewer <profile>] [--no-review-gate]', summary: 'Create or activate a task (--area records its monorepo app/service in meta; --reviewer records a .harness/reviewers.json profile in a new spec; a new plan starts with a human spec-review step unless --no-review-gate)', flags: ['area', 'reviewer', 'no-review-gate'] },
   // `--remote` reads local refs/remotes/origin/* only (no fetch): tasks on unmerged origin branches
   // that the checked-out branch does not have. Opt-in so plain `list` stays filesystem-only.
   { name: 'list', args: '[--area <area>] [--remote]', summary: 'List all tasks (--area filters by meta.area; --remote adds tasks only on unmerged origin branches, as of the last fetch)', flags: ['area', 'remote'] },
