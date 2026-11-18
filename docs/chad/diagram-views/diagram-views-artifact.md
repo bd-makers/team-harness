@@ -139,4 +139,31 @@ Reviewed the tracked branch diff against `origin/main` using `git status` and `g
   레거시 경로에도 이전부터 같다. 의도적으로 디렉터리를 만들어야 생기는 경우다. 조치 없음.
 - 조치(사용자 "고쳐줘"): 레거시 거부를 `(?!\((?:sequence|module)\))`로 좁히고 `(선택)` 꼬리 레거시 단계 테스트 추가, `harness-ship.md` 6단계를 단계별 산출물·기록으로 고침. 디렉터리 건은 조치 없음.
 
+### 2026-11-18T10:23:51.485Z — codex (harness-team review)
+
+- engine: codex · model: default · scope: diff · base: origin/main · mergeBase: 19a7c6ea532ec71fdb95c64281b57aa9ebe206e3 · tip: 3de6630644276cbdebf4e3d77b5bb8a67776e439 · exit 0 · 1262 B
+
+```text
+- **P2 should-fix** — The generated retry drops `--target`, so copying it from the original directory can update a different worktree’s plan and artifact. [src/commands/diagram.mjs:170](<src/commands/diagram.mjs:170>)
+- **P2 should-fix** — A Markdown code block under `## 단계` can be mistaken for an opted-in view, causing `record --skipped` to rewrite an example and report success. [src/commands/diagram.mjs:41](<src/commands/diagram.mjs:41>)
+- **P2 should-fix** — A directory named `*-diagram-sequence.html` passes both checks, allowing `record` to close the step and `pr-check` to suppress its advisory without an HTML file. [src/commands/diagram.mjs:174](<src/commands/diagram.mjs:174>), [src/commands/pr-check.mjs:62](<src/commands/pr-check.mjs:62>)
+- **P3 nit** — The ship guide’s skip example omits `--view`, so it fails on a view-only plan and leaves the step open. [commands/harness-ship.md:70](<commands/harness-ship.md:70>)
+
+Reviewed `git status` and the branch diff against `origin/main`. `git diff --check`, 14 targeted read-only tests, the docs check, and `pr-check --base origin/main` passed. The full suite requires writable fixtures and was skipped. No files were changed.
+
+**Verdict — Request changes.** No P1 blockers found.
+```
+
+<!-- harness:review kind=codex scope=diff tip=3de6630644276cbdebf4e3d77b5bb8a67776e439 at=2026-11-18T10:23:51.485Z -->
+
+판별(작성 세션, 2026-11-18):
+- P2 (`--target` 없음) — 2·3차와 같은 지적. 범위 밖 판단 유지.
+- P2 (`## 단계` 안 코드 블록을 단계로 오인) — **기존 결함, 범위 밖**. origin/main의 레거시 매처도 fence를 구분하지 않는다
+  (`stepsSection`은 이번 변경 전부터 같다). 뷰 매처만의 문제가 아니므로 별도 task가 맞다.
+- P2 (`*.html` 이름의 디렉터리) — 4차와 같은 지적. 범위 밖 판단 유지.
+- P3 (`commands/harness-ship.md` 6단계 Record 생략 예시에 `--view` 없음) — **진짜(문서)**. 3차 P3(harness-diagram)과 같은 종류의
+  형제 경로를 놓쳤다. 조치안: 뷰 단계면 `--view <view>`를 붙인다고 덧붙인다.
+- 수렴 판단: 새 지적 중 이번 변경이 만든 결함은 P3 문서 1건뿐이고 나머지는 반복 또는 기존 동작이다.
+- 조치(사용자 "고쳐줘"): `harness-ship.md` 6단계 Record 예시 뒤에 뷰 단계의 `--view` 기록 예시를 더했다.
+
 ## Learnings

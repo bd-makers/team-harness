@@ -69,7 +69,8 @@ Raw slash-command 인수:
      그러면 옵트인의 의미가 사라진다.
    - **Record** — 실행했든 건너뛰었든 `harness-team diagram record`(건너뛰었으면 `--skipped "<사유>"`)로
      남긴다 — artifact 한 줄과 plan 단계 닫기를 한 명령이 한다. 예: `harness-team diagram record --skipped
-     "diagram-design 스킬이 이 머신에 없음"`.
+     "diagram-design 스킬이 이 머신에 없음"`. 뷰 단계면 `--view <view>`를 붙여 뷰마다 기록한다
+     (예: `harness-team diagram record --view sequence --skipped "…"`).
 
    실제 생성·갱신은 `/harness-diagram`(`commands/harness-diagram.md`)이 담당한다 — 그 어댑터가
    산출물 경로·자립형 inline SVG 제약·artifact 기록을 상류 스킬 호출에 실어 준다. 위 세 단계는
