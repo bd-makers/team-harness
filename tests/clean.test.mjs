@@ -510,3 +510,17 @@ test('clean: any file in a task folder under another docs root is protected', as
     assert.match(r.out, /pkg\/docs\/chad\/y\/y-context\.md/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+// diagram-views: spec 없는 다른 task 폴더는 `TASK_FILE` 이름 규칙만 지킨다 — 뷰별 다이어그램도 그 이름에 든다.
+test('clean: another task per-view diagram file is protected even without its spec', async () => {
+  const { dir } = await fixture();
+  try {
+    await mkdir(join(dir, 'docs/chad/z'), { recursive: true });
+    await writeFile(join(dir, 'docs/chad/z/z-diagram-sequence.html'), '<svg></svg>\n');
+    const before = state(dir);
+    const r = await clean(dir, { yes: true });
+    assert.equal(r.exitCode, 1, r.out);
+    assert.match(r.out, /docs\/chad\/z\/z-diagram-sequence\.html/);
+    assert.deepEqual(state(dir), before);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

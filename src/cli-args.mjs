@@ -15,7 +15,7 @@
 
 import { KNOWN_STACK_IDS } from './detect-stack.mjs';
 
-export const VALUE_FLAGS = new Set(['stack', 'shape', 'member', 'target', 'days', 'name', 'paths', 'framing', 'rubric', 'prompt-file', 'scope', 'base', 'area', 'pr', 'model', 'reviewer']);
+export const VALUE_FLAGS = new Set(['stack', 'shape', 'member', 'target', 'days', 'name', 'paths', 'framing', 'rubric', 'prompt-file', 'scope', 'base', 'area', 'pr', 'model', 'reviewer', 'view']);
 
 // Accepted on every command: they change where the harness looks or how it
 // reports, not what it does. Keeping them global means a hook can pass --target
@@ -24,9 +24,13 @@ export const GLOBAL_FLAGS = ['target', 'member', 'yes', 'json'];
 
 export const SCOPES = ['worktree', 'diff', 'task-docs'];
 
+// 다이어그램 뷰 — 파일 하나가 관점 하나다(`<name>-diagram-<view>.html`). 이름 없는 레거시 뷰(`<name>-diagram.html`)는
+// 여기에 넣지 않는다 — `--view` 를 주지 않은 것이 레거시다. diagram·pr-check 가 이 목록을 읽는다.
+export const DIAGRAM_VIEWS = ['sequence', 'module'];
+
 // 값 계약은 커맨드가 아니라 플래그 이름에 묶는다. 커맨드마다 가드를 두면 플래그를 복제할 때 가드만 빠졌다 —
 // `stack --stack 오타`와 `scope --scope 오타`가 각각 성공한 판정으로 나왔다. 여기 있으면 COMMANDS 에 선언만 해도 검사된다.
-export const FLAG_CHOICES = { stack: KNOWN_STACK_IDS, scope: SCOPES };
+export const FLAG_CHOICES = { stack: KNOWN_STACK_IDS, scope: SCOPES, view: DIAGRAM_VIEWS };
 
 const INIT_FLAGS = ['stack', 'shape'];
 
@@ -64,7 +68,8 @@ export const COMMANDS = [
   { name: 'gate', args: 'commit | format <file> | suggest', summary: 'Run the commit gate / format commands declared in .harness/config.json, or propose them from a preset', flags: [] },
   // Owns the diagram opt-in's *record* step (artifact line + plan checkbox) that three command docs
   // used to describe in three different wordings. Probe/degrade (session-only judgment) stay in prose.
-  { name: 'diagram', args: 'record [--skipped] [note ...]', summary: "Record the diagram outcome in the active task's artifact and close its plan step (--skipped needs a reason)", flags: ['skipped'] },
+  // `--view` picks one per-view diagram (file + plan step); without it the legacy single diagram is recorded as before.
+  { name: 'diagram', args: `record [--view ${DIAGRAM_VIEWS.join('|')}] [--skipped] [note ...]`, summary: "Record the diagram outcome in the active task's artifact and close its plan step (--view: one per-view diagram; --skipped needs a reason)", flags: ['view', 'skipped'] },
   // Read-only. Owns the deterministic inputs of the wiki compile (/harness-wiki): provenance (PR · introducing
   // commit · author), the exact provenance marker, where the task is already compiled, and the project's rule files.
   // The compile itself (what goes where) is LLM judgment and stays in commands/harness-wiki.md.

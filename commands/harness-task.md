@@ -107,13 +107,24 @@ area 는 `<name>-meta.json` 의 `area` 키에만 기록되고 task 는 여전히
 새로 세우는 것이 아니다.
 
 1. **질문** — `AskUserQuestion`으로 한 번만 묻는다: 이 task의 spec/plan 단계에서 다이어그램을
-   함께 만들까? 사용자가 건너뛰면 그대로 진행한다. 다시 묻지 않는다.
+   함께 만들까? 사용자가 건너뛰면 그대로 진행한다. 다시 묻지 않는다. 같은 질문에서 뷰를 나눠 그릴지
+   (`sequence` 시간 순 상호작용 · `module` 구성요소·의존 관계, 복수 선택)를 함께 고르게 할 수 있다 — 뷰는 옵트인이다.
 
 2. **"예" → plan에 단계 추가** — `<name>-plan.md`의 `## 단계`에 체크박스를 더한다:
 
    ```markdown
    - [ ] spec/plan 다이어그램 작성 → docs/<user>/<name>/<name>-diagram.html
    ```
+
+   뷰를 골랐으면 위 한 줄 대신 **고른 뷰마다** 한 줄을 넣는다(뷰 열거의 정본은 CLI `FLAG_CHOICES.view`):
+
+   ```markdown
+   - [ ] spec/plan 다이어그램(sequence) 작성 → docs/<user>/<name>/<name>-diagram-sequence.html
+   - [ ] spec/plan 다이어그램(module) 작성 → docs/<user>/<name>/<name>-diagram-module.html
+   ```
+
+   이름 없는 첫 형식이 레거시 뷰이며 계속 유효하다. 레거시 단계와 뷰 단계가 한 plan에 함께 있어도 된다 —
+   각 단계는 자기 경로와 자기 기록 호출(6번)로 닫힌다.
 
    이것이 옵트인의 전부다. 전용 설정 키·상태 파일·doctor 체크를 만들지 않는다 —
    **plan.md가 곧 상태다**(AGENTS.md 세션 시작 프로토콜 2번이 반드시 읽는 파일).
@@ -131,16 +142,20 @@ area 는 `<name>-meta.json` 의 `area` 키에만 기록되고 task 는 여전히
    - [x] spec/plan 다이어그램 — 미실행(도구 없음)
    ```
 
+   뷰 단계는 뷰 이름을 남긴 채 닫는다: `- [x] spec/plan 다이어그램(sequence) — 미실행(도구 없음)`.
+
    지우면 옵트인했다는 사실 자체가 사라지고, `- [ ]`로 열어 두면 `harness-team done` 가드가
    "plan.md에 미완 체크박스가 남아 있음"으로 완료를 막는다.
 
-5. **산출물** — `docs/<user>/<name>/<name>-diagram.html`. 자립형 **inline SVG**로 쓴다 —
+5. **산출물** — `docs/<user>/<name>/<name>-diagram.html`(레거시), 뷰 단계면 뷰마다
+   `docs/<user>/<name>/<name>-diagram-<view>.html` — 파일 하나 = 뷰 하나. 자립형 **inline SVG**로 쓴다 —
    `docs/`는 Obsidian 볼트에서 열리고 Obsidian은 script를 제거하므로 mermaid 같은 런타임 JS
    다이어그램은 볼트에서 렌더되지 않는다. 이 파일은 `<name>-meta.json`과 마찬가지로 SSOT 4파일이
    아니다.
 
 6. **기록** — `harness-team diagram record`(건너뛰었으면 `--skipped "<사유>"`)가 `<name>-artifact.md`에
-   날짜 한 줄을 남기고 위 4번의 plan 단계를 함께 닫는다. 형식은 CLI가 정본이다. 기록하지 않으면 나중에
+   날짜 한 줄을 남기고 위 4번의 plan 단계를 함께 닫는다. 형식은 CLI가 정본이다. 뷰 단계는
+   `--view <view>`를 붙여 뷰마다 기록한다 — 그 뷰의 파일·단계만 다루고, `--view` 없는 호출은 레거시 단계만 닫는다. 기록하지 않으면 나중에
    "묻지 않은 것"과 "묻고 건너뛴 것"을 구분할 수 없다.
 
 7. **실행은 `/harness-diagram`이 담당한다** — 위 4~6번(probe·degrade·산출물·기록)을 실제로 수행하는

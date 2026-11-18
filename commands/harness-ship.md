@@ -77,7 +77,8 @@ Raw slash-command 인수:
    호출한다 — 이미 여기서 한 번 물었으므로 어댑터가 다시 묻지 않게 한다(어댑터는 `--force`에서도
    plan 단계는 그대로 추가한다).
 
-   산출물은 `docs/<user>/<name>/<name>-diagram.html` 하나이며, 기본값은 **자립형 inline SVG
+   산출물은 `docs/<user>/<name>/<name>-diagram.html` 하나이거나, plan에 뷰 단계가 있으면 뷰마다
+   `<name>-diagram-<view>.html` 한 파일씩이다(기록은 뷰마다 `diagram record --view <view>`). 기본값은 **자립형 inline SVG
    HTML**이다 — task 문서는 Obsidian처럼 **script를 제거하는 뷰어**에서 열리는 경우가 많고, 그런
    뷰어에서는 mermaid JS 런타임이 렌더되지 않는다(이 저장소의 `docs/`가 그런 환경이다). 뷰어가
    script를 실행하는 것이 확실한 프로젝트라면 다른 형식을 써도 되지만, 판단 근거를 artifact에

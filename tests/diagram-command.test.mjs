@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { runDiagram, closeDiagramStep, diagramRecordLine } from '../src/commands/diagram.mjs';
+import { runDiagram, closeDiagramStep, diagramRecordLine, DIAGRAM_SKIPPED_PREFIX } from '../src/commands/diagram.mjs';
 import { insertBeforeHeading, insertReviewBlock } from '../src/commands/review.mjs';
 
 // 다이어그램 옵트인의 **기록** 단계 — artifact 한 줄 + plan 체크박스 — 를 CLI 가 함께 쓰는지 고정한다.
@@ -285,5 +285,123 @@ test('diagram <action>: record 외 액션과 액션 없음은 exit 2 (--json 도
     const json = await capture(() => run(dir, ['draw'], { json: true }));
     assert.equal(json.exitCode, 2);
     assert.equal(JSON.parse(json.logs.join('\n')).status, 'error');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// ---- 뷰별 다이어그램 (diagram-views) ----
+// 뷰 단계 `spec/plan 다이어그램(<view>)` 은 `--view <view>` 만 닫는다. 레거시 단계·`--view` 없는 record 는 종전 그대로이고
+// 뷰 단계를 건드리지 않는다 — 레거시 정규식이 뷰 단계까지 맞던 겹침이 회귀하지 않게 고정한다.
+
+const SEQ_REL = 'docs/tester/demo/demo-diagram-sequence.html';
+const SEQ_STEP = `- [ ] spec/plan 다이어그램(sequence) 작성 → ${SEQ_REL}`;
+const MOD_STEP = '- [ ] spec/plan 다이어그램(module) 작성 → docs/tester/demo/demo-diagram-module.html';
+const VIEW_PLAN = PLAN.replace(OPEN_STEP, `${SEQ_STEP}\n${MOD_STEP}`);
+const MIXED_PLAN = PLAN.replace(OPEN_STEP, `${OPEN_STEP}\n${SEQ_STEP}\n${MOD_STEP}`);
+
+async function writeView(dir, view) {
+  await writeFile(join(dir, 'docs', 'tester', 'demo', `demo-diagram-${view}.html`), '<html><svg></svg></html>');
+}
+
+test('diagramRecordLine: 뷰 생략 줄은 머리를 그대로 두고 사유 앞에 [<view>] 를 붙인다', () => {
+  assert.equal(diagramRecordLine({ outcome: 'skipped', note: '도구 없음', date: '2026-11-18', view: 'sequence' }),
+    '- 다이어그램: 미실행 — [sequence] 도구 없음 (2026-11-18)');
+  assert.ok(diagramRecordLine({ outcome: 'skipped', note: 'x', date: 'd', view: 'module' }).startsWith(DIAGRAM_SKIPPED_PREFIX));
+  assert.equal(diagramRecordLine({ outcome: 'produced', diagram: SEQ_REL, date: '2026-11-18', view: 'sequence' }),
+    `- 다이어그램: ${SEQ_REL} 생성 (2026-11-18)`);
+});
+
+test('closeDiagramStep: --view 없는 기록은 뷰 단계를 닫지 않는다 — 뷰 단계만 있으면 missing (열림·닫힘 모두)', () => {
+  const open = closeDiagramStep(VIEW_PLAN, { outcome: 'skipped', note: '도구 없음' });
+  assert.equal(open.status, 'missing');
+  assert.equal(open.plan, VIEW_PLAN);
+  const closedViews = VIEW_PLAN.replace(SEQ_STEP, SEQ_STEP.replace('- [ ]', '- [x]')).replace(MOD_STEP, MOD_STEP.replace('- [ ]', '- [x]'));
+  assert.equal(closeDiagramStep(closedViews, { outcome: 'produced' }).status, 'missing', '닫힌 뷰 단계를 레거시 already-closed 로 세지 않는다');
+});
+
+test('closeDiagramStep: 레거시와 뷰가 섞이면 각 호출이 자기 단계만 닫는다', () => {
+  const legacy = closeDiagramStep(MIXED_PLAN, { outcome: 'produced' });
+  assert.equal(legacy.status, 'closed');
+  assert.match(legacy.plan, /^- \[x\] spec\/plan 다이어그램 작성 → docs\/tester\/demo\/demo-diagram\.html$/m);
+  assert.ok(legacy.plan.includes(SEQ_STEP) && legacy.plan.includes(MOD_STEP), '뷰 단계는 열린 채');
+
+  const seq = closeDiagramStep(MIXED_PLAN, { outcome: 'produced', view: 'sequence' });
+  assert.equal(seq.status, 'closed');
+  assert.ok(seq.plan.includes(SEQ_STEP.replace('- [ ]', '- [x]')));
+  assert.ok(seq.plan.includes(OPEN_STEP) && seq.plan.includes(MOD_STEP), '레거시·다른 뷰 단계는 열린 채');
+
+  const mod = closeDiagramStep(MIXED_PLAN, { outcome: 'skipped', note: '도구 없음', view: 'module' });
+  assert.equal(mod.status, 'closed');
+  assert.match(mod.plan, /^- \[x\] spec\/plan 다이어그램\(module\) — 미실행\(도구 없음\)$/m);
+  assert.ok(mod.plan.includes(OPEN_STEP) && mod.plan.includes(SEQ_STEP));
+});
+
+test('closeDiagramStep: 다른 뷰의 단계만 있으면 missing, 그 뷰가 닫혀 있으면 already-closed', () => {
+  const seqOnly = PLAN.replace(OPEN_STEP, SEQ_STEP);
+  assert.equal(closeDiagramStep(seqOnly, { outcome: 'produced', view: 'module' }).status, 'missing');
+  assert.equal(closeDiagramStep(PLAN, { outcome: 'produced', view: 'sequence' }).status, 'missing', '레거시 단계는 뷰 단계가 아니다');
+  const seqClosed = PLAN.replace(OPEN_STEP, '- [x] spec/plan 다이어그램(sequence) — 미실행(도구 없음)');
+  const r = closeDiagramStep(seqClosed, { outcome: 'produced', view: 'sequence' });
+  assert.equal(r.status, 'already-closed');
+  assert.equal(r.plan, seqClosed);
+});
+
+test('record --view sequence (produced): 뷰 파일로 판정하고 그 뷰 단계만 닫는다 — envelope 에 view', async () => {
+  const dir = await fixture({ plan: MIXED_PLAN });
+  try {
+    await writeView(dir, 'sequence');
+    const { exitCode, logs } = await capture(() => run(dir, ['record'], { view: 'sequence', json: true }));
+    assert.equal(exitCode, undefined, logs.join('\n'));
+    const env = JSON.parse(logs.join('\n'));
+    assert.equal(env.view, 'sequence');
+    assert.equal(env.diagram, SEQ_REL);
+    assert.equal(env.plan, 'closed');
+    assert.match(await readTask(dir, 'artifact.md'), new RegExp(`^- 다이어그램: ${SEQ_REL.replace(/[.]/g, '\\.')} 생성 \\(\\d{4}-\\d{2}-\\d{2}\\)$`, 'm'));
+    const plan = await readTask(dir, 'plan.md');
+    assert.ok(plan.includes(SEQ_STEP.replace('- [ ]', '- [x]')));
+    assert.ok(plan.includes(OPEN_STEP) && plan.includes(MOD_STEP));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('record --view: 그 뷰 파일이 없으면 exit 1 — 레거시 파일이 있어도 대신하지 않는다', async () => {
+  const dir = await fixture({ plan: MIXED_PLAN, diagram: true });
+  try {
+    const { exitCode, logs } = await capture(() => run(dir, ['record'], { view: 'sequence' }));
+    assert.equal(exitCode, 1);
+    assert.match(logs.join('\n'), /demo-diagram-sequence\.html/);
+    assert.equal(await readTask(dir, 'plan.md'), MIXED_PLAN);
+    assert.equal(await readTask(dir, 'artifact.md'), ARTIFACT);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('record --view module --skipped: [module] 생략 줄 + module 단계를 사유 붙여 닫는다', async () => {
+  const dir = await fixture({ plan: MIXED_PLAN });
+  try {
+    const { exitCode } = await capture(() => run(dir, ['record', '도구', '없음'], { view: 'module', skipped: true }));
+    assert.equal(exitCode, undefined);
+    assert.match(await readTask(dir, 'artifact.md'), /^- 다이어그램: 미실행 — \[module\] 도구 없음 \(\d{4}-\d{2}-\d{2}\)$/m);
+    const plan = await readTask(dir, 'plan.md');
+    assert.match(plan, /^- \[x\] spec\/plan 다이어그램\(module\) — 미실행\(도구 없음\)$/m);
+    assert.ok(plan.includes(OPEN_STEP) && plan.includes(SEQ_STEP));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('record (--view 없음): 뷰 단계만 있는 plan 은 exit 1 이고 --view 를 안내한다 — 쓰지 않는다', async () => {
+  const dir = await fixture({ plan: VIEW_PLAN, diagram: true });
+  try {
+    const { exitCode, logs } = await capture(() => run(dir, ['record']));
+    assert.equal(exitCode, 1);
+    assert.match(logs.join('\n'), /--view sequence\|module/);
+    assert.equal(await readTask(dir, 'plan.md'), VIEW_PLAN);
+    assert.equal(await readTask(dir, 'artifact.md'), ARTIFACT);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('record --view <모르는 값>: 직접 호출도 exit 2 이고 쓰지 않는다', async () => {
+  const dir = await fixture({ plan: MIXED_PLAN });
+  try {
+    const { exitCode, errs } = await capture(() => run(dir, ['record'], { view: '../x' }));
+    assert.equal(exitCode, 2);
+    assert.match(errs.join('\n'), /알 수 없는 --view/);
+    assert.equal(await readTask(dir, 'plan.md'), MIXED_PLAN);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

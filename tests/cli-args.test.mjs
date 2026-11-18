@@ -213,6 +213,17 @@ test('cli-args: scope accepts exactly the documented values', () => {
   assert.deepEqual(FLAG_CHOICES.scope, ['worktree', 'diff', 'task-docs']);
 });
 
+// 다이어그램 뷰 열거 — 파일 이름(`<name>-diagram-<view>.html`)과 plan 단계 문구가 이 값을 그대로 쓴다.
+test('cli-args: diagram --view accepts exactly the documented views and takes a value', () => {
+  assert.deepEqual(FLAG_CHOICES.view, ['sequence', 'module']);
+  const inv = resolveInvocation(['diagram', 'record', '--view', 'module', '--skipped', '도구', '없음']);
+  assert.equal(inv.kind, 'run');
+  assert.equal(inv.flags.view, 'module');
+  assert.deepEqual(inv.positional, ['record', '도구', '없음']);
+  assert.equal(resolveInvocation(['diagram', 'record', '--view']).kind, 'error', '--view 는 값이 필요하다');
+  assert.equal(resolveInvocation(['review', '--view', 'module']).kind, 'error', 'diagram 외 커맨드는 --view 를 받지 않는다');
+});
+
 test('cli-args: an inline empty choice value is rejected too', () => {
   assert.equal(resolveInvocation(['stack', '--stack=']).kind, 'error');
 });
