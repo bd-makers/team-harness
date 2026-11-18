@@ -494,3 +494,26 @@ test('harness-interview는 R1 원천 검토를 먼저 돌리고 미해결 발견
   const spec = await readFile(join(ROOT, 'commands', 'harness-spec.md'), 'utf8');
   assert.match(spec, /`## 원천 검토 \(R1\)` 절의 `### 원천`/, 'harness-spec 이 원천 위치를 R1 절에 적는다');
 });
+
+// A4(task spec-ask-markers): 외부 질의 마커 3상태. `(open → <대상>)` 이월은 대상이 적히면 통과하므로,
+// 역할을 이월 대상으로 받으면 답 없는 질문이 게이트를 지난다 — 별도 태그로 두고 세 상태 모두 막는다.
+// src 파서가 없어 이 문구가 계약이다(기계 차단이 아니라 interview 의 통과 선언이 차단, D11).
+test('외부 질의 마커(ask→asked→answered)는 interview 게이트를 통과하지 못하고 하네스는 게시하지 않는다', async () => {
+  const doc = await readFile(join(ROOT, 'commands', 'harness-interview.md'), 'utf8');
+  assert.match(doc, /spec 어디든 목록 항목에 외부 질의 마커 `\(ask:<역할>\)`·`\(asked:<역할> <날짜> <링크>\)`·`\(answered <링크>\)`가 남아 있어도\s+통과를 선언하지 않는다/,
+    '열린 질문 검사: 세 상태 모두 차단, spec 전체 범위');
+  assert.match(doc, /역할·`ask:`는 이월 대상이 아니다/, '이월 문법과 겹치지 않는다');
+  assert.match(doc, /`\(open → ask:<역할>\)`·`\(open → <역할>\)`은 이월로 세지 않고/, '역할을 대상으로 쓴 이월은 무효');
+  assert.match(doc, /R1 절 목록 항목에 `\(unresolved\)`·`\(open\)`·외부 질의 마커\(`\(ask:…\)`·`\(asked:…\)`·`\(answered …\)`\)/, 'R1 ②도 세 상태 차단');
+  assert.match(doc, /`\(open\)`·외부 질의 마커에도 같은 구분을 쓴다/, '표기와 언급의 구분을 마커에도 적용');
+  assert.match(doc, /남은 ask 마커 항목을 역할별로 묶어 보인다/, '차단 시 역할별 목록');
+  const spec = await readFile(join(ROOT, 'commands', 'harness-spec.md'), 'utf8');
+  assert.match(spec, /`- \(ask:<역할>\) <질문>`\(물어야 함\) → `- \(asked:<역할> <YYYY-MM-DD> <링크>\) <질문>`[^\n]*\n\s+`- \(answered <링크>\) <질문>`[^\n]*반영 후 삭제/,
+    '상태 계약: ask → asked → answered → 삭제');
+  assert.match(spec, /`asked:`·`answered` 전이는 사람이 적는다/, '전이는 사람이 적는다');
+  assert.match(spec, /역할별로 묶어\*\* 사용자에게 보인다/, '6단계 끝 역할별 목록');
+  assert.match(spec, /그 실행을 \*\*제안만\*\* 한다/, 'handler 는 제안만');
+  assert.match(spec, /하네스는 질의를 어디에도 게시하지 않고, handler를 찾는 장치·설정 키도 두지 않는다/, '게시·발견 장치 없음');
+  const step6 = spec.slice(spec.indexOf('\n6. '), spec.indexOf('\n7. '));
+  assert.ok(step6.lastIndexOf('역할별로 묶어') > step6.indexOf('Ontology 절에는'), '역할별 목록은 6단계 끝에 둔다');
+});
