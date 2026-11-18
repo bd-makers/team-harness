@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.56.0] - 2026-11-18
+
 ### Added
 
 - **`harness-team clean [<name>] [--base <ref>] [--yes]` — task 를 시작 전 상태로 되돌린다** (task `task-clean`). 방향이 틀렸거나 결과가 마음에 들지 않을 때 `done` 전에 쓴다. 상태(`dropped` 등)를 남기지 않는다.

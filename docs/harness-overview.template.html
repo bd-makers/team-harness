@@ -201,7 +201,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.55.0</span>
+      <span class="tag tag-purple">v0.56.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -209,6 +209,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.56.0 — 잘못 간 task를 한 번에 버린다:</strong>
+    <br>
+    <code>0.56.0</code> <strong><code>harness-team clean [&lt;name&gt;] [--base &lt;ref&gt;] [--yes]</code>를 추가했다.</strong> <code>done</code> 전의 task를 시작점으로 되돌리며, 기본은 dry-run이고 <code>--yes</code>는 작업 트리 전체를 <code>refs/harness/trash/…</code> 백업 ref에 남긴 뒤 <code>reset --hard</code>하고 백업 시점의 untracked만 지운다(ignored는 보존). 기본 브랜치·<code>done</code>된 task·다른 task 폴더가 섞인 범위는 거부하고, 원격에는 쓰지 않는다. 시작점을 위해 새 task의 meta에 <code>baseSha</code>를 기록한다. 소비자는 <strong>플러그인 갱신(PATH CLI 포함)</strong>만 하면 된다.
+    <br><br>
     <strong>🆕 0.55.0 — 커밋 직후 트리가 깨끗하다:</strong>
     <br>
     <code>0.55.0</code> <strong>post-commit 훅이 추적 파일을 쓰지 않는다(BREAKING).</strong> 훅은 gitignore된 <code>&lt;user&gt;-handoff.md</code>만 렌더하므로 handoff만 담는 커밋이 생기지 않는다. task handoff는 직접 쓰는 선택 메모가 됐고, D11의 필수 문서는 spec·plan·artifact로 줄었으며, <code>done</code>은 handoff에 완료 마커를 쓰지 않는다(정본은 <code>meta.json</code>). <code>done</code>의 보장 범위 줄은 리뷰 증거·커밋 게이트 유무를 함께 보이고, <code>--stack</code>·<code>--scope</code> 값 검증이 파서로 옮겨져 <code>review --scope &lt;오타&gt;</code>는 exit 2다. 소비자는 <strong>플러그인 갱신(PATH CLI 포함) + <code>init --yes</code></strong>이고, 설치된 <code>docs/README.md</code>는 손으로 고친다.
@@ -1023,7 +1027,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.55.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.56.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

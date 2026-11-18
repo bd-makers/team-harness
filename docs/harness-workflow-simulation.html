@@ -284,7 +284,7 @@
     <h1>Task Workflow Simulation</h1>
     <p>새로운 harness task 시스템의 전체 흐름 — init부터 완료, 세션 재개, task 전환까지의 시나리오별 시뮬레이션</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.55.0</span>
+      <span class="tag tag-purple">v0.56.0</span>
       <span class="tag tag-blue">post-commit 자동화</span>
       <span class="tag tag-green">증거 기반 종결 가드 7종</span>
       <span class="tag tag-orange">원장은 생성물</span>
@@ -293,7 +293,9 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #a78bfa;background:rgba(167,139,250,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
-    <strong>🆕 0.40.1–0.55.0 — 훅이 추적 파일을 쓰지 않음 · user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키 · 폴더 없는 done task · PR 없는 위키 컴파일 · 리뷰 scope 판정 정정 · worktree 리뷰 범위 확장 · scope 오류 안내 정정 · pre-push가 무관 히스토리 브랜치를 건너뜀 · 소급 위키 컴파일 후보 목록 · eval 기반 명령 문서 정정 · stack 인프로세스 DB 안내 · done tests 기본 optional · 리뷰어 allow 제거:</strong>
+    <strong>🆕 0.40.1–0.56.0 — task를 시작 전으로 되돌리는 clean · 훅이 추적 파일을 쓰지 않음 · user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키 · 폴더 없는 done task · PR 없는 위키 컴파일 · 리뷰 scope 판정 정정 · worktree 리뷰 범위 확장 · scope 오류 안내 정정 · pre-push가 무관 히스토리 브랜치를 건너뜀 · 소급 위키 컴파일 후보 목록 · eval 기반 명령 문서 정정 · stack 인프로세스 DB 안내 · done tests 기본 optional · 리뷰어 allow 제거:</strong>
+    <br>
+    <code>0.56.0</code> <strong><code>clean</code>이 task를 시작 전 상태로 되돌린다</strong> — 기본 dry-run, <code>--yes</code>는 백업 ref를 남기고 되돌린다. 워크스루 단계는 바뀌지 않았다.
     <br>
     <code>0.55.0</code> <strong>post-commit 훅이 추적 파일을 쓰지 않는다</strong> — 커밋 직후 트리가 깨끗하고, task handoff는 직접 쓰는 선택 메모가 됐다. <code>pr-check</code>의 필수 문서는 spec·plan·artifact 셋이고 <code>done</code>은 handoff에 완료 마커를 쓰지 않는다. 아래 S1·S3·S4·ship 시나리오를 그에 맞췄다.
     <br>
@@ -1186,7 +1188,7 @@ login-bug
 </main>
 
 <footer>
-  harness-aijient-team-plugin v0.55.0 — Task Workflow Simulation &nbsp;·&nbsp; 2026-11-16
+  harness-aijient-team-plugin v0.56.0 — Task Workflow Simulation &nbsp;·&nbsp; 2026-11-18
 </footer>
 
 
