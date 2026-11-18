@@ -78,8 +78,8 @@ Raw slash-command 인수:
    이 판정만 따로 필요하면(예: `/harness-ship` 2단계) `harness-team scope --json`이 같은 규칙으로
    `{scope, base, tip}`을 돌려준다 — 판정을 손으로 다시 실행하지 않는다.
 
-3. **실행** — `harness-team review [엔진] [--base <ref>] [focus ...]`를 실행한다. CLI가 1·2단계를
-   같은 규칙으로 다시 판정하고(엔진 인자·`--base`·focus를 그대로 넘긴다), 아래 "엔진 runner 표"의
+3. **실행** — `harness-team review [엔진] [--model <id>] [--base <ref>] [focus ...]`를 실행한다. CLI가 1·2단계를
+   같은 규칙으로 다시 판정하고(엔진 인자·`--model`·`--base`·focus를 그대로 넘긴다), 아래 "엔진 runner 표"의
    해당 행으로 공용 리뷰 프롬프트를 돌린 뒤, **성공(exit 0)한 실행만** 5단계의 기록을 남긴다.
    실패(exit ≠ 0·엔진 미가용)는 아무것도 기록하지 않고 error 패킷을 낸다 — 실패한 실행은 증거가
    아니다. 규모가 작으면(대략 파일 1~2개) 포그라운드, 그 외에는 Bash 백그라운드로 실행한다.
@@ -257,6 +257,9 @@ gitignore 대상이 아니다)에서 커맨드 템플릿을 읽어 `{prompt}`를
 - 스키마 검사는 프로필을 고르는 경로(엔진 인자 생략)와 `task --reviewer`에서만 한다 — 깨져 있으면 실행 전에 error 패킷이다.
   엔진 인자를 준 실행은 이 키들을 보지 않는다.
 - kind에는 프로필이 들어가지 않는다 — 어떤 모델로 돌았는지는 5단계의 `model` 필드가 남긴다.
+- **신뢰 수준**: `custom` 프로필이 task·`default`로 골리면 엔진을 생략한 `review`(loop QA 6·7 포함)도 `custom.command`를 `sh -c`로 실행한다.
+  `reviewers.json`·spec은 브랜치에 실려 오므로 `.harness/gates.json`·npm scripts·scenario `cmd`와 같은 신뢰 수준이다 —
+  검토하지 않은 브랜치에서는 엔진을 위치 인자(`codex`·`claude`)로 명시해 돌린다.
 
 ## R2 시나리오 대조 — `--framing scenario`
 

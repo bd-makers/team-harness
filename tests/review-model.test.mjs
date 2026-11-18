@@ -90,7 +90,7 @@ test('runner 표(commands/harness-review.md) ↔ engineArgv 동기화 (pin)', as
 
 test('modelIssue: 빈 값·공백·제어문자·선행 - 를 거부한다', () => {
   for (const ok of ['gpt-5.5', 'claude-opus-5-5', 'o4/mini:latest']) assert.equal(modelIssue(ok), null, ok);
-  for (const bad of ['', ' ', 'a b', 'a\tb', 'x\n', '-x', '--help', 5, null]) assert.ok(modelIssue(bad), JSON.stringify(bad));
+  for (const bad of ['', ' ', 'a b', 'a\tb', 'x\n', '-x', '--help', 'a\u0085b', 'a\u009bb', 5, null]) assert.ok(modelIssue(bad), JSON.stringify(bad));
 });
 
 // ─── reviewers.json 스키마 ───────────────────────────────────────────────────
@@ -378,4 +378,22 @@ test('task <existing> --reviewer: 사람이 쓴 spec 을 고치지 않고, 활�
     assert.equal(await readFile(join(dir, '.harness/active.json'), 'utf8'), activeBefore, '활성 포인터 불변');
     assert.equal(await readFile(join(dir, 'docs/tester/web-feat/web-feat-meta.json'), 'utf8'), metaBefore, 'area 채택 meta 쓰기도 없다');
   } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// codex 리뷰(2026-11-18) P2: 읽지 못한 spec 을 "없음"으로 보면 task 가 고른 리뷰어를 조용히 건너뛰고 default 로 돈다.
+test('review (엔진 생략): spec 을 읽지 못하면(ENOENT 아님) default 로 내려가지 않고 error', async () => {
+  const { dir, taskDir } = await makeFixture();
+  try {
+    await mkdir(join(taskDir, 'demo-spec.md')); // 디렉터리 → readFile EISDIR
+    const r = await review(dir);
+    assert.equal(r.exitCode, 1, r.logs.join('\n'));
+    assert.equal(r.calls.length, 0);
+    assert.ok(r.logs.some(l => l.includes('EISDIR')), r.logs.join('\n'));
+    assert.equal((await review(dir, { taskArgs: ['codex'] })).exitCode, undefined, '위치 인자 엔진은 spec 을 읽지 않는다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+  const missing = await makeFixture();
+  try {
+    const r = await review(missing.dir);
+    assert.equal(r.calls[0].engine, 'claude', 'spec 이 없으면(ENOENT) task 프로필 없음 → default(fast)');
+  } finally { await rm(missing.dir, { recursive: true, force: true }); }
 });

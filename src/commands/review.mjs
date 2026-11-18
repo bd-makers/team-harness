@@ -518,7 +518,18 @@ export async function runReview(ctx, deps = {}) {
   // 엔진 생략 경로만 spec 을 읽는다(task 프로필). 위치 인자 엔진은 프로필을 보지 않는다.
   let spec = null;
   if (!requestedEngine) {
-    try { spec = await readFile(taskFilePath(ctx.targetDir, active.user, active.task, 'spec.md'), 'utf8'); } catch { /* spec 없음 → task 프로필 없음 */ }
+    // 없는 spec 만 "task 프로필 없음"이다. 권한·I/O 실패를 없음으로 보면 task 가 고른 리뷰어를 조용히 건너뛴다.
+    try { spec = await readFile(taskFilePath(ctx.targetDir, active.user, active.task, 'spec.md'), 'utf8'); } catch (err) {
+      if (err.code !== 'ENOENT') {
+        return emitError(json, '엔진을 결정할 수 없음', buildErrorPacket({
+          cause: `${taskFileRel(active.user, active.task, 'spec.md')} 을 읽을 수 없어 task 프로필을 판정할 수 없음: ${err.code || err.message}`,
+          retry: 'spec 파일 권한·상태를 확인한 뒤 다시 실행',
+          alternatives: ['엔진을 위치 인자로 명시하면 프로필을 보지 않는다: `harness-team review codex` (또는 claude)'],
+          safeDefault: '엔진을 실행하지 않았고 어느 파일도 바뀌지 않았다',
+          stop: '고른 프로필을 확인하지 못한 채 다른 엔진으로 돌리지 말 것',
+        }));
+      }
+    }
   }
   const resolved = await resolveReviewer({ requested: requestedEngine, model: model ?? null, spec, targetDir: ctx.targetDir, which: deps.which });
   if (resolved.error) {

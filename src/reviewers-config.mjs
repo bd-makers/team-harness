@@ -18,7 +18,7 @@ const PROFILE_KEYS = ['engine', 'model'];
 // 다음 플래그로 읽고(argv 주입), 공백·제어문자는 id 가 아니다. `--model` 과 프로필 `model` 이 이 하나를 쓴다.
 export function modelIssue(model) {
   if (typeof model !== 'string' || !model.length) return '비어 있지 않은 문자열이어야 함';
-  if (/[\s\x00-\x1f\x7f]/.test(model)) return '공백·제어문자를 포함할 수 없음';
+  if (/[\s\x00-\x1f\x7f-\x9f]/.test(model)) return '공백·제어문자를 포함할 수 없음';
   if (model.startsWith('-')) return '`-` 로 시작할 수 없음 (엔진 CLI 가 플래그로 읽는다)';
   return null;
 }
