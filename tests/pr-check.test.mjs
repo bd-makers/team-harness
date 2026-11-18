@@ -158,24 +158,46 @@ test('pr-check: 다이어그램은 권장이다 — 없으면 막지 않고 안�
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-// diagram-views: 뷰별 파일(`<task>-diagram-<view>.html`) 하나만 있어도 다이어그램이 있는 것이다. 모르는 뷰 이름은 세지 않는다.
-test('pr-check: 뷰별 다이어그램 파일 하나만 있어도 권장 안내를 내지 않는다', async () => {
+// diagram-views·diagram-svg: 뷰 SVG(`<task>-diagram-<view>.svg`) 하나만 있어도 다이어그램이 있는 것이다. 모르는 뷰 이름과
+// 뷰 HTML(A1 미릴리스 형식)은 세지 않는다.
+test('pr-check: 뷰 SVG 하나만 있어도 권장 안내를 내지 않는다 — 뷰 HTML·모르는 뷰는 세지 않는다', async () => {
   const dir = await repo();
   try {
     await writeTask(dir, 't', { diagram: false });
-    await writeFile(join(dir, 'docs/u/t/t-diagram-unknown.html'), '<svg></svg>');
+    await writeFile(join(dir, 'docs/u/t/t-diagram-unknown.svg'), '<svg/>');
+    await writeFile(join(dir, 'docs/u/t/t-diagram-sequence.html'), '<svg/>');
     await commit(dir);
-    const none = (await check(dir, 'HEAD')).tasks[0].notes.join('\n');
-    assert.match(none, /권장: 다이어그램 없음/);
-    assert.match(none, /t-diagram-<view>\.html/, '뷰별 경로도 안내한다');
+    const none = (await check(dir, 'HEAD')).tasks[0].notes;
+    assert.equal(none.length, 1, none.join('\n'));
+    assert.match(none[0], /권장: 다이어그램 없음/);
+    assert.match(none[0], /t-diagram-<view>\.svg/, '뷰별 경로도 안내한다');
 
     for (const view of ['sequence', 'module']) {
       await rm(join(dir, 'docs/u/t'), { recursive: true, force: true });
       await writeTask(dir, 't', { diagram: false });
-      await writeFile(join(dir, `docs/u/t/t-diagram-${view}.html`), '<svg></svg>');
+      await writeFile(join(dir, `docs/u/t/t-diagram-${view}.svg`), '<svg/>');
       await commit(dir, view);
-      assert.deepEqual((await check(dir, 'HEAD')).tasks[0].notes, [], `${view} 뷰 파일`);
+      assert.deepEqual((await check(dir, 'HEAD')).tasks[0].notes, [`PR 본문에 링크: docs/u/t/t-diagram-${view}.svg`], `${view} 뷰 SVG`);
     }
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// diagram-svg: 뷰 SVG 마다 PR 본문 링크 안내(막지 않음). 레거시 HTML 은 forge 가 소스로 보이므로 안내하지 않는다.
+// 생략 기록이 있어도(다른 뷰의 생략일 수 있다) 있는 SVG 는 안내한다.
+test('pr-check: 있는 뷰 SVG 마다 PR 본문 링크를 안내하고 통과한다 — 레거시 HTML 은 링크하지 않는다', async () => {
+  const dir = await repo();
+  try {
+    await writeTask(dir, 't', { files: { 'artifact.md': FILLED['artifact.md'].replace('- 채움\n', `- 채움\n${SKIP_LINE}\n`) } });
+    await writeFile(join(dir, 'docs/u/t/t-diagram-sequence.svg'), '<svg/>');
+    await writeFile(join(dir, 'docs/u/t/t-diagram-module.svg'), '<svg/>');
+    await commit(dir);
+    assert.deepEqual((await check(dir, 'HEAD')).tasks[0].notes, [
+      'PR 본문에 링크: docs/u/t/t-diagram-sequence.svg',
+      'PR 본문에 링크: docs/u/t/t-diagram-module.svg',
+    ]);
+    const { out, exitCode } = await capture(() => runPrCheck({ targetDir: dir, flags: { base: 'main' } }));
+    assert.equal(exitCode, undefined, out);
+    assert.match(out, /✓ pr-check HEAD: u\/t\n  · PR 본문에 링크: docs\/u\/t\/t-diagram-sequence\.svg\n  · PR 본문에 링크: docs\/u\/t\/t-diagram-module\.svg/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

@@ -516,11 +516,11 @@ test('clean: another task per-view diagram file is protected even without its sp
   const { dir } = await fixture();
   try {
     await mkdir(join(dir, 'docs/chad/z'), { recursive: true });
-    await writeFile(join(dir, 'docs/chad/z/z-diagram-sequence.html'), '<svg></svg>\n');
+    await writeFile(join(dir, 'docs/chad/z/z-diagram-sequence.svg'), '<svg></svg>\n');
     const before = state(dir);
     const r = await clean(dir, { yes: true });
     assert.equal(r.exitCode, 1, r.out);
-    assert.match(r.out, /docs\/chad\/z\/z-diagram-sequence\.html/);
+    assert.match(r.out, /docs\/chad\/z\/z-diagram-sequence\.svg/);
     assert.deepEqual(state(dir), before);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

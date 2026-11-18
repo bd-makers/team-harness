@@ -1,0 +1,12 @@
+{
+  "user": "chad",
+  "task": "diagram-svg",
+  "created": "2026-11-18",
+  "firstActivatedAt": "2026-11-18T11:45:07.236Z",
+  "baseSha": "74aa5bb2d7782d92511eae17553bf0c80ec1e9e4",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": []
+}

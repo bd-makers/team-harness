@@ -79,13 +79,20 @@ Raw slash-command 인수:
    plan 단계는 그대로 추가한다).
 
    산출물은 plan의 다이어그램 단계마다 그 경로의 파일 하나다 — 레거시 단계면 `docs/<user>/<name>/<name>-diagram.html`,
-   뷰 단계면 `<name>-diagram-<view>.html`. 한 plan에 둘이 함께 있어도 되고, 단계마다 따로 기록한다
-   (레거시는 `diagram record`, 뷰는 `diagram record --view <view>`). 기본값은 **자립형 inline SVG
+   뷰 단계면 단독 SVG `<name>-diagram-<view>.svg`. 한 plan에 둘이 함께 있어도 되고, 단계마다 따로 기록한다
+   (레거시는 `diagram record`, 뷰는 `diagram record --view <view>` — 뷰는 SVG 자립성 검사를 통과해야 기록된다).
+   레거시의 기본값은 **자립형 inline SVG
    HTML**이다 — task 문서는 Obsidian처럼 **script를 제거하는 뷰어**에서 열리는 경우가 많고, 그런
    뷰어에서는 mermaid JS 런타임이 렌더되지 않는다(이 저장소의 `docs/`가 그런 환경이다). 뷰어가
-   script를 실행하는 것이 확실한 프로젝트라면 다른 형식을 써도 되지만, 판단 근거를 artifact에
+   script를 실행하는 것이 확실한 프로젝트라면 레거시는 다른 형식을 써도 되지만, 판단 근거를 artifact에
    남긴다. 이 파일은 **task 문서 4종(spec·plan·handoff·artifact)이 아닌 생성물**이며, 없어도 task는
    유효하다.
+
+   **PR 본문에 SVG 링크** — 뷰 SVG는 PR/MR 리뷰어가 이미지로 볼 수 있다. 8번의 `pr-check`가
+   `· PR 본문에 링크: <path>.svg`를 내면 PR/MR을 만들 때 본문에 그 파일을 링크한다(이미지 Markdown이나 링크).
+   경로는 저장소 상대이므로 **PR head 브랜치의 파일 URL(blob)**로 바꿔 건다 — PR 본문의 저장소 상대 경로는
+   저장소 안 Markdown처럼 풀린다는 보장이 없다(GitHub·GitLab 모두 이 하네스에서 확인하지 않았다).
+   MR diff는 SVG를 텍스트로 보일 수 있으므로 diff 뷰에 기대지 않는다. 레거시 HTML은 forge가 소스로 보이므로 링크하지 않는다.
 
 7. **정합 검증 — 적대적 검증 (옵트인, D6)** — ship은 PR 직전 마지막 게이트인데 문서↔diff
    정합을 ship을 도는 세션이 자기 채점하면 낙관적 통과가 샌다. 중요한 변경(AGENTS.md 리뷰
@@ -134,7 +141,7 @@ Raw slash-command 인수:
    ```
 
    exit 1(spec·plan·artifact 중 없거나 비었거나 템플릿 그대로)이면 **"준비 완료"를 선언하지 않는다** —
-   pre-push 훅과 CI가 같은 검사로 막는다. `· 권장: 다이어그램 없음` 안내는 막지 않는다(다이어그램은 권장).
+   pre-push 훅과 CI가 같은 검사로 막는다. `· 권장: 다이어그램 없음`·`· PR 본문에 링크:` 안내는 막지 않는다(다이어그램은 권장, 링크는 6번).
 
    그다음 사용자에게 아래를 한 화면으로 보고하고 멈춘다: 브랜치와 base, 변경 파일
    요약, 검증 결과(실제 명령과 출력), pr-check 결과, 갱신한 문서 항목, 다이어그램 상태(갱신/생성/건너뜀/미실행),

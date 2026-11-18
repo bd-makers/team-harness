@@ -24,7 +24,7 @@ export const GLOBAL_FLAGS = ['target', 'member', 'yes', 'json'];
 
 export const SCOPES = ['worktree', 'diff', 'task-docs'];
 
-// 다이어그램 뷰 — 파일 하나가 관점 하나다(`<name>-diagram-<view>.html`). 이름 없는 레거시 뷰(`<name>-diagram.html`)는
+// 다이어그램 뷰 — 파일 하나가 관점 하나다(`<name>-diagram-<view>.svg`). 이름 없는 레거시 뷰(`<name>-diagram.html`)는
 // 여기에 넣지 않는다 — `--view` 를 주지 않은 것이 레거시다. diagram·pr-check 가 이 목록을 읽는다.
 export const DIAGRAM_VIEWS = ['sequence', 'module'];
 
@@ -68,8 +68,8 @@ export const COMMANDS = [
   { name: 'gate', args: 'commit | format <file> | suggest', summary: 'Run the commit gate / format commands declared in .harness/config.json, or propose them from a preset', flags: [] },
   // Owns the diagram opt-in's *record* step (artifact line + plan checkbox) that three command docs
   // used to describe in three different wordings. Probe/degrade (session-only judgment) stay in prose.
-  // `--view` picks one per-view diagram (file + plan step); without it the legacy single diagram is recorded as before.
-  { name: 'diagram', args: `record [--view ${DIAGRAM_VIEWS.join('|')}] [--skipped] [note ...]`, summary: "Record the diagram outcome in the active task's artifact and close its plan step (--view: one per-view diagram; --skipped needs a reason)", flags: ['view', 'skipped'] },
+  // `--view` picks one per-view diagram (standalone SVG + plan step); without it the legacy single HTML diagram is recorded as before.
+  { name: 'diagram', args: `record [--view ${DIAGRAM_VIEWS.join('|')}] [--skipped] [note ...]`, summary: "Record the diagram outcome in the active task's artifact and close its plan step (--view: one per-view SVG, rejected unless self-contained; --skipped needs a reason)", flags: ['view', 'skipped'] },
   // Read-only. Owns the deterministic inputs of the wiki compile (/harness-wiki): provenance (PR · introducing
   // commit · author), the exact provenance marker, where the task is already compiled, and the project's rule files.
   // The compile itself (what goes where) is LLM judgment and stays in commands/harness-wiki.md.

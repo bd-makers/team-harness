@@ -86,6 +86,51 @@ export function closeDiagramStep(plan, { outcome, note = '', view = null }) {
   return { plan: plan.slice(0, at) + closed + plan.slice(at + open[0].length), status: 'closed' };
 }
 
+// 뷰 SVG 의 자립성(diagram-svg R1). 뷰어가 SVG 를 `<img>` 로 보이면(Markdown 이미지·Obsidian) 외부 자원을 불러오지 않고
+// 스크립트를 돌리지 않는다 — 그림이 오류 없이 조용히 깨진다. 그래서 거부 목록이 아니라 **허용 목록**이다: `href`·`url()` 값은
+// 문서 안(`#…`)·`data:`·빈 값만. http 만 막으면 상대 경로·`//`·`javascript:` 가 같은 이유로 샌다. 주석 안도 본다(보수적 —
+// 오탐 비용은 주석 한 줄, 미탐 비용은 PR 에서 깨진 그림). `xmlns`·DOCTYPE 의 URI 는 참조가 아니라 식별자라 보지 않는다.
+// HTML 에서 `<svg>` 를 떼어 낸 파일은 여기를 통과해도 문서 스타일을 잃는다 — 그것은 검사가 아니라 문서(6단계)가 막는다.
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const LOCAL_REF_RE = /^(?:#|data:|$)/i;
+// XML 선언·처리 지시·주석·DOCTYPE(내부 subset 포함)·공백 — 루트 요소 앞에 올 수 있는 것.
+const PROLOG_RE = /^(?:\s+|<\?[\s\S]*?\?>|<!--[\s\S]*?-->|<!DOCTYPE(?:[^>[]|\[[\s\S]*?\])*>)*/i;
+const ALWAYS_BAD = [
+  [/<((?:[\w-]+:)?script)\b/i, '스크립트 요소'],
+  [/<((?:[\w-]+:)?foreignObject)\b/i, 'foreignObject(HTML 섞기)'],
+  // 태그 안의 `on<이름>=` 만 — 텍스트 노드의 "online = …" 은 태그 밖이라 맞지 않는다.
+  [/<[a-z][^>]*?\s(on[a-z]+)\s*=/i, '이벤트 핸들러 속성(스크립트)'],
+  [/(@import)\b/i, '외부 스타일'],
+];
+const REF_RULES = [
+  [/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi, '외부 href'],
+  [/\burl\(\s*(?:"([^"]*)"|'([^']*)'|([^)"']*))\s*\)/gi, '외부 url()'],
+];
+const excerpt = (text) => (text.length > 60 ? `${text.slice(0, 57)}...` : text);
+
+// 위반 설명 목록(없으면 빈 배열). 파서가 아니라 문자열 검사다 — 결정론이고 의존성이 없다.
+export function svgSelfContainmentViolations(text) {
+  const violations = [];
+  const body = text.replace(/^﻿/, '').replace(PROLOG_RE, '');
+  const root = body.match(/^<svg(?=[\s/>])[^>]*>/);
+  if (!root) {
+    violations.push(`루트 요소가 <svg> 가 아님: ${excerpt(body.split('\n')[0].trim()) || '(빈 파일)'}`);
+  } else if (!new RegExp(`\\sxmlns\\s*=\\s*(["'])${escapeRe(SVG_NS)}\\1`).test(root[0])) {
+    violations.push(`루트 <svg> 에 xmlns="${SVG_NS}" 없음`);
+  }
+  for (const [re, label] of ALWAYS_BAD) {
+    const m = text.match(re);
+    if (m) violations.push(`${label}: ${m[1]}`);
+  }
+  for (const [re, label] of REF_RULES) {
+    for (const m of text.matchAll(re)) {
+      const value = (m[1] ?? m[2] ?? m[3]).trim();
+      if (!LOCAL_REF_RE.test(value)) violations.push(`${label}: ${excerpt(value)}`);
+    }
+  }
+  return [...new Set(violations)];
+}
+
 // `insertBeforeHeading` 은 블록 앞에 빈 줄 하나를 둔다(리뷰 블록의 형식). 다이어그램 줄이 바로 앞 다이어그램
 // 줄 뒤에 오면 그 빈 줄을 걷어 한 목록으로 붙인다 — 기록이 쌓일수록 느슨한 목록이 되지 않게.
 export function tightenRecordList(text, line) {
@@ -170,8 +215,9 @@ async function runRecord(ctx, json, noteTokens) {
   const rerun = `harness-team diagram record${view ? ` --view ${view}` : ''}${skipped ? ` --skipped -- ${posixSingleQuote(note)}` : ''}`;
   const viewHint = `뷰 단계(\`spec/plan 다이어그램(<view>)\`)라면 \`--view ${DIAGRAM_VIEWS.join('|')}\` 로 다시 실행`;
 
+  const diagramPath = taskFilePath(ctx.targetDir, user, task, kind);
   // 없는 산출물을 "생성" 으로 남기는 것이 산문이 막으려던 거짓 기록이다.
-  if (outcome === 'produced' && !(await exists(taskFilePath(ctx.targetDir, user, task, kind)))) {
+  if (outcome === 'produced' && !(await exists(diagramPath))) {
     emitError(json, `${diagramRel} 이 없어 생성으로 기록할 수 없음`, buildErrorPacket({
       cause: `${diagramRel} 이 없음`,
       retry: '다이어그램을 그 경로에 만든 뒤 다시 실행',
@@ -183,6 +229,22 @@ async function runRecord(ctx, json, noteTokens) {
       stop: '산출물 없이 생성을 기록하지 말 것',
     }));
     return;
+  }
+
+  // 뷰 산출물은 단독 SVG 다(결정 A2-1). 자립하지 않는 SVG 를 "생성" 으로 남기면 PR 에서 조용히 깨진 그림이 기록된다.
+  // 첫 기록·갱신 모두 본다. 레거시 HTML 은 검사하지 않는다(호환).
+  if (outcome === 'produced' && view) {
+    const violations = svgSelfContainmentViolations(await readFile(diagramPath, 'utf8'));
+    if (violations.length) {
+      emitError(json, `${diagramRel} 이 자립형 SVG 가 아니라 생성으로 기록할 수 없음`, buildErrorPacket({
+        cause: violations,
+        retry: '위반을 고친 단독 SVG 를 그 경로에 다시 쓴 뒤 다시 실행 — 스타일은 <svg> 안 <style>, system font stack, 참조는 #id·data: 만',
+        alternatives: [`단독 SVG 를 만들지 못했으면 \`harness-team diagram record --view ${view} --skipped "<사유>"\` 로 미실행을 기록`],
+        safeDefault: 'artifact·plan 어느 파일도 바뀌지 않았다',
+        stop: 'HTML 에서 <svg> 만 떼어 내 통과시키지 말 것 — 문서 스타일을 잃는다',
+      }));
+      return;
+    }
   }
 
   const planPath = taskFilePath(ctx.targetDir, user, task, 'plan.md');
