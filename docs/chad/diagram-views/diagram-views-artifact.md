@@ -198,4 +198,64 @@ Reviewed `git status` and both the direct and merge-base diffs against `origin/m
 - 수렴 판단: 이번 변경에 귀속되는 새 지적은 P3 1건이고, 반복 지적만 남았다.
 - 조치(사용자 "고쳐줘"): `TASK_FILE`을 `diagram(?:-(?:sequence|module))?`로 좁히고, 뷰가 아닌 꼬리 파일은 막지 않음·정규식 뷰 목록 = `DIAGRAM_VIEWS`를 테스트로 고정. spec 설계 절도 맞춰 고침.
 
+### 2026-11-18T10:55:25.755Z — codex (harness-team review)
+
+- engine: codex · model: default · scope: diff · base: origin/main · mergeBase: 19a7c6ea532ec71fdb95c64281b57aa9ebe206e3 · tip: 47af43f8916ba408895e859328c1a4cea4d40b15 · exit 0 · 1324 B
+
+```text
+**P1 blocking** — None found.
+
+**P2 should-fix**
+
+- The retry command drops `--target` after a plan write fails, so copying it can update the active task in a different worktree. [src/commands/diagram.mjs:170](<src/commands/diagram.mjs:170>)
+- The step matcher treats fenced Markdown examples under `## 단계` as real checkboxes, so `record --view sequence --skipped` can rewrite an example and report success. [src/commands/diagram.mjs:41](<src/commands/diagram.mjs:41>)
+- A directory named `*-diagram-sequence.html` can satisfy both artifact checks, letting `record` close the step and `pr-check` suppress its advisory without an HTML file. [src/commands/diagram.mjs:174](<src/commands/diagram.mjs:174>) · [src/commands/pr-check.mjs:62](<src/commands/pr-check.mjs:62>)
+
+**P3 nit**
+
+- `clean` classifies `*-diagram-sequence.json` and `.md` as diagram artifacts, so those filenames can block cleanup even in folders with no task spec. [src/commands/clean.mjs:115](<src/commands/clean.mjs:115>)
+
+Reviewed `git status` and `git diff origin/main`, using the merge-base diff to identify branch changes. All 36 targeted tests, the docs check, and `git diff --check` passed. The full suite requires writable fixtures and was skipped. No files changed.
+
+**Verdict — Request changes.** Address the P2 findings before merging.
+```
+
+<!-- harness:review kind=codex scope=diff tip=47af43f8916ba408895e859328c1a4cea4d40b15 at=2026-11-18T10:55:25.755Z -->
+
+판별(작성 세션, 2026-11-18):
+- P2 3건(`--target`·fence 오인·디렉터리 통과) — 2~6차와 같은 지적. 범위 밖·기존 동작 판단 유지.
+- P3 (`TASK_FILE`이 `*-diagram-sequence.json`·`.md`도 보호) — **기존 성질, 범위 밖**. kind와 확장자 그룹이 독립이라
+  origin/main에서도 `<t>-diagram.json`·`<t>-spec.json`·`<t>-meta.md`가 같이 걸린다. 결과는 clean 거부(fail-closed)라 손실이 없다.
+  kind별 확장자 묶기는 TASK_FILE 전체의 구조 변경이라 별도 task가 맞다.
+- 수렴 판단: 이번 변경에 귀속되는 새 결함 없음. 남은 지적은 모두 반복이거나 origin/main에도 있는 기존 동작이다.
+- review-only라 이 실행에서는 고치지 않았다.
+
+### 2026-11-18T11:03:02.412Z — codex (harness-team review)
+
+- engine: codex · model: default · scope: diff · base: origin/main · mergeBase: 19a7c6ea532ec71fdb95c64281b57aa9ebe206e3 · tip: 47af43f8916ba408895e859328c1a4cea4d40b15 · exit 0 · 2198 B
+
+```text
+**P1 blocking** — None found.
+
+**P2 should-fix**
+
+- The retry command drops `--target`, so copying it after a plan write failure can update the active task in a different worktree. [src/commands/diagram.mjs:170](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/optimistic-jepsen-777479/src/commands/diagram.mjs:170>)
+- A fenced Markdown example under `## 단계` can be checked off while the actual view step stays open, even though `record` reports success. [src/commands/diagram.mjs:41](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/optimistic-jepsen-777479/src/commands/diagram.mjs:41>)
+- A directory named `*-diagram-sequence.html` passes both artifact checks, so `record` can close the step and `pr-check` can suppress its advisory without an HTML file. [src/commands/diagram.mjs:174](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/optimistic-jepsen-777479/src/commands/diagram.mjs:174>) · [src/commands/pr-check.mjs:62](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/optimistic-jepsen-777479/src/commands/pr-check.mjs:62>)
+
+**P3 nit**
+
+- `clean` also recognizes `.md` and `.json` as view diagram extensions, so unrelated files with those names can block cleanup in folders without a task spec. [src/commands/clean.mjs:115](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/optimistic-jepsen-777479/src/commands/clean.mjs:115>)
+
+Reviewed `git status` and both the direct and merge-base diffs against `origin/main`. All 37 targeted read-only tests passed, along with the docs check, `git diff --check`, and `pr-check`. The full suite requires writable fixtures and was skipped. The review made no file changes.
+
+**Verdict — Request changes.** Address the P2 findings before merging.
+```
+
+<!-- harness:review kind=codex scope=diff tip=47af43f8916ba408895e859328c1a4cea4d40b15 at=2026-11-18T11:03:02.412Z -->
+
+판별(작성 세션, 2026-11-18): 같은 tip(`47af43f`)에 대한 7차와 **발견 4건이 같다**(P2 `--target`·fence 오인·디렉터리 통과, P3 확장자 교차).
+판단 유지 — 범위 밖 또는 origin/main에도 있는 기존 동작. 새 결함 없음. 리뷰 루프 수렴.
+후속 후보(별도 task): 오류 안내의 `--target` 전파(CLI 전반), `## 단계` fence 인식(레거시 포함), 산출물 판정을 파일 종류로(`stat().isFile()`·git blob), `TASK_FILE` kind별 확장자.
+
 ## Learnings
