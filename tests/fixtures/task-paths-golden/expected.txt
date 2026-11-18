@@ -1,6 +1,7 @@
 $ task demo (exit 0)
 created: docs/tester/demo/
 active: tester/demo
+review gate: docs/tester/demo/demo-plan.md 첫 단계 — 사용자 승인 뒤에만 [x]
 next: /harness-spec으로 docs/tester/demo/demo-spec.md 초안 생성 (또는 직접 작성, Ambiguity 자가진단 포함)
 next: /harness-interview → plan.md 작성 → 구현 → 테스트 (/harness-unittest 계열) → 리뷰 → /harness-retro → done
 
@@ -139,6 +140,7 @@ null
 
 
 ## 단계
+- [x] [사람] spec 검토 승인 — tester
 - [x] step one
 
 ## Ontology 변경 로그
@@ -260,6 +262,7 @@ null
 
 
 ## 단계
+- [ ] [사람] spec 검토 승인 — tester
 - [ ]
 
 ## Ontology 변경 로그

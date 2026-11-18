@@ -33,7 +33,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 |---|---|---|---|
 | **S0 셋업** | AGENTS/CLAUDE, Codex 배선, **검증 프리셋** | — | ✓ init · ✓ 프리셋(`templates/presets/` — 커밋 게이트·RN rules) |
 | **S1 Spec** | `spec.md` (PRD·Figma·API 문서·기획서·정책서 소스) | **R1 소스 검토**(차단) | ✓ harness-spec · ✓ R1 원천 검토(interview 안 단계, 규범 차단 — task `r1-source-review`) |
-| **S2 Plan** | `plan.md` + **plan 다이어그램**(이해용) | 개발자 확인 | ✓ plan · △ 다이어그램 옵트인 |
+| **S2 Plan** | `plan.md` + **plan 다이어그램**(이해용) | 개발자 확인(구현 전 사람 검토) | ✓ plan · ✓ 검토 게이트(신규 task plan의 `[사람]` 단계 기본, 프롬프트 수준 — task `human-review-gate`) · △ 다이어그램 옵트인 |
 | **S3 구현** | 코드 | — (자유) | ✓ 자유 · ✓ 기본 루프(`/harness-loop`, 선택형) |
 | **S4 구현 검증** | spec 시나리오(Given/When/Then) ↔ 증거 | **R2 시나리오 대조**(기계 2 + 루브릭 2, §4-1b) | ✓ R2 시나리오 대조(옵트인 — `scenario check` + `review --framing scenario`, task `r2-scenario-evidence`) |
 | **S5 커밋** | — | **검증 프리셋 실행**(lint·tsc·test) | ✓ `gate commit` — 팀 파일 `.harness/gates.json`(프리셋 제안, workspace는 turbo·nx 위임 또는 디렉터리별) |
@@ -150,7 +150,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
      **QA**(읽기 전용, 별도 컨텍스트)가 커밋 프리셋 + R2 4행으로 판정 → 실패면 Dev로, 통과면 plan 체크 후 다음 단계
   4. 모든 단계 통과 → R3 리뷰(Codex 엔진, 없으면 Claude 엔진) → [사람] PR 승인
 - **멈춤 조건**: 성공(모든 시나리오 + R3 통과, PR 생성은 사람) · spec 공백 발견(R1로 되돌려 사람에게 질문) ·
-  진전 없음(같은 시나리오가 변화 없이 연속 실패, 횟수 상한은 임의로 두지 않는다) · 승인 필요(push·PR·파괴적 변경).
+  진전 없음(같은 시나리오가 변화 없이 연속 실패, 횟수 상한은 임의로 두지 않는다) · 승인 필요(push·PR·파괴적 변경, 다음 단계가 `[사람]` 단계).
 - **실행 수단 — 세션이 가진 것으로** (`probe → degrade → record`, 다이어그램 단계와 같은 계약):
   - **기본: 서브에이전트.** 모든 세션에 있다. Dev 1 + QA 1, 순차. D4(단일 쓰기)·D6(read-only 검증자)를 그대로 만족한다.
   - **있으면: Workflows.** 단계 사이 검증을 코드로 강제할 수 있다. 단, 사용자의 명시적 opt-in이 필요하다.

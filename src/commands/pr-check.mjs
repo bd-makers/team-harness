@@ -10,7 +10,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { resolveScope } from './review.mjs';
-import { taskSpecTemplate, taskPlanTemplate, taskArtifactTemplate, repoPrefix } from './task.mjs';
+import { taskSpecTemplate, taskPlanTemplate, taskArtifactTemplate, repoPrefix, reviewGateStep } from './task.mjs';
 import { DIAGRAM_SKIPPED_PREFIX, svgSelfContainmentViolations } from './diagram.mjs';
 import { DOCS_DIR, taskFileRel, taskLabel, diagramKind } from '../task-paths.mjs';
 import { DIAGRAM_VIEWS } from '../cli-args.mjs';
@@ -33,7 +33,16 @@ const DOCS = [
   { kind: 'artifact.md', template: taskArtifactTemplate, hint: '결과·검증 증거를 채워 커밋' },
 ];
 
-const TASK_MARKER_KINDS = ['spec.md', 'plan.md', 'handoff.md', 'artifact.md', 'meta.json'];
+// 템플릿 그대로인가. 새 plan 은 검토 게이트 줄(human-review-gate)을 품고 생기므로, 그 줄을 — 켠 것까지 — 빼고 게이트 없는 템플릿과
+// 대조한다. 그러지 않으면 손대지 않은 plan 과 게이트만 켠 plan 이 "채워진 문서"로 통과한다.
+const GATE_DONE = (user) => reviewGateStep(user).replace('- [ ]', '- [x]');
+function untouched(doc, content, task, user) {
+  const body = doc.kind !== 'plan.md' ? content : content.split('\n')
+    .filter(line => line !== reviewGateStep(user) && line !== GATE_DONE(user)).join('\n');
+  return body.trim() === doc.template(task).trim();
+}
+
+const TASK_MARKER_KINDS =['spec.md', 'plan.md', 'handoff.md', 'artifact.md', 'meta.json'];
 
 // diff 가 건드린 `docs/<user>/<task>/…` 중 rev 에 `<task>-<kind>` 이름의 task 문서가 하나라도 있는 것.
 // spec 만 마커로 쓰면 spec 이 빠진 task 가 통째로 검사에서 빠진다(codex P2) — 디렉터리 이름을 접두로 가진 파일은
@@ -78,7 +87,7 @@ async function taskFindings(targetDir, rev, { user, task }) {
     // 빈 문서(0바이트·공백뿐)는 템플릿과 달라 통과했다 — 미완 plan 이 0바이트로 커밋된 실례(bb93755, task empty-doc-guard).
     if (content === null) issues.push(`${rel} 없음 — ${doc.hint}`);
     else if (!content.trim()) issues.push(`${rel} 가 비어 있음 — ${doc.hint}`);
-    else if (content.trim() === doc.template(task).trim()) issues.push(`${rel} 가 템플릿 그대로 — ${doc.hint}`);
+    else if (untouched(doc, content, task, user)) issues.push(`${rel} 가 템플릿 그대로 — ${doc.hint}`);
     if (doc.kind === 'artifact.md') artifact = content;
   }
   const diagramRel = taskFileRel(user, task, diagramKind());

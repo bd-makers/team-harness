@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { COMMANDS, FLAG_CHOICES, GLOBAL_FLAGS, resolveInvocation, parseArgs } from '../src/cli-args.mjs';
+import { COMMANDS, FLAG_CHOICES, GLOBAL_FLAGS, VALUE_FLAGS, resolveInvocation, parseArgs } from '../src/cli-args.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const pexec = promisify(execFile);
@@ -247,4 +247,20 @@ test('cli-args: review --model and task --reviewer are value flags of exactly th
   assert.match(resolveInvocation(['review', '--reviewer', 'x']).message, /unknown flag --reviewer/);
   assert.match(resolveInvocation(['help', 'review']).text, /--model <id>/);
   assert.match(resolveInvocation(['help', 'task']).text, /--reviewer <profile>/);
+});
+
+// human-review-gate: `--no-review-gate` 는 task 만의 boolean 플래그다 — 값 플래그면 다음 토큰(task 이름)을 삼킨다.
+test('cli-args: task --no-review-gate is a boolean flag of task only', () => {
+  assert.equal(VALUE_FLAGS.has('no-review-gate'), false);
+  const before = resolveInvocation(['task', '--no-review-gate', 'demo']);
+  assert.equal(before.kind, 'run');
+  assert.equal(before.flags['no-review-gate'], true);
+  assert.deepEqual(before.positional, ['demo'], '이름을 값으로 삼키지 않는다');
+  assert.deepEqual(resolveInvocation(['task', 'demo', '--no-review-gate']).flags, { 'no-review-gate': true });
+  for (const other of ['list', 'done', 'review', 'diagram']) {
+    assert.match(resolveInvocation([other, '--no-review-gate']).message, /unknown flag --no-review-gate/, other);
+  }
+  const help = resolveInvocation(['help', 'task']).text;
+  assert.match(help, /harness-team task <name> \[--area <area>\] \[--reviewer <profile>\] \[--no-review-gate\]/);
+  assert.match(help, /a new plan starts with a human spec-review step unless --no-review-gate/);
 });

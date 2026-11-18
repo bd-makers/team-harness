@@ -27,6 +27,12 @@
   - `pr-check`는 레거시 HTML이나 뷰 SVG가 있으면 다이어그램이 있는 것으로 보고, 있는 뷰 SVG마다 `· PR 본문에 링크: <path>.svg`(저장소 루트 기준)를 낸다(막지 않음). 커밋된 SVG가 자립성 검사에 걸리면 링크 대신 `· 뷰 SVG 가 자립형이 아님 — 링크하지 않음: …`을 낸다. `clean`은 다른 task 폴더의 `.svg`도 보호한다.
   - 문서: `/harness-diagram` 6단계에 단독 SVG 제약(`<svg>` 안 스타일·system font stack·외부 자산 0), `/harness-ship` 6단계에 "PR 본문에 SVG 링크"(PR head 브랜치의 파일 URL). 뷰 SVG에는 script 뷰어 예외가 없다.
   - **미검증**: GitLab self-managed·Obsidian에서의 `.svg` 렌더 실측, PR/MR 본문의 저장소 상대 경로 해석.
+- **구현 전 사람 검토 게이트 — 새 task plan의 첫 단계가 `- [ ] [사람] spec 검토 승인 — <user>`다** (task `human-review-gate`, 회고 A5·결정 A5-2). 사이클 S2 "개발자 확인"을 plan 체크박스로 남긴다. 새 meta 필드·Done evidence 키는 없다 — plan.md가 곧 상태다.
+  - **기본 동작 변경**: `harness-team task <새 이름>`이 이 단계를 `## 단계` 맨 위에 넣고 `review gate:` 줄을 출력한다. 켜지 않으면 `done` 가드가 미완 체크박스로 막는다(늦은 안전망). `task <새 이름> --no-review-gate`면 넣지 않는다. 기존 task·`activated:`·`reopened:`는 그대로다(소급 없음). 기존 task에 `--no-review-gate`를 주면 거부한다(exit 1, 아무것도 쓰지 않음).
+  - 규범(`/harness-task` 게이트 절): 에이전트는 사용자가 그 spec을 명시적으로 승인한 뒤에만 `[x]`로 켜고 artifact `## 결과`에 `- 검토 승인: <날짜> · 슬라이드 <경로|없음>`을 남긴다. 승인 전에는 task 문서 밖 파일을 고치지 않는다. 생성 시 질문은 다이어그램과 한 번(multiSelect, "게이트 빼기")으로 묻는다. 커밋·쓰기 차단은 없다.
+  - `/harness-loop`: 다음 미완 단계가 `[사람]` 단계면 진입하지 않고, 도중에 닿으면 "승인 필요"로 멈춘다. Dev는 `[사람]` 단계를 구현하지 않고 오케스트레이터도 켜지 않는다.
+  - `pr-check`는 게이트 줄(미완·완료)을 뺀 뒤 "템플릿 그대로"를 판정한다 — 손대지 않은 plan이 게이트 줄 때문에 통과하지 않는다.
+  - 옛 CLI는 이 줄을 평범한 체크박스로 본다 — 팀 최소 버전 요구는 없다.
 
 ### Changed
 

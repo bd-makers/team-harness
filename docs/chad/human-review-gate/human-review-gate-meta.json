@@ -1,0 +1,12 @@
+{
+  "user": "chad",
+  "task": "human-review-gate",
+  "created": "2026-11-18",
+  "firstActivatedAt": "2026-11-18T12:35:25.480Z",
+  "baseSha": "7afaa409bc2c8b7f4176cad8de5c2c88db4034ed",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": []
+}

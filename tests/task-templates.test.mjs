@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, rm, readFile, mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { taskSpecTemplate, taskPlanTemplate, taskArtifactTemplate, runTask, runList, runDone } from '../src/commands/task.mjs';
+import { taskSpecTemplate, taskPlanTemplate, taskArtifactTemplate, runTask, runList, runDone, reviewGateStep, firstOpenPlanStep } from '../src/commands/task.mjs';
 import { migrateTaskIndexLabels } from '../src/commands/migrate.mjs';
 import { collectTasks } from '../src/commands/summary.mjs';
 
@@ -237,4 +237,82 @@ test('migrateTaskIndexLabels: 기존 active 라벨을 open으로 조화한다', 
     // idempotent: second run is a no-op
     assert.equal(await migrateTaskIndexLabels({ targetDir: tmpDir }), false);
   } finally { await rm(tmpDir, { recursive: true, force: true }); }
+});
+
+// human-review-gate(A5): 신규 task plan 의 첫 단계는 사람 검토 게이트다. 옵션 없는 템플릿은 종전과 바이트 단위로 같아야 한다 —
+// done 가드·session-context·pr-check 테스트가 그 형태(`## 단계\n- [ ]`)에 기댄다.
+const BARE_STEPS = '## 단계\n- [ ]\n\n## Ontology 변경 로그';
+
+test('review gate: 게이트 줄 형식은 하나이고, 옵션이 있을 때만 `## 단계` 맨 위에 들어간다', () => {
+  assert.equal(reviewGateStep('chad'), '- [ ] [사람] spec 검토 승인 — chad');
+  const bare = taskPlanTemplate('demo');
+  assert.ok(bare.includes(BARE_STEPS), '옵션 없는 템플릿은 종전 그대로');
+  assert.doesNotMatch(bare, /\[사람\]/);
+  assert.equal(taskPlanTemplate('demo', {}), bare, '빈 옵션도 게이트 없음');
+  const gated = taskPlanTemplate('demo', { reviewGateUser: 'chad' });
+  assert.equal(gated, bare.replace('## 단계\n', '## 단계\n- [ ] [사람] spec 검토 승인 — chad\n'), '게이트 한 줄만 더해진다');
+  assert.equal(firstOpenPlanStep(gated), '[사람] spec 검토 승인 — chad', 'SessionStart 현재 단계가 게이트를 가리킨다');
+});
+
+const quiet = { doneOnMain: async () => null };
+async function runQuiet(dir, name, flags = {}) {
+  const logs = [];
+  const original = console.log;
+  const before = process.exitCode;
+  console.log = (...args) => logs.push(args.join(' '));
+  try {
+    process.exitCode = undefined;
+    await runTask({ targetDir: dir, flags: { member: 'tester', ...flags }, taskArgs: [name] }, quiet);
+    return { logs, exitCode: process.exitCode ?? 0 };
+  } finally { console.log = original; process.exitCode = before; }
+}
+const planPath = (dir, name) => join(dir, 'docs', 'tester', name, `${name}-plan.md`);
+
+test('review gate: 새 task 는 task user 의 게이트를 품고 생기고 출력에 review gate 줄이 붙는다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-review-gate-'));
+  try {
+    const r = await runQuiet(dir, 'demo');
+    assert.equal(r.exitCode, 0, r.logs.join('\n'));
+    assert.equal(await readFile(planPath(dir, 'demo'), 'utf8'), taskPlanTemplate('demo', { reviewGateUser: 'tester' }));
+    assert.ok(r.logs.includes('review gate: docs/tester/demo/demo-plan.md 첫 단계 — 사용자 승인 뒤에만 [x]'), r.logs.join('\n'));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('review gate: --no-review-gate 로 만들면 plan 은 게이트 없는 템플릿이고 review gate 줄이 없다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-review-gate-off-'));
+  try {
+    const r = await runQuiet(dir, 'demo', { 'no-review-gate': true });
+    assert.equal(r.exitCode, 0, r.logs.join('\n'));
+    assert.equal(await readFile(planPath(dir, 'demo'), 'utf8'), taskPlanTemplate('demo'));
+    assert.ok(!r.logs.some(l => l.startsWith('review gate:')), r.logs.join('\n'));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('review gate: 재활성화는 plan 을 건드리지 않는다 — 지운 게이트를 되살리지도 않는다(소급 없음)', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-review-gate-activate-'));
+  try {
+    await runQuiet(dir, 'demo');
+    const edited = taskPlanTemplate('demo').replace('- [ ]', '- [ ] 1. 사람이 쓴 단계');
+    await writeFile(planPath(dir, 'demo'), edited);
+    const r = await runQuiet(dir, 'demo');
+    assert.equal(r.exitCode, 0, r.logs.join('\n'));
+    assert.ok(r.logs.some(l => l.startsWith('activated:')), r.logs.join('\n'));
+    assert.equal(await readFile(planPath(dir, 'demo'), 'utf8'), edited);
+    assert.ok(!r.logs.some(l => l.startsWith('review gate:')));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('review gate: 기존 task 에 --no-review-gate 는 plan·meta·활성 포인터를 그대로 두고 exit 1', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-review-gate-existing-'));
+  try {
+    assert.equal((await runQuiet(dir, 'web-feat')).exitCode, 0);
+    assert.equal((await runQuiet(dir, 'other')).exitCode, 0);
+    const files = [planPath(dir, 'web-feat'), join(dir, 'docs/tester/web-feat/web-feat-meta.json'), join(dir, '.harness/active.json')];
+    const before = await Promise.all(files.map(f => readFile(f, 'utf8')));
+    const r = await runQuiet(dir, 'web-feat', { 'no-review-gate': true, area: 'web' });
+    assert.equal(r.exitCode, 1);
+    assert.ok(r.logs.includes('✗ task: --no-review-gate 는 새 task 를 만들 때만 쓸 수 있음'), r.logs.join('\n'));
+    assert.ok(r.logs.some(l => l.includes('[사람] spec 검토 승인') && l.includes('손으로 지우')), '손 편집을 안내한다');
+    assert.deepEqual(await Promise.all(files.map(f => readFile(f, 'utf8'))), before, 'plan·meta(area 채택 포함)·active 불변');
+  } finally { await rm(dir, { recursive: true, force: true }); }
 });

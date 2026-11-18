@@ -316,6 +316,32 @@ test('뷰 다이어그램 문서는 단독 SVG·자립성 검사·PR 본문 링�
   assert.match(skill, /never cut the `<svg>` out of an HTML output/, 'SKILL: 추출 금지');
 });
 
+// human-review-gate(A5): 게이트 절이 정본이다. 단계 형식은 CLI(reviewGateStep)와 같은 문자열이어야 하고, 켜는 조건·기록 형식·
+// 승인 전 쓰기 범위·빼는 법이 빠지면 게이트는 이름만 남는다. 슬라이드 CLI(A3 brief)는 별도 PR 이라 여기서 부르지 않는다.
+test('commands/harness-task.md 검토 게이트 절은 단계 형식·승인 규칙·기록·빼기를 정의한다', async () => {
+  const doc = await readFile(join(ROOT, 'commands', 'harness-task.md'), 'utf8');
+  const start = doc.indexOf('\n## 구현 전 사람 검토 게이트 (`--no-review-gate`)\n');
+  assert.ok(start >= 0, '게이트 절');
+  const rest = doc.slice(start + 1);
+  const gate = rest.slice(0, rest.indexOf('\n## ', 1));
+  const flat = gate.replace(/\s+/g, ' ');
+  const { reviewGateStep } = await import('../src/commands/task.mjs');
+  assert.ok(gate.includes(`\n  ${reviewGateStep('<user>')}\n`), '문서의 단계 형식 = CLI 정본');
+  assert.ok(gate.includes('\n  - 검토 승인: <YYYY-MM-DD> · 슬라이드 <경로|없음>\n'), 'artifact 기록 형식');
+  assert.match(flat, /사용자가 \*\*그 spec을\*\* 승인한다고 말한 뒤에만 `- \[x\]`로 바꾼다\. 다른 작업에 대한 "진행해"·이전 대화의 승인은 이 승인이 아니다\./);
+  assert.match(flat, /\*\*승인 전에는 task 문서\(`docs\/<user>\/<name>\/`\) 밖 파일을 고치지 않는다\.\*\*/);
+  assert.match(flat, /커밋·쓰기 차단은 없다/, '강도: 프롬프트 수준');
+  assert.match(flat, /Dev·루프 오케스트레이터는 구현하지도 켜지도 않는다/);
+  assert.match(flat, /기존 task에 `--no-review-gate`를 주면 거부한다\(exit 1, plan·meta·활성 포인터 모두 그대로\)/);
+  assert.match(flat, /\*\*게이트 빼기\*\*를 고르면 방금 만든 plan에서 그 한 줄을 지운다/);
+  const optin = doc.slice(doc.indexOf('\n## spec/plan 다이어그램 옵트인\n'));
+  assert.match(optin.replace(/\s+/g, ' '), /선택지는 넷이다 — 다이어그램\(레거시 한 장\) · `sequence`\(시간 순 상호작용\) · `module`\(구성요소·의존 관계\) · \*\*게이트 빼기\*\*\./, '통합 질문 선택지(상한 4)');
+  assert.match(optin.replace(/\s+/g, ' '), /아무것도 고르지 않으면 다이어그램 없이 게이트가 남는다/, '무응답은 옵트아웃이 아니다');
+  assert.doesNotMatch(doc, /harness-team brief/, '슬라이드 CLI 는 PR ②');
+  const cycle = await readFile(join(ROOT, 'docs', 'harness-cycle.md'), 'utf8');
+  assert.match(cycle, /\| \*\*S2 Plan\*\* \|.*\| 개발자 확인\(구현 전 사람 검토\) \| ✓ plan · ✓ 검토 게이트/);
+});
+
 // 완료 만료(reopen)가 세 번째 출력 동사를 만들었다. 문서가 created/activated 둘로만 갈리면
 // `reopened:`를 본 에이전트에게 규칙이 없다 — plan.md가 곧 옵트인 상태이므로 재개도 묻지 않는다.
 test('commands/harness-task.md는 reopened(완료 만료 후 재개)도 재질문 금지 쪽으로 분류한다', async () => {
