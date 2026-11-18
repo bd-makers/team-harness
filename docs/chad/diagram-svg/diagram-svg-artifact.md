@@ -19,6 +19,7 @@
   - 검사 함수 변이 6개(http 허용·레거시도 검사·`@import` 규칙 삭제·xmlns 검사 삭제·주석 prolog 삭제·참조 위반 push 삭제)를 손으로 넣어 돌림 → 각각 fail 3·7·2·2·1·3(모두 잡힘), 소스 복원 `cmp` 확인.
   - `npm test` → exit 0 — 본 스위트 tests 1362 · pass 1361 · fail 0 · skipped 1(1차 커밋 기준). codex 1차 반영 뒤 재실행: tests 1364 · pass 1363 · fail 0 · skipped 1(`CI에서는 jq-present 매트릭스가 반드시 실행된다` — CI 전용 기존 skip), perf 1/1.
   - `npm run docs:check` → "harness overview 생성 상태가 최신입니다."
+  - `node bin/harness-team.mjs pr-check --base origin/main` → `✓ pr-check HEAD: chad/diagram-svg`, exit 0(`· 권장: 다이어그램 없음` 안내만 — 이 task는 옵트아웃).
   - `node bin/harness-team.mjs doctor` → 1 warning(`.codex/hooks.json` 신뢰 없음 — 이 머신의 Codex 훅 승인 상태, 이 변경과 무관).
 
 ## Reviews

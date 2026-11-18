@@ -11,7 +11,7 @@
 - [x] 4. `pr-check` 뷰 SVG 인정·`PR 본문에 링크` note, `clean` `TASK_FILE` 확장자 `svg`
 - [x] 5. 테스트 — diagram-command(규칙별 위반·허용 표본)·pr-check·clean·agent-files
 - [x] 6. 문서 — harness-task 옵트인 절(정본)·harness-diagram 6·7·harness-ship 6·SKILL·templates/docs/README, CHANGELOG
-- [ ] 7. 검증 — `npm test`·`npm run docs:check`·doctor·`pr-check --base origin/main`, 로컬 커밋
+- [x] 7. 검증 — `npm test`·`npm run docs:check`·doctor·`pr-check --base origin/main`, 로컬 커밋
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
