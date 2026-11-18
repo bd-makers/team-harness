@@ -15,7 +15,7 @@
 
 import { KNOWN_STACK_IDS } from './detect-stack.mjs';
 
-export const VALUE_FLAGS = new Set(['stack', 'shape', 'member', 'target', 'days', 'name', 'paths', 'framing', 'rubric', 'prompt-file', 'scope', 'base', 'area', 'pr']);
+export const VALUE_FLAGS = new Set(['stack', 'shape', 'member', 'target', 'days', 'name', 'paths', 'framing', 'rubric', 'prompt-file', 'scope', 'base', 'area', 'pr', 'model', 'reviewer']);
 
 // Accepted on every command: they change where the harness looks or how it
 // reports, not what it does. Keeping them global means a hook can pass --target
@@ -69,7 +69,9 @@ export const COMMANDS = [
   // commit · author), the exact provenance marker, where the task is already compiled, and the project's rule files.
   // The compile itself (what goes where) is LLM judgment and stays in commands/harness-wiki.md.
   { name: 'wiki', args: 'sources [<user>/<task>] [--pr <N>] | sources --all', summary: "Report a merged task's wiki compile inputs: provenance, marker, existing compiles, wiki/90_system rules; --all lists every task as compilable, compiled or blocked (read-only)", flags: ['pr', 'all'] },
-  { name: 'task', args: '<name> [--area <area>]', summary: 'Create or activate a task (--area records its monorepo app/service in meta)', flags: ['area'] },
+  // `--reviewer` writes the spec's Done evidence block, so it is accepted only when the task is created —
+  // the CLI never edits a spec a human already owns (runTask rejects it for an existing task).
+  { name: 'task', args: '<name> [--area <area>] [--reviewer <profile>]', summary: 'Create or activate a task (--area records its monorepo app/service in meta; --reviewer records a .harness/reviewers.json profile in a new spec)', flags: ['area', 'reviewer'] },
   // `--remote` reads local refs/remotes/origin/* only (no fetch): tasks on unmerged origin branches
   // that the checked-out branch does not have. Opt-in so plain `list` stays filesystem-only.
   { name: 'list', args: '[--area <area>] [--remote]', summary: 'List all tasks (--area filters by meta.area; --remote adds tasks only on unmerged origin branches, as of the last fetch)', flags: ['area', 'remote'] },
@@ -88,9 +90,9 @@ export const COMMANDS = [
   // the model. Claude reads plain stdout, so the default output is unchanged.
   { name: 'session-context', args: '[--codex-hook]', summary: 'Emit SessionStart active-task breadcrumb and current plan step, or no-task nudge (--codex-hook wraps it in Codex\'s additionalContext envelope)', flags: ['codex-hook'] },
   { name: 'retro', args: '[text]', summary: "Append a dated Learnings entry to the active task's artifact.md", flags: [] },
-  { name: 'review', args: '[codex|claude|custom] [--framing <suffix>] [--rubric unit|component|integration] [--prompt-file <path>] [--scope worktree|diff|task-docs] [--base <ref>] [focus ...]',
-    summary: "Run a read-only review engine and record the evidence in the active task's meta.reviews + artifact (only exit 0 counts)",
-    flags: ['framing', 'rubric', 'prompt-file', 'scope', 'base'] },
+  { name: 'review', args: '[codex|claude|custom] [--model <id>] [--framing <suffix>] [--rubric unit|component|integration] [--prompt-file <path>] [--scope worktree|diff|task-docs] [--base <ref>] [focus ...]',
+    summary: "Run a read-only review engine and record the evidence in the active task's meta.reviews + artifact (only exit 0 counts); engine omitted → task reviewer profile → reviewers.json default → codex → claude",
+    flags: ['model', 'framing', 'rubric', 'prompt-file', 'scope', 'base'] },
   { name: 'rules', args: 'promote [<n>] [--name <slug>] [--paths <a,b>]',
     summary: "Promote a Learnings entry from the active task's artifact.md into .claude/rules/<slug>.md (lists entries when <n> is omitted)",
     flags: ['name', 'paths'] },

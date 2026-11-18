@@ -678,7 +678,7 @@ boundary: not-configured</code></pre>
           <tbody>
             <tr><td><code>codex</code></td><td><code>codex exec --sandbox read-only</code></td><td>벤더 분리 + 컨텍스트 분리</td></tr>
             <tr><td><code>claude</code></td><td><code>claude -p --permission-mode plan</code></td><td><strong>컨텍스트 분리만</strong> — 같은 모델의 맹점은 공유합니다. codex를 쓸 수 없는 머신의 경로라 탐지 체인에서 마지막입니다</td></tr>
-            <tr><td><code>custom</code></td><td><code>.harness/reviewers.json</code>의 커맨드 템플릿</td><td>설정하기 나름. 명시 호출 전용이라 자동 탐지 체인에 들어가지 않습니다</td></tr>
+            <tr><td><code>custom</code></td><td><code>.harness/reviewers.json</code>의 커맨드 템플릿</td><td>설정하기 나름. 엔진 인자나 custom 프로필로만 고르며 자동 탐지 체인에 들어가지 않습니다</td></tr>
           </tbody>
         </table>
       </div>

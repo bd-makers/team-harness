@@ -427,14 +427,17 @@ harness-team rules promote 2 --name api-errors --paths "src/api/**/*.ts"
 
 ### `/harness-review` · `/harness-adversarial-review` — 외부 read-only 리뷰
 
-엔진 중립 외부 리뷰입니다. 첫 토큰이 엔진(`codex`·`claude`·`custom`)이면 그 엔진으로,
-없으면 probe 폴백 체인(codex → claude)으로 실행합니다. 결과는 활성 task의 artifact
+엔진 중립 외부 리뷰입니다. 첫 토큰이 엔진(`codex`·`claude`·`custom`)이면 그 엔진으로(`--model <id>`로 모델 지정 — codex·claude만),
+없으면 task 프로필(`task <name> --reviewer <profile>`) → `.harness/reviewers.json`의 `default` → probe 폴백 체인(codex → claude) 순으로
+고릅니다. 프로필은 같은 파일의 `profiles`에 `{ "engine": "codex", "model": "<id>" }` 형태로 둡니다. 실행 모델은 `meta.reviews[].model`에
+남습니다(`null` = 엔진 기본 모델). 결과는 활성 task의 artifact
 `## Reviews`에 날짜·엔진과 함께 기록되고, 기록 끝의 기계 판독용 마커
 (`<!-- harness:review kind=... -->`)가 `harness-team done` 가드의 `review`·`verify` 증거가 됩니다.
 
 ```bash
-/harness-review                              # 엔진 자동 (codex → claude)
+/harness-review                              # 엔진 자동 (task 프로필 → default → codex → claude)
 /harness-review claude --base origin/develop # claude-only 머신, 브랜치 리뷰
+/harness-review codex --model <id>           # 엔진·모델 명시 (프로필 무시)
 /harness-adversarial-review codex            # 설계·가정에 반박을 시도하는 적대적 프레이밍
 ```
 
@@ -499,6 +502,9 @@ member를 추론(2~5)했는데 다른 member에 같은 이름의 task가 있으�
 ```bash
 # 생성 또는 활성화 (동일 이름이 이미 있으면 그 task를 active로 전환)
 /harness-task <name>                   # ex: user-auth
+
+# 새 task 의 리뷰 프로필(.harness/reviewers.json profiles)을 spec Done evidence 에 기록 — 생성 때만, 기존 task 는 거부
+/harness-task <name> --reviewer deep
 
 # 목록 (* = active)
 /harness-task list
@@ -620,6 +626,9 @@ task는 그 만료 시각부터) 안의 증거를 결정론적으로
     { "id": "S1", "given": "로그인한 사용자", "when": "로그아웃한다", "then": "세션 쿠키가 지워진다",
       "test": "logout clears session", "cmd": "npm test -- -t 'logout clears session'" } ] }
   ```
+- `reviewer` (선택) — 요건이 아니라 이 task의 리뷰 프로필 이름입니다(`.harness/reviewers.json` `profiles`). 엔진을 생략한
+  `harness-team review`가 이 프로필을 씁니다. `task <name> --reviewer <profile>`이 생성 때 쓰고, 이후는 손으로 고칩니다.
+  가드 판정은 바꾸지 않습니다. 이 키를 모르는 옛 CLI의 `done`은 `알 수 없는 키`로 막히므로 팀 전원이 이 버전 이상이어야 합니다.
 
 가드는 마커의 존재·kind·시각만 읽습니다 — finding 내용의 품질 판정은 결정론 게이트 밖이며
 별도 컨텍스트의 검증자와 driver의 재현·판별이 담당합니다(D6,

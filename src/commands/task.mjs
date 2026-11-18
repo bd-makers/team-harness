@@ -10,6 +10,7 @@ import { readTaskMeta, writeTaskMeta, taskMetaTemplate, inferLegacyMeta, readLed
 import { checkDoneOnMain, renderDoneOnMainNudge, listBranchOnlyTasks } from './remote-task.mjs';
 import { findCommand } from '../cli-args.mjs';
 import { userNameError } from '../user-config.mjs';
+import { REVIEWERS_REL, loadReviewersConfig, findProfile } from '../reviewers-config.mjs';
 import {
   taskDirRel, taskFileRel, userHandoffRel, USER_HANDOFF_IGNORE, taskLabel, docsPath, taskDirPath, taskFilePath, userHandoffPath, listTaskRefs, SUMMARY_REL,
 } from '../task-paths.mjs';
@@ -110,7 +111,13 @@ function printTaskNextActions(user, name, { activated = false } = {}) {
   console.log('next: /harness-interview → plan.md 작성 → 구현 → 테스트 (/harness-unittest 계열) → 리뷰 → /harness-retro → done');
 }
 
-export function taskSpecTemplate(name) {
+// reviewer: `task --reviewer <profile>` 로 생성할 때만 준다. 주석 예시는 벗기지 않고(벗기면 의도하지 않은 required 가 켜진다)
+// heading 바로 아래에 새 블록을 둔다 — 파서는 heading 직후의 ```json 블록만 읽는다. 없으면 출력은 종전과 같다.
+export function taskSpecTemplate(name, { reviewer } = {}) {
+  const reviewerBlock = reviewer === undefined ? '' : `\`\`\`json
+{ "version": 1, "reviewer": ${JSON.stringify(reviewer)} }
+\`\`\`
+`;
   return `# ${name} — Spec
 
 ## 목적 / 요구사항
@@ -160,7 +167,7 @@ export function taskSpecTemplate(name) {
      증거(테스트 이름·명령)를 잇는다. \`harness-team scenario check\`가 cmd exit 0을, \`review <engine> --framing scenario\`가
      "증거가 Then을 검증하는가"를 판정한다. 선언하면 verify 증거는 -scenario kind만 센다. -->
 ## Done evidence
-<!--
+${reviewerBlock}<!--
 \`\`\`json
 { "version": 1, "review": "required", "tests": "required" }
 \`\`\`
@@ -332,6 +339,17 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
     }
   }
 
+  // `--reviewer` 는 생성 때만 spec 에 쓴다(아래 isTask 분기가 기존 task 에는 거부한다). 값의 모양은 쓰기 전에 본다.
+  const reviewer = ctx.flags && ctx.flags.reviewer;
+  if (reviewer !== undefined && (typeof reviewer !== 'string' || !reviewer.trim())) {
+    return emitTaskError(json, '--reviewer 값이 비어 있음', buildErrorPacket({
+      cause: '--reviewer 는 .harness/reviewers.json 의 프로필 이름이어야 함',
+      retry: '`harness-team task <name> --reviewer <profile>` 형식으로 재실행',
+      safeDefault: 'task 디렉터리도 meta 도 .harness/active.json 도 바뀌지 않는다',
+      stop: '프로필 이름을 지어내지 말 것',
+    }));
+  }
+
   const { user, explicit, error: userError } = await resolveUser(ctx.targetDir, ctx.flags);
   if (userError) {
     return emitTaskError(json, 'user 가 docs/<user>/ 경로 규칙 위반', buildErrorPacket({
@@ -421,6 +439,15 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
   if (nudge && !json) console.log(nudge);
 
   if (isTask) {
+    // CLI 는 사람이 쓴 spec(SSOT)을 고치지 않는다 — 활성 포인터·handoff·area 채택 meta 를 쓰기 전에 거부한다.
+    if (reviewer !== undefined) {
+      return emitTaskError(json, '--reviewer 는 새 task 를 만들 때만 쓸 수 있음', buildErrorPacket({
+        cause: `${taskLabel(user, name)} 는 이미 있는 task 다 — CLI 는 사람이 쓴 spec 을 고치지 않는다`,
+        retry: `${taskFileRel(user, name, 'spec.md')} 의 \`## Done evidence\` JSON 에 \`"reviewer": "${reviewer}"\` 를 손으로 넣고, \`--reviewer\` 없이 \`harness-team task ${name}\` 으로 활성화`,
+        safeDefault: 'spec·meta·.harness/active.json 모두 바뀌지 않는다',
+        stop: '기존 task 의 spec 을 CLI 로 고치지 말 것',
+      }));
+    }
     const switchedAt = new Date().toISOString();
 
     // 완료 상태의 만료. 시간 경과가 아니라 **전이**다 — done된 task를 다시 활성화하는 행위가
@@ -486,11 +513,27 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
     return;
   }
 
+  // 고른 프로필은 지금 있어야 한다 — 오타를 생성 때 잡는다. 디렉터리를 만들기 전에 본다.
+  if (reviewer !== undefined) {
+    const loaded = await loadReviewersConfig(ctx.targetDir);
+    const cause = loaded.error
+      ?? (findProfile(loaded.config, reviewer) ? null : `${REVIEWERS_REL} profiles 에 "${reviewer}" 가 없음`);
+    if (cause) {
+      return emitTaskError(json, '리뷰 프로필을 확인할 수 없음', buildErrorPacket({
+        cause,
+        retry: `${REVIEWERS_REL} 에 { "profiles": { "${reviewer}": { "engine": "codex", "model": "<id>" } } } 를 두거나 있는 프로필 이름으로 재실행`,
+        alternatives: ['프로필 없이 만들려면 `--reviewer` 를 뺀다 — 엔진을 생략한 review 는 reviewers.json default → probe 체인을 쓴다'],
+        safeDefault: 'task 디렉터리도 meta 도 .harness/active.json 도 바뀌지 않는다',
+        stop: '없는 프로필을 spec 에 쓰지 말 것',
+      }));
+    }
+  }
+
   // `clean` 의 시작점. 템플릿 파일을 쓰기 **전** HEAD 다 — 생성 1회만 찍고 재활성화·reopen 은 meta 를 펼쳐 쓰므로 밀리지 않는다.
   const baseSha = await headSha(ctx.targetDir);
 
   await mkdir(dir, { recursive: true });
-  await writeText(taskFilePath(ctx.targetDir, user, name, 'spec.md'), taskSpecTemplate(name));
+  await writeText(taskFilePath(ctx.targetDir, user, name, 'spec.md'), taskSpecTemplate(name, { reviewer }));
   await writeText(taskFilePath(ctx.targetDir, user, name, 'plan.md'), taskPlanTemplate(name));
   await writeText(taskFilePath(ctx.targetDir, user, name, 'handoff.md'), taskHandoffTemplate(name));
   await writeText(taskFilePath(ctx.targetDir, user, name, 'artifact.md'), taskArtifactTemplate(name));
@@ -524,6 +567,7 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
   } else {
     console.log(`created: ${taskDirRel(user, name)}/`);
     console.log(`active: ${taskLabel(user, name)}`);
+    if (reviewer !== undefined) console.log(`reviewer: ${reviewer} (spec Done evidence — 엔진을 생략한 review 가 이 프로필을 쓴다)`);
     printTaskNextActions(user, name);
   }
 }
@@ -628,7 +672,9 @@ export function parseDoneEvidenceDeclaration(spec) {
     return { status: 'invalid', reason: '"version": 1 이 필요함' };
   }
 
-  const unknown = Object.keys(declaration).filter(k => k !== 'version' && k !== 'scenarios' && !(k in DONE_EVIDENCE_VALUES));
+  // `reviewer`(A6-1)는 요건이 아니라 이 task 의 리뷰 프로필 이름이다 — 가드는 값의 모양만 보고 프로필 존재는 `review` 가
+  // 실행 때 판정한다(done 가드를 reviewers.json 에 묶지 않는다). 이 키를 모르는 옛 CLI 의 done 은 여기서 막힌다(CHANGELOG).
+  const unknown = Object.keys(declaration).filter(k => k !== 'version' && k !== 'scenarios' && k !== 'reviewer' && !(k in DONE_EVIDENCE_VALUES));
   if (unknown.length) {
     return { status: 'invalid', reason: `알 수 없는 키: ${unknown.join(', ')}` };
   }
@@ -640,6 +686,12 @@ export function parseDoneEvidenceDeclaration(spec) {
       return { status: 'invalid', reason: `"${key}"는 ${allowed.join(' | ')} 중 하나여야 함` };
     }
     resolved[key] = declaration[key];
+  }
+  if (declaration.reviewer !== undefined) {
+    if (typeof declaration.reviewer !== 'string' || !declaration.reviewer.trim()) {
+      return { status: 'invalid', reason: '"reviewer"는 .harness/reviewers.json 프로필 이름(비어 있지 않은 문자열)이어야 함' };
+    }
+    resolved.reviewer = declaration.reviewer;
   }
   if (declaration.scenarios !== undefined) {
     const reason = scenariosIssue(declaration.scenarios);

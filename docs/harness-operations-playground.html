@@ -394,7 +394,7 @@ function buildSteps(){
     if(state.personas.simplifier) push('<code>/harness-simplifier'+eng+'</code>','plan에서 제거 가능한 단계와 추상화를 찾는다');
     if(state.reviewKind!=='none')
       push(`<code>/harness-${state.reviewKind==='adversarial'?'adversarial-review':'review'}${eng}</code>`,
-        (state.engine==='auto' ? '엔진 미지정 → probe 폴백 체인 (codex → claude). ' : '')
+        (state.engine==='auto' ? '엔진 미지정 → task 프로필 → reviewers.json default → probe 폴백 체인 (codex → claude). ' : '')
         + '<code>harness-team review</code>가 성공한 실행만 <code>meta.reviews[]</code>·artifact <code>## Reviews</code>에 기록 — 판별·조치는 직접 쓴다');
   }
 

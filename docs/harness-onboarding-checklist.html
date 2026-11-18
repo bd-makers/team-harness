@@ -222,7 +222,7 @@ const PHASES = [
     ok:'실제로 끝난 시점에 켠다', fail:'미완 <code>- [ ]</code>가 하나라도 남으면 <code>done</code>이 막힙니다.' },
   { t:'(선택) 외부 리뷰를 한 번 돌려 본다', cmd:'/harness-review',
     ok:'<code>harness-team review</code>가 성공한 실행을 <code>meta.reviews[]</code>와 artifact.md <code>## Reviews</code>(출력·마커)에 기록한다 — 당신은 그 아래 판별만 쓴다',
-    fail:'엔진을 안 주면 probe 폴백 체인(codex → claude)으로 실행됩니다. 실패한 실행은 아무것도 기록하지 않고, 활성 task가 없으면 실행 전에 거부됩니다. <b>기록을 남기지 않은 리뷰는 "안 한 것"</b>으로 칩니다.', opt:true },
+    fail:'엔진을 안 주면 task 리뷰 프로필 → <code>.harness/reviewers.json</code> <code>default</code> → probe 폴백 체인(codex → claude) 순으로 고릅니다. 실패한 실행은 아무것도 기록하지 않고, 활성 task가 없으면 실행 전에 거부됩니다. <b>기록을 남기지 않은 리뷰는 "안 한 것"</b>으로 칩니다.', opt:true },
   { t:'push 전 pr-check — PR에 대한 유일한 강제', cmd:'harness-team pr-check',
     ok:'✓ — PR이 담은 task 문서(spec·plan·artifact)가 계약을 지킨다',
     fail:'pre-push 훅도 같은 검사를 돌립니다(Phase 1 <code>sync</code>). 온보딩을 PR 없이 연습한다면 이 항목과 다음 항목의 "머지"는 건너뛰고 지금 브랜치에서 종결해도 됩니다.' },

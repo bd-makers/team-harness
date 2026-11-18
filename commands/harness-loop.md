@@ -84,7 +84,7 @@ QA는 두 겹이다. read-only 검증자는 테스트를 실행하지 못한다 
    단계별 검사는 증거가 없던 시나리오를 뺐으므로 끝까지 확인되지 않은 시나리오가 남을 수 있고, 루브릭은 명령 exit를
    재판정하지 않는다. 실패하면 실패 집합으로 Dev에게 돌려보내고, 반영 뒤 1–4와 이 검사를 다시 돈다.
 6. `harness-team review <engine> --framing scenario --scope diff` — 시나리오를 선언한 task에서만. 루브릭은 모든 단계가 끝난 뒤 한 번 돌린다 —
-   단계마다 돌리면 아직 만들지 않은 시나리오가 E1에서 실패한다. `<engine>`을 생략하면 CLI가 폴백 체인(codex → claude)으로 고른다.
+   단계마다 돌리면 아직 만들지 않은 시나리오가 E1에서 실패한다. `<engine>`을 생략하면 CLI가 프로필(task spec `reviewer` → `.harness/reviewers.json` `default`) → 폴백 체인(codex → claude)으로 고른다.
    fail 판정은 오케스트레이터가 재현·판별한 뒤(D6) 실패 집합으로 삼아 Dev에게 돌려보낸다.
 7. R3 — `harness-team review <engine> --scope diff`. 발견은 재현·판별한 뒤 유효한 것만 Dev 턴으로 반영하고, 반영 뒤에는
    1–4와 전체 시나리오 검사(5)를 다시 돈다. 반영이 테스트·증거를 바꿨으면 루브릭(6)도 다시 돈다.
