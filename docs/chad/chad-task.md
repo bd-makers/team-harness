@@ -6,6 +6,7 @@
 ## Completed
 - ✅ diagram-svg
 - ✅ diagram-views
+- ✅ human-review-gate
 - ✅ review-model
 - ✅ spec-ask-markers
 - ✅ task-clean
