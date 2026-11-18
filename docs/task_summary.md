@@ -183,3 +183,6 @@
 | hslee | notebooklm-review-fixes | ✅ done | 2026-11-15 |
 | hslee | notebooklm-review-followups | ✅ done | 2026-11-16 |
 | chad | task-clean | ✅ done | 2026-11-17 |
+| chad | review-model | ✅ done | 2026-11-18 |
+| chad | spec-ask-markers | 🔄 open | 2026-11-18 |
+| chad | team-harness-improvements | 🔄 open | 2026-11-18 |

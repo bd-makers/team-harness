@@ -1,8 +1,11 @@
 # chad — Tasks
 
 ## Open
+- spec-ask-markers (created 2026-11-18)
+- team-harness-improvements (created 2026-11-18)
 
 ## Completed
+- ✅ review-model
 - ✅ task-clean
 - ✅ correct-guards
 - ✅ handoff-no-sweep
