@@ -17,6 +17,7 @@ docs/
         ├── <name>-artifact.md        # 실행 결과 / 학습 (task done·retro 시 append)
         ├── <name>-diagram.html       # spec/plan 다이어그램 — 옵트인 산출물 (비-SSOT, 없을 수 있음)
         ├── <name>-diagram-<view>.svg # 뷰별 다이어그램(sequence·module) — 옵트인 단독 SVG, 뷰 하나 = 파일 하나
+        ├── <name>-brief.html         # 구현 전 검토용 슬라이드 — 생성물 (harness-team brief, 비-SSOT)
         └── <name>-meta.json          # created / status — harness 내부 상태 (기계 소유)
 ```
 
@@ -67,3 +68,7 @@ harness-team retro "<메모>"    # 활성 task artifact.md에 학습/교정 내�
   런타임 JS 다이어그램은 볼트에서 렌더되지 않는다. 뷰를 나눠 그리면 단독 SVG `<name>-diagram-<view>.svg`
   (`sequence`·`module`)가 뷰마다 하나씩 생기고, plan 단계도 `spec/plan 다이어그램(<view>)`로 뷰마다 있다.
   뷰 SVG는 PR/MR 본문에 링크해 리뷰어가 이미지로 본다 — 외부 자산이 없어야 한다(`diagram record --view`가 검사).
+- **`<name>-brief.html`**: 구현 전 검토용 슬라이드. `harness-team brief`가 spec의 정해진 절만 그대로 렌더한 **생성물**이다
+  (SSOT 아님, 매번 덮어씀) — 슬라이드의 텍스트는 모두 spec에 있으므로 틀렸으면 spec을 고치고 다시 만든다.
+  검토한 시점의 스냅샷으로 task 문서와 함께 커밋한다(미추적으로 두면 `done`이 막는다).
+  로컬 브라우저로 연다(Obsidian은 `.html`을 네이티브로 열지 않는다).

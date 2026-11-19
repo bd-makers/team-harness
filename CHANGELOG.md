@@ -35,6 +35,12 @@
   - `pr-check`는 게이트 줄(미완·완료)을 뺀 본문으로 "비어 있음"·"템플릿 그대로"를 판정한다 — 손대지 않은 plan이 게이트 줄 때문에 통과하지 않는다.
   - **Fixed**: 기존 task 거부 안내(`--reviewer`·`--no-review-gate`)의 재실행 명령이 `--member`로 고른 task면 `--member <user>`를 싣는다 — 기본 user의 동명 task로 새지 않는다.
   - 옛 CLI는 이 줄을 평범한 체크박스로 본다 — 팀 최소 버전 요구는 없다.
+- **`harness-team brief` — 구현 전 검토용 슬라이드를 spec에서만 뽑는다** (task `task-brief`, 회고 A3·결정 A3-1). 활성 task spec의 `## 목적`·`## 범위`·`## 원천 검토`의 `### 발견`·`## 설계`·`## Ontology` 절(`###` 하위 절마다 한 장), 열린 항목, 선언돼 있으면 Done evidence `scenarios`를 **그대로** 렌더해 `<name>-brief.html`을 쓴다(매번 덮어쓰는 생성물·비-SSOT).
+  - **새 사실 0**: 에이전트가 쓰지 않는 결정론 렌더러이고 장식 글자(슬라이드 번호·라벨·생성 시각)가 없다 — 렌더 결과의 텍스트는 모두 spec 원문의 부분 문자열이다. 출처 표지는 spec 절 제목 그대로다. 같은 spec이면 같은 바이트다. 템플릿 안내 문단과 줄머리 HTML 주석(주석 처리된 Done evidence 예시)은 렌더하지 않는다.
+  - 열린 항목은 목록 항목에 맨 글자로 붙은 `(open)`·`(open → <대상>)`·`(unresolved)`·`(ask:<역할>)`·`(asked:<역할> …)`·`(answered …)`를 spec 어디서든 모은다(백틱 안은 언급이라 제외).
+  - 산출물: script 0·외부 자산 0·system font stack·CSS scroll-snap 한 파일. 마크다운은 문단·목록·굵게·인라인 코드·표·코드 펜스·제목만 렌더하고 링크·이미지는 글자 그대로다. `--stage`는 `spec`만 받는다(`ship`은 후속).
+  - 브리프는 검토한 시점의 스냅샷으로 task 문서와 함께 커밋한다 — 미추적으로 두면 `done`의 미커밋 가드가 막는다.
+  - 열람은 로컬 브라우저다 — Obsidian은 `.html`을 네이티브로 열지 않는다. 슬래시 명령은 없고 `/harness-task`의 구현 전 사람 검토 게이트 절이 spec을 보여 줄 때 부르며, 그 경로가 artifact `- 검토 승인: … · 슬라이드 <경로>` 칸에 들어간다. `clean`은 다른 task 폴더의 `<task>-brief.html`(그 확장자만)도 보호한다. 새 task 이름으로 `brief`는 쓸 수 없다(명령 이름).
 
 ### Changed
 

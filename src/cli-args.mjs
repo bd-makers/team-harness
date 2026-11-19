@@ -15,7 +15,7 @@
 
 import { KNOWN_STACK_IDS } from './detect-stack.mjs';
 
-export const VALUE_FLAGS = new Set(['stack', 'shape', 'member', 'target', 'days', 'name', 'paths', 'framing', 'rubric', 'prompt-file', 'scope', 'base', 'area', 'pr', 'model', 'reviewer', 'view']);
+export const VALUE_FLAGS = new Set(['stack', 'shape', 'member', 'target', 'days', 'name', 'paths', 'framing', 'rubric', 'prompt-file', 'scope', 'base', 'area', 'pr', 'model', 'reviewer', 'view', 'stage']);
 
 // Accepted on every command: they change where the harness looks or how it
 // reports, not what it does. Keeping them global means a hook can pass --target
@@ -30,7 +30,11 @@ export const DIAGRAM_VIEWS = ['sequence', 'module'];
 
 // 값 계약은 커맨드가 아니라 플래그 이름에 묶는다. 커맨드마다 가드를 두면 플래그를 복제할 때 가드만 빠졌다 —
 // `stack --stack 오타`와 `scope --scope 오타`가 각각 성공한 판정으로 나왔다. 여기 있으면 COMMANDS 에 선언만 해도 검사된다.
-export const FLAG_CHOICES = { stack: KNOWN_STACK_IDS, scope: SCOPES, view: DIAGRAM_VIEWS };
+// 브리프 단계 — `spec` 만 있다. 설계의 `ship`(plan 단계·artifact 결과)은 후순위라 첫 PR 에서 뺐다(task-brief R1) —
+// 하는 일 없는 값을 광고하지 않는다. 더하면 하위 호환이다(플래그 없음 = spec).
+export const BRIEF_STAGES = ['spec'];
+
+export const FLAG_CHOICES = { stack: KNOWN_STACK_IDS, scope: SCOPES, view: DIAGRAM_VIEWS, stage: BRIEF_STAGES };
 
 const INIT_FLAGS = ['stack', 'shape'];
 
@@ -70,6 +74,9 @@ export const COMMANDS = [
   // used to describe in three different wordings. Probe/degrade (session-only judgment) stay in prose.
   // `--view` picks one per-view diagram (standalone SVG + plan step); without it the legacy single HTML diagram is recorded as before.
   { name: 'diagram', args: `record [--view ${DIAGRAM_VIEWS.join('|')}] [--skipped] [note ...]`, summary: "Record the diagram outcome in the active task's artifact and close its plan step (--view: one per-view SVG, rejected unless self-contained; --skipped needs a reason)", flags: ['view', 'skipped'] },
+  // Renders fixed spec sections verbatim — no agent writes the deck, so it carries no fact the spec lacks (decision A3-1).
+  // The review gate in commands/harness-task.md calls it; there is no slash command of its own.
+  { name: 'brief', args: `[--stage ${BRIEF_STAGES.join('|')}]`, summary: "Render the active task's spec sections (purpose, scope, R1 findings, design, ontology, open items, scenarios) verbatim as a review slide deck <name>-brief.html (no script, no external assets)", flags: ['stage'] },
   // Read-only. Owns the deterministic inputs of the wiki compile (/harness-wiki): provenance (PR · introducing
   // commit · author), the exact provenance marker, where the task is already compiled, and the project's rule files.
   // The compile itself (what goes where) is LLM judgment and stays in commands/harness-wiki.md.
@@ -125,7 +132,7 @@ const OPTIONS_HELP = `Options:
   --yes                Non-interactive
   --member <name>      Override member (default: git config user.name, else $USER)
   --target <dir>       Target directory (default: cwd)
-  --json               Structured JSON envelope output for drive commands (task/retro/release/doctor/summary/observe/rules/stack/scope/pr-check/config/diagram/wiki)`;
+  --json               Structured JSON envelope output for drive commands (task/retro/release/doctor/summary/observe/rules/stack/scope/pr-check/config/diagram/brief/wiki)`;
 
 // `doctor` proves the hook CLI is reachable by matching `session-context` and
 // `handoff` at the start of a line in this output, so the two-space indent is a
