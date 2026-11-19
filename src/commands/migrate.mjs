@@ -16,7 +16,8 @@ import {
   taskArtifactTemplate, parseReviewMarkers, evidenceWindowStart, verifyEvidencePredicate,
   parseDoneEvidenceDeclaration, VERIFY_KIND_SUFFIXES, trackedUserHandoffs,
 } from './task.mjs';
-import { collectTasks, readTaskMeta, writeTaskMeta, metaRel } from './summary.mjs';
+import { collectTasks, readTaskMeta, writeTaskMeta, metaRel, inferLegacyMeta, readLedger } from './summary.mjs';
+import { closureFromContent } from '../task-closure.mjs';
 import { settingsHasSessionGate } from './session-context.mjs';
 import { SUMMARY_REL, userIndexRel, docsPath, taskDirRel, taskFilePath } from '../task-paths.mjs';
 
@@ -862,15 +863,19 @@ export async function migrateBoundaryCheckpointHook(ctx) {
 // Without this backfill every pre-0.16.0 task renders as open with an empty date.
 async function backfillTaskMeta(ctx) {
   const tasks = await collectTasks(ctx.targetDir);
+  const ledger = await readLedger(ctx.targetDir);
   const written = [];
 
   for (const task of tasks) {
     if (await readTaskMeta(ctx.targetDir, task.user, task.task)) continue;
+    // `task.status` 는 plan 판정이 섞인 파생값이다(done-derive) — 굳히면 plan 이 다시 열려도 레거시 done 으로 닫힌 채 남는다.
+    // 원장·handoff 가 기록한 사실만 옮긴다.
+    const legacy = await inferLegacyMeta(ctx.targetDir, task.user, task.task, ledger);
     await writeTaskMeta(ctx.targetDir, task.user, task.task, {
       user: task.user,
       task: task.task,
       created: task.created || '',
-      status: task.status || 'open',
+      status: legacy.status,
       closedAt: null,
     });
     written.push(metaRel(task.user, task.task));
@@ -976,10 +981,12 @@ export async function migrateCodexHookFlag(ctx) {
 export async function collectReviewAdoptionCandidates(targetDir) {
   const candidates = [];
   for (const t of await collectTasks(targetDir)) {
-    if (t.status === 'done') continue;
     const meta = await readTaskMeta(targetDir, t.user, t.task);
     // meta 파일이 없으면 건너뛴다 — backfillTaskMeta 가 먼저 만들고, 다음 실행에서 후보가 된다.
     if (!meta || Array.isArray(meta.reviews)) continue;
+    // 제외는 **기록으로** 닫힌 task(레거시 `status: done`·유효한 우회)만이다. plan 이 전부 체크된 task 는 파생 판정으로는
+    // done 이지만 done 가드를 아직 지난다(ship 시 `done`, pre-push 의 pr-check — done-derive R4·R7) — 채택 비용이 그대로 남는다.
+    if (closureFromContent({ plan: null, meta }).closed) continue;
 
     const artifact = await readTextSafe(taskFilePath(targetDir, t.user, t.task, 'artifact.md'));
     const { at: windowStart } = evidenceWindowStart(meta);

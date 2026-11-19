@@ -9,8 +9,9 @@ import { runTask, runDone } from '../src/commands/task.mjs';
 import { USER_HANDOFF_IGNORE } from '../src/task-paths.mjs';
 import {
   collectTasks, renderTaskSummary, renderUserIndex, runSummary, readTaskMeta, defaultBranchCandidates,
-  readLedger, parseSummaryRows, taskMetaTemplate, writeTaskMeta as writeTaskMetaForTest,
+  readLedger, parseSummaryRows, taskMetaTemplate,
 } from '../src/commands/summary.mjs';
+import { taskClosure } from '../src/task-closure.mjs';
 
 const pexec = promisify(execFile);
 
@@ -109,7 +110,8 @@ test('재활성화는 meta.firstActivatedAt을 덮어쓰지 않는다 (switchedA
   }
 });
 
-test('done은 meta의 status를 done으로 바꾸고 closedAt을 남긴다', async () => {
+// 종결은 기록이 아니라 파생이다(done-derive R3) — done 은 status·closedAt 을 쓰지 않고, 우회했을 때만 forcedAt 을 남긴다.
+test('done은 meta의 status·closedAt을 쓰지 않는다 — 우회 종결은 forcedAt으로 판정된다', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'harness-summary-'));
   try {
     const flags = { member: 'chad', force: true };
@@ -117,8 +119,10 @@ test('done은 meta의 status를 done으로 바꾸고 closedAt을 남긴다', asy
     await runDone({ targetDir: dir, flags });
 
     const meta = await readTaskMeta(dir, 'chad', 'demo');
-    assert.equal(meta.status, 'done');
-    assert.ok(meta.closedAt, 'closedAt 타임스탬프가 있어야 한다');
+    assert.equal(meta.status, 'open');
+    assert.equal(meta.closedAt, null);
+    assert.ok(meta.forcedAt, '템플릿 plan 의 미완 단계를 우회했으므로 forcedAt 이 남는다');
+    assert.equal((await taskClosure(dir, 'chad', 'demo')).source, 'forced');
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -140,8 +144,8 @@ test('done된 task를 재활성화하면 완료가 만료된다 (status open · 
     await runTask({ targetDir: dir, flags, taskArgs: ['demo'] });
     const created = await readTaskMeta(dir, 'chad', 'demo');
     await runDone({ targetDir: dir, flags });
-    const closed = await readTaskMeta(dir, 'chad', 'demo');
-    assert.equal(closed.status, 'done', '전제: done이 상태를 닫아야 한다');
+    // done-derive: done 은 status 를 쓰지 않는다 — 미완 단계를 남긴 --force 는 유효한 우회 기록으로 닫힌다.
+    assert.equal((await taskClosure(dir, 'chad', 'demo')).source, 'forced', '전제: 우회 기록으로 닫혀야 한다');
 
     await runTask({ targetDir: dir, flags, taskArgs: ['demo'] }); // 재활성화 = 만료
 
@@ -780,6 +784,9 @@ test('meta 유실 + reopen 이후에도 우회 사실이 살아남는다 (열린
     await writeFile(join(dir, 'docs', 'chad', 'bypassed', 'bypassed-handoff.md'), '# bypassed — Handoff\n');
     await writeFile(join(dir, 'docs', 'task_summary.md'), renderTaskSummary([forcedTask]));
     await writeFile(join(dir, 'docs', 'chad', 'chad-task.md'), renderUserIndex('chad', [forcedTask]));
+    // 구 task 는 기본 브랜치에 커밋돼 있다 — origin 이 없으면 재개 판정의 R 은 로컬 main 이다(done-derive R2).
+    await git(dir, 'add', '-A');
+    await git(dir, 'commit', '-qm', 'legacy bypassed task');
 
     // reopen — meta 가 없으므로 inferLegacyMeta 가 원장에서 사실을 복구해 meta 를 새로 쓴다.
     await runTask({ targetDir: dir, flags: { member: 'chad' }, taskArgs: ['bypassed'] });
@@ -795,7 +802,8 @@ test('meta 유실 + reopen 이후에도 우회 사실이 살아남는다 (열린
     );
 
     // 이후 깨끗하게 다시 닫아도(우회 없음) 이 task 의 이력에 우회가 있었다는 사실은 남아야 한다.
-    await writeTaskMetaForTest(dir, 'chad', 'bypassed', { ...meta, status: 'done', closedAt: '2026-09-08T12:00:00.000Z' });
+    // done-derive: 깨끗한 종결은 meta 기록이 아니라 plan 전부 체크다.
+    await writeFile(join(dir, 'docs', 'chad', 'bypassed', 'bypassed-plan.md'), '# bypassed — Plan\n\n## 단계\n- [x] 재개: 수정\n');
     const after = await collectTasks(dir);
     const row = renderTaskSummary(after).split('\n').find(l => l.startsWith('| chad |'));
     assert.equal(statusCell(row), '✅ done ⚠️', 'reopen 을 거쳐도 우회 흔적이 지워지지 않는다');
@@ -885,6 +893,28 @@ test('summary: ignores ledger-only rows whose user or task is not a safe path se
     assert.deepEqual(tasks.filter(t => t.ledgerOnly).map(t => `${t.user}/${t.task}`), ['chad/gone'], '경로 규칙을 어기는 행은 빠진다');
   } finally {
     process.exitCode = exitCode;
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+// done-derive: done 은 더 이상 meta 의 `forcedAt` 을 지우지 않는다 — 우회로 닫고 재개한 뒤 plan 으로 깨끗이 닫은 task 에
+// 옛 `forcedAt` 이 남는다. ⚠️ 는 이번 종결의 표시이므로 `forcedAt > reopenedAt` 일 때만 붙는다.
+test('summary: 재개 이전의 forcedAt 은 plan 으로 다시 닫은 task 에 ⚠️ 를 붙이지 않는다', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-forced-stale-'));
+  try {
+    const td = join(dir, 'docs', 'chad', 'demo');
+    await mkdir(td, { recursive: true });
+    await writeFile(join(td, 'demo-spec.md'), '# demo — Spec\n');
+    await writeFile(join(td, 'demo-plan.md'), '# demo — Plan\n\n## 단계\n- [x] 1\n- [x] 재개: 수정\n');
+    const base = { user: 'chad', task: 'demo', created: '2026-11-01', status: 'open', closedAt: null, forcedIssues: ['x'] };
+    await writeFile(join(td, 'demo-meta.json'), JSON.stringify({ ...base, forcedAt: '2026-11-02T00:00:00.000Z', reopenedAt: '2026-11-03T00:00:00.000Z' }));
+    let row = renderTaskSummary(await collectTasks(dir)).split('\n').find(l => l.startsWith('| chad |'));
+    assert.equal(statusCell(row), '✅ done');
+    // 재개 뒤 다시 우회했으면 표시가 붙는다.
+    await writeFile(join(td, 'demo-meta.json'), JSON.stringify({ ...base, forcedAt: '2026-11-04T00:00:00.000Z', reopenedAt: '2026-11-03T00:00:00.000Z' }));
+    row = renderTaskSummary(await collectTasks(dir)).split('\n').find(l => l.startsWith('| chad |'));
+    assert.equal(statusCell(row), '✅ done ⚠️');
+  } finally {
     await rm(dir, { recursive: true, force: true });
   }
 });

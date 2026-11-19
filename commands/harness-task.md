@@ -1,19 +1,20 @@
 ---
-description: "task 관리 (task/list/done/clean/handoff) — docs/<user>/<name>/ 구조"
+description: "task 관리 (task/list/done/reopen/clean/handoff) — docs/<user>/<name>/ 구조"
 phase: Workflow
-argument-hint: '<name> [--area <area>] [--reviewer <profile>] | list [--area <area>] [--remote] | done [--force] | clean [<name>] [--base <ref>] | handoff'
+argument-hint: '<name> [--area <area>] [--reviewer <profile>] | list [--area <area>] [--remote] | done [--force] | reopen <name> [--reason <text>] | clean [<name>] [--base <ref>] | handoff'
 ---
 
-`$ARGUMENTS`의 **첫 토큰**으로 분기한다. `list`·`done`·`clean`·`handoff`는 `task`의 인자가 아니라 **별개 하위명령**이다 —
+`$ARGUMENTS`의 **첫 토큰**으로 분기한다. `list`·`done`·`reopen`·`clean`·`handoff`는 `task`의 인자가 아니라 **별개 하위명령**이다 —
 `task done`처럼 넘기면 CLI가 명령 이름이라며 거부한다(exit 1, 아무것도 쓰지 않음) — 그 이름의 task가 이미 있을 때만 활성화된다.
 다른 member의 task를 이어서 하려면 `task <name> --member <그 member>` — `--member`는 `.harness/config.json`의 user보다 우선한다.
 결정된 user가 `docs/<user>/` 한 세그먼트가 아니면(빈 값·`/`·`\`·선행 `.`·제어문자) `task`는 exit 1로 거부하고 아무것도 쓰지 않는다 —
 config를 고치라는 안내를 그대로 사용자에게 전하고, user를 임의로 바꿔 재시도하지 않는다.
 
 ```bash
-# 첫 토큰이 list | done | clean | handoff → task 없이 그 하위명령을 그대로 실행
+# 첫 토큰이 list | done | reopen | clean | handoff → task 없이 그 하위명령을 그대로 실행
 node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" list
 node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" done [--force]
+node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" reopen <name> [--reason <text>]
 node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" clean [<name>] [--base <ref>]   # dry-run — --yes 는 아래 절의 승인 뒤에만
 node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" handoff
 
@@ -24,7 +25,8 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name> [--area <area>] [-
 예시:
 - `harness-team task auth-redesign`   # 생성 또는 활성화
 - `harness-team list`                 # 전체 task 목록
-- `harness-team done`                 # 활성 task 완료 처리 (meta 상태만 — 원장은 `summary --write`)
+- `harness-team done`                 # 활성 task 의 done 가드 검증 (추적 파일을 쓰지 않는다 — 종결은 plan 에서 파생, 아래 "종결")
+- `harness-team reopen auth-redesign --reason "회귀"`   # 기본 브랜치에서 종결된 task 를 다시 연다 (아래 "재개")
 - `harness-team clean`                # 활성 task 를 시작 전 상태로 되돌리기 (dry-run, 아래 절)
 - `harness-team task web-next-login --area web-next`   # 모노레포 area task 생성 또는 활성화
 - `harness-team list --area web-next`  # 그 area 의 task 만
@@ -33,7 +35,8 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name> [--area <area>] [-
 
 ## task 되돌리기 (`clean`)
 
-task 를 시작했는데 방향이 틀렸거나 결과가 마음에 들지 않으면, `done` 하기 전에 그 task 를 **시작 전 상태로** 되돌린다.
+task 를 시작했는데 방향이 틀렸거나 결과가 마음에 들지 않으면, 기본 브랜치에 머지되기 전에 그 task 를 **시작 전 상태로** 되돌린다.
+ship 했지만 MR 이 거절·폐기된 task 도 되돌릴 수 있다.
 상태를 남기지 않는다(`dropped` 같은 status 없음) — 코드·task 문서를 시작점으로 되돌리고 활성 포인터를 비우는 것이 전부다.
 폴더가 사라진 open task 는 원장에 남지 않고, 같은 이름을 다시 쓸 수 있다.
 
@@ -43,7 +46,7 @@ task 를 시작했는데 방향이 틀렸거나 결과가 마음에 들지 않�
   (`git clean`을 쓰지 않는다 — ignored 파일은 지우지 않는다) ③ `active.json`이 이 task 를 가리키면 비우고
   `<user>-handoff.md`를 "활성 없음"으로 쓴다. 복구 명령·백업 목록 명령을 출력한다.
 - **시작점**: `--base <ref>`(그 ref 와의 merge-base) → meta `baseSha`(task 생성 시점 HEAD) → 둘 다 없는 구 task 는 기본 브랜치와의 merge-base.
-- **거부(exit 1, 아무것도 쓰지 않음)**: git 이 아님 · 기본 브랜치·detached HEAD · `done`된 task(머지된 변경은 `git revert`) ·
+- **거부(exit 1, 아무것도 쓰지 않음)**: git 이 아님 · 기본 브랜치·detached HEAD · **기본 브랜치에서 종결된** task(원격 추적 기본 브랜치 → 없으면 로컬 `main`/`master` 기준, 머지된 변경은 `git revert`) ·
   재개된 task 에 `--base` 없음 · `baseSha`가 HEAD 의 조상이 아님(rebase 등 — `--base`로 지정) · 시작점 이후 **다른 task 폴더**가 바뀜.
 - **원격에는 쓰지 않는다** — push 된 브랜치·열린 MR/PR 은 그대로다. upstream 이 있으면 정리 명령(`git push <remote> --delete <branch>`
   또는 `--force-with-lease`)을 안내만 한다.
@@ -102,7 +105,7 @@ area 는 `<name>-meta.json` 의 `area` 키에만 기록되고 task 는 여전히
 
 `task` 출력이 `created:`(신규 생성)일 때만 아래를 **1회** 수행한다. `activated:`(기존 task
 재활성화)면 **묻지 않는다** — 계획에 없는 단계를 다시 묻는 것은 계획을 무시하는 것이다.
-`reopened:`(완료가 만료된 재개 — meta의 `status`가 `done`→`open`으로 돌아간 경우)도 같다:
+`reopened:`(종결된 task 의 재개 — plan 에 재개 항목이 붙은 경우, 아래 "재개")도 같다:
 옵트인 상태는 plan.md에 그 단계가 있는지로 이미 남아 있고, 재개는 그 계획을 이어받는 것이지
 새로 세우는 것이 아니다.
 
@@ -149,9 +152,9 @@ area 는 `<name>-meta.json` 의 `area` 키에만 기록되고 task 는 여전히
 
 ## 원격 done nudge (`task`·`session-context`·`doctor` 공통)
 
-`task <name>`은 생성·활성화 직전에 그 task의 meta를 `origin/<default>`(`origin/HEAD` → 없으면 `origin/main`)에서
-한 번 읽는다 — **fetch하지 않는다**(로컬 ref 기준, 마지막 fetch 시점의 main). 원격 `status`가 `done`이고 로컬이
-미종결이면 출력 **첫 줄**에 nudge를 낸다. **막지 않는다** — 다른 클론이 같은 task를 먼저 끝냈는데 이 클론이
+`task <name>`은 생성·활성화 직전에 그 task가 `origin/<default>`(`origin/HEAD` → 없으면 `origin/main`)에서 종결됐는지
+한 번 판정한다(아래 "종결"의 판정을 그 커밋의 plan·meta에 적용) — **fetch하지 않는다**(로컬 ref 기준, 마지막 fetch 시점의 main).
+원격에서 종결이고 작업 트리가 미종결이면 출력 **첫 줄**에 nudge를 낸다. **막지 않는다** — 다른 클론이 같은 task를 먼저 끝냈는데 이 클론이
 모르고 이어가는 사고(2026-09-10, 6커밋 폐기)를 가장 이른 지점에서 알리는 것이 목적이다.
 
 ```
@@ -161,15 +164,17 @@ created: docs/<user>/<name>/
 
 - 판정은 `src/commands/remote-task.mjs` 한 곳이고 `session-context`(SessionStart, breadcrumb·현재 단계 대신 nudge만)와
   `doctor`(`done on main` warning)가 같은 함수를 쓴다.
-- **침묵 조건**: 로컬 meta가 이미 `done`(재개 후보 판정이 처리) · 로컬 `reopenedAt`이 원격 `closedAt`보다 나중(고의 재개).
-  따라서 정상 복구 경로는 **main을 가져온 뒤 `task <name>`** — 로컬 meta가 done이 되고, 다시 열면 `reopenedAt`이 생겨
-  다음 세션부터 조용하다.
-- git이 없거나, 저장소가 아니거나, origin이 없거나, 그 경로에 meta가 없으면 조용히 건너뛴다. partial clone(`--filter=blob:none`)도
+- **침묵 조건**: 작업 트리도 종결(같은 판정 — `task <name>`의 재개가 처리) · 로컬 `reopenedAt`이 원격 `closedAt`보다 나중(고의 재개).
+  따라서 정상 복구 경로는 **main을 가져온 뒤 `task <name>`** — 작업 트리의 plan도 종결이 되고, 다시 열면 `reopenedAt`이 생겨
+  다음 세션부터 조용하다. 원격 `closedAt`은 meta에 남은 시각(옛 CLI의 `closedAt`·우회 `forcedAt`)이 없으면 그 task 디렉터리를
+  마지막으로 건드린 커밋의 시각이다.
+- git이 없거나, 저장소가 아니거나, origin이 없거나, 그 경로에 task가 없으면 조용히 건너뛴다. partial clone(`--filter=blob:none`)도
   마찬가지다 — `GIT_NO_LAZY_FETCH=1`로 암묵 fetch를 막으므로 blob이 없으면 "모른다"(2 s timeout). `--json`이면 envelope 최상위에
   `doneOnMain: { ref, closedAt }` 필드가 붙는다.
-- **원장 폴백**: 원격에 meta가 없으면(main에서 task 폴더를 지웠다) 같은 커밋의 `docs/task_summary.md`에서 그 task의 `✅ done` 행을 찾는다.
-  `closedAt`은 원격에서 그 task 디렉터리를 마지막으로 건드린 커밋의 시각이고, `doneOnMain`에 `source: "ledger"`가 붙는다.
-  이때만 nudge의 복구 안내가 "새 이름으로 이어간다"로 바뀐다 — main을 가져오면 폴더가 지워지고 아래 이름 가드가 그 이름을 거부하기 때문이다.
+- **원장 폴백**: 원격에 그 task의 meta가 없으면(main에서 폴더를 지웠거나 meta 없는 구 task) 같은 커밋의 `docs/task_summary.md`에서
+  그 task의 `✅ done` 행을 찾는다 — 재개·clean과 같은 판정이다. `closedAt`은 원격에서 그 task 디렉터리를 마지막으로 건드린 커밋의 시각이다.
+  meta 없는 구 task는 작업 트리도 원장·handoff에서 추론한 값으로 판정하므로, 로컬 원장도 닫혀 있으면 조용하다.
+  폴더가 지워진 경우에만 `doneOnMain`에 `source: "ledger"`가 붙고 nudge의 복구 안내가 "새 이름으로 이어간다"로 바뀐다 — main을 가져오면 폴더가 지워지고 아래 이름 가드가 그 이름을 거부하기 때문이다.
 - **종결된 이름의 재사용**: 로컬 `docs/task_summary.md`에 `<user>/<name>`이 `✅ done`이고 `docs/<user>/<name>/`이 없으면 `task <name>`은
   만들지 않고 exit 1로 멈춘다(다른 이름으로 다시 실행, 원문은 `git log -- docs/<user>/<name>`). 폴더가 있으면 종전대로 다시 연다(`reopened:`).
 
@@ -189,25 +194,64 @@ created: docs/<user>/<name>/
 
 그런 저장소와 무시 줄이 없는 저장소에서 훅은 이 파일을 쓰지 않는다 — 어떤 설치본에서도 훅은 트리를 더럽히지 않는다. 활성화와
 `done`은 진입점이 낡지 않게 여전히 쓰므로, 추적을 풀기 전까지는 그 변경이 트리에 남는다. `done` 가드와 `review`·`scope`의 scope 자동 판정은 user handoff와 task handoff를 dirty에서 뺀다. task handoff 제외는 옛 CLI의 훅이 쓰는 동안만 두는 임시 조치다. scope 판정은 `review`가 쓰는
-artifact·meta도 함께 빼지만 가드는 빼지 않는다 — 종결 커밋에 담겨야 하는 파일이다(`commands/harness-review.md` 2단계).
+artifact·meta도 함께 빼지만 가드는 빼지 않는다 — ship 커밋에 담겨야 하는 파일이다(`commands/harness-review.md` 2단계).
 
-## 머지 후 종결 — 커밋 하나
+## 종결 — ship 시점, 머지가 곧 종결
 
-PR/MR이 머지된 뒤 기본 브랜치에서: plan의 마지막 단계(보통 "커밋·PR")를 `- [x]`로 켠다 → `harness-team done`
-→ `harness-team summary --write` → **커밋 하나**(`chore(task): <name> 종결`)에 plan·meta·원장을 함께 담는다.
-위키 컴파일은 선택이다 — `harness-team done` 다음, `summary --write` 전에 `/harness-wiki <user>/<task>`를 돌리면 위키 변경도
-같은 종결 커밋에 담긴다(`done`이 활성 task를 비우므로 대상을 명시한다, `commands/harness-wiki.md`).
+종결은 **기록이 아니라 계산값**이다. task는 어떤 커밋에서 다음 중 하나면 그 커밋에서 종결이다
+(`src/task-closure.mjs` 한 곳 — summary·session-context·wiki·clean·원격 nudge·재개가 같은 판정을 쓴다):
+
+1. `<name>-plan.md`에 줄머리 미완 체크박스(`- [ ]`, 내용 없는 것 포함)가 없고 **체크된 체크박스(`- [x]`)가 하나 이상** 있다 —
+   plan이 없거나 비었거나 체크박스가 하나도 없으면 open이다.
+2. 유효한 우회 기록 — meta `forcedAt`이 `reopenedAt`보다 나중(또는 재개 이력 없음). `done --force`만 남긴다.
+3. 옛 CLI의 meta `status: "done"`(재개 이력 없음, 또는 `closedAt`이 `reopenedAt`보다 나중) — 기존 task 호환.
+
+팀·클론 간의 "이 task는 종결됐는가"는 기본 브랜치(원격 추적 ref, fetch 없음)에서 판정한다. 그래서 **머지가 곧 종결**이고
+머지 뒤에 할 일(종결 커밋·종결 MR)이 없다.
+
+**흐름(브랜치에서, MR 생성 전):** 구현 → `/harness-ship`(문서 정합) → plan의 마지막 단계(**"ship 완료"**)를 `- [x]`로 켠다 →
+`harness-team done`(가드) → 커밋 → push(pre-push `pr-check`가 가드를 한 번 더 돈다) → MR → 머지 = 종결.
+위키 컴파일은 선택이고 머지 뒤 기본 브랜치에서 한다(PR 출처가 머지 커밋에 있다) — 원장 갱신처럼 모아서
+`/harness-wiki <user>/<task>`를 돌리고 `summary --write`와 같은 커밋에 담는다(`commands/harness-wiki.md`). 할 때만 머지 뒤 커밋이 생긴다.
+
+- **`done`은 검증 명령이다.** 기존 가드(`collectDoneIssues`)를 돌리고 활성 포인터를 비우고 user handoff(워크트리 로컬)를 쓴다.
+  **추적 파일은 쓰지 않는다** — 예외는 `--force`로 실제 issue를 무시할 때 meta에 남는 `forcedAt`·`forcedIssues`(감사 흔적,
+  같은 MR에 커밋한다). 옛 절차(머지 뒤 기본 브랜치에서 `done` + 종결 커밋)를 그대로 해도 오류가 아니다 — 결과가 같을 뿐 불필요하다.
+- **pre-push 가드**: `pr-check --pre-push`는 이번 push가 건드린 task 중 plan이 전부 체크된 것에 `done` 가드를 같이 돌린다 —
+  체크박스만 켜고 `done`을 건너뛰는 경로를 막는다. push 되는 커밋이 HEAD이고 작업 트리가 깨끗할 때만 돌고(아니면 `· done 가드 건너뜀`),
+  유효한 우회 기록이면 경고만 낸다. CI·`--pre-push` 없는 실행은 종전대로 문서만 본다. `git push --no-verify`는 허용된 한계다.
+- **여러 MR에 걸친 task**: 이후 단계를 **미리 plan에 적어 둔다**(`- [ ]`로 남김) — 그래야 중간 MR 머지가 종결로 판정되지 않는다.
+  "하지 않은 단계를 미리 켜지 않는다"와 같은 선상의 규칙이다.
+- **리뷰 수정 라운드**(머지 전 같은 브랜치): reopen하지 않는다. `task <name>`은 기본 브랜치에서 종결되지 않은 task를 activate만 한다 —
+  고친 뒤 다시 ship 한다. 마지막 단계는 이미 켜져 있으니 가드만 다시 돌리면 된다.
+- **원장**(`docs/task_summary.md`)은 종결 절차에서 빠졌다. 렌더는 위 판정을 따르고, 갱신은 기본 브랜치에서 필요할 때
+  `harness-team summary --write`(이 저장소는 릴리스 때). 머지마다 원장이 낡으므로 CI에서 `summary --check`로 막지 않는다.
 
 `done` 가드는 미커밋 변경을 막지만, 활성 task의 plan.md 변경이 **줄머리 체크박스를 켠 것뿐**이면 세지 않는다
 (`isCheckboxOnlyChange` — HEAD의 plan과 index·작업 트리를 **둘 다** 줄 단위로 대조한다. 끄기·줄 추가·산문 수정은
 종전대로 막는다. 하네스를 저장소 하위 디렉터리에 설치해도 같다 — git 경로와 `--show-prefix`로 맞춰 대조한다).
-그래서 체크·종결·원장을 커밋 셋으로 나눌 이유가 없다(2026-09-26 이전 관례는 셋이었다). 단계를 켜는 판단은
-여전히 에이전트 몫이다 — 머지를 확인하기 전에 켜지 않는다.
+그래서 마지막 단계 체크 → `done` → 커밋 순서가 가능하다. 단계를 켜는 판단은 여전히 에이전트 몫이다 — ship이 끝나기 전에 켜지 않는다.
+
+## 재개 (`task <name>` · `reopen <name>`)
+
+머지 뒤 문제가 생기면 다시 열어 새 브랜치·MR로 고친다. **재개는 기본 브랜치에서 종결됐고 작업 트리에서도 아직 종결일 때만** 일어난다 —
+기본 브랜치만 보면 재개 브랜치에서 `task <name>`을 칠 때마다 또 재개하고(기본 브랜치는 재개 MR이 머지될 때까지 종결이다),
+작업 트리만 보면 리뷰 수정 라운드를 재개로 오인한다. 기본 브랜치의 종결이 마지막 재개(`reopenedAt`)보다 앞이면 이미 다시 연 옛 종결이라
+재개하지 않는다(재개 → 재개 항목 체크 → 머지 전 수정 라운드는 activate만). 기본 브랜치는 원격 추적 ref, origin이 없으면 로컬 `main`/`master`,
+둘 다 없으면 작업 트리로 판정한다(clean과 같은 해석 — origin 없는 저장소의 기본 브랜치가 `develop` 등 다른 이름이면 작업 트리로 떨어진다).
+`clean`도 같은 비교를 쓴다 — 재개 MR이 머지되기 전의 재개 task는 "기본 브랜치에서 종결"로 거부하지 않고 `--base`를 요구한다.
+
+- **전이**: meta에 `reopenedAt`(새 판정 창의 시작)을 쓰고 옛 `status`·`closedAt`을 풀고, plan `## 단계` 끝에
+  `- [ ] 재개: <사유>`를 넣는다(사유 미지정 시 `(사유 미기재)`) — 이 미완 항목이 종결 판정을 open으로 되돌린다. 출력은 `reopened:`.
+- **`reopen <name> [--reason <text>]`**: 같은 전이를 하되 종결된 task에만 동작한다 — 종결되지 않았거나 없는 task면 아무것도 쓰지 않고 exit 1.
+  `task <name>`도 같은 조건에서 재개한다(사유는 기본 문구).
+- **재개 전 `git fetch`** — 판정은 마지막 fetch 시점의 기본 브랜치다. fetch하지 않은 클론은 머지를 몰라 activate로 떨어진다.
+- 재개 항목을 끝내면(고침 → ship → 체크) 평소처럼 머지가 다시 종결이다.
 
 ## `<name>-meta.json`과 판정 창
 
-`<name>-meta.json`은 harness가 소유하는 **기계 상태**다(`created`·`firstActivatedAt`·`status`·
-`closedAt`·`reopenedAt`·`forcedAt`·`forcedIssues`·`reviews`, 그리고 git 저장소에서 만든 task 의 `baseSha`). SSOT 4파일에 포함되지 않으며 **손으로
+`<name>-meta.json`은 harness가 소유하는 **기계 상태**다(`created`·`firstActivatedAt`·`reopenedAt`·`forcedAt`·`forcedIssues`·`reviews`,
+그리고 git 저장소에서 만든 task 의 `baseSha`. `status`·`closedAt`은 옛 CLI의 `done`이 쓰던 값으로, 새 CLI는 읽기만 하고 재개 때 푼다). SSOT 4파일에 포함되지 않으며 **손으로
 고치지 않는다** — `done` 가드가 증거를 찾는 판정 창의 시작점과, `verify: required`가 세는 리뷰 증거
 (`reviews[]`, `harness-team review`가 성공한 실행마다 append)가 여기 있기 때문이다. `reviews` 키가
 없는 구 task는 종전대로 artifact 마커로 판정한다 — 상세는 harness-review 명령 문서 5단계.
@@ -221,14 +265,11 @@ PR/MR이 머지된 뒤 기본 브랜치에서: plan의 마지막 단계(보통 "
 
 ### 완료 상태의 만료
 
-완료는 시간이 아니라 **전이**로 만료된다. `done`된 task를 `harness-team task <name>`으로 다시
-활성화하면 그 완료가 무효가 되어 `status`가 `open`으로 돌아가고 `closedAt`이 풀리며, 그 시각이
-`reopenedAt`에 남아 **새 판정 창의 시작**이 된다. 출력도 `activated:`가 아니라 `reopened:`다.
-새 라운드의 완료는 새 증거로 판정해야 하기 때문이다.
+완료는 시간이 아니라 **전이**로 만료된다 — 위 "재개". 재개가 남긴 `reopenedAt`이 **새 판정 창의 시작**이 되고,
+plan의 재개 항목이 종결 판정을 open으로 되돌린다. 새 라운드의 완료는 새 증거로 판정해야 하기 때문이다.
 
 - **열린 task 사이의 평범한 재활성화는 meta를 건드리지 않는다** — 거기까지 쓰면 판정 창이 흔들린다.
-- **`status`가 `done`인 task는 SessionStart 재개 후보에서 빠진다.** 후보 판정의 정본은 plan의
-  체크박스가 아니라 이 값이다 — 열린 체크박스만 보던 탓에 `done --force`로 닫은 task가 영구히
-  후보로 떴다.
-- `meta.json`이 없는 구 task는 원장·handoff에서 추론한 값을 굳혀 만료시키되, 알 수 없는
-  `firstActivatedAt`은 지어내지 않는다(구 task는 시각 가드를 건너뛴다).
+- **종결된 task는 SessionStart 재개 후보에서 빠진다.** 후보 판정은 위 종결 판정을 쓴다 — 열린 체크박스만 보던 탓에
+  `done --force`로 닫은 task가 영구히 후보로 떴다.
+- `meta.json`이 없는 구 task는 원장·handoff에서 추론한 값으로 판정하고, 재개 때 그 값을 굳혀 만료시키되 알 수 없는
+  `firstActivatedAt`은 지어내지 않는다(구 task는 시각 가드를 건너뛴다). 기본 브랜치에도 meta가 없으면 그 커밋의 원장 `✅ done` 행이 종결 기록이다.

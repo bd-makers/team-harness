@@ -98,7 +98,7 @@ spec·plan·artifact가 task의 **SSOT**다(handoff는 선택 메모). 상세 �
 > 활성 task 유무를 주입한다. 활성 task가 있으면 breadcrumb 다음에 plan의 첫 미완 단계를 한 줄 주입한다.
 > 활성 task가 없으면 첫 작업 프롬프트에서 `AskUserQuestion`으로
 > **재개 / 새 task / task 없이 진행**을 확인하라 — 파일을 바꾸는 일은 크기와 무관하게 task로 진행하고, task 없이 진행은 파일을 바꾸지 않는 질문·탐색·리뷰에만 쓴다. 이는 block이 아닌 nudge이며 판단은 Claude 몫.
-> 활성 task가 main에서 이미 `done`이면 "종결됨" nudge만 나온다 — harness-task 문서.
+> 활성 task가 main에서 이미 종결됐으면 "종결됨" nudge만 나온다 — harness-task 문서.
 
 ### task 워크플로우
 - **시작**: `harness-team task <name>` — 생성 또는 활성화
@@ -117,12 +117,15 @@ spec·plan·artifact가 task의 **SSOT**다(handoff는 선택 메모). 상세 �
 - **commit 시**: post-commit hook은 워크트리 로컬(gitignore)인 `<user>-handoff.md`만 갱신한다 — 트리는 깨끗하다
 - **PR/MR 직전(ship)**: spec·plan·artifact를 최종 갱신하고 준비 완료를 보고한다 — 다이어그램
   갱신은 옵트인이며, 절차·산출물 계약은 ship 명령 문서가 정본이다(PR/MR 생성은 별도 지시).
-- **완료**: plan 전체 완료 감지 또는 사용자 신호 → AskUserQuestion → `harness-team done`
+- **완료(종결)**: 종결은 기록이 아니라 계산값이다 — 기본 브랜치에서 plan이 전부 체크되면(머지 = 종결) 끝이다.
+  ship 뒤 plan 마지막 단계("ship 완료") 체크 → AskUserQuestion → `harness-team done`(가드 검증, 추적 파일 무변경) → 커밋 → MR.
+  머지 뒤 문제는 `harness-team reopen <name>`(또는 `task <name>`)으로 다시 열어 새 MR로 고친다 — 상세는 harness-task 명령 문서.
 
 ### plan.md 계약
 `<name>-plan.md`는 산문이 아니라 다른 명령의 입력이다 — 초안 도구가 없으면 직접 쓴다(멈추지 않는다).
 - `## 단계`의 줄머리 체크박스를 `done` 가드가 읽는다(미완 `- [ ]`가 남으면 막힌다) —
-  **하지 않은 단계를 미리 `- [x]`로 켜지 않는다**.
+  **하지 않은 단계를 미리 `- [x]`로 켜지 않는다**. 여러 MR에 걸친 task는 이후 단계를 미리 `- [ ]`로 적어 둔다 —
+  전부 체크된 plan이 기본 브랜치에 머지되는 순간 종결이다(pre-push `pr-check`가 그런 task에 `done` 가드를 돌린다).
 - 개념이 바뀌면 `## Ontology 변경 로그`에 한 줄 — spec.md Ontology 절 갱신 트리거다.
 - spec의 `## Done evidence`는 종결 시 `done` 가드가 읽는다.
 

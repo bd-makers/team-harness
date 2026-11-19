@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>done-derive — 파생 종결</title>
+<style>
+  body { margin: 0; padding: 32px 24px; background: #f5f5f5; color: #2d3142; font: 14px/1.5 system-ui, -apple-system, sans-serif; }
+  .eyebrow { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.12em; color: #7a8399; margin: 0 0 4px; }
+  h1 { font: 400 28px/1.2 Georgia, 'Times New Roman', serif; margin: 0 0 8px; }
+  h2 { font: 400 20px/1.2 Georgia, 'Times New Roman', serif; margin: 32px 0 8px; }
+  p.sub { margin: 0 0 24px; color: #4f5d75; max-width: 80ch; }
+  code { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; }
+  svg { max-width: 100%; height: auto; display: block; }
+  .cards { display: grid; grid-template-columns: 1.2fr 1fr 0.9fr; gap: 16px; margin-top: 24px; }
+  .card { background: #ffffff; border: 1px solid rgba(45,49,66,0.12); border-radius: 6px; padding: 16px 20px; }
+  .card h3 { margin: 0 0 8px; font: 600 16px system-ui, -apple-system, sans-serif; }
+  .card ul { margin: 0; padding-left: 18px; color: #4f5d75; }
+  .card .eyebrow { font-size: 12px; }
+  @media (max-width: 760px) { .cards { grid-template-columns: 1fr; } }
+  footer { margin-top: 24px; padding-top: 12px; border-top: 1px solid rgba(45,49,66,0.12); font: 12px ui-monospace, Menlo, monospace; color: #7a8399; }
+  .n { font: 600 16px system-ui, -apple-system, sans-serif; fill: #2d3142; }
+  .s { font: 12px system-ui, -apple-system, sans-serif; fill: #4f5d75; }
+  .m { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #4f5d75; }
+  .tag { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #7a8399; letter-spacing: 0.08em; }
+  .lbl { font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #7a8399; }
+  .lbl.acc { fill: #eb6c36; }
+  .aside { font: italic 16px Georgia, 'Times New Roman', serif; fill: #4f5d75; }
+  .arrow { stroke: #4f5d75; stroke-width: 1.2; fill: none; marker-end: url(#dd-arrow); }
+  .arrow.acc { stroke: #eb6c36; marker-end: url(#dd-arrow-accent); }
+  .arrow.opt { stroke-dasharray: 5 4; }
+</style>
+</head>
+<body>
+<p class="eyebrow">DONE-DERIVE · STATE MACHINE + BEFORE/AFTER</p>
+<h1>머지가 곧 종결 — 기록하지 않고 계산한다</h1>
+<p class="sub">종결은 기본 브랜치 ref에서 plan이 전부 <code>[x]</code>인지로 계산한다. <code>done</code>은 가드를 검증할 뿐 추적 파일을 쓰지 않는다
+(예외: <code>--force</code> 감사 흔적). 그래서 머지 뒤에 할 일이 없고, 종결 커밋과 보호 브랜치의 종결 MR이 사라진다.</p>
+
+<svg viewBox="0 0 1200 480" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="dd-state-title dd-state-desc">
+  <title id="dd-state-title">task 종결 상태 전이</title>
+  <desc id="dd-state-desc">open에서 ship으로 shipped, MR 머지로 closed, reopen 또는 task name으로 다시 open. shipped에서 리뷰 수정은 상태를 바꾸지 않는다.</desc>
+  <defs>
+    <marker id="dd-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+    <marker id="dd-arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#eb6c36"/></marker>
+  </defs>
+  <rect width="1200" height="480" fill="#f5f5f5"/>
+
+  <!-- arrows before boxes -->
+  <path class="arrow" d="M128 200 H228"/>
+  <path class="arrow" d="M440 200 H548"/>
+  <path class="arrow acc" d="M760 200 H868"/>
+  <path class="arrow" d="M620 152 C620 72, 700 72, 700 148"/>
+  <path class="arrow opt" d="M980 252 C980 352, 340 352, 340 256"/>
+
+  <!-- arrow labels (masked) -->
+  <rect x="132" y="168" width="88" height="16" rx="2" fill="#f5f5f5"/>
+  <text x="176" y="180" class="lbl" text-anchor="middle">task 생성</text>
+  <rect x="452" y="168" width="84" height="16" rx="2" fill="#f5f5f5"/>
+  <text x="494" y="180" class="lbl" text-anchor="middle">SHIP</text>
+  <text x="494" y="228" class="lbl" text-anchor="middle">마지막 체크</text>
+  <text x="494" y="244" class="lbl" text-anchor="middle">done 가드</text>
+  <text x="494" y="260" class="lbl" text-anchor="middle">커밋·push</text>
+  <rect x="772" y="168" width="84" height="16" rx="2" fill="#f5f5f5"/>
+  <text x="814" y="180" class="lbl acc" text-anchor="middle">MR 머지</text>
+  <text x="814" y="228" class="lbl" text-anchor="middle">추가 커밋 0</text>
+  <rect x="600" y="60" width="120" height="16" rx="2" fill="#f5f5f5"/>
+  <text x="660" y="72" class="lbl" text-anchor="middle">리뷰 수정 커밋</text>
+  <text x="660" y="44" class="lbl" text-anchor="middle">task &lt;name&gt; = activate · pre-push 가드</text>
+  <rect x="588" y="316" width="144" height="16" rx="2" fill="#f5f5f5"/>
+  <text x="660" y="328" class="lbl" text-anchor="middle">reopen / task</text>
+  <text x="660" y="364" class="lbl" text-anchor="middle">reopenedAt 기록 + plan에 - [ ] 재개: &lt;사유&gt;</text>
+
+  <!-- start dot -->
+  <circle cx="120" cy="200" r="6" fill="#2d3142"/>
+
+  <!-- open -->
+  <rect x="240" y="148" width="200" height="104" rx="8" fill="#f5f5f5"/>
+  <rect x="240" y="148" width="200" height="104" rx="8" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="256" y="172" class="tag">STATE</text>
+  <text x="340" y="200" class="n" text-anchor="middle">open</text>
+  <text x="340" y="220" class="m" text-anchor="middle">plan에 미완 단계</text>
+  <text x="340" y="236" class="m" text-anchor="middle">또는 빈 plan</text>
+
+  <!-- shipped -->
+  <rect x="560" y="152" width="200" height="96" rx="8" fill="#f5f5f5"/>
+  <rect x="560" y="152" width="200" height="96" rx="8" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.30)" stroke-width="1" stroke-dasharray="4 3"/>
+  <text x="576" y="176" class="tag">파생 전용</text>
+  <text x="660" y="204" class="n" text-anchor="middle">shipped</text>
+  <text x="660" y="224" class="m" text-anchor="middle">브랜치: 전부 [x]</text>
+  <text x="660" y="240" class="m" text-anchor="middle">main: 아직 아님</text>
+
+  <!-- closed (focal) -->
+  <rect x="880" y="148" width="200" height="104" rx="8" fill="#f5f5f5"/>
+  <rect x="880" y="148" width="200" height="104" rx="8" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
+  <text x="896" y="172" class="tag">STATE</text>
+  <text x="980" y="200" class="n" text-anchor="middle">closed</text>
+  <text x="980" y="220" class="m" text-anchor="middle">main: 전부 [x]</text>
+  <text x="980" y="236" class="m" text-anchor="middle">+ [x] 하나 이상</text>
+
+  <!-- side note -->
+  <text x="980" y="128" class="aside" text-anchor="middle">--force 우회 기록·레거시 done도 closed</text>
+
+  <!-- legend -->
+  <line x1="40" y1="412" x2="1160" y2="412" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+  <text x="40" y="440" class="tag">LEGEND</text>
+  <rect x="132" y="428" width="24" height="16" rx="4" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
+  <text x="164" y="440" class="s">상태</text>
+  <rect x="224" y="428" width="24" height="16" rx="4" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.30)" stroke-dasharray="4 3"/>
+  <text x="256" y="440" class="s">저장하지 않는 파생 상태</text>
+  <rect x="428" y="428" width="24" height="16" rx="4" fill="rgba(235,108,54,0.08)" stroke="#eb6c36"/>
+  <text x="460" y="440" class="s">종결 (기본 브랜치 기준)</text>
+  <path class="arrow acc" d="M640 436 H680"/>
+  <text x="692" y="440" class="s">머지 = 종결</text>
+  <path class="arrow opt" d="M800 436 H840"/>
+  <text x="852" y="440" class="s">재개 (새 브랜치·MR)</text>
+</svg>
+
+<h2>종결 절차 — 지금과 이후</h2>
+<svg viewBox="0 0 1200 300" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="dd-flow-title dd-flow-desc">
+  <title id="dd-flow-title">종결 절차 비교</title>
+  <desc id="dd-flow-desc">지금은 머지 뒤 main 체크, done의 meta 쓰기, summary write, 종결 커밋, 보호 브랜치에서는 종결 MR이 더 필요하다. 이후에는 ship 때 체크와 done 검증을 하고 머지가 곧 종결이다.</desc>
+  <defs>
+    <marker id="dd-arrow2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
+  </defs>
+  <rect width="1200" height="300" fill="#f5f5f5"/>
+
+  <!-- bracket over removed steps -->
+  <path d="M448 52 V44 H1144 V52" stroke="#7a8399" stroke-width="1" fill="none"/>
+  <text x="796" y="36" class="aside" text-anchor="middle">머지 뒤 단계 — 새 흐름에서 0개</text>
+
+  <text x="40" y="92" class="tag">지금</text>
+  <text x="40" y="212" class="tag">이후</text>
+
+  <!-- before row arrows -->
+  <g stroke="#4f5d75" stroke-width="1.2" fill="none" marker-end="url(#dd-arrow2)">
+    <path d="M280 88 H300"/><path d="M424 88 H444"/><path d="M568 88 H588"/><path d="M712 88 H732"/><path d="M856 88 H876"/><path d="M1000 88 H1020"/>
+    <path d="M280 208 H300"/><path d="M424 208 H444"/><path d="M568 208 H588"/>
+  </g>
+
+  <!-- before chips -->
+  <g>
+    <rect x="160" y="64" width="120" height="48" rx="6" fill="#ffffff" stroke="#2d3142"/>
+    <text x="220" y="92" class="s" text-anchor="middle">구현·MR</text>
+    <rect x="304" y="64" width="120" height="48" rx="6" fill="#ffffff" stroke="#2d3142"/>
+    <text x="364" y="92" class="s" text-anchor="middle">리뷰·머지</text>
+    <rect x="448" y="64" width="120" height="48" rx="6" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.30)" stroke-dasharray="4 3"/>
+    <text x="508" y="92" class="s" text-anchor="middle">main에서 체크</text>
+    <rect x="592" y="64" width="120" height="48" rx="6" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.30)" stroke-dasharray="4 3"/>
+    <text x="652" y="84" class="s" text-anchor="middle">done</text>
+    <text x="652" y="100" class="m" text-anchor="middle">meta 쓰기</text>
+    <rect x="736" y="64" width="120" height="48" rx="6" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.30)" stroke-dasharray="4 3"/>
+    <text x="796" y="92" class="m" text-anchor="middle">summary --write</text>
+    <rect x="880" y="64" width="120" height="48" rx="6" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.30)" stroke-dasharray="4 3"/>
+    <text x="940" y="92" class="s" text-anchor="middle">종결 커밋</text>
+    <rect x="1024" y="64" width="120" height="48" rx="6" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.30)" stroke-dasharray="4 3"/>
+    <text x="1084" y="84" class="s" text-anchor="middle">종결 MR</text>
+    <text x="1084" y="100" class="m" text-anchor="middle">보호 브랜치</text>
+  </g>
+
+  <!-- after chips -->
+  <g>
+    <rect x="160" y="184" width="120" height="48" rx="6" fill="#ffffff" stroke="#2d3142"/>
+    <text x="220" y="212" class="s" text-anchor="middle">구현</text>
+    <rect x="304" y="184" width="120" height="48" rx="6" fill="#ffffff" stroke="#2d3142"/>
+    <text x="364" y="204" class="s" text-anchor="middle">마지막 체크</text>
+    <text x="364" y="220" class="m" text-anchor="middle">done 검증</text>
+    <rect x="448" y="184" width="120" height="48" rx="6" fill="#ffffff" stroke="#2d3142"/>
+    <text x="508" y="212" class="s" text-anchor="middle">커밋·MR</text>
+    <rect x="592" y="184" width="120" height="48" rx="6" fill="rgba(235,108,54,0.08)" stroke="#eb6c36"/>
+    <text x="652" y="204" class="s" text-anchor="middle">리뷰·머지</text>
+    <text x="652" y="220" class="m" text-anchor="middle">= 종결</text>
+  </g>
+  <text x="736" y="204" class="s">원장은 필요할 때 기본 브랜치에서 summary --write로</text>
+  <text x="736" y="224" class="s">묶어서 갱신한다 — 종결 절차가 아니다.</text>
+
+  <line x1="40" y1="260" x2="1160" y2="260" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
+  <text x="40" y="284" class="tag">LEGEND</text>
+  <rect x="132" y="272" width="24" height="16" rx="4" fill="#ffffff" stroke="#2d3142"/>
+  <text x="164" y="284" class="s">남는 단계</text>
+  <rect x="264" y="272" width="24" height="16" rx="4" fill="rgba(45,49,66,0.02)" stroke="rgba(45,49,66,0.30)" stroke-dasharray="4 3"/>
+  <text x="296" y="284" class="s">사라지는 단계</text>
+</svg>
+
+<div class="cards">
+  <div class="card">
+    <p class="eyebrow">판정 · R1</p>
+    <h3>closed ⇔ 셋 중 하나</h3>
+    <ul>
+      <li>기본 브랜치 plan: 미완 <code>- [ ]</code> 없음 + <code>[x]</code> ≥ 1</li>
+      <li>유효한 우회 기록: <code>forcedAt</code> &gt; <code>reopenedAt</code></li>
+      <li>레거시 meta <code>status: done</code></li>
+    </ul>
+  </div>
+  <div class="card">
+    <p class="eyebrow">강제 지점 · R7</p>
+    <h3>pre-push에서만 가드</h3>
+    <ul>
+      <li>plan이 전부 체크된 task에 <code>collectDoneIssues</code></li>
+      <li>HEAD·깨끗한 트리일 때만, CI는 문서 검사만</li>
+    </ul>
+  </div>
+  <div class="card">
+    <p class="eyebrow">주의</p>
+    <h3>다중 MR task</h3>
+    <ul>
+      <li>이후 단계를 plan에 미리 적어 둔다</li>
+      <li>재개 전 기본 브랜치를 fetch</li>
+    </ul>
+  </div>
+</div>
+
+<footer>docs/chad/done-derive/done-derive-spec.md · R1·R4·R5·R6·R7·R8 · 2026-11-18</footer>
+</body>
+</html>

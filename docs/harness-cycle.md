@@ -210,7 +210,8 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
 
 ### 4-6. 남은 확인 (2026-10-05 전부 결정)
 - **강제 범위 (2026-10-05 확정)**: 순서는 기존대로 PR → 머지 → (기본 브랜치에서) `done`. `done` → PR로 바꾸는 안은 손볼 장치
-  (머지 후 종결 절차·`remote-task.mjs`·done-on-main 안내)가 많아 기각. task 시작도 강제하지 않는다(지금의 SessionStart nudge 유지).
+  (머지 후 종결 절차·`remote-task.mjs`·done-on-main 안내)가 많아 기각. (2026-11-19 정정으로 뒤집혔다 — 종결은 ship 시점에 선언하고
+  머지로 성립한다. `docs/decisions.md` D11 정정 문단·task `done-derive`.) task 시작도 강제하지 않는다(지금의 SessionStart nudge 유지).
   lint·tsc·PR 전 로컬 리뷰는 '제공'이다. **PR에 spec·plan·artifact를 담는 것만 필수**이며
   (artifact는 머지 후 위키 컴파일(§4-4)의 재료다. handoff는 2026-11-06 정정으로 선택 메모가 됐다 — `docs/decisions.md` D11). 다이어그램은 권장이다(아래 다이어그램 결정).
 - **PR 필수 문서 확인 (결정)**: 결정론적 CLI 검사 하나(`harness-team pr-check`)를 두고 호출처를 셋으로 한다.

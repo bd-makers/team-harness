@@ -711,7 +711,7 @@
           <tr data-command-source="commands/harness-task.md">
             <td><span class="cmd">/harness-task</span></td>
             <td><code>commands/harness-task.md</code></td>
-            <td>task 관리 (task/list/done/clean/handoff) — docs/&lt;user&gt;/&lt;name&gt;/ 구조</td>
+            <td>task 관리 (task/list/done/reopen/clean/handoff) — docs/&lt;user&gt;/&lt;name&gt;/ 구조</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
           </tr>
           <tr data-command-source="commands/harness-ship.md">
@@ -729,7 +729,7 @@
           <tr data-command-source="commands/harness-wiki.md">
             <td><span class="cmd">/harness-wiki</span></td>
             <td><code>commands/harness-wiki.md</code></td>
-            <td>머지된 task의 결정·바뀐 모듈·학습을 PR·커밋·작성자 출처가 붙은 기능·모듈 위키 항목(wiki/)으로 컴파일 — 선택 단계, 머지 후 종결 절차에서 done 다음</td>
+            <td>머지된 task의 결정·바뀐 모듈·학습을 PR·커밋·작성자 출처가 붙은 기능·모듈 위키 항목(wiki/)으로 컴파일 — 선택 단계, 머지 뒤 기본 브랜치에서 원장 갱신과 함께</td>
             <td><span class="tag tag-blue" style="font-size:0.72rem;padding:2px 8px;">Workflow</span></td>
           </tr>
           <tr data-command-source="commands/harness-diagram.md">
@@ -1560,7 +1560,7 @@
           <tr>
             <td><code>commands/harness-task.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
-            <td>task 관리 (task/list/done/clean/handoff) — docs/&lt;user&gt;/&lt;name&gt;/ 구조</td>
+            <td>task 관리 (task/list/done/reopen/clean/handoff) — docs/&lt;user&gt;/&lt;name&gt;/ 구조</td>
           </tr>
           <tr>
             <td><code>commands/harness-unittest.md</code></td>
@@ -1570,7 +1570,7 @@
           <tr>
             <td><code>commands/harness-wiki.md</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Command</span></td>
-            <td>머지된 task의 결정·바뀐 모듈·학습을 PR·커밋·작성자 출처가 붙은 기능·모듈 위키 항목(wiki/)으로 컴파일 — 선택 단계, 머지 후 종결 절차에서 done 다음</td>
+            <td>머지된 task의 결정·바뀐 모듈·학습을 PR·커밋·작성자 출처가 붙은 기능·모듈 위키 항목(wiki/)으로 컴파일 — 선택 단계, 머지 뒤 기본 브랜치에서 원장 갱신과 함께</td>
           </tr>
           <tr>
             <td><code>docs/diagrams/harness-overview/architecture.mmd</code></td>
@@ -2089,6 +2089,11 @@
           </tr>
           <tr>
             <td><code>src/settings-permissions.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
+            <td>CLI가 공유하는 핵심 모듈</td>
+          </tr>
+          <tr>
+            <td><code>src/task-closure.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Module</span></td>
             <td>CLI가 공유하는 핵심 모듈</td>
           </tr>
@@ -2878,6 +2883,11 @@
             <td>자동 회귀 검증</td>
           </tr>
           <tr>
+            <td><code>tests/task-closure.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
             <td><code>tests/task-done-on-main.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
@@ -2894,6 +2904,11 @@
           </tr>
           <tr>
             <td><code>tests/task-paths-single-source.test.mjs</code></td>
+            <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
+            <td>자동 회귀 검증</td>
+          </tr>
+          <tr>
+            <td><code>tests/task-reopen.test.mjs</code></td>
             <td><span class="tag tag-blue" style="font-size:0.7rem;padding:1px 7px;">Test</span></td>
             <td>자동 회귀 검증</td>
           </tr>

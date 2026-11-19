@@ -15,7 +15,7 @@
 
 import { KNOWN_STACK_IDS } from './detect-stack.mjs';
 
-export const VALUE_FLAGS = new Set(['stack', 'shape', 'member', 'target', 'days', 'name', 'paths', 'framing', 'rubric', 'prompt-file', 'scope', 'base', 'area', 'pr', 'model', 'reviewer']);
+export const VALUE_FLAGS = new Set(['stack', 'shape', 'member', 'target', 'days', 'name', 'paths', 'framing', 'rubric', 'prompt-file', 'scope', 'base', 'area', 'pr', 'model', 'reviewer', 'reason']);
 
 // Accepted on every command: they change where the harness looks or how it
 // reports, not what it does. Keeping them global means a hook can pass --target
@@ -78,6 +78,8 @@ export const COMMANDS = [
   { name: 'summary', args: '[--write|--check] [--force]',
     summary: 'Render the task ledger from task dirs (--write is default-branch only)',
     flags: ['write', 'check', 'force'] },
+  // done-derive R6: `task <name>` 이 하는 재개 전이와 같지만 종결된 task 에만 동작한다(아니면 exit 1·무쓰기).
+  { name: 'reopen', args: '<name> [--reason <text>]', summary: "Reopen a task closed on the default branch: records reopenedAt and adds '- [ ] 재개: <reason>' to its plan (exit 1 if not closed)", flags: ['reason'] },
   { name: 'done', args: '[--force]', summary: 'Complete the active task (--force bypasses the completion guard)',
     flags: ['force'] },
   { name: 'clean', args: '[<name>] [--base <ref>] [--yes]', summary: 'Roll a task back to before it started: dry-run by default, --yes backs up to refs/harness/trash then resets (local only)',

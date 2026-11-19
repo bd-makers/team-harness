@@ -12,7 +12,7 @@ import { runPrCheck } from '../src/commands/pr-check.mjs';
 import { runConfig } from '../src/commands/config.mjs';
 import { runGate } from '../src/commands/gate.mjs';
 import { runDiagram } from '../src/commands/diagram.mjs';
-import { runTask, runList, runDone, runHandoffAuto, runRetro } from '../src/commands/task.mjs';
+import { runTask, runReopen, runList, runDone, runHandoffAuto, runRetro } from '../src/commands/task.mjs';
 import { runClean } from '../src/commands/clean.mjs';
 import { runMigrate } from '../src/commands/migrate.mjs';
 import { runRelease } from '../src/commands/release.mjs';
@@ -53,13 +53,13 @@ async function main() {
 
   const { cmd, positional, flags } = invocation;
 
-  const taskCmds = new Set(['task', 'list', 'summary', 'done', 'clean', 'handoff', 'retro', 'release', 'context', 'boundary', 'scenario', 'session-context', 'observe', 'rules', 'review', 'config', 'diagram', 'gate', 'wiki']);
+  const taskCmds = new Set(['task', 'reopen', 'list', 'summary', 'done', 'clean', 'handoff', 'retro', 'release', 'context', 'boundary', 'scenario', 'session-context', 'observe', 'rules', 'review', 'config', 'diagram', 'gate', 'wiki']);
   const target = flags.target || (taskCmds.has(cmd) ? process.cwd() : positional[0]) || process.cwd();
   const ctx = {
     root: ROOT,
     targetDir: resolve(process.cwd(), target),
     flags,
-    taskArgs: (cmd === 'task' || cmd === 'clean' || cmd === 'retro' || cmd === 'release' || cmd === 'context' || cmd === 'boundary' || cmd === 'scenario' || cmd === 'rules' || cmd === 'review' || cmd === 'config' || cmd === 'diagram' || cmd === 'gate' || cmd === 'wiki') ? positional : [],
+    taskArgs: (cmd === 'task' || cmd === 'reopen' || cmd === 'clean' || cmd === 'retro' || cmd === 'release' || cmd === 'context' || cmd === 'boundary' || cmd === 'scenario' || cmd === 'rules' || cmd === 'review' || cmd === 'config' || cmd === 'diagram' || cmd === 'gate' || cmd === 'wiki') ? positional : [],
   };
 
   switch (cmd) {
@@ -75,6 +75,7 @@ async function main() {
     case 'diagram': return runDiagram(ctx);
     case 'wiki': return runWiki(ctx);
     case 'task': return runTask(ctx);
+    case 'reopen': return runReopen(ctx);
     case 'list': return runList(ctx);
     case 'summary': return runSummary(ctx);
     case 'observe': return runObserve(ctx);

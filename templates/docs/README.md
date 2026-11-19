@@ -26,8 +26,8 @@ harness-team task <name>      # task 생성 + active 전환 (이미 있으면 �
 harness-team list             # 전체 task 목록
 harness-team summary          # 원장을 task 디렉터리에서 렌더해 출력 (읽기 전용)
 harness-team summary --write  # 원장 파일 갱신 — 기본 브랜치에서만
-harness-team summary --check  # 원장이 최신인지 검사 (mutation 없음, CI용)
-harness-team done             # 활성 task 완료 처리 (artifact.md에 git log/diff 수집)
+harness-team summary --check  # 원장이 최신인지 검사 (mutation 없음 — 머지마다 낡으므로 CI 게이트로 쓰지 않는다)
+harness-team done             # 활성 task 종결 가드 검증 (종결은 기본 브랜치의 plan에서 파생 — 머지가 곧 종결)
 harness-team retro "<메모>"    # 활성 task artifact.md에 학습/교정 내용 append
 ```
 
@@ -44,7 +44,8 @@ harness-team retro "<메모>"    # 활성 task artifact.md에 학습/교정 내�
 
 - 브랜치에서는 원장을 갱신하지 않습니다 — `--write`는 기본 브랜치에서만 동작합니다.
 - 렌더는 결정론적입니다(요약표는 created 오름차순, 사용자 인덱스는 최신순).
-- CI에서 `harness-team summary --check`로 원장이 낡았는지 검사할 수 있습니다.
+- 원장은 종결 절차에서 빠졌습니다 — 머지마다 갱신하지 않고, 기본 브랜치에서 필요할 때(예: 릴리스) `summary --write`로 묶어 갱신합니다.
+  그래서 `summary --check`를 CI 게이트로 두면 머지 뒤마다 실패합니다.
 - task 디렉터리가 없는 task의 `✅ done` 행은 원장이 그대로 이어받습니다(상태·⚠️·생성일·Area) — 종결 뒤 폴더를 지워도 행이 남습니다.
   폴더 없는 `🔄 open` 행은 손으로 버린 task라 다음 렌더에서 빠집니다.
 

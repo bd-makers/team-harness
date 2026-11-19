@@ -2,6 +2,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { exists } from '../fsx.mjs';
 import { readActive, planHasOpenBoxes, firstOpenPlanStep } from './task.mjs';
 import { readTaskMeta } from './summary.mjs';
+import { closureFromContent } from '../task-closure.mjs';
 import { evaluateObserveVerdict } from './observe.mjs';
 import { checkDoneOnMain, renderDoneOnMainNudge } from './remote-task.mjs';
 import { taskLabel, docsPath, taskFilePath, listTaskRefs } from '../task-paths.mjs';
@@ -20,18 +21,13 @@ export const SESSION_CONTEXT_MAX_TASKS = 8;
 // plan 한 줄이 SessionStart 출력을 키우지 않게 자른다. 전문은 breadcrumb가 가리키는 plan에 있다.
 export const PLAN_STEP_MAX_CHARS = 200;
 
-// 재개 가능 = 완료되지 않았고(meta.status) plan.md에 열린 체크박스가 남은 task.
+// 재개 가능 = 종결 판정(done-derive R1, 작업 트리)이 open 이고 plan.md에 열린 체크박스가 남은 task.
 // (marker: <name>-spec.md, `list`와 동일 규약)
 // 최신 활동(plan.md mtime) 내림차순, 동률이면 user/name 오름차순으로 정렬해 반환한다.
 export async function listIncompleteTasks(targetDir) {
   if (!(await exists(docsPath(targetDir)))) return [];
   const out = [];
   for (const { user, task: name } of await listTaskRefs(targetDir)) {
-    // 후보 판정의 정본은 meta.status다. 열린 체크박스만 보면 `done --force`로 닫았거나
-    // 다이어그램 옵트인 규약대로 미실행 단계를 열어 둔 채 닫은 task가 영구히 후보로 뜬다.
-    // meta가 없거나 읽히지 않으면(구 task) 완료 여부를 알 수 없으므로 잘라내지 않는다.
-    const meta = await readTaskMeta(targetDir, user, name);
-    if (meta && meta.status === 'done') continue;
     const planPath = taskFilePath(targetDir, user, name, 'plan.md');
     // 스캔 중 task가 이동·삭제될 수 있다 — readFile·stat 어느 쪽이 실패해도 그 task만 건너뛴다.
     let plan, mtimeMs;
@@ -40,6 +36,10 @@ export async function listIncompleteTasks(targetDir) {
       ({ mtimeMs } = await stat(planPath));
     } catch { continue; }
     if (!planHasOpenBoxes(plan)) continue;
+    // 열린 체크박스만 보면 `done --force`로 닫았거나 레거시 meta `done`으로 닫은 task가 영구히 후보로 뜬다 —
+    // 종결 판정이 우회 기록·레거시 meta 까지 본다. meta가 없거나 읽히지 않으면 plan 만으로 판정한다.
+    const meta = await readTaskMeta(targetDir, user, name);
+    if (closureFromContent({ plan, meta }).closed) continue;
     out.push({ user, name, mtimeMs });
   }
   out.sort((a, b) => b.mtimeMs - a.mtimeMs

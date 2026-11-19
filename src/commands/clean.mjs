@@ -13,9 +13,11 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { exists, writeText } from '../fsx.mjs';
 import { buildErrorPacket, renderErrorPacket } from '../observation.mjs';
-import { readTaskMeta, inferLegacyMeta, readLedger, defaultBranchCandidates } from './summary.mjs';
+import { readTaskMeta, inferLegacyMeta, readLedger, defaultBranchCandidates, readTextOrNull } from './summary.mjs';
 import { resolveScope } from './review.mjs';
 import { readActive, writeActive, resolveUser, repoPrefix, parsePorcelainPaths } from './task.mjs';
+import { resolveClosureRef, closureAtRef, closedSinceReopen } from './remote-task.mjs';
+import { closureFromContent } from '../task-closure.mjs';
 import { taskDirRel, taskFilePath, taskDirPath, taskLabel, userHandoffPath } from '../task-paths.mjs';
 
 const pexec = promisify(execFile);
@@ -254,6 +256,17 @@ async function removeUntracked(targetDir, paths, anchor) {
   }
 }
 
+// 거부 기준(done-derive R10): 기본 브랜치(R)에서 종결된 task 만. ship 했지만 R 에 없는 task(MR 거절·폐기)는 되돌린다.
+// R 은 원격 추적 기본 브랜치, origin 이 없으면 로컬 기본 브랜치(R2)다. 둘 다 없으면 작업 트리 판정으로 거부한다 —
+// 모를 때는 되돌리지 않는 쪽이다. 종결이면 그 ref 이름(표시용), 아니면 null.
+// 재개 MR 이 머지되기 전 R 의 종결은 이미 다시 연 옛 종결이다 — 거부하지 않고 아래 `reopenedAt`·`--base` 분기로 넘긴다(재개 판정과 같은 비교).
+async function closedOnDefault(targetDir, user, task, meta) {
+  const full = await resolveClosureRef(targetDir);
+  if (full) return closedSinceReopen(await closureAtRef(targetDir, user, task, full), meta) ? full.replace(/^refs\/(remotes|heads)\//, '') : null;
+  const plan = await readTextOrNull(taskFilePath(targetDir, user, task, 'plan.md'));
+  return closureFromContent({ plan, meta }).closed ? '작업 트리' : null;
+}
+
 export async function runClean(ctx) {
   try {
     await clean(ctx);
@@ -280,9 +293,11 @@ async function clean(ctx) {
   }
   const meta = await readTaskMeta(targetDir, user, task)
     || await inferLegacyMeta(targetDir, user, task, await readLedger(targetDir));
-  if (meta && meta.status === 'done') {
-    refuse('done 된 task', `${label} 은 이미 done — clean 은 done 이전 task 만 되돌린다`,
-      '머지된 변경을 되돌리려면 `git revert` 로 새 MR 을 만든다', ['로컬 기록만 다시 열려면 `harness-team task <name>` (reopen)']);
+  const defaults = await defaultBranchCandidates(targetDir);
+  const closedOn = await closedOnDefault(targetDir, user, task, meta);
+  if (closedOn) {
+    refuse('기본 브랜치에서 종결된 task', `${label} 은 ${closedOn} 에서 이미 종결 — clean 은 기본 브랜치에 들어가기 전 task 만 되돌린다`,
+      '머지된 변경을 되돌리려면 `git revert` 로 새 MR 을 만든다', ['이어서 고치려면 `harness-team reopen <name>` (또는 `task <name>`)']);
   }
   if (meta && meta.reopenedAt && !flags.base) {
     refuse('재개된 task 의 시작점이 모호함', `${label} 은 ${meta.reopenedAt} 에 재개됨 — baseSha 는 이미 머지된 작업보다 앞이다`,
@@ -292,7 +307,6 @@ async function clean(ctx) {
   let branch = null;
   try { branch = (await git(targetDir, ['symbolic-ref', '--quiet', '--short', 'HEAD'])).trim(); } catch { /* detached */ }
   if (!branch) refuse('detached HEAD', '브랜치가 아닌 곳에서는 되돌릴 대상이 불분명함', 'task 브랜치를 체크아웃한 뒤 재실행');
-  const defaults = await defaultBranchCandidates(targetDir);
   if (defaults.includes(branch)) {
     refuse('기본 브랜치에서는 실행하지 않음', `현재 브랜치 ${branch} 가 기본 브랜치 후보(${defaults.join(', ')})`,
       'task 브랜치(또는 worktree)에서 재실행', ['기본 브랜치의 작업을 되돌리려면 `git revert` 를 쓴다']);
