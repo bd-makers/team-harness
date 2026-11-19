@@ -1,7 +1,6 @@
 # chad — Tasks
 
 ## Open
-- task-brief (created 2026-11-18)
 
 ## Completed
 - ✅ diagram-svg
@@ -9,6 +8,7 @@
 - ✅ human-review-gate
 - ✅ review-model
 - ✅ spec-ask-markers
+- ✅ task-brief
 - ✅ team-harness-improvements
 - ✅ task-clean
 - ✅ correct-guards
