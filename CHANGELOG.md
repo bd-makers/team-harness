@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.57.0] - 2026-11-19
+
 - **호환 주의: spec에 `reviewer`를 쓰면 팀 전원이 이 버전 이상이어야 한다** — `reviewer` 키를 모르는 옛 CLI의 `done`은 Done evidence 선언을 `알 수 없는 키: reviewer`(invalid)로 보고 막힌다.
 
 ### Added

@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.56.0</span>
+      <span class="tag tag-purple">v0.57.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.57.0 — 구현 전에 사람이 spec을 본다:</strong>
+    <br>
+    <code>0.57.0</code> kc-platform 실사용 회고(A1–A6)를 반영했다. <strong>새 task plan의 첫 단계가 <code>[사람] spec 검토 승인</code>이고</strong>(<code>--no-review-gate</code>로 뺀다, <code>/harness-loop</code>도 그 단계에서 멈춘다), <strong><code>harness-team brief</code></strong>가 spec에서만 검토용 슬라이드를 뽑는다. <code>review --model</code>과 <code>.harness/reviewers.json</code>의 <code>profiles</code>·<code>default</code>로 리뷰 엔진과 모델을 나눴고, 다이어그램은 뷰별 단독 SVG(<code>sequence</code>·<code>module</code>)가 됐으며, spec에 다른 역할에 묻는 질의 마커(<code>(ask:&lt;역할&gt;)</code>…)가 생겼다. 소비자는 <strong>플러그인 갱신(PATH CLI 포함)</strong>을 하고, spec에 <code>reviewer</code>를 쓰거나 뷰 다이어그램 단계를 쓰는 팀은 <strong>전원이 0.57.0 이상</strong>이어야 한다. 설치된 <code>docs/README.md</code>는 손으로 고친다.
+    <br><br>
     <strong>🆕 0.56.0 — 잘못 간 task를 한 번에 버린다:</strong>
     <br>
     <code>0.56.0</code> <strong><code>harness-team clean [&lt;name&gt;] [--base &lt;ref&gt;] [--yes]</code>를 추가했다.</strong> <code>done</code> 전의 task를 시작점으로 되돌리며, 기본은 dry-run이고 <code>--yes</code>는 작업 트리 전체를 <code>refs/harness/trash/…</code> 백업 ref에 남긴 뒤 <code>reset --hard</code>하고 백업 시점의 untracked만 지운다(ignored는 보존). 기본 브랜치·<code>done</code>된 task·다른 task 폴더가 섞인 범위는 거부하고, 원격에는 쓰지 않는다. 시작점을 위해 새 task의 meta에 <code>baseSha</code>를 기록한다. 소비자는 <strong>플러그인 갱신(PATH CLI 포함)</strong>만 하면 된다.
@@ -2969,7 +2973,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.56.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.57.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
