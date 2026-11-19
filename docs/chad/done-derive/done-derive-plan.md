@@ -35,7 +35,7 @@
       (실행: Unreleased에 Changed BREAKING 1건(판정·done·pre-push 가드·재개 조건·clean·원장·호환·소비자 조치) + Added `reopen`. `npm run test` 1371/0 fail/1 skip — 리뷰 수정 전 수치, 최종 수치는 artifact 결과)
 - [x] 12. 리뷰 — `harness-team review codex`(diff) → 발견 재현·판별 후 반영 → artifact `## Reviews` 기록
       (실행: codex 1차 → 진짜 결함 7건 수정, codex 재리뷰는 네트워크 실패(기록 없음) → claude 재리뷰 → 회귀 1건·P3 2건 처리. P2-6 판단 보류·P2-3 기존 동작은 후속 후보)
-- [ ] 13. ship 완료 — `/harness-ship` → 이 단계 체크 → `harness-team done` → 커밋 (이 task가 새 흐름의 첫 사례)
+- [x] 13. ship 완료 — `/harness-ship` → 이 단계 체크 → `harness-team done` → 커밋 (이 task가 새 흐름의 첫 사례)
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
