@@ -1,7 +1,7 @@
 # chad — Tasks
 
 ## Open
-- team-harness-improvements (created 2026-11-18)
+- task-brief (created 2026-11-18)
 
 ## Completed
 - ✅ diagram-svg
@@ -9,6 +9,7 @@
 - ✅ human-review-gate
 - ✅ review-model
 - ✅ spec-ask-markers
+- ✅ team-harness-improvements
 - ✅ task-clean
 - ✅ correct-guards
 - ✅ handoff-no-sweep

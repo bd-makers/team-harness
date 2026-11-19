@@ -188,4 +188,5 @@
 | chad | human-review-gate | ✅ done | 2026-11-18 |
 | chad | review-model | ✅ done | 2026-11-18 |
 | chad | spec-ask-markers | ✅ done | 2026-11-18 |
-| chad | team-harness-improvements | 🔄 open | 2026-11-18 |
+| chad | task-brief | 🔄 open | 2026-11-18 |
+| chad | team-harness-improvements | ✅ done | 2026-11-18 |
