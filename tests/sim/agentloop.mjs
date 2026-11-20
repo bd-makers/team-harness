@@ -36,6 +36,7 @@ import { homedir } from 'node:os';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { STACKS, doctorBlockers, isolationEnv } from '../e2e/sandbox.mjs';
+import { closureFromContent } from '../../src/task-closure.mjs';
 // 순수 채점 함수는 rule 층(rules.mjs)에 있다 — 이 파일에는 하네스(샌드박스·spawn·리포트 I/O)만 남는다.
 import {
   sig, manual, na, ICO, renderSignals, ambiguityCounts, forceAllChecked,
@@ -390,7 +391,7 @@ async function sc5Triggers(token, initDir, trials = 2) {
 // ── SC6 full task lifecycle (CLI-driven, deterministic, own sandbox) ──────────
 // SC3 stops at "created + 4 SSOT + active pointer". SC6 drives the REST of the
 // lifecycle: plan checkbox → commit → done-guard BLOCK → done COMPLETE → active
-// released → meta status done. done/done-guard are CLI machinery, so
+// released → closure derived from the plan (done writes no tracked file). done/done-guard are CLI machinery, so
 // this is scored by direct `node BIN` calls + file/git evidence — NO agent, NO
 // auth needed (hand-proven auth-independent). It runs LAST and in its OWN applied
 // sandbox because it nulls active.json at the end (would pollute canon.dir which
@@ -429,10 +430,13 @@ async function sc6Lifecycle() {
   const missingCauses = CAUSES.filter((c) => !block.stdout.includes(c));
   const activePreserved = (await readActiveRaw()).includes(slug);
 
-  // plan checkbox progress: flip `- [ ]` → `- [x]`; planHasOpenBoxes goes open→closed.
+  // plan checkbox progress: flip EVERY `- [ ]` → `- [x]` (the human review gate included —
+  // it is a default step of a new plan); empty boxes get a step label. open→closed.
   const planBefore = await readFile(planPath, 'utf8').catch(() => '');
   const openBefore = /^\s*- \[ \]/m.test(planBefore);
-  await writeFile(planPath, planBefore.replace(/^(\s*)- \[ \]/m, '$1- [x] sim lifecycle step'));
+  await writeFile(planPath, planBefore
+    .replace(/^(\s*)- \[ \][ \t]*$/gm, '$1- [x] sim lifecycle step')
+    .replace(/^(\s*)- \[ \]/gm, '$1- [x]'));
   const openAfter = /^\s*- \[ \]/m.test(await readFile(planPath, 'utf8').catch(() => ''));
   const planProgressed = openBefore && !openAfter;
 
@@ -455,8 +459,10 @@ async function sc6Lifecycle() {
   }
   const releasedNull = activeAfter.trim() === 'null';
 
+  // Closure is computed, not recorded (0.58.0): judge it from the committed plan + meta.
   const meta = JSON.parse(await readFile(join(dirname(handoffPath), `${slug}-meta.json`), 'utf8').catch(() => '{}'));
-  const closed = meta.status === 'done' && Boolean(meta.closedAt);
+  const closure = closureFromContent({ plan: await readFile(planPath, 'utf8').catch(() => ''), meta });
+  const closed = closure.closed && closure.source === 'plan';
   const handoffUntouched = !(await fileHas(handoffPath, '완료'));
 
   const signals = [
@@ -467,7 +473,7 @@ async function sc6Lifecycle() {
     sig('done-guard preserves active.json', activePreserved),
     sig('plan 체크박스 진행 (open→closed)', planProgressed),
     sig('done 완료 → active.json 해제(null)', releasedNull, usedForce ? '--force 필요' : '--force 불필요'),
-    sig('meta status done + closedAt 기록', closed),
+    sig('종결 판정 (plan 파생)', closed, closure.source ? `source: ${closure.source}` : ''),
     sig('task handoff 에 완료 마커를 쓰지 않음', handoffUntouched),
     manual('AskUserQuestion done 휴먼 게이트', '헤드리스 재현 불가 — 머신러리만 검증'),
   ];
