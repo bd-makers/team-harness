@@ -9,6 +9,18 @@
 
 ## [Unreleased]
 
+## [0.58.1] - 2026-11-20
+
+### Fixed
+
+- **워크플로우 다이어그램·스케매틱이 옛 handoff 동작을 적던 것을 고친다** (task `sim-sc6-retired-phrases`). `docs/harness-workflow-diagrams.html`의 커밋 시퀀스가 "task handoff append (다음 커밋에 포함)"을, `docs/harness-workflow-schematics.html`이 "task handoff는 훅이 append해 다음 커밋에"를 적고 있었다. 0.55.0부터 훅은 추적 파일을 쓰지 않고 워크트리 로컬 user handoff만 갱신한다 — 두 문장을 그 동작으로 바꿨다.
+- **SC6 시뮬레이션이 0.57.0·0.58.0 이후에도 녹색이다** (`tests/sim/agentloop.mjs`, 메인테이너 표면). doctor green 판정을 L1과 같은 차단 목록·격리로 맞췄고(env 선언 soft warning·`CODEX_HOME` 미격리), 검토 게이트가 든 plan의 미완 박스를 모두 켜며, 종결은 `closureFromContent`의 plan 파생 판정으로 본다. `done`이 `--force`로만 끝나면 실패한다. Codex 시뮬레이션의 doctor 판정도 같은 결함을 고쳤다.
+
+### Added
+
+- **없앤 표면의 옛 문구가 현행 문서에 남으면 `npm test`가 실패한다** (`tests/docs-retired-phrases.*`, 메인테이너 표면). 등록한 문구만 보고 이력 문서·릴리스 배너는 제외한다. 첫 등록은 TCC와 "handoff 다음 커밋 담기"다. `MAINTAINING.md` 반복 실수 규칙표의 해당 행이 판단에서 테스트로 올라갔다.
+- **SC6이 `npm test`에서 돈다** (`tests/e2e/sim-smoke.test.mjs`). 인증이 필요 없는 결정적 스모크라 `npm test` 밖에서 깨진 채 드러나지 않던 것을 막는다.
+
 ## [0.58.0] - 2026-11-20
 
 ### Added

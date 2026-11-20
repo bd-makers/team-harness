@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Harness Aijient Team 0.58.0 — 무엇이 왜 달라졌나</title>
+  <title>Harness Aijient Team 0.58.1 — 무엇이 왜 달라졌나</title>
   <style>
     :root {
       --bg: #0f1117;
@@ -217,150 +217,123 @@
 </head>
 <body>
   <nav aria-label="문서 섹션">
-    <div class="nav-logo">Harness 0.58.0</div>
+    <div class="nav-logo">Harness 0.58.1</div>
     <div class="nav-links">
-      <a href="#why">왜 minor인가</a>
-      <a href="#closure">머지가 곧 종결</a>
-      <a href="#reopen">reopen</a>
-      <a href="#prcheck">pr-check 보강</a>
-      <a href="#adopt">adopt-reviews</a>
+      <a href="#why">왜 patch인가</a>
+      <a href="#docs">문서 정정</a>
+      <a href="#guard">회귀 테스트</a>
+      <a href="#same">바뀌지 않은 것</a>
       <a href="#compat">소비자가 할 일</a>
     </div>
   </nav>
 
   <main>
     <header class="hero">
-      <div class="eyebrow">Release note · 2026-11-20 · minor (BREAKING)</div>
-      <h1>종결은 기록이 아니라 계산값입니다<br><strong>머지가 곧 종결</strong></h1>
-      <p>task 종결이 더 이상 <code>harness-team done</code>이 meta에 쓰는 기록이 아닙니다. 기본 브랜치에서 plan이 전부 체크돼 있으면 그 task는 종결입니다. 그래서 구현 MR 뒤에 따라붙던 종결 커밋과 종결 MR이 없어집니다. 머지 뒤 문제가 생기면 <code>reopen</code>으로 다시 엽니다. 이 흐름을 받치도록 pre-push <code>pr-check</code>도 두 군데를 보강했습니다.</p>
+      <div class="eyebrow">Release note · 2026-11-20 · patch</div>
+      <h1>옛 handoff 문장을 지우고<br><strong>다시 남지 않게 테스트로 막습니다</strong></h1>
+      <p>0.55.0부터 post-commit 훅은 추적 파일을 쓰지 않습니다. 그런데 워크플로우 다이어그램과 스케매틱은 여전히 "훅이 task handoff를 append해 다음 커밋에 담는다"고 적고 있었습니다.
+      0.58.1은 <strong>그 두 문장을 고치고</strong>, 없앤 표면의 옛 문구가 현행 문서에 다시 나타나면 <code>npm test</code>가 실패하게 합니다.
+      11-06에 PR 없이 남아 있던 두 하위 세션의 결과를 살린 릴리스이기도 합니다.</p>
       <div class="tags">
-        <span class="tag tag-purple">0.57.0 → 0.58.0</span>
-        <span class="tag tag-orange">minor — BREAKING(종결 판정) + 새 명령</span>
-        <span class="tag tag-blue">PR #194–#197</span>
-        <span class="tag tag-green">소비자 조치 — CLI 갱신·<code>harness-team sync</code>·CI 게이트 점검</span>
+        <span class="tag tag-purple">0.58.0 → 0.58.1</span>
+        <span class="tag tag-orange">patch — 소비자 문서 사실 정정 2곳</span>
+        <span class="tag tag-blue">PR #198</span>
+        <span class="tag tag-green">소비자 조치 — 플러그인 갱신만</span>
       </div>
     </header>
 
     <dl class="release-brief" aria-label="릴리스 요약">
-      <div><dt>버전</dt><dd>0.58.0</dd></div>
+      <div><dt>버전</dt><dd>0.58.1</dd></div>
       <div><dt>날짜</dt><dd>2026-11-20</dd></div>
-      <div><dt>기준</dt><dd><code>v0.57.0..main</code>: done-derive #194, pr-check-fork-main #195, adopt-reviews-closed #196, ledger-only-pr-check #197, 그리고 원장 갱신 커밋.</dd></div>
+      <div><dt>기준</dt><dd><code>v0.58.0..main</code> — #198(<code>5a7d8a6</code>, task <code>sim-sc6-retired-phrases</code>). 이 PR이 <code>claude/jovial-blackwell-bfcd1f</code>(<code>c8a98c4</code>·<code>e8f617c</code>)와 <code>claude/ecstatic-herschel-b3c503</code>(<code>8e35a1e</code>)를 합쳤습니다. 원장 갱신(<code>b413a2d</code>)은 생성물이라 아래 "바뀌지 않은 것"에만 적습니다.</dd></div>
     </dl>
 
     <section id="why">
-      <h2 class="section-title">왜 minor인가 — 종결 판정이 바뀌었다</h2>
-      <p class="section-sub">MAINTAINING.md 기준으로 ① 표면의 호환성 파괴는 0.x에서 minor입니다. <code>done</code>이 meta에 <code>status: done</code>을 쓰지 않게 됐고, 종결하려면 plan을 전부 체크하고 머지해야 합니다. <code>reopen</code> 명령도 새로 생겼습니다.</p>
+      <h2 class="section-title">왜 patch인가 — ② 문서가 틀린 사실을 말했다</h2>
+      <p class="section-sub">MAINTAINING.md의 릴리스 크기 기준에서 "② 소비자가 읽는 문서가 틀린 사실을 말함"은 patch로 바로 발행합니다. 읽는 사람이 그 문장대로 하면 틀리기 때문입니다. 나머지 변경은 테스트·메인테이너 표면이라 배포 동작이 없습니다.</p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>task</th><th>무엇</th><th>표면</th><th>PR</th></tr></thead>
+          <thead><tr><th>표면</th><th>변경</th><th>계층</th></tr></thead>
           <tbody>
-            <tr><td>done-derive</td><td>종결 = 기본 브랜치 plan 상태(계산값), <code>done</code>은 검증 전용, <code>reopen</code> 신설</td><td><code>task-closure.mjs</code>·<code>task.mjs</code>·<code>remote-task.mjs</code>·<code>pr-check.mjs</code>·summary·wiki·migrate·clean</td><td>#194</td></tr>
-            <tr><td>pr-check-fork-main</td><td>fork 기본 브랜치로 가는 push도 pre-push에서 검사</td><td><code>pr-check.mjs</code>·<code>git-hooks.mjs</code>·doctor</td><td>#195</td></tr>
-            <tr><td>adopt-reviews-closed</td><td><code>migrate --adopt-reviews</code> 후보에서 기본 브랜치 종결 task 제외</td><td><code>migrate.mjs</code></td><td>#196</td></tr>
-            <tr><td>ledger-only-pr-check</td><td>생성물 원장만 바꾼 브랜치는 <code>pr-check</code> 통과</td><td><code>pr-check.mjs</code></td><td>#197</td></tr>
+            <tr><td><code>docs/harness-workflow-diagrams.html</code>·<code>docs/harness-workflow-schematics.html</code></td><td>옛 handoff 동작 문장 정정</td><td>② 소비자가 읽는 문서</td></tr>
+            <tr><td><code>tests/**</code></td><td>옛 문구 회귀 테스트, SC6 현행화, sim-smoke</td><td>배포되지 않음</td></tr>
+            <tr><td><code>MAINTAINING.md</code></td><td>반복 실수 규칙표 한 행</td><td>③ 메인테이너 전용</td></tr>
+            <tr><td><code>src/**</code>·<code>commands/**</code>·<code>skills/**</code>·<code>templates/**</code></td><td>없음</td><td>① 에이전트 행동 표면</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <section id="closure">
-      <h2 class="section-title">머지가 곧 종결</h2>
-      <div class="change-grid">
-        <article class="change-card breaking">
-          <div class="card-head"><div class="kind danger">BREAKING · #194</div><h3>종결 판정은 plan에서 계산한다</h3></div>
-          <dl>
-            <div><dt>무엇</dt><dd>어떤 커밋에서 plan에 미완 <code>- [ ]</code>가 없고 <code>- [x]</code>가 하나 이상이면 그 task는 종결입니다. 유효한 <code>done --force</code> 우회 기록(<code>forcedAt</code> &gt; <code>reopenedAt</code>)과 옛 meta <code>status: done</code>도 종결로 읽으므로, 기존 task의 판정은 바뀌지 않습니다. 판정은 <code>src/task-closure.mjs</code> 한 곳에 있고 summary·session-context·wiki·migrate·doctor·clean이 함께 씁니다.</dd></div>
-            <div class="why"><dt>왜</dt><dd>종결을 기록으로 남기면 구현 MR 뒤에 종결만을 위한 커밋과 MR이 매번 따라오고, 기록과 실제 plan 상태가 어긋날 수 있었습니다. 기본 브랜치의 plan 상태를 정본으로 두면 머지 하나로 끝나고, 어긋날 기록 자체가 없습니다.</dd></div>
-            <div class="effect"><dt>done</dt><dd><code>done</code>은 가드만 돌리고 추적 파일을 쓰지 않습니다. plan이 없는 task는 막습니다(plan이 없으면 머지해도 종결되지 않기 때문입니다). 새 흐름은 <code>/harness-ship</code> → plan의 "ship 완료" 체크 → <code>done</code> → 커밋 → MR → 머지입니다.</dd></div>
-          </dl>
-        </article>
-        <article class="change-card feature">
-          <div class="card-head"><div class="kind">Changed · #194</div><h3>pre-push가 done 가드를 미리 돈다</h3></div>
-          <dl>
-            <div><dt>무엇</dt><dd>plan이 전부 체크된 task를 바꾸는 push에서 <code>pr-check</code>가 <code>done</code> 가드도 실행합니다. push하는 커밋이 HEAD이고 작업 트리가 깨끗할 때만 돌고, 그렇지 않으면 건너뛰었다는 note를 남깁니다.</dd></div>
-            <div class="why"><dt>왜</dt><dd>전부 체크된 plan이 머지되는 순간이 종결이므로, 가드를 돌릴 마지막 기회가 push입니다.</dd></div>
-            <div class="effect"><dt>원장</dt><dd><code>docs/task_summary.md</code>는 종결 절차에서 빠졌습니다. 머지마다 낡는 것이 정상이고, 기본 브랜치에서 필요할 때 <code>summary --write</code>로 한꺼번에 갱신합니다.</dd></div>
-          </dl>
-        </article>
-      </div>
-    </section>
-
-    <section id="reopen">
-      <h2 class="section-title"><code>reopen</code> — 머지 뒤 다시 연다</h2>
-      <div class="change-grid">
-        <article class="change-card feature">
-          <div class="card-head"><div class="kind">Added · #194</div><h3><code>harness-team reopen &lt;name&gt; [--reason &lt;text&gt;]</code></h3></div>
-          <dl>
-            <div><dt>무엇</dt><dd>meta에 <code>reopenedAt</code>을 쓰고 plan <code>## 단계</code> 끝에 <code>- [ ] 재개: &lt;사유&gt;</code>를 넣어 판정을 open으로 되돌립니다. 종결되지 않았거나 없는 task면 아무것도 쓰지 않고 exit 1입니다. <code>task &lt;name&gt;</code>도 같은 조건이면 같은 전이를 합니다(출력 <code>reopened:</code>).</dd></div>
-            <div class="why"><dt>왜</dt><dd>종결이 머지로 정해지면, 머지 뒤 문제를 고칠 때 그 task를 다시 여는 정해진 방법이 필요합니다. 고친 내용은 새 MR로 들어갑니다.</dd></div>
-            <div class="effect"><dt>조건</dt><dd>기본 브랜치와 작업 트리 둘 다에서 종결이고, 기본 브랜치의 종결이 마지막 <code>reopenedAt</code>보다 늦을 때만 다시 엽니다. 그래서 머지 전 리뷰 수정 라운드에서 이중으로 재개되지 않습니다.</dd></div>
-          </dl>
-        </article>
-      </div>
-    </section>
-
-    <section id="prcheck">
-      <h2 class="section-title">pre-push <code>pr-check</code> 보강</h2>
+    <section id="docs">
+      <h2 class="section-title">문서 정정 — 훅은 추적 파일을 쓰지 않는다</h2>
       <div class="change-grid">
         <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Fixed · #195</div><h3>fork <code>main</code>으로 가는 push도 검사</h3></div>
+          <div class="card-head"><div class="kind">Fixed · diagrams</div><h3>커밋 시퀀스의 훅 화살표</h3></div>
           <dl>
-            <div><dt>무엇</dt><dd>훅이 git이 준 push 원격(<code>$1</code>)을 <code>HARNESS_PUSH_REMOTE</code>로 넘깁니다. 그 원격이 base 원격(origin)이 아닌 다른 설정된 원격으로 풀리면 기본 브랜치 push도 검사합니다. origin 기본 브랜치 push와 판정 근거가 없는 경우는 종전대로 건너뜁니다.</dd></div>
-            <div class="why"><dt>왜</dt><dd>이전에는 기본 브랜치 이름으로 가는 push를 원격과 상관없이 건너뛰었습니다. 그래서 fork의 <code>main</code>에서 PR을 여는 흐름에서는 문서 검사와 <code>done</code> 가드가 한 번도 돌지 않았고, 머지 = 종결 이후에는 가드 없는 종결로 이어집니다.</dd></div>
-            <div class="effect"><dt>설치</dt><dd><code>init</code>·<code>sync</code>는 옛 훅 블록이 릴리스 원문과 정확히 같을 때만 새 블록으로 바꾸고, 손댄 블록은 보존합니다. <code>doctor</code>는 옛 형식을 경고합니다.</dd></div>
+            <div><dt>전</dt><dd>"task handoff append (다음 커밋에 포함)"</dd></div>
+            <div class="effect"><dt>후</dt><dd>"로컬 user handoff 갱신"</dd></div>
           </dl>
         </article>
         <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Fixed · #197</div><h3>원장만 바꾼 브랜치는 통과</h3></div>
+          <div class="card-head"><div class="kind">Fixed · schematics</div><h3>task 문서 목록의 handoff 설명</h3></div>
           <dl>
-            <div><dt>무엇</dt><dd>diff가 전부 생성물 원장(<code>docs/task_summary.md</code>·<code>docs/&lt;user&gt;/&lt;user&gt;-task.md</code>)이면 <code>✓ pr-check &lt;ref&gt;: 생성물 원장만 변경 — task 문서 검사 대상 아님</code>을 내고 통과합니다. 원장과 다른 파일이 섞이면 종전대로 판정합니다.</dd></div>
-            <div class="why"><dt>왜</dt><dd>원장 갱신 커밋만 담은 브랜치는 "task 문서가 없음"으로 막혔고, 보호 브랜치 저장소에서는 <code>--no-verify</code> 말고 길이 없었습니다.</dd></div>
-            <div class="effect"><dt>경계</dt><dd>다른 파일을 원장 경로로 옮긴 커밋이 원장 전용으로 통과하지 않도록 <code>--no-renames</code>로 판정합니다.</dd></div>
+            <div><dt>전</dt><dd>"세션 인계 (task handoff는 훅이 append해 다음 커밋에 · user handoff는 로컬)"</dd></div>
+            <div class="effect"><dt>후</dt><dd>"선택 메모 (훅은 쓰지 않는다 · user handoff는 로컬)"</dd></div>
           </dl>
         </article>
       </div>
+      <div class="callout"><strong>① 무결성 확인.</strong> 에이전트가 실행하는 표면(<code>commands/harness-task.md</code>·<code>AGENTS.md</code>·템플릿)은 0.55.0부터 이미 새 동작을 적고 있었습니다. 틀린 문장은 사람이 읽는 다이어그램 두 곳에만 있었습니다.</div>
     </section>
 
-    <section id="adopt">
-      <h2 class="section-title"><code>migrate --adopt-reviews</code> 후보 정정</h2>
+    <section id="guard">
+      <h2 class="section-title">회귀 테스트 — 등록한 옛 문구만 본다</h2>
       <div class="change-grid">
         <article class="change-card maintenance">
-          <div class="card-head"><div class="kind">Changed · #196</div><h3>기본 브랜치에서 종결된 task는 후보가 아니다</h3></div>
+          <div class="card-head"><div class="kind">Added · tests</div><h3><code>tests/docs-retired-phrases.*</code></h3></div>
           <dl>
-            <div><dt>무엇</dt><dd>기본 브랜치에서 이미 종결된 task를 채택 후보에서 뺍니다. 재개 MR이 머지되기 전인 task, 로컬 plan만 종결된 task, 기본 브랜치 ref를 모르는 경우는 종전대로 후보입니다. fetch하지 않습니다.</dd></div>
-            <div class="why"><dt>왜</dt><dd>종결된 task는 <code>done</code> 가드를 다시 지나지 않습니다. 후보로 보이던 "검증 마커 N개가 빠짐 → 리뷰 재실행 필요"는 실제로 치를 일이 없는 비용이었습니다.</dd></div>
+            <div><dt>무엇</dt><dd>없앤 표면을 설명하던 문구를 <code>tests/docs-retired-phrases.json</code>에 등록합니다. 현행 문서에 그 문구가 있으면 파일과 대체 표현을 알려 주며 실패합니다. 줄바꿈·태그로 쪼개진 문구도 같은 문구로 봅니다.</dd></div>
+            <div class="why"><dt>왜</dt><dd>사실을 지운 뒤 다른 자리에 옛 설명이 남는 실수가 이 저장소에서 가장 잦았습니다. 이번 두 문장도 0.55.0 정정 때 전수 검색이 놓친 것입니다. 같은 뜻을 다른 말로 쓴 경우는 잡지 못합니다 — 등록과 의역 판단은 여전히 사람 몫입니다.</dd></div>
+          </dl>
+        </article>
+        <article class="change-card maintenance">
+          <div class="card-head"><div class="kind">Fixed · sim</div><h3>SC6이 녹색이고 <code>npm test</code>에서 돈다</h3></div>
+          <dl>
+            <div><dt>전</dt><dd>doctor green이 늘 실패했고(env 선언 warning·<code>CODEX_HOME</code> 미격리), 0.57.0 검토 게이트와 0.58.0 계산된 종결 이후 실패가 두 건 더 늘었습니다. <code>npm test</code> 밖이라 아무도 몰랐습니다.</dd></div>
+            <div class="effect"><dt>후</dt><dd>L1과 같은 차단 목록·격리로 판정하고, 미완 박스를 모두 켜며, 종결은 <code>closureFromContent</code>로 봅니다. <code>done</code>이 <code>--force</code>로만 끝나면 실패합니다. <code>tests/e2e/sim-smoke.test.mjs</code>가 SC6을 <code>npm test</code>에서 돌립니다.</dd></div>
           </dl>
         </article>
       </div>
+    </section>
+
+    <section id="same">
+      <h2 class="section-title">바뀌지 않은 것</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>항목</th><th>0.58.1</th></tr></thead>
+          <tbody>
+            <tr><td>CLI·<code>commands/**</code>·<code>skills/**</code>·<code>templates/**</code>·훅</td><td>그대로 — <code>init</code>·<code>migrate</code>가 쓰는 파일과 명령 동작이 같습니다</td></tr>
+            <tr><td><code>docs/harness-overview.html</code></td><td>생성물 — 테스트 인벤토리와 버전 표지만 바뀌었습니다</td></tr>
+            <tr><td><code>docs/task_summary.md</code>·<code>docs/chad/chad-task.md</code></td><td>task 종결 집계 갱신(<code>b413a2d</code>) — 생성물</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="callout"><strong>검증 범위.</strong> <code>npm test</code>·<code>docs:check</code>·SC6이 통과합니다. 첫 박스만 켜는 옛 SC6 동작으로 되돌리면 SC6이 실패하는 것을 변이로 확인했습니다. 인증이 필요한 SC1~SC5·SC7은 돌리지 않았습니다.</div>
     </section>
 
     <section id="compat">
       <h2 class="section-title">소비자가 할 일</h2>
       <div class="change-grid">
         <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Do · 1</div><h3>플러그인과 PATH CLI 갱신, 팀 전원</h3></div>
+          <div class="card-head"><div class="kind">Do · 1</div><h3>플러그인 갱신</h3></div>
           <dl>
-            <div><dt>어떻게</dt><dd><code>/plugin marketplace update</code>를 실행하거나 clone에서 <code>git pull</code>을 합니다. <code>harness-team --version</code>이 <code>0.58.0</code>이면 됩니다.</dd></div>
-            <div class="why"><dt>팀</dt><dd>옛 CLI는 meta <code>status</code>만 읽으므로, 새 흐름으로 머지된 task를 원장에 열린 task로 그립니다. 팀 전원이 같이 올리는 편이 좋습니다.</dd></div>
-          </dl>
-        </article>
-        <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Do · 2</div><h3>각 클론에서 <code>harness-team sync</code></h3></div>
-          <dl>
-            <div><dt>왜</dt><dd>fork <code>main</code> 검사는 새 pre-push 훅 블록이 있어야 동작합니다. <code>sync</code>를 돌리기 전까지는 옛 훅이 종전대로 동작하고 <code>doctor</code>가 경고합니다.</dd></div>
-          </dl>
-        </article>
-        <article class="change-card breaking">
-          <div class="card-head"><div class="kind danger">Check</div><h3>CI 게이트와 검증하지 못한 경로</h3></div>
-          <dl>
-            <div><dt>CI</dt><dd>CI에서 <code>harness-team summary --check</code>를 게이트로 쓰고 있으면 뺍니다. 원장은 머지마다 낡으므로 매번 실패합니다.</dd></div>
-            <div><dt>미검증</dt><dd>이번 릴리스의 리뷰는 사내 네트워크 제약으로 claude 엔진으로만 돌렸고, vendor가 분리된 codex 리뷰는 받지 못했습니다. origin이 fork이고 upstream이 정본인 레이아웃(<code>gh repo fork</code> 기본)에서는 fork <code>main</code> 검사가 동작하지 않는 한계가 있습니다(task artifact에 기록).</dd></div>
+            <div><dt>왜</dt><dd>바뀐 것은 플러그인에 실린 문서뿐이라 플러그인 채널로만 닿습니다. <code>init</code>·<code>migrate</code>는 필요 없습니다.</dd></div>
+            <div class="effect"><dt>어떻게</dt><dd><code>/plugin marketplace update</code>(또는 clone에서 <code>git pull</code>). <code>harness-team --version</code>이 <code>0.58.1</code>이면 됩니다.</dd></div>
           </dl>
         </article>
       </div>
     </section>
 
-    <footer>Harness Aijient Team Plugin 0.58.0 · 2026-11-20 · 0.57.0 이후 변경 설명</footer>
+    <footer>Harness Aijient Team Plugin 0.58.1 · 2026-11-20 · 0.58.0 이후 변경 설명</footer>
   </main>
 </body>
 </html>

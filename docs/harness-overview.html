@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.58.0</span>
+      <span class="tag tag-purple">v0.58.1</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.58.1 — 옛 handoff 문장을 지우고, 다시 남지 않게 테스트로 막는다:</strong>
+    <br>
+    <code>0.58.1</code> 워크플로우 다이어그램·스케매틱이 "훅이 task handoff를 append해 다음 커밋에 담는다"는 0.55.0 이전 동작을 적고 있던 것을 고쳤다. <strong>없앤 표면의 옛 문구를 등록해 두면 현행 문서에 다시 나타날 때 <code>npm test</code>가 실패한다</strong>(<code>tests/docs-retired-phrases.*</code>). SC6 시뮬레이션도 검토 게이트·계산된 종결에 맞춰 <code>npm test</code>에 들어갔다. CLI·명령·템플릿 동작은 그대로다.
+    <br><br>
     <strong>🆕 0.58.0 — 머지가 곧 종결:</strong>
     <br>
     <code>0.58.0</code> <strong>종결은 기록이 아니라 계산값이다</strong> — 기본 브랜치에서 plan이 전부 체크돼 있으면(미완 <code>- [ ]</code> 없음 + <code>- [x]</code> 하나 이상) 그 task는 종결이라 머지 뒤 종결 커밋·종결 MR이 없어졌다(BREAKING). <code>done</code>은 가드만 돌리고 추적 파일을 쓰지 않으며, pre-push <code>pr-check</code>가 plan이 전부 체크된 task에 같은 가드를 미리 돈다. 머지 뒤 문제는 <strong><code>harness-team reopen &lt;name&gt;</code></strong>으로 다시 연다. pre-push는 fork <code>main</code>으로 가는 push도 검사하고, 생성물 원장만 바꾼 브랜치는 통과시킨다. <code>migrate --adopt-reviews</code>는 기본 브랜치에서 종결된 task를 후보에서 뺀다. 소비자는 <strong>플러그인 갱신(PATH CLI 포함, 팀 전원 권장)</strong>을 하고, 각 클론에서 <code>harness-team sync</code>로 훅을 갱신하며, CI의 <code>summary --check</code> 게이트는 뺀다.
@@ -3012,7 +3016,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.58.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.58.1 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

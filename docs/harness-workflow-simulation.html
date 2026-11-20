@@ -284,7 +284,7 @@
     <h1>Task Workflow Simulation</h1>
     <p>새로운 harness task 시스템의 전체 흐름 — init부터 완료, 세션 재개, task 전환까지의 시나리오별 시뮬레이션</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.58.0</span>
+      <span class="tag tag-purple">v0.58.1</span>
       <span class="tag tag-blue">post-commit 자동화</span>
       <span class="tag tag-green">증거 기반 종결 가드 7종</span>
       <span class="tag tag-orange">원장은 생성물</span>
@@ -293,7 +293,9 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #a78bfa;background:rgba(167,139,250,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
-    <strong>🆕 0.40.1–0.58.0 — 머지가 곧 종결·reopen · 구현 전 사람 검토 게이트·검토 슬라이드 · task를 시작 전으로 되돌리는 clean · 훅이 추적 파일을 쓰지 않음 · user handoff는 워크트리 로컬 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키 · 폴더 없는 done task · PR 없는 위키 컴파일 · 리뷰 scope 판정 정정 · worktree 리뷰 범위 확장 · scope 오류 안내 정정 · pre-push가 무관 히스토리 브랜치를 건너뜀 · 소급 위키 컴파일 후보 목록 · eval 기반 명령 문서 정정 · stack 인프로세스 DB 안내 · done tests 기본 optional · 리뷰어 allow 제거:</strong>
+    <strong>🆕 0.40.1–0.58.1 — 옛 문구 회귀 테스트 · 머지가 곧 종결·reopen · 구현 전 사람 검토 게이트·검토 슬라이드 · task를 시작 전으로 되돌리는 clean · 훅이 추적 파일을 쓰지 않음 · user handoff는 워크트리 로컬 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키 · 폴더 없는 done task · PR 없는 위키 컴파일 · 리뷰 scope 판정 정정 · worktree 리뷰 범위 확장 · scope 오류 안내 정정 · pre-push가 무관 히스토리 브랜치를 건너뜀 · 소급 위키 컴파일 후보 목록 · eval 기반 명령 문서 정정 · stack 인프로세스 DB 안내 · done tests 기본 optional · 리뷰어 allow 제거:</strong>
+    <br>
+    <code>0.58.1</code> <strong>워크스루 본문은 그대로다</strong> — 다이어그램·스케매틱의 옛 handoff 문장을 고쳤고, 없앤 표면의 옛 문구가 현행 문서에 다시 나타나면 <code>npm test</code>가 실패한다.
     <br>
     <code>0.58.0</code> <strong>머지가 곧 종결이다</strong> — 기본 브랜치에서 plan이 전부 체크돼 있으면 종결이라, 완료 시나리오(4)에서 머지 뒤 종결 커밋이 사라졌다. <code>done</code>은 가드 검증만 하고 meta를 쓰지 않는다. 머지 뒤 문제는 <code>reopen</code>으로 다시 연다. pre-push는 fork <code>main</code> push도 검사하고 원장만 바꾼 브랜치는 통과시킨다.
     <br>
@@ -1191,7 +1193,7 @@ login-bug
 </main>
 
 <footer>
-  harness-aijient-team-plugin v0.58.0 — Task Workflow Simulation &nbsp;·&nbsp; 2026-11-20
+  harness-aijient-team-plugin v0.58.1 — Task Workflow Simulation &nbsp;·&nbsp; 2026-11-20
 </footer>
 
 
