@@ -68,8 +68,8 @@
 | overview 인벤토리는 `git add` 순서에 기대지 않는다 | `tests/harness-overview-generation.test.mjs`, `docs:check` | 구조 |
 | stock 템플릿·훅 변경은 한 커밋에 모으고 이전 판 sha를 등록한다 | `tests/migrate-hooks.test.mjs`, `tests/migrate-templates.test.mjs` | 테스트 |
 | `AGENTS.md`·`CLAUDE.md`를 늘리기 전에 여유를 잰다 | `PROJECT_EAGER_MAX_BYTES`, `doctor` 예산 경고 | 테스트 |
+| 사실을 바꾸거나 지우면 같은 사실의 다른 자리를 전수 검색하고, 없앤 표면의 옛 문구를 `tests/docs-retired-phrases.json`에 등록한다 | `tests/docs-retired-phrases.test.mjs`(등록한 문구만 — 등록과 의역은 판단), 버전 표지는 `docs:check` | 테스트 |
 | 이 저장소의 CLI는 `node bin/harness-team.mjs`로 부른다 | `doctor` drift 경고만 | 경고 |
-| 사실을 바꾸거나 지우면 같은 사실의 다른 자리를 전수 검색한다 | 없음 — 버전 표지만 `docs:check` | 판단 |
 | 보고된 사례가 아니라 그 문법·형제 경로 전체를 고치고 테스트한다 | 없음 | 판단 |
 | 검증은 산문이 아니라 명령과 출력으로 남긴다 | shipcheck S5(탐지만) | 판단 |
 | 테스트는 변이가 살아남지 않게 쓴다 | testcritic E1(탐지만) | 판단 |

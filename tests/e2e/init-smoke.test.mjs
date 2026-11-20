@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { access } from 'node:fs/promises';
 import { join } from 'node:path';
-import { STACKS, appliedSandbox } from './sandbox.mjs';
+import { STACKS, appliedSandbox, doctorBlockers } from './sandbox.mjs';
 
 const REQUIRED_PATHS = [
   'AGENTS.md', 'CLAUDE.md',
@@ -45,10 +45,7 @@ for (const stack of STACKS) {
       const doc = await sb.cli(['doctor', '--json']);
       assert.equal(doc.code, 0, `doctor exit non-zero:\n${doc.stdout}\n${doc.stderr}`);
       const env = JSON.parse(doc.stdout);
-      // 선언 빈칸(D12 정정 역할 ①)은 저장소에 대한 soft warning이지 설치 결함이 아니다 — fixture에는 .nvmrc·lockfile이 없다.
-      // 그 밖의 warning은 여전히 없어야 green이다.
-      const others = env.checks.filter(c => c.status === 'warning' && c.label !== 'env declarations');
-      assert.deepEqual(others, [], `doctor warnings: ${env.summary}`);
+      assert.deepEqual(doctorBlockers(env), [], `doctor blockers: ${env.summary}`);
       assert.ok(['success', 'warning'].includes(env.status), `doctor status: ${env.status} — ${env.summary}`);
     } finally {
       await sb.cleanup();

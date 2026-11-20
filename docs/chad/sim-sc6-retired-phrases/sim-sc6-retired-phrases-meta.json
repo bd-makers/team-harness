@@ -1,0 +1,37 @@
+{
+  "user": "chad",
+  "task": "sim-sc6-retired-phrases",
+  "created": "2026-11-20",
+  "firstActivatedAt": "2026-11-20T08:26:12.807Z",
+  "baseSha": "03d90b7d4370380942a950e6f20dd332ccd91910",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "model": null,
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "03d90b7d4370380942a950e6f20dd332ccd91910",
+      "tip": "a95a88ff4d8637c068612b5599c33ab8490a4caa",
+      "at": "2026-11-20T08:44:13.501Z",
+      "exitCode": 0,
+      "outputBytes": 1390
+    },
+    {
+      "kind": "codex-shipcheck",
+      "engine": "codex",
+      "model": null,
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "03d90b7d4370380942a950e6f20dd332ccd91910",
+      "tip": "1cddd55324347e09984e4c73cea7441076ca39f5",
+      "at": "2026-11-20T08:54:01.329Z",
+      "exitCode": 0,
+      "outputBytes": 2955
+    }
+  ]
+}
