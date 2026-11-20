@@ -10,7 +10,7 @@
 - [x] 3. 섞인 경우·닮은 경로·`--pre-push` 테스트 추가, `npm run test` 통과
 - [x] 4. 문서 — D11·D5 정정(D5 는 `templates/docs/decisions.md` 미러 동일 문장), `commands/harness-task.md`, CHANGELOG Unreleased
 - [x] 5. `npm run docs:check` 통과, artifact 기록, 커밋
-- [ ] ship 완료
+- [x] ship 완료
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
