@@ -191,3 +191,6 @@
 | chad | spec-ask-markers | ✅ done | 2026-11-18 |
 | chad | task-brief | ✅ done | 2026-11-18 |
 | chad | team-harness-improvements | ✅ done | 2026-11-18 |
+| chad | adopt-reviews-closed | ✅ done | 2026-11-20 |
+| chad | ledger-only-pr-check | ✅ done | 2026-11-20 |
+| chad | pr-check-fork-main | ✅ done | 2026-11-20 |

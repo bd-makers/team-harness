@@ -3,6 +3,9 @@
 ## Open
 
 ## Completed
+- ✅ adopt-reviews-closed
+- ✅ ledger-only-pr-check
+- ✅ pr-check-fork-main
 - ✅ diagram-svg
 - ✅ diagram-views
 - ✅ done-derive
