@@ -574,7 +574,22 @@ test('pre-push 훅 실측: 빈 원격 첫 push · 앞선 훅의 stdin 소비 · 
     await writeFile(shim, `#!/bin/sh\nexec "${process.execPath}" "${join(ROOT, 'bin/harness-team.mjs')}" "$@"\n`);
     await chmod(shim, 0o755);
 
-    // 기본 브랜치 push 는 PR 이 아니다 — 같은 커밋이어도 통과
+    // fork 의 기본 브랜치는 PR 원천이다 — 원격 이름·URL 어느 쪽으로 push 해도 검사한다(task pr-check-fork-main)
+    const fork = await mkdtemp(join(tmpdir(), 'harness-prcheck-fork-'));
+    try {
+      await git(fork, 'init', '-q', '--bare');
+      await git(dir, 'remote', 'add', 'fork', fork);
+      const forkMain = await push('fork', 'feature:main');
+      assert.notEqual(forkMain, 0);
+      assert.match(forkMain.out, /t-plan\.md 가 템플릿 그대로/);
+      assert.notEqual(await push(fork, 'feature:main'), 0);
+    } finally { await rm(fork, { recursive: true, force: true }); }
+
+    // 기본 브랜치 push 는 PR 이 아니다 — 같은 커밋이어도 통과(base 원격으로 가므로). base 원격(origin)의 URL 로 push 해도
+    // origin 으로 풀려 통과한다. URL push 는 origin/main 을 옮기지 않지만 원격의 main 은 옮기므로, 이름 push 가 no-op 이 되지 않게 되돌린다.
+    const mainSha = (await git(dir, 'rev-parse', 'main')).stdout.trim();
+    assert.equal(await push(remote, 'feature:main'), 0);
+    await git(remote, 'update-ref', 'refs/heads/main', mainSha);
     assert.equal(await push('origin', 'feature:main'), 0);
 
     // 문서를 채우면 통과
@@ -604,6 +619,42 @@ test('pr-check --pre-push --base <짧은 원격 이름>: 기본 브랜치 push �
     assert.equal(r.exitCode, undefined);
     assert.equal(r.out, '');
   } finally { for (const d of [dir, remote]) await rm(d, { recursive: true, force: true }); }
+});
+
+// ---- task pr-check-fork-main: 기본 브랜치 이름 push 는 base 원격이 아닌 원격으로 간다고 확인될 때만 검사한다 ----
+
+test('pr-check --pre-push: push 원격 판정 — 다른 원격의 기본 브랜치는 검사, base 원격·정보 없음·안 풀리는 URL 은 건너뜀', async () => {
+  const dir = await repo();
+  const remote = await mkdtemp(join(tmpdir(), 'harness-prcheck-remote-'));
+  const fork = await mkdtemp(join(tmpdir(), 'harness-prcheck-fork-'));
+  try {
+    for (const r of [remote, fork]) await git(r, 'init', '-q', '--bare');
+    await git(dir, 'remote', 'add', 'origin', remote);
+    await git(dir, 'remote', 'add', 'fork', fork);
+    await git(dir, 'push', '-q', 'origin', 'main');
+    await writeTask(dir, 't', { files: { 'plan.md': 'template' } });
+    await commit(dir);
+    const { stdout: sha } = await git(dir, 'rev-parse', 'HEAD');
+    const stdin = `refs/heads/feature ${sha.trim()} refs/heads/main ${'0'.repeat(40)}\n`;
+    const run = (pushRemote, flags = {}) => capture(() => runPrCheck(
+      { targetDir: dir, flags: { 'pre-push': true, ...flags } }, { readStdin: async () => stdin, pushRemote }));
+
+    for (const pushRemote of ['fork', fork]) {
+      const r = await run(pushRemote);
+      assert.equal(r.exitCode, 1, `${pushRemote}: 검사가 돈다`);
+      assert.match(r.out, /pr-check main: u\/t/);
+    }
+    // 종전 동작: 정보 없음(옛 훅 블록) · base 원격 이름 · base 원격 URL · 어떤 원격으로도 안 풀리는 URL
+    for (const pushRemote of [undefined, '', 'origin', remote, 'https://example.invalid/other.git']) {
+      const r = await run(pushRemote);
+      assert.equal(r.exitCode, undefined, `${pushRemote}: 건너뜀`);
+      assert.equal(r.out, '');
+    }
+    // base 가 로컬 브랜치면 base 원격이 없어 판정 근거가 없다 — 건너뜀
+    const local = await run('fork', { base: 'main' });
+    assert.equal(local.exitCode, undefined);
+    assert.equal(local.out, '');
+  } finally { for (const d of [dir, remote, fork]) await rm(d, { recursive: true, force: true }); }
 });
 
 // ---- S3 (done-derive R7): plan 이 전부 체크된 변경 task 는 pre-push 에서 done 가드를 같이 돈다 ----

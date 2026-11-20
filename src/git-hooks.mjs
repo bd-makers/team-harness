@@ -58,11 +58,18 @@ export const PRE_PUSH_BLOCK =`# harness: PR 필수 task 문서 검사 (D11) — 
 if command -v harness-team >/dev/null 2>&1 && harness-team --help </dev/null 2>/dev/null | grep -q '^ *pr-check' \\
   && harness_in=$(mktemp "\${TMPDIR:-/tmp}/harness-pre-push.XXXXXX"); then
   cat > "$harness_in"
-  harness-team pr-check --pre-push < "$harness_in" || { rm -f "$harness_in"; exit 1; }
+  HARNESS_PUSH_REMOTE="$1" harness-team pr-check --pre-push < "$harness_in" || { rm -f "$harness_in"; exit 1; }
   exec < "$harness_in"
   rm -f "$harness_in"
 fi
 `;
+
+// 옛 블록(2026-10-06 ~ 0.57) — git 이 주는 `$1`(push 원격)을 넘기지 않아 CLI 가 fork 의 기본 브랜치 push 를 정본 원격 push 와
+// 구분하지 못했다(task pr-check-fork-main). init·sync 는 훅 안에서 이 원문과 **정확히 일치하는** 부분만 새 블록으로 바꾼다 —
+// 손댄 블록은 건드리지 않고 doctor 가 알린다. 원격은 플래그가 아니라 환경변수로 넘긴다: 구버전 CLI 는 모르는 플래그를 exit 1 로
+// 거부해 모든 push 를 막지만 환경변수는 무시한다.
+export const PRE_PUSH_BLOCK_V1 = PRE_PUSH_BLOCK.replace('HARNESS_PUSH_REMOTE="$1" harness-team', 'harness-team');
+export const PRE_PUSH_REMOTE_ENV = 'HARNESS_PUSH_REMOTE';
 
 export const PRE_PUSH_HOOK = `#!/bin/sh\n${PRE_PUSH_BLOCK}`;
 
@@ -80,7 +87,7 @@ export function hasLiveMarker(text, marker) {
 
 // 기존 훅에는 블록을 shebang 바로 다음, 맨 위에 넣는다 — 이유는 PRE_PUSH_BLOCK·POST_COMMIT_BLOCK 주석.
 // 새 훅은 `#!/bin/sh` + 블록이다. `call` 은 셸이 아닌 훅을 건너뛸 때 사용자에게 처방하는 호출이다.
-async function installGitHook(targetDir, { name, block, marker, call }) {
+async function installGitHook(targetDir, { name, block, marker, call, legacyBlocks = [] }) {
   const hooksDir = await resolveHooksDir(targetDir);
   if (!hooksDir) return; // not a git repo (or no git) — nothing to hook into
   try {
@@ -107,7 +114,14 @@ async function installGitHook(targetDir, { name, block, marker, call }) {
   } catch { /* doesn't exist */ }
 
   if (existing !== null) {
-    if (hasLiveMarker(existing, marker)) return;
+    if (hasLiveMarker(existing, marker)) {
+      const legacy = legacyBlocks.find(b => existing.includes(b));
+      if (legacy) {
+        await writeFile(hookPath, existing.replace(legacy, block), 'utf8');
+        console.log(`  ${name} hook: updated harness block`);
+      }
+      return;
+    }
     const firstLine = existing.split('\n', 1)[0];
     if (firstLine.startsWith('#!') && !SH_SHEBANG.test(firstLine)) {
       console.log(`  ${name} hook: 기존 훅이 셸 스크립트가 아님 (${firstLine}) — 건너뜀; 그 훅에서 \`${call}\` 를 직접 부르세요`);
@@ -132,7 +146,7 @@ export function installPostCommitHook(targetDir) {
 }
 
 export function installPrePushHook(targetDir) {
-  return installGitHook(targetDir, { name: 'pre-push', block: PRE_PUSH_BLOCK, marker: PRE_PUSH_MARKER, call: `${PRE_PUSH_MARKER} --pre-push` });
+  return installGitHook(targetDir, { name: 'pre-push', block: PRE_PUSH_BLOCK, marker: PRE_PUSH_MARKER, call: `${PRE_PUSH_MARKER} --pre-push`, legacyBlocks: [PRE_PUSH_BLOCK_V1] });
 }
 
 // doctor 용: push 때 pr-check 가 실제로 도는가. 훅 관리자(husky·lefthook 등)가 훅 파일을 다시 쓰면 블록이 조용히
@@ -153,6 +167,9 @@ export async function checkPrePushHook(targetDir) {
   } catch { /* doesn't exist */ }
 
   if (existing !== null && hasLiveMarker(existing, PRE_PUSH_MARKER)) {
+    if (!existing.includes(PRE_PUSH_REMOTE_ENV)) {
+      return { status: 'warning', detail: `${shown}의 pr-check 블록이 옛 형식(push 원격을 넘기지 않음) — fork 등 다른 원격의 기본 브랜치 push를 검사하지 않음; run: harness-team sync (블록을 손댔다면 지우고 sync, 훅 관리자 설정이면 README 블록으로 교체)` };
+    }
     return { status: 'pass', detail: `${shown}에 pr-check 실행 줄 있음` };
   }
   if (await hasCustomHooksPath(targetDir)) {

@@ -266,11 +266,31 @@ async function sharesHistory(targetDir, base, rev) {
   }
 }
 
+// 기본 브랜치 이름으로의 push 가 base 원격이 아닌 원격(fork 등)으로 가는가 — 그렇다고 **확인될 때만** true 다(task pr-check-fork-main).
+// base 원격으로의 기본 브랜치 push 는 base 자체를 올리는 것이라 PR 이 아니지만, fork 의 main 은 PR 원천이다. 원격 정보는 훅이
+// git 의 `$1`(원격 이름, 이름 없는 push 면 URL)을 `HARNESS_PUSH_REMOTE` 로 넘긴다 — 플래그는 구버전 CLI 가 exit 1 로 거부해 push 를
+// 막으므로 쓰지 않는다. 정보 없음(옛 훅 블록)·base 가 로컬 브랜치·어떤 원격으로도 안 풀리는 URL(같은 저장소의 다른 표기일 수 있다)은
+// 판정 근거가 없어 종전대로 건너뛴다. 로컬 git 명령만 쓴다 — pre-push 는 네트워크 없이 끝나야 한다.
+async function pushGoesElsewhere(targetDir, baseFullRef, pushRemote) {
+  const baseRemote = /^refs\/remotes\/([^/]+)\//.exec(baseFullRef)?.[1];
+  if (!pushRemote || !baseRemote) return false;
+  try {
+    const remotes = (await git(targetDir, ['remote'])).split('\n').map(r => r.trim()).filter(Boolean);
+    let resolved = remotes.includes(pushRemote) ? pushRemote : null;
+    for (const r of remotes) {
+      if (resolved) break;
+      const urls = `${await git(targetDir, ['remote', 'get-url', '--all', r])}\n${await git(targetDir, ['remote', 'get-url', '--push', '--all', r])}`;
+      if (urls.split('\n').some(u => u.trim() === pushRemote)) resolved = r;
+    }
+    return !!resolved && resolved !== baseRemote;
+  } catch { return false; }
+}
+
 function emitQuietPass(json) {
   if (json) emitObservation(buildEnvelope({ command: 'pr-check', status: 'success', summary: 'pre-push: 검사할 브랜치 push 없음', extra: { base: null, checks: [] } }));
 }
 
-export async function runPrCheck(ctx, { readStdin = readAllStdin } = {}) {
+export async function runPrCheck(ctx, { readStdin = readAllStdin, pushRemote = process.env.HARNESS_PUSH_REMOTE } = {}) {
   const json = !!(ctx.flags && ctx.flags.json);
   const prePush = !!(ctx.flags && ctx.flags['pre-push']);
 
@@ -290,9 +310,11 @@ export async function runPrCheck(ctx, { readStdin = readAllStdin } = {}) {
 
   const runs = [];
   if (prePush) {
-    const defaultRef = `refs/heads/${branchName(await fullRefName(ctx.targetDir, base))}`;
+    const baseFullRef = await fullRefName(ctx.targetDir, base);
+    const defaultRef = `refs/heads/${branchName(baseFullRef)}`;
+    const skipDefault = !(await pushGoesElsewhere(ctx.targetDir, baseFullRef, pushRemote));
     for (const t of pushes) {
-      if (t.remoteRef === defaultRef) continue;
+      if (skipDefault && t.remoteRef === defaultRef) continue;
       if (!(await sharesHistory(ctx.targetDir, base, t.rev))) continue;
       runs.push({ label: t.remoteRef.replace(/^refs\/heads\//, ''), rev: t.rev });
     }

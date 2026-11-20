@@ -546,8 +546,11 @@ harness-team pr-check --base origin/main --json
 ```
 
 - **pre-push 훅**: init·sync가 설치합니다. 기존 pre-push 훅(git-lfs 등)이 있으면 그 맨 위에 넣고 ref 목록(stdin)을 그대로 넘겨 주며,
-  셸 스크립트가 아닌 훅은 건드리지 않고 안내합니다. 기본 브랜치 push·태그·삭제·빈 원격으로의 첫 push·기본 브랜치와 공통 조상이 없는 브랜치(gh-pages 등 — PR을 열 수 없다)는 검사하지 않고,
+  셸 스크립트가 아닌 훅은 건드리지 않고 안내합니다. base 원격(origin)의 기본 브랜치 push·태그·삭제·빈 원격으로의 첫 push·기본 브랜치와 공통 조상이 없는 브랜치(gh-pages 등 — PR을 열 수 없다)는 검사하지 않고,
   PATH의 `harness-team`이 없거나 `pr-check`를 모르는 구버전이면 건너뜁니다(doctor가 경고). 우회는 `git push --no-verify`.
+  fork 등 origin이 아닌 원격의 기본 브랜치로 가는 push는 PR 원천이라 피처 브랜치처럼 검사합니다 — 훅이 git이 준 push 원격(`$1`)을
+  `HARNESS_PUSH_REMOTE`로 넘기고, 원격 이름이나 설정된 원격 URL로 풀리지 않으면 종전대로 건너뜁니다(네트워크 호출 없음).
+  push 원격을 넘기지 않는 옛 블록은 doctor가 경고하고 `harness-team sync`가 새 블록으로 바꿉니다(원문 그대로일 때만 — 손댄 블록은 지우고 sync).
   pre-push 훅이 없던 버전으로 설치한 저장소는 업그레이드 후 `harness-team sync`를 한 번 실행하세요(migrate는 pre-push 훅을 설치하지 않습니다).
 - **훅 관리자(husky·lefthook 등)를 쓰면**: 관리자가 install 때 훅 파일을 다시 써서 위 블록이 지워집니다(husky는 `npm install`의
   prepare마다). 관리자 설정의 pre-push(husky라면 `.husky/pre-push`) **맨 위**에 init이 넣는 것과 같은 아래 블록을 직접 넣으세요.
@@ -558,7 +561,7 @@ harness-team pr-check --base origin/main --json
   if command -v harness-team >/dev/null 2>&1 && harness-team --help </dev/null 2>/dev/null | grep -q '^ *pr-check' \
     && harness_in=$(mktemp "${TMPDIR:-/tmp}/harness-pre-push.XXXXXX"); then
     cat > "$harness_in"
-    harness-team pr-check --pre-push < "$harness_in" || { rm -f "$harness_in"; exit 1; }
+    HARNESS_PUSH_REMOTE="$1" harness-team pr-check --pre-push < "$harness_in" || { rm -f "$harness_in"; exit 1; }
     exec < "$harness_in"
     rm -f "$harness_in"
   fi
