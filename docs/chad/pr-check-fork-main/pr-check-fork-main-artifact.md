@@ -15,6 +15,7 @@
   변이 확인: `skipDefault = true`로 되돌리면 새 테스트 2건이 실패한다.
 - **알려진 한계(범위 밖)**: origin이 fork이고 upstream이 정본인 레이아웃은 base 사다리부터 origin 기준이라 고치지 못한다 — 별도 결정 후보.
   `insteadOf` 재작성·같은 저장소의 다른 URL 표기로 push하면 판정 불가로 건너뛴다.
+  그 레이아웃에서 `git push upstream main`(직접 push)은 이제 검사된다(종전 건너뜀) — 사용자 선택으로 한계로 문서화, 우회는 `--no-verify`.
 
 
 ## Reviews

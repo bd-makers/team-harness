@@ -40,6 +40,8 @@ base의 원격으로 가는 기본 브랜치 push는 종전대로 건너뛴다.
   R6 문서.
 - **Out**: `origin`이 fork이고 `upstream`이 정본인 레이아웃(GitHub `gh repo fork` 기본) — base 사다리가 `origin/HEAD`를 기준으로 하므로 그 레이아웃에서는
   피처 브랜치 검사도 fork의 main을 base로 본다. 고치려면 base 판정(`resolveScope`)부터 바꿔야 하는 별도 결정이다. 이번 변경은 "push 원격 ≠ base 원격"만 다룬다.
+  **이 레이아웃에서 달라지는 것**: 메인테이너의 `git push upstream main`(PR 아닌 직접 push)은 upstream ≠ origin이라 이제 검사된다(종전 건너뜀). 우회는 `--no-verify`.
+  한계로 문서화한다(사용자 선택 2026-11-20 "한계로 문서화") — `upstream` 이름 휴리스틱은 두지 않는다.
 - **Out**: `git push <URL>` 중 설정된 원격으로 안 풀리는 URL, `url.<base>.insteadOf` 재작성 표기 차이 — R1-3대로 건너뛴다(알려진 한계).
 - **Out**: CI 경로 — CI는 push 원격 개념이 없고 종전대로 HEAD를 본다.
 
