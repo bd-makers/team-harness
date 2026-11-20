@@ -13,6 +13,13 @@
 
 - **`migrate --adopt-reviews`가 기본 브랜치에서 종결된 task를 후보에서 뺀다** (task `adopt-reviews-closed`, done-derive 리뷰 P2-6). 머지가 곧 종결이라 기본 브랜치 R(`resolveClosureRef`)에서 종결된 task는 done 가드를 다시 지나지 않는다 — 후보로 보이던 "검증 마커 N개가 빠짐 → 리뷰 재실행 필요"는 거짓 비용이었다. R의 종결이 마지막 재개(`reopenedAt`)보다 앞이면(재개 MR 머지 전) 후보로 남는다. 로컬 plan만 종결(ship 했지만 머지 전)인 task와 R을 모르는 경우(git 없음·origin도 main/master도 없음)는 종전대로 후보다. fetch하지 않는다(로컬 ref 기준).
 
+### Fixed
+
+- **pre-push `pr-check`가 fork의 기본 브랜치로 가는 push를 검사한다** (task `pr-check-fork-main`). 종전에는 기본 브랜치 이름(`main` 등)으로의 push를 원격과 상관없이 건너뛰어, fork `main`에서 PR을 여는 흐름에서는 문서 검사와 done 가드가 돌지 않았다. 이제 훅이 git이 준 push 원격(`$1`)을 `HARNESS_PUSH_REMOTE`로 넘기고, 그것이 base 원격(origin)이 아닌 설정된 원격(이름 또는 URL)으로 풀리면 기본 브랜치 push도 검사한다. origin 기본 브랜치 push·판정 근거가 없는 경우(옛 훅 블록·안 풀리는 URL·origin 없음)는 종전대로 건너뛴다. 네트워크 호출 없음.
+  - **기존 설치**: `init`·`sync`가 옛 훅 블록을 원문 그대로일 때만 새 블록으로 바꾼다. 손댄 블록은 그대로 두고 doctor가 `옛 형식` 경고를 낸다. 훅 관리자(husky 등) 설정에 블록을 넣었다면 README의 새 블록으로 교체한다.
+  - **호환**: 새 블록 + 구버전 CLI는 환경변수를 무시하고 종전대로 동작한다(플래그를 쓰지 않은 이유).
+  - **알려진 한계**: origin이 fork이고 upstream이 정본인 레이아웃(`gh repo fork` 기본)에서는 `git push upstream main`(PR 아닌 직접 push)도 이제 검사된다 — 우회는 `git push --no-verify`. 그 레이아웃의 base는 여전히 origin 기준이다.
+
 ## [0.57.0] - 2026-11-19
 
 - **호환 주의: spec에 `reviewer`를 쓰면 팀 전원이 이 버전 이상이어야 한다** — `reviewer` 키를 모르는 옛 CLI의 `done`은 Done evidence 선언을 `알 수 없는 키: reviewer`(invalid)로 보고 막힌다.

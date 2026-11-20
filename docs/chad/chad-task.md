@@ -5,6 +5,7 @@
 ## Completed
 - ✅ diagram-svg
 - ✅ diagram-views
+- ✅ done-derive
 - ✅ human-review-gate
 - ✅ review-model
 - ✅ spec-ask-markers
