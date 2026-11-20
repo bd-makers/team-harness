@@ -9,6 +9,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- **`migrate --adopt-reviews`가 기본 브랜치에서 종결된 task를 후보에서 뺀다** (task `adopt-reviews-closed`, done-derive 리뷰 P2-6). 머지가 곧 종결이라 기본 브랜치 R(`resolveClosureRef`)에서 종결된 task는 done 가드를 다시 지나지 않는다 — 후보로 보이던 "검증 마커 N개가 빠짐 → 리뷰 재실행 필요"는 거짓 비용이었다. R의 종결이 마지막 재개(`reopenedAt`)보다 앞이면(재개 MR 머지 전) 후보로 남는다. 로컬 plan만 종결(ship 했지만 머지 전)인 task와 R을 모르는 경우(git 없음·origin도 main/master도 없음)는 종전대로 후보다. fetch하지 않는다(로컬 ref 기준).
+
 ## [0.57.0] - 2026-11-19
 
 - **호환 주의: spec에 `reviewer`를 쓰면 팀 전원이 이 버전 이상이어야 한다** — `reviewer` 키를 모르는 옛 CLI의 `done`은 Done evidence 선언을 `알 수 없는 키: reviewer`(invalid)로 보고 막힌다.

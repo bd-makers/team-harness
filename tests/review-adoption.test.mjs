@@ -151,3 +151,54 @@ test('R2: scenarios 선언 task는 -scenario 마커만 잃는 증거로 센다',
     assert.equal(c.verifyRequired, true);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+// ---- 기본 브랜치 R 에서 종결된 task 는 후보가 아니다 (done-derive 리뷰 P2-6, 결정 A) ----
+// 머지가 곧 종결이라 R 에서 종결된 task 는 done 가드를 다시 지나지 않는다 — 후보로 보이면 거짓 비용(소음)이다.
+// R 은 `refs/remotes/origin/main` 을 직접 옮겨 머지 전·후를 만든다(task-reopen.test 와 같은 방식).
+const pexec = (await import('node:util')).promisify((await import('node:child_process')).execFile);
+const GIT_ID = ['-c', 'user.name=t', '-c', 'user.email=t@t', '-c', 'commit.gpgsign=false'];
+const git = (dir, args) => pexec('git', ['-C', dir, ...GIT_ID, ...args]).then(r => r.stdout);
+const PLAN_OPEN = '# demo — Plan\n\n## 단계\n- [x] 구현\n- [ ] ship 완료\n';
+
+async function commitAsDefault(dir) {
+  await git(dir, ['add', '-A']);
+  await git(dir, ['commit', '-q', '-m', 'snapshot']);
+  await git(dir, ['update-ref', 'refs/remotes/origin/main', 'HEAD']);
+}
+
+const candidateNames = async dir => (await collectReviewAdoptionCandidates(dir)).map(c => c.task).sort();
+
+test('P2-6: R 에서 plan 으로 종결된 task 는 후보에서 빠진다 — 로컬 plan 만 종결(머지 전)이면 남는다', async () => {
+  const { dir } = await makeLegacyTask({ task: 'merged' });
+  const { taskDir: unmergedDir } = await makeLegacyTask({ task: 'unmerged', dir });
+  await writeFile(join(unmergedDir, 'unmerged-plan.md'), PLAN_OPEN);
+  try {
+    await git(dir, ['init', '-q', '-b', 'main']);
+    await commitAsDefault(dir); // R: merged 는 plan 전부 체크, unmerged 는 열린 plan
+    // 브랜치에서 unmerged 를 ship — 로컬 plan 은 종결이지만 R 에서는 아직 열려 있다.
+    await writeFile(join(unmergedDir, 'unmerged-plan.md'), PLAN_OPEN.replace('- [ ] ship', '- [x] ship'));
+    assert.deepEqual(await candidateNames(dir), ['unmerged']);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('P2-6: R 에서 종결 뒤 재개한 task 는 후보로 남는다 — 재개보다 앞선 재개 이력은 제외를 막지 않는다', async () => {
+  const { dir, taskDir, meta } = await makeLegacyTask({ task: 'demo' });
+  const metaPath = join(taskDir, 'demo-meta.json');
+  try {
+    await git(dir, ['init', '-q', '-b', 'main']);
+    await commitAsDefault(dir);
+    // 재개 MR 이 머지되기 전: R 은 closed 지만 로컬 재개가 그 종결보다 나중이다 → 가드를 다시 지난다.
+    await writeFile(metaPath, JSON.stringify({ ...meta, reopenedAt: '2099-01-01T00:00:00.000Z' }, null, 2) + '\n');
+    assert.deepEqual(await candidateNames(dir), ['demo']);
+    // 재개가 R 의 종결보다 앞이면 그 뒤 다시 종결·머지된 것이다 → 제외.
+    await writeFile(metaPath, JSON.stringify({ ...meta, reopenedAt: '2000-01-01T00:00:00.000Z' }, null, 2) + '\n');
+    assert.deepEqual(await candidateNames(dir), []);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('P2-6: R 이 없으면(git 저장소 아님) 종전대로 plan 으로 닫힌 task 도 후보다', async () => {
+  const { dir } = await makeLegacyTask({ task: 'demo' });
+  try {
+    assert.deepEqual(await candidateNames(dir), ['demo']);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

@@ -18,6 +18,7 @@ import {
 } from './task.mjs';
 import { collectTasks, readTaskMeta, writeTaskMeta, metaRel, inferLegacyMeta, readLedger } from './summary.mjs';
 import { closureFromContent } from '../task-closure.mjs';
+import { resolveClosureRef, closureAtRef, closedSinceReopen } from './remote-task.mjs';
 import { settingsHasSessionGate } from './session-context.mjs';
 import { SUMMARY_REL, userIndexRel, docsPath, taskDirRel, taskFilePath } from '../task-paths.mjs';
 
@@ -980,13 +981,19 @@ export async function migrateCodexHookFlag(ctx) {
 //   3. 비용을 수가 아니라 결과로 말한다 — `verify: required` task 는 채택 뒤 리뷰를 **다시 돌려야** 종결된다.
 export async function collectReviewAdoptionCandidates(targetDir) {
   const candidates = [];
+  // 기본 브랜치 R(done-derive R2). 없으면(git 없음·origin 도 main/master 도 없음) R 판정을 건너뛴다 — 종전 동작.
+  const closureRef = await resolveClosureRef(targetDir);
   for (const t of await collectTasks(targetDir)) {
     const meta = await readTaskMeta(targetDir, t.user, t.task);
     // meta 파일이 없으면 건너뛴다 — backfillTaskMeta 가 먼저 만들고, 다음 실행에서 후보가 된다.
     if (!meta || Array.isArray(meta.reviews)) continue;
-    // 제외는 **기록으로** 닫힌 task(레거시 `status: done`·유효한 우회)만이다. plan 이 전부 체크된 task 는 파생 판정으로는
-    // done 이지만 done 가드를 아직 지난다(ship 시 `done`, pre-push 의 pr-check — done-derive R4·R7) — 채택 비용이 그대로 남는다.
+    // 후보는 "done 가드를 아직 다시 지날 task"다. 빼는 것은 둘이다:
+    // 1. **기록으로** 닫힌 task(레거시 `status: done`·유효한 우회).
+    // 2. R 에서 종결된 task — 머지가 곧 종결이라 가드를 다시 지나지 않는다(채택 비용은 거짓, done-derive 리뷰 P2-6).
+    //    단 R 의 종결이 마지막 재개보다 앞이면 남긴다 — 재개 MR 이 머지될 때까지 R 은 closed 지만 그 task 는 가드를 다시 지난다.
+    // 로컬 plan 만 전부 체크된 task(ship 했지만 머지 전)는 남는다 — done 가드를 아직 지난다(ship 시 `done`, pre-push 의 pr-check — done-derive R4·R7).
     if (closureFromContent({ plan: null, meta }).closed) continue;
+    if (closureRef && closedSinceReopen(await closureAtRef(targetDir, t.user, t.task, closureRef), meta)) continue;
 
     const artifact = await readTextSafe(taskFilePath(targetDir, t.user, t.task, 'artifact.md'));
     const { at: windowStart } = evidenceWindowStart(meta);
