@@ -1,0 +1,32 @@
+[
+  {
+    "id": "tcc",
+    "removed": "0.54.0에서 Task Context Card와 context 명령을 폐지했다",
+    "phrases": [
+      "TCC",
+      "Task Context Card",
+      "harness-team context",
+      "context init",
+      "context check",
+      "-context.md"
+    ],
+    "history": ["0.54.0 TCC 폐지"],
+    "replacement": "plan의 첫 미완 단계(SessionStart가 주입한다). 카드와 context 명령은 없다"
+  },
+  {
+    "id": "handoff-next-commit",
+    "removed": "post-commit 훅이 task handoff를 쓰지 않아 다음 커밋에 담을 것이 없다",
+    "phrases": [
+      "다음 커밋에 담는다",
+      "다음 커밋에 담음",
+      "다음 커밋에 포함",
+      "다음 작업 커밋에 담는다",
+      "다음 작업 커밋에 함께 담",
+      "훅이 append해 다음 커밋에",
+      "task handoff append",
+      "task handoff 갱신",
+      "훅이 handoff 갱신"
+    ],
+    "replacement": "훅은 gitignore된 로컬 <user>-handoff.md만 갱신하고 커밋 직후 트리는 깨끗하다. <name>-handoff.md는 사람이 쓰는 선택 메모다"
+  }
+]
