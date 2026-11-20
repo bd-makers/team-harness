@@ -9,7 +9,7 @@
 - [x] 테스트: R 종결 제외 · R에서 열림 · 재개 · ref 없음
 - [x] 문서: harness-migrate.md · harness-review.md · CHANGELOG
 - [x] `npm run test` · `npm run docs:check` 통과
-- [ ] ship 완료
+- [x] ship 완료
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
