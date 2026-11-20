@@ -14,7 +14,8 @@
 
 ## 범위 (In / Out)
 - **In**: `src/commands/pr-check.mjs`(원장 판정·통과·렌더링·JSON `ledgerOnly`), `tests/pr-check.test.mjs`,
-  `docs/decisions.md` D11·D5 정정 + `templates/docs/decisions.md` D5 미러(seed, 같은 문장), `commands/harness-task.md`, `CHANGELOG.md`.
+  `docs/decisions.md` D11·D5 정정 + `templates/docs/decisions.md` D5 미러(seed, 같은 문장), `commands/harness-task.md`, `CHANGELOG.md`,
+  `README.md`·`docs/harness-cycle.md` §4-6(pr-check 판정을 서술하는 다른 자리 — 전수 검색으로 추가).
 - **Out**: `wiki/` 컴파일 결과와 원장을 한 커밋에 담은 diff — 위키는 사람이 검토하는 내용이라 생성물이 아니다. 종전대로 실패한다
   (`harness-task.md`에 경계를 적는다; 위키를 담는 PR의 처리는 별도 판단). 원장 내용의 정합(`summary --check`) 검사 — D5 정정대로 게이트로 두지 않는다.
   P2-3(fork main push) 수정 — 별 세션.
@@ -32,6 +33,7 @@
   `DOCS_DIR` 기준 POSIX 비교 — `SUMMARY_REL`·`userIndexRel`은 `join`이라 Windows 에서 `\`가 되므로 쓰지 않는다.
 - `collectPrCheck`: diff 가 비지 않았고 모든 경로가 원장이면 `{ empty: false, ledgerOnly: true, tasks: [] }`.
   원장 경로는 task 디렉터리(깊이 4+)가 아니므로 섞인 경우의 task 판정은 그대로다.
+- diff 는 `--no-renames` 로 읽는다 — 다른 파일을 원장 경로로 옮긴 커밋이 rename 감지로 새 경로만 보여 원장 전용으로 통과하지 않게 한다.
 - `passed`·`runPrCheck` 의 `docsFailed` 가 `ledgerOnly` 를 통과로 본다. 렌더링: `✓ pr-check <ref>: 생성물 원장만 변경 — task 문서 검사 대상 아님`
   + `· …` note. JSON `checks[]` 에 `ledgerOnly` 불리언.
 - **2차 장치 규칙(D11)**: 새 장치가 아니라 기존 검사의 대상을 줄이는 변경이다. "검사 자체를 원장 커밋에서 빼는 대안"(pre-push 만 예외)은
@@ -60,6 +62,7 @@
      증거(테스트 이름·명령)를 잇는다. `harness-team scenario check`가 cmd exit 0을, `review <engine> --framing scenario`가
      "증거가 Then을 검증하는가"를 판정한다. 선언하면 verify 증거는 -scenario kind만 센다. -->
 ## Done evidence
+*의도적으로 미선언 — 기본값(tests·review optional)을 따른다(D11 2026-11-02 정정: 엄격도는 팀 선언으로).*
 <!--
 ```json
 { "version": 1, "review": "required", "tests": "required" }

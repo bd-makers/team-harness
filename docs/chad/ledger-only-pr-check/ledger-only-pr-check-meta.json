@@ -8,5 +8,18 @@
   "closedAt": null,
   "forcedAt": null,
   "forcedIssues": null,
-  "reviews": []
+  "reviews": [
+    {
+      "kind": "claude-shipcheck",
+      "engine": "claude",
+      "model": null,
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "c12fe63086c6859513e64aea2e761f5af1f69af4",
+      "tip": "6a9e70b8f19f58ec5a6a008008611a1821d9fa0a",
+      "at": "2026-11-20T06:55:33.531Z",
+      "exitCode": 0,
+      "outputBytes": 4763
+    }
+  ]
 }
