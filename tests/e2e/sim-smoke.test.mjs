@@ -13,7 +13,9 @@ test('agentloop sc6 passes', async () => {
   const playground = await mkdtemp(join(tmpdir(), 'harness-sim-'));
   try {
     // A commit gate runs this suite with GIT_DIR set; it must not reach the sandbox's git calls.
-    const env = Object.fromEntries(Object.entries(process.env).filter(([k]) => !k.startsWith('GIT_')));
+    // GIT_CONFIG_NOSYSTEM stays: without it a system core.hooksPath would point init outside the sandbox.
+    const env = Object.fromEntries(Object.entries(process.env)
+      .filter(([k]) => !k.startsWith('GIT_') || k === 'GIT_CONFIG_NOSYSTEM'));
     const r = spawnSync('node', [join(ROOT, 'tests/sim/agentloop.mjs'), 'sc6'], {
       encoding: 'utf8', env: { ...env, SIM_PLAYGROUND: playground },
     });

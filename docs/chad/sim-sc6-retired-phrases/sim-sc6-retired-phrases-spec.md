@@ -33,7 +33,7 @@
 2. SC6 plan 체크: 첫 박스만이 아니라 **모든** 줄머리 `- [ ]`를 켠다(내용 없는 박스는 `sim lifecycle step`으로 채운다).
    검토 게이트도 사람 승인을 흉내 내 켠다 — 게이트는 생성 기본값이므로 SC6은 기본 경로를 그대로 탄다.
 3. SC6 종결 신호: meta `status`/`closedAt` 대신 `closureFromContent({ plan, meta })`로 판정하고, 신호 이름을 `종결 판정(plan 파생)`으로 바꾼다.
-   `--force`를 쓰지 않았는지는 기존 `done 완료` 신호의 detail이 이미 보인다.
+   `done 완료` 신호는 `--force`가 필요하면 FAIL이다 — 아무것도 dirty하지 않고 plan이 닫혔으니 우회는 finding이 아니라 회귀다(리뷰 P1).
 
 ## Ontology
 - **SC6**: CLI만으로 도는 결정적 task 라이프사이클 시뮬레이션(`node tests/sim/agentloop.mjs sc6`, 인증 불필요).

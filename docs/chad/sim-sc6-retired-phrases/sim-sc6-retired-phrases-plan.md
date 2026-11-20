@@ -4,11 +4,11 @@
 11-06에 남은 두 브랜치(SC6 doctor green 수정·retired-phrases 테스트)를 합치고, SC6을 0.58.0에 맞춰 `--force` 없이 녹색으로 만든다.
 
 ## 단계
-- [ ] `claude/jovial-blackwell-bfcd1f` 병합
-- [ ] `claude/ecstatic-herschel-b3c503` 병합·충돌 해소
-- [ ] SC6 plan 체크·종결 판정 현행화 (`tests/sim/agentloop.mjs`)
-- [ ] retired-phrases·sim-smoke·SC6·`npm test` 검증
-- [ ] 리뷰·artifact 기록
+- [x] `claude/jovial-blackwell-bfcd1f` 병합
+- [x] `claude/ecstatic-herschel-b3c503` 병합·충돌 해소
+- [x] SC6 plan 체크·종결 판정 현행화 (`tests/sim/agentloop.mjs`)
+- [x] retired-phrases·sim-smoke·SC6·`npm test` 검증
+- [x] 리뷰·artifact 기록
 - [ ] ship 완료
 
 ## Ontology 변경 로그

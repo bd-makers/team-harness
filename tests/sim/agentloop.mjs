@@ -472,7 +472,8 @@ async function sc6Lifecycle() {
     sig('done-guard detects all 4 conditions', missingCauses.length === 0, missingCauses.length ? `missing: ${missingCauses.join(', ')}` : ''),
     sig('done-guard preserves active.json', activePreserved),
     sig('plan 체크박스 진행 (open→closed)', planProgressed),
-    sig('done 완료 → active.json 해제(null)', releasedNull, usedForce ? '--force 필요' : '--force 불필요'),
+    // Nothing is dirty and the plan is closed, so needing --force is a regression, not a finding.
+    sig('done 완료 → active.json 해제(null), --force 없이', releasedNull && !usedForce, usedForce ? '--force 필요' : '--force 불필요'),
     sig('종결 판정 (plan 파생)', closed, closure.source ? `source: ${closure.source}` : ''),
     sig('task handoff 에 완료 마커를 쓰지 않음', handoffUntouched),
     manual('AskUserQuestion done 휴먼 게이트', '헤드리스 재현 불가 — 머신러리만 검증'),
