@@ -194,3 +194,4 @@
 | chad | adopt-reviews-closed | ✅ done | 2026-11-20 |
 | chad | ledger-only-pr-check | ✅ done | 2026-11-20 |
 | chad | pr-check-fork-main | ✅ done | 2026-11-20 |
+| chad | sim-sc6-retired-phrases | ✅ done | 2026-11-20 |

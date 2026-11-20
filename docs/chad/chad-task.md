@@ -6,6 +6,7 @@
 - ✅ adopt-reviews-closed
 - ✅ ledger-only-pr-check
 - ✅ pr-check-fork-main
+- ✅ sim-sc6-retired-phrases
 - ✅ diagram-svg
 - ✅ diagram-views
 - ✅ done-derive
