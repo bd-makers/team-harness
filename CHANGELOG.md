@@ -15,6 +15,7 @@
   - **기존 설치**: `init`·`sync`가 옛 훅 블록을 원문 그대로일 때만 새 블록으로 바꾼다. 손댄 블록은 그대로 두고 doctor가 `옛 형식` 경고를 낸다. 훅 관리자(husky 등) 설정에 블록을 넣었다면 README의 새 블록으로 교체한다.
   - **호환**: 새 블록 + 구버전 CLI는 환경변수를 무시하고 종전대로 동작한다(플래그를 쓰지 않은 이유).
   - **알려진 한계**: origin이 fork이고 upstream이 정본인 레이아웃(`gh repo fork` 기본)에서는 `git push upstream main`(PR 아닌 직접 push)도 이제 검사된다 — 우회는 `git push --no-verify`. 그 레이아웃의 base는 여전히 origin 기준이다.
+- **`pr-check`가 생성물 원장만 바꾼 브랜치를 통과시킨다** (task `ledger-only-pr-check`). done-derive 뒤 원장(`docs/task_summary.md`·`docs/<user>/<user>-task.md`)은 기본 브랜치에서 `summary --write`로 묶어 갱신하는데, 그 커밋만 담은 브랜치는 "task 문서가 없음"으로 exit 1이 나고 pre-push가 막았다 — 보호 브랜치 저장소는 `--no-verify` 외에 길이 없었다. 이제 diff 가 전부 원장이면 `✓ pr-check <ref>: 생성물 원장만 변경 — task 문서 검사 대상 아님`과 note를 내고 통과한다(`--json`은 `checks[].ledgerOnly`). 원장과 다른 파일(위키 컴파일 결과 포함)이 섞이면 종전 판정이다. `docs/<user>/<user>-task.md`는 파일 이름의 user 가 디렉터리와 같을 때만 원장으로 본다.
 
 ## [0.57.0] - 2026-11-19
 

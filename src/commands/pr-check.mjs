@@ -113,10 +113,21 @@ async function taskFindings(targetDir, rev, { user, task }) {
   return { issues, notes };
 }
 
+// `summary --write` 가 쓰는 생성물 원장 — `docs/task_summary.md` 와 `docs/<user>/<user>-task.md`(D5). git diff 의 POSIX 경로로
+// 비교한다 — `SUMMARY_REL`·`userIndexRel` 은 `join` 이라 Windows 에서 `\` 가 된다. 파일 이름의 user 가 디렉터리와 같아야 한다.
+function isLedgerPath(p) {
+  const parts = p.split('/');
+  if (parts[0] !== DOCS_DIR) return false;
+  return (parts.length === 2 && parts[1] === 'task_summary.md') || (parts.length === 3 && parts[2] === `${parts[1]}-task.md`);
+}
+
 // 순수 판정. `empty` = diff 가 비었다(새 브랜치를 커밋 전에 push) — 담을 변경이 없으므로 통과다.
+// `ledgerOnly` = 바뀐 것이 생성물 원장뿐이다 — 기본 브랜치에서 묶어 갱신하는 커밋이라 담을 task 문서가 없는 게 정상이고, 통과다
+// (task ledger-only-pr-check). 원장과 다른 파일이 섞이면 종전 판정이다.
 export async function collectPrCheck({ targetDir, base, rev = 'HEAD' }) {
   const paths = (await git(targetDir, ['diff', '--name-only', '--relative', `${base}...${rev}`])).split('\n').filter(Boolean);
   if (!paths.length) return { empty: true, tasks: [] };
+  if (paths.every(isLedgerPath)) return { empty: false, ledgerOnly: true, tasks: [] };
   const refs = await changedTaskRefs(targetDir, rev, paths);
   const tasks = [];
   for (const ref of refs) tasks.push({ ...ref, ...(await taskFindings(targetDir, rev, ref)) });
@@ -157,13 +168,17 @@ async function headIfClean(targetDir) {
   } catch { return null; }
 }
 
-export const passed = result => result.empty || (result.tasks.length > 0 && result.tasks.every(t => !t.issues.length));
+export const passed = result => result.empty || result.ledgerOnly || (result.tasks.length > 0 && result.tasks.every(t => !t.issues.length));
 
 const NO_TASK = `이 브랜치의 변경에 task 문서(${DOCS_DIR}/<user>/<task>/)가 없음 — \`harness-team task <name>\` 으로 task 를 만들고 문서를 커밋`;
 
 function renderResult(label, result) {
   const lines = [];
   if (result.empty) return [`✓ pr-check ${label}: base 대비 변경 없음`];
+  if (result.ledgerOnly) {
+    return [`✓ pr-check ${label}: 생성물 원장만 변경 — task 문서 검사 대상 아님`,
+      `  · ${DOCS_DIR}/task_summary.md·${DOCS_DIR}/<user>/<user>-task.md 는 \`harness-team summary --write\` 생성물이다(D5)`];
+  }
   if (!result.tasks.length) return [`✗ pr-check ${label}: ${NO_TASK}`];
   for (const t of result.tasks) {
     lines.push(`${t.issues.length ? '✗' : '✓'} pr-check ${label}: ${taskLabel(t.user, t.task)}`);
@@ -343,7 +358,7 @@ export async function runPrCheck(ctx, { readStdin = readAllStdin, pushRemote = p
   }
   const ok = results.every(r => passed(r.result));
   const guardFailed = results.some(r => r.result.tasks.some(t => t.guardFailed));
-  const docsFailed = results.some(r => !r.result.empty
+  const docsFailed = results.some(r => !r.result.empty && !r.result.ledgerOnly
     && (!r.result.tasks.length || r.result.tasks.some(t => t.issues.some(i => !i.startsWith(GUARD_PREFIX)))));
   const failSummary = [docsFailed && 'PR 필수 task 문서가 빠짐', guardFailed && 'plan 이 전부 체크된 task 가 done 가드를 통과하지 못함']
     .filter(Boolean).join(' · ');
@@ -359,7 +374,7 @@ export async function runPrCheck(ctx, { readStdin = readAllStdin, pushRemote = p
       status: ok ? 'success' : 'failure',
       summary: ok ? `PR 필수 task 문서 확인 (base ${base})` : `${failSummary} (base ${base})`,
       nextActions: ok ? [] : failActions,
-      extra: { base, checks: results.map(r => ({ ref: r.label, rev: r.rev, empty: r.result.empty, tasks: toJsonTasks(r.result) })) },
+      extra: { base, checks: results.map(r => ({ ref: r.label, rev: r.rev, empty: r.result.empty, ledgerOnly: !!r.result.ledgerOnly, tasks: toJsonTasks(r.result) })) },
     }));
     return;
   }
