@@ -9,7 +9,7 @@ import { mkdtemp, mkdir, readFile, writeFile, rm, stat, access, realpath } from 
 import { constants } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { installPostCommitHook, installPrePushHook, checkPrePushHook, resolveHooksDir, POST_COMMIT_MARKER, POST_COMMIT_HOOK, PRE_PUSH_HOOK, PRE_PUSH_MARKER, PRE_PUSH_BLOCK } from '../src/git-hooks.mjs';
+import { installPostCommitHook, installPrePushHook, checkPrePushHook, resolveHooksDir, POST_COMMIT_MARKER, POST_COMMIT_HOOK, PRE_PUSH_HOOK, PRE_PUSH_MARKER, PRE_PUSH_BLOCK, PRE_PUSH_BLOCK_V1 } from '../src/git-hooks.mjs';
 
 const pexec = promisify(execFile);
 const git = (cwd, ...args) => pexec('git', ['-C', cwd, ...args]);
@@ -319,6 +319,34 @@ test('checkPrePushHook: core.hooksPath 는 관리자 소유 — 마커가 없으
     assert.match(r.detail, /pre-push 블록/);
     await installPrePushHook(dir);
     assert.equal((await checkPrePushHook(dir)).status, 'pass');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// task pr-check-fork-main (U1) — 옛 블록(push 원격을 넘기지 않음)은 init·sync 가 원문 정확 일치일 때만 새 블록으로 바꾼다.
+// 손댄 블록은 그대로 두고 doctor 가 경고한다. 옛 블록 뒤의 기존 줄은 보존한다.
+test('pre-push: 옛 블록은 정확히 일치할 때만 새 블록으로 바꾸고, 손댄 블록은 두고 doctor 가 경고한다', async () => {
+  const dir = await repo();
+  const hook = () => join(dir, '.git/hooks/pre-push');
+  try {
+    assert.ok(PRE_PUSH_BLOCK.includes('HARNESS_PUSH_REMOTE="$1" harness-team pr-check --pre-push'));
+    assert.ok(!PRE_PUSH_BLOCK_V1.includes('HARNESS_PUSH_REMOTE'));
+    await writeFile(hook(), `#!/bin/sh\n${PRE_PUSH_BLOCK_V1}\necho other\n`, { mode: 0o755 });
+    const stale = await checkPrePushHook(dir);
+    assert.equal(stale.status, 'warning');
+    assert.match(stale.detail, /옛 형식/);
+    assert.match(stale.detail, /run: harness-team sync/);
+
+    await installPrePushHook(dir);
+    assert.equal(await readFile(hook(), 'utf8'), `#!/bin/sh\n${PRE_PUSH_BLOCK}\necho other\n`);
+    assert.equal((await checkPrePushHook(dir)).status, 'pass');
+    await pexec('sh', ['-n', hook()]);
+
+    // 손댄 옛 블록(한 글자라도 다르면) — 설치기는 건드리지 않고 doctor 가 계속 알린다.
+    const edited = `#!/bin/sh\n${PRE_PUSH_BLOCK_V1.replace('exit 1;', 'exit 2;')}`;
+    await writeFile(hook(), edited);
+    await installPrePushHook(dir);
+    assert.equal(await readFile(hook(), 'utf8'), edited);
+    assert.equal((await checkPrePushHook(dir)).status, 'warning');
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

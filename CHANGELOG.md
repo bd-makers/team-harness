@@ -9,6 +9,13 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- **pre-push `pr-check`가 fork의 기본 브랜치로 가는 push를 검사한다** (task `pr-check-fork-main`). 종전에는 기본 브랜치 이름(`main` 등)으로의 push를 원격과 상관없이 건너뛰어, fork `main`에서 PR을 여는 흐름에서는 문서 검사와 done 가드가 돌지 않았다. 이제 훅이 git이 준 push 원격(`$1`)을 `HARNESS_PUSH_REMOTE`로 넘기고, 그것이 base 원격(origin)이 아닌 설정된 원격(이름 또는 URL)으로 풀리면 기본 브랜치 push도 검사한다. origin 기본 브랜치 push·판정 근거가 없는 경우(옛 훅 블록·안 풀리는 URL·origin 없음)는 종전대로 건너뛴다. 네트워크 호출 없음.
+  - **기존 설치**: `init`·`sync`가 옛 훅 블록을 원문 그대로일 때만 새 블록으로 바꾼다. 손댄 블록은 그대로 두고 doctor가 `옛 형식` 경고를 낸다. 훅 관리자(husky 등) 설정에 블록을 넣었다면 README의 새 블록으로 교체한다.
+  - **호환**: 새 블록 + 구버전 CLI는 환경변수를 무시하고 종전대로 동작한다(플래그를 쓰지 않은 이유).
+  - **알려진 한계**: origin이 fork이고 upstream이 정본인 레이아웃(`gh repo fork` 기본)에서는 `git push upstream main`(PR 아닌 직접 push)도 이제 검사된다 — 우회는 `git push --no-verify`. 그 레이아웃의 base는 여전히 origin 기준이다.
+
 ## [0.57.0] - 2026-11-19
 
 - **호환 주의: spec에 `reviewer`를 쓰면 팀 전원이 이 버전 이상이어야 한다** — `reviewer` 키를 모르는 옛 CLI의 `done`은 Done evidence 선언을 `알 수 없는 키: reviewer`(invalid)로 보고 막힌다.

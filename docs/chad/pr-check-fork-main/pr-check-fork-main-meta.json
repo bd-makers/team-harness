@@ -1,0 +1,25 @@
+{
+  "user": "chad",
+  "task": "pr-check-fork-main",
+  "created": "2026-11-20",
+  "firstActivatedAt": "2026-11-20T02:11:10.003Z",
+  "baseSha": "d282f76131db3eab7e2d6a42885a8ab00884ba05",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "claude",
+      "engine": "claude",
+      "model": null,
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "d282f76131db3eab7e2d6a42885a8ab00884ba05",
+      "tip": "de2a10c17ea3cc2a1451c3747d3ffbd0861b2c09",
+      "at": "2026-11-20T02:50:58.637Z",
+      "exitCode": 0,
+      "outputBytes": 3129
+    }
+  ]
+}
