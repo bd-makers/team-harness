@@ -367,7 +367,7 @@
 
     /* === CONTENT START ===
        새 덱은 이 구간(DECK + slides)만 교체한다. */
-    const DECK = { brand: 'TEAM HARNESS · 한눈에 보기 · v0.54.0' };
+    const DECK = { brand: 'TEAM HARNESS · 한눈에 보기 · v0.58.1' };
     const slides = [];
 
     slides.push(cover({
@@ -439,7 +439,7 @@
         ['<span class="row-id">plan</span>', '단계 체크리스트 · Ontology 변경 로그', '개발자', tag('필수', 'ok', 'sm'), '개발자 확인 · <span class="mono">done</span>이 미완 <span class="mono">- [ ]</span>을 막음 · 선택 simplifier'],
         ['<span class="row-id">artifact</span>', '실행 결과 · <span class="mono">## Reviews</span> · Learnings · Failures', '하네스 + 개발자', tag('필수', 'ok', 'sm'), '리뷰 결과가 <b>쌓이는 곳</b> · 머지 후 위키 컴파일의 재료'],
         ['<span class="row-id">handoff</span>', '세션 메모', '개발자 (원하면)', tag('선택', 'warn', 'sm'), '없음'],
-        ['<span class="row-id">meta.json</span>', '판정 창 · 완료 상태 (SSOT 아님)', '하네스 CLI', '—', '손으로 고치지 않는다']
+        ['<span class="row-id">meta.json</span>', '판정 창 · 리뷰 증거 (SSOT 아님)', '하네스 CLI', '—', '손으로 고치지 않는다']
       ]
     ), `<div class="callout warn"><strong>4종 → 3종 (2026-11-06)</strong> · 훅이 추적되는 handoff에 git log 사본을 쓰고 pr-check가 그 커밋을 요구해, 병합된 브랜치 70개에 handoff 전용 커밋 78개가 생겼다. 이제 훅은 추적 파일을 쓰지 않고 handoff는 직접 쓰는 선택 메모다.</div>`)}`, { notes: 'AGENTS.md 작업 프로토콜은 여전히 "네 파일"로 설명하지만 handoff는 선택 메모로 바뀌었다(D11 정정, task handoff-no-sweep). pr-check가 요구하는 것은 spec·plan·artifact.' }));
 
@@ -468,7 +468,7 @@
       <g class="d-node"><rect x="1220" y="300" width="360" height="72" rx="8"/><text class="d-name" x="1400" y="332" text-anchor="middle">S5 커밋</text><text class="d-sub" x="1400" y="358" text-anchor="middle">커밋 게이트 · gates.json</text></g>
       <g class="d-node"><rect x="820" y="300" width="360" height="72" rx="8"/><text class="d-name" x="1000" y="332" text-anchor="middle">S6 코드 리뷰</text><text class="d-sub" x="1000" y="358" text-anchor="middle">R3 · /harness-review</text></g>
       <g class="d-node focal"><rect x="420" y="300" width="360" height="72" rx="8"/><text class="d-name" x="600" y="332" text-anchor="middle">S7 PR</text><text class="d-sub" x="600" y="358" text-anchor="middle">/harness-ship · pr-check</text></g>
-      <g class="d-node optional"><rect x="20" y="300" width="360" height="72" rx="8"/><text class="d-name" x="200" y="332" text-anchor="middle">done · S8 지식화</text><text class="d-sub" x="200" y="358" text-anchor="middle">머지 뒤 · /harness-wiki 선택</text></g>
+      <g class="d-node optional"><rect x="20" y="300" width="360" height="72" rx="8"/><text class="d-name" x="200" y="332" text-anchor="middle">S8 종결 · 지식화</text><text class="d-sub" x="200" y="358" text-anchor="middle">머지 = 종결 · /harness-wiki 선택</text></g>
       <path class="d-edge focal" d="M380 60 H412" marker-end="url(#hs-arrow-focal)"/>
       <text class="d-label" x="400" y="16" text-anchor="middle">R1 통과</text>
       <path class="d-edge" d="M780 60 H812" marker-end="url(#hs-arrow)"/>
@@ -487,6 +487,7 @@
         ['', 'A1 fail → 구현 진입 금지']
       ])}
       ${hideBox(420, 104, [
+        ['규약', '첫 단계 [사람] spec 검토 승인'],
         ['루브릭', 'simplifier 4행 (선택)'],
         ['', 'YAGNI·1회용 추상화·중복·죽은 옵션'],
         ['규약', '다이어그램 옵트인 · 생성 직후 1회만'],
@@ -526,15 +527,15 @@
       ${hideBox(420, 380, [
         ['가드', 'pr-check — 하네스의 유일한 강제'],
         ['', '3종 존재 · 비어 있지 않음 · 템플릿 아님'],
-        ['훅', 'pre-push(git)가 같은 pr-check 실행'],
+        ['훅', 'pre-push(git)가 pr-check + done 가드'],
         ['루브릭', 'shipcheck 5행 (ship 선택 단계)'],
         ['', '요구사항↔diff · [x]↔커밋 · 스코프 밖'],
         ['규약', '다이어그램이 없으면 막지 않고 안내']
       ])}
       ${hideBox(20, 380, [
-        ['가드', 'done: 미완 체크박스 · 미커밋 변경 차단'],
+        ['가드', 'done(push 전): 미완 [ ] · 미커밋 차단'],
         ['가드', 'Done evidence review · tests', true],
-        ['가드', 'main에서 이미 done → 첫 줄 nudge'],
+        ['가드', 'main에서 이미 종결 → 첫 줄 nudge'],
         ['가드', 'wiki sources — compiled 감지 · 추가만'],
         ['규약', 'retro → artifact · 3회 반복 → promote']
       ])}
@@ -544,21 +545,22 @@
       <g class="d-hide"><rect x="20" y="538" width="1560" height="42" rx="6"/>
         <text y="564"><tspan class="d-hk rule" x="34">항상</tspan><tspan class="d-hk hook" dx="14">훅</tspan><tspan class="d-ht" dx="6">SessionStart session-context — 활성 task·첫 미완 단계 주입, 없으면 재개/새 task/없이 진행 nudge (Codex도)</tspan><tspan class="d-hk hook" dx="16">훅</tspan><tspan class="d-ht" dx="6">block-dangerous-git·bash</tspan><tspan class="d-hk hook" dx="16">훅</tspan><tspan class="d-ht" dx="6">observe-tools → 트립와이어</tspan><tspan class="d-hk guard" dx="16">권한</tspan><tspan class="d-ht" dx="6">.env·force push deny · push·PR ask</tspan></text>
       </g>
-    </svg></div>`)}`, { notes: '실선 상자는 사람이 부르는 단계, 점선 상자는 그 뒤에서 자동으로 도는 장치다. 훅 = Claude Code PreToolUse/PostToolUse/SessionStart 또는 git post-commit·pre-push(templates/.claude/settings.json, src/git-hooks.mjs). Codex는 SessionStart 하나만 받는다(D9). 가드 = 결정론적 CLI 판정(pr-check·done·boundary·scenario·doctor). 루브릭 = read-only 검증자가 id·심각도·pass/fail/na로 채점(src/commands/review-prompts.mjs: scenario·contrarian·simplifier·shipcheck·adversarial·testcritic 3종). 규약 = 기계 차단 없이 에이전트가 통과를 선언하지 않는 방식(interview R1·Ambiguity, D11). "선언 시"는 gates.json·Boundary contracts·scenarios·Done evidence를 팀이 선언했을 때만 작동한다는 뜻 — 강제는 여전히 pr-check 하나. simplifier 4행·shipcheck 5행의 원래 id(R1–R4·S1–S5)는 단계 기호와 겹쳐 쓰지 않았다. 종결 순서는 PR → 머지 → 기본 브랜치에서 done.' }));
+    </svg></div>`)}`, { notes: '실선 상자는 사람이 부르는 단계, 점선 상자는 그 뒤에서 자동으로 도는 장치다. 훅 = Claude Code PreToolUse/PostToolUse/SessionStart 또는 git post-commit·pre-push(templates/.claude/settings.json, src/git-hooks.mjs). Codex는 SessionStart 하나만 받는다(D9). 가드 = 결정론적 CLI 판정(pr-check·done·boundary·scenario·doctor). 루브릭 = read-only 검증자가 id·심각도·pass/fail/na로 채점(src/commands/review-prompts.mjs: scenario·contrarian·simplifier·shipcheck·adversarial·testcritic 3종). 규약 = 기계 차단 없이 에이전트가 통과를 선언하지 않는 방식(interview R1·Ambiguity, D11). "선언 시"는 gates.json·Boundary contracts·scenarios·Done evidence를 팀이 선언했을 때만 작동한다는 뜻 — 강제는 여전히 pr-check 하나. simplifier 4행·shipcheck 5행의 원래 id(R1–R4·S1–S5)는 단계 기호와 겹쳐 쓰지 않았다. 종결 순서는 ship → plan 마지막 단계 [x] → done → push → PR → 머지(= 종결)이고, 머지 뒤 종결 커밋은 없다.' }));
 
     const COMMANDS = [
       '# 셋업 — 사람마다: 플러그인 설치 + CLI 링크 · 프로젝트마다 1회: /harness-init',
       '/harness-task user-auth       # task 생성·활성화 → docs/<user>/user-auth/',
       '/harness-spec                 # spec 초안 (Confluence · Figma · 인터뷰)',
       '/harness-interview            # R1 원천 검토 + Ambiguity 게이트',
+      'harness-team brief            # 검토 슬라이드 → plan 첫 단계 [사람] spec 검토 승인',
       '#  plan.md 직접 작성·확정',
       '/harness-loop                 # 선택: 단계마다 Dev → QA → 커밋 (아니면 직접 구현)',
       'git commit                    # Claude가 커밋할 때만 커밋 게이트(gates.json) · 터미널 커밋엔 안 돎',
       '/harness-review               # R3 read-only 리뷰 → artifact ## Reviews',
       '/harness-ship                 # 문서를 코드 현실에 맞추고 pr-check → 준비 보고',
-      'git push → PR → 머지           # pre-push 훅이 pr-check',
-      '/harness-task done            # 머지 후, 기본 브랜치에서 종결',
-      '/harness-wiki <user>/<task>   # 선택: 결정·학습을 wiki/로 컴파일'
+      '/harness-task done            # plan 마지막 "ship 완료" [x] 뒤 가드 검증 · 추적 파일은 안 씀',
+      'git push → PR → 머지 = 종결     # pre-push 훅이 pr-check + done 가드 · 머지 뒤 종결 커밋 없음',
+      '/harness-wiki <user>/<task>   # 선택: 머지 뒤 결정·학습을 wiki/로 컴파일'
     ].join('\n');
     slides.push(slide(`${head('04 · COMMANDS', '명령 순서 — task 하나를 열고 닫기까지', 'PR 생성·push는 하네스가 대신하지 않는다 — ship은 준비 완료 보고에서 멈춘다.')}${body(`<pre class="code">${esc(COMMANDS)}</pre>`, cards([
       { title: '사람이 정하는 것', body: 'spec과 plan의 내용, 구현 방식(직접 · 루프), 리뷰를 몇 번 할지, PR 승인.' },
