@@ -10,7 +10,7 @@ fork 등 base 원격이 아닌 원격의 기본 브랜치로 가는 push에서�
 - [x] git-hooks: 새 훅 블록 · 옛 블록 정확일치 교체 · doctor 경고 + 테스트
 - [x] 문서: README · harness-ship · harness-task · decisions D11 · CHANGELOG (harness-cycle: 해당 서술 없음)
 - [x] 검증: `npm run test` · `npm run docs:check` — 리뷰 반영 후 1443 pass · 0 fail · 1 skip(기존 CI 전용), perf 1 pass, docs:check 최신
-- [ ] ship 완료
+- [x] ship 완료
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
