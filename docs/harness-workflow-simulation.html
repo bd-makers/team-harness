@@ -284,7 +284,7 @@
     <h1>Task Workflow Simulation</h1>
     <p>새로운 harness task 시스템의 전체 흐름 — init부터 완료, 세션 재개, task 전환까지의 시나리오별 시뮬레이션</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.56.0</span>
+      <span class="tag tag-purple">v0.57.0</span>
       <span class="tag tag-blue">post-commit 자동화</span>
       <span class="tag tag-green">증거 기반 종결 가드 7종</span>
       <span class="tag tag-orange">원장은 생성물</span>
@@ -293,7 +293,9 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #a78bfa;background:rgba(167,139,250,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
-    <strong>🆕 0.40.1–0.56.0 — task를 시작 전으로 되돌리는 clean · 훅이 추적 파일을 쓰지 않음 · user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키 · 폴더 없는 done task · PR 없는 위키 컴파일 · 리뷰 scope 판정 정정 · worktree 리뷰 범위 확장 · scope 오류 안내 정정 · pre-push가 무관 히스토리 브랜치를 건너뜀 · 소급 위키 컴파일 후보 목록 · eval 기반 명령 문서 정정 · stack 인프로세스 DB 안내 · done tests 기본 optional · 리뷰어 allow 제거:</strong>
+    <strong>🆕 0.40.1–0.57.0 — 구현 전 사람 검토 게이트·검토 슬라이드 · task를 시작 전으로 되돌리는 clean · 훅이 추적 파일을 쓰지 않음 · user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키 · 폴더 없는 done task · PR 없는 위키 컴파일 · 리뷰 scope 판정 정정 · worktree 리뷰 범위 확장 · scope 오류 안내 정정 · pre-push가 무관 히스토리 브랜치를 건너뜀 · 소급 위키 컴파일 후보 목록 · eval 기반 명령 문서 정정 · stack 인프로세스 DB 안내 · done tests 기본 optional · 리뷰어 allow 제거:</strong>
+    <br>
+    <code>0.57.0</code> <strong>새 task plan의 첫 단계가 <code>- [ ] [사람] spec 검토 승인 — &lt;user&gt;</code>다</strong> — 사용자가 spec을 승인해야 구현에 들어간다(<code>--no-review-gate</code>로 뺀다). 검토용 슬라이드는 <code>harness-team brief</code>가 spec에서만 뽑는다. 생성 직후 질문은 다이어그램 뷰(<code>sequence</code>·<code>module</code>)와 게이트 빼기를 한 번에 묻는다. 아래 S1 3·4·5단계를 그에 맞췄다.
     <br>
     <code>0.56.0</code> <strong><code>clean</code>이 task를 시작 전 상태로 되돌린다</strong> — 기본 dry-run, <code>--yes</code>는 백업 ref를 남기고 되돌린다. 워크스루 단계는 바뀌지 않았다.
     <br>
@@ -615,7 +617,7 @@
             <div class="tree" style="margin-top:0.5rem">
 <span class="tree-new">docs/chad/login-bug/</span>
 ├── <span class="tree-new">login-bug-spec.md</span>      <span style="color:var(--border)"># 초안 (Ambiguity 자가진단 포함)</span>
-├── <span class="tree-new">login-bug-plan.md</span>      <span style="color:var(--border)"># 초안 작성</span>
+├── <span class="tree-new">login-bug-plan.md</span>      <span style="color:var(--border)"># 초안 — 첫 단계 - [ ] [사람] spec 검토 승인 — chad (0.57.0)</span>
 ├── <span class="tree-new">login-bug-handoff.md</span>   <span style="color:var(--border)"># 선택 메모 (직접 작성, 훅은 쓰지 않음)</span>
 ├── <span class="tree-new">login-bug-artifact.md</span>  <span style="color:var(--border)"># 빈 scaffold (done/retro 시 기록)</span>
 └── <span class="tree-new">login-bug-meta.json</span>    <span style="color:var(--border)"># created·firstActivatedAt·status·closedAt (기계 상태)</span>
@@ -633,8 +635,8 @@
         <div class="step-body">
           <div class="step-actor actor-claude">Claude</div>
           <div class="step-content"></div>
-          <div class="ask-badge">❓ AskUserQuestion — spec/plan 단계에서 다이어그램도 함께 만들까요? <span style="color:var(--muted)">(0.17.0 옵트인 — 신규 생성 직후 <strong>1회만</strong> 묻고, 기존 task 재활성화 때는 묻지 않는다)</span></div>
-          <div class="step-detail">"예"면 <code>login-bug-plan.md</code>에 <code>- [ ] spec/plan 다이어그램 작성 → docs/chad/login-bug/login-bug-diagram.html</code> 단계를 추가한다. "아니오"면 아무것도 추가하지 않는다 — <strong>plan.md에 그 단계가 있는지가 곧 상태</strong>이며 전용 설정 키·상태 파일은 없다. 그 단계의 실행·갱신은 <code>/harness-diagram</code> 어댑터가 맡는다 — 외부 <code>diagram-design</code> 플러그인을 산출물 경로·자립형 inline SVG 제약·artifact 기록 규약을 주입해 호출한다.</div>
+          <div class="ask-badge">❓ AskUserQuestion (multiSelect) — 다이어그램을 함께 만들까요, 구현 전 사람 검토를 뺄까요? <span style="color:var(--muted)">(0.17.0 옵트인·0.57.0부터 게이트와 한 질문 — 신규 생성 직후 <strong>1회만</strong> 묻고, 기존 task 재활성화 때는 묻지 않는다)</span></div>
+          <div class="step-detail">선택지는 다이어그램(레거시 한 장) · <code>sequence</code> · <code>module</code> · <strong>게이트 빼기</strong>다. 뷰를 고르면 <code>login-bug-plan.md</code>에 뷰마다 <code>- [ ] spec/plan 다이어그램(sequence) 작성 → docs/chad/login-bug/login-bug-diagram-sequence.svg</code> 같은 단계를 하나씩 추가한다(레거시는 <code>…-diagram.html</code> 한 단계). 아무것도 고르지 않으면 다이어그램 단계 없이 게이트만 남는다 — <strong>plan.md에 그 단계가 있는지가 곧 상태</strong>이며 전용 설정 키·상태 파일은 없다. 그 단계의 실행·갱신은 <code>/harness-diagram</code> 어댑터가 맡는다 — 외부 <code>diagram-design</code> 플러그인을 산출물 경로·자립형 inline SVG 제약·artifact 기록 규약을 주입해 호출한다.</div>
         </div>
       </div>
       <div class="step">
@@ -642,7 +644,7 @@
         <div class="step-body">
           <div class="step-actor actor-claude">Claude</div>
           <div class="step-content">
-            <p><code>/harness-spec</code>으로 <code>login-bug-spec.md</code> 초안 생성 <span style="color:var(--muted)">(0.18.0 — Confluence·Figma·인터뷰 3소스, 또는 직접 작성)</span> → <code>/harness-interview</code>로 R1 원천 검토 <span style="color:var(--muted)">(0.47.0 — 원천 문서 사이 충돌 <code>(unresolved)</code>·누락 <code>(open)</code>을 spec <code>## 원천 검토 (R1)</code>에 기록, 미해결이 남으면 통과 선언 안 함)</span> + Ambiguity 자가진단 검증 → <code>login-bug-plan.md</code> 확정후 작업 시작</p>
+            <p><code>/harness-spec</code>으로 <code>login-bug-spec.md</code> 초안 생성 <span style="color:var(--muted)">(0.18.0 — Confluence·Figma·인터뷰 3소스, 또는 직접 작성)</span> → <code>/harness-interview</code>로 R1 원천 검토 <span style="color:var(--muted)">(0.47.0 — 원천 문서 사이 충돌 <code>(unresolved)</code>·누락 <code>(open)</code>을 spec <code>## 원천 검토 (R1)</code>에 기록, 미해결이 남으면 통과 선언 안 함)</span> + Ambiguity 자가진단 검증 → <code>login-bug-plan.md</code> 확정 → <strong>사람 검토 게이트</strong> <span style="color:var(--muted)">(0.57.0 — <code>harness-team brief</code>로 만든 <code>login-bug-brief.html</code>과 함께 spec을 보이고, 사용자가 명시적으로 승인하면 게이트 단계를 <code>[x]</code>로 켜고 artifact에 <code>- 검토 승인: &lt;날짜&gt; · 슬라이드 &lt;경로&gt;</code>를 남긴다)</span> → 작업 시작</p>
             <div class="step-detail">CLI가 그대로 안내한다: <code>next: /harness-spec으로 …-spec.md 초안 생성 (또는 직접 작성, Ambiguity 자가진단 포함)</code> · <code>next: /harness-interview → plan.md 작성 → 구현 → 테스트 (/harness-unittest 계열) → 리뷰 → /harness-retro → done</code></div>
           </div>
         </div>
@@ -1188,7 +1190,7 @@ login-bug
 </main>
 
 <footer>
-  harness-aijient-team-plugin v0.56.0 — Task Workflow Simulation &nbsp;·&nbsp; 2026-11-18
+  harness-aijient-team-plugin v0.57.0 — Task Workflow Simulation &nbsp;·&nbsp; 2026-11-19
 </footer>
 
 

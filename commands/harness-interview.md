@@ -35,11 +35,12 @@ argument-hint: (없음 — 활성 task 자동 감지)
    갱신한다 — 채점표에 없는 근거로 체크박스를 바꾸지 않는다.
 6. 채점표의 모든 항목이 pass(greenfield의 Context는 na 허용)이고 **열린 질문이 정리됐으면**
    "Ambiguity ≤ 0.2 통과"를 선언하고, 통과 근거를 spec.md "Ontology" 섹션에 한 줄로 남긴 뒤
-   다음 단계(plan 작성 → 구현)로 인계한다.
+   다음 단계(plan 작성 → 사람 검토 승인 → 구현)로 인계한다.
    - **plan writer는 하네스 밖에 있다** — `superpowers:writing-plans`가 설치돼 있으면 그것으로 초안을
      쓰고, 없으면 직접 쓴다. 도구가 없다고 멈추지 않는다. 어느 경로든 `AGENTS.md`의 "plan.md 계약"
      (체크박스가 `done` 가드의 입력 · Ontology 변경 로그 · Done evidence)과 "task 워크플로우"
-     (다이어그램 옵트인 체크박스는 상태 · Boundary contracts)를 따른다.
+     (다이어그램 옵트인 체크박스는 상태 · Boundary contracts)를 따른다. plan에 검토 게이트 `[사람] spec 검토 승인` 단계가 있으면
+     지우지 않고 `## 단계` 맨 위에 둔다 — 구현은 사용자가 그 단계를 승인한 뒤다(harness-task 명령 문서 검토 게이트 절).
    - plan을 확정한 뒤 구현을 루프로 돌릴지는 개발자가 고른다 — 선택형 `/harness-loop`(쓰지 않아도 된다).
    - 열린 질문 검사: `## 참고` 절의 `- (open) …` 항목마다 답이 spec에 반영돼 마커가 지워졌거나,
      `- (open → <대상>) …`으로 이월 대상(다음 task·`docs/decisions.md` 등)이 적혀 있어야 한다.

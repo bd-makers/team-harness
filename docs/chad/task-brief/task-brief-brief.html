@@ -1,0 +1,107 @@
+<!doctype html>
+<!-- 생성물 — harness-team brief 가 spec 에서 렌더한다. 손으로 고치지 말고 spec 을 고친 뒤 다시 생성한다. -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>task-brief — Spec</title>
+<style>
+:root{color-scheme:light dark;--bg:#ffffff;--fg:#1d1d1f;--muted:#6e6e73;--line:#d2d2d7;--code:#f2f2f5;--accent:#0a5bb5}
+@media (prefers-color-scheme:dark){:root{--bg:#111113;--fg:#f2f2f2;--muted:#a1a1a6;--line:#3a3a3c;--code:#1f1f22;--accent:#6aaeff}}
+html{scroll-snap-type:y mandatory}
+body{margin:0;background:var(--bg);color:var(--fg);font:18px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
+.slide{box-sizing:border-box;min-height:100vh;padding:7vh 8vw;scroll-snap-align:start;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.cover{display:flex;align-items:center}
+h1{font-size:2.4em;line-height:1.25;margin:0}
+h2{font-size:1.6em;line-height:1.3;margin:0 0 .8em;color:var(--accent)}
+h3{font-size:1.15em;margin:1.2em 0 .4em}
+.src{margin:0 0 .3em;color:var(--muted);font-size:.9em}
+.src+ul{margin-top:0}
+ul,ol{padding-left:1.4em}
+li{margin:.25em 0}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;background:var(--code);padding:.08em .32em;border-radius:4px}
+pre{background:var(--code);padding:.9em 1.1em;border-radius:6px;overflow:auto}
+pre code{background:none;padding:0}
+table{border-collapse:collapse;margin:.6em 0}
+th,td{border:1px solid var(--line);padding:.35em .65em;text-align:left;vertical-align:top}
+th{background:var(--code)}
+@media print{html{scroll-snap-type:none}.slide{min-height:auto;break-after:page}}
+</style>
+</head>
+<body>
+<main>
+<section class="slide cover"><h1>task-brief — Spec</h1></section>
+<section class="slide"><h2>목적 / 요구사항</h2><ul><li><strong>문제</strong>: 구현 전 사람 검토(A5 게이트 — 구현에 들어가기 전에 사용자가 spec을 한 번 검토)를 하려면 spec 전문을 읽어야 한다. spec은 템플릿 안내·주석·
+자가진단이 섞인 긴 마크다운이라 &quot;빠르고 확실한&quot; 검토가 어렵고, 에이전트가 요약 슬라이드를 쓰면 spec에 없는 사실이 섞일 수 있다
+(kc-platform 회고 A3, 설계 task <code>team-harness-improvements</code>).</li><li><strong>영향</strong>: 새 CLI <code>brief</code>와 그 표면(<code>bin/harness-team.mjs</code> router, <code>src/cli-args.mjs</code>), <code>clean</code> CLI, 문서(<code>commands/harness-task.md</code>,
+<code>templates/docs/README.md</code>, README 명령어, <code>skills/harness-team/SKILL.md</code>). 하네스를 쓰는 모든 소비자 프로젝트의 task 작성자(구현 전 자기 검토).</li><li><strong>기대 결과</strong>: <code>harness-team brief [--stage spec]</code>이 활성 task spec의 절(목적·범위·설계·Ontology·R1 발견)과 열린 항목, 선언돼 있으면
+Done evidence <code>scenarios</code>를 <strong>그대로</strong> 슬라이드로 렌더해 <code>&lt;name&gt;-brief.html</code>을 쓴다. 렌더 결과의 텍스트는 모두 spec 원문의 부분 문자열이다
+(새 사실 0 — 결정 A3-1). 슬라이드마다 출처 절 이름이 보인다.</li><li><strong>제약</strong>: 결정론 — 같은 spec이면 같은 바이트(시각·난수 없음). CSS scroll-snap·script 0·외부 자산 0·system font stack.
+probe → degrade 계약은 적용하지 않는다(A3-1 — probe할 외부 도구가 없다). 슬래시 명령을 새로 만들지 않는다(manifest-sync 표면을 늘리지 않음).
+doctor·<code>AGENTS.md</code>·<code>templates/AGENTS.md.hbs</code>·<code>src/commands/task.mjs</code>는 바꾸지 않는다. A5(<code>human-review-gate</code>)를 기다리지 않는다(사용자가 병렬 시작을 택함).
+push·PR·릴리스는 범위 밖.</li></ul></section>
+<section class="slide"><h2>범위 (In / Out)</h2><ul><li><strong>In</strong>: <code>src/commands/brief.mjs</code>(신규 — 절 선택·마크다운 부분집합 렌더러·쓰기), <code>bin/harness-team.mjs</code> router, <code>src/cli-args.mjs</code>
+(COMMANDS <code>brief</code>·<code>VALUE_FLAGS</code> <code>stage</code>·<code>FLAG_CHOICES.stage</code>·<code>--json</code> 목록), <code>src/commands/clean.mjs</code> <code>TASK_FILE</code> kind <code>brief</code>,
+<code>src/task-paths.mjs</code> kind 주석, 테스트(<code>tests/brief-command.test.mjs</code> 신규·<code>tests/cli-args.test.mjs</code>·<code>tests/clean.test.mjs</code>),
+문서(<code>commands/harness-task.md</code> 게이트와 독립된 짧은 절, <code>templates/docs/README.md</code> 트리·규약, README 명령어 블록, <code>skills/harness-team/SKILL.md</code>),
+CHANGELOG <code>[Unreleased]</code>.</li><li><strong>Out</strong>: <code>--stage ship</code>(plan 단계·artifact 결과) — 설계가 후순위로 두고 첫 PR에서 빼도 된다고 했다(아래 R1). A5 범위 — 게이트 단계 삽입
+(<code>taskPlanTemplate</code>), <code>commands/harness-loop.md</code> 진입, <code>docs/harness-cycle.md</code> §2, harness-task 게이트 절과 <code>brief</code> 연결, artifact 승인 줄 —
+A5 머지 뒤 rebase 때 맞춘다. 링크·이미지·기울임·인용 렌더(부분집합 밖 — 글자 그대로 둔다). doctor(설계 A1-2와 같은 이유 — 기존 계약 유지).
+<code>AGENTS.md</code>·<code>templates/AGENTS.md.hbs</code>(eager 예산). <code>pr-check</code> — 브리프는 PR 산출물이 아니다(작성자 본인 검토용, 설계 R1).</li></ul></section>
+<section class="slide"><p class="src">원천 검토 (R1)</p><h2>발견</h2><ul><li><strong>Obsidian 열람(설계의 미검증 항목)</strong> — 실측할 수 있는지 먼저 확인했다. Obsidian 공식 지원 형식에 <code>.html</code>이 없다(Markdown·Bases·Canvas·
+Images·Audio·Video·PDF — 다른 형식은 커뮤니티 플러그인). 이 볼트의 커뮤니티 플러그인 21개에 HTML 뷰어는 없다. 즉 scroll-snap 이전에
+Obsidian은 <code>&lt;name&gt;-brief.html</code>을 네이티브로 열지 않는다. 플러그인 열람을 실측하려면 플러그인 설치(사용자 볼트 변경)와 GUI 조작이 필요하다.
+→ 결정(2026-11-18): 열람 정본은 <strong>로컬 브라우저</strong>다. Obsidian은 네이티브 미지원(문서 근거), HTML 플러그인 열람은 미검증으로 남긴다(<code>## 참고</code>).
+결정 A3-1(결정론 HTML)은 그대로 두고 열람 경로만 좁힌다. 로컬 브라우저의 scroll-snap은 구현 뒤 내장 브라우저로 실측한다.</li><li><strong>&quot;새 사실 0&quot;의 판정 방식</strong> — 설계는 &quot;렌더 결과의 텍스트가 모두 spec 원문의 부분 문자열&quot;이다. 슬라이드 번호·&quot;출처:&quot; 라벨·생성 시각 같은
+장식 글자도 spec에 없는 텍스트라 이 판정을 깬다.
+→ 결정(2026-11-18): 장식 글자를 두지 않는다. 출처 절 이름은 spec 제목 글자 그대로(예: <code>설계 / 접근</code>)가 슬라이드 제목·출처 표지를 겸하고,
+<code>&lt;title&gt;</code>은 H1이다. 생성 시각을 넣지 않아 같은 spec이면 같은 바이트다. 판정은 텍스트 노드마다 엔티티를 풀고 공백 연속을 한 칸으로 접은 뒤
+(spec 쪽도 같이 접어) 부분 문자열인지 본다 — HTML은 공백을 접어 그리므로 줄 이음은 사실이 아니다. scenarios 값은 JSON을 푼 문자열이라
+escape(<code>\&quot;</code>·<code>\u…</code>)가 든 값은 원문의 부분 문자열이 아니다 — 이 저장소 spec 187개에 렌더해 보니 실패는 <code>cmd</code>의 <code>\&quot;</code> 8건뿐이었다.
+JSON escape를 푸는 것은 엔티티를 푸는 것과 같은 표현 변환이라, 판정은 spec 원문과 그 spec의 Done evidence가 선언한 scenarios의 키·값(푼 문자열)을 원문으로 센다
+(키까지 — codex 1차 P1: <code>&quot;\u0073cenarios&quot;</code>처럼 escape로 쓴 키). 걷어 낸 주석 자리는 빈 줄로 남긴다 — 앞뒤 줄이 한 문단으로 붙으면 원문에 없는 문자열이 된다(codex 1차 P1).</li><li><strong>spec 안에 있지만 이 task의 사실이 아닌 글자</strong> — 템플릿 안내 문단(제목 아래 기울임 문단)과 HTML 주석(Done evidence의 주석 처리된 예시
+<code>&quot;review&quot;: &quot;required&quot;</code>)은 부분 문자열 검사를 통과하지만, 슬라이드에 나오면 선언되지 않은 요건이 선언된 것처럼 보인다.
+→ 결정(2026-11-18): 코드 펜스 밖 줄머리 HTML 주석과 안내 문단(절 첫 블록이면서 단일 <code>*</code>로 시작하고 끝나는 문단 — <code>**</code> 굵게는 아니다, 본문 중간의
+기울임 문단은 작성자 글이라 남긴다 — codex 1차 P2)을 렌더 전에 걷어 낸다. scenarios는 <code>parseDoneEvidenceDeclaration</code>이 <code>configured</code>로 돌려준 것만 렌더한다
+(done 가드와 같은 판정 — invalid면 CLI 출력에만 알린다). 그 파서가 주석·펜스 안의 <code>## Done evidence</code> 예시를 선언으로 읽는 경우가 있어도 브리프는 따로 판정하지 않는다
+(codex 1차 P1 기각) — 브리프가 가드와 다르게 읽으면 <code>done</code>·<code>scenario check</code>가 실제로 강제하는 시나리오를 숨기게 된다. 파서를 고치는 것은 done 가드 변경이라 이 task 밖이다.</li><li><strong>열린 항목의 문법</strong> — 설계는 &quot;<code>(open)</code>/<code>(unresolved)</code> 항목&quot;이다. A4가 외부 질의 마커 세 상태를 더했고 셋 다 게이트를 통과하지 못한다.
+이월 <code>(open → &lt;대상&gt;)</code>은 게이트를 통과하지만 답은 아직 없다.
+→ 결정(2026-11-18, MAINTAINING &quot;문법·형제 경로 전체&quot;): 목록 항목에 맨 글자로 붙은 <code>(open…)</code>(이월 포함)·<code>(unresolved)</code>·<code>(&lt;출처&gt;, unresolved)</code>·
+<code>(ask:…)</code>·<code>(asked:…)</code>·<code>(answered …)</code>를 spec 어디서든 모아 한 슬라이드에 둔다. 백틱 안은 언급이라 세지 않는다(harness-interview 표기/언급 구분).
+<code>(open</code> 뒤는 <code>)</code> 또는 <code>→</code>만 태그다 — <code>(open 아님, …)</code> 같은 산문은 세지 않는다. 외부 질의는 역할이 있어야 태그다 — <code>(ask:)</code>는 세지 않는다(codex 1차 P2).
+<code>두 (open)이 닫혔다</code>처럼 산문에 맨 글자로 쓴 <code>(open)</code>은 harness-interview 규칙대로 표기로 센다(codex 1차 P2 기각 — 게이트와 같은 판정).
+이월을 넣는 이유: 검토자는 &quot;답 없이 넘긴 것&quot;을 보고 승인해야 한다. 묶음마다 그 항목이 있던 절 제목을 출처 표지로 단다. 열린 항목이 없으면 슬라이드도 없다.</li><li><strong><code>--stage ship</code></strong> — 설계는 &quot;후순위, 첫 PR에서 빼도 됨&quot;이다.
+→ 결정(2026-11-18): 뺀다. <code>--stage</code>는 <code>spec</code>만 받는다 — 값 계약은 <code>FLAG_CHOICES</code>(MAINTAINING 규칙표)에 두고, 하는 일 없는 값을 광고하지 않는다.
+<code>ship</code>을 더하는 것은 하위 호환 변경이다(플래그 없음 = <code>spec</code>).</li><li><strong>A5와의 순서</strong> — 설계 PR 분할은 &quot;②는 ① 뒤&quot;인데 사용자가 병렬 시작을 택했다. <code>brief</code>는 게이트 단계에 기대지 않는다(spec만 읽는다).
+→ 결정(2026-11-18): <code>commands/harness-task.md</code>에는 게이트와 독립된 짧은 절만 둔다. A5 머지 뒤 rebase 때 게이트 절이 이 절을 부르게 맞춘다.
+<code>src/commands/task.mjs</code>는 고치지 않는다(A5가 <code>taskPlanTemplate</code>을 고친다 — 충돌 최소화, <code>readActive</code>·<code>parseDoneEvidenceDeclaration</code>은 import만).
+→ 후속(2026-11-18): A5가 main에 머지됐다(PR #191, <code>bef05f1</code>). rebase하면서 독립 절을 게이트 절의 &quot;검토용 슬라이드(<code>brief</code>)&quot; 항목으로 옮기고,
+artifact 승인 줄의 슬라이드 칸이 <code>brief</code>가 쓴 경로를 가리키게 했다. 충돌은 CHANGELOG 한 곳(두 항목 모두 유지).</li><li><strong>생성물의 git 상태</strong> — 브리프를 만들고 두면 미추적 파일이라 <code>done</code>의 미커밋 가드가 막는다(codex 1차 P2). gitignore는 init·migrate 표면(소비자 <code>.gitignore</code>)을 늘리고,
+가드 면제는 <code>task.mjs</code>(A5와 충돌)를 고친다.
+→ 결정(2026-11-18): 브리프는 검토한 시점의 스냅샷이라 <strong>task 문서와 함께 커밋한다</strong>(다이어그램과 같다). spec을 고쳐 다시 검토하면 다시 만들어 커밋한다.
+커밋하지 않을 거면 지운다. 문서(<code>commands/harness-task.md</code>·<code>templates/docs/README.md</code>)에 적는다.</li><li><strong>없는 절</strong> — 이전 spec에는 R1 절 같은 절이 없을 수 있다.
+→ 결정(2026-11-18): 없거나 비어 있는 절은 슬라이드를 만들지 않고 CLI 출력(파일 밖)에만 알린다 — 자리표시 슬라이드는 새 텍스트라 만들지 않는다.
+렌더할 절이 하나도 없으면 exit 1이고 아무것도 쓰지 않는다.</li><li>검토 완료: 2026-11-18 — 위 결정 반영 후 재대조, 남은 <code>(unresolved)</code>·<code>(open)</code> 없음</li></ul></section>
+<section class="slide"><h2>설계 / 접근</h2><p>설계 task의 &quot;A5 + A3&quot; 절 중 슬라이드(A3) 항목을 옮겨 쓰고 위 R1 결정을 반영했다.</p><ul><li><strong>CLI(결정 A3-1)</strong>: <code>harness-team brief [--stage spec]</code> — 활성 task(<code>.harness/active.json</code>)의 <code>&lt;name&gt;-spec.md</code>를 읽어 같은 폴더에
+<code>&lt;name&gt;-brief.html</code>을 쓴다. 매번 덮어쓴다(생성물). LLM이 쓰지 않으므로 &quot;새 사실 0&quot;이 구조로 보장되고, probe할 외부 도구가 없어 probe → degrade
+계약은 적용하지 않는다. 위치 인자는 받지 않는다. <code>--json</code>은 <code>command: 'brief'</code> envelope(<code>artifacts</code>, <code>slides</code>·<code>sections</code>·<code>missing</code>).
+오류(활성 task 없음·spec 없음·렌더할 절 없음)는 exit 1, error 패킷, 아무것도 쓰지 않음.</li><li><strong>절 선택(spec 문서 순서)</strong>: <code>## 목적…</code>·<code>## 범위…</code>·<code>## 원천 검토…</code>의 <code>### 발견</code>만·<code>## 설계…</code>·<code>## Ontology</code> — 제목 머리 글자로 찾는다.
+<code>###</code> 하위 절이 있으면 하위 절마다 한 슬라이드(위 절 제목을 출처 표지로), 하위 절 앞 본문도 한 슬라이드. 그 뒤 열린 항목 슬라이드(있을 때만),
+Done evidence <code>scenarios</code>(선언됐을 때만 — 시나리오마다 <code>id</code>·<code>given</code>·<code>when</code>·<code>then</code>·<code>test</code>·<code>cmd</code> 표). 맨 앞은 H1 표지(H1이 있을 때).</li><li><strong>렌더러(작은 마크다운 부분집합)</strong>: 문단, 목록(<code>-</code>·<code>*</code>·<code>+</code>·<code>1.</code> — 들여쓰기 중첩, 이어지는 줄), 굵게 <code>**</code>, 인라인 코드, 표(<code>|</code> 헤더 + 구분 줄),
+코드 펜스, 슬라이드 안 <code>####</code> 이하 제목. 링크·이미지·기울임·인용은 글자 그대로. spec 글자는 모두 HTML escape(<code>&amp;</code>·<code>&lt;</code>·<code>&gt;</code>·<code>&quot;</code>) —
+spec의 <code>&lt;script&gt;</code>는 글자다.</li><li><strong>산출물</strong>: <code>&lt;!doctype html&gt;</code> 한 파일. 인라인 <code>&lt;style&gt;</code> 하나(고정 문자열 — spec과 무관), script 0, <code>src</code>·<code>href</code>·<code>url(</code>·<code>@import</code> 0,
+system font stack, <code>html { scroll-snap-type: y mandatory }</code>·<code>.slide { scroll-snap-align: start; min-height: 100vh }</code>, 다크 모드, 인쇄(<code>break-after: page</code>).</li><li><strong>명령 표면</strong>: CLI 서브커맨드 <code>brief</code>(<code>bin/harness-team.mjs</code> router·<code>taskCmds</code>, <code>cli-args.mjs</code> COMMANDS·<code>VALUE_FLAGS</code>·<code>FLAG_CHOICES.stage</code>).
+슬래시 명령은 새로 만들지 않는다 — <code>commands/harness-task.md</code>의 절이 <code>harness-team brief</code>를 부른다.</li><li><strong>형제 경로</strong>: <code>clean.mjs</code> <code>TASK_FILE</code> kind에 <code>brief</code>(확장자 그룹은 이미 <code>html</code>), <code>task-paths.mjs</code> kind 주석, <code>templates/docs/README.md</code> 트리
+(생성물·비-SSOT — docs seed는 migrate refresh 대상이 아니라 sha 등록 없음, A1·A2 선례).</li><li><strong>문서 정본</strong>: <code>commands/harness-task.md</code> 구현 전 사람 검토 게이트 절의 &quot;검토용 슬라이드(<code>brief</code>)&quot; 항목(A5 머지 뒤 rebase에서 독립 절을 옮김). README 명령어 블록,
+Codex <code>skills/harness-team/SKILL.md</code> 한 줄.</li><li><strong>테스트</strong>: <code>tests/brief-command.test.mjs</code> — 새 사실 0(텍스트 노드 ⊂ spec — 표본과 이 저장소의 모든 task spec, 음성 대조: 남의 문자열 하나를 넣으면 판정이 실패),
+외부 참조 0(태그·속성·style만 본다 — 본문 텍스트의 URL 언급은 허용), escape(<code>&lt;script&gt;</code>·링크 문법), 주석·안내 문단 제외, 열린 항목(맨 글자/백틱,
+마커 종류), scenarios(configured만), 결정론(두 번 실행 바이트 동일), 없는 절 생략·전부 없으면 exit 1·쓰지 않음, 활성 task 없음.
+<code>tests/cli-args.test.mjs</code>(<code>--stage</code> 값·<code>--json</code> 목록), <code>tests/clean.test.mjs</code>(brief 보호).</li><li><strong>호환</strong>: 새 명령·새 파일만 — 기존 task·명령 동작 불변. <code>brief</code>가 task 예약어가 된다(<code>tests/task-reserved-names.test.mjs</code>가 COMMANDS를 돈다) —
+이 저장소에 <code>docs/*/brief</code> task는 없다.</li></ul></section>
+<section class="slide"><h2>Ontology</h2><ul><li><strong>브리프(brief)</strong>: spec의 정해진 절만 그대로 옮긴 검토용 슬라이드 HTML <code>&lt;name&gt;-brief.html</code>. 생성물·비-SSOT — 사실의 정본은 spec이고, spec이 바뀌면 다시 만든다.
+검토한 시점의 스냅샷으로 task 문서와 함께 커밋한다.</li><li><strong>새 사실 0</strong>: 브리프의 모든 텍스트 노드가 (엔티티를 풀고 공백을 접은 뒤) spec 원문 — 또는 그 spec이 선언한 scenarios JSON의 푼 키·값 — 의 부분 문자열인 상태.
+장식 글자를 두지 않아서 성립한다.</li><li><strong>열린 항목</strong>: 목록 항목에 맨 글자로 붙은 열린 질문·충돌 표기 — <code>(open…)</code>(이월 포함)·<code>(unresolved)</code>·외부 질의 마커 세 상태.</li><li><strong>출처 표지</strong>: 슬라이드가 옮긴 spec 절의 제목 글자 그대로.</li><li>게이트 근거(2026-11-18): 설계 결정 A3-1 확정(PR #184), 판정 방식·제외 글자·열린 항목 문법·<code>--stage ship</code> 제외·A5 순서·없는 절을 R1 결정으로 닫음,
+Obsidian 열람은 네이티브 미지원·플러그인 미검증으로 명시. 목표·제약·완료 기준·영향 파일이 모두 식별됨.</li></ul></section>
+</main>
+</body>
+</html>

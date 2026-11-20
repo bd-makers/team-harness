@@ -1,0 +1,25 @@
+{
+  "user": "chad",
+  "task": "human-review-gate",
+  "created": "2026-11-18",
+  "firstActivatedAt": "2026-11-18T12:35:25.480Z",
+  "baseSha": "7afaa409bc2c8b7f4176cad8de5c2c88db4034ed",
+  "status": "done",
+  "closedAt": "2026-11-18T13:08:29.143Z",
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "model": null,
+      "scope": "diff",
+      "base": "origin/main",
+      "mergeBase": "7afaa409bc2c8b7f4176cad8de5c2c88db4034ed",
+      "tip": "15aab2e51eeff2dfb0f58dff5d2273bdfbb5f6b3",
+      "at": "2026-11-18T12:54:37.100Z",
+      "exitCode": 0,
+      "outputBytes": 1992
+    }
+  ]
+}

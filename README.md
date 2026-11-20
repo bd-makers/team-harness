@@ -529,6 +529,9 @@ harness-team boundary check
 
 # spec Done evidence의 R2 시나리오마다 증거 명령을 실행해 exit 0 대조
 harness-team scenario check
+
+# 활성 task spec 의 절만 그대로 렌더한 구현 전 검토용 슬라이드 → <name>-brief.html (생성물, 새 사실 0)
+harness-team brief
 ```
 
 ### PR 필수 문서 검사 — `harness-team pr-check`

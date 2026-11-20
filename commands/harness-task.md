@@ -1,7 +1,7 @@
 ---
 description: "task 관리 (task/list/done/reopen/clean/handoff) — docs/<user>/<name>/ 구조"
 phase: Workflow
-argument-hint: '<name> [--area <area>] [--reviewer <profile>] | list [--area <area>] [--remote] | done [--force] | reopen <name> [--reason <text>] | clean [<name>] [--base <ref>] | handoff'
+argument-hint: '<name> [--area <area>] [--reviewer <profile>] [--no-review-gate] | list [--area <area>] [--remote] | done [--force] | reopen <name> [--reason <text>] | clean [<name>] [--base <ref>] | handoff'
 ---
 
 `$ARGUMENTS`의 **첫 토큰**으로 분기한다. `list`·`done`·`reopen`·`clean`·`handoff`는 `task`의 인자가 아니라 **별개 하위명령**이다 —
@@ -18,8 +18,8 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" reopen <name> [--reason <text>
 node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" clean [<name>] [--base <ref>]   # dry-run — --yes 는 아래 절의 승인 뒤에만
 node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" handoff
 
-# 그 외 → task 생성 또는 활성화 (모노레포 area·리뷰 프로필은 아래 절)
-node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name> [--area <area>] [--reviewer <profile>]
+# 그 외 → task 생성 또는 활성화 (모노레포 area·리뷰 프로필·검토 게이트는 아래 절)
+node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name> [--area <area>] [--reviewer <profile>] [--no-review-gate]
 ```
 
 예시:
@@ -31,6 +31,7 @@ node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" task <name> [--area <area>] [-
 - `harness-team task web-next-login --area web-next`   # 모노레포 area task 생성 또는 활성화
 - `harness-team list --area web-next`  # 그 area 의 task 만
 - `harness-team task auth-redesign --reviewer deep`   # 새 task 의 리뷰 프로필을 spec 에 기록 (생성 때만)
+- `harness-team task auth-redesign --no-review-gate`   # 새 task 를 구현 전 사람 검토 단계 없이 생성 (생성 때만)
 - `harness-team list --remote`        # + 머지되지 않은 origin 브랜치에만 있는 task
 
 ## task 되돌리기 (`clean`)
@@ -101,6 +102,49 @@ area 는 `<name>-meta.json` 의 `area` 키에만 기록되고 task 는 여전히
   선언 invalid로 막힌다. 프로필이 실제로 있는지는 `review`가 실행 때 본다.
 - **팀 전원이 이 키를 아는 버전이어야 한다.** `reviewer`를 모르는 옛 CLI의 `done`은 `알 수 없는 키`로 막힌다(CHANGELOG).
 
+## 구현 전 사람 검토 게이트 (`--no-review-gate`)
+
+구현에 들어가기 전에 사용자가 spec을 한 번 검토하는 절차가 **기본**이다(사이클 S2 게이트 — `docs/harness-cycle.md` §2).
+검토자는 그 task의 user 본인이다.
+
+- **단계** — `task` 출력이 `created:`면 plan `## 단계` **맨 위**에 아래 한 줄이 들어 있고, 출력에 `review gate:` 줄이 붙는다.
+  `<user>`는 task의 user(`docs/<user>/`)다. 형식은 CLI가 정본이다(`reviewGateStep`).
+
+  ```markdown
+  - [ ] [사람] spec 검토 승인 — <user>
+  ```
+
+- **검토용 슬라이드(`brief`)** — 검토를 빠르고 확실하게 하도록, spec을 보여 줄 때 슬라이드를 만들어 경로를 함께 보인다(따로 묻지 않는다):
+
+  ```bash
+  node "${CLAUDE_PLUGIN_ROOT}/bin/harness-team.mjs" brief   # → docs/<user>/<name>/<name>-brief.html (--json 지원)
+  ```
+
+  - **무엇을 옮기나** — 활성 task spec의 `## 목적`·`## 범위`·`## 원천 검토`의 `### 발견`·`## 설계`·`## Ontology`(`###` 하위 절마다 한 장),
+    열린 항목(목록 항목에 맨 글자로 붙은 `(open…)`·`(unresolved)`·외부 질의 마커), 선언돼 있으면 Done evidence `scenarios`.
+    없거나 빈 절은 슬라이드 없이 출력에만 알린다. 렌더할 절이 하나도 없으면 exit 1이고 쓰지 않는다 — 그때 슬라이드 칸은 `없음`이다.
+  - **새 사실 0** — 에이전트가 슬라이드를 쓰지 않는다. CLI가 spec 글자를 그대로 렌더하므로 슬라이드의 텍스트는 모두 spec에 있다.
+    슬라이드가 틀렸으면 **spec을 고치고 다시 생성한다** — 생성물·비-SSOT이고 매번 덮어쓴다.
+  - **커밋** — 검토한 시점의 스냅샷이라 task 문서와 함께 커밋한다. 미추적으로 두면 `done`의 미커밋 가드가 막는다 — 커밋하지 않을 거면 지운다.
+  - **열람** — 로컬 브라우저로 연다(script 0·외부 자산 0, 한 장씩 스크롤 스냅). Obsidian은 `.html`을 네이티브로 열지 않는다.
+- **켜는 조건 — 사용자의 명시적 승인뿐.** 에이전트는 spec(경로와 요지)을 보여 주고 사용자가 **그 spec을** 승인한다고 말한 뒤에만
+  `- [x]`로 바꾼다. 다른 작업에 대한 "진행해"·이전 대화의 승인은 이 승인이 아니다. 켤 때 artifact `## 결과`에 그 단계의 증거로 한 줄을 남긴다:
+
+  ```markdown
+  - 검토 승인: <YYYY-MM-DD> · 슬라이드 <경로|없음>
+  ```
+
+  슬라이드 칸은 위 `brief`로 만들어 보여 준 슬라이드의 경로(`docs/<user>/<name>/<name>-brief.html`), 만들지 못했으면 `없음`이다.
+- **승인 전에는 task 문서(`docs/<user>/<name>/`) 밖 파일을 고치지 않는다.** spec·plan을 다듬는 것은 된다 — 그것이 검토 대상이다.
+- **강도는 프롬프트 수준이다** — 커밋·쓰기 차단은 없다. SessionStart는 plan 첫 미완 단계로 이 단계를 보여 주고,
+  `/harness-loop`는 다음 단계가 `[사람]` 단계면 들어가지 않는다. 끝내 켜지 않으면 `done` 가드가 미완 체크박스로 막는다(늦은 안전망).
+- **`[사람]` 단계는 사람이 하는 일의 기록이다** — Dev·루프 오케스트레이터는 구현하지도 켜지도 않는다.
+- **빼기** — 생성 시 질문(아래 옵트인 절 1번)에서 **게이트 빼기**를 고르면 방금 만든 plan에서 그 한 줄을 지운다. 사용자가 생성 **전에**
+  이미 빼라고 했거나 스크립트로 만들면 `task <새 이름> --no-review-gate`로 처음부터 넣지 않는다(값은 받지 않는다 — `--no-review-gate=false`는 거부).
+  plan에 그 줄이 없다는 사실이 곧 옵트아웃이다. 그 밖의 이유로는 지우지 않는다 — plan을 다시 쓸 때도 `## 단계` 맨 위에 둔다.
+- **기존 task에는 손대지 않는다** — `activated:`·`reopened:`는 plan을 그대로 두고(소급 없음), 기존 task에 `--no-review-gate`를 주면
+  거부한다(exit 1, plan·meta·활성 포인터 모두 그대로). 빼려면 plan의 그 줄을 손으로 지운다.
+
 ## spec/plan 다이어그램 옵트인
 
 `task` 출력이 `created:`(신규 생성)일 때만 아래를 **1회** 수행한다. `activated:`(기존 task
@@ -109,14 +153,26 @@ area 는 `<name>-meta.json` 의 `area` 키에만 기록되고 task 는 여전히
 옵트인 상태는 plan.md에 그 단계가 있는지로 이미 남아 있고, 재개는 그 계획을 이어받는 것이지
 새로 세우는 것이 아니다.
 
-1. **질문** — `AskUserQuestion`으로 한 번만 묻는다: 이 task의 spec/plan 단계에서 다이어그램을
-   함께 만들까? 사용자가 건너뛰면 그대로 진행한다. 다시 묻지 않는다.
+1. **질문** — `AskUserQuestion`으로 한 번만 묻는다(multiSelect, 위 검토 게이트와 **한 질문**): 이 task의 spec/plan 단계에서
+   다이어그램을 함께 만들까, 그리고 구현 전 사람 검토를 뺄까? 선택지는 넷이다 — 다이어그램(레거시 한 장) · `sequence`(시간 순 상호작용) ·
+   `module`(구성요소·의존 관계) · **게이트 빼기**. 뷰는 복수 선택이다 — 뷰는 옵트인이다. 게이트는 기본이라 "빼기"로 묻는다 —
+   아무것도 고르지 않으면 다이어그램 없이 게이트가 남는다. 다시 묻지 않는다. `--no-review-gate`로 만들었으면 게이트 선택지는 뺀다.
 
 2. **"예" → plan에 단계 추가** — `<name>-plan.md`의 `## 단계`에 체크박스를 더한다:
 
    ```markdown
    - [ ] spec/plan 다이어그램 작성 → docs/<user>/<name>/<name>-diagram.html
    ```
+
+   뷰를 골랐으면 위 한 줄 대신 **고른 뷰마다** 한 줄을 넣는다(뷰 열거의 정본은 CLI `FLAG_CHOICES.view`):
+
+   ```markdown
+   - [ ] spec/plan 다이어그램(sequence) 작성 → docs/<user>/<name>/<name>-diagram-sequence.svg
+   - [ ] spec/plan 다이어그램(module) 작성 → docs/<user>/<name>/<name>-diagram-module.svg
+   ```
+
+   이름 없는 첫 형식이 레거시 뷰이며 계속 유효하다. 레거시 단계와 뷰 단계가 한 plan에 함께 있어도 된다 —
+   각 단계는 자기 경로와 자기 기록 호출(6번)로 닫힌다.
 
    이것이 옵트인의 전부다. 전용 설정 키·상태 파일·doctor 체크를 만들지 않는다 —
    **plan.md가 곧 상태다**(AGENTS.md 세션 시작 프로토콜 2번이 반드시 읽는 파일).
@@ -134,16 +190,23 @@ area 는 `<name>-meta.json` 의 `area` 키에만 기록되고 task 는 여전히
    - [x] spec/plan 다이어그램 — 미실행(도구 없음)
    ```
 
+   뷰 단계는 뷰 이름을 남긴 채 닫는다: `- [x] spec/plan 다이어그램(sequence) — 미실행(도구 없음)`.
+
    지우면 옵트인했다는 사실 자체가 사라지고, `- [ ]`로 열어 두면 `harness-team done` 가드가
    "plan.md에 미완 체크박스가 남아 있음"으로 완료를 막는다.
 
-5. **산출물** — `docs/<user>/<name>/<name>-diagram.html`. 자립형 **inline SVG**로 쓴다 —
+5. **산출물** — `docs/<user>/<name>/<name>-diagram.html`(레거시), 뷰 단계면 뷰마다
+   `docs/<user>/<name>/<name>-diagram-<view>.svg` — 파일 하나 = 뷰 하나. 레거시는 자립형 **inline SVG**로 쓴다 —
    `docs/`는 Obsidian 볼트에서 열리고 Obsidian은 script를 제거하므로 mermaid 같은 런타임 JS
-   다이어그램은 볼트에서 렌더되지 않는다. 이 파일은 `<name>-meta.json`과 마찬가지로 SSOT 4파일이
+   다이어그램은 볼트에서 렌더되지 않는다. 뷰는 **단독 SVG** 하나다 — PR/MR 리뷰어와 Obsidian이 이미지로 보도록
+   HTML을 두지 않는다. 스타일은 `<svg>` 안에 두고 외부 자산은 0이다(제약 목록은 `commands/harness-diagram.md` 6번,
+   판정은 아래 6번의 `record --view`). 이 파일은 `<name>-meta.json`과 마찬가지로 SSOT 4파일이
    아니다.
 
 6. **기록** — `harness-team diagram record`(건너뛰었으면 `--skipped "<사유>"`)가 `<name>-artifact.md`에
-   날짜 한 줄을 남기고 위 4번의 plan 단계를 함께 닫는다. 형식은 CLI가 정본이다. 기록하지 않으면 나중에
+   날짜 한 줄을 남기고 위 4번의 plan 단계를 함께 닫는다. 형식은 CLI가 정본이다. 뷰 단계는
+   `--view <view>`를 붙여 뷰마다 기록한다 — 그 뷰의 파일·단계만 다루고, `--view` 없는 호출은 레거시 단계만 닫는다.
+   생성 기록이면 `--view`가 SVG 자립성을 검사한다 — 위반이면 exit 1이고 아무것도 쓰지 않는다. 기록하지 않으면 나중에
    "묻지 않은 것"과 "묻고 건너뛴 것"을 구분할 수 없다.
 
 7. **실행은 `/harness-diagram`이 담당한다** — 위 4~6번(probe·degrade·산출물·기록)을 실제로 수행하는

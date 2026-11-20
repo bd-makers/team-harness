@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { runDiagram, closeDiagramStep, diagramRecordLine } from '../src/commands/diagram.mjs';
+import { runDiagram, closeDiagramStep, diagramRecordLine, svgSelfContainmentViolations, DIAGRAM_SKIPPED_PREFIX } from '../src/commands/diagram.mjs';
 import { insertBeforeHeading, insertReviewBlock } from '../src/commands/review.mjs';
 
 // 다이어그램 옵트인의 **기록** 단계 — artifact 한 줄 + plan 체크박스 — 를 CLI 가 함께 쓰는지 고정한다.
@@ -285,5 +285,293 @@ test('diagram <action>: record 외 액션과 액션 없음은 exit 2 (--json 도
     const json = await capture(() => run(dir, ['draw'], { json: true }));
     assert.equal(json.exitCode, 2);
     assert.equal(JSON.parse(json.logs.join('\n')).status, 'error');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// ---- 뷰별 다이어그램 (diagram-views) ----
+// 뷰 단계 `spec/plan 다이어그램(<view>)` 은 `--view <view>` 만 닫는다. 레거시 단계·`--view` 없는 record 는 종전 그대로이고
+// 뷰 단계를 건드리지 않는다 — 레거시 정규식이 뷰 단계까지 맞던 겹침이 회귀하지 않게 고정한다.
+
+const SEQ_REL = 'docs/tester/demo/demo-diagram-sequence.svg';
+const SEQ_STEP = `- [ ] spec/plan 다이어그램(sequence) 작성 → ${SEQ_REL}`;
+const MOD_STEP = '- [ ] spec/plan 다이어그램(module) 작성 → docs/tester/demo/demo-diagram-module.svg';
+const VIEW_PLAN = PLAN.replace(OPEN_STEP, `${SEQ_STEP}\n${MOD_STEP}`);
+const MIXED_PLAN = PLAN.replace(OPEN_STEP, `${OPEN_STEP}\n${SEQ_STEP}\n${MOD_STEP}`);
+
+// 뷰 산출물은 단독 SVG 다(diagram-svg). 기본 내용은 자립성 검사를 통과하는 최소 SVG.
+const MIN_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>\n';
+async function writeView(dir, view, content = MIN_SVG) {
+  await writeFile(join(dir, 'docs', 'tester', 'demo', `demo-diagram-${view}.svg`), content);
+}
+
+test('diagramRecordLine: 뷰 생략 줄은 머리를 그대로 두고 사유 앞에 [<view>] 를 붙인다', () => {
+  assert.equal(diagramRecordLine({ outcome: 'skipped', note: '도구 없음', date: '2026-11-18', view: 'sequence' }),
+    '- 다이어그램: 미실행 — [sequence] 도구 없음 (2026-11-18)');
+  assert.ok(diagramRecordLine({ outcome: 'skipped', note: 'x', date: 'd', view: 'module' }).startsWith(DIAGRAM_SKIPPED_PREFIX));
+  assert.equal(diagramRecordLine({ outcome: 'produced', diagram: SEQ_REL, date: '2026-11-18', view: 'sequence' }),
+    `- 다이어그램: ${SEQ_REL} 생성 (2026-11-18)`);
+});
+
+test('closeDiagramStep: --view 없는 기록은 뷰 단계를 닫지 않는다 — 뷰 단계만 있으면 missing (열림·닫힘 모두)', () => {
+  const open = closeDiagramStep(VIEW_PLAN, { outcome: 'skipped', note: '도구 없음' });
+  assert.equal(open.status, 'missing');
+  assert.equal(open.plan, VIEW_PLAN);
+  const closedViews = VIEW_PLAN.replace(SEQ_STEP, SEQ_STEP.replace('- [ ]', '- [x]')).replace(MOD_STEP, MOD_STEP.replace('- [ ]', '- [x]'));
+  assert.equal(closeDiagramStep(closedViews, { outcome: 'produced' }).status, 'missing', '닫힌 뷰 단계를 레거시 already-closed 로 세지 않는다');
+});
+
+test('closeDiagramStep: 레거시와 뷰가 섞이면 각 호출이 자기 단계만 닫는다', () => {
+  const legacy = closeDiagramStep(MIXED_PLAN, { outcome: 'produced' });
+  assert.equal(legacy.status, 'closed');
+  assert.match(legacy.plan, /^- \[x\] spec\/plan 다이어그램 작성 → docs\/tester\/demo\/demo-diagram\.html$/m);
+  assert.ok(legacy.plan.includes(SEQ_STEP) && legacy.plan.includes(MOD_STEP), '뷰 단계는 열린 채');
+
+  const seq = closeDiagramStep(MIXED_PLAN, { outcome: 'produced', view: 'sequence' });
+  assert.equal(seq.status, 'closed');
+  assert.ok(seq.plan.includes(SEQ_STEP.replace('- [ ]', '- [x]')));
+  assert.ok(seq.plan.includes(OPEN_STEP) && seq.plan.includes(MOD_STEP), '레거시·다른 뷰 단계는 열린 채');
+
+  const mod = closeDiagramStep(MIXED_PLAN, { outcome: 'skipped', note: '도구 없음', view: 'module' });
+  assert.equal(mod.status, 'closed');
+  assert.match(mod.plan, /^- \[x\] spec\/plan 다이어그램\(module\) — 미실행\(도구 없음\)$/m);
+  assert.ok(mod.plan.includes(OPEN_STEP) && mod.plan.includes(SEQ_STEP));
+});
+
+test('closeDiagramStep: 다른 뷰의 단계만 있으면 missing, 그 뷰가 닫혀 있으면 already-closed', () => {
+  const seqOnly = PLAN.replace(OPEN_STEP, SEQ_STEP);
+  assert.equal(closeDiagramStep(seqOnly, { outcome: 'produced', view: 'module' }).status, 'missing');
+  assert.equal(closeDiagramStep(PLAN, { outcome: 'produced', view: 'sequence' }).status, 'missing', '레거시 단계는 뷰 단계가 아니다');
+  const seqClosed = PLAN.replace(OPEN_STEP, '- [x] spec/plan 다이어그램(sequence) — 미실행(도구 없음)');
+  const r = closeDiagramStep(seqClosed, { outcome: 'produced', view: 'sequence' });
+  assert.equal(r.status, 'already-closed');
+  assert.equal(r.plan, seqClosed);
+});
+
+test('record --view sequence (produced): 뷰 파일로 판정하고 그 뷰 단계만 닫는다 — envelope 에 view', async () => {
+  const dir = await fixture({ plan: MIXED_PLAN });
+  try {
+    await writeView(dir, 'sequence');
+    const { exitCode, logs } = await capture(() => run(dir, ['record'], { view: 'sequence', json: true }));
+    assert.equal(exitCode, undefined, logs.join('\n'));
+    const env = JSON.parse(logs.join('\n'));
+    assert.equal(env.view, 'sequence');
+    assert.equal(env.diagram, SEQ_REL);
+    assert.equal(env.plan, 'closed');
+    assert.match(await readTask(dir, 'artifact.md'), new RegExp(`^- 다이어그램: ${SEQ_REL.replace(/[.]/g, '\\.')} 생성 \\(\\d{4}-\\d{2}-\\d{2}\\)$`, 'm'));
+    const plan = await readTask(dir, 'plan.md');
+    assert.ok(plan.includes(SEQ_STEP.replace('- [ ]', '- [x]')));
+    assert.ok(plan.includes(OPEN_STEP) && plan.includes(MOD_STEP));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('record --view: 그 뷰 파일이 없으면 exit 1 — 레거시 파일이 있어도 대신하지 않는다', async () => {
+  const dir = await fixture({ plan: MIXED_PLAN, diagram: true });
+  try {
+    const { exitCode, logs } = await capture(() => run(dir, ['record'], { view: 'sequence' }));
+    assert.equal(exitCode, 1);
+    assert.match(logs.join('\n'), /demo-diagram-sequence\.svg/);
+    assert.equal(await readTask(dir, 'plan.md'), MIXED_PLAN);
+    assert.equal(await readTask(dir, 'artifact.md'), ARTIFACT);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('record --view module --skipped: [module] 생략 줄 + module 단계를 사유 붙여 닫는다', async () => {
+  const dir = await fixture({ plan: MIXED_PLAN });
+  try {
+    const { exitCode } = await capture(() => run(dir, ['record', '도구', '없음'], { view: 'module', skipped: true }));
+    assert.equal(exitCode, undefined);
+    assert.match(await readTask(dir, 'artifact.md'), /^- 다이어그램: 미실행 — \[module\] 도구 없음 \(\d{4}-\d{2}-\d{2}\)$/m);
+    const plan = await readTask(dir, 'plan.md');
+    assert.match(plan, /^- \[x\] spec\/plan 다이어그램\(module\) — 미실행\(도구 없음\)$/m);
+    assert.ok(plan.includes(OPEN_STEP) && plan.includes(SEQ_STEP));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('record (--view 없음): 뷰 단계만 있는 plan 은 exit 1 이고 --view 를 안내한다 — 쓰지 않는다', async () => {
+  const dir = await fixture({ plan: VIEW_PLAN, diagram: true });
+  try {
+    const { exitCode, logs } = await capture(() => run(dir, ['record']));
+    assert.equal(exitCode, 1);
+    assert.match(logs.join('\n'), /--view sequence\|module/);
+    assert.equal(await readTask(dir, 'plan.md'), VIEW_PLAN);
+    assert.equal(await readTask(dir, 'artifact.md'), ARTIFACT);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('record --view <모르는 값>: 직접 호출도 exit 2 이고 쓰지 않는다', async () => {
+  const dir = await fixture({ plan: MIXED_PLAN });
+  try {
+    const { exitCode, errs } = await capture(() => run(dir, ['record'], { view: '../x' }));
+    assert.equal(exitCode, 2);
+    assert.match(errs.join('\n'), /알 수 없는 --view/);
+    assert.equal(await readTask(dir, 'plan.md'), MIXED_PLAN);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// codex P2(diagram-views 리뷰): 레거시 파일이 없는 view-only plan 에서도 bare record 는 --view 를 안내한다.
+test('record (--view 없음): 레거시 파일도 없는 view-only plan 에서도 --view 를 안내한다', async () => {
+  const dir = await fixture({ plan: VIEW_PLAN });
+  try {
+    const { exitCode, logs } = await capture(() => run(dir, ['record']));
+    assert.equal(exitCode, 1);
+    assert.match(logs.join('\n'), /--view sequence\|module/);
+    assert.equal(await readTask(dir, 'plan.md'), VIEW_PLAN);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// codex P2: plan 쓰기 실패 뒤 재실행 안내가 --view·--skipped 를 잃지 않는다.
+test('record --view --skipped: plan 쓰기 실패 패킷의 재실행 안내가 같은 플래그를 담는다',
+  { skip: process.getuid?.() === 0 ? 'root 는 권한 비트를 무시한다' : false }, async () => {
+  const dir = await fixture({ plan: MIXED_PLAN });
+  const planPath = join(dir, 'docs', 'tester', 'demo', 'demo-plan.md');
+  try {
+    const { chmod } = await import('node:fs/promises');
+    await chmod(planPath, 0o444);
+    const { exitCode, logs } = await capture(() => run(dir, ['record', "it's", '$HOME'], { view: 'module', skipped: true }));
+    assert.equal(exitCode, 1);
+    // 사유는 POSIX 단일 인용 — `'`·`$` 가 복사한 명령의 의미를 바꾸지 않는다.
+    assert.ok(logs.join('\n').includes(`harness-team diagram record --view module --skipped -- 'it'\\''s $HOME'`), logs.join('\n'));
+  } finally {
+    const { chmod } = await import('node:fs/promises');
+    await chmod(planPath, 0o644).catch(() => {});
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+// codex 4차 P2: 레거시 거부는 알려진 뷰 꼬리만 — 손으로 쓴 괄호 레거시 단계는 종전대로 닫힌다.
+test('closeDiagramStep: 알려진 뷰가 아닌 괄호 꼬리는 레거시 단계로 닫힌다', () => {
+  const custom = PLAN.replace(OPEN_STEP, '- [ ] spec/plan 다이어그램(선택) 작성 → docs/tester/demo/demo-diagram.html');
+  const r = closeDiagramStep(custom, { outcome: 'produced' });
+  assert.equal(r.status, 'closed');
+  assert.match(r.plan, /^- \[x\] spec\/plan 다이어그램\(선택\) 작성 → /m);
+  assert.equal(closeDiagramStep(custom, { outcome: 'produced', view: 'sequence' }).status, 'missing');
+});
+
+// ---- 뷰 SVG 자립성 (diagram-svg) ----
+// 뷰어가 SVG 를 `<img>` 로 보이면 외부 자원·스크립트가 조용히 빠진다. 규칙마다 최소 위반 표본 하나가 **그 규칙 하나만** 걸리고,
+// 비슷하지만 허용되는 것(문서 안 참조·data:·xmlns·DOCTYPE URI·텍스트의 "online =")을 모은 표본은 통과한다 —
+// 규칙을 지우거나 넓히면 어느 한쪽이 깨진다.
+
+const NS = 'xmlns="http://www.w3.org/2000/svg"';
+const LOOKALIKES_SVG = `﻿<?xml version="1.0" encoding="UTF-8"?>
+<!-- 주석 -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg ${NS} xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 10 10">
+  <style>text { font-family: system-ui, -apple-system, "Segoe UI", sans-serif } .a { fill: url(#g) } .b { fill: url( '#g' ) }</style>
+  <defs><linearGradient id="g"/></defs>
+  <use href="#g"/><use xlink:href='#g'/><image href="data:image/png;base64,AAAA"/>
+  <a href=""><text class="a">online = true</text></a>
+</svg>
+`;
+
+const SVG_VIOLATIONS = [
+  ['스크립트 요소(대문자)', `<svg ${NS}><SCRIPT>x()</SCRIPT></svg>`, /^스크립트 요소: SCRIPT$/],
+  ['스크립트 요소(접두사)', `<svg ${NS}><svg:script/></svg>`, /^스크립트 요소: svg:script$/],
+  ['foreignObject', `<svg ${NS}><foreignObject><div/></foreignObject></svg>`, /^foreignObject\(HTML 섞기\): foreignObject$/],
+  ['이벤트 핸들러', `<svg ${NS}><rect onclick = "x()"/></svg>`, /^이벤트 핸들러 속성\(스크립트\): onclick$/],
+  ['@import', `<svg ${NS}><style>@IMPORT "#x";</style></svg>`, /^외부 스타일: @IMPORT$/],
+  ['https href', `<svg ${NS}><image href="https://cdn.example/x.png"/></svg>`, /^외부 href: https:\/\/cdn\.example\/x\.png$/],
+  ['http xlink:href(대문자·공백·홑따옴표)', `<svg ${NS}><image XLINK:HREF = 'http://x/y.png'/></svg>`, /^외부 href: http:\/\/x\/y\.png$/],
+  ['// href', `<svg ${NS}><image href="//cdn/x.png"/></svg>`, /^외부 href: \/\/cdn\/x\.png$/],
+  ['상대 경로 href(따옴표 없음)', `<svg ${NS}><image href=logo.png /></svg>`, /^외부 href: logo\.png$/],
+  ['javascript: href', `<svg ${NS}><a href="javascript:x()"/></svg>`, /^외부 href: javascript:x\(\)$/],
+  ['xml-stylesheet', `<?xml-stylesheet href="s.css"?>\n<svg ${NS}/>`, /^외부 href: s\.css$/],
+  ['url(https)', `<svg ${NS}><style>.a { fill: url( 'https://x/p' ) }</style></svg>`, /^외부 url\(\): https:\/\/x\/p$/],
+  ['url(//)', `<svg ${NS}><style>@font-face { src: url(//f/x.woff) }</style></svg>`, /^외부 url\(\): \/\/f\/x\.woff$/],
+  ['url(상대)', `<svg ${NS}><rect fill="url(p.svg#g)"/></svg>`, /^외부 url\(\): p\.svg#g$/],
+  ['xmlns 없음', '<svg viewBox="0 0 1 1"></svg>', /^루트 <svg> 에 xmlns="http:\/\/www\.w3\.org\/2000\/svg" 없음$/],
+  ['다른 xmlns', '<svg xmlns="http://www.w3.org/2000/svgX"></svg>', /^루트 <svg> 에 xmlns=/],
+  ['자식의 xmlns 만', `<svg viewBox="0 0 1 1"><g ${NS}/></svg>`, /^루트 <svg> 에 xmlns=/],
+  ['HTML 루트', `<html><body><svg ${NS}></svg></body></html>`, /^루트 요소가 <svg> 가 아님: <html>/],
+  ['빈 파일', '', /^루트 요소가 <svg> 가 아님: \(빈 파일\)$/],
+  // codex 1차 리뷰
+  ['잘린 파일', `<svg ${NS}><rect width="1"`, /^루트 <svg> 가 닫히지 않음/],
+  ['문자 참조로 숨긴 url()', `<svg ${NS}><rect fill="u&#114;l(p.svg#g)"/></svg>`, /^외부 url\(\): p\.svg#g$/],
+  ['16진 문자 참조로 숨긴 href', `<svg ${NS}><image href="&#x68;ttps://x/y.png"/></svg>`, /^외부 href: https:\/\/x\/y\.png$/],
+  ['따옴표 안 > 뒤의 이벤트 속성', `<svg ${NS}><rect aria-label="A > B" onload="x()"/></svg>`, /^이벤트 핸들러 속성\(스크립트\): onload$/],
+  ['DTD 엔티티', `<!DOCTYPE svg [<!ENTITY u "x">]>\n<svg ${NS}/>`, /^DTD 엔티티 선언: <!ENTITY$/],
+];
+
+test('svgSelfContainmentViolations: 허용되는 비슷한 것들을 모은 SVG 는 통과한다', () => {
+  assert.deepEqual(svgSelfContainmentViolations(LOOKALIKES_SVG), []);
+  assert.deepEqual(svgSelfContainmentViolations(MIN_SVG), []);
+  // 문서 안 참조를 문자 참조로 쓴 것(`&#35;g` = `#g`), 스스로 닫는 루트, 끝의 공백·주석은 허용(codex 1차)
+  assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><use href="&#35;g"/><rect aria-label="a &gt; b" fill="url(&#x23;g)"/></svg>\n<!-- end -->\n`), []);
+  assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS} viewBox="0 0 1 1"/>`), []);
+});
+
+test('svgSelfContainmentViolations: 규칙마다 위반 표본이 그 규칙 하나만 건다', () => {
+  for (const [name, svg, expected] of SVG_VIOLATIONS) {
+    const got = svgSelfContainmentViolations(svg);
+    assert.equal(got.length, 1, `${name}: ${JSON.stringify(got)}`);
+    assert.match(got[0], expected, name);
+  }
+});
+
+test('record --view: 자립하지 않는 SVG 는 규칙마다 exit 1 이고 plan·artifact 를 바이트 그대로 둔다', async () => {
+  const dir = await fixture({ plan: MIXED_PLAN });
+  try {
+    for (const [name, svg, expected] of SVG_VIOLATIONS) {
+      await writeView(dir, 'sequence', svg);
+      const { exitCode, logs } = await capture(() => run(dir, ['record'], { view: 'sequence' }));
+      assert.equal(exitCode, 1, name);
+      const out = logs.join('\n');
+      assert.match(out, /demo-diagram-sequence\.svg 이 자립형 SVG 가 아니라/, name);
+      assert.ok(out.split('\n').some(line => line.startsWith('cause: ') && expected.test(line.slice('cause: '.length))), `${name}: ${out}`);
+      assert.equal(await readTask(dir, 'plan.md'), MIXED_PLAN, name);
+      assert.equal(await readTask(dir, 'artifact.md'), ARTIFACT, name);
+    }
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('record --view --json: 위반은 error envelope 의 root_cause 배열로 낸다', async () => {
+  const dir = await fixture({ plan: MIXED_PLAN });
+  try {
+    await writeView(dir, 'module', `<html><svg><script/></svg></html>`);
+    const { exitCode, logs } = await capture(() => run(dir, ['record'], { view: 'module', json: true }));
+    assert.equal(exitCode, 1);
+    const env = JSON.parse(logs.join('\n'));
+    assert.equal(env.status, 'error');
+    assert.deepEqual(env.error.root_cause.map(c => c.split(':')[0]), ['루트 요소가 <svg> 가 아님', '스크립트 요소']);
+    assert.equal(await readTask(dir, 'plan.md'), MIXED_PLAN);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('record --view: 이미 닫힌 뷰 단계의 갱신도 자립성을 본다', async () => {
+  const closedSeq = PLAN.replace(OPEN_STEP, SEQ_STEP.replace('- [ ]', '- [x]'));
+  const dir = await fixture({ plan: closedSeq });
+  try {
+    await writeView(dir, 'sequence', `<svg ${NS}><image href="https://x/y.png"/></svg>`);
+    const bad = await capture(() => run(dir, ['record'], { view: 'sequence' }));
+    assert.equal(bad.exitCode, 1);
+    assert.equal(await readTask(dir, 'artifact.md'), ARTIFACT);
+    await writeView(dir, 'sequence');
+    const ok = await capture(() => run(dir, ['record'], { view: 'sequence' }));
+    assert.equal(ok.exitCode, undefined, ok.logs.join('\n'));
+    assert.match(ok.logs.join('\n'), /plan: already-closed/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('record --view: 뷰 HTML(A1 형식)은 뷰 산출물이 아니다 — .svg 가 없으면 exit 1', async () => {
+  const dir = await fixture({ plan: MIXED_PLAN });
+  try {
+    await writeFile(join(dir, 'docs', 'tester', 'demo', 'demo-diagram-sequence.html'), `<svg ${NS}/>`);
+    const { exitCode, logs } = await capture(() => run(dir, ['record'], { view: 'sequence' }));
+    assert.equal(exitCode, 1);
+    assert.match(logs.join('\n'), /demo-diagram-sequence\.svg 이 없어/);
+    assert.equal(await readTask(dir, 'plan.md'), MIXED_PLAN);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('자립성 검사는 뷰 생성 기록에만 — 레거시 HTML·--skipped 는 검사하지 않는다(호환)', async () => {
+  const dir = await fixture({ plan: MIXED_PLAN });
+  try {
+    await writeFile(join(dir, 'docs', 'tester', 'demo', 'demo-diagram.html'), '<html><script src="https://cdn/m.js"></script></html>');
+    const legacy = await capture(() => run(dir, ['record']));
+    assert.equal(legacy.exitCode, undefined, legacy.logs.join('\n'));
+    await writeView(dir, 'module', '<html><script/></html>');
+    const skipped = await capture(() => run(dir, ['record', '도구', '없음'], { view: 'module', skipped: true }));
+    assert.equal(skipped.exitCode, undefined, skipped.logs.join('\n'));
+    assert.match(await readTask(dir, 'plan.md'), /^- \[x\] spec\/plan 다이어그램\(module\) — 미실행\(도구 없음\)$/m);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });

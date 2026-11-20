@@ -78,7 +78,7 @@ test('loop: the four stop conditions are pinned and no-progress has no numeric c
   const noProgress =
     '- **진전 없음** — 직전 Dev 턴 이후 실패 집합이 같고 diff에도 변화가 없으면 멈춘다. 비교는 Dev 턴 전후의 `git diff HEAD` 출력, 추적되지 않은 파일(`git ls-files --others --exclude-standard`로 찾은 파일)의 내용, 실패 집합이다 — `git diff HEAD`는 새 파일을 보지 않아 새 파일만 만든 진전을 놓친다. 횟수 상한을 두지 않는다 — 상한은 진전 중인 루프를 끊고, 진전 없는 루프는 상한에 닿을 때까지 헛돈다. 실패 집합이 줄었어도 그 Dev 턴이 기존 테스트를 지우거나 비활성화(`.skip`·`xit`·`@Disabled` 등)하거나 assert를 약화해 줄였으면 진전이 아니다 — 멈추고 그 diff를 보고한다. 판정은 같은 Dev 턴의 `git diff HEAD`에서 삭제된 테스트 파일, 추가된 줄의 skip 표지, 제거된 줄의 assert로 한다.';
   const approval =
-    '- **승인 필요** — push·PR·파괴적 변경·의존성 추가처럼 되돌리기 어려운 행위가 필요하다. 하지 않고 멈춘다.';
+    '- **승인 필요** — push·PR·파괴적 변경·의존성 추가처럼 되돌리기 어려운 행위가 필요하거나, 다음 단계가 `[사람]` 단계다. 하지 않고 멈춘다.';
   assert.equal(block(stops, '멈추면 사람에게'), intro, '멈춤 조건 첫 문단(멈추면 보고할 것)');
   assert.equal(bullet(stops, 'spec 공백'), specGap, 'spec 공백은 질문을 사람에게 넘겨야');
   assert.equal(bullet(stops, '진전 없음'), noProgress, '진전 없음은 실패 집합·diff 무변화로 정의되고 횟수 상한이 없어야');
@@ -149,8 +149,8 @@ test('loop: entry asks orchestrator-or-individual and the loop never pushes or o
   assert.match(doc, /push·PR을 하지 않는다/);
   assert.equal(
     bullet(section(doc, '멈춤 조건'), '승인 필요'),
-    '- **승인 필요** — push·PR·파괴적 변경·의존성 추가처럼 되돌리기 어려운 행위가 필요하다. 하지 않고 멈춘다.',
-    '승인 필요 상황에서는 하지 않고 멈춰야',
+    '- **승인 필요** — push·PR·파괴적 변경·의존성 추가처럼 되돌리기 어려운 행위가 필요하거나, 다음 단계가 `[사람]` 단계다. 하지 않고 멈춘다.',
+    '승인 필요 상황(다음 단계가 [사람] 단계 포함)에서는 하지 않고 멈춰야',
   );
   assert.equal(
     block(entry, '2. **질문**'),
@@ -176,6 +176,28 @@ test('loop: entry asks orchestrator-or-individual and the loop never pushes or o
     bullet(doc, 'push·PR을 하지 않는다.'),
     '- **push·PR을 하지 않는다.** 루프는 로컬 커밋까지만 한다. push·PR·파괴적 변경은 사람의 몫이다(아래 멈춤 조건).',
     '핵심 제약: push·PR 금지',
+  );
+});
+
+// human-review-gate(결정 A5-2): 사람 검토 게이트는 loop 에도 같다. 판정은 루프가 **다음에 다룰** 단계 기준이다 — plan 전체의
+// 미완 `[사람]` 을 보면 끝의 `[사람] PR 승인` 같은 단계가 진입을 영구히 막는다. 멈춤 조건은 넷 그대로(위 테스트)다.
+test('loop: a pending [사람] step stops entry and the loop, and Dev never implements it', async () => {
+  const doc = await read('commands/harness-loop.md');
+  const entry = section(doc, '진입');
+  assert.equal(
+    block(entry, '1. **전제 확인**'),
+    '1. **전제 확인** — 활성 task(`.harness/active.json`), spec의 Ambiguity 게이트 통과, 단계가 하나 이상 있는 `<name>-plan.md`. 하나라도 없으면 무엇이 빠졌는지 알리고 멈춘다 — spec·plan을 만드는 일은 루프 밖이다 (`/harness-spec`·`/harness-interview`). plan의 다이어그램 단계가 미완이면 `/harness-diagram`으로 먼저 닫으라고 안내하고 멈춘다. 루프가 시작할 미완 단계가 `[사람]` 단계(검토 게이트 `[사람] spec 검토 승인` 등)면 사람에게 검토·승인을 요청하고 멈춘다 — 그 단계는 사용자가 명시적으로 승인한 뒤에만 켠다(harness-task 명령 문서 검토 게이트 절). 진입 질문(2번)은 이 승인을 대신하지 못한다.',
+    '진입 1번(전제 확인 + [사람] 단계 멈춤)',
+  );
+  assert.equal(
+    block(entry, '루프는 plan의 첫 미완 단계부터'),
+    '루프는 plan의 첫 미완 단계부터 시작한다 — plan.md가 곧 상태라서, 멈췄다가 다시 부르면 그 자리에서 이어진다. 도중에 다음 미완 단계가 `[사람]` 단계면 승인 필요로 멈춘다 — `[사람]` 단계는 Dev가 구현하지 않고 오케스트레이터도 켜지 않는다. 구현 없이 검증만 하는 단계(전체 테스트 실행 등)는 Dev 턴 없이 닫는다 — 그 단계가 적은 검증 명령을 오케스트레이터가 실행해 exit 0이 나고, 그 위에 QA 1–4를 통과해야 한다. 명령이 실패하면 실패 집합에 넣는다. 리뷰·ship·PR 같은 단계에 도달하면 구현 반복을 끝내고 마무리로 간다. 미완 단계가 없거나 남은 미완 단계가 리뷰·ship·PR뿐이면(구현을 다 마친 뒤 마무리 도중 멈췄던 경우) 진입을 거부하지 않고 마무리부터 이어간다.',
+    '시작 지점 문단(도중의 [사람] 단계)',
+  );
+  assert.match(
+    section(doc, 'Dev'),
+    /너는 Dev다\. 아래 plan 단계 하나만 구현한다\. 다른 단계\(`\[사람\]` 단계 포함\)·리팩터·요청 밖 변경을 하지 않는다\./,
+    'Dev 지시: [사람] 단계를 구현하지 않는다',
   );
 });
 

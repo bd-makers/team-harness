@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { COMMANDS, FLAG_CHOICES, GLOBAL_FLAGS, resolveInvocation, parseArgs } from '../src/cli-args.mjs';
+import { COMMANDS, FLAG_CHOICES, GLOBAL_FLAGS, VALUE_FLAGS, resolveInvocation, parseArgs } from '../src/cli-args.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const pexec = promisify(execFile);
@@ -187,7 +187,7 @@ test('cli-args: rules promote 는 번호 positional 과 --name/--paths 값 플�
 
 test('cli-args: 전역 도움말의 --json 지원 명령 목록에 observe·rules 가 있다 (codex P3)', () => {
   const { text } = resolveInvocation(['--help']);
-  assert.match(text, /--json\s+.*\(task\/retro\/release\/doctor\/summary\/observe\/rules\/stack\/scope\/pr-check\/config\/diagram\/wiki\)/);
+  assert.match(text, /--json\s+.*\(task\/retro\/release\/doctor\/summary\/observe\/rules\/stack\/scope\/pr-check\/config\/diagram\/brief\/wiki\)/);
 });
 
 // 플래그를 새 커맨드에 복제할 때 가드만 빠지던 실수의 구조적 차단. COMMANDS 를 순회하므로 나중에 추가한
@@ -213,6 +213,32 @@ test('cli-args: scope accepts exactly the documented values', () => {
   assert.deepEqual(FLAG_CHOICES.scope, ['worktree', 'diff', 'task-docs']);
 });
 
+// 다이어그램 뷰 열거 — 파일 이름(`<name>-diagram-<view>.html`)과 plan 단계 문구가 이 값을 그대로 쓴다.
+test('cli-args: diagram --view accepts exactly the documented views and takes a value', () => {
+  assert.deepEqual(FLAG_CHOICES.view, ['sequence', 'module']);
+  const inv = resolveInvocation(['diagram', 'record', '--view', 'module', '--skipped', '도구', '없음']);
+  assert.equal(inv.kind, 'run');
+  assert.equal(inv.flags.view, 'module');
+  assert.deepEqual(inv.positional, ['record', '도구', '없음']);
+  assert.equal(resolveInvocation(['diagram', 'record', '--view']).kind, 'error', '--view 는 값이 필요하다');
+  assert.equal(resolveInvocation(['review', '--view', 'module']).kind, 'error', 'diagram 외 커맨드는 --view 를 받지 않는다');
+});
+
+// task-brief: `--stage` 는 brief 의 값 플래그다. `ship` 은 첫 PR 에서 뺐다 — 하는 일 없는 값을 받지 않는다(spec R1).
+test('cli-args: brief --stage accepts exactly spec, takes a value, and only brief declares it', () => {
+  assert.deepEqual(FLAG_CHOICES.stage, ['spec']);
+  const inv = resolveInvocation(['brief', '--stage', 'spec']);
+  assert.equal(inv.kind, 'run');
+  assert.equal(inv.cmd, 'brief');
+  assert.equal(inv.flags.stage, 'spec');
+  assert.equal(resolveInvocation(['brief']).kind, 'run', '플래그 없음 = spec');
+  const ship = resolveInvocation(['brief', '--stage', 'ship']);
+  assert.equal(ship.kind, 'error');
+  assert.equal(ship.code, 2);
+  assert.equal(resolveInvocation(['brief', '--stage']).kind, 'error', '--stage 는 값이 필요하다');
+  assert.deepEqual(COMMANDS.filter(c => c.flags.includes('stage')).map(c => c.name), ['brief']);
+});
+
 test('cli-args: an inline empty choice value is rejected too', () => {
   assert.equal(resolveInvocation(['stack', '--stack=']).kind, 'error');
 });
@@ -236,4 +262,20 @@ test('cli-args: review --model and task --reviewer are value flags of exactly th
   assert.match(resolveInvocation(['review', '--reviewer', 'x']).message, /unknown flag --reviewer/);
   assert.match(resolveInvocation(['help', 'review']).text, /--model <id>/);
   assert.match(resolveInvocation(['help', 'task']).text, /--reviewer <profile>/);
+});
+
+// human-review-gate: `--no-review-gate` 는 task 만의 boolean 플래그다 — 값 플래그면 다음 토큰(task 이름)을 삼킨다.
+test('cli-args: task --no-review-gate is a boolean flag of task only', () => {
+  assert.equal(VALUE_FLAGS.has('no-review-gate'), false);
+  const before = resolveInvocation(['task', '--no-review-gate', 'demo']);
+  assert.equal(before.kind, 'run');
+  assert.equal(before.flags['no-review-gate'], true);
+  assert.deepEqual(before.positional, ['demo'], '이름을 값으로 삼키지 않는다');
+  assert.deepEqual(resolveInvocation(['task', 'demo', '--no-review-gate']).flags, { 'no-review-gate': true });
+  for (const other of ['list', 'done', 'review', 'diagram']) {
+    assert.match(resolveInvocation([other, '--no-review-gate']).message, /unknown flag --no-review-gate/, other);
+  }
+  const help = resolveInvocation(['help', 'task']).text;
+  assert.match(help, /harness-team task <name> \[--area <area>\] \[--reviewer <profile>\] \[--no-review-gate\]/);
+  assert.match(help, /a new plan starts with a human spec-review step unless --no-review-gate/);
 });

@@ -179,14 +179,23 @@ ${reviewerBlock}<!--
 `;
 }
 
-export function taskPlanTemplate(name) {
+// 구현 전 사람 검토 게이트(A5) — 신규 task plan `## 단계` 맨 위의 한 줄. 이 문자열의 정본은 여기 하나다(템플릿·pr-check·테스트).
+// 켜는 것은 사용자의 명시적 승인 뒤뿐이다(commands/harness-task.md). 상태는 plan 의 이 체크박스가 전부다 — meta 키를 두지 않는다.
+export function reviewGateStep(user) {
+  return `- [ ] [사람] spec 검토 승인 — ${user}`;
+}
+
+// reviewGateUser: 생성 경로(`runTask`)가 `--no-review-gate` 가 아닐 때만 준다. 없으면 출력은 종전과 바이트 단위로 같다 —
+// 기존 호출처(done 가드·session-context·pr-check 대조)가 그 형태에 기댄다.
+export function taskPlanTemplate(name, { reviewGateUser } = {}) {
+  const gate = reviewGateUser === undefined ? '' : `${reviewGateStep(reviewGateUser)}\n`;
   return `# ${name} — Plan
 
 ## 목표
 
 
 ## 단계
-- [ ]
+${gate}- [ ]
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
@@ -389,6 +398,18 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain, closedForReop
       stop: '프로필 이름을 지어내지 말 것',
     }));
   }
+  // 검토 게이트는 생성 때만 넣는다 — 빼기도 생성 때만이다(아래 isTask 분기가 기존 task 에는 거부한다).
+  // 파서는 `--flag=값`을 문자열로 준다 — `--no-review-gate=false`가 truthy 라 기본 게이트를 조용히 빼지 않게 맨 플래그만 받는다.
+  const gateFlag = ctx.flags && ctx.flags['no-review-gate'];
+  if (gateFlag !== undefined && gateFlag !== true) {
+    return emitTaskError(json, '--no-review-gate 는 값을 받지 않음', buildErrorPacket({
+      cause: `--no-review-gate=${gateFlag} — 게이트를 빼려면 값 없이 준다`,
+      retry: '`harness-team task <name> --no-review-gate` 로 재실행하거나, 게이트를 두려면 플래그를 뺀다',
+      safeDefault: 'task 디렉터리도 meta 도 .harness/active.json 도 바뀌지 않는다',
+      stop: '값으로 게이트를 켜고 끄려 하지 말 것',
+    }));
+  }
+  const noReviewGate = gateFlag === true;
 
   const { user, explicit, error: userError } = await resolveUser(ctx.targetDir, ctx.flags);
   if (userError) {
@@ -488,13 +509,24 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain, closedForReop
   if (nudge && !json) console.log(nudge);
 
   if (isTask) {
+    // 거부 안내의 재실행 명령 — `--member` 로 고른 task 면 그대로 실어야 같은 task 를 가리킨다(기본 user 의 동명 task 로 새지 않게).
+    const activateCmd = `harness-team task ${name}${explicit ? ` --member ${user}` : ''}`;
     // CLI 는 사람이 쓴 spec(SSOT)을 고치지 않는다 — 활성 포인터·handoff·area 채택 meta 를 쓰기 전에 거부한다.
     if (reviewer !== undefined) {
       return emitTaskError(json, '--reviewer 는 새 task 를 만들 때만 쓸 수 있음', buildErrorPacket({
         cause: `${taskLabel(user, name)} 는 이미 있는 task 다 — CLI 는 사람이 쓴 spec 을 고치지 않는다`,
-        retry: `${taskFileRel(user, name, 'spec.md')} 의 \`## Done evidence\` JSON 에 \`"reviewer": "${reviewer}"\` 를 손으로 넣고, \`--reviewer\` 없이 \`harness-team task ${name}\` 으로 활성화`,
+        retry: `${taskFileRel(user, name, 'spec.md')} 의 \`## Done evidence\` JSON 에 \`"reviewer": "${reviewer}"\` 를 손으로 넣고, \`--reviewer\` 없이 \`${activateCmd}\` 으로 활성화`,
         safeDefault: 'spec·meta·.harness/active.json 모두 바뀌지 않는다',
         stop: '기존 task 의 spec 을 CLI 로 고치지 말 것',
+      }));
+    }
+    // 조용히 무시하면 게이트를 뺐다고 믿게 된다 — 기존 plan 은 사람이 쓴 문서라 CLI 가 고치지 않는다.
+    if (noReviewGate) {
+      return emitTaskError(json, '--no-review-gate 는 새 task 를 만들 때만 쓸 수 있음', buildErrorPacket({
+        cause: `${taskLabel(user, name)} 는 이미 있는 task 다 — CLI 는 기존 plan 을 고치지 않는다`,
+        retry: `게이트를 빼려면 ${taskFileRel(user, name, 'plan.md')} 의 \`[사람] spec 검토 승인\` 줄을 손으로 지우고, \`--no-review-gate\` 없이 \`${activateCmd}\` 으로 활성화`,
+        safeDefault: 'plan·meta·.harness/active.json 모두 바뀌지 않는다',
+        stop: '기존 task 의 plan 을 CLI 로 고치지 말 것',
       }));
     }
     const switchedAt = new Date().toISOString();
@@ -601,7 +633,8 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain, closedForReop
 
   await mkdir(dir, { recursive: true });
   await writeText(taskFilePath(ctx.targetDir, user, name, 'spec.md'), taskSpecTemplate(name, { reviewer }));
-  await writeText(taskFilePath(ctx.targetDir, user, name, 'plan.md'), taskPlanTemplate(name));
+  await writeText(taskFilePath(ctx.targetDir, user, name, 'plan.md'),
+    taskPlanTemplate(name, noReviewGate ? {} : { reviewGateUser: user }));
   await writeText(taskFilePath(ctx.targetDir, user, name, 'handoff.md'), taskHandoffTemplate(name));
   await writeText(taskFilePath(ctx.targetDir, user, name, 'artifact.md'), taskArtifactTemplate(name));
 
@@ -635,6 +668,7 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain, closedForReop
     console.log(`created: ${taskDirRel(user, name)}/`);
     console.log(`active: ${taskLabel(user, name)}`);
     if (reviewer !== undefined) console.log(`reviewer: ${reviewer} (spec Done evidence — 엔진을 생략한 review 가 이 프로필을 쓴다)`);
+    if (!noReviewGate) console.log(`review gate: ${taskFileRel(user, name, 'plan.md')} 첫 단계 — 사용자 승인 뒤에만 [x]`);
     printTaskNextActions(user, name);
   }
 }

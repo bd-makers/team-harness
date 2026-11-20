@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.57.0] - 2026-11-19
+
 - **호환 주의: spec에 `reviewer`를 쓰면 팀 전원이 이 버전 이상이어야 한다** — `reviewer` 키를 모르는 옛 CLI의 `done`은 Done evidence 선언을 `알 수 없는 키: reviewer`(invalid)로 보고 막힌다.
 
 ### Added
@@ -19,6 +21,29 @@
   - `.harness/reviewers.json`에 `profiles`(`{ "<name>": { "engine", "model"? } }`)·`default`를 더했다. 기존 `custom.command`와 공존한다. 엔진 결정 우선순위: 엔진 위치 인자 > task 프로필 > `default` > probe 체인(codex → claude, 불변). 고른 프로필의 엔진이 없거나 설정이 깨졌으면 조용히 내려가지 않고 error다.
   - `harness-team task <name> --reviewer <profile>` — 새 task의 spec Done evidence에 `{ "version": 1, "reviewer": "<profile>" }` 블록을 쓴다. 기존 task에는 거부한다(spec은 손으로 고친다). Done evidence 파서가 `reviewer`(비어 있지 않은 문자열)를 받는다 — 가드 판정은 바꾸지 않는다.
   - `meta.reviews[]` 새 항목에 `model`(`null` = 엔진 기본 모델, 키 없음 = 이전 기록), artifact `- engine:` 줄에 `· model: <id|default>`. 리뷰 마커·kind·verify 판정은 바꾸지 않는다. 기존 기록은 소급하지 않는다.
+- **뷰별 다이어그램(옵트인) — `<name>-diagram-<view>.svg`와 `diagram record --view sequence|module`** (task `diagram-views`, 회고 A1). 한 파일에 시간 순 상호작용과 구성요소 관계를 섞지 않도록 뷰마다 파일 하나·plan 단계 하나(`- [ ] spec/plan 다이어그램(<view>) 작성 → …`)를 둔다. 뷰 열거의 정본은 `FLAG_CHOICES.view`다.
+  - `record --view <v>`는 그 뷰의 파일 존재·plan 단계·artifact 줄만 다룬다. 생략 줄은 `- 다이어그램: 미실행 — [<view>] <사유> (날짜)`이고, 뷰 단계는 `- [x] spec/plan 다이어그램(<view>) — 미실행(<사유>)`로 닫힌다.
+  - `pr-check`는 레거시 파일이나 뷰 파일 중 하나라도 있으면 다이어그램 권장 안내를 내지 않는다. `clean`은 다른 task 폴더의 뷰 파일도 보호한다.
+  - **호환**: 레거시 `<name>-diagram.html`·레거시 단계·`--view` 없는 `record`는 종전 그대로다. `--view` 없는 `record`는 이제 뷰 단계를 닫지 않는다. **뷰 단계를 쓰는 plan은 팀 전원이 이 버전 이상이어야 한다** — 옛 CLI의 `record`는 뷰 단계를 레거시 단계로 닫는다. doctor·`AGENTS.md`는 바뀌지 않는다.
+- **뷰 다이어그램은 단독 SVG 하나 — PR/MR 리뷰어가 이미지로 본다** (task `diagram-svg`, 회고 A2·결정 A2-1). 뷰 산출물은 `<name>-diagram-<view>.svg`이고 HTML·SVG 이중화는 없다. 상류 다이어그램 스킬이 SVG를 직접 쓰고, 하네스는 그리지도 HTML에서 떼어 내지도 않는다.
+  - `diagram record --view <v>`(생성 기록 — 첫 기록·갱신)가 SVG 자립성을 결정론으로 검사한다: 루트 `<svg xmlns="http://www.w3.org/2000/svg">`, 루트가 닫힘(잘린 파일 거부), `<script>`·`on…=` 이벤트 속성·`<foreignObject>`·`@import`·DTD `<!ENTITY` 없음, `href`·`xlink:href`·CSS `url()`은 `#id`·`data:`만(숫자 문자 참조를 풀어서 본다). 텍스트 안의 `url(…)`도 걸리는 보수적 검사다. 위반이면 exit 1이고 위반 목록을 내며 아무것도 쓰지 않는다. `--skipped`와 레거시 HTML은 검사하지 않는다.
+  - `pr-check`는 레거시 HTML이나 뷰 SVG가 있으면 다이어그램이 있는 것으로 보고, 있는 뷰 SVG마다 `· PR 본문에 링크: <path>.svg`(저장소 루트 기준)를 낸다(막지 않음). 커밋된 SVG가 자립성 검사에 걸리면 링크 대신 `· 뷰 SVG 가 자립형이 아님 — 링크하지 않음: …`을 낸다. `clean`은 다른 task 폴더의 `.svg`도 보호한다.
+  - 문서: `/harness-diagram` 6단계에 단독 SVG 제약(`<svg>` 안 스타일·system font stack·외부 자산 0), `/harness-ship` 6단계에 "PR 본문에 SVG 링크"(PR head 브랜치의 파일 URL). 뷰 SVG에는 script 뷰어 예외가 없다.
+  - **미검증**: GitLab self-managed·Obsidian에서의 `.svg` 렌더 실측, PR/MR 본문의 저장소 상대 경로 해석.
+- **구현 전 사람 검토 게이트 — 새 task plan의 첫 단계가 `- [ ] [사람] spec 검토 승인 — <user>`다** (task `human-review-gate`, 회고 A5·결정 A5-2). 사이클 S2 "개발자 확인"을 plan 체크박스로 남긴다. 새 meta 필드·Done evidence 키는 없다 — plan.md가 곧 상태다.
+  - **기본 동작 변경**: `harness-team task <새 이름>`이 이 단계를 `## 단계` 맨 위에 넣고 `review gate:` 줄을 출력한다. 켜지 않으면 `done` 가드가 미완 체크박스로 막는다(늦은 안전망). `task <새 이름> --no-review-gate`면 넣지 않는다(값은 받지 않는다 — `--no-review-gate=false`는 거부). 기존 task·`activated:`·`reopened:`는 그대로다(소급 없음). 기존 task에 `--no-review-gate`를 주면 거부한다(exit 1, 아무것도 쓰지 않음).
+  - 규범(`/harness-task` 게이트 절): 에이전트는 사용자가 그 spec을 명시적으로 승인한 뒤에만 `[x]`로 켜고 artifact `## 결과`에 `- 검토 승인: <날짜> · 슬라이드 <경로|없음>`을 남긴다. 승인 전에는 task 문서 밖 파일을 고치지 않는다. 생성 시 질문은 다이어그램과 한 번(multiSelect, "게이트 빼기")으로 묻는다. 커밋·쓰기 차단은 없다.
+  - `/harness-loop`: 다음 미완 단계가 `[사람]` 단계면 진입하지 않고, 도중에 닿으면 "승인 필요"로 멈춘다. Dev는 `[사람]` 단계를 구현하지 않고 오케스트레이터도 켜지 않는다.
+  - `/harness-interview` 6번 인계: "plan 작성 → 사람 검토 승인 → 구현". plan writer는 게이트 단계를 지우지 않고 맨 위에 둔다.
+  - `pr-check`는 게이트 줄(미완·완료)을 뺀 본문으로 "비어 있음"·"템플릿 그대로"를 판정한다 — 손대지 않은 plan이 게이트 줄 때문에 통과하지 않는다.
+  - **Fixed**: 기존 task 거부 안내(`--reviewer`·`--no-review-gate`)의 재실행 명령이 `--member`로 고른 task면 `--member <user>`를 싣는다 — 기본 user의 동명 task로 새지 않는다.
+  - 옛 CLI는 이 줄을 평범한 체크박스로 본다 — 팀 최소 버전 요구는 없다.
+- **`harness-team brief` — 구현 전 검토용 슬라이드를 spec에서만 뽑는다** (task `task-brief`, 회고 A3·결정 A3-1). 활성 task spec의 `## 목적`·`## 범위`·`## 원천 검토`의 `### 발견`·`## 설계`·`## Ontology` 절(`###` 하위 절마다 한 장), 열린 항목, 선언돼 있으면 Done evidence `scenarios`를 **그대로** 렌더해 `<name>-brief.html`을 쓴다(매번 덮어쓰는 생성물·비-SSOT).
+  - **새 사실 0**: 에이전트가 쓰지 않는 결정론 렌더러이고 장식 글자(슬라이드 번호·라벨·생성 시각)가 없다 — 렌더 결과의 텍스트는 모두 spec 원문의 부분 문자열이다. 출처 표지는 spec 절 제목 그대로다. 같은 spec이면 같은 바이트다. 템플릿 안내 문단과 줄머리 HTML 주석(주석 처리된 Done evidence 예시)은 렌더하지 않는다.
+  - 열린 항목은 목록 항목에 맨 글자로 붙은 `(open)`·`(open → <대상>)`·`(unresolved)`·`(ask:<역할>)`·`(asked:<역할> …)`·`(answered …)`를 spec 어디서든 모은다(백틱 안은 언급이라 제외).
+  - 산출물: script 0·외부 자산 0·system font stack·CSS scroll-snap 한 파일. 마크다운은 문단·목록·굵게·인라인 코드·표·코드 펜스·제목만 렌더하고 링크·이미지는 글자 그대로다. `--stage`는 `spec`만 받는다(`ship`은 후속).
+  - 브리프는 검토한 시점의 스냅샷으로 task 문서와 함께 커밋한다 — 미추적으로 두면 `done`의 미커밋 가드가 막는다.
+  - 열람은 로컬 브라우저다 — Obsidian은 `.html`을 네이티브로 열지 않는다. 슬래시 명령은 없고 `/harness-task`의 구현 전 사람 검토 게이트 절이 spec을 보여 줄 때 부르며, 그 경로가 artifact `- 검토 승인: … · 슬라이드 <경로>` 칸에 들어간다. `clean`은 다른 task 폴더의 `<task>-brief.html`(그 확장자만)도 보호한다. 새 task 이름으로 `brief`는 쓸 수 없다(명령 이름).
 
 ### Changed
 

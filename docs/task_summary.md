@@ -183,6 +183,10 @@
 | hslee | notebooklm-review-fixes | ✅ done | 2026-11-15 |
 | hslee | notebooklm-review-followups | ✅ done | 2026-11-16 |
 | chad | task-clean | ✅ done | 2026-11-17 |
+| chad | diagram-svg | ✅ done | 2026-11-18 |
+| chad | diagram-views | ✅ done | 2026-11-18 |
+| chad | human-review-gate | ✅ done | 2026-11-18 |
 | chad | review-model | ✅ done | 2026-11-18 |
-| chad | spec-ask-markers | 🔄 open | 2026-11-18 |
-| chad | team-harness-improvements | 🔄 open | 2026-11-18 |
+| chad | spec-ask-markers | ✅ done | 2026-11-18 |
+| chad | task-brief | ✅ done | 2026-11-18 |
+| chad | team-harness-improvements | ✅ done | 2026-11-18 |

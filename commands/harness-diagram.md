@@ -49,6 +49,8 @@ Raw slash-command 인수:
 3. **입력 수집** — `<name>-spec.md`(요구사항·Ontology·경계)와 `<name>-plan.md`(단계)를 읽는다.
    다이어그램은 spec의 모호성을 드러내는 도구이므로, 그리기 전에 **무엇을 드러내려는지**를 한 줄로
    정한다: 구성요소 관계인가, 상태 전이인가, 단계 흐름인가. 정하지 못하면 그리지 말고 사용자에게 묻는다.
+   plan에 뷰 단계(`spec/plan 다이어그램(<view>)`)가 있으면 **뷰마다** 한 줄씩 정한다 — `sequence`는 시간 순
+   상호작용, `module`은 구성요소·의존 관계가 기본 관점이다. 한 파일에 두 관점을 섞지 않는다.
 
 4. **Probe** — 다이어그램 스킬(`/diagram-design:diagram-design` 등)이 이 세션에 노출되는지 확인한다.
    설치 명령을 단정해 안내하지 않는다 — 해당 플러그인이 이 머신에 설치·활성화되어 있는지 확인하도록
@@ -59,14 +61,25 @@ Raw slash-command 인수:
 
 6. **생성** — 스킬이 있으면 호출하되, 프롬프트에 아래 하네스 제약을 **명시적으로 실어** 보낸다.
    상류 스킬은 하네스 규약을 모른다:
-   - 출력 파일: `docs/<user>/<name>/<name>-diagram.html` (활성 task 기준, 파일 하나)
-   - 형식: **자립형 inline SVG HTML**. 런타임 JS 다이어그램(mermaid 등) 금지 — `docs/`는 Obsidian
+   - 출력 파일: `docs/<user>/<name>/<name>-diagram.html` (활성 task 기준, 파일 하나). 뷰 단계면 뷰마다
+     `docs/<user>/<name>/<name>-diagram-<view>.svg` 한 파일씩 — 호출도 뷰마다 따로 하고, 한 뷰를 갱신할 때
+     다른 뷰 파일은 건드리지 않는다.
+   - 형식: 레거시는 **자립형 inline SVG HTML**. 런타임 JS 다이어그램(mermaid 등) 금지 — `docs/`는 Obsidian
      볼트에서 열리고 Obsidian은 script를 제거하므로 볼트에서 렌더되지 않는다.
+   - 뷰는 **단독 SVG 문서**를 상류 스킬이 **직접** 쓴다 — PR/MR 리뷰어가 이미지로 본다. 뷰어는 SVG를 `<img>`처럼
+     보이므로 밖에서 오는 것은 오류 없이 빠진다. 그래서:
+     - 루트는 `<svg xmlns="http://www.w3.org/2000/svg" …>`. 스타일은 `<svg>` 안 `<style>`에 두고 바깥 문서의
+       CSS 변수·클래스에 기대지 않는다.
+     - 글꼴은 **system font stack**(`system-ui, -apple-system, "Segoe UI", sans-serif` 등)만 — 웹 폰트를 부르지 않는다.
+     - **외부 자산 0**: `href`·`xlink:href`·CSS `url()`은 문서 안(`#id`)이나 `data:`만, `@import` 없음.
+     - `<script>`·`on…=` 이벤트 속성·`<foreignObject>`(HTML 섞기) 금지.
+     상류 스킬이 단독 SVG를 내지 못하면 5번(degrade)으로 간다. **HTML 산출물에서 `<svg>`만 떼어 내지 않는다** —
+     바깥 문서의 스타일을 잃어 검사는 통과해도 그림이 깨진다.
    - 외부 자산 참조 금지(CDN 스크립트·원격 이미지·외부 폰트). 한 파일로 열려야 한다.
    - **기본값이 아니라 요구사항이다.** `commands/harness-task.md` 5번이 이 형식을 조건 없이 요구한다.
      뷰어가 script를 실행하는 것이 확실한 프로젝트에서만 예외가 성립하며(`commands/harness-ship.md`
      6번과 같은 예외), 그때는 **어느 뷰어에서 확인했는지와 판단 근거를 artifact에 남긴다.** 근거를
-     남기지 않는 예외는 없다.
+     남기지 않는 예외는 없다. 이 예외는 레거시 HTML에만 있다 — 뷰 SVG는 7번의 `record --view`가 검사하므로 예외가 없다.
 
    이미 파일이 있으면 새로 만들지 말고 갱신한다. plan 단계는 7번의 CLI가 닫는다. 산출물은 `<name>-meta.json`과
    마찬가지로 **SSOT 4파일이 아닌 생성물**이며, 없어도 task는 유효하다.
@@ -79,11 +92,19 @@ Raw slash-command 인수:
    ```bash
    harness-team diagram record                      # 산출물이 있을 때 — 없으면 exit 1
    harness-team diagram record --skipped "도구 없음"  # 사유 필수
+   harness-team diagram record --view sequence      # 뷰 단계 — 그 뷰의 파일·단계만 다룬다
+   harness-team diagram record --view module --skipped "도구 없음"
    ```
+
+   뷰 단계는 뷰마다 `--view <view>`로 기록한다. `--view` 없는 호출은 레거시 단계(`spec/plan 다이어그램 작성 → …`)만
+   닫고 뷰 단계는 건드리지 않는다 — 뷰 단계만 있는 plan에서는 exit 1로 `--view`를 안내한다.
+   생성 기록이면 `--view`가 6번의 뷰 제약(루트 `xmlns`, script·이벤트 속성·`foreignObject`·`@import` 없음, 참조는
+   `#id`·`data:`만)을 결정론으로 검사한다. 위반이면 exit 1이고 artifact·plan 어느 것도 쓰지 않는다 — 위반 목록을 보고
+   SVG를 고쳐 다시 기록하거나, 고칠 수 없으면 `--skipped "<사유>"`로 남긴다.
 
    plan에 다이어그램 단계가 없으면 CLI가 exit 1로 거부한다 — 2번(단계 추가)을 건너뛴 것이다. 6번의 예외
    (script를 실행하는 뷰어)를 택했으면 뷰어와 근거를 `record`의 메모 인자로 넘긴다:
-   `harness-team diagram record "Confluence 뷰어에서 확인 — script 실행됨"`.
+   `harness-team diagram record "Confluence 뷰어에서 확인 — script 실행됨"`. 뷰 단계에는 이 예외가 없다(6번).
 
 8. **보고** — 산출물 경로(또는 미실행 사유), 무엇을 드러낸 다이어그램인지, plan 단계 처리 결과를
    한 화면으로 보고하고 멈춘다.

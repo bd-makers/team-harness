@@ -574,3 +574,56 @@ test('clean: any file in a task folder under another docs root is protected', as
     assert.match(r.out, /pkg\/docs\/chad\/y\/y-context\.md/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
+
+// diagram-views: spec 없는 다른 task 폴더는 `TASK_FILE` 이름 규칙만 지킨다 — 뷰별 다이어그램도 그 이름에 든다.
+test('clean: another task per-view diagram file is protected even without its spec', async () => {
+  const { dir } = await fixture();
+  try {
+    await mkdir(join(dir, 'docs/chad/z'), { recursive: true });
+    await writeFile(join(dir, 'docs/chad/z/z-diagram-sequence.svg'), '<svg></svg>\n');
+    const before = state(dir);
+    const r = await clean(dir, { yes: true });
+    assert.equal(r.exitCode, 1, r.out);
+    assert.match(r.out, /docs\/chad\/z\/z-diagram-sequence\.svg/);
+    assert.deepEqual(state(dir), before);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// task-brief: 검토용 슬라이드 `<task>-brief.html`(생성물)도 task 파일 이름이다 — spec 없는 다른 task 폴더에서도 보호한다.
+test('clean: another task brief slide file is protected even without its spec', async () => {
+  const { dir } = await fixture();
+  try {
+    await mkdir(join(dir, 'docs/chad/z'), { recursive: true });
+    await writeFile(join(dir, 'docs/chad/z/z-brief.html'), '<!doctype html>\n');
+    const before = state(dir);
+    const r = await clean(dir, { yes: true });
+    assert.equal(r.exitCode, 1, r.out);
+    assert.match(r.out, /docs\/chad\/z\/z-brief\.html/);
+    assert.deepEqual(state(dir), before);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// task-brief codex 1차 P3: `brief` 는 `.html` 만 task 파일이다 — `-brief.md` 같은 남의 파일로 clean 을 막지 않는다.
+test('clean: TASK_FILE matches only <task>-brief.html, not other brief extensions', async () => {
+  const { dir } = await fixture();
+  try {
+    await mkdir(join(dir, 'docs/chad/z'), { recursive: true });
+    await writeFile(join(dir, 'docs/chad/z/z-brief.md'), 'x\n');
+    const r = await clean(dir, {});
+    assert.equal(r.exitCode, 0, r.out);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// codex 6차 P3: 뷰가 아닌 `<폴더명>-diagram-<x>` 는 task 파일 이름이 아니다 — DIAGRAM_VIEWS 와 정규식이 갈리지 않게도 고정한다.
+test('clean: TASK_FILE protects only known diagram views', async () => {
+  const { DIAGRAM_VIEWS } = await import('../src/cli-args.mjs');
+  const src = await readFile(new URL('../src/commands/clean.mjs', import.meta.url), 'utf8');
+  assert.ok(src.includes(`diagram(?:-(?:${DIAGRAM_VIEWS.join('|')}))?`), 'TASK_FILE 뷰 목록 = DIAGRAM_VIEWS');
+  const { dir } = await fixture();
+  try {
+    await mkdir(join(dir, 'docs/chad/z'), { recursive: true });
+    await writeFile(join(dir, 'docs/chad/z/z-diagram-layout.json'), '{}\n');
+    const r = await clean(dir, {});
+    assert.equal(r.exitCode, 0, r.out);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

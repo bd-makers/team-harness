@@ -276,6 +276,72 @@ test('commands/harness-task.md는 created/activated를 구분하고 건너뛴 �
   assert.doesNotMatch(doc, /"다이어그램 미실행 — 도구 없음"을 날짜와 함께 한 줄 남긴다/, '손으로 쓰는 문구 회귀 금지');
 });
 
+// diagram-views: 뷰별 단계·경로·기록 호출의 정본도 같은 절이다. 레거시 형식(위 테스트)은 그대로 남고 뷰는 옵트인으로 더해진다.
+test('commands/harness-task.md는 뷰별 다이어그램 단계·경로·기록(--view)을 옵트인으로 정의한다', async () => {
+  const doc = await readFile(join(ROOT, 'commands', 'harness-task.md'), 'utf8');
+  assert.match(doc, /- \[ \] spec\/plan 다이어그램\(sequence\) 작성 → docs\/<user>\/<name>\/<name>-diagram-sequence\.svg/, '뷰 단계 형식');
+  assert.match(doc, /- \[x\] spec\/plan 다이어그램\(sequence\) — 미실행\(도구 없음\)/, '뷰 단계의 생략 종결 형식');
+  assert.match(doc, /docs\/<user>\/<name>\/<name>-diagram-<view>\.svg/, '뷰 산출물 경로');
+  assert.match(doc, /`--view <view>`/, '뷰 기록 호출');
+  assert.match(doc, /뷰는 옵트인이다/, '뷰는 옵트인');
+  assert.match(doc, /FLAG_CHOICES\.view/, '뷰 열거의 정본은 CLI');
+  const diagram = await readFile(join(ROOT, 'commands', 'harness-diagram.md'), 'utf8');
+  assert.match(diagram, /harness-team diagram record --view sequence/, 'harness-diagram 7단계 예시');
+  assert.match(diagram, /<name>-diagram-<view>\.svg/, 'harness-diagram 6단계 출력 파일');
+});
+
+// diagram-svg: 뷰 산출물은 단독 SVG 하나다(결정 A2-1). 뷰 HTML 경로가 문서에 되살아나지 않게, 상류 스킬에 싣는 제약과
+// ship 의 PR 링크 안내가 빠지지 않게 고정한다.
+test('뷰 다이어그램 문서는 단독 SVG·자립성 검사·PR 본문 링크를 정의한다', async () => {
+  const read = (...p) => readFile(join(ROOT, ...p), 'utf8');
+  const [task, diagram, ship, skill, readme] = await Promise.all([
+    read('commands', 'harness-task.md'), read('commands', 'harness-diagram.md'), read('commands', 'harness-ship.md'),
+    read('skills', 'harness-diagram', 'SKILL.md'), read('templates', 'docs', 'README.md'),
+  ]);
+  for (const [name, doc] of Object.entries({ task, diagram, ship, skill, readme })) {
+    assert.doesNotMatch(doc, /-diagram-(?:<view>|sequence|module)\.html/, `${name}: 뷰 HTML 경로 없음`);
+    assert.match(doc, /-diagram-(?:<view>|sequence)\.svg/, `${name}: 뷰 SVG 경로`);
+  }
+  assert.match(task, /뷰는 \*\*단독 SVG\*\* 하나다/, '옵트인 절(정본): 뷰 산출물 형식');
+  assert.match(task, /`--view`가 SVG 자립성을 검사한다 — 위반이면 exit 1이고 아무것도 쓰지 않는다/, '옵트인 절: 기록 시 검사');
+  assert.match(diagram, /\*\*system font stack\*\*/, 'harness-diagram 6단계: system font stack');
+  assert.match(diagram, /\*\*외부 자산 0\*\*: `href`·`xlink:href`·CSS `url\(\)`은 문서 안\(`#id`\)이나 `data:`만, `@import` 없음/, '6단계: 외부 자산 0');
+  assert.match(diagram, /`<script>`·`on…=` 이벤트 속성·`<foreignObject>`\(HTML 섞기\) 금지/, '6단계: script·foreignObject 금지');
+  assert.match(diagram, /\*\*HTML 산출물에서 `<svg>`만 떼어 내지 않는다\*\*/, '6단계: 추출 금지(A2-1)');
+  assert.match(diagram, /위반이면 exit 1이고 artifact·plan 어느 것도 쓰지 않는다/, '7단계: record --view 검사');
+  assert.doesNotMatch(diagram, /record --view \w+ "Confluence/, '뷰에는 script 예외가 없다');
+  assert.match(ship, /\*\*PR 본문에 SVG 링크\*\*/, 'ship 6단계: PR 본문에 SVG 링크');
+  assert.match(ship, /`· PR 본문에 링크: <path>\.svg`/, 'ship 6단계: pr-check 안내 문구');
+  assert.match(ship, /\*\*PR head 브랜치의 파일 URL\(blob\)\*\*/, 'ship 6단계: 링크 형태');
+  assert.match(skill, /never cut the `<svg>` out of an HTML output/, 'SKILL: 추출 금지');
+});
+
+// human-review-gate(A5): 게이트 절이 정본이다. 단계 형식은 CLI(reviewGateStep)와 같은 문자열이어야 하고, 켜는 조건·기록 형식·
+// 승인 전 쓰기 범위·빼는 법이 빠지면 게이트는 이름만 남는다. 슬라이드 CLI(A3 brief)는 별도 PR 이라 여기서 부르지 않는다.
+test('commands/harness-task.md 검토 게이트 절은 단계 형식·승인 규칙·기록·빼기를 정의한다', async () => {
+  const doc = await readFile(join(ROOT, 'commands', 'harness-task.md'), 'utf8');
+  const start = doc.indexOf('\n## 구현 전 사람 검토 게이트 (`--no-review-gate`)\n');
+  assert.ok(start >= 0, '게이트 절');
+  const rest = doc.slice(start + 1);
+  const gate = rest.slice(0, rest.indexOf('\n## ', 1));
+  const flat = gate.replace(/\s+/g, ' ');
+  const { reviewGateStep } = await import('../src/commands/task.mjs');
+  assert.ok(gate.includes(`\n  ${reviewGateStep('<user>')}\n`), '문서의 단계 형식 = CLI 정본');
+  assert.ok(gate.includes('\n  - 검토 승인: <YYYY-MM-DD> · 슬라이드 <경로|없음>\n'), 'artifact 기록 형식');
+  assert.match(flat, /사용자가 \*\*그 spec을\*\* 승인한다고 말한 뒤에만 `- \[x\]`로 바꾼다\. 다른 작업에 대한 "진행해"·이전 대화의 승인은 이 승인이 아니다\./);
+  assert.match(flat, /\*\*승인 전에는 task 문서\(`docs\/<user>\/<name>\/`\) 밖 파일을 고치지 않는다\.\*\*/);
+  assert.match(flat, /커밋·쓰기 차단은 없다/, '강도: 프롬프트 수준');
+  assert.match(flat, /Dev·루프 오케스트레이터는 구현하지도 켜지도 않는다/);
+  assert.match(flat, /기존 task에 `--no-review-gate`를 주면 거부한다\(exit 1, plan·meta·활성 포인터 모두 그대로\)/);
+  assert.match(flat, /\*\*게이트 빼기\*\*를 고르면 방금 만든 plan에서 그 한 줄을 지운다/);
+  const optin = doc.slice(doc.indexOf('\n## spec/plan 다이어그램 옵트인\n'));
+  assert.match(optin.replace(/\s+/g, ' '), /선택지는 넷이다 — 다이어그램\(레거시 한 장\) · `sequence`\(시간 순 상호작용\) · `module`\(구성요소·의존 관계\) · \*\*게이트 빼기\*\*\./, '통합 질문 선택지(상한 4)');
+  assert.match(optin.replace(/\s+/g, ' '), /아무것도 고르지 않으면 다이어그램 없이 게이트가 남는다/, '무응답은 옵트아웃이 아니다');
+  assert.doesNotMatch(doc, /harness-team brief/, '슬라이드 CLI 는 PR ②');
+  const cycle = await readFile(join(ROOT, 'docs', 'harness-cycle.md'), 'utf8');
+  assert.match(cycle, /\| \*\*S2 Plan\*\* \|.*\| 개발자 확인\(구현 전 사람 검토\) \| ✓ plan · ✓ 검토 게이트/);
+});
+
 // 완료 만료(reopen)가 세 번째 출력 동사를 만들었다. 문서가 created/activated 둘로만 갈리면
 // `reopened:`를 본 에이전트에게 규칙이 없다 — plan.md가 곧 옵트인 상태이므로 재개도 묻지 않는다.
 test('commands/harness-task.md는 reopened(완료 만료 후 재개)도 재질문 금지 쪽으로 분류한다', async () => {

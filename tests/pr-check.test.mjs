@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { collectPrCheck, runPrCheck, prePushTargets, branchName } from '../src/commands/pr-check.mjs';
-import { taskSpecTemplate, taskPlanTemplate, taskHandoffTemplate, taskArtifactTemplate } from '../src/commands/task.mjs';
+import { taskSpecTemplate, taskPlanTemplate, taskHandoffTemplate, taskArtifactTemplate, reviewGateStep } from '../src/commands/task.mjs';
 import { installPrePushHook } from '../src/git-hooks.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -23,6 +23,7 @@ const FILLED = {
 };
 const TEMPLATES = { 'spec.md': taskSpecTemplate, 'plan.md': taskPlanTemplate, 'artifact.md': taskArtifactTemplate };
 const SKIP_LINE = '- 다이어그램: 미실행 — 구조 변화 없음 (2026-10-06)';
+const VIEW_SVG = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"/>\n';
 
 async function repo() {
   const dir = await mkdtemp(join(tmpdir(), 'harness-prcheck-'));
@@ -96,6 +97,31 @@ test('pr-check: 문서마다 없음·템플릿 그대로를 각각 잡는다 →
   }
 });
 
+// human-review-gate: 새 plan 은 게이트 줄을 품고 생긴다. 게이트 없는 템플릿과만 대조하면 손대지 않은 plan 과 게이트만 켠 plan 이
+// "채워진 문서"로 통과했다. 게이트 줄은 빼고 대조하되, 진짜 단계가 있는 plan 은 통과해야 한다(과잉 차단 금지).
+test('pr-check: 게이트가 든 plan 도 템플릿 그대로면 잡고, 게이트 외 단계가 있으면 통과한다', async () => {
+  const gated = taskPlanTemplate('t', { reviewGateUser: 'u' });
+  const TEMPLATE = ['docs/u/t/t-plan.md 가 템플릿 그대로 — 목표·단계를 채워 커밋'];
+  const EMPTY = ['docs/u/t/t-plan.md 가 비어 있음 — 목표·단계를 채워 커밋'];
+  const cases = [
+    ['게이트 미완 그대로', gated, TEMPLATE],
+    ['게이트만 켬', gated.replace(reviewGateStep('u'), reviewGateStep('u').replace('- [ ]', '- [x]')), TEMPLATE],
+    // codex 리뷰(2026-11-18) P2: 빈 문서 판정이 게이트를 빼기 전에 돌아 게이트 줄만 남은 plan 이 통과했다.
+    ['게이트 줄만 남음', `${reviewGateStep('u')}\n`, EMPTY],
+    ['게이트 + 채운 단계', gated.replace('\n- [ ]\n', '\n- [x] 1. 채움\n'), []],
+    ['사람이 더한 다른 [사람] 단계는 빼지 않는다', gated.replace('\n- [ ]\n', '\n- [ ]\n- [ ] [사람] PR 승인\n'), []],
+  ];
+  for (const [label, plan, want] of cases) {
+    const dir = await repo();
+    try {
+      await writeTask(dir, 't', { files: { 'plan.md': plan } });
+      await commit(dir);
+      const r = await check(dir, 'HEAD');
+      assert.deepEqual(r.tasks[0].issues, want, label);
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  }
+});
+
 // 템플릿 비교만 하면 0바이트·공백뿐인 문서는 템플릿과 달라 통과했다 — 실례: dangerous-git-end-boundary plan 이 미완 단계를
 // 남긴 채 0바이트로 커밋됐다(bb93755, task empty-doc-guard).
 test('pr-check: 빈 문서(0바이트·공백뿐)도 잡는다 → exit 1', async () => {
@@ -155,6 +181,80 @@ test('pr-check: 다이어그램은 권장이다 — 없으면 막지 않고 안�
     await writeTask(dir, 't', { diagram: false, files: { 'artifact.md': FILLED['artifact.md'].replace('- 채움\n', `- 채움\n${SKIP_LINE}\n`) } });
     await commit(dir);
     assert.deepEqual((await check(dir, 'HEAD')).tasks[0].notes, []);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// diagram-views·diagram-svg: 뷰 SVG(`<task>-diagram-<view>.svg`) 하나만 있어도 다이어그램이 있는 것이다. 모르는 뷰 이름과
+// 뷰 HTML(A1 미릴리스 형식)은 세지 않는다.
+test('pr-check: 뷰 SVG 하나만 있어도 권장 안내를 내지 않는다 — 뷰 HTML·모르는 뷰는 세지 않는다', async () => {
+  const dir = await repo();
+  try {
+    await writeTask(dir, 't', { diagram: false });
+    await writeFile(join(dir, 'docs/u/t/t-diagram-unknown.svg'), '<svg/>');
+    await writeFile(join(dir, 'docs/u/t/t-diagram-sequence.html'), '<svg/>');
+    await commit(dir);
+    const none = (await check(dir, 'HEAD')).tasks[0].notes;
+    assert.equal(none.length, 1, none.join('\n'));
+    assert.match(none[0], /권장: 다이어그램 없음/);
+    assert.match(none[0], /t-diagram-<view>\.svg/, '뷰별 경로도 안내한다');
+
+    for (const view of ['sequence', 'module']) {
+      await rm(join(dir, 'docs/u/t'), { recursive: true, force: true });
+      await writeTask(dir, 't', { diagram: false });
+      await writeFile(join(dir, `docs/u/t/t-diagram-${view}.svg`), VIEW_SVG);
+      await commit(dir, view);
+      assert.deepEqual((await check(dir, 'HEAD')).tasks[0].notes, [`PR 본문에 링크: docs/u/t/t-diagram-${view}.svg`], `${view} 뷰 SVG`);
+    }
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// diagram-svg: 뷰 SVG 마다 PR 본문 링크 안내(막지 않음). 레거시 HTML 은 forge 가 소스로 보이므로 안내하지 않는다.
+// 생략 기록이 있어도(다른 뷰의 생략일 수 있다) 있는 SVG 는 안내한다.
+test('pr-check: 있는 뷰 SVG 마다 PR 본문 링크를 안내하고 통과한다 — 레거시 HTML 은 링크하지 않는다', async () => {
+  const dir = await repo();
+  try {
+    await writeTask(dir, 't', { files: { 'artifact.md': FILLED['artifact.md'].replace('- 채움\n', `- 채움\n${SKIP_LINE}\n`) } });
+    await writeFile(join(dir, 'docs/u/t/t-diagram-sequence.svg'), VIEW_SVG);
+    await writeFile(join(dir, 'docs/u/t/t-diagram-module.svg'), VIEW_SVG);
+    await commit(dir);
+    assert.deepEqual((await check(dir, 'HEAD')).tasks[0].notes, [
+      'PR 본문에 링크: docs/u/t/t-diagram-sequence.svg',
+      'PR 본문에 링크: docs/u/t/t-diagram-module.svg',
+    ]);
+    const { out, exitCode } = await capture(() => runPrCheck({ targetDir: dir, flags: { base: 'main' } }));
+    assert.equal(exitCode, undefined, out);
+    assert.match(out, /✓ pr-check HEAD: u\/t\n  · PR 본문에 링크: docs\/u\/t\/t-diagram-sequence\.svg\n  · PR 본문에 링크: docs\/u\/t\/t-diagram-module\.svg/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// codex 1차 P2: 커밋된 뷰 SVG 가 자립성 검사에 걸리면 링크하지 않는다(깨진 그림을 걸지 않는다) — 막지는 않는다.
+test('pr-check: 자립하지 않는 뷰 SVG 는 링크하지 않고 알린다 — 통과는 그대로', async () => {
+  const dir = await repo();
+  try {
+    await writeTask(dir, 't');
+    await writeFile(join(dir, 'docs/u/t/t-diagram-sequence.svg'), '<svg xmlns="http://www.w3.org/2000/svg"><image href="https://x/y.png"/></svg>');
+    await writeFile(join(dir, 'docs/u/t/t-diagram-module.svg'), '<svg/>');
+    await commit(dir);
+    const r = await check(dir, 'HEAD');
+    assert.deepEqual(r.tasks[0].issues, []);
+    assert.deepEqual(r.tasks[0].notes, [
+      '뷰 SVG 가 자립형이 아님 — 링크하지 않음: docs/u/t/t-diagram-sequence.svg (외부 href: https://x/y.png; `harness-team diagram record --view sequence` 로 확인)',
+      '뷰 SVG 가 자립형이 아님 — 링크하지 않음: docs/u/t/t-diagram-module.svg (루트 <svg> 에 xmlns="http://www.w3.org/2000/svg" 없음; `harness-team diagram record --view module` 로 확인)',
+    ]);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// codex 1차 P2: 하네스가 하위 디렉터리(모노레포 패키지)에 있으면 링크 경로는 저장소 루트 기준이어야 blob URL 이 맞는다.
+test('pr-check: 하위 디렉터리 설치에서 PR 링크 경로는 저장소 루트 기준이다', async () => {
+  const dir = await repo();
+  try {
+    const pkg = join(dir, 'pkg');
+    await mkdir(pkg, { recursive: true });
+    await writeTask(pkg, 't');
+    await writeFile(join(pkg, 'docs/u/t/t-diagram-module.svg'), VIEW_SVG);
+    await commit(dir);
+    const r = await collectPrCheck({ targetDir: pkg, base: 'main', rev: 'HEAD' });
+    assert.deepEqual(r.tasks.map(t => t.notes), [['PR 본문에 링크: pkg/docs/u/t/t-diagram-module.svg']]);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

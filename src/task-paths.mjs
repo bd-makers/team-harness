@@ -18,8 +18,12 @@ import { exists } from './fsx.mjs';
 export const DOCS_DIR = 'docs';
 
 export const taskDirRel = (user, task) => `${DOCS_DIR}/${user}/${task}`;
-// kind: 'spec.md' | 'plan.md' | 'handoff.md' | 'artifact.md' | 'meta.json' | 'diagram.html'
+// kind: 'spec.md' | 'plan.md' | 'handoff.md' | 'artifact.md' | 'meta.json' | 'brief.html' | 'diagram.html' | 'diagram-<view>.svg'
+// (뷰 열거는 cli-args `DIAGRAM_VIEWS` — 다이어그램 kind 는 `diagramKind` 로 만든다)
 export const taskFileRel = (user, task, kind) => `${taskDirRel(user, task)}/${task}-${kind}`;
+// 뷰 없음 = 이름 없는 레거시 뷰 `<task>-diagram.html`. 뷰 산출물은 단독 SVG 하나다(diagram-svg, 결정 A2-1 —
+// HTML·SVG 이중화 대신). 뷰 값 검사는 호출자(FLAG_CHOICES) 몫이다.
+export const diagramKind = (view) => (view ? `diagram-${view}.svg` : 'diagram.html');
 export const userHandoffRel = (user) => `${DOCS_DIR}/${user}/${user}-handoff.md`;
 // user handoff 는 워크트리 로컬 렌더링이라 추적하지 않는다 — 내용이 전부 gitignore 된 active.json 과 그 워크트리의
 // `git log -1` 에서 나오므로, 추적하면 같은 user 의 병렬 PR 이 머지마다 이 파일에서 충돌했다(3323c6f·fdcffbc·a7c8354).
