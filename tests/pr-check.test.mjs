@@ -303,6 +303,88 @@ test('pr-check: diff 는 있는데 task 가 없으면 실패, diff 가 비면(�
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+// 원장은 기본 브랜치에서 `summary --write` 로 몰아서 갱신하는 생성물이다(D5) — 그 커밋만 담은 브랜치는 task 문서가 없는 게 정상이다.
+// 전에는 "task 문서 없음"으로 막혀 보호 브랜치 저장소는 `--no-verify` 외에 길이 없었다(task ledger-only-pr-check, 재현 c72c76a4).
+async function writeLedger(dir, user = 'u') {
+  await mkdir(join(dir, 'docs', user), { recursive: true });
+  await writeFile(join(dir, 'docs', 'task_summary.md'), '# Task Summary\n\n| x |\n');
+  await writeFile(join(dir, 'docs', user, `${user}-task.md`), `# ${user} tasks\n\n## Open\n`);
+}
+
+test('pr-check: 생성물 원장만 바뀐 diff 는 통과하고 note 를 남긴다 — 직접 실행·--json·--pre-push 가 같은 판정', async () => {
+  const dir = await repo();
+  try {
+    await writeLedger(dir);
+    await commit(dir);
+    const r = await check(dir, 'HEAD');
+    assert.equal(r.ledgerOnly, true);
+    assert.deepEqual(r.tasks, []);
+
+    const direct = await capture(() => runPrCheck({ targetDir: dir, flags: { base: 'main' } }));
+    assert.equal(direct.exitCode, undefined);
+    assert.match(direct.out, /✓ pr-check HEAD: 생성물 원장만 변경/);
+    assert.doesNotMatch(direct.out, /task 문서\(docs\/<user>\/<task>\/\)가 없음/);
+
+    const json = await capture(() => runPrCheck({ targetDir: dir, flags: { base: 'main', json: true } }));
+    assert.equal(json.exitCode, undefined);
+    const env = JSON.parse(json.out);
+    assert.equal(env.status, 'success');
+    assert.equal(env.checks[0].ledgerOnly, true);
+
+    const { stdout: sha } = await git(dir, 'rev-parse', 'HEAD');
+    const stdin = `refs/heads/feature ${sha.trim()} refs/heads/feature ${'0'.repeat(40)}\n`;
+    const hook = await capture(() => runPrCheck({ targetDir: dir, flags: { base: 'main', 'pre-push': true } }, { readStdin: async () => stdin }));
+    assert.equal(hook.exitCode, undefined);
+    assert.match(hook.out, /✓ pr-check feature: 생성물 원장만 변경/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('pr-check: 원장에 다른 파일이 섞이면 종전 판정 — task 없으면 실패, 정상 task 면 원장 note 없이 통과', async () => {
+  const dir = await repo();
+  try {
+    await writeLedger(dir);
+    await writeFile(join(dir, 'code.js'), 'x\n');
+    await commit(dir);
+    const mixed = await capture(() => runPrCheck({ targetDir: dir, flags: { base: 'main' } }));
+    assert.equal(mixed.exitCode, 1);
+    assert.match(mixed.out, /task 문서\(docs\/<user>\/<task>\/\)가 없음/);
+    assert.equal((await check(dir, 'HEAD')).ledgerOnly, undefined);
+
+    await writeTask(dir, 't');
+    await commit(dir);
+    const ok = await capture(() => runPrCheck({ targetDir: dir, flags: { base: 'main' } }));
+    assert.equal(ok.exitCode, undefined);
+    assert.match(ok.out, /✓ pr-check HEAD: u\/t/);
+    assert.doesNotMatch(ok.out, /원장/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('pr-check: 다른 파일을 원장 경로로 옮긴 커밋은 원장 전용이 아니다 — rename 감지로 옛 경로가 숨지 않는다', async () => {
+  const dir = await repo();
+  try {
+    await mkdir(join(dir, 'docs'), { recursive: true });
+    await git(dir, 'mv', 'README.md', 'docs/task_summary.md');
+    await commit(dir);
+    const r = await capture(() => runPrCheck({ targetDir: dir, flags: { base: 'main' } }));
+    assert.equal(r.exitCode, 1, r.out);
+    assert.match(r.out, /task 문서\(docs\/<user>\/<task>\/\)가 없음/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('pr-check: 원장을 닮은 경로는 원장이 아니다 — 이름의 user 가 디렉터리와 다르거나 깊이가 다르면 실패', async () => {
+  for (const rel of ['docs/u/x-task.md', 'docs/u/u/u-task.md', 'docs/task_summary.md.bak', 'task_summary.md']) {
+    const dir = await repo();
+    try {
+      await mkdir(dirname(join(dir, rel)), { recursive: true });
+      await writeFile(join(dir, rel), 'x\n');
+      await commit(dir);
+      const r = await capture(() => runPrCheck({ targetDir: dir, flags: { base: 'main' } }));
+      assert.equal(r.exitCode, 1, rel);
+      assert.match(r.out, /task 문서\(docs\/<user>\/<task>\/\)가 없음/, rel);
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  }
+});
+
 test('pr-check: 커밋 내용 기준이다 — 작업 트리에서만 채운 문서는 통과시키지 않는다', async () => {
   const dir = await repo();
   try {
@@ -702,6 +784,26 @@ test('pr-check --pre-push (S3): plan 전부 체크 + done 가드 issue → 실�
     const ci = await capture(() => runPrCheck({ targetDir: dir, flags: { base: 'main' } }));
     assert.equal(ci.exitCode, undefined, ci.out);
     assert.doesNotMatch(ci.out, /done 가드/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('pr-check --pre-push: 원장 전용 ref 와 가드 실패 ref 를 함께 push 하면 실패 요약에 문서 누락이 섞이지 않는다', async () => {
+  const dir = await repo();
+  try {
+    await git(dir, 'checkout', '-q', '-b', 'ledger', 'main');
+    await writeLedger(dir);
+    await commit(dir);
+    const ledgerSha = (await git(dir, 'rev-parse', 'HEAD')).stdout.trim();
+    await git(dir, 'checkout', '-q', 'feature');
+    await writeTask(dir, 't', { files: { 'spec.md': SPEC_REVIEW_REQUIRED } });
+    await commit(dir);
+    const stdin = `${await headStdin(dir)}refs/heads/ledger ${ledgerSha} refs/heads/ledger ${'0'.repeat(40)}\n`;
+    const r = await prePush(dir, stdin, { json: true });
+    assert.equal(r.exitCode, 1, r.out);
+    const env = JSON.parse(r.out);
+    assert.equal(env.checks.find(c => c.ref === 'ledger').ledgerOnly, true);
+    assert.doesNotMatch(env.summary, /PR 필수 task 문서가 빠짐/);
+    assert.match(env.summary, /done 가드를 통과하지 못함/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

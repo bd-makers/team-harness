@@ -218,6 +218,7 @@ Anthropic "Effective harnesses for long-running agents"(세션 간 진행 산출
   검사: spec·plan·artifact가 있고 비어 있지 않으며 템플릿 그대로가 아님. 다이어그램 파일도 생략 기록도 없으면 막지 않고 권장 안내만 낸다.
   호출처: ① ship 준비 보고 ② init이 설치하는 git pre-push 훅(post-commit 훅과 같은 방식) ③ 원하는 팀의 CI(같은 명령).
   하네스가 강제하는 유일한 것이라 확인 장치를 하나로 모은다.
+  (2026-11-20 정정: 생성물 원장만 바꾼 diff는 검사 대상이 아니다 — `docs/decisions.md` D11, task `ledger-only-pr-check`.)
 - **다이어그램 (결정, 2026-10-06 정정)**: PR 다이어그램은 **권장**이다 — plan 단계에서 옵트인하지 않았어도 최종 변경이 로직·구조를 바꾸면 담는다.
   처음엔 "필수 + 생략 기록"이었으나 생략 기록 명령(`diagram record --skipped`)은 plan 옵트인이 없으면 거부해, 옵트인하지 않은 task는 통과할 길이 없었다.
   plan 단계 다이어그램은 선택(이해용) 그대로.

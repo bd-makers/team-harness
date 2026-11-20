@@ -290,6 +290,9 @@ artifact·meta도 함께 빼지만 가드는 빼지 않는다 — ship 커밋에
   고친 뒤 다시 ship 한다. 마지막 단계는 이미 켜져 있으니 가드만 다시 돌리면 된다.
 - **원장**(`docs/task_summary.md`)은 종결 절차에서 빠졌다. 렌더는 위 판정을 따르고, 갱신은 기본 브랜치에서 필요할 때
   `harness-team summary --write`(이 저장소는 릴리스 때). 머지마다 원장이 낡으므로 CI에서 `summary --check`로 막지 않는다.
+  원장 파일(`docs/task_summary.md`·`docs/<user>/<user>-task.md`)만 바꾼 브랜치는 `pr-check`가 `✓ … 생성물 원장만 변경`으로 통과시킨다
+  (`--json`은 `checks[].ledgerOnly: true`) — 기본 브랜치가 보호된 저장소는 그 브랜치로 PR을 연다. 위키 컴파일 결과처럼 다른 파일이 섞이면
+  종전대로 task 문서를 요구한다(`task ledger-only-pr-check`).
 
 `done` 가드는 미커밋 변경을 막지만, 활성 task의 plan.md 변경이 **줄머리 체크박스를 켠 것뿐**이면 세지 않는다
 (`isCheckboxOnlyChange` — HEAD의 plan과 index·작업 트리를 **둘 다** 줄 단위로 대조한다. 끄기·줄 추가·산문 수정은
