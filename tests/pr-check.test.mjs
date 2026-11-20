@@ -359,6 +359,18 @@ test('pr-check: 원장에 다른 파일이 섞이면 종전 판정 — task 없�
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+test('pr-check: 다른 파일을 원장 경로로 옮긴 커밋은 원장 전용이 아니다 — rename 감지로 옛 경로가 숨지 않는다', async () => {
+  const dir = await repo();
+  try {
+    await mkdir(join(dir, 'docs'), { recursive: true });
+    await git(dir, 'mv', 'README.md', 'docs/task_summary.md');
+    await commit(dir);
+    const r = await capture(() => runPrCheck({ targetDir: dir, flags: { base: 'main' } }));
+    assert.equal(r.exitCode, 1, r.out);
+    assert.match(r.out, /task 문서\(docs\/<user>\/<task>\/\)가 없음/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('pr-check: 원장을 닮은 경로는 원장이 아니다 — 이름의 user 가 디렉터리와 다르거나 깊이가 다르면 실패', async () => {
   for (const rel of ['docs/u/x-task.md', 'docs/u/u/u-task.md', 'docs/task_summary.md.bak', 'task_summary.md']) {
     const dir = await repo();

@@ -20,9 +20,14 @@
 - doctor·migrate-templates·agent-files 테스트 → `pass 177 / fail 0`. D5 두 사본 `diff` 동일.
 - 실재현: `collectPrCheck({ base: 'origin/main', rev: 'c72c76a4' })`(diff = `docs/chad/chad-task.md`, `docs/task_summary.md`) → `ledgerOnly: true`, `passed= true`.
 
+- 후속(같은 날, 전체 `npm run test` exit 0 · 1446 / pass 1445 / fail 0): `git diff --no-renames` — 다른 파일을 원장 경로로 옮긴 커밋이 새 경로만 보여 통과하던 경계. 테스트 추가, 플래그를 빼면 `pass 36 / fail 1`.
+  README·`docs/harness-cycle.md` §4-6 에 원장 예외 한 줄(pr-check 판정을 서술하는 다른 자리 전수 검색 결과).
+- P2-3 병합 시험: `git merge-tree --write-tree HEAD fb45f6ad` → `src/commands/pr-check.mjs`·`tests/pr-check.test.mjs` 자동 병합,
+  충돌은 `CHANGELOG.md`·`docs/decisions.md`(둘 다 같은 자리에 항목 추가 — 양쪽 유지로 해소). P2-3 테스트는 `checks[]` 객체를 통째 비교하지 않는다.
+
 ### 검증하지 못한 것
 - `git fetch` 실패(네트워크) — rebase 기준은 로컬 `origin/main` = d282f761 이다. 원격 최신과의 차이는 확인하지 않았다.
-- P2-3(`pr-check-fork-main`, 같은 파일 `runPrCheck` push 대상 판정부)과의 실제 병합은 해 보지 않았다 — hunk 는 떨어져 있다(`docsFailed` 줄이 P2-3 hunk 끝에서 약 10줄 아래).
+- 리뷰(Codex·D6 검증자)는 돌리지 않았다 — Reviews 절이 비어 있다.
 - 실제 pre-push 훅 경유 push 는 네트워크 차단으로 하지 않았다(훅과 같은 `--pre-push` 경로는 테스트로 확인).
 
 ## Reviews

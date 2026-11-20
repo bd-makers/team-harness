@@ -123,9 +123,10 @@ function isLedgerPath(p) {
 
 // 순수 판정. `empty` = diff 가 비었다(새 브랜치를 커밋 전에 push) — 담을 변경이 없으므로 통과다.
 // `ledgerOnly` = 바뀐 것이 생성물 원장뿐이다 — 기본 브랜치에서 묶어 갱신하는 커밋이라 담을 task 문서가 없는 게 정상이고, 통과다
-// (task ledger-only-pr-check). 원장과 다른 파일이 섞이면 종전 판정이다.
+// (task ledger-only-pr-check). 원장과 다른 파일이 섞이면 종전 판정이다. `--no-renames` — 다른 파일을 원장 경로로 옮긴 커밋이
+// 새 경로만 보여 원장 전용으로 통과하지 않게 한다(옛 경로는 rev 에 문서가 없어 task 판정에는 영향 없다).
 export async function collectPrCheck({ targetDir, base, rev = 'HEAD' }) {
-  const paths = (await git(targetDir, ['diff', '--name-only', '--relative', `${base}...${rev}`])).split('\n').filter(Boolean);
+  const paths = (await git(targetDir, ['diff', '--name-only', '--no-renames', '--relative', `${base}...${rev}`])).split('\n').filter(Boolean);
   if (!paths.length) return { empty: true, tasks: [] };
   if (paths.every(isLedgerPath)) return { empty: false, ledgerOnly: true, tasks: [] };
   const refs = await changedTaskRefs(targetDir, rev, paths);
