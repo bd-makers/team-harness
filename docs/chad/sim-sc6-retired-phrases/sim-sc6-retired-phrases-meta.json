@@ -1,0 +1,12 @@
+{
+  "user": "chad",
+  "task": "sim-sc6-retired-phrases",
+  "created": "2026-11-20",
+  "firstActivatedAt": "2026-11-20T08:26:12.807Z",
+  "baseSha": "03d90b7d4370380942a950e6f20dd332ccd91910",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": []
+}
