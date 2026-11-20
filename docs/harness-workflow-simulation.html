@@ -284,7 +284,7 @@
     <h1>Task Workflow Simulation</h1>
     <p>새로운 harness task 시스템의 전체 흐름 — init부터 완료, 세션 재개, task 전환까지의 시나리오별 시뮬레이션</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.57.0</span>
+      <span class="tag tag-purple">v0.58.0</span>
       <span class="tag tag-blue">post-commit 자동화</span>
       <span class="tag tag-green">증거 기반 종결 가드 7종</span>
       <span class="tag tag-orange">원장은 생성물</span>
@@ -293,7 +293,9 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #a78bfa;background:rgba(167,139,250,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
-    <strong>🆕 0.40.1–0.57.0 — 구현 전 사람 검토 게이트·검토 슬라이드 · task를 시작 전으로 되돌리는 clean · 훅이 추적 파일을 쓰지 않음 · user handoff는 워크트리 로컬 · 종결은 커밋 하나 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키 · 폴더 없는 done task · PR 없는 위키 컴파일 · 리뷰 scope 판정 정정 · worktree 리뷰 범위 확장 · scope 오류 안내 정정 · pre-push가 무관 히스토리 브랜치를 건너뜀 · 소급 위키 컴파일 후보 목록 · eval 기반 명령 문서 정정 · stack 인프로세스 DB 안내 · done tests 기본 optional · 리뷰어 allow 제거:</strong>
+    <strong>🆕 0.40.1–0.58.0 — 머지가 곧 종결·reopen · 구현 전 사람 검토 게이트·검토 슬라이드 · task를 시작 전으로 되돌리는 clean · 훅이 추적 파일을 쓰지 않음 · user handoff는 워크트리 로컬 · member·stack 판정 정정 · 적용 버전 표시 · PR 필수 문서 검사 · R1·R2·기본 루프·위키 · 폴더 없는 done task · PR 없는 위키 컴파일 · 리뷰 scope 판정 정정 · worktree 리뷰 범위 확장 · scope 오류 안내 정정 · pre-push가 무관 히스토리 브랜치를 건너뜀 · 소급 위키 컴파일 후보 목록 · eval 기반 명령 문서 정정 · stack 인프로세스 DB 안내 · done tests 기본 optional · 리뷰어 allow 제거:</strong>
+    <br>
+    <code>0.58.0</code> <strong>머지가 곧 종결이다</strong> — 기본 브랜치에서 plan이 전부 체크돼 있으면 종결이라, 완료 시나리오(4)에서 머지 뒤 종결 커밋이 사라졌다. <code>done</code>은 가드 검증만 하고 meta를 쓰지 않는다. 머지 뒤 문제는 <code>reopen</code>으로 다시 연다. pre-push는 fork <code>main</code> push도 검사하고 원장만 바꾼 브랜치는 통과시킨다.
     <br>
     <code>0.57.0</code> <strong>새 task plan의 첫 단계가 <code>- [ ] [사람] spec 검토 승인 — &lt;user&gt;</code>다</strong> — 사용자가 spec을 승인해야 구현에 들어간다(<code>--no-review-gate</code>로 뺀다). 검토용 슬라이드는 <code>harness-team brief</code>가 spec에서만 뽑는다. 생성 직후 질문은 다이어그램 뷰(<code>sequence</code>·<code>module</code>)와 게이트 빼기를 한 번에 묻는다. 아래 S1 3·4·5단계를 그에 맞췄다.
     <br>
@@ -754,13 +756,12 @@
     </div>
 
     <div class="infobox" style="border-left-color:var(--accent3)">
-      <strong>PR/MR로 일하면 종결은 머지 후 기본 브랜치에서 커밋 하나다 (0.44.0):</strong>
-      plan의 마지막 단계(보통 "커밋·PR")를 <code>- [x]</code>로 켠다 → <code>harness-team done</code> → <code>harness-team summary --write</code>
-      → <strong>커밋 하나</strong>(<code>chore(task): &lt;name&gt; 종결</code>)에 plan·meta·원장을 함께 담는다.
-      <code>done</code> 가드는 활성 task의 plan.md 변경이 <strong>줄머리 체크박스를 켠 것뿐</strong>이면 미커밋 작업으로 세지 않는다(끄기·줄 추가·산문 수정은 종전대로 막는다) — 그래서 체크·종결·원장을 커밋 셋으로 나눌 이유가 없다.
-      단계를 켜는 판단은 여전히 에이전트 몫이다 — 머지를 확인하기 전에 켜지 않는다.
-      위키 컴파일은 선택이다(0.47.0) — <code>done</code> 다음, <code>summary --write</code> 전에 <code>/harness-wiki &lt;user&gt;/&lt;task&gt;</code>를 돌리면 위키 변경도 같은 종결 커밋에 담긴다(<code>done</code>이 활성 task를 비우므로 대상을 명시한다).
-      <code>summary --write</code>는 기본 브랜치이거나 HEAD가 <code>origin/HEAD</code>의 기본 브랜치와 같은 커밋일 때만(detached HEAD 포함, 0.44.5) 허용되고 피처 브랜치에서는 거부되므로, 종결은 PR 브랜치가 아니라 기본 브랜치에서 한다.
+      <strong>머지가 곧 종결이다 (0.58.0):</strong>
+      종결은 기록이 아니라 계산값이다 — 기본 브랜치에서 plan에 미완 <code>- [ ]</code>가 없고 <code>- [x]</code>가 하나 이상이면 그 task는 종결이다.
+      그래서 브랜치에서 <code>/harness-ship</code> → plan 마지막 단계("ship 완료")를 <code>- [x]</code>로 켠다 → <code>harness-team done</code>(가드 검증) → 커밋 → push/MR → <strong>머지 = 종결</strong>이다. 머지 뒤 종결 커밋·종결 MR은 없다.
+      <code>done</code>은 추적 파일을 쓰지 않는다 — meta <code>status</code>·<code>closedAt</code>을 더 이상 쓰지 않고, 가드 검증·활성 포인터 해제·user handoff 갱신만 한다. pre-push <code>pr-check</code>가 plan이 전부 체크된 task를 바꾸는 push에 같은 가드를 미리 돈다.
+      머지 뒤 문제가 생기면 <code>harness-team reopen &lt;name&gt;</code>(또는 <code>task &lt;name&gt;</code>)으로 다시 열어 새 MR로 고친다.
+      원장(<code>summary --write</code>)은 종결 절차에서 빠졌다 — 머지마다 낡는 것이 정상이고, 기본 브랜치(또는 기본 브랜치와 같은 커밋)에서 필요할 때 한꺼번에 갱신한다. 원장만 바꾼 브랜치는 <code>pr-check</code>를 통과한다(0.58.0).
     </div>
 
     <div class="steps">
@@ -837,8 +838,8 @@ stop: 가드가 지적한 증거가 실제로 없으면 종결하지 말 것
           <div class="step-actor actor-system">완료 처리 시</div>
           <div class="step-content">
             <div class="tree">
-<span class="tree-new">docs/chad/login-bug/login-bug-meta.json</span>
-  { "status": "done", "closedAt": "2026-08-22T04:11:07.914Z" }   <span style="color:var(--border)"># 완료 표지의 정본 — handoff에 마커를 쓰지 않는다 (0.55.0)</span>
+<span style="color:var(--muted)">docs/chad/login-bug/login-bug-meta.json</span>   <span style="color:var(--border)"># 건드리지 않음 (0.58.0) — 종결은 머지된 plan에서 계산한다</span>
+  종결 판정 = 기본 브랜치의 plan 상태 (미완 - [ ] 없음 + - [x] 하나 이상)
 
 <span class="tree-new">docs/chad/chad-handoff.md</span> — 종결 형태로 재작성   <span style="color:var(--border)"># gitignore (0.44.4)</span>
   ## Active Task
@@ -1145,7 +1146,7 @@ login-bug
       </div>
       <div class="card card-accent-green">
         <h3>harness-team done</h3>
-        <p>수동 완료 트리거. <strong>종결 가드 7종</strong>(plan·artifact·미커밋·커밋 0개·테스트·리뷰 증거·검증 증거) 통과 후 완료 처리 — CLI는 묻지 않으며, plan 완료 감지나 발화로 트리거될 때 Claude가 실행 전에 AskUserQuestion으로 확인한다. 리뷰·검증 증거는 <code>meta.reviews[]</code>가 정본이고, 그 키가 없는 구 task만 artifact 마커로 판정한다(0.37.0). <code>--force</code>는 경고만 하고 통과시키되 <strong>무시된 issue가 1개 이상이면</strong> meta에 <code>forcedAt</code>·<code>forcedIssues</code>를 남긴다(0.34.0).</p>
+        <p>수동 완료 트리거. <strong>종결 가드 7종</strong>(plan·artifact·미커밋·커밋 0개·테스트·리뷰 증거·검증 증거) 을 검증한다 — 추적 파일은 쓰지 않으며 종결은 머지된 plan에서 계산한다(0.58.0). CLI는 묻지 않으며, plan 완료 감지나 발화로 트리거될 때 Claude가 실행 전에 AskUserQuestion으로 확인한다. 리뷰·검증 증거는 <code>meta.reviews[]</code>가 정본이고, 그 키가 없는 구 task만 artifact 마커로 판정한다(0.37.0). <code>--force</code>는 경고만 하고 통과시키되 <strong>무시된 issue가 1개 이상이면</strong> meta에 <code>forcedAt</code>·<code>forcedIssues</code>를 남긴다(0.34.0).</p>
       </div>
       <div class="card card-accent-orange">
         <h3>harness-team handoff</h3>
@@ -1190,7 +1191,7 @@ login-bug
 </main>
 
 <footer>
-  harness-aijient-team-plugin v0.57.0 — Task Workflow Simulation &nbsp;·&nbsp; 2026-11-19
+  harness-aijient-team-plugin v0.58.0 — Task Workflow Simulation &nbsp;·&nbsp; 2026-11-20
 </footer>
 
 
