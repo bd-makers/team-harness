@@ -7,7 +7,7 @@
 - [x] `679641e` cherry-pick (`docs/team-harness-explainer.html`)
 - [x] 0.55.0 이후 틀린 사실 정정 — 브랜드·meta.json·사이클 S2/S7/S8·명령 순서·notes
 - [x] 렌더 확인(15장·상자 넘침 없음)·docs 검사
-- [ ] 리뷰·artifact 기록
+- [x] 리뷰·artifact 기록
 - [ ] ship 완료
 
 ## Ontology 변경 로그

@@ -480,7 +480,7 @@
       <path class="d-edge dashed" d="M420 336 H388" marker-end="url(#hs-arrow)"/>
       ${hideBox(20, 104, [
         ['규약', 'R1 원천 검토가 채점보다 먼저'],
-        ['', '미해결(unresolved·open) → 통과 거부'],
+        ['', '미해결(unresolved·open·ask) → 통과 거부'],
         ['루브릭', 'Ambiguity 5차원 pass/fail/na'],
         ['', '인용 근거 없으면 na · ≤ 0.2면 통과'],
         ['루브릭', 'contrarian A1–A4 (선택)'],
@@ -527,7 +527,7 @@
       ${hideBox(420, 380, [
         ['가드', 'pr-check — 하네스의 유일한 강제'],
         ['', '3종 존재 · 비어 있지 않음 · 템플릿 아님'],
-        ['훅', 'pre-push(git)가 pr-check + done 가드'],
+        ['훅', 'pre-push: pr-check (+전부 [x]면 done)'],
         ['루브릭', 'shipcheck 5행 (ship 선택 단계)'],
         ['', '요구사항↔diff · [x]↔커밋 · 스코프 밖'],
         ['규약', '다이어그램이 없으면 막지 않고 안내']
@@ -537,7 +537,7 @@
         ['가드', 'Done evidence review · tests', true],
         ['가드', 'main에서 이미 종결 → 첫 줄 nudge'],
         ['가드', 'wiki sources — compiled 감지 · 추가만'],
-        ['규약', 'retro → artifact · 3회 반복 → promote']
+        ['규약', 'retro(done 전) → artifact · 반복 → promote']
       ])}
       <path class="d-edge dashed" d="M820 268 H1580"/>
       <text class="d-label" x="1200" y="288" text-anchor="middle">S3–S6 · /harness-loop가 맡을 수 있는 구간 (Dev → QA → 커밋)</text>
@@ -545,27 +545,28 @@
       <g class="d-hide"><rect x="20" y="538" width="1560" height="42" rx="6"/>
         <text y="564"><tspan class="d-hk rule" x="34">항상</tspan><tspan class="d-hk hook" dx="14">훅</tspan><tspan class="d-ht" dx="6">SessionStart session-context — 활성 task·첫 미완 단계 주입, 없으면 재개/새 task/없이 진행 nudge (Codex도)</tspan><tspan class="d-hk hook" dx="16">훅</tspan><tspan class="d-ht" dx="6">block-dangerous-git·bash</tspan><tspan class="d-hk hook" dx="16">훅</tspan><tspan class="d-ht" dx="6">observe-tools → 트립와이어</tspan><tspan class="d-hk guard" dx="16">권한</tspan><tspan class="d-ht" dx="6">.env·force push deny · push·PR ask</tspan></text>
       </g>
-    </svg></div>`)}`, { notes: '실선 상자는 사람이 부르는 단계, 점선 상자는 그 뒤에서 자동으로 도는 장치다. 훅 = Claude Code PreToolUse/PostToolUse/SessionStart 또는 git post-commit·pre-push(templates/.claude/settings.json, src/git-hooks.mjs). Codex는 SessionStart 하나만 받는다(D9). 가드 = 결정론적 CLI 판정(pr-check·done·boundary·scenario·doctor). 루브릭 = read-only 검증자가 id·심각도·pass/fail/na로 채점(src/commands/review-prompts.mjs: scenario·contrarian·simplifier·shipcheck·adversarial·testcritic 3종). 규약 = 기계 차단 없이 에이전트가 통과를 선언하지 않는 방식(interview R1·Ambiguity, D11). "선언 시"는 gates.json·Boundary contracts·scenarios·Done evidence를 팀이 선언했을 때만 작동한다는 뜻 — 강제는 여전히 pr-check 하나. simplifier 4행·shipcheck 5행의 원래 id(R1–R4·S1–S5)는 단계 기호와 겹쳐 쓰지 않았다. 종결 순서는 ship → plan 마지막 단계 [x] → done → push → PR → 머지(= 종결)이고, 머지 뒤 종결 커밋은 없다.' }));
+    </svg></div>`)}`, { notes: '실선 상자는 사람이 부르는 단계, 점선 상자는 그 뒤에서 자동으로 도는 장치다. 훅 = Claude Code PreToolUse/PostToolUse/SessionStart 또는 git post-commit·pre-push(templates/.claude/settings.json, src/git-hooks.mjs). Codex는 SessionStart 하나만 받는다(D9). 가드 = 결정론적 CLI 판정(pr-check·done·boundary·scenario·doctor). 루브릭 = read-only 검증자가 id·심각도·pass/fail/na로 채점(src/commands/review-prompts.mjs: scenario·contrarian·simplifier·shipcheck·adversarial·testcritic 3종). 규약 = 기계 차단 없이 에이전트가 통과를 선언하지 않는 방식(interview R1·Ambiguity, D11). "선언 시"는 gates.json·Boundary contracts·scenarios·Done evidence를 팀이 선언했을 때만 작동한다는 뜻 — 강제는 여전히 pr-check 하나. simplifier 4행·shipcheck 5행의 원래 id(R1–R4·S1–S5)는 단계 기호와 겹쳐 쓰지 않았다. 종결 순서는 ship → plan 마지막 단계 [x] → done → 커밋 → push → PR → 머지(= 종결)이고, 머지 뒤 종결 커밋은 없다. retro는 활성 task가 필요하므로 done 전에 돌린다.' }));
 
     const COMMANDS = [
       '# 셋업 — 사람마다: 플러그인 설치 + CLI 링크 · 프로젝트마다 1회: /harness-init',
       '/harness-task user-auth       # task 생성·활성화 → docs/<user>/user-auth/',
       '/harness-spec                 # spec 초안 (Confluence · Figma · 인터뷰)',
       '/harness-interview            # R1 원천 검토 + Ambiguity 게이트',
-      'harness-team brief            # 검토 슬라이드 → plan 첫 단계 [사람] spec 검토 승인',
+      'harness-team brief            # spec 검토 슬라이드 → 사람이 승인하면 plan 첫 단계 [사람] 체크',
       '#  plan.md 직접 작성·확정',
       '/harness-loop                 # 선택: 단계마다 Dev → QA → 커밋 (아니면 직접 구현)',
       'git commit                    # Claude가 커밋할 때만 커밋 게이트(gates.json) · 터미널 커밋엔 안 돎',
       '/harness-review               # R3 read-only 리뷰 → artifact ## Reviews',
       '/harness-ship                 # 문서를 코드 현실에 맞추고 pr-check → 준비 보고',
       '/harness-task done            # plan 마지막 "ship 완료" [x] 뒤 가드 검증 · 추적 파일은 안 씀',
-      'git push → PR → 머지 = 종결     # pre-push 훅이 pr-check + done 가드 · 머지 뒤 종결 커밋 없음',
+      'git commit                    # 켠 체크박스를 커밋 — 이게 머지돼야 종결로 계산된다',
+      'git push → PR → 머지 = 종결     # pre-push 훅이 pr-check (plan 전부 [x]면 done 가드도) · 머지 뒤 종결 커밋 없음',
       '/harness-wiki <user>/<task>   # 선택: 머지 뒤 결정·학습을 wiki/로 컴파일'
     ].join('\n');
     slides.push(slide(`${head('04 · COMMANDS', '명령 순서 — task 하나를 열고 닫기까지', 'PR 생성·push는 하네스가 대신하지 않는다 — ship은 준비 완료 보고에서 멈춘다.')}${body(`<pre class="code">${esc(COMMANDS)}</pre>`, cards([
       { title: '사람이 정하는 것', body: 'spec과 plan의 내용, 구현 방식(직접 · 루프), 리뷰를 몇 번 할지, PR 승인.' },
       { title: '하네스가 해 주는 것', body: '세션 시작 시 활성 task 주입, 커밋 게이트 실행, 리뷰 기록·마커, PR 문서 검사.' }
-    ], 2))}`, { notes: 'task를 안 열고 프롬프트부터 시작해도 SessionStart 훅이 재개/새 task/task 없이 진행을 물어본다(nudge, 차단 아님). 셋업 3채널은 독립이라 init만으로 슬래시 커맨드가 생기지 않는다. 커밋 게이트는 git pre-commit 훅이 아니라 Claude Code PreToolUse 훅(pre-commit-check)이라 Claude의 Bash가 부르는 git commit에만 걸린다 — 설치되는 git 훅은 post-commit·pre-push 둘뿐(src/git-hooks.mjs).' }));
+    ], 2))}`, { notes: 'task를 안 열고 프롬프트부터 시작해도 SessionStart 훅이 활성 task가 없다고 알리고, 첫 작업 프롬프트에서 에이전트가 재개/새 task/task 없이 진행을 묻는다(nudge, 차단 아님). task 없이 진행은 파일을 바꾸지 않는 질문·탐색·리뷰에만 쓴다. 셋업 3채널은 독립이라 init만으로 슬래시 커맨드가 생기지 않는다. 커밋 게이트는 git pre-commit 훅이 아니라 Claude Code PreToolUse 훅(pre-commit-check)이라 Claude의 Bash가 부르는 git commit에만 걸린다 — 설치되는 git 훅은 post-commit·pre-push 둘뿐(src/git-hooks.mjs).' }));
 
     slides.push(slide(`${head('04 · RULES', '지킬 것 네 가지', '하네스가 결정론적으로 막지는 않지만, 어기면 충돌·재작업으로 돌아온다.')}${body(cards([
       { title: '같은 워킹트리는 한 명만 쓴다', html: '<p>병렬이 필요하면 각자 브랜치·git worktree에서 작업하고 PR로 합친다(D4·D5). 조사용 서브에이전트는 예외 — 읽고 요약만 돌려준다.</p>' },
