@@ -657,6 +657,25 @@ test('pr-check --pre-push: push 원격 판정 — 다른 원격의 기본 브랜
   } finally { for (const d of [dir, remote, fork]) await rm(d, { recursive: true, force: true }); }
 });
 
+// 원격 이름에 `/` 가 있어도(`team/origin`) base 원격을 첫 경로 조각(`team`)으로 자르지 않는다(리뷰 2026-11-20 P3).
+test('pr-check --pre-push: base 원격 이름에 / 가 있어도 그 원격의 기본 브랜치 push 는 건너뛴다', async () => {
+  const dir = await repo();
+  const remote = await mkdtemp(join(tmpdir(), 'harness-prcheck-remote-'));
+  try {
+    await git(remote, 'init', '-q', '--bare');
+    await git(dir, 'remote', 'add', 'team/origin', remote);
+    await git(dir, 'push', '-q', 'team/origin', 'main');
+    await writeTask(dir, 't', { files: { 'plan.md': 'template' } });
+    await commit(dir);
+    const { stdout: sha } = await git(dir, 'rev-parse', 'HEAD');
+    const stdin = `refs/heads/feature ${sha.trim()} refs/heads/main ${'0'.repeat(40)}\n`;
+    const r = await capture(() => runPrCheck({ targetDir: dir, flags: { 'pre-push': true, base: 'refs/remotes/team/origin/main' } },
+      { readStdin: async () => stdin, pushRemote: 'team/origin' }));
+    assert.equal(r.exitCode, undefined);
+    assert.equal(r.out, '');
+  } finally { for (const d of [dir, remote]) await rm(d, { recursive: true, force: true }); }
+});
+
 // ---- S3 (done-derive R7): plan 이 전부 체크된 변경 task 는 pre-push 에서 done 가드를 같이 돈다 ----
 
 const SPEC_REVIEW_REQUIRED = '# t — Spec\n\n## 목적 / 요구사항\n채움\n\n## Done evidence\n\n```json\n{ "version": 1, "review": "required" }\n```\n';

@@ -68,7 +68,16 @@ fi
 // 구분하지 못했다(task pr-check-fork-main). init·sync 는 훅 안에서 이 원문과 **정확히 일치하는** 부분만 새 블록으로 바꾼다 —
 // 손댄 블록은 건드리지 않고 doctor 가 알린다. 원격은 플래그가 아니라 환경변수로 넘긴다: 구버전 CLI 는 모르는 플래그를 exit 1 로
 // 거부해 모든 push 를 막지만 환경변수는 무시한다.
-export const PRE_PUSH_BLOCK_V1 = PRE_PUSH_BLOCK.replace('HARNESS_PUSH_REMOTE="$1" harness-team', 'harness-team');
+// 설치된 원문 그대로 얼려 둔다 — 현재 블록에서 파생하면 다음 블록 수정 때 같이 바뀌어 교체가 조용히 멈춘다(리뷰 2026-11-20 P3).
+export const PRE_PUSH_BLOCK_V1 = `# harness: PR 필수 task 문서 검사 (D11) — 우회: git push --no-verify
+if command -v harness-team >/dev/null 2>&1 && harness-team --help </dev/null 2>/dev/null | grep -q '^ *pr-check' \\
+  && harness_in=$(mktemp "\${TMPDIR:-/tmp}/harness-pre-push.XXXXXX"); then
+  cat > "$harness_in"
+  harness-team pr-check --pre-push < "$harness_in" || { rm -f "$harness_in"; exit 1; }
+  exec < "$harness_in"
+  rm -f "$harness_in"
+fi
+`;
 export const PRE_PUSH_REMOTE_ENV = 'HARNESS_PUSH_REMOTE';
 
 export const PRE_PUSH_HOOK = `#!/bin/sh\n${PRE_PUSH_BLOCK}`;
@@ -117,7 +126,7 @@ async function installGitHook(targetDir, { name, block, marker, call, legacyBloc
     if (hasLiveMarker(existing, marker)) {
       const legacy = legacyBlocks.find(b => existing.includes(b));
       if (legacy) {
-        await writeFile(hookPath, existing.replace(legacy, block), 'utf8');
+        await writeFile(hookPath, existing.replace(legacy, () => block), 'utf8');
         console.log(`  ${name} hook: updated harness block`);
       }
       return;
