@@ -24,10 +24,15 @@
   README·`docs/harness-cycle.md` §4-6 에 원장 예외 한 줄(pr-check 판정을 서술하는 다른 자리 전수 검색 결과).
 - P2-3 병합 시험: `git merge-tree --write-tree HEAD fb45f6ad` → `src/commands/pr-check.mjs`·`tests/pr-check.test.mjs` 자동 병합,
   충돌은 `CHANGELOG.md`·`docs/decisions.md`(둘 다 같은 자리에 항목 추가 — 양쪽 유지로 해소). P2-3 테스트는 `checks[]` 객체를 통째 비교하지 않는다.
+- rebase(ship 전): P2-3(#195)이 `origin/main` c12fe630 에 머지된 뒤 `git fetch origin && git rebase origin/main`.
+  `src/commands/pr-check.mjs`·`tests/pr-check.test.mjs` 는 자동 병합(원장 판정 `collectPrCheck`·`passed`·`renderResult`·`docsFailed` 와
+  P2-3 의 `HARNESS_PUSH_REMOTE`·`baseRemoteBranch`·`pushGoesElsewhere` 가 함께 남음, pr-check 테스트 39개). 충돌은 `CHANGELOG.md`
+  `### Fixed`·`docs/decisions.md` D11 정정 문단 — 둘 다 추가뿐이라 양쪽 유지. D5 두 사본 `diff` 동일.
+  rebase 뒤 `npm run test` → exit 0, `tests 1449 / pass 1448 / fail 0`; `npm run docs:check` → 최신.
 
 ### 검증하지 못한 것
-- `git fetch` 실패(네트워크) — rebase 기준은 로컬 `origin/main` = d282f761 이다. 원격 최신과의 차이는 확인하지 않았다.
-- 리뷰(Codex·D6 검증자)는 돌리지 않았다 — Reviews 절이 비어 있다.
+- Codex 리뷰는 이 네트워크에서 불가라 돌리지 않았다. ship 정합 검증은 claude 엔진 shipcheck 로 대신한다(아래 Reviews).
+- 다이어그램: 옵트인하지 않음(task 생성 때 사용자 선택 "없음", ship `--no-diagram`) — pr-check 권장 안내만 남는다.
 - 실제 pre-push 훅 경유 push 는 네트워크 차단으로 하지 않았다(훅과 같은 `--pre-push` 경로는 테스트로 확인).
 
 ## Reviews
