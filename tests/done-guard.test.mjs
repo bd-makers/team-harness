@@ -10,6 +10,7 @@ import {
   parseDoneEvidenceDeclaration, classifyChangedPaths, parseReviewMarkers, DONE_EVIDENCE_DEFAULT, describeDoneScope,
   VERIFY_KIND_SUFFIXES, parseMetaReviews, isCheckboxOnlyChange,
 } from '../src/commands/task.mjs';
+import { taskClosure } from '../src/task-closure.mjs';
 
 const pexec = promisify(execFile);
 
@@ -78,12 +79,14 @@ test('--force → 경고만 하고 진행: done 처리됨', async () => {
     assert.ok(logs.some(l => l.startsWith('⚠️')), 'warns instead of blocking');
     assert.ok(logs.some(l => l.startsWith('done:')), 'proceeds to done');
 
-    // active.json nulled out, 완료 표지는 meta.json 에만 남는다
+    // active.json nulled out. done 은 status·closedAt 을 쓰지 않는다 — 우회 흔적(forcedAt)이 종결 판정의 근거다 (done-derive R3)
     const active = JSON.parse(await readFile(join(dir, '.harness/active.json'), 'utf8'));
     assert.equal(active, null, 'active cleared');
     const meta = JSON.parse(await readFile(join(taskDir, 'demo-meta.json'), 'utf8'));
-    assert.equal(meta.status, 'done');
-    assert.ok(meta.closedAt, 'closedAt recorded');
+    assert.notEqual(meta.status, 'done', 'status 를 쓰지 않는다');
+    assert.ok(meta.closedAt == null, 'closedAt 을 쓰지 않는다');
+    const closure = await taskClosure(dir, 'tester', 'demo');
+    assert.deepEqual([closure.closed, closure.source], [true, 'forced']);
     const handoff = await readFile(join(taskDir, 'demo-handoff.md'), 'utf8');
     assert.ok(!handoff.includes('완료'), 'handoff not mutated');
   } finally {
@@ -137,6 +140,8 @@ test('빈 plan·빈 artifact(0바이트·공백뿐) → 차단 사유에 포함'
   for (const [plan, artifact, want] of [
     ['', taskArtifactTemplate('demo') + '\n- 결과\n', 'plan.md가 비어 있음'],
     [' \n', taskArtifactTemplate('demo') + '\n- 결과\n', 'plan.md가 비어 있음'],
+    // 체크박스가 하나도 없는 plan 은 종결 판정(R1)이 open 으로 본다 — done 이 통과시키면 머지해도 닫히지 않는다 (done-derive)
+    ['# demo — Plan\n\n## 단계\n- 1. 산문 단계\n', taskArtifactTemplate('demo') + '\n- 결과\n', 'plan.md에 체크된 단계(`- [x]`)가 없음'],
     ['# demo — Plan\n\n## 단계\n- [x] 완료\n', '', 'artifact.md가 비어 있음'],
   ]) {
     const { dir } = await makeFixture({ plan, artifact });
@@ -151,6 +156,22 @@ test('빈 plan·빈 artifact(0바이트·공백뿐) → 차단 사유에 포함'
       process.exitCode = prevExit;
       await rm(dir, { recursive: true, force: true });
     }
+  }
+});
+
+// codex 리뷰 P2(2026-11-19): plan 이 없으면 R1 판정은 영영 open 이다 — done 이 통과시키면 "머지 = 종결"이 거짓 약속이 된다.
+test('plan.md 가 없으면 차단 사유에 포함 (종결 판정 불가)', async () => {
+  const { dir } = await makeFixture({ artifact: taskArtifactTemplate('demo') + '\n- 결과\n' });
+  const prevExit = process.exitCode;
+  const { logs, restore } = captureLogs();
+  try {
+    await runDone({ targetDir: dir, flags: {} });
+    assert.equal(process.exitCode, 1);
+    assert.ok(logs.some(l => l.includes('plan.md가 없음')), logs.join('\n'));
+  } finally {
+    restore();
+    process.exitCode = prevExit;
+    await rm(dir, { recursive: true, force: true });
   }
 });
 
@@ -1432,7 +1453,7 @@ test('--force 로 issue 를 무시하고 종결하면 meta 에 forcedAt·forcedI
     await runDone({ targetDir: dir, flags: { force: true } });
 
     const meta = JSON.parse(await readFile(join(taskDir, 'demo-meta.json'), 'utf8'));
-    assert.equal(meta.status, 'done', '종결 자체는 그대로 일어난다');
+    assert.equal((await taskClosure(dir, 'tester', 'demo')).closed, true, '종결 자체는 그대로 일어난다(우회 기록으로 판정)');
     assert.ok(meta.forcedAt, 'forcedAt 기록됨');
     assert.equal(
       meta.forcedAt, new Date(meta.forcedAt).toISOString(),
@@ -1462,10 +1483,10 @@ test('무시한 issue 가 없는 --force 는 우회가 아니다 — 두 필드�
     await runDone({ targetDir: dir, flags: { force: true } });
     assert.ok(!logs.some(l => l.startsWith('⚠️')), '무시할 issue 자체가 없다');
 
-    const meta = JSON.parse(await readFile(join(taskDir, 'demo-meta.json'), 'utf8'));
-    assert.equal(meta.status, 'done');
-    assert.ok(meta.forcedAt == null, 'forcedAt 미기록');
-    assert.ok(meta.forcedIssues == null, 'forcedIssues 미기록');
+    // 우회가 없으면 done 은 추적 파일을 하나도 쓰지 않는다 — meta 가 생기지도 않는다 (done-derive R3)
+    await assert.rejects(readFile(join(taskDir, 'demo-meta.json'), 'utf8'), { code: 'ENOENT' }, 'meta 미생성');
+    const closure = await taskClosure(dir, 'tester', 'demo');
+    assert.deepEqual([closure.closed, closure.source], [true, 'plan']);
   } finally {
     restore();
     process.exitCode = prevExit;

@@ -10,9 +10,10 @@ import { join } from 'node:path';
 import { readdir, readFile } from 'node:fs/promises';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { exists } from '../fsx.mjs';
+import { exists, readTextSafe } from '../fsx.mjs';
 import { readActive } from './task.mjs';
 import { readTaskMeta } from './summary.mjs';
+import { closureFromContent } from '../task-closure.mjs';
 import { docsPath, listTaskRefs, taskDirRel, taskFileRel, taskFilePath, taskLabel } from '../task-paths.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 
@@ -212,7 +213,9 @@ export async function wikiSources(targetDir, user, task, { pr = null, at = today
   const label = taskLabel(user, task);
   const meta = await readTaskMeta(targetDir, user, task);
   // 키 이름이 `status`가 아닌 이유: JSON 출력은 이 객체를 envelope 에 펼치므로 envelope 의 `status` 를 덮는다.
-  const taskStatus = meta && typeof meta.status === 'string' ? meta.status : 'unknown';
+  // 종결은 기록이 아니라 판정이다(done-derive R1) — 작업 트리 plan + meta 로 계산하므로 'unknown' 이 없다.
+  const plan = await readTextSafe(taskFilePath(targetDir, user, task, 'plan.md'));
+  const taskStatus = closureFromContent({ plan, meta }).closed ? 'done' : 'open';
   const author = meta && typeof meta.user === 'string' && meta.user ? meta.user : user;
 
   const docs = [];

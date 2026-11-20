@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { hasDoneMarker } from '../src/handoff-marker.mjs';
 import { runDone, taskArtifactTemplate } from '../src/commands/task.mjs';
 import { collectTasks } from '../src/commands/summary.mjs';
+import { taskClosure } from '../src/task-closure.mjs';
 
 // 옛 task handoff 의 완료 마커는 meta.json 이 없는 레거시 task 의 완료 증거다. 새 종결은 마커를 쓰지 않으므로
 // 파서는 이미 디스크에 쓰인 형태만 읽으면 된다. 아래 fixture 는 그 과거 형태를 그대로 못박는다.
@@ -63,7 +64,8 @@ function captureLogs() {
   return { logs, restore: () => { console.log = orig; } };
 }
 
-test('runDone 은 handoff 에 마커를 쓰지 않고 meta.json 만으로 완료를 남긴다', async () => {
+// done-derive: 완료는 기록(meta)이 아니라 plan 판정이다 — done 은 handoff 도 meta 도 쓰지 않는다.
+test('runDone 은 handoff 에 마커를 쓰지 않고 완료는 plan 판정으로 남는다', async () => {
   const { dir, taskDir } = await makeDoneFixture();
   await writeFile(join(taskDir, 'demo-spec.md'), '# demo — Spec\n');
   const prevExit = process.exitCode;
@@ -73,7 +75,7 @@ test('runDone 은 handoff 에 마커를 쓰지 않고 meta.json 만으로 완료
     assert.equal(await readFile(join(taskDir, 'demo-handoff.md'), 'utf8'), HANDOFF_HEAD);
     const demo = (await collectTasks(dir)).find(t => t.task === 'demo');
     assert.equal(demo.status, 'done');
-    assert.ok(demo.closedAt, '종결 시각이 meta 에 있다');
+    assert.equal((await taskClosure(dir, 'tester', 'demo')).source, 'plan', '종결 근거는 plan 이다');
   } finally {
     restore();
     process.exitCode = prevExit;

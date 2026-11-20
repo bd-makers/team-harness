@@ -12,8 +12,8 @@ argument-hint: '[--base <ref>] [--no-diagram]'
 
 - **PR/MR을 만들지 않는다.** 이 명령은 준비 완료 보고에서 멈춘다. 실제 브랜치 푸시와
   PR/MR 생성은 사용자 지시로 별도 진행한다.
-- **`harness-team done`을 대체하지 않는다.** done은 task 완료 처리이고 ship은 PR 직전 문서
-  정합 단계다. 이 명령 안에서 done을 실행하지 않는다.
+- **`harness-team done`을 대체하지 않는다.** done은 종결 가드 검증이고 ship은 PR 직전 문서
+  정합 단계다. 이 명령 안에서 done을 실행하지 않는다 — 끝에 종결 순서만 안내한다(아래 보고 형식).
 - **문서만 고친다.** ship 중에 발견한 코드 결함은 보고만 하고, 수정은 사용자 지시로 별도 진행한다.
 - **다이어그램은 옵트인이고 하드 의존이 아니다.** 도구가 없으면 실패시키지 말고 건너뛴 뒤
   artifact에 '미실행'을 기록한다(아래 6번).
@@ -180,8 +180,11 @@ ship: chad/ship-command (base: origin/main)
 - 문서: spec 갱신 / plan 12항목 체크 / artifact 결과·리스크 기록
 - 다이어그램: 건너뜀 (사용자 선택)
 - 남은 리스크: 없음
-→ PR/MR 준비 완료. 생성은 지시 주시면 진행합니다.
+→ PR/MR 준비 완료. 종결 순서: plan 마지막 단계("ship 완료") 체크 → harness-team done → 커밋 → push/MR (머지 = 종결).
 ```
 
-task 자체를 끝낼 때는 `harness-team done`을, 학습만 남길 때는 `harness-team retro`를 쓴다 —
+종결은 머지로 성립한다(`commands/harness-task.md` "종결") — 머지 뒤 종결 커밋은 없다. 그래서 plan의 마지막 단계는
+"ship 완료"이고 MR 전에 켠다. 여러 MR에 걸친 task면 남은 단계가 plan에 `- [ ]`로 있어야 하고, 그때는 마지막 단계를 켜지 않는다.
+
+task 종결 가드는 `harness-team done`을, 학습만 남길 때는 `harness-team retro`를 쓴다 —
 ship은 둘 중 어느 것도 실행하지 않는다.

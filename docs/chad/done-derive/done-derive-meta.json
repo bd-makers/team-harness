@@ -1,0 +1,49 @@
+{
+  "user": "chad",
+  "task": "done-derive",
+  "created": "2026-11-18",
+  "firstActivatedAt": "2026-11-18T11:39:31.490Z",
+  "baseSha": "134462ce2d89956957a214e42317d567bd8aebc8",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "model": null,
+      "scope": "worktree",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "134462ce2d89956957a214e42317d567bd8aebc8",
+      "tip": "134462ce2d89956957a214e42317d567bd8aebc8",
+      "at": "2026-11-19T07:12:45.725Z",
+      "exitCode": 0,
+      "outputBytes": 2812
+    },
+    {
+      "kind": "claude",
+      "engine": "claude",
+      "model": null,
+      "scope": "worktree",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "134462ce2d89956957a214e42317d567bd8aebc8",
+      "tip": "134462ce2d89956957a214e42317d567bd8aebc8",
+      "at": "2026-11-19T09:25:32.350Z",
+      "exitCode": 0,
+      "outputBytes": 6386
+    },
+    {
+      "kind": "claude-shipcheck",
+      "engine": "claude",
+      "model": null,
+      "scope": "worktree",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "134462ce2d89956957a214e42317d567bd8aebc8",
+      "tip": "134462ce2d89956957a214e42317d567bd8aebc8",
+      "at": "2026-11-19T10:07:04.833Z",
+      "exitCode": 0,
+      "outputBytes": 6481
+    }
+  ]
+}

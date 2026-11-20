@@ -1,6 +1,7 @@
 // `harness-team pr-check` — read-only. 하네스가 강제하는 유일한 것(D11)을 판정한다: 이 브랜치가 PR로 담을
 // task 마다 spec·plan·artifact 가 템플릿이 아닌 채로 있는가. 다이어그램은 권장이라(2026-10-06 결정)
-// 없으면 막지 않고 안내(notes)만 낸다.
+// 없으면 막지 않고 안내(notes)만 낸다. pre-push 에서는 plan 이 전부 체크된 task 에 done 가드를 더한다(done-derive R7,
+// `applyDoneGuard` 참고) — 머지가 곧 종결이라 가드가 머지 전에 돌아야 한다.
 //
 // 호출처는 셋이다(docs/harness-cycle.md §4-6): ship 준비 보고, init 이 설치하는 git pre-push 훅, 원하는 팀의 CI.
 // 셋이 같은 판정을 보도록 두 가지를 고정한다.
@@ -10,7 +11,8 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { resolveScope } from './review.mjs';
-import { taskSpecTemplate, taskPlanTemplate, taskArtifactTemplate, repoPrefix, reviewGateStep } from './task.mjs';
+import { taskSpecTemplate, taskPlanTemplate, taskArtifactTemplate, repoPrefix, reviewGateStep, collectDoneIssues } from './task.mjs';
+import { closureFromContent, forcedIsValid } from '../task-closure.mjs';
 import { DIAGRAM_SKIPPED_PREFIX, svgSelfContainmentViolations } from './diagram.mjs';
 import { DOCS_DIR, taskFileRel, taskLabel, diagramKind } from '../task-paths.mjs';
 import { DIAGRAM_VIEWS } from '../cli-args.mjs';
@@ -119,6 +121,40 @@ export async function collectPrCheck({ targetDir, base, rev = 'HEAD' }) {
   const tasks = [];
   for (const ref of refs) tasks.push({ ...ref, ...(await taskFindings(targetDir, rev, ref)) });
   return { empty: false, tasks };
+}
+
+// done 가드(done-derive R7) — plan 이 전부 체크된 변경 task 는 머지되는 순간 종결이다. 체크박스만 켜고 `done` 을 건너뛰는
+// 경로를 pre-push 에서 막는다. 가드(`collectDoneIssues`)는 작업 트리·`git log` 를 읽으므로 push 되는 sha 가 HEAD 이고
+// 작업 트리가 깨끗할 때만 돌린다 — 그 밖(다른 브랜치 push·미정리 트리)과 CI 는 종전대로 문서만 본다(가드를 rev 기준으로
+// 리팩터하지 않는다). 유효한 우회 기록(`forcedAt` > `reopenedAt`)이 있으면 issue 를 경고로만 낸다.
+// plan 에 미완 단계가 남은 task(진행 중·다중 MR)는 대상이 아니다.
+const GUARD_PREFIX = 'done 가드 — ';
+const GUARD_NEXT = '`harness-team done` 으로 확인해 고친 뒤 커밋하고 다시 push 하거나, 의도한 우회면 `done --force` 기록을 커밋';
+async function applyDoneGuard(targetDir, rev, t, canRun) {
+  const plan = await showAt(targetDir, rev, taskFileRel(t.user, t.task, 'plan.md'));
+  if (!closureFromContent({ plan, meta: null }).closed) return;
+  if (!canRun) {
+    t.notes.push('done 가드 건너뜀 — plan 이 전부 체크됐지만 push 되는 커밋이 HEAD 이고 작업 트리가 깨끗할 때만 돈다');
+    return;
+  }
+  let meta = null;
+  try { meta = JSON.parse(await showAt(targetDir, rev, taskFileRel(t.user, t.task, 'meta.json'))); } catch { /* 없음·깨짐 */ }
+  const { issues } = await collectDoneIssues(targetDir, { user: t.user, task: t.task });
+  if (!issues.length) return;
+  if (forcedIsValid(meta)) {
+    for (const issue of issues) t.notes.push(`경고: done 가드 — ${issue} (우회 기록 forcedAt ${meta.forcedAt})`);
+    return;
+  }
+  t.guardFailed = true;
+  for (const issue of issues) t.issues.push(`${GUARD_PREFIX}${issue}`);
+}
+
+// pre-push 가드 실행 조건: HEAD sha 와 작업 트리 상태(untracked 포함, ignored 제외). 어떤 실패도 "돌리지 않음"이다.
+async function headIfClean(targetDir) {
+  try {
+    if ((await git(targetDir, ['status', '--porcelain'])).trim()) return null;
+    return (await git(targetDir, ['rev-parse', 'HEAD'])).trim();
+  } catch { return null; }
 }
 
 export const passed = result => result.empty || (result.tasks.length > 0 && result.tasks.every(t => !t.issues.length));
@@ -266,15 +302,30 @@ export async function runPrCheck(ctx, { readStdin = readAllStdin } = {}) {
 
   const results = [];
   for (const r of runs) results.push({ ...r, result: await collectPrCheck({ targetDir: ctx.targetDir, base, rev: r.rev }) });
+  if (prePush) {
+    const head = await headIfClean(ctx.targetDir);
+    for (const r of results) {
+      for (const t of r.result.tasks) await applyDoneGuard(ctx.targetDir, r.rev, t, head !== null && r.rev === head);
+    }
+  }
   const ok = results.every(r => passed(r.result));
+  const guardFailed = results.some(r => r.result.tasks.some(t => t.guardFailed));
+  const docsFailed = results.some(r => !r.result.empty
+    && (!r.result.tasks.length || r.result.tasks.some(t => t.issues.some(i => !i.startsWith(GUARD_PREFIX)))));
+  const failSummary = [docsFailed && 'PR 필수 task 문서가 빠짐', guardFailed && 'plan 이 전부 체크된 task 가 done 가드를 통과하지 못함']
+    .filter(Boolean).join(' · ');
+  const failActions = [
+    ...(docsFailed ? ['빠진 문서를 채워 커밋한 뒤 `harness-team pr-check` 를 다시 실행'] : []),
+    ...(guardFailed ? [GUARD_NEXT] : []),
+  ];
   if (!ok) process.exitCode = 1;
 
   if (json) {
     emitObservation(buildEnvelope({
       command: 'pr-check',
       status: ok ? 'success' : 'failure',
-      summary: ok ? `PR 필수 task 문서 확인 (base ${base})` : `PR 필수 task 문서가 빠짐 (base ${base})`,
-      nextActions: ok ? [] : ['빠진 문서를 채워 커밋한 뒤 `harness-team pr-check` 를 다시 실행'],
+      summary: ok ? `PR 필수 task 문서 확인 (base ${base})` : `${failSummary} (base ${base})`,
+      nextActions: ok ? [] : failActions,
       extra: { base, checks: results.map(r => ({ ref: r.label, rev: r.rev, empty: r.result.empty, tasks: toJsonTasks(r.result) })) },
     }));
     return;
@@ -283,7 +334,10 @@ export async function runPrCheck(ctx, { readStdin = readAllStdin } = {}) {
   if (!results.length) return; // pre-push 가 기본 브랜치만 push — 조용히 통과
   for (const r of results) for (const line of renderResult(r.label, r.result)) console.log(line);
   if (!ok) {
-    console.log(`→ PR 에 담을 task 문서가 빠졌습니다 (D11, base ${base}).`);
+    if (guardFailed) console.log(`→ plan 이 전부 체크된 task 가 done 가드를 통과하지 못했습니다 — ${GUARD_NEXT}.`);
+    if (docsFailed) {
+      console.log(`→ PR 에 담을 task 문서가 빠졌습니다 (D11, base ${base}).`);
+    }
     if (prePush) console.log('→ 검사 없이 push 하려면 `git push --no-verify`');
   }
 }

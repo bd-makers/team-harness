@@ -180,19 +180,80 @@ async function editMeta(dir, fn) {
   await writeFile(p, JSON.stringify(fn(meta), null, 2) + '\n');
 }
 
-test('clean: refuses a done task, and a reopened one without --base', async () => {
+const PLAN_DONE = '# x — Plan\n\n## 단계\n- [x] 1. 구현\n- [x] 2. ship 완료\n';
+
+// S5 (done-derive R10): 거부 기준은 "기본 브랜치에서 종결"이다 — ship 했지만 기본 브랜치에 없는 task 는 되돌린다.
+test('clean (S5): ship 했지만 기본 브랜치에 없는 task 는 되돌리고, 기본 브랜치에서 종결된 task 는 거부한다', async () => {
   const { dir } = await fixture();
   try {
+    await writeFile(join(dir, 'docs/chad/x/x-plan.md'), PLAN_DONE);
+    git(dir, 'add', '-A');
+    git(dir, 'commit', '-q', '-m', 'ship');
+    let r = await clean(dir, { name: 'x' });
+    assert.equal(r.exitCode, 0, `작업 트리에서 종결이어도 main 에 없으면 되돌릴 수 있다(MR 거절·폐기):\n${r.out}`);
+
+    // 레거시 meta `status: done` 도 브랜치에만 있으면 거부하지 않는다.
     await editMeta(dir, m => ({ ...m, status: 'done', closedAt: '2026-11-17T00:00:00.000Z' }));
+    git(dir, 'commit', '-q', '-am', 'legacy done on branch');
+    r = await clean(dir, { name: 'x' });
+    assert.equal(r.exitCode, 0, r.out);
+
+    git(dir, 'update-ref', 'refs/heads/main', 'HEAD'); // 머지(origin 없음 → 로컬 기본 브랜치가 R)
+    const before = state(dir);
+    r = await clean(dir, { name: 'x', yes: true });
+    assert.equal(r.exitCode, 1);
+    assert.match(r.out, /기본 브랜치에서 종결된 task/);
+    assert.match(r.out, /main 에서 이미 종결/);
+    assert.deepEqual(state(dir), before);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('clean: 원격 추적 기본 브랜치가 있으면 그것이 R 이다', async () => {
+  const { dir } = await fixture();
+  try {
+    await writeFile(join(dir, 'docs/chad/x/x-plan.md'), PLAN_DONE);
+    git(dir, 'commit', '-q', '-am', 'ship');
+    git(dir, 'update-ref', 'refs/heads/main', 'HEAD'); // 로컬 main 은 R 이 아니다
+    git(dir, 'update-ref', 'refs/remotes/origin/main', `${git(dir, 'rev-parse', 'HEAD')}~2`);
+    let r = await clean(dir, { name: 'x' });
+    assert.equal(r.exitCode, 0, `origin/main 에 아직 없다:\n${r.out}`);
+    git(dir, 'update-ref', 'refs/remotes/origin/main', 'HEAD');
+    r = await clean(dir, { name: 'x' });
+    assert.equal(r.exitCode, 1);
+    assert.match(r.out, /origin\/main 에서 이미 종결/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+// 재리뷰 P2(2026-11-19): 재개 MR 이 머지되기 전 R 의 종결은 이미 다시 연 옛 종결이다 — "기본 브랜치에서 종결"로 거부하지 않고
+// 재개 task 규칙(`--base` 필요)으로 넘긴다. 문서가 재개 task 에 약속한 탈출구다.
+test('clean: 재개 MR 머지 전의 재개 task 는 종결 거부가 아니라 --base 분기를 탄다', async () => {
+  const { dir } = await fixture();
+  try {
+    await writeFile(join(dir, 'docs/chad/x/x-plan.md'), PLAN_DONE);
+    git(dir, 'add', '-A');
+    git(dir, 'commit', '-q', '-m', 'ship');
+    git(dir, 'update-ref', 'refs/heads/main', 'HEAD'); // 머지
+    git(dir, 'switch', '-q', '-c', 'fix');
+    const reopened = await task(dir, 'x');
+    assert.match(reopened.out, /reopened: chad\/x/);
+    git(dir, 'add', '-A');
+    git(dir, 'commit', '-q', '-m', 'reopen');
+
+    let r = await clean(dir, { name: 'x' });
+    assert.equal(r.exitCode, 1);
+    assert.match(r.out, /재개된 task/);
+    assert.doesNotMatch(r.out, /기본 브랜치에서 종결된 task/);
+    r = await clean(dir, { name: 'x', base: 'main' });
+    assert.equal(r.exitCode, 0, r.out);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('clean: refuses a reopened task without --base', async () => {
+  const { dir } = await fixture();
+  try {
+    await editMeta(dir, m => ({ ...m, status: 'open', closedAt: null, reopenedAt: '2026-11-17T01:00:00.000Z' }));
     let before = state(dir);
     let r = await clean(dir, { name: 'x', yes: true });
-    assert.equal(r.exitCode, 1);
-    assert.match(r.out, /done 된 task/);
-    assert.deepEqual(state(dir), before);
-
-    await editMeta(dir, m => ({ ...m, status: 'open', closedAt: null, reopenedAt: '2026-11-17T01:00:00.000Z' }));
-    before = state(dir);
-    r = await clean(dir, { name: 'x', yes: true });
     assert.equal(r.exitCode, 1);
     assert.match(r.out, /재개된 task/);
     assert.deepEqual(state(dir), before);
@@ -370,15 +431,18 @@ test('clean: a task folder under another docs root is protected too', async () =
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
-// P2: meta 없는 구 task 는 원장·handoff 로 done 을 추론한다 — runTask 의 reopen 판정과 같은 함수.
+// P2: meta 없는 구 task 는 기본 브랜치의 원장으로 종결을 읽는다 — 재개 판정과 같은 함수(closedAtRef).
 test('clean: refuses a legacy task the ledger already marks done', async () => {
   const { dir } = await fixture();
   try {
     await rm(join(dir, 'docs/chad/x/x-meta.json'));
     await writeFile(join(dir, 'docs/task_summary.md'), '# Task Summary\n\n| User | Task | Status | Created |\n|------|------|--------|---------|\n| chad | x | ✅ done | 2026-11-17 |\n');
+    git(dir, 'add', '-A');
+    git(dir, 'commit', '-q', '-m', 'legacy close');
+    git(dir, 'update-ref', 'refs/heads/main', 'HEAD'); // 기본 브랜치(R)의 원장이 종결을 기록한다
     const r = await clean(dir, { yes: true });
     assert.equal(r.exitCode, 1, r.out);
-    assert.match(r.out, /done 된 task/);
+    assert.match(r.out, /기본 브랜치에서 종결된 task/);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

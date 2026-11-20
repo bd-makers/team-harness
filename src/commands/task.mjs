@@ -7,7 +7,8 @@ import { exists, writeText } from '../fsx.mjs';
 import { GATES_REL } from '../presets.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 import { readTaskMeta, writeTaskMeta, taskMetaTemplate, inferLegacyMeta, readLedger, parseSummaryRows, readTextOrNull } from './summary.mjs';
-import { checkDoneOnMain, renderDoneOnMainNudge, listBranchOnlyTasks } from './remote-task.mjs';
+import { checkDoneOnMain, renderDoneOnMainNudge, listBranchOnlyTasks, resolveDefaultRef, resolveClosureRef, closureAtRef, closedSinceReopen } from './remote-task.mjs';
+import { planHasOpenBoxes, closureFromContent, gitAt } from '../task-closure.mjs';
 import { findCommand } from '../cli-args.mjs';
 import { userNameError } from '../user-config.mjs';
 import { REVIEWERS_REL, loadReviewersConfig, findProfile } from '../reviewers-config.mjs';
@@ -25,11 +26,8 @@ export async function headSha(targetDir) {
   } catch { return null; }
 }
 
-// "미완"의 단일 정의 — done-guard와 session-task-gate가 공유.
-// 줄 시작 체크박스만 매칭(인라인/산문 `- [ ]`는 미완 아님).
-export function planHasOpenBoxes(content) {
-  return /^\s*- \[ \]/m.test(content);
-}
+// "미완"의 단일 정의는 종결 판정과 함께 `src/task-closure.mjs` 에 있다 — 기존 import 경로를 위해 다시 내보낸다.
+export { planHasOpenBoxes };
 
 // plan의 "현재 단계" — 내용이 있는 첫 미완 체크박스 줄. 파생값이라 어디에도 저장하지 않는다.
 // 생성 직후 plan의 빈 `- [ ]`는 단계가 아니므로 건너뛴다.
@@ -291,6 +289,42 @@ async function isAbsentOrEmpty(p) {
   try { return (await readdir(p)).length === 0; } catch (e) { return e.code === 'ENOENT'; }
 }
 
+// 재개 판정(done-derive R5·R6): 기본 브랜치(R)에서 종결됐고 **작업 트리에서도 아직 종결**이다.
+// - R 만 보면 재개 브랜치에서 `task <name>` 을 다시 칠 때마다 또 재개한다 — R 은 재개 MR 이 머지될 때까지 closed 다.
+// - 작업 트리만 보면 ship 했지만 머지 전인 리뷰 수정 라운드를 재개로 오인한다(R5: 그때는 activate 만).
+// - R 의 종결이 마지막 재개(`reopenedAt`)보다 앞이면 그것은 이미 다시 연 옛 종결이다 — 재개 → 재개 항목 체크(re-ship) → 머지 전
+//   `task <name>` 은 리뷰 수정 라운드라 activate 만 한다(codex 리뷰 P1, 2026-11-19). 원격 nudge 침묵 조건과 같은 비교이고,
+//   R 의 종결 시각을 모르면 재개하지 않는다(판정 창을 잘못 리셋하는 쪽이 더 비싸다).
+// R 은 `resolveClosureRef`(원격 추적 기본 브랜치 → origin 이 없으면 로컬 main/master)다. 그것도 없으면 작업 트리로 대신한다.
+// fetch 하지 않는다: 머지 뒤 fetch 하지 않은 클론은 activate 로 떨어진다(spec 제약 "허용된 한계").
+// `meta` 는 호출자가 이미 읽은 값(meta.json 이 없는 구 task 면 `inferLegacyMeta` 추론값)이다 — meta 파일만 읽으면
+// 원장·handoff 로만 종결이 남은 구 task 를 열린 것으로 본다.
+export async function closedForReopen(targetDir, user, task, { meta, resolveRef = resolveDefaultRef, git: run = gitAt } = {}) {
+  const plan = await readTextOrNull(taskFilePath(targetDir, user, task, 'plan.md'));
+  const m = meta === undefined ? await readTaskMeta(targetDir, user, task) : meta;
+  if (!closureFromContent({ plan, meta: m }).closed) return false;
+  const full = await resolveClosureRef(targetDir, { resolveRef, git: run });
+  if (!full) return true;
+  return closedSinceReopen(await closureAtRef(targetDir, user, task, full, { git: run }), m);
+}
+
+export const REOPEN_DEFAULT_REASON = '(사유 미기재)';
+
+// plan `## 단계` 끝(다음 `## ` 제목 앞, 꼬리 빈 줄 앞)에 미완 항목 `- [ ] 재개: <사유>` 를 넣는다 — 이 한 줄이 R1 판정을 open 으로
+// 되돌린다. `## 단계` 제목이 없으면 파일 끝에 절을 만들어 넣는다. 사유는 한 줄로 접는다(줄바꿈이 체크박스 줄을 깨지 않게).
+export function addReopenStep(plan, reason) {
+  const text = String(reason ?? '').replace(/\s+/g, ' ').trim() || REOPEN_DEFAULT_REASON;
+  const line = `- [ ] 재개: ${text}`;
+  const lines = plan.split('\n');
+  const start = lines.findIndex(l => /^##\s+단계\s*$/.test(l));
+  if (start === -1) return `${plan.replace(/\n*$/, '')}\n\n## 단계\n${line}\n`;
+  let end = lines.findIndex((l, i) => i > start && /^##\s/.test(l));
+  if (end === -1) end = lines.length;
+  while (end > start + 1 && lines[end - 1].trim() === '') end--;
+  lines.splice(end, 0, line);
+  return lines.join('\n');
+}
+
 function emitTaskError(json, summary, packet) {
   process.exitCode = 1;
   if (json) {
@@ -301,7 +335,13 @@ function emitTaskError(json, summary, packet) {
   for (const line of renderErrorPacket(packet)) console.log(line);
 }
 
-export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
+// `reopen <name>`(done-derive R6) — `task <name>` 과 같은 재개 전이를 하되 종결된 task 에만 동작한다.
+// 아니면(없는 task·종결 안 된 task) 아무것도 쓰지 않고 exit 1. 새 task 를 만들지 않는다.
+export async function runReopen(ctx, deps = {}) {
+  return runTask(ctx, { ...deps, reopenOnly: true });
+}
+
+export async function runTask(ctx, { doneOnMain = checkDoneOnMain, closedForReopen: isClosed = closedForReopen, reopenOnly = false } = {}) {
   const json = !!(ctx.flags && ctx.flags.json);
   const name = (ctx.taskArgs || [])[0];
   // `.`·`..` 은 문자 규칙을 통과하지만 경로 세그먼트로서 디렉터리 깊이를 바꾼다(`docs/<user>/..` = `docs/`).
@@ -389,6 +429,15 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
   // 그 안에 meta 까지 쓴다(docs/spec-monorepo-scope.md §6 R1). 마커도 없고 비어 있지도 않은 자리는 거부한다 —
   // scaffold 하면 남은 plan·handoff 를 템플릿으로 덮어쓴다. spec 만 잃은 task 는 spec 을 복원하면 종전대로 활성화된다.
   const isTask = await exists(taskFilePath(ctx.targetDir, user, name, 'spec.md'));
+  if (reopenOnly && !isTask) {
+    return emitTaskError(json, '재개할 task 가 없음', buildErrorPacket({
+      cause: `${taskFileRel(user, name, 'spec.md')} 가 없다 — reopen 은 있는 task 만 다시 연다`,
+      retry: '이름·member 를 확인해 재실행',
+      alternatives: ['새로 만들려면 `harness-team task <name>`'],
+      safeDefault: 'task 디렉터리도 meta 도 .harness/active.json 도 바뀌지 않는다',
+      stop: 'reopen 으로 새 task 를 만들지 말 것',
+    }));
+  }
   if (!isTask && !(await isAbsentOrEmpty(dir))) {
     return emitTaskError(json, '기존 디렉터리가 task 가 아님', buildErrorPacket({
       cause: `${taskDirRel(user, name)}/ 가 이미 있지만 ${taskFileRel(user, name, 'spec.md')} 가 없다 — list·summary 와 같은 기준으로 task 가 아니다`,
@@ -452,7 +501,7 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
   }
 
   // 원격 done 감지(done-on-main-nudge). 사고의 시작점이 바로 여기였다 — 클론에서 `task <name>`을 쳤을 때 main에는
-  // 같은 task가 이미 종결돼 있었다. 막지 않는다(nudge). 로컬 meta가 done이면(아래 reopened 전이) 판정은 null이다 —
+  // 같은 task가 이미 종결돼 있었다. 막지 않는다(nudge). 작업 트리도 종결이면(아래 reopened 전이) 판정은 null이다 —
   // 그것은 사용자가 종결을 보고 다시 여는 고의 재개다.
   let doneOnMainVerdict = null;
   try { doneOnMainVerdict = await doneOnMain(ctx.targetDir, user, name); } catch { doneOnMainVerdict = null; }
@@ -484,7 +533,7 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
 
     // 완료 상태의 만료. 시간 경과가 아니라 **전이**다 — done된 task를 다시 활성화하는 행위가
     // 그 완료를 무효로 만든다. 만료시키지 않으면 지금 작업 중인 활성 task가 원장에서
-    // "✅ done"으로 보인다(status를 읽는 유일한 소비처가 summary 렌더링이다).
+    // "✅ done"으로 보인다. 종결은 plan 판정이라(done-derive) 만료도 plan 에 미완 항목을 넣는 것으로 한다.
     // 열린 task 사이를 오가는 평범한 재활성화는 meta를 건드리지 않는다 — 그쪽까지 쓰면
     // done 가드의 판정 창이 흔들린다(done-guard-window가 고친 바로 그 오탐).
     // `reopenedAt`은 이 전이에서만 생긴다: 템플릿은 그대로고, 키 없는 meta는 종전대로 읽힌다.
@@ -505,13 +554,31 @@ export async function runTask(ctx, { doneOnMain = checkDoneOnMain } = {}) {
     }
     // 채택: 접두 규약으로 먼저 만든 task 에 area 를 처음 기록한다. 판정 창 필드는 건드리지 않는다.
     const adopted = area !== undefined && !meta.area;
-    const reopened = Boolean(meta && meta.status === 'done');
+    // 판정 입력은 로컬 meta `status` 가 아니라 종결 판정(done-derive R1)이다 — `closedForReopen` 주석 참고.
+    const reopened = await isClosed(ctx.targetDir, user, name, { meta });
+    if (reopenOnly && !reopened) {
+      return emitTaskError(json, '종결되지 않은 task 는 다시 열 수 없음', buildErrorPacket({
+        cause: `${taskLabel(user, name)} 는 기본 브랜치 또는 작업 트리에서 종결 상태가 아니다 — 이미 열려 있거나 아직 머지되지 않았다`,
+        retry: `이어서 작업하려면 \`harness-team task ${name}\` 으로 활성화`,
+        alternatives: ['머지된 종결을 아직 받지 않았다면 기본 브랜치를 fetch 한 뒤 재실행한다'],
+        safeDefault: 'meta·plan·.harness/active.json 모두 바뀌지 않는다',
+        stop: '열린 task 에 재개 항목을 덧붙이지 말 것',
+      }));
+    }
     if (reopened || adopted) {
+      // 레거시 `status`·`closedAt` 도 함께 연다 — 옛 CLI 가 남긴 `status: done` 이 legacy-meta 종결로 남지 않게.
       await writeTaskMeta(ctx.targetDir, user, name, {
         ...meta, user, task: name,
         ...(reopened ? { status: 'open', closedAt: null, reopenedAt: switchedAt } : {}),
         ...(adopted ? { area } : {}),
       });
+    }
+    // meta 를 먼저 굳히고 plan 에 재개 항목을 넣는다 — plan 쓰기가 실패해도 재실행이 같은 판정(작업 트리 closed)으로 이어받는다.
+    // plan 이 없는 레거시 task 는 건너뛴다: 위 `reopenedAt > closedAt` 이 이미 레거시 종결을 무효로 만든다.
+    if (reopened) {
+      const planPath = taskFilePath(ctx.targetDir, user, name, 'plan.md');
+      const plan = await readTextOrNull(planPath);
+      if (plan !== null) await writeText(planPath, addReopenStep(plan, ctx.flags && ctx.flags.reason));
     }
     const verb = reopened ? 'reopened' : 'activated';
 
@@ -1028,7 +1095,9 @@ export function describeDoneScope({ evidence, isGitRepo, windowKnown, hasReviewE
     + ` | 정보: 리뷰 증거 ${hasReviewEvidence ? '있음' : '없음'} · 커밋 게이트 ${GATES_REL} ${hasCommitGates ? '있음' : '없음'}`;
 }
 
-async function collectDoneIssues(targetDir, active) {
+// `done` 가드의 판정 한 곳 — `done`(활성 task)과 `pr-check --pre-push`(plan 이 전부 체크된 변경 task)가 공유한다.
+// 작업 트리·`git log` 를 읽으므로 작업 트리가 판정 대상 커밋과 같을 때만 의미가 있다.
+export async function collectDoneIssues(targetDir, active) {
   const { user, task } = active;
   const issues = [];
 
@@ -1056,8 +1125,14 @@ async function collectDoneIssues(targetDir, active) {
       issues.push('plan.md가 비어 있음 (단계 없음)');
     } else if (planHasOpenBoxes(planContent)) {
       issues.push('plan.md에 미완 체크박스(`- [ ]`)가 남아 있음');
+    } else if (!closureFromContent({ plan: planContent, meta: null }).closed) {
+      // 종결은 plan 에서 파생된다(done-derive R1) — 체크된 단계가 없으면 머지해도 닫히지 않는다.
+      issues.push('plan.md에 체크된 단계(`- [x]`)가 없음');
     }
-  } catch { /* no plan.md → not a positive signal, skip */ }
+  } catch {
+    // 종결은 plan 에서 파생된다(done-derive R1) — plan 이 없으면 머지해도 닫히지 않으므로 `done` 통과가 거짓 약속이 된다(codex 리뷰 P2, 2026-11-19).
+    issues.push('plan.md가 없음 (종결 판정 불가 — 단계를 적고 체크)');
+  }
 
   // artifact.md: missing or still the untouched template
   const artifactPath = taskFilePath(targetDir, user, task, 'artifact.md');
@@ -1227,11 +1302,14 @@ export async function runDone(ctx) {
   // 이전 값을 덮어쓴다 — 이 스키마가 답하는 질문은 "이 task 에 우회가 있었는가"이지
   // "몇 번 있었는가"가 아니다. 전체 이력이 필요해지면 배열 필드를 새로 도입할 일이며,
   // 두 필드의 의미를 조용히 바꾸지 말 것 (2026-09-08 codex P2 — 범위 밖으로 판별).
-  const forcedFields = force && issues.length ? { forcedAt: ts, forcedIssues: issues } : {};
-  const meta = (await readTaskMeta(ctx.targetDir, user, task)) || { user, task, created: today() };
-  await writeTaskMeta(ctx.targetDir, user, task, {
-    ...meta, user, task, status: 'done', closedAt: ts, ...forcedFields,
-  });
+  //
+  // 종결은 기록하지 않는다(done-derive R3) — 기본 브랜치의 plan 에서 파생되므로(`src/task-closure.mjs`) 여기서
+  // `status`·`closedAt` 을 쓰면 머지 뒤 종결 커밋이 다시 생긴다. 쓰는 것은 우회 흔적뿐이고, 이것은 사용자가
+  // 같은 MR 에 커밋한다 — 미완 단계를 남긴 채 닫은 task 의 종결 판정 근거가 이 흔적이다.
+  if (force && issues.length) {
+    const meta = (await readTaskMeta(ctx.targetDir, user, task)) || { user, task, created: today() };
+    await writeTaskMeta(ctx.targetDir, user, task, { ...meta, user, task, forcedAt: ts, forcedIssues: issues });
+  }
 
   // 사용자 handoff 는 AGENTS.md 가 규정한 **세션 진입점**이다. 갱신하지 않고 활성만 비우면
   // 이 파일이 종결된 task 를 계속 "Active Task" 로 가리킨 채 얼어붙는다 — 이후 커밋에서
@@ -1247,6 +1325,7 @@ export async function runDone(ctx) {
   console.log(`done: ${taskLabel(user, task)}`);
   console.log(scope);
   console.log(`handoff updated: ${userHandoffRel(user)}`);
+  console.log('next: plan·artifact 변경을 커밋해 push — 종결은 기본 브랜치에 머지될 때 성립한다 (머지 뒤 종결 커밋 불필요)');
 }
 
 export async function runRetro(ctx) {

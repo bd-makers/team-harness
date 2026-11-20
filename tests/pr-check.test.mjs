@@ -605,3 +605,96 @@ test('pr-check --pre-push --base <짧은 원격 이름>: 기본 브랜치 push �
     assert.equal(r.out, '');
   } finally { for (const d of [dir, remote]) await rm(d, { recursive: true, force: true }); }
 });
+
+// ---- S3 (done-derive R7): plan 이 전부 체크된 변경 task 는 pre-push 에서 done 가드를 같이 돈다 ----
+
+const SPEC_REVIEW_REQUIRED = '# t — Spec\n\n## 목적 / 요구사항\n채움\n\n## Done evidence\n\n```json\n{ "version": 1, "review": "required" }\n```\n';
+const headStdin = async dir => {
+  const sha = (await git(dir, 'rev-parse', 'HEAD')).stdout.trim();
+  return `refs/heads/feature ${sha} refs/heads/feature ${'0'.repeat(40)}\n`;
+};
+const prePush = (dir, stdin, flags = {}) =>
+  capture(() => runPrCheck({ targetDir: dir, flags: { base: 'main', 'pre-push': true, ...flags } }, { readStdin: async () => stdin }));
+
+test('pr-check --pre-push (S3): plan 전부 체크 + done 가드 issue → 실패, 문서 누락 안내는 내지 않는다', async () => {
+  const dir = await repo();
+  try {
+    await writeTask(dir, 't', { files: { 'spec.md': SPEC_REVIEW_REQUIRED } });
+    await commit(dir);
+    const r = await prePush(dir, await headStdin(dir));
+    assert.equal(r.exitCode, 1, r.out);
+    assert.match(r.out, /✗ pr-check feature: u\/t/);
+    assert.match(r.out, /- done 가드 — spec이 `review: required`/);
+    assert.match(r.out, /done 가드를 통과하지 못했습니다/);
+    assert.doesNotMatch(r.out, /task 문서가 빠졌습니다/);
+
+    // CI·수동 실행(--pre-push 없음)은 종전대로 문서만 본다.
+    const ci = await capture(() => runPrCheck({ targetDir: dir, flags: { base: 'main' } }));
+    assert.equal(ci.exitCode, undefined, ci.out);
+    assert.doesNotMatch(ci.out, /done 가드/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('pr-check --pre-push (S3): 유효한 우회 기록(forcedAt)이면 경고만 내고 통과, 재개 뒤의 옛 기록은 무효', async () => {
+  const dir = await repo();
+  try {
+    await writeTask(dir, 't', { files: { 'spec.md': SPEC_REVIEW_REQUIRED } });
+    const metaPath = join(dir, 'docs/u/t/t-meta.json');
+    await writeFile(metaPath, JSON.stringify({ forcedAt: '2026-11-18T00:00:00.000Z', forcedIssues: ['x'] }) + '\n');
+    await commit(dir);
+    let r = await prePush(dir, await headStdin(dir));
+    assert.equal(r.exitCode, undefined, r.out);
+    assert.match(r.out, /· 경고: done 가드 — spec이 `review: required`.*forcedAt 2026-11-18/);
+
+    await writeFile(metaPath, JSON.stringify({ forcedAt: '2026-11-18T00:00:00.000Z', reopenedAt: '2026-11-19T00:00:00.000Z' }) + '\n');
+    await commit(dir);
+    r = await prePush(dir, await headStdin(dir));
+    assert.equal(r.exitCode, 1, r.out);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('pr-check --pre-push (S3): 미완 단계가 남은 plan 은 가드 대상이 아니다', async () => {
+  const dir = await repo();
+  try {
+    await writeTask(dir, 't', { files: { 'spec.md': SPEC_REVIEW_REQUIRED, 'plan.md': '# t — Plan\n\n## 단계\n- [x] 1. a\n- [ ] 2. b\n' } });
+    await commit(dir);
+    const r = await prePush(dir, await headStdin(dir));
+    assert.equal(r.exitCode, undefined, r.out);
+    assert.doesNotMatch(r.out, /done 가드/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('pr-check --pre-push (S3): HEAD 가 아닌 sha·미정리 트리에서는 가드를 건너뛰고 그 사실을 안내한다', async () => {
+  const dir = await repo();
+  try {
+    await writeTask(dir, 't', { files: { 'spec.md': SPEC_REVIEW_REQUIRED } });
+    await commit(dir);
+    const stdin = await headStdin(dir);
+    await writeFile(join(dir, 'scratch.txt'), 'untracked\n');
+    let r = await prePush(dir, stdin);
+    assert.equal(r.exitCode, undefined, r.out);
+    assert.match(r.out, /· done 가드 건너뜀/);
+
+    await rm(join(dir, 'scratch.txt'));
+    await writeFile(join(dir, 'README.md'), 'y\n');
+    await commit(dir, 'after'); // push 되는 sha(이전 커밋) ≠ HEAD
+    r = await prePush(dir, stdin);
+    assert.equal(r.exitCode, undefined, r.out);
+    assert.match(r.out, /· done 가드 건너뜀/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('pr-check --pre-push --json (S3): 가드만 실패하면 summary·nextActions 가 문서 누락이 아니라 가드를 말한다', async () => {
+  const dir = await repo();
+  try {
+    await writeTask(dir, 't', { files: { 'spec.md': SPEC_REVIEW_REQUIRED } });
+    await commit(dir);
+    const r = await prePush(dir, await headStdin(dir), { json: true });
+    assert.equal(r.exitCode, 1, r.out);
+    const env = JSON.parse(r.out);
+    assert.match(env.summary, /done 가드를 통과하지 못함/);
+    assert.doesNotMatch(env.summary, /문서가 빠짐/);
+    assert.equal(env.next_actions.length, 1);
+    assert.match(env.next_actions[0], /harness-team done/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

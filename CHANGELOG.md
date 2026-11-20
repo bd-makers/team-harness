@@ -15,6 +15,7 @@
 
 ### Added
 
+- **`harness-team reopen <name> [--reason <text>]` — 기본 브랜치에서 종결된 task를 다시 연다** (task `done-derive`). meta에 `reopenedAt`을 쓰고 plan `## 단계` 끝에 `- [ ] 재개: <사유>`(기본 `(사유 미기재)`)를 넣어 종결 판정을 open으로 되돌린다. 종결되지 않았거나 없는 task면 아무것도 쓰지 않고 exit 1. `task <name>`도 같은 조건에서 같은 전이를 한다(출력 `reopened:`).
 - **`harness-team review --model <id>`와 리뷰 프로필 — 엔진과 모델을 분리한다** (task `review-model`, 설계 A6·결정 A6-1).
   - `review codex|claude --model <id>`가 모델을 엔진 CLI에 넘긴다(codex `-m <id>`, claude `--model <id>`). 모델을 고르지 않은 실행의 argv는 그대로다. `custom`과 함께, 엔진 위치 인자 없이, 빈 값·공백·선행 `-` 값이면 실행 전에 거부한다.
   - `.harness/reviewers.json`에 `profiles`(`{ "<name>": { "engine", "model"? } }`)·`default`를 더했다. 기존 `custom.command`와 공존한다. 엔진 결정 우선순위: 엔진 위치 인자 > task 프로필 > `default` > probe 체인(codex → claude, 불변). 고른 프로필의 엔진이 없거나 설정이 깨졌으면 조용히 내려가지 않고 error다.
@@ -46,6 +47,18 @@
 
 ### Changed
 
+- **BREAKING: 종결은 기록이 아니라 계산값이다 — 머지가 곧 종결, `done`은 검증 명령** (task `done-derive`, D11·D5 정정). 머지 뒤 종결 커밋(·보호 브랜치에서는 종결 MR)이 없어진다.
+  - **판정**: task는 어떤 커밋에서 plan에 미완 `- [ ]`가 없고 `- [x]`가 하나 이상이면 종결이다. 유효한 `done --force` 우회 기록(`forcedAt` > `reopenedAt`)·옛 meta `status: done`도 종결로 읽는다(기존 task 판정 불변). 판정은 `src/task-closure.mjs` 한 곳이고 summary(원장 렌더)·session-context·wiki·migrate·원격 done nudge·doctor·clean·재개가 같은 판정을 쓴다. 팀·클론 간 판정은 기본 브랜치 원격 추적 ref 기준이다(fetch 없음).
+  - **`done`은 plan 없는 task를 막는다**(`plan.md가 없음`) — plan이 없으면 머지해도 종결되지 않기 때문이다. 하네스를 저장소 하위 디렉터리에 설치해도 기본 브랜치 판정이 같은 경로를 읽는다.
+  - **`done`은 추적 파일을 쓰지 않는다** — meta `status`·`closedAt`을 더 이상 쓰지 않고 가드 검증·활성 포인터 해제·user handoff만 한다. 예외: `--force`로 issue를 무시하면 meta에 `forcedAt`·`forcedIssues`를 남긴다(같은 MR에 커밋). 옛 절차(머지 뒤 `done` + 종결 커밋)를 해도 오류는 아니다.
+  - **새 흐름**: 브랜치에서 `/harness-ship` → plan 마지막 단계("ship 완료") 체크 → `done` → 커밋 → push/MR → 머지 = 종결. 여러 MR에 걸친 task는 남은 단계를 plan에 `- [ ]`로 미리 적어 둔다.
+  - **pre-push `pr-check`가 plan이 전부 체크된 변경 task에 `done` 가드를 같이 돈다** — push 되는 커밋이 HEAD이고 작업 트리가 깨끗할 때만(아니면 `· done 가드 건너뜀` 안내). 유효한 우회 기록이면 경고만 낸다. CI·`--pre-push` 없는 실행은 종전대로 문서만 본다.
+  - **재개 조건**: `task <name>`은 기본 브랜치에서 종결됐고 작업 트리에서도 종결인 task만 다시 연다 — 머지 전 리뷰 수정 라운드(재개 뒤 re-ship 포함 — 기본 브랜치의 종결이 `reopenedAt`보다 앞이면 옛 종결로 본다)는 activate만 한다. 기본 브랜치는 원격 추적 ref, origin이 없으면 로컬 `main`/`master`다(clean과 같은 해석).
+  - **`clean`은 기본 브랜치에서 종결된 task만 거부한다**(원격 추적 기본 브랜치 → 없으면 로컬 `main`/`master`). ship했지만 머지되지 않은 task는 되돌릴 수 있다.
+  - **원장의 ⚠️(우회 종결)는 유효한 우회 기록일 때만 붙는다**(`forcedAt` > `reopenedAt`) — 재개 전 옛 `forcedAt`이 남은 채 정상 종결한 task에는 붙지 않는다.
+  - **원장(`docs/task_summary.md`)은 종결 절차에서 빠졌다** — 머지마다 낡는 것이 정상이고, 기본 브랜치에서 필요할 때 `summary --write`로 묶어 갱신한다. 위키 컴파일(`/harness-wiki`)도 머지 뒤 원장 갱신과 묶는다.
+  - **호환 주의**: 팀에 옛 CLI가 섞이면 옛 CLI는 meta `status`만 읽으므로 새 흐름으로 머지된 task를 원장에 열린 task로 그리고, 그 task에 원격 done nudge·`task <name>` 재개가 동작하지 않는다(activate로 떨어진다). 판정이 갈리지 않게 팀 전원을 이 버전 이상으로 올린다.
+  - **소비자 조치**: CI에서 `harness-team summary --check`를 게이트로 쓰고 있으면 뺀다(머지마다 실패한다). PATH의 `harness-team`도 갱신한다(pre-push 훅이 그것을 부른다). `init --yes`로 `AGENTS.md`를 갱신한다. 설치된 `docs/README.md`·`docs/decisions.md`(D5 정정)는 자동으로 바뀌지 않으니 `templates/docs/`를 보고 손으로 고친다.
 - **spec 외부 질의 마커 — 다른 역할에 묻는 질문의 상태를 적는다** (task `spec-ask-markers`, 설계 A4-1·A4-2). `- (ask:<역할>) <질문>` → `- (asked:<역할> <YYYY-MM-DD> <링크>) …` → `- (answered <링크>) …` 순으로 상태를 적고, 답을 spec에 반영하면 마커를 지운다. 상태 전이는 사람이 적는다.
   - **세 상태 모두 `/harness-interview` 게이트를 통과하지 못한다** — 열린 질문 검사(spec 전체)와 R1 검사 ② 둘 다. 역할은 이월 대상이 아니다. `(open → ask:<역할>)`·`(open → <역할>)`은 이월로 세지 않는다. 기존 `(open)`·`(open → <대상>)`의 뜻은 그대로다.
   - `/harness-spec` 6단계는 끝에 남은 마커를 역할별로 묶어 보인다. 프로젝트가 정한 질의 게시용 rule·skill이 있으면 실행을 제안만 한다. 하네스는 아무 데도 게시하지 않고, handler 발견 장치나 설정 키를 두지 않는다.

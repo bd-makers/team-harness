@@ -152,8 +152,8 @@ cd my-project
 # 4. PR/MR 올리기 직전
 /harness-ship         # spec·plan·artifact 최종 갱신 + 준비 완료 보고 (PR 생성은 별도)
 
-# 5. 세션 종료 전
-/harness-task done    # 활성 task 완료 처리 (meta 상태 done — 원장은 기본 브랜치에서 `harness-team summary --write`)
+# 5. MR 전 — plan 마지막 단계("ship 완료") 체크 후
+/harness-task done    # 종결 가드 검증 (추적 파일 무변경) → 커밋 → push/MR. 머지가 곧 종결 — 머지 뒤 커밋 없음
 ```
 
 > **task-gate (자동):** 3번을 건너뛰고 그냥 프롬프트로 작업을 시작해도, 세션 시작 시
@@ -378,7 +378,7 @@ Dev 구현 → QA 판정 → 로컬 커밋을 순차로 돌리고(쓰기는 Dev 
 
 ### `/harness-wiki` — 머지된 task를 위키로 컴파일 (선택)
 
-머지 후 종결 절차에서 `done` 다음에 쓰는 선택 단계입니다. 머지된 task의 결정·바뀐 모듈·학습을 최상위 `wiki/`의
+머지 뒤 기본 브랜치에서 원장 갱신과 함께 모아 쓰는 선택 단계입니다. 머지된 task의 결정·바뀐 모듈·학습을 최상위 `wiki/`의
 기능·모듈 단위 항목으로 모으고, 단락마다 PR 번호·커밋·작성자 출처 마커를 남깁니다(PR 없이 직접 커밋한 저장소는 커밋만). 분류는 프로젝트의
 `wiki/90_system/` 작성 규칙을 따르며, 규칙이 없거나 분류하지 못한 것은 `wiki/99_inbox/`로 갑니다.
 결정론적 입력(출처 추론·마커·이미 컴파일된 위치)은 읽기 전용 `harness-team wiki sources`가 냅니다.
@@ -387,7 +387,7 @@ Dev 구현 → QA 판정 → 로컬 커밋을 순차로 돌리고(쓰기는 Dev 
 ```bash
 harness-team wiki sources chad/my-task --json   # 출처·마커·compiled·규칙 목록 (파일을 쓰지 않음)
 harness-team wiki sources --all                 # 소급 컴파일 후보 — task마다 컴파일 가능·이미 컴파일됨·막힘 (--json 지원)
-/harness-wiki chad/my-task                      # 머지 후 종결에서 done 다음 — done이 활성 task를 비우므로 대상 명시 (막힘·이미 컴파일됨이면 멈춤)
+/harness-wiki chad/my-task                      # 머지 뒤 기본 브랜치에서 — 대상 명시 (막힘·이미 컴파일됨이면 멈춤)
 ```
 
 ### `/harness-task` — task 관리
@@ -512,10 +512,13 @@ member를 추론(2~5)했는데 다른 member에 같은 이름의 task가 있으�
 # + 머지되지 않은 origin 브랜치에만 있는 task (fetch 하지 않음 — 마지막 fetch 기준, 실패하면 건너뜀 한 줄)
 /harness-task list --remote
 
-# 활성 task 완료 — meta 상태를 done으로 (원장 갱신은 기본 브랜치에서 `harness-team summary --write`)
+# 활성 task 종결 가드 검증 — 추적 파일을 쓰지 않는다 (종결은 기본 브랜치의 plan에서 파생, 원장은 필요할 때 `summary --write`)
 /harness-task done
 
-# done 전에 task 를 시작 전 상태로 되돌리기 — 기본 dry-run, --yes 는 refs/harness/trash 백업 뒤 reset (로컬만, 원격은 안내)
+# 머지 뒤 문제가 생긴 task 다시 열기 — plan 에 `- [ ] 재개: <사유>` 추가 (종결된 task 에만, `task <name>` 도 같은 전이)
+/harness-task reopen my-task --reason "회귀"
+
+# 기본 브랜치에 머지되기 전 task 를 시작 전 상태로 되돌리기 — 기본 dry-run, --yes 는 refs/harness/trash 백업 뒤 reset (로컬만, 원격은 안내)
 /harness-task clean
 
 # 워크트리 로컬 <user>-handoff.md를 최신 커밋 정보로 갱신 (post-commit hook이 자동 호출, 추적 파일은 쓰지 않는다)

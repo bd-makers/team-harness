@@ -8,6 +8,7 @@ import { hasDoneMarker } from '../handoff-marker.mjs';
 import { readOriginHead } from '../git-default-branch.mjs';
 import { userNameError } from '../user-config.mjs';
 import { SUMMARY_REL, userIndexRel, metaRel, taskLabel, docsPath, taskFilePath, listTaskRefs } from '../task-paths.mjs';
+import { closureFromContent, forcedIsValid } from '../task-closure.mjs';
 
 const pexec = promisify(execFile);
 
@@ -29,7 +30,8 @@ const doneCell = (forced) => (forced ? `${DONE_CELL} ${FORCED_MARK}` : DONE_CELL
 // `forcedRecovered` 는 거기서 복구한 "우회가 있었다(시각 불명)" 로, 시각을 모르는 채 `forcedAt` 을
 // 지어내지 않기 위한 별도 키다. 복구 산물이라 새 task 의 템플릿에는 없다.
 // 두 렌더러가 같은 판정을 쓰게 해 한쪽만 표시가 빠지는 것을 막는다.
-const isForced = (t) => Boolean(t.forcedAt || t.forcedRecovered);
+// 시각이 있는 `forcedAt` 은 재개 뒤에도 meta 에 남는다(done 이 더 이상 meta 를 지우지 않는다) — 유효한 것만 센다.
+const isForced = (t) => Boolean(forcedIsValid(t) || t.forcedRecovered);
 
 // Machine-owned per-task state. Lives beside the four SSOT files but is not one of
 // them: agents rewrite spec.md wholesale, so it cannot hold data the harness must be
@@ -199,7 +201,11 @@ export async function collectTasks(targetDir, { includeLedgerOnly = false } = {}
     // (reopen 이 써 둔 것)은 원장이 그 사실을 잊은 뒤에도 그대로 살아남는다.
     const forcedRecovered = Boolean(meta.forcedRecovered)
       || (!meta.forcedAt && ledger.forcedNames.has(key(user, task)));
-    tasks.push({ ...meta, user, task, forcedRecovered });
+    // 상태는 기록이 아니라 판정이다(done-derive R1) — 작업 트리 plan + meta(레거시 추론값 포함)로 계산한다.
+    // `taskClosure` 가 아니라 순수 판정을 쓴다: closedAt 용 `git log` 를 task 마다 띄울 이유가 렌더에는 없다.
+    const plan = await readTextOrNull(taskFilePath(targetDir, user, task, 'plan.md'));
+    const status = closureFromContent({ plan, meta }).closed ? 'done' : 'open';
+    tasks.push({ ...meta, user, task, status, forcedRecovered });
   }
 
   return tasks;

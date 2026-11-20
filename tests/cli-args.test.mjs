@@ -147,7 +147,7 @@ test('cli-args: the command table and the bin router agree', async () => {
 // failure this module exists to remove: the caller passes `--stack B`,
 // nothing errors, and the command operates on A. Each declared flag must appear
 // in the module that actually handles the command.
-const HANDLER = { list: 'task', done: 'task', handoff: 'task', retro: 'task' };
+const HANDLER = { list: 'task', reopen: 'task', done: 'task', handoff: 'task', retro: 'task' };
 
 test('cli-args: every declared flag is read by the command that declares it', async () => {
   for (const command of COMMANDS.filter(c => c.name !== 'help' && c.flags.length > 0)) {
