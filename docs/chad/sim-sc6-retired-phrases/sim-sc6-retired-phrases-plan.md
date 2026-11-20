@@ -9,7 +9,7 @@
 - [x] SC6 plan 체크·종결 판정 현행화 (`tests/sim/agentloop.mjs`)
 - [x] retired-phrases·sim-smoke·SC6·`npm test` 검증
 - [x] 리뷰·artifact 기록
-- [ ] ship 완료
+- [x] ship 완료
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
