@@ -11,7 +11,7 @@ import { cp, mkdir, writeFile, rm, chmod, readFile, stat, readdir } from 'node:f
 import { existsSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { STACKS } from '../e2e/sandbox.mjs';
+import { STACKS, doctorBlockers, isolationEnv } from '../e2e/sandbox.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const PG = resolve(ROOT, '..', 'harness-playground');
@@ -191,11 +191,13 @@ async function fileHas(path, needle) {
   return (await readFile(path, 'utf8')).includes(needle);
 }
 
-async function doctorGreen(sb) {
-  const r = await run('node', [sb.bin, 'doctor', '--json', '--target', sb.dir], { cwd: sb.dir, env: sb.env });
+// Isolate here, not in sb.env: runCodex hands sb.env to `codex exec`, which needs the real CODEX_HOME to log in.
+export async function doctorGreen(sb) {
+  const env = { ...sb.env, ...isolationEnv(sb.dir) };
+  const r = await run('node', [sb.bin, 'doctor', '--json', '--target', sb.dir], { cwd: sb.dir, env });
   try {
     const j = JSON.parse(r.stdout);
-    return j.status === 'success' && !(j.checks || []).some((c) => c.status === 'fail');
+    return ['success', 'warning'].includes(j.status) && doctorBlockers(j).length === 0;
   } catch {
     return false;
   }

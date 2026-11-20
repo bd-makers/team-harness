@@ -15,6 +15,26 @@ import { spawn } from 'node:child_process';
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 export const BIN = join(ROOT, 'bin', 'harness-team.mjs');
 
+// Every sandbox that runs doctor needs these, or it reads the dev machine's real config and goes
+// red on a laptop while CI stays green. L1 and the L5 sim share this so a new one cannot reach only one.
+// CLAUDE_PLUGINS_ROOT: checkCliDrift's installed_plugins.json (nonexistent → no-op, same as CI).
+// CLAUDE_CONFIG_DIR: the eager-tier check's ~/.claude/CLAUDE.md, which can exceed the budget.
+// CODEX_HOME: the hook-trust check's ~/.codex/config.toml, which never trusts a throwaway path.
+export function isolationEnv(dir) {
+  return {
+    CLAUDE_PLUGINS_ROOT: join(dir, '.plugins-isolated'),
+    CLAUDE_CONFIG_DIR: join(dir, '.claude-config-isolated'),
+    CODEX_HOME: join(dir, '.codex-home-isolated'),
+  };
+}
+
+// 선언 빈칸(D12 정정 역할 ①)은 저장소에 대한 soft warning이지 설치 결함이 아니다 — fixture에는 .nvmrc·lockfile이 없다.
+// 그 밖의 warning과 fail은 있으면 green이 아니다.
+export function doctorBlockers(envelope) {
+  return (envelope.checks ?? []).filter(c =>
+    c.status === 'fail' || (c.status === 'warning' && c.label !== 'env declarations'));
+}
+
 // Stack matrix — each entry is a minimal detect-stack signature.
 export const STACKS = [
   { id: 'node', label: 'bare-node', pkg: { name: 'bare-app', version: '0.0.0', dependencies: {} } },
@@ -44,23 +64,7 @@ export async function createSandbox(stack) {
   const shim = join(binDir, 'harness-team');
   await writeFile(shim, `#!/bin/sh\nexec node ${JSON.stringify(BIN)} "$@"\n`);
   await chmod(shim, 0o755);
-  // CLAUDE_PLUGINS_ROOT points doctor's checkCliDrift at a path inside the
-  // sandbox (nonexistent → drift check no-ops, same as CI). Without it the
-  // spawned CLI reads the dev machine's real ~/.claude/plugins/
-  // installed_plugins.json, and any version drift there fails these tests.
-  // CLAUDE_CONFIG_DIR does the same for doctor's eager-tier check: without it the
-  // spawned CLI sums the dev machine's real ~/.claude/CLAUDE.md into the budget and
-  // these suites go red on a laptop with a large one while CI stays green.
-  const env = {
-    ...process.env,
-    PATH: `${binDir}:${process.env.PATH}`,
-    CLAUDE_PLUGINS_ROOT: join(dir, '.plugins-isolated'),
-    CLAUDE_CONFIG_DIR: join(dir, '.claude-config-isolated'),
-    // CODEX_HOME does the same for doctor's Codex hook-trust check: without it the spawned CLI
-    // reads the dev machine's real ~/.codex/config.toml, which never has a trust entry for a
-    // throwaway sandbox path, so every sandbox would warn here and nowhere in CI.
-    CODEX_HOME: join(dir, '.codex-home-isolated'),
-  };
+  const env = { ...process.env, PATH: `${binDir}:${process.env.PATH}`, ...isolationEnv(dir) };
 
   await writeFile(join(dir, 'package.json'), JSON.stringify(stack.pkg, null, 2));
   await run('git', ['init', '-q'], { cwd: dir, env });
