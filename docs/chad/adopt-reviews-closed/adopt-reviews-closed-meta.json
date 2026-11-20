@@ -1,0 +1,25 @@
+{
+  "user": "chad",
+  "task": "adopt-reviews-closed",
+  "created": "2026-11-20",
+  "firstActivatedAt": "2026-11-20T02:11:10.003Z",
+  "baseSha": "d282f76131db3eab7e2d6a42885a8ab00884ba05",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "claude-shipcheck",
+      "engine": "claude",
+      "model": null,
+      "scope": "worktree",
+      "base": "origin/main",
+      "mergeBase": "d282f76131db3eab7e2d6a42885a8ab00884ba05",
+      "tip": "99569197594fab431857463a5d6d4a8e820bb22c",
+      "at": "2026-11-20T06:24:42.527Z",
+      "exitCode": 0,
+      "outputBytes": 5115
+    }
+  ]
+}
