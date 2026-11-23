@@ -196,4 +196,5 @@
 | chad | pr-check-fork-main | ✅ done | 2026-11-20 |
 | chad | sim-sc6-retired-phrases | ✅ done | 2026-11-20 |
 | chad | team-harness-explainer-deck | ✅ done | 2026-11-20 |
+| chad | path-cli-run-failure | ✅ done | 2026-11-23 |
 | chad | task-guide-closure-flow | ✅ done | 2026-11-23 |

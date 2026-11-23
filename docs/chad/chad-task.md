@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ path-cli-run-failure
 - ✅ task-guide-closure-flow
 - ✅ adopt-reviews-closed
 - ✅ ledger-only-pr-check
