@@ -1,0 +1,46 @@
+<!doctype html>
+<!-- 생성물 — harness-team brief 가 spec 에서 렌더한다. 손으로 고치지 말고 spec 을 고친 뒤 다시 생성한다. -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>guide-docs-current — Spec</title>
+<style>
+:root{color-scheme:light dark;--bg:#ffffff;--fg:#1d1d1f;--muted:#6e6e73;--line:#d2d2d7;--code:#f2f2f5;--accent:#0a5bb5}
+@media (prefers-color-scheme:dark){:root{--bg:#111113;--fg:#f2f2f2;--muted:#a1a1a6;--line:#3a3a3c;--code:#1f1f22;--accent:#6aaeff}}
+html{scroll-snap-type:y mandatory}
+body{margin:0;background:var(--bg);color:var(--fg);font:18px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
+.slide{box-sizing:border-box;min-height:100vh;padding:7vh 8vw;scroll-snap-align:start;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.cover{display:flex;align-items:center}
+h1{font-size:2.4em;line-height:1.25;margin:0}
+h2{font-size:1.6em;line-height:1.3;margin:0 0 .8em;color:var(--accent)}
+h3{font-size:1.15em;margin:1.2em 0 .4em}
+.src{margin:0 0 .3em;color:var(--muted);font-size:.9em}
+.src+ul{margin-top:0}
+ul,ol{padding-left:1.4em}
+li{margin:.25em 0}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;background:var(--code);padding:.08em .32em;border-radius:4px}
+pre{background:var(--code);padding:.9em 1.1em;border-radius:6px;overflow:auto}
+pre code{background:none;padding:0}
+table{border-collapse:collapse;margin:.6em 0}
+th,td{border:1px solid var(--line);padding:.35em .65em;text-align:left;vertical-align:top}
+th{background:var(--code)}
+@media print{html{scroll-snap-type:none}.slide{min-height:auto;break-after:page}}
+</style>
+</head>
+<body>
+<main>
+<section class="slide cover"><h1>guide-docs-current — Spec</h1></section>
+<section class="slide"><h2>목적 / 요구사항</h2><p>0.58.3 기준 현행 가이드 문서(표지 대조 가드가 없는 &quot;기준 v0.50.0&quot; 계열 등)가 0.51.0–0.52.0 변경을 반영하지 못해 틀린 사실을 적는다.
+2026-11-23 감사(서브에이전트 + 소스 대조)에서 9건:</p><ul><li><strong>done <code>tests</code> 기본값</strong> — 0.52.0부터 <code>optional</code>(<code>src/commands/task.mjs:746</code> <code>DONE_EVIDENCE_DEFAULT</code>)인데 <code>required</code>로 적음:
+<code>docs/harness-cheatsheet.html:160</code>, <code>docs/harness-task-guide.html:510</code>, <code>docs/harness-onboarding-checklist.html:212</code>,
+<code>docs/harness-operations-playground.html</code>(초기 상태 <code>tests:'required'</code>, 허용값 안내 <code>required|skip</code>에 <code>optional</code> 누락).</li><li><strong>훅 목록의 <code>block-dangerous-bash.sh</code>(0.51.0) 누락</strong> — <code>docs/prerequisites.md:51</code>(&quot;훅 네 개&quot; — 실제 jq 셸 훅은 5개. <code>boundary-checkpoint.sh</code>는 JSON 파싱을 Node CLI에 맡겨 목록 대상이 아니다),
+<code>docs/harness-task-guide.html:728</code>, <code>docs/harness-operations-playground.html:418</code>, <code>docs/harness-workflow-diagrams.html:263</code>(PreToolUse 목록).</li><li><strong>spec 골격</strong> — <code>docs/harness-task-guide.html:490–494</code>가 scaffold 섹션을 나열하며 0.51.0 <code>## 범위 (In / Out)</code> 절을 빠뜨림(<code>src/commands/task.mjs:127</code>).</li></ul><p>영향: 문서를 따라 하는 팀원이 테스트 증거 미선언 task가 막힌다고 오해하고, 위험 셸 차단 훅의 존재를 모른다.
+기대 결과: 위 문서가 현재 소스와 같은 사실을 적고, <code>tests</code> 기본값의 옛 문구는 회귀 테스트가 잡는다.</p></section>
+<section class="slide"><h2>범위 (In / Out)</h2><ul><li><strong>In</strong>: 위 6개 문서의 해당 문장·표·시뮬레이터 초기값, <code>tests/docs-retired-phrases.json</code>에 <code>tests</code> 기본값 옛 문구 등록.</li><li><strong>Out</strong>: <code>src/</code>·<code>templates/</code>·<code>commands/</code> 동작 변경(소스가 정본이다), 표지 라벨 &quot;기준 v0.50.0&quot; 재작성(가이드 전체 재검토는 범위 밖),
+감사가 &quot;허용 가능&quot;으로 본 누락(cheatsheet·kickoff 덱의 <code>clean</code>·<code>brief</code>·<code>reopen</code>), 이력 문서(<code>*-0.*.html</code>·<code>what-changes-*</code>).</li></ul></section>
+<section class="slide"><h2>설계 / 접근</h2><ol><li>각 문장을 소스 정본에 맞춰 최소 수정한다(<code>tests</code>: 기본 <code>optional</code>, <code>required</code>면 소스 변경 시 테스트 변경 요구, <code>skip</code> 허용).</li><li>playground 시뮬레이터: 초기 <code>tests</code>를 <code>optional</code>로, 허용값 안내에 <code>optional</code>을 넣고 가드 로직이 <code>optional</code>을 비차단으로 다루는지 확인한다.</li><li>훅 목록: PreToolUse Bash에 <code>block-dangerous-bash.sh</code>를 더하고, prerequisites는 실제 jq 셸 훅 목록과 개수로 고친다.</li><li>회귀: <code>tests/docs-retired-phrases.json</code>에 <code>tests-default-required</code> 항목(현행 문서 3곳의 옛 문구)을 등록한다.</li><li>같은 사실의 다른 자리를 전수 검색한다(MAINTAINING 규칙표).</li></ol></section>
+<section class="slide"><h2>Ontology</h2><ul><li><strong>가이드 문서</strong>: 표지 대조 가드가 없는 현행 소비자 문서(MAINTAINING 결합 강도 최하위).</li><li><strong><code>tests</code> 증거 기본값</strong>: spec Done evidence 미선언 시 done 가드가 쓰는 값 — <code>optional</code>.</li><li>게이트 근거: 목표·제약(문서만)·성공 기준(아래 명령)·영향 파일 6개가 모두 정해졌다.</li></ul></section>
+</main>
+</body>
+</html>

@@ -488,6 +488,7 @@ harness-team summary --write   <span class="c"># 기본 브랜치에서만 — H
       <p class="section-sub">scaffold가 섹션을 미리 만들어 줍니다(<code>taskSpecTemplate</code>). 채우는 방법만 정하면 됩니다.</p>
 
       <pre><code><span class="c">## 목적 / 요구사항</span>     ← 직접 작성. 문제 → 영향 → 기대 결과 → 제약 순. 껍데기 금지
+<span class="c">## 범위 (In / Out)</span>     ← 이번 task가 바꾸는 것(In)과 하지 않기로 한 것·이유(Out) (0.51.0)
 <span class="c">## 원천 검토 (R1)</span>      ← ### 원천 · ### 발견 — 원천 문서 충돌·누락. 없으면 "- 없음 — &lt;사유&gt;" (0.47.0)
 <span class="c">## 설계 / 접근</span>
 <span class="c">## Ontology</span>            ← "X가 정확히 뭔가" 한 줄 정의 + 게이트 통과 근거
@@ -507,7 +508,7 @@ harness-team summary --write   <span class="c"># 기본 브랜치에서만 — H
 ```</code></pre>
       <p><code>```json</code> 코드펜스는 <strong>생략할 수 없습니다</strong> — 펜스 없이 JSON만 두면 선언이 인식되지 않아 조용히 기본값으로 남고, 펜스를 열고 닫지 않으면 <strong>invalid로 차단</strong>됩니다.</p>
       <ul class="tight">
-        <li><code>tests</code> — <code>required</code>(기본): task 기간에 <strong>소스가 바뀌었는데 테스트 파일이 안 바뀌면 차단</strong>합니다. 문서·설정만 바뀐 task에는 발동하지 않습니다. 정말 테스트가 불필요하면 <code>"skip"</code>을 <strong>선언</strong>하세요 — 무시가 아니라 선언입니다.</li>
+        <li><code>tests</code> — <code>optional</code>(기본, 0.52.0) / <code>required</code>: <code>required</code>를 선언하면 task 기간에 <strong>소스가 바뀌었는데 테스트 파일이 안 바뀌면 차단</strong>합니다. 문서·설정만 바뀐 task에는 발동하지 않습니다. 선언하지 않으면 대조하지 않습니다. <code>"skip"</code>은 <code>optional</code>과 같은 뜻으로 남아 있습니다.</li>
         <li><code>review</code> — <code>optional</code>(기본) / <code>required</code>: <code>required</code>면 <strong>이 task 기간의 리뷰 기록</strong>이 있어야 닫힙니다 — <code>harness-team review</code>가 남긴 <code>meta.reviews[]</code> 항목, 또는 구 task의 artifact 마커. <strong>kind는 대조하지 않습니다</strong>.</li>
         <li><code>verify</code> <span class="pill pill-auto">0.20.0</span> — <code>optional</code>(기본) / <code>required</code>: <code>required</code>면 <strong>검증 프레이밍 기록</strong>만 증거로 셉니다. kind가 <code>-adversarial</code> · <code>-testcritic</code> · <code>-shipcheck</code> · <code>-contrarian</code> · <code>-simplifier</code> · <code>-scenario</code>로 끝나는 기록이며, meta에 <code>reviews</code> 키가 있는 task(0.37.0 이후 새 task)는 <code>meta.reviews</code>만 셉니다 — 손으로 쓴 마커는 무효, 즉 <strong>별도 컨텍스트의 검증자가 반박을 시도한 기록</strong>입니다(D6). 검증 마커는 <code>review</code> 증거를 겸하지만 <strong>역은 성립하지 않습니다</strong> — 일반 리뷰를 아무리 돌려도 <code>verify: required</code>는 닫히지 않습니다.</li>
         <li><code>scenarios</code> <span class="pill pill-auto">0.47.0</span> — R2(옵트인): <code>[{ "id", "given", "when", "then", "test", "cmd" }]</code>로 수용 기준을 Given/When/Then으로 쓰고 증거를 잇습니다. <code>harness-team scenario check</code>가 cmd exit 0을, <code>harness-team review &lt;engine&gt; --framing scenario</code>가 "증거가 Then을 검증하는가"를 판정하며, 선언하면 verify 증거는 <code>-scenario</code>만 셉니다. 키 누락·빈 값·id 중복은 invalid입니다. <strong>0.46.0 이하 CLI는 이 키를 미지 키로 보고 done을 막으므로</strong> 팀 전체의 CLI가 0.47.0 이상인지 먼저 확인하세요.</li>
@@ -725,7 +726,7 @@ boundary: not-configured</code></pre>
           <tbody>
             <tr><td>SessionStart</td><td><code>harness-team session-context</code></td><td>활성 task breadcrumb + plan 첫 미완 단계 주입 (없으면 task 확인 nudge) <span class="pill pill-auto">자동</span></td></tr>
             <tr><td>Edit/Write 직전</td><td><code>protect-files.sh</code> · <code>boundary-checkpoint.sh</code></td><td>보호 파일 차단 · 체크박스 완료 직전 boundary 대조 <span class="pill pill-auto">자동</span></td></tr>
-            <tr><td>Bash 직전</td><td><code>block-dangerous-git.sh</code> · <code>pre-commit-check.sh</code></td><td>위험한 git 조작 차단 · 커밋 게이트 — <code>pre-commit-check.sh</code>가 <code>harness-team gate commit</code>을 불러 커밋된 <code>.harness/gates.json</code>의 <code>commit</code> 목록을 실행(0.46.0) <span class="pill pill-auto">자동</span></td></tr>
+            <tr><td>Bash 직전</td><td><code>block-dangerous-git.sh</code> · <code>pre-commit-check.sh</code> · <code>block-dangerous-bash.sh</code></td><td>위험한 git 조작 차단 · git 밖 위험 셸 명령 차단(<code>rm -rf</code> 변형 등, 0.51.0) · 커밋 게이트 — <code>pre-commit-check.sh</code>가 <code>harness-team gate commit</code>을 불러 커밋된 <code>.harness/gates.json</code>의 <code>commit</code> 목록을 실행(0.46.0) <span class="pill pill-auto">자동</span></td></tr>
             <tr><td>Edit/Write 직후</td><td><code>auto-format.sh</code></td><td><code>gate format &lt;file&gt;</code> — <code>gates.json</code>에 선언된 포맷터만 <span class="pill pill-auto">자동</span></td></tr>
             <tr><td>commit 직후 (git hook)</td><td><code>harness-team handoff</code></td><td>사용자 handoff 갱신(gitignore된 워크트리 로컬, 추적 파일은 쓰지 않는다), 전부 체크되면 <code>PLAN_COMPLETE</code> <span class="pill pill-auto">자동</span></td></tr>
             <tr><td>push 직전 (git hook)</td><td><code>harness-team pr-check --pre-push</code></td><td>PR이 담은 task 문서 계약 검사 — 하네스의 유일한 강제(D11, 0.46.0). plan이 전부 체크된 task에는 <code>done</code> 가드도 같이 돈다(0.58.0). 기존 설치는 <code>harness-team sync</code>로 받는다 <span class="pill pill-auto">자동</span></td></tr>
@@ -784,7 +785,7 @@ stop: 가드가 지적한 증거가 실제로 없으면 종결하지 말 것</co
             <tr><td>소스 변경 O + 테스트 변경 X <span class="pill pill-auto">0.18.1</span></td><td>테스트를 쓴다. 정말 불필요한 task(문서·설정 전용은 애초에 발동하지 않는다)면 spec <code>## Done evidence</code>에 <code>"tests": "skip"</code>을 <strong>선언</strong>한다 — 선언하지 않고 <code>--force</code>로 넘기지 않는다.</td></tr>
             <tr><td>리뷰 기록 없음 <span class="pill pill-auto">0.18.1</span></td><td>spec이 <code>review: required</code>일 때만 나온다. <code>/harness-review</code>(<code>harness-team review</code>)를 돌린다 — CLI가 기록한다. <strong>엔진을 직접 돌리고 기록이 없으면 여기서 막힌다.</strong></td></tr>
             <tr><td>검증 기록 없음 <span class="pill pill-auto">0.20.0</span></td><td>spec이 <code>verify: required</code>일 때만 나온다. <strong>일반 리뷰로는 풀리지 않는다</strong> — <code>harness-team review &lt;engine&gt; --framing &lt;접미사&gt;</code>(testcritic은 <code>--rubric</code> 추가)로 검증 프레이밍을 돌린다. 새 task는 <code>meta.reviews</code>만 세므로 손으로 쓴 마커로는 풀리지 않는다. <code>scenarios</code>를 선언했다면 <code>--framing scenario</code>만 센다.</td></tr>
-            <tr><td><code>## Done evidence</code> 선언이 올바르지 않음 <span class="pill pill-auto">0.18.1</span></td><td>JSON 오류·미종결 코드펜스·미지 키. 고치거나, 선언 자체를 지워 기본값(<code>tests: required</code> / <code>review</code>·<code>verify: optional</code>)으로 돌아간다.</td></tr>
+            <tr><td><code>## Done evidence</code> 선언이 올바르지 않음 <span class="pill pill-auto">0.18.1</span></td><td>JSON 오류·미종결 코드펜스·미지 키. 고치거나, 선언 자체를 지워 기본값(<code>tests</code>·<code>review</code>·<code>verify</code> 모두 <code>optional</code>)으로 돌아간다.</td></tr>
           </tbody>
         </table>
       </div>

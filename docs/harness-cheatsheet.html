@@ -157,7 +157,7 @@
       <h2><span class="n">4</span>Done evidence<span class="hint">spec에 선언</span></h2>
       <div class="json">{ "version": 1, "tests": "required", "review": "optional", "verify": "optional" }</div>
       <table>
-        <tr><td class="k"><code>tests</code></td><td class="d">기본 <code>required</code> — 소스 변경 시 테스트 변경 요구</td></tr>
+        <tr><td class="k"><code>tests</code></td><td class="d">기본 <code>optional</code> — <code>required</code>면 소스 변경 시 테스트 변경 요구 (<code>skip</code>은 <code>optional</code>과 같음, 0.52.0)</td></tr>
         <tr><td class="k"><code>review</code></td><td class="d">기본 <code>optional</code> — 리뷰 기록 요구 (kind 무관)</td></tr>
         <tr><td class="k"><code>verify</code></td><td class="d">기본 <code>optional</code> — <b>검증 프레이밍 kind만</b>, <code>meta.reviews</code>만(손 마커 무효)<br>
           <code>-adversarial</code> <code>-testcritic</code> <code>-shipcheck</code> <code>-contrarian</code> <code>-simplifier</code> <code>-scenario</code><br>

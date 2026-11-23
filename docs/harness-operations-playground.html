@@ -165,7 +165,7 @@ const DEFAULTS = {
   engine: 'auto',            // auto | codex | claude
   personas: { interview:false, contrarian:false, simplifier:false },
   tests: { unit:false, comp:false, int:false },
-  evidence: { tests:'required', review:'optional', verify:'optional' },
+  evidence: { tests:'optional', review:'optional', verify:'optional' },
   scenarios: false,          // spec Done evidence의 scenarios(R2) 선언
 };
 const state = structuredClone(DEFAULTS);
@@ -300,7 +300,7 @@ function renderControls(){
 
   <div class="grp">
     <h3>Done evidence 선언</h3>
-    ${[['tests',['required','skip']],['review',['required','optional']],['verify',['required','optional']]].map(([k,vals])=>`
+    ${[['tests',['required','optional','skip']],['review',['required','optional']],['verify',['required','optional']]].map(([k,vals])=>`
       <div class="tri"><label>${k}</label>
         ${seg('ev:'+k,vals.map(v=>[v,v]),e[k])}
       </div>`).join('')}
@@ -309,7 +309,7 @@ function renderControls(){
       <span>scenarios 선언 (R2, 옵트인)
         <small>Given/When/Then + 증거 <code>test</code>·<code>cmd</code>. 선언하면 verify 증거는 <code>-scenario</code>만 센다 · CLI 0.47.0 이상 필요</small></span>
     </label>
-    <div class="hint">spec의 <code>## Done evidence</code> JSON. 허용값은 <code>tests: required|skip</code> · <code>review</code>/<code>verify: required|optional</code> — 그 밖의 값은 선언 오류로 <code>done</code>이 막힙니다. 가드는 판정 창(<code>reopenedAt || firstActivatedAt</code> 이후) 안의 리뷰 기록 <b>존재·kind·시각</b>만 읽습니다 — finding 품질은 판정하지 않습니다.</div>
+    <div class="hint">spec의 <code>## Done evidence</code> JSON. 허용값은 <code>tests: required|optional|skip</code>(기본 <code>optional</code>, <code>skip</code>은 같은 뜻) · <code>review</code>/<code>verify: required|optional</code> — 그 밖의 값은 선언 오류로 <code>done</code>이 막힙니다. 가드는 판정 창(<code>reopenedAt || firstActivatedAt</code> 이후) 안의 리뷰 기록 <b>존재·kind·시각</b>만 읽습니다 — finding 품질은 판정하지 않습니다.</div>
   </div>
 
   <div class="grp">
@@ -415,7 +415,7 @@ function buildAuto(){
     ['PreToolUse Edit|Write','protect-files.sh','보호 경로 쓰기 차단'],
   ];
   if(state.boundary) A.push(['PreToolUse Edit|Write','boundary-checkpoint.sh','plan 체크박스를 완료로 바꾸기 직전 <code>harness-team boundary checkpoint</code> 실행 — LLM이 아니라 결정론적 CLI']);
-  A.push(['PreToolUse Bash','block-dangerous-git.sh · pre-commit-check.sh','위험 git 차단 + 커밋 게이트 <code>harness-team gate commit</code> (<code>.harness/gates.json</code>의 commit 목록, 없으면 안내 후 통과)']);
+  A.push(['PreToolUse Bash','block-dangerous-git.sh · pre-commit-check.sh · block-dangerous-bash.sh','위험 git 차단 + git 밖 위험 셸 명령 차단 + 커밋 게이트 <code>harness-team gate commit</code> (<code>.harness/gates.json</code>의 commit 목록, 없으면 안내 후 통과)']);
   A.push(['PostToolUse Edit|Write','auto-format.sh','<code>harness-team gate format</code> — gates.json에 선언된 포맷터만']);
   A.push(['post-commit','harness-team handoff','<code>&lt;user&gt;-handoff.md</code>만 갱신 — gitignore된 로컬이라 트리는 깨끗하다']);
   A.push(['pre-push','harness-team pr-check --pre-push','PR이 담은 task 문서 계약 — 하네스의 유일한 강제(D11)']);

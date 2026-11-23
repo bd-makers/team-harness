@@ -51,5 +51,17 @@
       "PR 머지 → done"
     ],
     "replacement": "ship 뒤 같은 브랜치에서 plan 마지막 단계 \"ship 완료\" 체크 → done(가드만, 추적 파일 안 씀) → 커밋 → push → PR → 머지 = 종결. 머지 뒤 종결 커밋은 없다"
+  },
+  {
+    "id": "tests-default-required",
+    "removed": "0.52.0에서 done 가드의 tests 증거 기본값을 required에서 optional로 내렸다",
+    "phrases": [
+      "기본 required — 소스 변경",
+      "기본값은 tests: required",
+      "tests: required|skip",
+      "<code>required</code>(기본)",
+      "기본값(<code>tests: required</code>"
+    ],
+    "replacement": "tests 기본값은 optional(skip은 같은 뜻). required를 선언하면 소스 변경 시 테스트 파일 변경을 요구한다"
   }
 ]
