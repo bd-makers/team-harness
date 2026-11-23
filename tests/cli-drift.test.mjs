@@ -152,19 +152,79 @@ test('cli-drift: an unrunnable CLI is unknown, not legacy', async () => {
     assert.deepEqual(await readPathCliVersion(env), { state: 'missing' }, 'not executable → cannot run it');
 
     // 127 is "the wrapper ran but could not find what it wraps" — a `#!/usr/bin/env
-    // node` entrypoint on a PATH without node. The CLI never answered, so its
-    // version is unknown; calling it pre-0.15.1 would name the wrong problem.
-    await writeFile(shim, '#!/bin/sh\nexit 127\n');
+    // node` entrypoint on a PATH without node. The CLI never answered, so this is a
+    // run failure; calling it pre-0.15.1 would name the wrong problem.
+    await writeFile(shim, '#!/bin/sh\necho "env: node: No such file or directory" >&2\nexit 127\n');
     await chmod(shim, 0o755);
-    assert.deepEqual(await readPathCliVersion(env), { state: 'unknown' });
+    assert.deepEqual(await readPathCliVersion(env),
+      { state: 'failed', code: 127, detail: 'env: node: No such file or directory' });
 
-    // Ran and rejected the flag — that, and only that, dates the binary.
+    // A bare non-zero exit is not the old CLI either: every pre-0.15.1 release said
+    // `Unknown command: --version`. Silence dates nothing.
     await writeFile(shim, '#!/bin/sh\nexit 1\n');
-    assert.deepEqual(await readPathCliVersion(env), { state: 'legacy' });
+    assert.deepEqual(await readPathCliVersion(env), { state: 'failed', code: 1, detail: null });
+
+    // The old CLI's reply counts only as its own stderr line — not on stdout, and
+    // not as a prefix of some other wrapper's message.
+    await writeFile(shim, '#!/bin/sh\necho "Unknown command: --version" \necho "wrapper: broken" >&2\nexit 1\n');
+    assert.equal((await readPathCliVersion(env)).state, 'failed');
+    await writeFile(shim, '#!/bin/sh\necho "Unknown command: --version-helper" >&2\nexit 1\n');
+    assert.equal((await readPathCliVersion(env)).state, 'failed');
 
     // Exited 0 but said nothing version-shaped: also not a statement about age.
     await writeFile(shim, '#!/bin/sh\necho "harness-team"\n');
     assert.deepEqual(await readPathCliVersion(env), { state: 'unknown' });
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+// The 2026-11-23 incident: a mise shim whose npm global link lived under the
+// previous Node. It exits 1 with a mise error — the CLI does not run at all, and
+// the remedy is reinstalling it under the active Node, not pulling a newer clone.
+const MISE_ERROR = 'mise ERROR harness-team is not provided by the active node@24.22.2';
+const MISE_SHIM = `#!/bin/sh\necho "${MISE_ERROR}" >&2\necho "mise ERROR Run \\\`mise use\\\` to fix" >&2\nexit 1\n`;
+const OLD_CLI_SHIM = '#!/bin/sh\necho "Unknown command: $1" >&2\necho >&2\necho "Usage: harness-team <command>"\nexit 1\n';
+
+test('cli-drift: a CLI that fails to run is not dated as pre-0.15.1', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-drift-fail-'));
+  try {
+    const env = { ...process.env, PATH: dir };
+    const shim = join(dir, 'harness-team');
+    await writeFile(shim, MISE_SHIM);
+    await chmod(shim, 0o755);
+    const pathCli = await readPathCliVersion(env);
+    assert.deepEqual(pathCli, { state: 'failed', code: 1, detail: MISE_ERROR });
+
+    const warning = cliDriftWarning({ pathCli, installedVersion: '0.58.2', installCommand: 'npm i -g "/clone"' });
+    assert.ok(warning.includes(MISE_ERROR), 'the cause line must be quoted');
+    assert.ok(warning.includes('npm i -g "/clone"'), 'the remedy is reinstalling the CLI');
+    assert.match(warning, /실행되지 않/);
+    assert.match(warning, /mise/);
+    assert.doesNotMatch(warning, /0\.15\.1 이전|구버전|--version을 지원하지 않/);
+    assert.doesNotMatch(warning, /git pull/);
+
+    // A failure is not a version claim, so it is reported regardless of the install.
+    assert.ok(cliDriftWarning({ pathCli, installedVersion: '0.14.0', installCommand: 'x' }));
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+// The genuine old CLI must keep its diagnosis — its fix (refresh the clone) differs.
+test('cli-drift: the real pre-0.15.1 CLI is still recognised by its Unknown command reply', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'harness-drift-old-'));
+  try {
+    const env = { ...process.env, PATH: dir };
+    const shim = join(dir, 'harness-team');
+    await writeFile(shim, OLD_CLI_SHIM);
+    await chmod(shim, 0o755);
+    const pathCli = await readPathCliVersion(env);
+    assert.deepEqual(pathCli, { state: 'legacy' });
+    assert.match(
+      cliDriftWarning({ pathCli, installedVersion: '0.58.2', installCommand: 'x' }),
+      /--version을 지원하지 않음 \(0\.15\.1 이전\)/,
+    );
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -183,7 +243,14 @@ test('cli-drift: checkCliDrift reads the plugins root end to end', async () => {
     await chmod(shim, 0o755);
     const env = { ...process.env, PATH: binDir, CLAUDE_PLUGINS_ROOT: pluginsRoot };
 
-    assert.match(await checkCliDrift(env), /0\.14\.0/);
+    const drift = await checkCliDrift(env);
+    assert.match(drift.warning, /0\.14\.0/);
+    assert.equal(drift.action, cliDriftAction(env), 'a version mismatch is fixed by refreshing the clone');
+
+    await writeFile(shim, MISE_SHIM);
+    const failed = await checkCliDrift(env);
+    assert.ok(failed.warning.includes(MISE_ERROR));
+    assert.match(failed.action, /^npm i -g "/, 'a CLI that does not run is fixed by reinstalling it');
 
     await writeFile(shim, '#!/bin/sh\necho 0.15.1\n');
     assert.equal(await checkCliDrift(env), null);
@@ -243,6 +310,21 @@ test('cli-drift: doctor reports drift in a plugin-dev repo, with a remedy', asyn
       .catch(error => error.stdout || '');
     assert.match(text, /warning\(s\)\./);
     assert.doesNotMatch(text, /All checks passed/);
+
+    // A CLI that does not run routes to reinstalling it, not to `git pull`.
+    await writeFile(shim, MISE_SHIM);
+    const failed = JSON.parse((await pexec('node', [bin, 'doctor', '--json'], { env, timeout: 30000 })
+      .catch(error => ({ stdout: error.stdout || '' }))).stdout);
+    const failedDrift = failed.checks.find(c => /drift/.test(c.label));
+    assert.ok(failedDrift?.detail.includes(MISE_ERROR), JSON.stringify(failedDrift));
+    assert.ok(
+      failed.next_actions.some(action => action.startsWith('npm i -g')),
+      `a run failure must carry the reinstall remedy — got ${JSON.stringify(failed.next_actions)}`,
+    );
+    assert.ok(
+      !failed.next_actions.some(action => action.includes(' pull')),
+      `a run failure must not also prescribe git pull — got ${JSON.stringify(failed.next_actions)}`,
+    );
   } finally {
     await rm(binDir, { recursive: true, force: true });
     await rm(pluginsRoot, { recursive: true, force: true });

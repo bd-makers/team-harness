@@ -115,9 +115,23 @@ export const HOOK_CLI_MARKETPLACE_DIR = 'harness-aijient-team-marketplace';
 // read a companion's version as the harness version.
 export const HOOK_CLI_PLUGIN_NAME = 'harness-aijient-team';
 
-// `--version` landed in 0.15.1. Before that the CLI answered `Unknown command`
-// and exited 1, so "no version reported" dates the binary rather than hiding it.
+// `--version` landed in 0.15.1. Every release before that (v0.2.0–v0.15.0)
+// answered `Unknown command: --version` on stderr and exited 1 — that reply, not
+// the exit code, is what dates the binary. A version-manager shim that cannot find
+// the CLI also exits 1, and treating that as "old" sent the 2026-11-23 maintainer
+// to `git pull` a clone that was already current.
 export const VERSION_FLAG_SINCE = '0.15.1';
+// Anchored to a whole stderr line: the old CLI printed it via console.error, and a
+// looser match would let a wrapper's unrelated output pass for the old CLI.
+const LEGACY_VERSION_REPLY = /^Unknown command: --version$/m;
+
+function firstOutputLine(...texts) {
+  for (const text of texts) {
+    const line = String(text ?? '').split('\n').map(l => l.trim()).find(Boolean);
+    if (line) return line.length > 200 ? `${line.slice(0, 199)}…` : line;
+  }
+  return null;
+}
 
 // Tolerant on purpose: a CLI may print `v0.15.1`, `harness-team 0.15.1`, or a
 // prerelease. Pulling the first semver-shaped run out of the output beats an
@@ -172,11 +186,13 @@ export function harnessVersionReport({ applied, cli, plugin, pluginDev = false }
   return { line, kind: null, warning: null };
 }
 
-// Four outcomes. `missing` and `legacy` need different fixes — install the CLI
-// vs refresh the source it points at — and `unknown` exists so a CLI that never
-// got to answer is not dated by its silence. A timeout, a missing interpreter
-// (exit 127), or a signal says nothing about the binary's version; only a plain
-// non-zero exit means it ran and rejected `--version`, which does date it.
+// Five outcomes, because the fixes differ: `missing` → install the CLI,
+// `legacy` → refresh the source it points at, `failed` → reinstall/relink it
+// (it exists but does not run), and `unknown` exists so a CLI that never got to
+// answer (timeout, signal) is not dated by its silence. Only the old CLI's own
+// `Unknown command: --version` reply dates it; any other non-zero exit —
+// including 127, a wrapper that could not find what it wraps — is a run failure
+// whose first output line is the cause worth showing.
 export async function readPathCliVersion(env = process.env) {
   try {
     const { stdout } = await pexec('harness-team', ['--version'], { timeout: 5000, env });
@@ -184,8 +200,9 @@ export async function readPathCliVersion(env = process.env) {
     return version ? { state: 'version', version } : { state: 'unknown' };
   } catch (error) {
     if (error?.code === 'ENOENT' || error?.code === 'EACCES') return { state: 'missing' };
-    if (error?.killed || error?.code === 127 || typeof error?.code !== 'number') return { state: 'unknown' };
-    return { state: 'legacy' };
+    if (error?.killed || typeof error?.code !== 'number') return { state: 'unknown' };
+    if (LEGACY_VERSION_REPLY.test(String(error.stderr ?? ''))) return { state: 'legacy' };
+    return { state: 'failed', code: error.code, detail: firstOutputLine(error.stderr, error.stdout) };
   }
 }
 
@@ -224,9 +241,18 @@ export function installedHarnessVersion(
 // is what makes a silent `--version` conclusive instead of ambiguous.
 export function cliDriftWarning({ pathCli, installedVersion, installCommand }) {
   if (!installedVersion || !pathCli) return null;
-  // Absent or unrunnable is not drift: there is no version to disagree with, and
-  // the consumer-side hook CLI check already owns "the CLI will not run".
+  // Absent or silent is not drift: there is no version to disagree with, and the
+  // consumer-side hook CLI check already owns "no CLI on PATH".
   if (pathCli.state === 'missing' || pathCli.state === 'unknown') return null;
+  // A CLI that exits non-zero without the old CLI's reply is broken, not old. Said
+  // here even though the consumer hook check also notices it, because that check
+  // is skipped in plugin-dev mode — where the 2026-11-23 incident happened — and
+  // only this row can quote the cause. Not gated on VERSION_FLAG_SINCE: it makes
+  // no claim about versions.
+  if (pathCli.state === 'failed') {
+    const cause = pathCli.detail ? `exit ${pathCli.code}: ${pathCli.detail}` : `exit ${pathCli.code}, 출력 없음`;
+    return `PATH의 harness-team이 실행되지 않음 (${cause}) — 설치된 플러그인은 ${installedVersion}; 같은 CLI를 부르는 훅(SessionStart·post-commit 등)도 같은 이유로 실패하고 있을 수 있다. 활성 Node에서 ${installCommand}로 다시 설치·연결하라 (mise·nvm·asdf 등 버전 관리자 shim이면 Node 전환 뒤 전역 패키지가 이전 Node에 남았을 수 있다)`;
+  }
   const remedy = `전역 CLI 출처를 갱신하라 (marketplace clone: git pull 또는 /plugin marketplace update), 필요하면 ${installCommand}로 재링크`;
   if (pathCli.state === 'legacy') {
     if (!isAtLeast(installedVersion, VERSION_FLAG_SINCE)) return null;
@@ -253,14 +279,16 @@ export async function readInstalledHarnessVersion(env = process.env) {
   try { return installedHarnessVersion(JSON.parse(raw)); } catch { return null; }
 }
 
+// `{ warning, action }` or null — the action differs by cause: a CLI that does
+// not run is reinstalled, one that runs old or different code has its clone pulled.
 export async function checkCliDrift(env = process.env) {
   const installedVersion = await readInstalledHarnessVersion(env);
   if (!installedVersion) return null;
-  return cliDriftWarning({
-    pathCli: await readPathCliVersion(env),
-    installedVersion,
-    installCommand: hookCliInstallCommand(env),
-  });
+  const pathCli = await readPathCliVersion(env);
+  const installCommand = hookCliInstallCommand(env);
+  const warning = cliDriftWarning({ pathCli, installedVersion, installCommand });
+  if (!warning) return null;
+  return { warning, action: pathCli.state === 'failed' ? installCommand : cliDriftAction(env) };
 }
 
 export function hookCliInstallCommand(env = process.env) {
@@ -1070,9 +1098,9 @@ export async function runDoctor(ctx) {
   // PATH binary and the source tree diverge furthest, and the incident that
   // motivated this check happened in this repo: a stale global CLI ran a release
   // that the fixed source would have refused.
-  const driftWarning = await checkCliDrift();
-  if (driftWarning) {
-    add('global CLI version drift', 'warning', driftWarning, `\n⚠️ ${driftWarning}`);
+  const drift = await checkCliDrift();
+  if (drift) {
+    add('global CLI version drift', 'warning', drift.warning, `\n⚠️ ${drift.warning}`);
   }
 
   const versions = {
@@ -1114,7 +1142,8 @@ export async function runDoctor(ctx) {
     if (jqMissing) warnActions.push(jqInstallAction());
     if (!pluginDev && !hookCliOk) warnActions.push(hookCliInstall);
     if (versionReport.kind === 'behind') warnActions.push('harness-team init --yes');
-    if (driftWarning || versionReport.kind === 'ahead') warnActions.push(cliDriftAction());
+    if (drift) warnActions.push(drift.action);
+    if (versionReport.kind === 'ahead') warnActions.push(cliDriftAction());
     emitObservation(buildEnvelope({
       command: 'doctor',
       status,
