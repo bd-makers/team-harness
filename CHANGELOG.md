@@ -9,9 +9,11 @@
 
 ## [Unreleased]
 
+## [0.58.4] - 2026-11-23
+
 ### Fixed
 
-- **가이드 문서가 0.51.0·0.52.0 이전 사실을 적던 것을 고친다** (task `guide-docs-current`). `docs/harness-cheatsheet.html`·`harness-task-guide.html`·`harness-onboarding-checklist.html`·`harness-operations-playground.html`이 `done`의 `tests` 증거 기본값을 `required`로 적고 있었다. 0.52.0부터 기본값은 `optional`이고 `skip`은 같은 뜻이다(playground 시뮬레이터 초기값·선택지도 고쳤다). `docs/prerequisites.md`·task-guide·playground·`harness-workflow-diagrams.html`의 훅 목록에 0.51.0 `block-dangerous-bash.sh`를 넣고, task-guide의 spec 골격에 0.51.0 `## 범위 (In / Out)` 절을 넣었다. 옛 `tests` 기본값 문구는 `tests/docs-retired-phrases.json`(`tests-default-required`)에 등록해 현행 문서에 다시 나타나면 `npm test`가 실패한다.
+- **가이드 문서가 0.51.0·0.52.0 이전 사실을 적던 것을 고친다** (task `guide-docs-current`, #202). `docs/harness-cheatsheet.html`·`harness-task-guide.html`·`harness-onboarding-checklist.html`·`harness-operations-playground.html`이 `done`의 `tests` 증거 기본값을 `required`로 적고 있었다. 0.52.0부터 기본값은 `optional`이고 `skip`은 같은 뜻이다(playground 시뮬레이터 초기값·선택지도 고쳤다). `docs/prerequisites.md`·task-guide·playground·`harness-workflow-diagrams.html`의 훅 목록에 0.51.0 `block-dangerous-bash.sh`를 넣고, task-guide의 spec 골격에 0.51.0 `## 범위 (In / Out)` 절을 넣었다. 옛 `tests` 기본값 문구는 `tests/docs-retired-phrases.json`(`tests-default-required`)에 등록해 현행 문서에 다시 나타나면 `npm test`가 실패한다.
 
 ## [0.58.3] - 2026-11-23
 

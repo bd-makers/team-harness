@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Harness Aijient Team 0.58.3 — 무엇이 왜 달라졌나</title>
+  <title>Harness Aijient Team 0.58.4 — 무엇이 왜 달라졌나</title>
   <style>
     :root {
       --bg: #0f1117;
@@ -217,10 +217,10 @@
 </head>
 <body>
   <nav aria-label="문서 섹션">
-    <div class="nav-logo">Harness 0.58.3</div>
+    <div class="nav-logo">Harness 0.58.4</div>
     <div class="nav-links">
       <a href="#why">왜 patch인가</a>
-      <a href="#doctor">doctor 진단</a>
+      <a href="#docs">문서 정정</a>
       <a href="#same">바뀌지 않은 것</a>
       <a href="#compat">소비자가 할 일</a>
     </div>
@@ -229,72 +229,73 @@
   <main>
     <header class="hero">
       <div class="eyebrow">Release note · 2026-11-23 · patch</div>
-      <h1>doctor가 실행되지 않는 CLI를<br><strong>옛 CLI로 오진하지 않습니다</strong></h1>
-      <p><code>doctor</code>의 <code>global CLI version drift</code> 검사는 <code>harness-team --version</code>이 0 아닌 exit로 끝나면 모두 "0.15.1 이전 CLI"로 단정했습니다.
-      mise·nvm·asdf shim이 Node 전환 뒤 실행에 실패하는 경우에도 clone <code>git pull</code>을 처방해, 고쳐도 경고가 사라지지 않았습니다.
-      0.58.3은 <strong>옛 CLI와 실행 실패를 구분</strong>하고, 실행 실패에는 원인 첫 줄과 다시 설치하는 명령을 보여 줍니다.</p>
+      <h1>가이드 문서가<br><strong>0.51.0·0.52.0 사실과 맞습니다</strong></h1>
+      <p>버전 표지 가드가 없는 가이드 문서들이 0.52.0 이후에도 <code>done</code>의 <code>tests</code> 증거 기본값을 <code>required</code>로 적고 있었습니다.
+      0.51.0에 들어온 <code>block-dangerous-bash.sh</code> 훅과 spec의 <code>## 범위 (In / Out)</code> 절도 빠져 있었습니다.
+      0.58.4는 <strong>그 문장들을 소스에 맞추고</strong> 옛 <code>tests</code> 기본값 문구를 회귀 테스트에 등록합니다.</p>
       <div class="tags">
-        <span class="tag tag-purple">0.58.2 → 0.58.3</span>
-        <span class="tag tag-orange">patch — 진단 오류 수정</span>
-        <span class="tag tag-blue">PR #201</span>
+        <span class="tag tag-purple">0.58.3 → 0.58.4</span>
+        <span class="tag tag-orange">patch — 소비자 문서 사실 정정</span>
+        <span class="tag tag-blue">PR #202</span>
         <span class="tag tag-green">소비자 조치 — 플러그인 갱신만</span>
       </div>
     </header>
 
     <dl class="release-brief" aria-label="릴리스 요약">
-      <div><dt>버전</dt><dd>0.58.3</dd></div>
+      <div><dt>버전</dt><dd>0.58.4</dd></div>
       <div><dt>날짜</dt><dd>2026-11-23</dd></div>
-      <div><dt>기준</dt><dd><code>v0.58.2..main</code> — #201(<code>29f6b64e</code>, task <code>path-cli-run-failure</code>). 원장 갱신(<code>1b058001</code>)은 생성물이라 아래 "바뀌지 않은 것"에만 적습니다.</dd></div>
+      <div><dt>기준</dt><dd><code>v0.58.3..main</code> — #202(<code>fbc55e13</code>, task <code>guide-docs-current</code>). 원장 갱신(<code>72c86803</code>)은 생성물이라 아래 "바뀌지 않은 것"에만 적습니다.</dd></div>
     </dl>
 
     <section id="why">
-      <h2 class="section-title">왜 patch인가 — 진단이 틀린 처방을 냈다</h2>
-      <p class="section-sub">경고를 따라 <code>git pull</code>을 해도 원인(활성 Node에 CLI가 연결되지 않음)은 남습니다. 동작을 넓히지 않고 잘못된 판정만 바로잡으므로 patch입니다.</p>
+      <h2 class="section-title">왜 patch인가 — ② 문서가 틀린 사실을 말했다</h2>
+      <p class="section-sub">문서대로 읽으면 테스트 증거를 선언하지 않은 task가 <code>done</code>에서 막힌다고 오해하고, 위험 셸 명령 차단 훅의 존재를 모릅니다. MAINTAINING.md 기준 "② 소비자 문서가 틀린 사실을 말함"은 patch입니다.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>표면</th><th>변경</th><th>계층</th></tr></thead>
           <tbody>
-            <tr><td><code>src/commands/doctor.mjs</code></td><td>PATH CLI <code>--version</code> 결과 판정·경고·<code>next_actions</code></td><td>CLI 진단</td></tr>
-            <tr><td><code>MAINTAINING.md</code>·<code>docs/prerequisites.md</code>·<code>docs/harness-onboarding-checklist.html</code></td><td>같은 사실을 적은 문장 정합</td><td>② 소비자가 읽는 문서</td></tr>
-            <tr><td><code>tests/cli-drift.test.mjs</code></td><td>shim 실패·옛 CLI·127·무출력 exit 1·JSON 케이스</td><td>배포되지 않음</td></tr>
+            <tr><td><code>harness-cheatsheet</code>·<code>harness-task-guide</code>·<code>harness-onboarding-checklist</code>·<code>harness-operations-playground</code></td><td><code>tests</code> 기본값 정정</td><td>② 소비자가 읽는 문서</td></tr>
+            <tr><td><code>prerequisites.md</code>·task-guide·playground·<code>harness-workflow-diagrams</code></td><td>훅 목록에 <code>block-dangerous-bash.sh</code></td><td>② 소비자가 읽는 문서</td></tr>
+            <tr><td><code>tests/docs-retired-phrases.json</code></td><td>옛 <code>tests</code> 기본값 문구 등록</td><td>배포되지 않음</td></tr>
+            <tr><td><code>src/**</code>·<code>commands/**</code>·<code>skills/**</code>·<code>templates/**</code></td><td>없음</td><td>① 에이전트 행동 표면</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <section id="doctor">
-      <h2 class="section-title">doctor 진단 — 옛 CLI와 실행 실패를 가른다</h2>
+    <section id="docs">
+      <h2 class="section-title">문서 정정</h2>
       <div class="change-grid">
         <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Fixed · #201</div><h3>옛 CLI 판정</h3></div>
+          <div class="card-head"><div class="kind">Fixed · #202</div><h3><code>tests</code> 증거 기본값</h3></div>
           <dl>
-            <div><dt>전</dt><dd>0 아닌 exit면(127 제외) 모두 "<code>--version</code> 미지원(0.15.1 이전) — 구버전 CLI"로 보고하고 clone <code>git pull</code>을 처방.</dd></div>
-            <div class="effect"><dt>후</dt><dd>0.15.1 이전 릴리스가 내던 stderr 한 줄 <code>Unknown command: --version</code>이 있을 때만 옛 CLI로 판정합니다.</dd></div>
+            <div><dt>전</dt><dd>기본 <code>required</code> — 선언하지 않아도 소스를 고치고 테스트 파일을 안 고치면 <code>done</code>이 막힌다.</dd></div>
+            <div class="effect"><dt>후</dt><dd>기본 <code>optional</code>(0.52.0), <code>skip</code>은 같은 뜻. <code>required</code>를 선언할 때만 소스 변경과 테스트 파일 변경을 대조합니다. playground 시뮬레이터도 초기값이 <code>optional</code>이고 선택지에 넣었습니다.</dd></div>
           </dl>
         </article>
         <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Fixed · #201</div><h3>실행 실패</h3></div>
+          <div class="card-head"><div class="kind">Fixed · #202</div><h3>훅 목록과 spec 골격</h3></div>
           <dl>
-            <div><dt>무엇</dt><dd>그 밖의 0 아닌 exit(127 포함)는 "실행되지 않음 (exit N: 첫 줄)"로 보고하고, 활성 Node에서 <code>npm i -g "&lt;clone&gt;"</code>로 다시 설치·연결하라고 처방합니다. <code>--json</code> <code>next_actions</code>도 같은 명령이며, plugin-dev 모드에서도 경고합니다.</dd></div>
+            <div><dt>무엇</dt><dd>PreToolUse Bash 훅 목록에 git 밖 위험 셸 명령을 막는 <code>block-dangerous-bash.sh</code>(0.51.0)를 넣고, <code>prerequisites.md</code>의 jq 파싱 셸 훅을 다섯 개로 바로잡았습니다. task 가이드의 spec 골격에 <code>## 범위 (In / Out)</code>(0.51.0)를 넣었습니다.</dd></div>
           </dl>
         </article>
       </div>
+      <div class="callout"><strong>재발 방지.</strong> 옛 <code>tests</code> 기본값 문구 5개를 <code>tests/docs-retired-phrases.json</code>(<code>tests-default-required</code>)에 등록했습니다. 고치기 전 문서에서 실제로 걸리는 것을 확인했습니다.</div>
     </section>
 
     <section id="same">
       <h2 class="section-title">바뀌지 않은 것</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>항목</th><th>0.58.3</th></tr></thead>
+          <thead><tr><th>항목</th><th>0.58.4</th></tr></thead>
           <tbody>
-            <tr><td><code>commands/**</code>·<code>skills/**</code>·<code>templates/**</code>·훅</td><td>그대로 — <code>init</code>·<code>migrate</code>가 쓰는 파일이 같습니다</td></tr>
-            <tr><td>버전이 맞는 CLI·옛 CLI의 경고</td><td>그대로 — 바뀐 것은 실행되지 않는 CLI의 판정뿐입니다</td></tr>
+            <tr><td>CLI·<code>commands/**</code>·<code>skills/**</code>·<code>templates/**</code>·훅</td><td>그대로 — <code>tests</code> 기본값은 0.52.0부터 이미 <code>optional</code>이었습니다. 바뀐 것은 문서뿐입니다</td></tr>
             <tr><td><code>docs/harness-overview.html</code></td><td>생성물 — 버전 표지만 바뀌었습니다</td></tr>
-            <tr><td><code>docs/task_summary.md</code>·<code>docs/chad/chad-task.md</code></td><td>task 종결 집계 갱신(<code>1b058001</code>) — 생성물</td></tr>
+            <tr><td><code>docs/task_summary.md</code>·<code>docs/chad/chad-task.md</code></td><td>task 종결 집계 갱신(<code>72c86803</code>) — 생성물</td></tr>
           </tbody>
         </table>
       </div>
-      <div class="callout"><strong>검증 범위.</strong> <code>npm test</code>(1468건)·<code>docs:check</code>가 통과합니다. shim 실패는 가짜 실행 파일로 재현한 테스트이며, 모든 버전 관리자의 실제 오류 문구를 확인한 것은 아닙니다.</div>
+      <div class="callout"><strong>검증 범위.</strong> <code>npm test</code>(1468건)·<code>docs:check</code>가 통과합니다. 옛 문구 테스트는 등록한 문구만 보므로 같은 뜻을 다른 말로 쓴 문장은 잡지 못합니다. "기준 v0.50.0" 라벨 가이드 전체를 다시 검토한 것은 아닙니다.</div>
     </section>
 
     <section id="compat">
@@ -303,14 +304,14 @@
         <article class="change-card accuracy">
           <div class="card-head"><div class="kind">Do · 1</div><h3>플러그인 갱신</h3></div>
           <dl>
-            <div><dt>왜</dt><dd>바뀐 것은 CLI와 문서라 플러그인 채널로만 닿습니다. <code>init</code>·<code>migrate</code>는 필요 없습니다.</dd></div>
-            <div class="effect"><dt>어떻게</dt><dd><code>/plugin marketplace update</code>(또는 clone에서 <code>git pull</code>). 전역 CLI가 실행되지 않는다면 새 doctor가 알려 주는 <code>npm i -g</code> 명령을 실행합니다. <code>harness-team --version</code>이 <code>0.58.3</code>이면 됩니다.</dd></div>
+            <div><dt>왜</dt><dd>바뀐 것은 플러그인에 실린 문서뿐이라 플러그인 채널로만 닿습니다. <code>init</code>·<code>migrate</code>는 필요 없습니다.</dd></div>
+            <div class="effect"><dt>어떻게</dt><dd><code>/plugin marketplace update</code>(또는 clone에서 <code>git pull</code>). <code>harness-team --version</code>이 <code>0.58.4</code>이면 됩니다.</dd></div>
           </dl>
         </article>
       </div>
     </section>
 
-    <footer>Harness Aijient Team Plugin 0.58.3 · 2026-11-23 · 0.58.2 이후 변경 설명</footer>
+    <footer>Harness Aijient Team Plugin 0.58.4 · 2026-11-23 · 0.58.3 이후 변경 설명</footer>
   </main>
 </body>
 </html>
