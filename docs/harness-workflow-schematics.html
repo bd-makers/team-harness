@@ -148,13 +148,13 @@
     <div class="section">
       <p class="section-eyebrow">01 · Flowchart — 게이트</p>
       <h2>task는 게이트를 지난다 — 강제는 pr-check 하나</h2>
-      <p class="section-sub">활성 task 판정, spec R1·Ambiguity, 구현 완주 판정을 지나 리뷰 · ship(pr-check) · PR 머지 뒤 done.
+      <p class="section-sub">활성 task 판정, spec R1·Ambiguity, 구현 완주 판정을 지나 리뷰 · ship(pr-check) · done → PR 머지(= 종결).
       하네스가 강제하는 것은 pr-check(ship 8단계 · pre-push)뿐이고 나머지는 규범·제공 게이트다(D11).
       게이트 사이의 보강 반복은 점선 루프로 접었다.</p>
       <div class="diagram-container">
         <svg viewBox="0 0 1040 840" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="hw-flow-title hw-flow-desc">
           <title id="hw-flow-title">task는 게이트를 지난다 — 강제는 pr-check 하나</title>
-          <desc id="hw-flow-desc">세션 시작부터 done까지의 플로우차트. 활성 task 여부, spec R1·Ambiguity, 구현 완주라는 세 결정 지점을 지나 리뷰, ship(pr-check), PR 머지를 거쳐 기본 브랜치에서 done으로 완료된다.</desc>
+          <desc id="hw-flow-desc">세션 시작부터 done까지의 플로우차트. 활성 task 여부, spec R1·Ambiguity, 구현 완주라는 세 결정 지점을 지나 리뷰, ship(pr-check), 같은 브랜치의 done을 거쳐 PR이 머지되면 종결된다.</desc>
           <defs>
             <pattern id="f-dots" width="22" height="22" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.9" fill="rgba(45,49,66,0.10)"/></pattern>
             <marker id="f-arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#4f5d75"/></marker>
@@ -240,13 +240,13 @@
 
           <!-- 리뷰·ship rect -->
           <rect x="400" y="604" width="200" height="56" rx="6" fill="#ffffff" stroke="#2d3142" stroke-width="1"/>
-          <text x="500" y="628" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist','Noto Sans KR',sans-serif" text-anchor="middle">리뷰 · ship · PR 머지</text>
-          <text x="500" y="644" fill="#4f5d75" font-size="9" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle">review 기록 · pr-check · push</text>
+          <text x="500" y="628" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist','Noto Sans KR',sans-serif" text-anchor="middle">리뷰 · ship</text>
+          <text x="500" y="644" fill="#4f5d75" font-size="9" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle">review 기록 · pr-check</text>
 
           <!-- done oval (coral focal) -->
           <rect x="400" y="684" width="200" height="56" rx="28" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
-          <text x="500" y="708" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist','Noto Sans KR',sans-serif" text-anchor="middle">harness-team done</text>
-          <text x="500" y="724" fill="#4f5d75" font-size="9" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle">머지 후 · summary · 종결 커밋</text>
+          <text x="500" y="708" fill="#2d3142" font-size="12" font-weight="600" font-family="'Geist','Noto Sans KR',sans-serif" text-anchor="middle">harness-team done → PR</text>
+          <text x="500" y="724" fill="#4f5d75" font-size="9" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle">ship 완료 체크 · 머지 = 종결</text>
 
           <!-- Legend -->
           <line x1="40" y1="772" x2="1000" y2="772" stroke="rgba(45,49,66,0.10)" stroke-width="0.8"/>
@@ -535,8 +535,8 @@
     <div class="section">
       <p class="section-eyebrow">04 · State machine — 상태와 가드</p>
       <h2>done은 상태가 아니라 판정이다</h2>
-      <p class="section-sub">Active를 벗어나는 모든 전이에는 조건이 붙는다. 특히 Done으로 가는 전이는 PR 머지 뒤 기본 브랜치에서,
-      판정 창(reopenedAt 또는 firstActivatedAt) 이후의 증거와 plan 전량 닫힘을 가드가 대조한 뒤에만 열린다.</p>
+      <p class="section-sub">Active를 벗어나는 모든 전이에는 조건이 붙는다. 특히 Done으로 가는 전이는 ship 뒤 같은 브랜치에서
+      판정 창(reopenedAt 또는 firstActivatedAt) 이후의 증거와 plan 전량 닫힘을 가드가 대조한 뒤에만 열리고, 그 브랜치가 머지될 때 성립한다(머지 = 종결, 0.58.0).</p>
       <div class="diagram-container">
         <svg viewBox="0 0 1000 544" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="hw-state-title hw-state-desc">
           <title id="hw-state-title">done은 상태가 아니라 판정이다</title>
@@ -577,13 +577,13 @@
           <text x="420" y="94" fill="#4f5d75" font-size="8" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle" letter-spacing="0.04em">COMMIT(GATE) → HANDOFF (반복)</text>
 
           <rect x="504" y="164" width="52" height="12" rx="2" fill="#f5f5f5"/>
-          <text x="530" y="174" fill="#4f5d75" font-size="8" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle" letter-spacing="0.04em">SHIP·머지</text>
+          <text x="530" y="174" fill="#4f5d75" font-size="8" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle" letter-spacing="0.04em">SHIP</text>
 
           <rect x="520" y="260" width="36" height="12" rx="2" fill="#f5f5f5"/>
           <text x="538" y="270" fill="#4f5d75" font-size="8" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle" letter-spacing="0.08em">아직</text>
 
           <rect x="724" y="176" width="48" height="12" rx="2" fill="#f5f5f5"/>
-          <text x="748" y="186" fill="#eb6c36" font-size="8" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle" letter-spacing="0.08em">DONE</text>
+          <text x="748" y="186" fill="#eb6c36" font-size="8" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle" letter-spacing="0.08em">DONE·머지</text>
 
           <rect x="872" y="256" width="128" height="12" rx="2" fill="#f5f5f5"/>
           <text x="936" y="266" fill="#4f5d75" font-size="8" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle" letter-spacing="0.04em">ACTIVE.JSON = NULL</text>
@@ -616,7 +616,7 @@
           <rect x="568" y="168" width="40" height="12" rx="2" fill="transparent" stroke="rgba(45,49,66,0.40)" stroke-width="0.8"/>
           <text x="588" y="177" fill="#2d3142" font-size="7" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle" letter-spacing="0.08em">STATE</text>
           <text x="640" y="208" fill="#2d3142" font-size="14" font-weight="600" font-family="'Geist','Noto Sans KR',sans-serif" text-anchor="middle">AskDone</text>
-          <text x="640" y="224" fill="#4f5d75" font-size="9" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle">기본 브랜치 · 완료 확인</text>
+          <text x="640" y="224" fill="#4f5d75" font-size="9" font-family="'Geist Mono','Noto Sans KR',monospace" text-anchor="middle">ship 완료 체크 · 확인</text>
 
           <!-- Done (coral focal) -->
           <rect x="780" y="160" width="160" height="80" rx="8" fill="rgba(235,108,54,0.08)" stroke="#eb6c36" stroke-width="1"/>
@@ -712,7 +712,7 @@
           <text x="728" y="456" class="node-name focal-name">리뷰</text><text x="728" y="476" class="sublabel">read-only 반박 · D6</text>
 
           <rect class="station" x="440" y="548" width="160" height="64" rx="6"/>
-          <text x="520" y="576" class="node-name">Ship · Done</text><text x="520" y="596" class="sublabel">pr-check · 머지 후 done</text>
+          <text x="520" y="576" class="node-name">Ship · Done</text><text x="520" y="596" class="sublabel">pr-check · done → 머지</text>
 
           <rect class="station" x="232" y="428" width="160" height="64" rx="6"/>
           <text x="312" y="456" class="node-name">Retro</text><text x="312" y="476" class="sublabel">학습 · promote · wiki(선택)</text>

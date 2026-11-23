@@ -120,6 +120,15 @@ test('lines that shipped in past sweeps are caught', async () => {
     'HK-->>CC: task handoff append (다음 커밋에 포함)',
     '<li>handoff — 세션 인계 (task handoff는 훅이 append해 다음 커밋에 · user handoff는 로컬)</li>',
     '커밋 대상은 <code>&lt;name&gt;-handoff.md</code> 하나이고 다음 작업 커밋에 함께 담는다(0.42.1·0.44.4).',
+    // 0.58.0 done-derive 뒤에도 머지 뒤 done·종결 커밋을 가르치던 줄이다(task task-guide-closure-flow).
+    '<p class="section-sub"><code>done</code>은 <strong>PR이 머지된 뒤 기본 브랜치에서</strong> 돌립니다(0.44.0).',
+    '<text class="svg-sub" x="855" y="221" text-anchor="middle">PR 머지 후 · done</text>',
+    '<td class="d"><b>머지 후 기본 브랜치에서</b> 가드 통과 시 종결</td>',
+    '<b>종결</b> 머지 후 기본 브랜치: 체크 → <code>done</code> → (<code>/harness-wiki</code>) → <code>summary --write</code> → <b>커밋 하나</b> ·',
+    'CC->>HT: (선택) wiki → summary --write → 종결 커밋 1개',
+    '<text x="500" y="724" text-anchor="middle">머지 후 · summary · 종결 커밋</text>',
+    "[990,'done 가드','머지 후 종결 직전','#4df0aa']",
+    '<p>통과 뒤 <strong>머지 후 종결 순서 — 커밋 하나</strong>(0.44.0)</p>',
   ];
   for (const line of incidents) {
     const problems = await withTree({ 'docs/x.html': line }, (base) => findRetired(base));

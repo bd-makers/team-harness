@@ -240,7 +240,7 @@
       <h1>하네스를 깔았다.<br>이제 어떻게 일하나</h1>
       <p><code>init</code>이 끝난 프로젝트에서 <strong>첫 task를 만들어 닫을 때까지</strong>의 실제 절차와, 그 절차를 <strong>LLM과 함께</strong> 굴리는 방법을 담았습니다. 하네스는 런타임 오케스트레이터가 아니라 <em>설정·상태 하네스</em>입니다 — 대신 코딩해 주는 게 아니라, 작업의 입력(spec)·상태(plan)·출력(artifact)이 흩어지지 않게 붙잡아 둡니다. 하네스가 <strong>강제</strong>하는 것은 PR에 담긴 task 문서를 보는 <code>pr-check</code> 하나이고(D11), 나머지 게이트는 팀 개발 사이클을 돕는 제공 도구입니다 — plan 단계를 자동으로 돌려 주는 <code>/harness-loop</code>도 선택형입니다(0.47.0).</p>
       <div class="tags">
-        <span class="tag tag-purple">기준 v0.50.0 · 0.54.0 TCC 폐지 반영</span>
+        <span class="tag tag-purple">기준 v0.50.0 · 0.54.0 TCC 폐지 반영 · 0.58.0 종결 흐름 반영</span>
         <span class="tag tag-blue">init 이후 온보딩</span>
         <span class="tag tag-green">출력은 소스 문자열 대조</span>
         <span class="tag tag-orange">LLM 협업 규율</span>
@@ -298,7 +298,7 @@ harness-team doctor</code></pre>
 
       <figure class="figure">
         <svg viewBox="0 0 960 300" role="img" aria-labelledby="loop-title">
-          <title id="loop-title">task 생성부터 done까지의 10단계 흐름과 3개 게이트</title>
+          <title id="loop-title">task 생성부터 done·PR까지의 10단계 흐름과 게이트</title>
           <defs>
             <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
               <path d="M0,0 L10,5 L0,10 z" fill="#50c8f5"></path>
@@ -359,8 +359,8 @@ harness-team doctor</code></pre>
           <text class="svg-sub" x="665" y="221" text-anchor="middle">/harness-ship → pr-check</text>
 
           <rect class="svg-box-accent" x="780" y="180" width="150" height="54" rx="9"></rect>
-          <text class="svg-label" x="855" y="204" text-anchor="middle">10 · done</text>
-          <text class="svg-sub" x="855" y="221" text-anchor="middle">PR 머지 후 · done</text>
+          <text class="svg-label" x="855" y="204" text-anchor="middle">10 · done → PR</text>
+          <text class="svg-sub" x="855" y="221" text-anchor="middle">ship 완료 체크 · 머지 = 종결</text>
 
           <path class="svg-line" d="M170,207 L204,207" marker-end="url(#ah)"></path>
           <path class="svg-line" d="M360,207 L394,207" marker-end="url(#ah)"></path>
@@ -369,6 +369,7 @@ harness-team doctor</code></pre>
 
           <!-- gates -->
           <text class="svg-gate" x="855" y="118" text-anchor="middle">체크박스 완료 직전 boundary check</text>
+          <text class="svg-gate" x="760" y="36" text-anchor="middle">구현 전 [사람] spec 검토 승인 (0.57.0)</text>
           <text class="svg-gate" x="855" y="254" text-anchor="middle">종결 가드 7종 + 선언 유효성</text>
           <text class="svg-gate" x="285" y="254" text-anchor="middle">CLI가 meta.reviews[]·## Reviews 기록</text>
 
@@ -376,21 +377,30 @@ harness-team doctor</code></pre>
           <path class="svg-lane" d="M946,240 L946,268 L20,268 L20,246" ></path>
           <text class="svg-sub" x="480" y="284" text-anchor="middle">commit마다 post-commit 훅이 로컬 user handoff 갱신 · 트리는 깨끗 · 전부 체크되면 PLAN_COMPLETE</text>
         </svg>
-        <figcaption>10단계와 게이트. 점선은 게이트에 걸렸을 때의 복귀 경로다. 9 · ship(0.17.0 신설)은 PR/MR을 여는 경우에 밟는 <strong>문서 정합</strong> 단계이며, PR을 만들지는 않는다 — 대신 8단계에서 <code>pr-check</code>를 돌리고, push 때 pre-push 훅이 같은 검사를 한다. 10 · done은 <strong>PR이 머지된 뒤 기본 브랜치에서</strong> 돌린다(§8). 5단계에서 plan을 사람 대신 단계별로 돌리려면 선택형 <code>/harness-loop</code>(Dev → QA → 커밋, 0.47.0)를 쓴다. 사이클의 S0–S8·R1–R3 표기는 <code>docs/harness-cycle.md</code>가 정본이다. 4·6번 칸의 축약 이름은 각각 <code>/harness-contrarian</code>·<code>/harness-simplifier</code>, <code>/harness-unittest</code>·<code>/harness-comptest</code>·<code>/harness-inttest</code>다.</figcaption>
+        <figcaption>10단계와 게이트. 점선은 게이트에 걸렸을 때의 복귀 경로다. 9 · ship(0.17.0 신설)은 PR/MR을 여는 경우에 밟는 <strong>문서 정합</strong> 단계이며, PR을 만들지는 않는다 — 대신 자기 8단계(준비 완료 보고)에서 <code>pr-check</code>를 돌리고, push 때 pre-push 훅이 같은 검사를 한다. 10 · done은 ship 뒤 <strong>같은 브랜치에서, PR을 열기 전에</strong> 돌린다 — plan 마지막 단계 "ship 완료"를 <code>- [x]</code>로 켜고 <code>harness-team done</code>(가드) → 커밋 → push → PR이며, <strong>머지가 곧 종결</strong>이다(§8, 0.58.0). 구현(5단계)에 들어가기 전에는 plan 첫 단계인 <code>[사람] spec 검토 승인</code>을 사용자가 승인해야 한다(§1, 0.57.0). 5단계에서 plan을 사람 대신 단계별로 돌리려면 선택형 <code>/harness-loop</code>(Dev → QA → 커밋, 0.47.0)를 쓴다. 사이클의 S0–S8·R1–R3 표기는 <code>docs/harness-cycle.md</code>가 정본이다. 4·6번 칸의 축약 이름은 각각 <code>/harness-contrarian</code>·<code>/harness-simplifier</code>, <code>/harness-unittest</code>·<code>/harness-comptest</code>·<code>/harness-inttest</code>다.</figcaption>
       </figure>
 
       <h3 class="sub">실제 출력 — <code>task</code>는 다음 칸을 알려준다</h3>
       <pre><code>$ /harness-task auth-refresh
 <span class="g">created: docs/chad/auth-refresh/</span>
 active: chad/auth-refresh
+review gate: docs/chad/auth-refresh/auth-refresh-plan.md 첫 단계 — 사용자 승인 뒤에만 [x]
 <span class="b">next:</span> /harness-spec으로 docs/chad/auth-refresh/auth-refresh-spec.md 초안 생성 (또는 직접 작성, Ambiguity 자가진단 포함)
 <span class="b">next:</span> /harness-interview → plan.md 작성 → 구현 → 테스트 (/harness-unittest 계열) → 리뷰 → /harness-retro → done</code></pre>
-      <p>같은 이름으로 다시 부르면 생성이 아니라 <strong>활성화</strong>(<code>activated:</code>)이고, 이때는 <code>next: 현재 단계는 …-plan.md 에서 확인</code>이 나옵니다. 즉 task 전환도 같은 한 줄로 합니다. 이미 <code>done</code>된 task를 부르면 <code>reopened:</code>가 나오고 meta가 <code>status: open</code>·<code>closedAt: null</code>·<code>reopenedAt</code>(새 판정 창)으로 바뀝니다(0.32.0). 원장에는 done인데 폴더가 지워진 이름은 재사용이 거부됩니다(0.48.0).</p>
+      <p>같은 이름으로 다시 부르면 생성이 아니라 <strong>활성화</strong>(<code>activated:</code>)이고, 이때는 <code>next: 현재 단계는 …-plan.md 에서 확인</code>이 나옵니다. 즉 task 전환도 같은 한 줄로 합니다. <strong>기본 브랜치에서 종결됐고 작업 트리에서도 종결인</strong> task를 부르면 <code>reopened:</code>가 나오고, meta에 <code>reopenedAt</code>(새 판정 창)이 생기고 plan <code>## 단계</code> 끝에 <code>- [ ] 재개: (사유 미기재)</code>가 붙어 종결 판정이 open으로 돌아갑니다(0.58.0). 사유를 남기려면 <code>harness-team reopen &lt;name&gt; --reason "…"</code>을 씁니다 — 종결되지 않은 task에는 아무것도 쓰지 않고 exit 1입니다(§8). 머지 전 리뷰 수정 라운드의 <code>task &lt;name&gt;</code>은 재개가 아니라 활성화입니다. 원장에는 done인데 폴더가 지워진 이름은 재사용이 거부됩니다(0.48.0).</p>
+      <div class="callout warn">
+        <div class="mark">🧑‍⚖️</div>
+        <div>
+          <h5>구현 전 사람 검토 게이트 — 새 plan의 첫 단계 (0.57.0)</h5>
+          <p>새 task의 plan은 <code>## 단계</code> 맨 위에 <code>- [ ] [사람] spec 검토 승인 — &lt;user&gt;</code>를 갖고 태어나고, 출력에 위의 <code>review gate:</code> 줄이 붙습니다. 에이전트는 spec(경로와 요지)을 보여 주고 <strong>사용자가 그 spec을 승인한다고 말한 뒤에만</strong> <code>- [x]</code>로 켜며, artifact <code>## 결과</code>에 <code>- 검토 승인: &lt;YYYY-MM-DD&gt; · 슬라이드 &lt;경로|없음&gt;</code>을 남깁니다. 승인 전에는 task 문서(<code>docs/&lt;user&gt;/&lt;name&gt;/</code>) 밖 파일을 고치지 않습니다 — spec·plan을 다듬는 것은 됩니다.</p>
+          <p>검토용 슬라이드는 <code>harness-team brief</code>가 spec 원문만 렌더해 <code>&lt;name&gt;-brief.html</code>로 씁니다(새 사실 0 — 틀렸으면 spec을 고치고 다시 생성). 검토한 시점의 스냅샷이라 task 문서와 함께 커밋합니다. 강도는 프롬프트 수준이라 커밋·쓰기 차단은 없고, 끝내 켜지 않으면 <code>done</code> 가드가 미완 체크박스로 막습니다. 빼려면 아래 생성 질문에서 <strong>게이트 빼기</strong>를 고르거나 <code>task &lt;새 이름&gt; --no-review-gate</code>로 만듭니다. 기존 task에는 소급하지 않습니다.</p>
+        </div>
+      </div>
       <div class="callout">
         <div class="mark">📐</div>
         <div>
-          <h5>신규 생성 직후 한 번 물어봅니다 — 다이어그램 옵트인 (0.17.0)</h5>
-          <p>"이 task의 spec/plan 단계에서 다이어그램도 함께 만들까요?" <strong>신규 생성 때만 1회</strong> 묻고, 기존 task를 다시 활성화할 때는 묻지 않습니다. "예"면 <code>plan.md</code>에 <code>- [ ] spec/plan 다이어그램 작성 → …-diagram.html</code> 단계가 추가됩니다 — <strong>plan에 그 단계가 있는지가 곧 상태</strong>이고, 전용 설정 키나 상태 파일은 없습니다.</p>
+          <h5>신규 생성 직후 한 번 물어봅니다 — 다이어그램 옵트인 (0.17.0) · 게이트 빼기 (0.57.0)</h5>
+          <p>"이 task의 spec/plan 단계에서 다이어그램도 함께 만들까요? 구현 전 사람 검토를 뺄까요?" 두 가지를 <strong>한 질문으로, 신규 생성 때만 1회</strong> 묻고, 기존 task를 다시 활성화할 때는 묻지 않습니다. "예"면 <code>plan.md</code>에 <code>- [ ] spec/plan 다이어그램 작성 → …-diagram.html</code> 단계가 추가됩니다 — <strong>plan에 그 단계가 있는지가 곧 상태</strong>이고, 전용 설정 키나 상태 파일은 없습니다.</p>
           <p>그 단계를 <strong>실제로 실행하는 것은 <code>/harness-diagram</code></strong>입니다 <span class="pill pill-auto">0.17.0</span> &mdash; 다이어그램을 직접 그리는 명령이 아니라, <code>diagram-design</code> 같은 외부 스킬을 부르되 그 앞뒤에 하네스 규약(산출물 경로 · 자립형 inline SVG · artifact 기록)을 주입하는 <strong>어댑터</strong>입니다. 상류 스킬을 직접 부르면 이 규약이 하나도 적용되지 않습니다. plan에 그 단계가 없는 task에 쓰려면 <code>--force</code>를 붙입니다.</p>
           <p>산출물 <code>&lt;name&gt;-diagram.html</code>은 SSOT 4파일이 아니며, 옵트인이므로 <strong>없는 task가 정상</strong>입니다. 도구(<code>diagram-design</code> 같은 외부 플러그인)가 없는 머신이면 task를 실패시키지 말고 그 단계를 <strong>지우지 말고</strong> <code>harness-team diagram record --skipped "&lt;사유&gt;"</code>로 닫습니다 — plan 단계의 <code>- [x] … — 미실행(…)</code>과 artifact 기록을 한 명령이 합니다(0.40.0). 손으로 고치지 않습니다. 지우면 옵트인 사실이 사라지고, 열어 두면 <code>done</code>이 막힙니다.</p>
         </div>
@@ -404,16 +414,16 @@ active: chad/auth-refresh
         </div>
       </div>
 
-      <h3 class="sub">생성되는 파일 6개 — 4개는 SSOT, 1개는 캐시, 1개는 기계 상태</h3>
+      <h3 class="sub">생성되는 파일 5개 — 3개는 SSOT, 1개는 선택 메모, 1개는 기계 상태</h3>
       <div class="table-wrap">
         <table>
           <thead><tr><th>파일</th><th>성격</th><th>무엇을 쓰나</th></tr></thead>
           <tbody>
             <tr><td><code>&lt;name&gt;-spec.md</code></td><td><strong>SSOT</strong></td><td>요구사항·설계·Ontology·Ambiguity 자가진단 (+ 필요 시 결정·Boundary contracts)</td></tr>
             <tr><td><code>&lt;name&gt;-plan.md</code></td><td><strong>SSOT</strong></td><td>단계별 체크리스트 + Ontology 변경 로그</td></tr>
-            <tr><td><code>&lt;name&gt;-handoff.md</code></td><td><strong>SSOT</strong></td><td>세션 인수인계 — post-commit 훅이 자동 append</td></tr>
+            <tr><td><code>&lt;name&gt;-handoff.md</code></td><td>선택 메모</td><td>세션 인수인계 메모 — 사람·에이전트가 직접 쓴다. 훅은 쓰지 않고 <code>pr-check</code>도 요구하지 않는다</td></tr>
             <tr><td><code>&lt;name&gt;-artifact.md</code></td><td><strong>SSOT</strong></td><td>결과 · <code>## Reviews</code> · <code>## Learnings</code></td></tr>
-            <tr><td><code>&lt;name&gt;-meta.json</code></td><td>비-SSOT <em>기계 상태</em> <span class="pill pill-auto">0.16.0</span></td><td><code>created</code>·<code>firstActivatedAt</code>·<code>status</code>·<code>closedAt</code>·<code>reopenedAt</code>·<code>forcedAt</code>·<code>forcedIssues</code>·<code>reviews[]</code>(+ <code>area</code>). harness가 소유하므로 <strong>손으로 고치지 않습니다</strong> — <code>reopenedAt || firstActivatedAt</code>은 <code>done</code> 가드가 증거를 찾는 <strong>판정 창의 시작점</strong>이고, <code>reviews[]</code>는 <code>harness-team review</code>가 쓰는 <strong>verify 증거의 정본</strong>입니다</td></tr>
+            <tr><td><code>&lt;name&gt;-meta.json</code></td><td>비-SSOT <em>기계 상태</em> <span class="pill pill-auto">0.16.0</span></td><td><code>created</code>·<code>firstActivatedAt</code>·<code>reopenedAt</code>·<code>forcedAt</code>·<code>forcedIssues</code>·<code>reviews[]</code>(+ <code>area</code>·<code>baseSha</code>). <code>status</code>·<code>closedAt</code>은 옛 CLI의 <code>done</code>이 쓰던 값이라 새 CLI는 읽기만 하고 재개 때 풉니다(0.58.0). harness가 소유하므로 <strong>손으로 고치지 않습니다</strong> — <code>reopenedAt || firstActivatedAt</code>은 <code>done</code> 가드가 증거를 찾는 <strong>판정 창의 시작점</strong>이고, <code>reviews[]</code>는 <code>harness-team review</code>가 쓰는 <strong>verify 증거의 정본</strong>입니다</td></tr>
           </tbody>
         </table>
       </div>
@@ -437,15 +447,16 @@ harness-team summary --write   <span class="c"># 기본 브랜치에서만 — H
         <table>
           <thead><tr><th>단계</th><th>프롬프트 예</th><th>발동되는 것</th></tr></thead>
           <tbody>
-            <tr><td>시작</td><td><code>/harness-task auth-refresh</code> + 요구사항 2~3문장</td><td><strong>CLI가</strong> 파일 6개 + 활성 포인터 + 다음 단계 두 줄을 출력하고, 이어서 <strong>커맨드가</strong> 다이어그램 옵트인을 1회 묻습니다(질문은 CLI stdout이 아니라 커맨드 절차입니다)</td></tr>
+            <tr><td>시작</td><td><code>/harness-task auth-refresh</code> + 요구사항 2~3문장</td><td><strong>CLI가</strong> 파일 5개 + 활성 포인터 + <code>review gate:</code> 줄 + 다음 단계 두 줄을 출력하고, 이어서 <strong>커맨드가</strong> 다이어그램 옵트인과 게이트 빼기를 한 질문으로 1회 묻습니다(질문은 CLI stdout이 아니라 커맨드 절차입니다)</td></tr>
             <tr><td>spec 초안</td><td><code>/harness-spec</code> <span class="pill pill-auto">0.18.0</span></td><td>Confluence(PRD·정책) · Figma(와이어프레임) · task 이름 기반 인터뷰 <strong>3소스</strong>에서 초안 생성. 소스 접근은 MCP 우선 + 수동 붙여넣기 폴백이고, 원문 덤프 대신 <strong>요약 + 출처 링크</strong>만 남깁니다</td></tr>
-            <tr><td>spec 검증</td><td><code>/harness-interview</code></td><td>채점 전에 <strong>R1 원천 검토</strong>(원천 문서 사이의 충돌·누락 — <code>(unresolved)</code>·<code>(open)</code>이 남으면 통과를 선언하지 않는다, 0.47.0) → 소크라테스식 질문으로 숨은 가정 노출 — 통과 근거를 spec <code>## Ontology</code>에 한 줄. <strong>writer(<code>/harness-spec</code>)와 validator를 나눈 것이 핵심</strong>입니다. 통과 뒤 plan.md를 씁니다</td></tr>
+            <tr><td>spec 검증</td><td><code>/harness-interview</code></td><td>채점 전에 <strong>R1 원천 검토</strong>(원천 문서 사이의 충돌·누락 — <code>(unresolved)</code>·<code>(open)</code>이 남으면 통과를 선언하지 않는다, 0.47.0) → 소크라테스식 질문으로 숨은 가정 노출 — 통과 근거를 spec <code>## Ontology</code>에 한 줄. <strong>writer(<code>/harness-spec</code>)와 validator를 나눈 것이 핵심</strong>입니다. 통과 뒤 plan.md를 쓰고 → 사람 검토 승인(<code>harness-team brief</code> 슬라이드와 함께, 0.57.0) → 구현입니다</td></tr>
             <tr><td>plan 다듬기</td><td><code>/harness-contrarian</code> → <code>/harness-simplifier</code></td><td>가정 반박 → 단계·추상화 축소. 첫 토큰에 엔진(<code>codex</code>·<code>claude</code>·<code>custom</code>)을 주면 <strong>별도 컨텍스트의 read-only 검증자</strong>가 D6 루브릭으로 채점합니다 — 실행은 <code>harness-team review &lt;engine&gt; --framing contrarian|simplifier</code>, scope는 <code>task-docs</code> 고정 <span class="pill pill-auto">0.20.0</span></td></tr>
             <tr><td>구현</td><td><strong>"plan §1부터 진행해줘"</strong></td><td>boundary check(선언 시) + 체크박스 갱신 · 커밋 시 <code>gate commit</code>(<code>.harness/gates.json</code>, 0.46.0) · plan을 단계별로 자동 진행하려면 선택형 <code>/harness-loop</code>(0.47.0)</td></tr>
             <tr><td>테스트</td><td><code>/harness-unittest</code> · UI면 <code>/harness-comptest</code> · 프로세스 경계면 <code>/harness-inttest</code></td><td>스택 감지 → GWT 강제 → 위험 기반 커버리지 → 뮤테이션 자가점검</td></tr>
             <tr><td>리뷰</td><td><code>/harness-review</code> (설계·가정을 때리려면 <code>/harness-adversarial-review</code>) <span class="pill pill-auto">0.17.0</span></td><td>엔진 중립 — <code>codex</code>·<code>claude</code>·<code>custom</code>을 인수로 고르고, 인수가 없으면 codex → claude 순으로 탐지합니다. <code>harness-team review</code>가 <strong>성공한 실행만</strong> <code>meta.reviews[]</code>와 artifact <code>## Reviews</code>(출력·마커)에 기록하고, 에이전트는 그 아래 판별만 씁니다(0.37.0)</td></tr>
             <tr><td>PR/MR 직전</td><td><code>/harness-ship</code> <span class="pill pill-auto">0.17.0</span></td><td>spec·plan·artifact를 코드 현실과 맞추고 "준비 완료"를 보고합니다. <strong>PR을 만들지 않고</strong>, ship 중 발견한 코드 결함도 보고만 합니다. 0.20.0부터 <strong>정합 검증</strong>(문서↔diff를 별도 검증자가 shipcheck 루브릭으로 반박, 옵트인) 단계가 붙고, 0.46.0부터 준비 완료 전에 <code>harness-team pr-check</code>를 돌려 exit 1이면 준비 완료를 선언하지 않습니다</td></tr>
-            <tr><td>종결</td><td>(PR 머지 후 기본 브랜치에서) "retro 남기고 done 처리해줘"</td><td><code>## Learnings (날짜)</code> append → 마지막 단계 체크 → 종결 가드 7종 + 선언 유효성 확인 → (선택) <code>/harness-wiki</code> → <code>summary --write</code> → 종결 커밋 하나</td></tr>
+            <tr><td>종결</td><td>(ship 뒤, PR을 열기 전에 같은 브랜치에서) "retro 남기고 ship 완료 체크한 뒤 done 해줘"</td><td><code>## Learnings (날짜)</code> append → plan 마지막 단계 "ship 완료" 체크 → 종결 가드 7종 + 선언 유효성 확인(추적 파일은 쓰지 않음) → 커밋 → push(pre-push <code>pr-check</code>가 가드를 한 번 더) → PR → <strong>머지 = 종결</strong>. 머지 뒤 할 일은 없습니다 <span class="pill pill-auto">0.58.0</span></td></tr>
+            <tr><td>재개</td><td>(머지 뒤 문제가 생기면) "auth-refresh 다시 열어줘 — 회귀"</td><td><code>git fetch</code> → <code>harness-team reopen auth-refresh --reason "회귀"</code> → meta <code>reopenedAt</code> + plan 끝 <code>- [ ] 재개: 회귀</code> → 새 브랜치·PR로 고치고 같은 흐름으로 다시 종결 <span class="pill pill-auto">0.58.0</span></td></tr>
           </tbody>
         </table>
       </div>
@@ -545,6 +556,7 @@ boundary: not-configured</code></pre>
 (한 문장)
 
 <span class="c">## 단계</span>
+- [ ] [사람] spec 검토 승인 — chad   ← 새 task의 첫 단계 (0.57.0). 사용자 승인 뒤에만 [x]
 <span class="c">### §1 추출 (동작 불변)</span>
 - [ ] hookCliInstall 모듈 스코프 추출 — 검증: 전후 출력 바이트 동일(diff)
 
@@ -554,7 +566,8 @@ boundary: not-configured</code></pre>
 <span class="c">### §3 종결</span>                ← 항상 마지막 §로 고정
 - [ ] npm test 전체 통과
 - [ ] 리뷰 실행 + artifact ## Reviews 기록
-- [ ] artifact ## 결과 작성 → 커밋 → done
+- [ ] artifact ## 결과 작성
+- [ ] ship 완료                    ← 마지막 단계. /harness-ship 뒤 켜고 done → 커밋 → PR (0.58.0)
 
 <span class="c">## Ontology 변경 로그</span>       ← 개념이 새로 정의/변경되면 한 줄. spec Ontology 갱신 트리거
 - (none)</code></pre>
@@ -578,7 +591,7 @@ boundary: not-configured</code></pre>
         </div>
       </div>
 
-      <p>모든 박스가 <code>- [x]</code>가 되고 미완이 없어지면, commit 시 post-commit 훅이 <code>PLAN_COMPLETE</code>를 내보냅니다 — 종결 대화를 시작하라는 신호입니다.</p>
+      <p>모든 박스가 <code>- [x]</code>가 되고 미완이 없어지면, commit 시 post-commit 훅이 <code>PLAN_COMPLETE</code>를 내보냅니다 — 보통 ship 뒤 "ship 완료"를 켜고 <code>done</code>을 통과한 그 커밋이고, 이 브랜치가 머지되면 task가 종결됩니다. 그래서 <strong>하지 않은 단계를 미리 켜지 않고</strong>, 여러 PR에 걸친 task는 남은 단계를 미리 <code>- [ ]</code>로 적어 둡니다 — 전부 체크된 plan이 기본 브랜치에 머지되는 순간 종결이기 때문입니다(0.58.0).</p>
     </section>
 
     <section id="resume">
@@ -593,7 +606,7 @@ boundary: not-configured</code></pre>
 
       <h3 class="sub">재현 가능한 실패는 artifact에 남긴다</h3>
       <p>artifact의 <code>## Failures</code>에 <code>### F-NNN</code>으로 신호·시도·가설·원인 범주(<code>Cause</code>)·다음 판별법·안전한 source 위치를 씁니다. 해소돼도 지우지 않고 <code>Resolved:</code> 한 줄을 붙입니다. raw stderr, 토큰·비밀값, 전체 HTTP payload는 넣지 않습니다.</p>
-      <p>활성 task가 없으면 첫 작업 프롬프트에서 <strong>재개 / 새 task / task 없이 진행</strong>을 묻습니다. 파일 변경은 규모와 무관하게 task로 진행하고, "task 없이 진행"은 파일 변경 없는 질문·탐색·리뷰에만 씁니다. block이 아니라 nudge입니다. 재개 후보는 <code>meta.status</code>가 done이 아니면서 plan에 열린 체크박스가 있는 task이고(0.32.0), 최근 활동순(<code>plan.md</code> mtime)으로 <strong>최대 8개</strong>만 나열되며 나머지는 <code>… 외 N개</code> 한 줄로 접힙니다(0.23.0). 접힌 것까지 전부 보려면 <code>harness-team list</code>를 쓰세요. 활성 task가 이미 origin 기본 브랜치에서 종결됐으면 breadcrumb·Context Card 대신 <strong>종결됨 nudge</strong>만 나오고(0.38.0), 발화한 observe 트립와이어는 한 줄로 붙습니다(0.35.0).</p>
+      <p>활성 task가 없으면 첫 작업 프롬프트에서 <strong>재개 / 새 task / task 없이 진행</strong>을 묻습니다. 파일 변경은 규모와 무관하게 task로 진행하고, "task 없이 진행"은 파일 변경 없는 질문·탐색·리뷰에만 씁니다. block이 아니라 nudge입니다. 재개 후보는 종결되지 않은 task이고(판정은 §8의 종결 판정과 같다 — 0.58.0), 최근 활동순(<code>plan.md</code> mtime)으로 <strong>최대 8개</strong>만 나열되며 나머지는 <code>… 외 N개</code> 한 줄로 접힙니다(0.23.0). 접힌 것까지 전부 보려면 <code>harness-team list</code>를 쓰세요. 활성 task가 이미 origin 기본 브랜치에서 종결됐으면 breadcrumb·Context Card 대신 <strong>종결됨 nudge</strong>만 나오고(0.38.0), 발화한 observe 트립와이어는 한 줄로 붙습니다(0.35.0).</p>
     </section>
 
     <section id="llm">
@@ -715,7 +728,7 @@ boundary: not-configured</code></pre>
             <tr><td>Bash 직전</td><td><code>block-dangerous-git.sh</code> · <code>pre-commit-check.sh</code></td><td>위험한 git 조작 차단 · 커밋 게이트 — <code>pre-commit-check.sh</code>가 <code>harness-team gate commit</code>을 불러 커밋된 <code>.harness/gates.json</code>의 <code>commit</code> 목록을 실행(0.46.0) <span class="pill pill-auto">자동</span></td></tr>
             <tr><td>Edit/Write 직후</td><td><code>auto-format.sh</code></td><td><code>gate format &lt;file&gt;</code> — <code>gates.json</code>에 선언된 포맷터만 <span class="pill pill-auto">자동</span></td></tr>
             <tr><td>commit 직후 (git hook)</td><td><code>harness-team handoff</code></td><td>사용자 handoff 갱신(gitignore된 워크트리 로컬, 추적 파일은 쓰지 않는다), 전부 체크되면 <code>PLAN_COMPLETE</code> <span class="pill pill-auto">자동</span></td></tr>
-            <tr><td>push 직전 (git hook)</td><td><code>harness-team pr-check --pre-push</code></td><td>PR이 담은 task 문서 계약 검사 — 하네스의 유일한 강제(D11, 0.46.0). 기존 설치는 <code>harness-team sync</code>로 받는다 <span class="pill pill-auto">자동</span></td></tr>
+            <tr><td>push 직전 (git hook)</td><td><code>harness-team pr-check --pre-push</code></td><td>PR이 담은 task 문서 계약 검사 — 하네스의 유일한 강제(D11, 0.46.0). plan이 전부 체크된 task에는 <code>done</code> 가드도 같이 돈다(0.58.0). 기존 설치는 <code>harness-team sync</code>로 받는다 <span class="pill pill-auto">자동</span></td></tr>
             <tr><td><code>git push</code> · <code>gh pr create/merge</code></td><td><code>permissions.ask</code></td><td>실행 전 사용자 확인 프롬프트(0.29.0) <span class="pill pill-auto">자동</span></td></tr>
             <tr><td>모든 도구 호출 (성공·실패·거부)</td><td><code>observe-tools.mjs</code></td><td>빈도·시간·결과 크기만 허용목록 메타데이터로 기록 — 프롬프트·경로·자격증명 원문은 남기지 않음 <span class="pill pill-auto">자동</span></td></tr>
             <tr><td>spec·plan 품질 / 리뷰 판별·조치</td><td>—</td><td>사람과 에이전트의 규율 (리뷰 실행 기록 자체는 CLI가 남긴다) <span class="pill pill-norm">규범</span></td></tr>
@@ -735,8 +748,15 @@ boundary: not-configured</code></pre>
     </section>
 
     <section id="done">
-      <h2 class="section-title">8. 종결 — 가드 7종 + 선언 유효성을 통과해야 닫힌다</h2>
-      <p class="section-sub"><code>done</code>은 <strong>PR이 머지된 뒤 기본 브랜치에서</strong> 돌립니다(0.44.0). 그리고 <strong>먼저 검사</strong>입니다 — 통과하지 못하면 아무것도 바꾸지 않고 멈춥니다. 통과한 뒤에야 상태를 옮깁니다(handoff append · <code>meta.json</code> <code>status</code>/<code>closedAt</code> · 활성 포인터 비우기).</p>
+      <h2 class="section-title">8. 종결 — ship 뒤 가드를 통과시키고, 머지가 곧 종결</h2>
+      <p class="section-sub">0.58.0부터 종결은 <strong>기록이 아니라 계산값</strong>입니다 — 기본 브랜치의 어떤 커밋에서 plan에 미완 <code>- [ ]</code>가 없고 <code>- [x]</code>가 하나 이상이면 그 커밋에서 종결입니다. 그래서 <strong>머지가 곧 종결</strong>이고 머지 뒤 할 일이 없습니다. <code>done</code>은 ship 뒤 <strong>같은 브랜치에서, PR을 열기 전에</strong> 돌리는 <strong>검증 명령</strong>입니다 — 통과하지 못하면 아무것도 바꾸지 않고 멈추고, 통과해도 추적 파일은 쓰지 않습니다(활성 포인터 비우기 · 워크트리 로컬 user handoff만).</p>
+
+      <pre><code><span class="c"># 브랜치에서, PR 생성 전</span>
+/harness-ship                         <span class="c"># 문서 정합 · pr-check</span>
+<span class="c"># plan 마지막 단계 "ship 완료" → - [x]</span>
+harness-team done                     <span class="c"># 가드만 — 추적 파일을 쓰지 않는다</span>
+git commit → git push                 <span class="c"># pre-push pr-check가 plan이 전부 체크된 task에 done 가드를 한 번 더</span>
+PR → 머지                             <span class="c"># = 종결. 기본 브랜치에서 할 일 없음</span></code></pre>
 
       <pre><code>$ harness-team done
 <span class="r">✗ done: 종결 가드에 걸림 (5개)</span>
@@ -749,7 +769,7 @@ retry: 위 항목을 해소한 뒤 다시 `harness-team done` 실행
 alternatives: `harness-team done --force` 로 가드를 무시하고 종결한다 — 무시한 사유를 artifact.md 에 남길 것
 default: task는 활성으로 남고 handoff·artifact 어느 파일도 바뀌지 않는다
 stop: 가드가 지적한 증거가 실제로 없으면 종결하지 말 것</code></pre>
-      <p>0.18.1에서 <strong>증거 기반 가드 2종</strong>(테스트·리뷰 마커)이, 0.20.0에서 <strong>검증 마커 1종</strong>이 붙어 총 <strong>7종</strong>이 됐습니다. 위 출력에는 다섯 번째(테스트)가 보이고, 여섯·일곱 번째는 spec이 각각 <code>review: required</code> · <code>verify: required</code>를 선언한 task에서만 나옵니다. 0.46.0에서는 빈 <code>plan.md</code>·빈 <code>artifact.md</code>도 막히는데, 각각 미완 체크박스·템플릿 그대로 가드의 하위 조건으로 셉니다. 여기에 <strong>선언 유효성</strong>이 따로 붙습니다 — <code>## Done evidence</code>가 깨져 있으면 그 자체로 차단되므로, 가드 7종과 나란히 세는 항목이 아니라 <strong>7종을 읽기 전에 걸리는 관문</strong>입니다.</p>
+      <p>0.18.1에서 <strong>증거 기반 가드 2종</strong>(테스트·리뷰 마커)이, 0.20.0에서 <strong>검증 마커 1종</strong>이 붙어 총 <strong>7종</strong>이 됐습니다. 위 출력에는 다섯 번째(테스트)가 보이고, 여섯·일곱 번째는 spec이 각각 <code>review: required</code> · <code>verify: required</code>를 선언한 task에서만 나옵니다. 0.46.0에서는 빈 <code>plan.md</code>·빈 <code>artifact.md</code>도 막히는데, 각각 미완 체크박스·템플릿 그대로 가드의 하위 조건으로 셉니다. 0.58.0부터는 <code>plan.md</code>가 없거나 체크된 단계(<code>- [x]</code>)가 하나도 없어도 같은 가드가 막습니다 — 그런 plan은 머지해도 종결되지 않기 때문입니다. 여기에 <strong>선언 유효성</strong>이 따로 붙습니다 — <code>## Done evidence</code>가 깨져 있으면 그 자체로 차단되므로, 가드 7종과 나란히 세는 항목이 아니라 <strong>7종을 읽기 전에 걸리는 관문</strong>입니다.</p>
       <p>증거를 찾는 <strong>판정 창</strong>의 시작점은 <code>&lt;name&gt;-meta.json</code>의 <code>reopenedAt || firstActivatedAt</code> 중 처음 유효한 값입니다 <span class="pill pill-auto">0.19.0 · 0.32.0</span>. done task를 다시 열면(<code>reopened:</code>) <code>reopenedAt</code>이 새 창을 엽니다. <code>firstActivatedAt</code>은 생성 시 한 번만 기록되고 열린 task의 재활성화가 건드리지 않습니다 — 예전에는 <code>active.json</code>의 <code>switchedAt</code>을 썼는데, 끝난 task를 닫으려면 재활성화해야 하고 그 재활성화가 창을 초기화해 <strong>이미 만족된 리뷰 마커·커밋을 창 밖으로 밀어냈습니다</strong>. 손으로 고치지 마세요. 이 값을 밀면 가드가 오탐을 냅니다.</p>
 
       <div class="table-wrap">
@@ -758,7 +778,7 @@ stop: 가드가 지적한 증거가 실제로 없으면 종결하지 말 것</co
           <tbody>
             <tr><td>미완 체크박스</td><td>실제로 끝냈으면 <code>- [x]</code>로. 안 할 항목이면 <strong>지우고 이유를 artifact에</strong> — 체크로 위장하지 않는다.</td></tr>
             <tr><td>artifact가 템플릿 그대로</td><td><code>## 결과</code>를 쓰고, 리뷰했다면 <code>## Reviews</code>, 배운 게 있으면 <code>/harness-retro</code>.</td></tr>
-            <tr><td>커밋되지 않은 변경</td><td>커밋하거나 되돌린다. handoff 2개는 가드에서 제외되므로 그것만 dirty면 통과한다. plan 변경이 <strong>줄머리 체크박스를 켠 것뿐</strong>이면 미커밋으로 세지 않는다(0.44.0) — 머지 후 마지막 단계를 체크하고 바로 <code>done</code>할 수 있는 이유다.</td></tr>
+            <tr><td>커밋되지 않은 변경</td><td>커밋하거나 되돌린다. handoff 2개는 가드에서 제외되므로 그것만 dirty면 통과한다. plan 변경이 <strong>줄머리 체크박스를 켠 것뿐</strong>이면 미커밋으로 세지 않는다(0.44.0) — ship 뒤 마지막 단계를 체크하고 바로 <code>done</code> → 커밋할 수 있는 이유다.</td></tr>
             <tr><td>task 시작 이후 커밋 0개</td><td>작업이 정말 없었다면 task 자체가 필요했는지 되묻는다.</td></tr>
             <tr><td>소스 변경 O + 테스트 변경 X <span class="pill pill-auto">0.18.1</span></td><td>테스트를 쓴다. 정말 불필요한 task(문서·설정 전용은 애초에 발동하지 않는다)면 spec <code>## Done evidence</code>에 <code>"tests": "skip"</code>을 <strong>선언</strong>한다 — 선언하지 않고 <code>--force</code>로 넘기지 않는다.</td></tr>
             <tr><td>리뷰 기록 없음 <span class="pill pill-auto">0.18.1</span></td><td>spec이 <code>review: required</code>일 때만 나온다. <code>/harness-review</code>(<code>harness-team review</code>)를 돌린다 — CLI가 기록한다. <strong>엔진을 직접 돌리고 기록이 없으면 여기서 막힌다.</strong></td></tr>
@@ -771,15 +791,26 @@ stop: 가드가 지적한 증거가 실제로 없으면 종결하지 말 것</co
       <div class="callout bad">
         <div class="mark">🩹</div>
         <div>
-          <p><code>--force</code>는 가드를 경고로 낮춥니다. 무시한 issue가 있으면 meta에 <code>forcedAt</code>·<code>forcedIssues</code>가 자동으로 남고 원장에 <code>✅ done ⚠️</code>로 표시됩니다(0.34.0). 그래도 <strong>왜 우회했는지 artifact에 남기지 않으면</strong> 그 task는 다음 사람에게 "닫혔지만 알 수 없는" 상태가 됩니다.</p>
+          <p><code>--force</code>는 가드를 경고로 낮춥니다. 무시한 issue가 있으면 meta에 <code>forcedAt</code>·<code>forcedIssues</code>가 자동으로 남고(<code>done</code>이 추적 파일을 쓰는 유일한 경우 — 같은 PR에 커밋한다) 원장에 <code>✅ done ⚠️</code>로 표시됩니다(0.34.0). 이 우회 기록도 종결로 읽히므로 미완 단계가 남은 plan이라도 머지되면 닫힙니다. 그래도 <strong>왜 우회했는지 artifact에 남기지 않으면</strong> 그 task는 다음 사람에게 "닫혔지만 알 수 없는" 상태가 됩니다.</p>
         </div>
       </div>
-      <p>닫히면 <code>&lt;name&gt;-handoff.md</code>에 완료 줄이 append되고, <code>&lt;name&gt;-meta.json</code>이 <code>status: "done"</code>·<code>closedAt</code>으로 바뀌고, user handoff가 종결 형태로 다시 쓰이고, 활성 포인터가 비워집니다. 다음 task는 다시 <code>/harness-task &lt;name&gt;</code> 한 줄로 시작합니다.</p>
+      <p>통과하면 활성 포인터가 비워지고 워크트리 로컬 user handoff가 종결 형태로 다시 쓰입니다. task 폴더의 파일(plan·meta·handoff)은 바뀌지 않으므로 커밋할 것은 마지막 단계를 켠 plan과 ship에서 고친 문서뿐입니다. 이어서 push → PR이고, 머지되면 종결입니다. 다음 task는 다시 <code>/harness-task &lt;name&gt;</code> 한 줄로 시작합니다.</p>
       <div class="callout">
         <div class="mark">🧾</div>
         <div>
           <p><strong>0.16.0부터 <code>done</code>은 원장을 갱신하지 않습니다.</strong> 예전에는 여기서 <code>&lt;user&gt;-task.md</code>의 <code>## Completed</code>와 <code>docs/task_summary.md</code>를 직접 고쳤지만, 그것이 모든 병렬 브랜치가 같은 줄에서 충돌하던 원인이었습니다. 지금 원장은 <code>meta.json</code>을 스캔해 렌더하는 <strong>생성물</strong>입니다.</p>
-          <p><strong>머지 후 종결 순서 — 커밋 하나</strong>(0.44.0): 기본 브랜치에서 plan의 마지막 단계를 <code>- [x]</code> → <code>harness-team done</code> → (선택) <code>/harness-wiki &lt;user&gt;/&lt;task&gt;</code>(위키 컴파일, 0.47.0) → <code>harness-team summary --write</code> → <code>chore(task): &lt;name&gt; 종결</code> 커밋 하나에 plan·meta·handoff·원장(·위키)을 함께 담습니다.</p>
+          <p><strong>원장·위키는 종결 절차가 아닙니다</strong>(0.58.0). 원장은 머지마다 낡는 것이 정상이고, 기본 브랜치에서 필요할 때 <code>harness-team summary --write</code>로 묶어 갱신합니다 — CI에서 <code>summary --check</code>를 게이트로 두지 않습니다. 위키 컴파일(<code>/harness-wiki &lt;user&gt;/&lt;task&gt;</code>, 선택)도 머지 뒤 기본 브랜치에서 원장 갱신과 같은 커밋에 담습니다. 원장 파일만 바꾼 브랜치는 <code>pr-check</code>가 통과시킵니다.</p>
+        </div>
+      </div>
+      <div class="callout warn">
+        <div class="mark">↩️</div>
+        <div>
+          <h5>여러 PR에 걸친 task · 리뷰 수정 · 머지 뒤 재개</h5>
+          <ul>
+            <li><strong>여러 PR에 걸친 task</strong>: 이후 단계를 plan에 미리 <code>- [ ]</code>로 적어 둡니다 — 그래야 중간 PR의 머지가 종결로 판정되지 않습니다. 그때는 마지막 단계를 켜지 않습니다.</li>
+            <li><strong>머지 전 리뷰 수정 라운드</strong>(같은 브랜치): 다시 열지 않습니다. <code>task &lt;name&gt;</code>은 기본 브랜치에서 종결되지 않은 task를 활성화만 합니다 — 고친 뒤 다시 ship하고, 마지막 단계는 이미 켜져 있으니 가드만 다시 돌립니다.</li>
+            <li><strong>머지 뒤 문제</strong>: <code>git fetch</code> → <code>harness-team reopen &lt;name&gt; --reason "&lt;사유&gt;"</code>(또는 <code>task &lt;name&gt;</code>) → meta에 <code>reopenedAt</code>(새 판정 창), plan 끝에 <code>- [ ] 재개: &lt;사유&gt;</code>가 붙어 종결이 풀립니다. 새 브랜치·PR로 고치고 재개 항목을 켜면 머지가 다시 종결입니다. 재개는 기본 브랜치에서 종결됐고 작업 트리에서도 종결일 때만 일어나며, 종결되지 않은 task에 <code>reopen</code>을 주면 아무것도 쓰지 않고 exit 1입니다.</li>
+          </ul>
         </div>
       </div>
     </section>
@@ -797,7 +828,8 @@ stop: 가드가 지적한 증거가 실제로 없으면 종결하지 말 것</co
             <tr><td><code>docs/&lt;user&gt;/new/</code>가 생겼다</td><td><code>/harness-task new feature X</code> 형태로 호출</td><td>디렉터리 삭제 후 <code>/harness-task &lt;name&gt;</code>로 재생성</td></tr>
             <tr><td>spec이 외부 문서만 가리킨다</td><td>포인터 껍데기 spec — 자가진단·Ontology가 없다</td><td>요구사항·자가진단·Ontology는 spec에 직접. 외부 문서는 보조 참조로만 (<code>doctor</code>가 경고)</td></tr>
             <tr><td>리뷰했는데 흔적이 없다</td><td>결과를 artifact에 남기지 않았다</td><td>엔진을 직접 돌리지 말고 <code>harness-team review</code>로 — CLI가 <code>meta.reviews[]</code>·<code>## Reviews</code>에 기록하고, 당신은 판별·조치를 쓴다. 없으면 안 한 것이고, spec이 <code>review: required</code>면 <code>done</code>도 막힌다</td></tr>
-            <tr><td>병합했는데 <code>task_summary.md</code>가 그대로다</td><td>0.16.0부터 원장은 <strong>생성물</strong>이라 <code>task</code>·<code>done</code>이 쓰지 않는다</td><td>기본 브랜치에서 <code>harness-team summary --write</code> 실행 후 커밋</td></tr>
+            <tr><td>병합했는데 <code>task_summary.md</code>가 그대로다</td><td>0.16.0부터 원장은 <strong>생성물</strong>이라 <code>task</code>·<code>done</code>이 쓰지 않고, 0.58.0부터 종결 절차에서도 빠졌다 — 머지마다 낡는 것이 정상</td><td>필요할 때 기본 브랜치에서 <code>harness-team summary --write</code> 실행 후 커밋(원장만 바꾼 브랜치는 <code>pr-check</code>가 통과시킨다)</td></tr>
+            <tr><td>머지했는데 task가 열린 채로 보인다</td><td>plan 마지막 단계("ship 완료")를 켜지 않고 PR을 올렸다 — 종결은 기본 브랜치의 plan에서 계산된다</td><td>PR을 열기 전에 ship → 마지막 단계 체크 → <code>done</code> → 커밋. 이미 머지됐으면 새 브랜치에서 남은 단계를 켜고 <code>done</code> → PR</td></tr>
             <tr><td>피처 브랜치에서 <code>summary --write</code>가 거부됐다</td><td>가드가 기본 브랜치만 허용한다 — 의도된 동작</td><td>거부가 맞다. <code>--force</code>로 뚫지 말고 기본 브랜치에서 돌린다</td></tr>
             <tr><td><code>done</code>이 "테스트 파일 변경이 없음"으로 막힌다</td><td>0.18.1 테스트 증거 가드</td><td>테스트를 쓰거나, 정말 불필요하면 spec <code>## Done evidence</code>에 <code>"tests": "skip"</code> 선언</td></tr>
             <tr><td><code>/harness-codex-review</code>가 아무 반응이 없다</td><td>0.17.0에서 <code>/harness-review</code>로 재편, 옛 이름 alias는 <strong>제거됐다</strong></td><td>문서·브리프의 커맨드 이름을 <code>/harness-review</code>로 바꾼다</td></tr>
@@ -823,6 +855,6 @@ stop: 가드가 지적한 증거가 실제로 없으면 종결하지 말 것</co
     </section>
   </main>
 
-  <footer>Harness Aijient Team Plugin · task 작업 가이드 · CLI 출력은 v0.50.0 소스 문자열 대조 · 기준 v0.50.0 갱신 2026-10-12 · 0.54.0 TCC 폐지 반영 2026-11-04</footer>
+  <footer>Harness Aijient Team Plugin · task 작업 가이드 · CLI 출력은 v0.50.0 소스 문자열 대조 · 기준 v0.50.0 갱신 2026-10-12 · 0.54.0 TCC 폐지 반영 2026-11-04 · 0.58.0 종결 흐름 반영 2026-11-23</footer>
 </body>
 </html>

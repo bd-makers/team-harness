@@ -198,10 +198,11 @@ flowchart TD
     REV --> ART["CLI가 meta.reviews[]·마커 기록<br/>발견 재현·판별 후 단일 스레드 반영"]
     ART -->|반영할 발견 있음| IMPL
     ART --> SHIP["ship — spec·plan·artifact 최종 갱신<br/>8단계 pr-check (D11 유일한 강제) → 준비 완료 보고"]
-    SHIP --> PUSH["push — pre-push pr-check<br/>→ PR/MR → 머지 (사용자 지시)"]
-    PUSH --> DQ{"기본 브랜치<br/>마지막 단계 체크 · AskUserQuestion"}
-    DQ -->|완료| DN["harness-team done<br/>가드 통과 → active.json = null"]
-    DN --> WK["/harness-wiki &lt;user&gt;/&lt;task&gt;<br/>(선택)"] --> SM["harness-team summary --write<br/>→ 종결 커밋 1개"] --> E([task 종료])
+    SHIP --> DQ{"같은 브랜치 — 마지막 단계<br/>ship 완료 체크 · AskUserQuestion"}
+    DQ -->|완료| DN["harness-team done<br/>가드만 · 추적 파일 무변경 → active.json = null"]
+    DN --> PUSH["commit → push — pre-push pr-check<br/>(plan 전부 체크면 done 가드도) → PR/MR → 머지 (사용자 지시)"]
+    PUSH --> E(["머지 = 종결 · 머지 뒤 커밋 없음"])
+    E -.->|선택 · 기본 브랜치에서 묶어서| SM["/harness-wiki · summary --write"]
 
     classDef gate fill:#3d2700,stroke:#f5a623,color:#f5a623
     classDef hook fill:#0e3d30,stroke:#4df0aa,color:#4df0aa
@@ -300,16 +301,16 @@ sequenceDiagram
     HT-->>CC: meta.reviews[] · artifact 마커 기록
     CC->>CC: 발견 재현·판별 → 단일 스레드 반영
     CC->>HT: ship 8단계 — harness-team pr-check
-    CC->>U: 준비 완료 보고 (push·PR은 별도 지시)
-    U-->>CC: push · PR 지시
-    CC->>HK: git push
-    HK->>HT: pre-push — pr-check
-    Note over U,CC: PR/MR 머지
-    CC->>U: AskUserQuestion — 기본 브랜치에서 완료 확인
+    CC->>CC: plan 마지막 단계 ship 완료 체크
+    CC->>U: AskUserQuestion — 종결(done) 확인
     U-->>CC: 완료
     CC->>HT: harness-team done
-    HT-->>CC: 가드 통과 → meta status=done · active.json = null
-    CC->>HT: (선택) wiki → summary --write → 종결 커밋 1개
+    HT-->>CC: 가드 통과 → active.json = null (추적 파일 무변경)
+    CC->>U: 준비 완료 보고 (push·PR은 별도 지시)
+    U-->>CC: commit · push · PR 지시
+    CC->>HK: git commit · git push
+    HK->>HT: pre-push — pr-check (plan 전부 체크면 done 가드도)
+    Note over U,CC: PR/MR 머지 = 종결 (머지 뒤 커밋 없음)
       </div>
     </div>
     <div class="diagram-label">정본: AGENTS.md §task 워크플로우 · commands/harness-review.md §실행 절차 · commands/harness-ship.md</div>
@@ -323,17 +324,18 @@ sequenceDiagram
 stateDiagram-v2
     [*] --> NoTask : 세션 시작 (active.json = null)
     NoTask --> Created : harness-team task &lt;name&gt;
-    Created --> Active : 자동 활성화 (다이어그램 옵트인 1회)
-    Active --> Active : 구현 · gate commit · handoff append
+    Created --> Active : 자동 활성화 (다이어그램 옵트인 · 게이트 빼기 1회)
+    Active --> Active : 사람 검토 승인 → 구현 · gate commit · 로컬 user handoff 갱신
     Active --> Reviewing : harness-team review (중요 변경)
     Reviewing --> Active : 발견 재현·판별 후 단일 스레드 반영
     Active --> Shipping : 구현 단계 완료 → ship (문서 정합 · pr-check)
-    Shipping --> Merged : push (pre-push pr-check) → PR/MR 머지
-    Merged --> AskDone : 기본 브랜치 — 마지막 단계 체크 + 완료 확인
+    Shipping --> AskDone : 같은 브랜치 — 마지막 단계 ship 완료 체크 + 완료 확인
     AskDone --> Active : 아직 진행 중
-    AskDone --> Done : harness-team done — 가드 통과 (--force면 forcedAt 감사)
-    Done --> Active : task &lt;name&gt; → reopened (새 판정 창)
-    Done --> [*] : wiki(선택) · summary --write · 종결 커밋 1개
+    AskDone --> Shipped : harness-team done — 가드 통과 (--force면 forcedAt 감사)
+    Shipped --> Active : 머지 전 리뷰 수정 (task &lt;name&gt; = 활성화)
+    Shipped --> Done : commit → push (pre-push pr-check) → PR/MR 머지 = 종결
+    Done --> Active : reopen &lt;name&gt; → 재개 항목 (새 판정 창)
+    Done --> [*] : 머지 뒤 커밋 없음 (원장·위키는 선택 묶음)
 
     note right of AskDone
         done 가드 7종 + 선언 유효성.
@@ -363,22 +365,21 @@ gitGraph
    checkout task-b
    commit id: "B: spec·plan"
    checkout task-a
-   commit id: "A: ship 문서 → push(pr-check)"
+   commit id: "A: ship·done → push(pr-check)"
    checkout main
-   merge task-a id: "PR merge A"
-   commit id: "A 종결: done·summary"
+   merge task-a id: "PR merge A = 종결"
    checkout task-b
-   commit id: "B: ship 문서 → push(pr-check)"
+   commit id: "B: ship·done → push(pr-check)"
    checkout main
-   merge task-b id: "PR merge B"
-   commit id: "B 종결: done·summary"
+   merge task-b id: "PR merge B = 종결"
+   commit id: "summary --write (선택 묶음)"
       </div>
     </div>
     <div class="diagram-label">정본: docs/decisions.md D5 · AGENTS.md §task 단위 관리 (집계 파일은 생성물)</div>
     <div class="infobox">
       <strong>왜 충돌하지 않나:</strong> task SSOT 4파일은 <code>docs/&lt;user&gt;/&lt;name&gt;/</code>에 격리되고,
       집계 파일(<code>docs/task_summary.md</code> · <code>&lt;user&gt;-task.md</code>)은 어느 브랜치도 직접 쓰지 않는다 —
-      병합이 끝난 기본 브랜치에서 <code>harness-team summary --write</code>로만 갱신한다 — 머지마다 그 task의 <strong>종결 커밋 하나</strong>(plan 체크 · done meta · task handoff · 원장)를 둔다.
+      병합이 끝난 기본 브랜치에서 <code>harness-team summary --write</code>로만, 필요할 때 묶어서 갱신한다 — 종결은 머지로 성립하므로(plan의 마지막 단계는 브랜치에서 켠다) 머지 뒤 종결 커밋이 없다(0.58.0).
       <code>&lt;user&gt;-handoff.md</code>는 gitignore된 워크트리 로컬이라 병렬 PR이 충돌하지 않고(0.44.4), summary 가드는 HEAD가 origin 기본 브랜치와 같은 커밋인지를 본다(detached HEAD 허용).
     </div>
   </section>

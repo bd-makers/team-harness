@@ -174,12 +174,12 @@ const SLIDES = [
   </table></div>` },
 
 { t:'하루의 루프', kicker:'어떻게',
-  note:'ship은 pr-check를 돌리고 준비 완료 보고에서 멈춘다 — PR을 만들지 않는다. done은 PR이 머지된 뒤 기본 브랜치에서 돌리고, 체크·done·summary를 종결 커밋 하나에 담는다. 여기 질문이 자주 나옴.',
+  note:'ship은 pr-check를 돌리고 준비 완료 보고에서 멈춘다 — PR을 만들지 않는다. done은 ship 뒤 같은 브랜치에서 마지막 단계(ship 완료)를 켜고 돌린다 — 가드만 보고 추적 파일은 쓰지 않는다. 그다음 커밋·push·PR이고 머지가 곧 종결이라 머지 뒤 커밋이 없다(0.58.0). 여기 질문이 자주 나옴.',
   html:`<div class="body"><h2>task 하나가 열리고 닫히는 길</h2>
   <svg viewBox="0 0 1130 210" style="width:100%;max-height:250px;margin-top:6px" role="img" aria-label="task 수명주기">
     <defs><marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
       <path d="M0,0 L7,3 L0,6 Z" fill="#3a4260"/></marker></defs>
-    ${[['task','열기'],['spec','합의 · R1'],['plan','분해'],['구현','+테스트'],['review','반박'],['ship','pr-check'],['done','머지 후']]
+    ${[['task','열기'],['spec','합의 · R1'],['plan','분해'],['구현','+테스트'],['review','반박'],['ship','pr-check'],['done','PR 전 가드']]
       .map((n,i)=>`<g transform="translate(${i*160},58)">
         <rect width="128" height="66" rx="11" fill="${i===6?'#12261d':'#1a1d27'}" stroke="${i===6?'#2e6b4e':'#2e3350'}"/>
         <text x="64" y="29" text-anchor="middle" fill="#e2e6f0" font-size="19" font-weight="600" font-family="ui-monospace,Menlo,monospace">${n[0]}</text>
@@ -187,7 +187,7 @@ const SLIDES = [
         ${i<6?`<line x1="${i*160+130}" y1="91" x2="${i*160+156}" y2="91" stroke="#3a4260" stroke-width="2" marker-end="url(#ar)"/>`:''}`).join('')}
     <text x="0" y="165" fill="#8a92ae" font-size="14">SessionStart 훅이 활성 task와 현재 단계를 주입</text>
     <text x="640" y="165" fill="#8a92ae" font-size="14">post-commit 훅이 로컬 진입점 갱신</text>
-    <text x="0" y="192" fill="#f5c451" font-size="14">ship은 “준비 완료 보고”에서 멈춘다 — PR·머지는 사람이 지시하고, done은 머지 후 기본 브랜치에서 판정한다</text>
+    <text x="0" y="192" fill="#f5c451" font-size="14">ship은 “준비 완료 보고”에서 멈춘다 — done은 그 브랜치에서 가드만, PR·머지는 사람이 지시하고 머지가 곧 종결</text>
   </svg></div>` },
 
 { t:'게이트 — 강제는 하나', kicker:'어떻게',
@@ -195,7 +195,7 @@ const SLIDES = [
   html:`<div class="body"><h2>task는 네 개의 게이트를 지난다</h2>
   <svg viewBox="0 0 1130 150" style="width:100%;max-height:170px" role="img" aria-label="네 게이트">
     <line x1="20" y1="62" x2="1110" y2="62" stroke="#2e3350" stroke-width="2"/>
-    ${[[110,'R1·Ambiguity','구현 진입 전 · 규범','#f5c451'],[400,'boundary check','plan 체크박스 직전','#50c8f5'],[700,'pr-check','ship · pre-push · 강제','#f56a8c'],[990,'done 가드','머지 후 종결 직전','#4df0aa']]
+    ${[[110,'R1·Ambiguity','구현 진입 전 · 규범','#f5c451'],[400,'boundary check','plan 체크박스 직전','#50c8f5'],[700,'pr-check','ship · pre-push · 강제','#f56a8c'],[990,'done 가드','ship 뒤 · PR 전','#4df0aa']]
       .map(([x,a,b,c])=>`<g><circle cx="${x}" cy="62" r="13" fill="#0f1117" stroke="${c}" stroke-width="3"/>
         <text x="${x}" y="26" text-anchor="middle" fill="${c}" font-size="19" font-weight="650">${a}</text>
         <text x="${x}" y="108" text-anchor="middle" fill="#8a92ae" font-size="14">${b}</text></g>`).join('')}
