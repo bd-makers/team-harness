@@ -9,6 +9,17 @@
 
 ## [Unreleased]
 
+## [0.58.2] - 2026-11-23
+
+### Fixed
+
+- **현행 문서가 0.58.0 이전 종결 흐름을 가르치던 것을 고친다** (task `task-guide-closure-flow`, #200). `docs/harness-task-guide.html`을 비롯한 현행 문서 9개(`harness-cheatsheet`·`harness-kickoff-deck`·`harness-onboarding-checklist`·`harness-operations-playground`·`harness-rubric-guide`·`harness-workflow-diagrams`·`harness-workflow-schematics`·`harness-workflow-simulation`)가 "PR 머지 뒤 기본 브랜치에서 `done` + 종결 커밋"을 적고 있었다. 이제 모두 ship 뒤 같은 브랜치에서 plan 마지막 단계 "ship 완료" 체크 → `done`(가드만) → 커밋 → push → PR → 머지 = 종결로 적는다. 가이드에는 0.57.0 사람 검토 게이트·`brief`와 0.58.0 `reopen`도 반영했다.
+
+### Added
+
+- **팀 온보딩 덱 `docs/team-harness-explainer.html`** (task `team-harness-explainer-deck`, #199). 왜·무엇·어떻게를 15장으로 설명하고, 사이클 장표에 단계마다 뒤에서 도는 훅·가드·루브릭·규약을 표기한다. 0.58.1 종결 흐름과 검토 게이트에 맞췄다.
+- **옛 종결 흐름 문구를 회귀 테스트에 등록한다** (`tests/docs-retired-phrases.json` `done-after-merge`, 메인테이너 표면). "머지 후 done"·"종결 커밋 하나" 같은 문구가 현행 문서에 다시 나타나면 `npm test`가 실패한다.
+
 ## [0.58.1] - 2026-11-20
 
 ### Fixed

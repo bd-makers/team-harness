@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Harness Aijient Team 0.58.1 — 무엇이 왜 달라졌나</title>
+  <title>Harness Aijient Team 0.58.2 — 무엇이 왜 달라졌나</title>
   <style>
     :root {
       --bg: #0f1117;
@@ -217,11 +217,11 @@
 </head>
 <body>
   <nav aria-label="문서 섹션">
-    <div class="nav-logo">Harness 0.58.1</div>
+    <div class="nav-logo">Harness 0.58.2</div>
     <div class="nav-links">
       <a href="#why">왜 patch인가</a>
       <a href="#docs">문서 정정</a>
-      <a href="#guard">회귀 테스트</a>
+      <a href="#deck">온보딩 덱</a>
       <a href="#same">바뀌지 않은 것</a>
       <a href="#compat">소비자가 할 일</a>
     </div>
@@ -229,35 +229,35 @@
 
   <main>
     <header class="hero">
-      <div class="eyebrow">Release note · 2026-11-20 · patch</div>
-      <h1>옛 handoff 문장을 지우고<br><strong>다시 남지 않게 테스트로 막습니다</strong></h1>
-      <p>0.55.0부터 post-commit 훅은 추적 파일을 쓰지 않습니다. 그런데 워크플로우 다이어그램과 스케매틱은 여전히 "훅이 task handoff를 append해 다음 커밋에 담는다"고 적고 있었습니다.
-      0.58.1은 <strong>그 두 문장을 고치고</strong>, 없앤 표면의 옛 문구가 현행 문서에 다시 나타나면 <code>npm test</code>가 실패하게 합니다.
-      11-06에 PR 없이 남아 있던 두 하위 세션의 결과를 살린 릴리스이기도 합니다.</p>
+      <div class="eyebrow">Release note · 2026-11-23 · patch</div>
+      <h1>모든 현행 문서가<br><strong>같은 종결 흐름을 가르칩니다</strong></h1>
+      <p>0.58.0에서 종결은 계산값이 됐습니다. ship 뒤 같은 브랜치에서 <code>done</code>을 돌리고, 머지가 곧 종결입니다.
+      그런데 task 가이드를 비롯한 현행 문서 9개는 여전히 "머지 뒤 기본 브랜치에서 <code>done</code> + 종결 커밋"을 가르치고 있었습니다.
+      0.58.2는 <strong>그 문서들을 모두 새 흐름으로 고치고</strong> 옛 문구를 회귀 테스트에 등록합니다. 팀 온보딩 덱도 새로 싣습니다.</p>
       <div class="tags">
-        <span class="tag tag-purple">0.58.0 → 0.58.1</span>
-        <span class="tag tag-orange">patch — 소비자 문서 사실 정정 2곳</span>
-        <span class="tag tag-blue">PR #198</span>
+        <span class="tag tag-purple">0.58.1 → 0.58.2</span>
+        <span class="tag tag-orange">patch — 소비자 문서 사실 정정</span>
+        <span class="tag tag-blue">PR #199 · #200</span>
         <span class="tag tag-green">소비자 조치 — 플러그인 갱신만</span>
       </div>
     </header>
 
     <dl class="release-brief" aria-label="릴리스 요약">
-      <div><dt>버전</dt><dd>0.58.1</dd></div>
-      <div><dt>날짜</dt><dd>2026-11-20</dd></div>
-      <div><dt>기준</dt><dd><code>v0.58.0..main</code> — #198(<code>5a7d8a6</code>, task <code>sim-sc6-retired-phrases</code>). 이 PR이 <code>claude/jovial-blackwell-bfcd1f</code>(<code>c8a98c4</code>·<code>e8f617c</code>)와 <code>claude/ecstatic-herschel-b3c503</code>(<code>8e35a1e</code>)를 합쳤습니다. 원장 갱신(<code>b413a2d</code>)은 생성물이라 아래 "바뀌지 않은 것"에만 적습니다.</dd></div>
+      <div><dt>버전</dt><dd>0.58.2</dd></div>
+      <div><dt>날짜</dt><dd>2026-11-23</dd></div>
+      <div><dt>기준</dt><dd><code>v0.58.1..main</code> — #199(<code>0058e89</code>, task <code>team-harness-explainer-deck</code>), #200(<code>b681d17</code>, task <code>task-guide-closure-flow</code>). 원장 갱신(<code>44544ed</code>)은 생성물이라 아래 "바뀌지 않은 것"에만 적습니다.</dd></div>
     </dl>
 
     <section id="why">
       <h2 class="section-title">왜 patch인가 — ② 문서가 틀린 사실을 말했다</h2>
-      <p class="section-sub">MAINTAINING.md의 릴리스 크기 기준에서 "② 소비자가 읽는 문서가 틀린 사실을 말함"은 patch로 바로 발행합니다. 읽는 사람이 그 문장대로 하면 틀리기 때문입니다. 나머지 변경은 테스트·메인테이너 표면이라 배포 동작이 없습니다.</p>
+      <p class="section-sub">사람이 그 문서대로 하면 종결 커밋을 하나 더 만들거나, 머지 뒤에 <code>done</code>을 돌리려다 이미 종결된 task를 다시 열 수 있습니다. MAINTAINING.md의 기준에서 "② 소비자 문서가 틀린 사실을 말함"은 patch로 바로 발행합니다.</p>
       <div class="table-wrap">
         <table>
           <thead><tr><th>표면</th><th>변경</th><th>계층</th></tr></thead>
           <tbody>
-            <tr><td><code>docs/harness-workflow-diagrams.html</code>·<code>docs/harness-workflow-schematics.html</code></td><td>옛 handoff 동작 문장 정정</td><td>② 소비자가 읽는 문서</td></tr>
-            <tr><td><code>tests/**</code></td><td>옛 문구 회귀 테스트, SC6 현행화, sim-smoke</td><td>배포되지 않음</td></tr>
-            <tr><td><code>MAINTAINING.md</code></td><td>반복 실수 규칙표 한 행</td><td>③ 메인테이너 전용</td></tr>
+            <tr><td><code>docs/harness-task-guide.html</code> 외 현행 문서 8개</td><td>종결 흐름 정정</td><td>② 소비자가 읽는 문서</td></tr>
+            <tr><td><code>docs/team-harness-explainer.html</code></td><td>새 온보딩 덱</td><td>② 소비자가 읽는 문서</td></tr>
+            <tr><td><code>tests/docs-retired-phrases.*</code></td><td>옛 종결 흐름 문구 등록</td><td>배포되지 않음</td></tr>
             <tr><td><code>src/**</code>·<code>commands/**</code>·<code>skills/**</code>·<code>templates/**</code></td><td>없음</td><td>① 에이전트 행동 표면</td></tr>
           </tbody>
         </table>
@@ -265,41 +265,33 @@
     </section>
 
     <section id="docs">
-      <h2 class="section-title">문서 정정 — 훅은 추적 파일을 쓰지 않는다</h2>
+      <h2 class="section-title">문서 정정 — 종결은 머지 전에 준비한다</h2>
       <div class="change-grid">
         <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Fixed · diagrams</div><h3>커밋 시퀀스의 훅 화살표</h3></div>
+          <div class="card-head"><div class="kind">Fixed · #200</div><h3>9개 현행 문서의 종결 순서</h3></div>
           <dl>
-            <div><dt>전</dt><dd>"task handoff append (다음 커밋에 포함)"</dd></div>
-            <div class="effect"><dt>후</dt><dd>"로컬 user handoff 갱신"</dd></div>
+            <div><dt>전</dt><dd>PR이 머지된 뒤 기본 브랜치에서 <code>done</code>을 돌리고 종결 커밋을 하나 만든다.</dd></div>
+            <div class="effect"><dt>후</dt><dd>ship 뒤 같은 브랜치에서 plan 마지막 단계 "ship 완료"를 체크 → <code>done</code>(가드만, 추적 파일 안 씀) → 커밋 → push → PR → 머지 = 종결. 머지 뒤 종결 커밋은 없습니다.</dd></div>
           </dl>
         </article>
         <article class="change-card accuracy">
-          <div class="card-head"><div class="kind">Fixed · schematics</div><h3>task 문서 목록의 handoff 설명</h3></div>
+          <div class="card-head"><div class="kind">Fixed · #200</div><h3>task 가이드의 빠진 단계</h3></div>
           <dl>
-            <div><dt>전</dt><dd>"세션 인계 (task handoff는 훅이 append해 다음 커밋에 · user handoff는 로컬)"</dd></div>
-            <div class="effect"><dt>후</dt><dd>"선택 메모 (훅은 쓰지 않는다 · user handoff는 로컬)"</dd></div>
+            <div><dt>무엇</dt><dd>0.57.0의 구현 전 사람 검토 게이트(plan 첫 단계 <code>[사람] spec 검토 승인</code>, <code>harness-team brief</code>)와 0.58.0의 <code>reopen</code>을 가이드에 넣었습니다.</dd></div>
           </dl>
         </article>
       </div>
-      <div class="callout"><strong>① 무결성 확인.</strong> 에이전트가 실행하는 표면(<code>commands/harness-task.md</code>·<code>AGENTS.md</code>·템플릿)은 0.55.0부터 이미 새 동작을 적고 있었습니다. 틀린 문장은 사람이 읽는 다이어그램 두 곳에만 있었습니다.</div>
+      <div class="callout"><strong>재발 방지.</strong> "머지 후 done"·"종결 커밋 하나" 같은 문구 14개를 <code>tests/docs-retired-phrases.json</code>에 등록했습니다. 현행 문서에 다시 나타나면 <code>npm test</code>가 파일과 대체 표현을 알려 주며 실패합니다. 이력 문서와 릴리스 배너는 제외합니다.</div>
     </section>
 
-    <section id="guard">
-      <h2 class="section-title">회귀 테스트 — 등록한 옛 문구만 본다</h2>
+    <section id="deck">
+      <h2 class="section-title">팀 온보딩 덱</h2>
       <div class="change-grid">
         <article class="change-card maintenance">
-          <div class="card-head"><div class="kind">Added · tests</div><h3><code>tests/docs-retired-phrases.*</code></h3></div>
+          <div class="card-head"><div class="kind">Added · #199</div><h3><code>docs/team-harness-explainer.html</code></h3></div>
           <dl>
-            <div><dt>무엇</dt><dd>없앤 표면을 설명하던 문구를 <code>tests/docs-retired-phrases.json</code>에 등록합니다. 현행 문서에 그 문구가 있으면 파일과 대체 표현을 알려 주며 실패합니다. 줄바꿈·태그로 쪼개진 문구도 같은 문구로 봅니다.</dd></div>
-            <div class="why"><dt>왜</dt><dd>사실을 지운 뒤 다른 자리에 옛 설명이 남는 실수가 이 저장소에서 가장 잦았습니다. 이번 두 문장도 0.55.0 정정 때 전수 검색이 놓친 것입니다. 같은 뜻을 다른 말로 쓴 경우는 잡지 못합니다 — 등록과 의역 판단은 여전히 사람 몫입니다.</dd></div>
-          </dl>
-        </article>
-        <article class="change-card maintenance">
-          <div class="card-head"><div class="kind">Fixed · sim</div><h3>SC6이 녹색이고 <code>npm test</code>에서 돈다</h3></div>
-          <dl>
-            <div><dt>전</dt><dd>doctor green이 늘 실패했고(env 선언 warning·<code>CODEX_HOME</code> 미격리), 0.57.0 검토 게이트와 0.58.0 계산된 종결 이후 실패가 두 건 더 늘었습니다. <code>npm test</code> 밖이라 아무도 몰랐습니다.</dd></div>
-            <div class="effect"><dt>후</dt><dd>L1과 같은 차단 목록·격리로 판정하고, 미완 박스를 모두 켜며, 종결은 <code>closureFromContent</code>로 봅니다. <code>done</code>이 <code>--force</code>로만 끝나면 실패합니다. <code>tests/e2e/sim-smoke.test.mjs</code>가 SC6을 <code>npm test</code>에서 돌립니다.</dd></div>
+            <div><dt>무엇</dt><dd>왜 만들었나, 무슨 역할인가, SSOT 문서는 코드 리뷰가 필요한가, 실제로 어떻게 작업하나 — 네 질문에 15장으로 답합니다. 사이클 장표는 단계마다 뒤에서 도는 훅·가드·루브릭·규약을 함께 보입니다.</dd></div>
+            <div class="why"><dt>이력</dt><dd>11-10에 만들어졌지만 로컬 브랜치에만 남아 있었습니다. 0.54.0 기준이던 내용을 0.58.1 종결 흐름과 검토 게이트에 맞춰 실었습니다.</dd></div>
           </dl>
         </article>
       </div>
@@ -309,15 +301,15 @@
       <h2 class="section-title">바뀌지 않은 것</h2>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>항목</th><th>0.58.1</th></tr></thead>
+          <thead><tr><th>항목</th><th>0.58.2</th></tr></thead>
           <tbody>
             <tr><td>CLI·<code>commands/**</code>·<code>skills/**</code>·<code>templates/**</code>·훅</td><td>그대로 — <code>init</code>·<code>migrate</code>가 쓰는 파일과 명령 동작이 같습니다</td></tr>
-            <tr><td><code>docs/harness-overview.html</code></td><td>생성물 — 테스트 인벤토리와 버전 표지만 바뀌었습니다</td></tr>
-            <tr><td><code>docs/task_summary.md</code>·<code>docs/chad/chad-task.md</code></td><td>task 종결 집계 갱신(<code>b413a2d</code>) — 생성물</td></tr>
+            <tr><td><code>docs/harness-overview.html</code></td><td>생성물 — 버전 표지만 바뀌었습니다</td></tr>
+            <tr><td><code>docs/task_summary.md</code>·<code>docs/chad/chad-task.md</code></td><td>task 종결 집계 갱신(<code>44544ed</code>) — 생성물</td></tr>
           </tbody>
         </table>
       </div>
-      <div class="callout"><strong>검증 범위.</strong> <code>npm test</code>·<code>docs:check</code>·SC6이 통과합니다. 첫 박스만 켜는 옛 SC6 동작으로 되돌리면 SC6이 실패하는 것을 변이로 확인했습니다. 인증이 필요한 SC1~SC5·SC7은 돌리지 않았습니다.</div>
+      <div class="callout"><strong>검증 범위.</strong> <code>npm test</code>·<code>docs:check</code>가 통과합니다. 옛 문구 테스트는 등록한 문구만 보므로, 같은 뜻을 다른 말로 쓴 문장은 잡지 못합니다.</div>
     </section>
 
     <section id="compat">
@@ -327,13 +319,13 @@
           <div class="card-head"><div class="kind">Do · 1</div><h3>플러그인 갱신</h3></div>
           <dl>
             <div><dt>왜</dt><dd>바뀐 것은 플러그인에 실린 문서뿐이라 플러그인 채널로만 닿습니다. <code>init</code>·<code>migrate</code>는 필요 없습니다.</dd></div>
-            <div class="effect"><dt>어떻게</dt><dd><code>/plugin marketplace update</code>(또는 clone에서 <code>git pull</code>). <code>harness-team --version</code>이 <code>0.58.1</code>이면 됩니다.</dd></div>
+            <div class="effect"><dt>어떻게</dt><dd><code>/plugin marketplace update</code>(또는 clone에서 <code>git pull</code>). <code>harness-team --version</code>이 <code>0.58.2</code>이면 됩니다.</dd></div>
           </dl>
         </article>
       </div>
     </section>
 
-    <footer>Harness Aijient Team Plugin 0.58.1 · 2026-11-20 · 0.58.0 이후 변경 설명</footer>
+    <footer>Harness Aijient Team Plugin 0.58.2 · 2026-11-23 · 0.58.1 이후 변경 설명</footer>
   </main>
 </body>
 </html>

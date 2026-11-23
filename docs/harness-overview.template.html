@@ -201,7 +201,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.58.1</span>
+      <span class="tag tag-purple">v0.58.2</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -209,6 +209,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.58.2 — 모든 현행 문서가 같은 종결 흐름을 가르친다:</strong>
+    <br>
+    <code>0.58.2</code> task 가이드를 비롯한 현행 문서 9개가 아직 "머지 뒤 기본 브랜치에서 <code>done</code> + 종결 커밋"을 가르치고 있던 것을 고쳤다. 이제 모두 <strong>ship → "ship 완료" 체크 → <code>done</code> → 커밋 → push → 머지 = 종결</strong>이다. 옛 문구는 회귀 테스트에 등록했다. <strong>팀 온보딩 덱</strong>(<code>docs/team-harness-explainer.html</code>)도 새로 실었다. CLI·명령·템플릿 동작은 그대로다.
+    <br><br>
     <strong>🆕 0.58.1 — 옛 handoff 문장을 지우고, 다시 남지 않게 테스트로 막는다:</strong>
     <br>
     <code>0.58.1</code> 워크플로우 다이어그램·스케매틱이 "훅이 task handoff를 append해 다음 커밋에 담는다"는 0.55.0 이전 동작을 적고 있던 것을 고쳤다. <strong>없앤 표면의 옛 문구를 등록해 두면 현행 문서에 다시 나타날 때 <code>npm test</code>가 실패한다</strong>(<code>tests/docs-retired-phrases.*</code>). SC6 시뮬레이션도 검토 게이트·계산된 종결에 맞춰 <code>npm test</code>에 들어갔다. CLI·명령·템플릿 동작은 그대로다.
@@ -1039,7 +1043,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.58.1 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.58.2 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
