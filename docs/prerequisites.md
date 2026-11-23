@@ -48,7 +48,7 @@ harness-team doctor          # 도구 유무를 런타임에 확인
 
 ## 3. ⚠ jq는 "있으면 좋은 것"이 아닙니다 — 없으면 훅이 저정밀 모드로 떨어집니다
 
-`templates/.claude/hooks/`의 훅 네 개(`block-dangerous-git.sh`, `protect-files.sh`,
+`templates/.claude/hooks/`의 셸 훅 다섯 개(`block-dangerous-git.sh`, `block-dangerous-bash.sh`, `protect-files.sh`,
 `pre-commit-check.sh`, `auto-format.sh`)는 Claude Code가 stdin으로 넘기는 JSON payload를
 파싱해서 판단합니다. jq가 있으면 정확히 파싱하고, **없으면 `"key": "value"` 문자열만 잘라내는
 grep 폴백**으로 같은 검사에 넘깁니다.

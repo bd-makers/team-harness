@@ -1,0 +1,25 @@
+{
+  "user": "chad",
+  "task": "guide-docs-current",
+  "created": "2026-11-23",
+  "firstActivatedAt": "2026-11-23T06:25:29.436Z",
+  "baseSha": "68941d655a1515cff6898e7c0168d2b936e38a7f",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "model": null,
+      "scope": "worktree",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "68941d655a1515cff6898e7c0168d2b936e38a7f",
+      "tip": "68941d655a1515cff6898e7c0168d2b936e38a7f",
+      "at": "2026-11-23T06:34:22.697Z",
+      "exitCode": 0,
+      "outputBytes": 1261
+    }
+  ]
+}

@@ -260,7 +260,7 @@ flowchart LR
         <li>어떤 세션·에이전트도 같은 워킹트리에 <strong>동시에</strong> 쓰지 않는다(D4). OpenCode·Gemini는 멤버에서 제외됐다(D7).</li>
         <li>Cursor는 보조 에디터로 <code>.cursor/rules/*.mdc</code>를 자동 적용받는다.</li>
         <li>리뷰 기록이 없는 리뷰는 "안 한 것"이다 — <code>harness-team review</code>가 성공한 실행만 <code>meta.reviews[]</code>와 artifact <code>## Reviews</code>에 기록한다. 기본 리뷰는 P1/P2/P3 + <code>file:line</code>, 루브릭은 framing일 때만.</li>
-        <li>PreToolUse 훅: protect-files · block-dangerous-git · boundary-checkpoint · pre-commit-check.</li>
+        <li>PreToolUse 훅: protect-files · block-dangerous-git · block-dangerous-bash · boundary-checkpoint · pre-commit-check.</li>
       </ul>
     </details>
   </section>
