@@ -3,6 +3,7 @@
 ## Open
 
 ## Completed
+- ✅ guide-docs-current
 - ✅ path-cli-run-failure
 - ✅ task-guide-closure-flow
 - ✅ adopt-reviews-closed
