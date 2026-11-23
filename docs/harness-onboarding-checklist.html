@@ -199,7 +199,7 @@ const PHASES = [
   note:'온보딩의 목표는 읽기가 아니라 여기입니다. 실제 작업 대신 아주 작은 변경 하나(오타 수정 수준)로 한 바퀴를 돌려 보세요.',
   items:[
   { t:'task 생성', cmd:'/harness-task onboarding-<내이름>',
-    ok:'<code>created:</code> 출력 · <code>.harness/active.json</code>이 이 task를 가리킨다 · 다이어그램 옵트인 질문은 온보딩에서는 건너뛴다',
+    ok:'<code>created:</code> 출력 · <code>.harness/active.json</code>이 이 task를 가리킨다 · 생성 질문(다이어그램·게이트 빼기)에서 다이어그램은 건너뛴다. 게이트를 남기면 plan 첫 단계 <code>[사람] spec 검토 승인</code>은 spec을 쓴 뒤 당신이 승인해야 켜지고, 그 전에는 task 문서 밖을 고치지 않는다 — 온보딩이면 <b>게이트 빼기</b>를 골라도 된다',
     fail:'<code>docs/&lt;member&gt;/&lt;name&gt;/</code>에 task 문서 4종(spec·plan·handoff·artifact)과 <code>meta.json</code>(기계 상태 — 손으로 고치지 않음)이 생겼는지 확인하세요.' },
   { t:'spec.md — Ambiguity 자가진단 + Ontology를 직접 쓴다',
     cmd:'docs/<member>/onboarding-<내이름>/onboarding-<내이름>-spec.md',
@@ -210,7 +210,7 @@ const PHASES = [
     cmd:'{ "version": 1, "tests": "skip", "review": "optional", "verify": "optional" }',
     ok:'온보딩용이므로 가장 느슨하게 선언해도 됩니다',
     fail:'기본값은 <code>tests: required</code>라, 소스를 고쳤는데 테스트 파일을 안 고치면 <code>done</code>이 막힙니다.' },
-  { t:'plan.md — 단계 2~3개 작성', cmd:'- [ ] 단계 1\n- [ ] 단계 2',
+  { t:'plan.md — 단계 2~3개 작성', cmd:'- [ ] 단계 1\n- [ ] 단계 2\n- [ ] ship 완료',
     ok:'줄머리 체크박스로 작성',
     fail:'<b>하지 않은 단계를 미리 <code>- [x]</code>로 켜지 않습니다.</b> 이 체크박스는 산문이 아니라 <code>done</code> 가드와 SessionStart 재개 판정이 읽는 기계 입력입니다.',
     gate:true },

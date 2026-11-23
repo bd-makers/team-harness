@@ -169,7 +169,7 @@
 
   <section id="flow">
     <div class="section-title">1 · 플로우차트 — task의 전체 여정</div>
-    <div class="section-sub">세션 시작 → task 활성화 → spec 게이트(R1·Ambiguity) → 구현 루프 → 리뷰(R3) → ship(pr-check) → PR 머지 → done → summary. 사이클의 S0–S8·R1–R3 표기는 <code>docs/harness-cycle.md</code>가 정본이다.</div>
+    <div class="section-sub">세션 시작 → task 활성화 → spec 게이트(R1·Ambiguity) → 구현 루프 → 리뷰(R3) → ship(pr-check) → done → PR 머지(= 종결). 사이클의 S0–S8·R1–R3 표기는 <code>docs/harness-cycle.md</code>가 정본이다.</div>
     <div class="diagram-wrap">
       <div class="mermaid">
 flowchart TD
@@ -301,12 +301,12 @@ sequenceDiagram
     HT-->>CC: meta.reviews[] · artifact 마커 기록
     CC->>CC: 발견 재현·판별 → 단일 스레드 반영
     CC->>HT: ship 8단계 — harness-team pr-check
+    CC->>U: 준비 완료 보고 (push·PR은 별도 지시)
     CC->>CC: plan 마지막 단계 ship 완료 체크
     CC->>U: AskUserQuestion — 종결(done) 확인
     U-->>CC: 완료
     CC->>HT: harness-team done
     HT-->>CC: 가드 통과 → active.json = null (추적 파일 무변경)
-    CC->>U: 준비 완료 보고 (push·PR은 별도 지시)
     U-->>CC: commit · push · PR 지시
     CC->>HK: git commit · git push
     HK->>HT: pre-push — pr-check (plan 전부 체크면 done 가드도)

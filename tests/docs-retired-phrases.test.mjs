@@ -129,10 +129,24 @@ test('lines that shipped in past sweeps are caught', async () => {
     '<text x="500" y="724" text-anchor="middle">머지 후 · summary · 종결 커밋</text>',
     "[990,'done 가드','머지 후 종결 직전','#4df0aa']",
     '<p>통과 뒤 <strong>머지 후 종결 순서 — 커밋 하나</strong>(0.44.0)</p>',
+    '세션 시작 → task 활성화 → spec 게이트(R1·Ambiguity) → 구현 루프 → 리뷰(R3) → ship(pr-check) → PR 머지 → done → summary.',
+    "push('<code>/harness-task done</code>','<b>머지 후 기본 브랜치에서</b> plan 마지막 단계를 체크하고 실행', 'gate');",
   ];
   for (const line of incidents) {
     const problems = await withTree({ 'docs/x.html': line }, (base) => findRetired(base));
     assert.ok(problems.length > 0, line);
+  }
+});
+
+test('the done-after-merge entry leaves the post-merge wiki and ledger batch alone', async () => {
+  const lines = [
+    '위키 컴파일은 선택이고 머지 후 기본 브랜치에서 한다(PR 출처가 머지 커밋에 있다).',
+    '옛 절차(머지 뒤 기본 브랜치에서 `done` + 종결 커밋)를 그대로 해도 오류가 아니다.',
+    '머지 뒤에 할 일(종결 커밋·종결 MR)이 없다.',
+  ];
+  for (const line of lines) {
+    const problems = await withTree({ 'docs/x.html': line }, (base) => findRetired(base));
+    assert.deepEqual(problems, [], line);
   }
 });
 

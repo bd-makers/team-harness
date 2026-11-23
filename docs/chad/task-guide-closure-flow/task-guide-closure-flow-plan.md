@@ -8,7 +8,7 @@
 - [x] 다른 현행 문서 정정 — cheatsheet·kickoff-deck·onboarding-checklist·operations-playground·rubric-guide·workflow-diagrams·workflow-schematics
 - [x] `tests/docs-retired-phrases.json` 등록 + 사고 줄 테스트 — 검증: 옛 줄을 넣으면 실패하는가
 - [x] `npm run docs:check` · `tests/docs-*.test.mjs` · `npm test` 통과
-- [ ] 리뷰 실행 + artifact `## Reviews` 판별 기록
+- [x] 리뷰 실행 + artifact `## Reviews` 판별 기록
 - [ ] ship 완료
 
 ## Ontology 변경 로그
