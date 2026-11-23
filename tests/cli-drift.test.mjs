@@ -164,6 +164,13 @@ test('cli-drift: an unrunnable CLI is unknown, not legacy', async () => {
     await writeFile(shim, '#!/bin/sh\nexit 1\n');
     assert.deepEqual(await readPathCliVersion(env), { state: 'failed', code: 1, detail: null });
 
+    // The old CLI's reply counts only as its own stderr line — not on stdout, and
+    // not as a prefix of some other wrapper's message.
+    await writeFile(shim, '#!/bin/sh\necho "Unknown command: --version" \necho "wrapper: broken" >&2\nexit 1\n');
+    assert.equal((await readPathCliVersion(env)).state, 'failed');
+    await writeFile(shim, '#!/bin/sh\necho "Unknown command: --version-helper" >&2\nexit 1\n');
+    assert.equal((await readPathCliVersion(env)).state, 'failed');
+
     // Exited 0 but said nothing version-shaped: also not a statement about age.
     await writeFile(shim, '#!/bin/sh\necho "harness-team"\n');
     assert.deepEqual(await readPathCliVersion(env), { state: 'unknown' });
@@ -313,6 +320,10 @@ test('cli-drift: doctor reports drift in a plugin-dev repo, with a remedy', asyn
     assert.ok(
       failed.next_actions.some(action => action.startsWith('npm i -g')),
       `a run failure must carry the reinstall remedy — got ${JSON.stringify(failed.next_actions)}`,
+    );
+    assert.ok(
+      !failed.next_actions.some(action => action.includes(' pull')),
+      `a run failure must not also prescribe git pull — got ${JSON.stringify(failed.next_actions)}`,
     );
   } finally {
     await rm(binDir, { recursive: true, force: true });

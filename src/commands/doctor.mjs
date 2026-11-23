@@ -121,7 +121,9 @@ export const HOOK_CLI_PLUGIN_NAME = 'harness-aijient-team';
 // the CLI also exits 1, and treating that as "old" sent the 2026-11-23 maintainer
 // to `git pull` a clone that was already current.
 export const VERSION_FLAG_SINCE = '0.15.1';
-const LEGACY_VERSION_REPLY = /Unknown command:\s*--version/;
+// Anchored to a whole stderr line: the old CLI printed it via console.error, and a
+// looser match would let a wrapper's unrelated output pass for the old CLI.
+const LEGACY_VERSION_REPLY = /^Unknown command: --version$/m;
 
 function firstOutputLine(...texts) {
   for (const text of texts) {
@@ -199,7 +201,7 @@ export async function readPathCliVersion(env = process.env) {
   } catch (error) {
     if (error?.code === 'ENOENT' || error?.code === 'EACCES') return { state: 'missing' };
     if (error?.killed || typeof error?.code !== 'number') return { state: 'unknown' };
-    if (LEGACY_VERSION_REPLY.test(`${error.stderr ?? ''}\n${error.stdout ?? ''}`)) return { state: 'legacy' };
+    if (LEGACY_VERSION_REPLY.test(String(error.stderr ?? ''))) return { state: 'legacy' };
     return { state: 'failed', code: error.code, detail: firstOutputLine(error.stderr, error.stdout) };
   }
 }
@@ -249,7 +251,7 @@ export function cliDriftWarning({ pathCli, installedVersion, installCommand }) {
   // no claim about versions.
   if (pathCli.state === 'failed') {
     const cause = pathCli.detail ? `exit ${pathCli.code}: ${pathCli.detail}` : `exit ${pathCli.code}, 출력 없음`;
-    return `PATH의 harness-team이 실행되지 않음 (${cause}) — 설치된 플러그인은 ${installedVersion}; 이 CLI를 부르는 훅(SessionStart·post-commit 등)도 실패한다. 활성 Node에서 ${installCommand}로 다시 설치·연결하라 (mise·nvm·asdf 등 버전 관리자 shim이면 Node 전환 뒤 전역 패키지가 이전 Node에 남았을 수 있다)`;
+    return `PATH의 harness-team이 실행되지 않음 (${cause}) — 설치된 플러그인은 ${installedVersion}; 같은 CLI를 부르는 훅(SessionStart·post-commit 등)도 같은 이유로 실패하고 있을 수 있다. 활성 Node에서 ${installCommand}로 다시 설치·연결하라 (mise·nvm·asdf 등 버전 관리자 shim이면 Node 전환 뒤 전역 패키지가 이전 Node에 남았을 수 있다)`;
   }
   const remedy = `전역 CLI 출처를 갱신하라 (marketplace clone: git pull 또는 /plugin marketplace update), 필요하면 ${installCommand}로 재링크`;
   if (pathCli.state === 'legacy') {

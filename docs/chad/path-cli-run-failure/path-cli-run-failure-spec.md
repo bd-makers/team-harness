@@ -47,8 +47,8 @@
 
 ## 설계 / 접근
 
-1. **옛 CLI는 양성 표지로만 판정한다.** `--version` 호출이 0 아닌 exit로 끝나고 stderr(없으면 stdout)에
-   `Unknown command: --version`이 있을 때만 `legacy`. 0.15.1 이전 모든 릴리스가 정확히 이 줄을 낸다.
+1. **옛 CLI는 양성 표지로만 판정한다.** `--version` 호출이 0 아닌 exit로 끝나고 stderr에
+   `Unknown command: --version`이 있을 때만 `legacy`. 0.15.1 이전 모든 릴리스가 정확히 이 줄을 stderr로 낸다 — stderr의 한 줄 전체로만 대조한다(stdout·접두 일치 불인정).
 2. **그 밖의 0 아닌 exit는 `failed`** — `{ state: 'failed', code, detail }`, `detail`은 출력의 첫 비어 있지 않은 줄
    (없으면 `출력 없음`), 길이 제한. 127(래퍼가 대상 실행 파일을 못 찾음)도 같은 부류라 `failed`로 접는다 —
    "버전을 모른다"가 아니라 "실행되지 않는다"는 사실은 확실하고, 메시지가 버전을 단정하지 않는다.
@@ -56,7 +56,7 @@
    검사가 skip되어 이것이 유일한 신호다. 처방은 `hookCliInstallCommand`(활성 Node에서 `npm i -g "<clone>"`)와
    버전 관리자 shim(mise·nvm·asdf) 언급.
 4. **JSON `next_actions`도 상태별로** — `failed`면 `npm i -g …`, 버전 불일치·`legacy`면 기존 `git -C <clone> pull`.
-   `checkCliDrift`가 `{ state, warning }`을 돌려준다.
+   `checkCliDrift`가 `{ warning, action }`(또는 null)을 돌려준다.
 5. `missing`·`unknown`(타임아웃·신호·숫자 아닌 오류)·`version` 판정은 그대로.
 
 ### 기각한 대안

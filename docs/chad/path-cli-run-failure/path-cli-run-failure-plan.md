@@ -9,8 +9,8 @@ doctor가 PATH CLI 실행 실패를 옛 CLI로 오진하지 않고, 원인 첫 �
 - [x] `readPathCliVersion`·`cliDriftWarning`·`checkCliDrift`·next_actions 수정 — 검증: 새 테스트 통과
 - [x] 같은 사실을 적은 현행 문서 정합 (`MAINTAINING.md`·`docs/prerequisites.md` 등)
 - [x] `npm test` · `npm run docs:check` 통과
-- [ ] 리뷰 실행 + artifact `## Reviews` 판별 기록
-- [ ] ship 완료
+- [x] 리뷰 실행 + artifact `## Reviews` 판별 기록
+- [x] ship 완료
 
 ## Ontology 변경 로그
 *개념이 새로 정의되거나 의미가 바뀌면 한 줄로 기록. spec.md의 Ontology 섹션을 갱신할 트리거가 된다.*
