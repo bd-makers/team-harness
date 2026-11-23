@@ -272,7 +272,10 @@ grep -rn 'origin/main' commands/ skills/ templates/
 `release`가 clone의 카탈로그만 갱신하는 것은 의도된 동작입니다 — 남의 checkout을 대신 pull 하는 것은
 이 명령의 일이 아닙니다. 대신 clone이 뒤처져 있으면 release가 `⚠️`와 `next:` 힌트로 알리고,
 `doctor`의 `global CLI version drift` 검사가 PATH CLI 버전과 `installed_plugins.json`의 설치 버전이
-다를 때 경고합니다. 이 검사는 **plugin-dev 저장소에서도 실행됩니다** — 다른 소비자 전용 검사와 달리,
+다를 때 경고합니다. PATH CLI가 **실행되지 않으면**(0 아닌 exit — 예: mise·nvm·asdf shim이 Node 전환 뒤
+`harness-team is not provided by the active node@…`를 내는 경우) 옛 버전이라 단정하지 않고 출력 첫 줄과 함께
+활성 Node에서 `npm i -g "<clone>"`로 다시 설치·연결하라고 처방합니다. "`--version` 미지원(0.15.1 이전)"은
+옛 CLI가 실제로 `Unknown command: --version`을 답했을 때만 나옵니다. 이 검사는 **plugin-dev 저장소에서도 실행됩니다** — 다른 소비자 전용 검사와 달리,
 전역 CLI와 소스 트리가 가장 크게 벌어지는 곳이 메인테이너 머신이기 때문입니다.
 
 > **왜 cache가 아니라 clone에 링크하나:** cache 경로는 버전별(`.../0.15.1/`)이라 심볼릭 링크가 그 버전에

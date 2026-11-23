@@ -116,7 +116,9 @@ git은 **하드 요구사항이 아닙니다.** 없어도 CLI는 실행되지만
 
 훅이 실제로 도는지는 별개입니다 — `SessionStart`·post-commit·PreToolUse boundary checkpoint 훅은 PATH의
 `harness-team`을 셸에서 호출하므로, 전역 CLI가 링크되어 있지 않으면 **조용히 no-op**입니다. `harness-team doctor`가
-이 상태를 경고로 잡아 줍니다.
+이 상태를 경고로 잡아 줍니다. mise·nvm·asdf 같은 Node 버전 관리자를 쓰면 전역 패키지는 **설치할 때의 Node**에
+묶이므로, 활성 Node를 바꾼 뒤 shim이 `harness-team is not provided by the active node@…` 같은 오류로 실패할 수
+있습니다 — doctor는 이를 "실행되지 않음"과 그 첫 줄로 보고하며, 처방은 활성 Node에서 `npm i -g`를 다시 하는 것입니다.
 
 ### Codex — `$` 스킬 호출
 

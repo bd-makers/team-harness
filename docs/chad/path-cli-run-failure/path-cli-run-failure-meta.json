@@ -1,0 +1,12 @@
+{
+  "user": "chad",
+  "task": "path-cli-run-failure",
+  "created": "2026-11-23",
+  "firstActivatedAt": "2026-11-23T02:22:08.338Z",
+  "baseSha": "6d9a218e3477c85fbc47881c4e136b2f1a33423f",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": []
+}

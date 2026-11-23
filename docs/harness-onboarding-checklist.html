@@ -169,7 +169,7 @@ const PHASES = [
   { t:'전역 harness-team CLI 링크', cmd:'npm i -g "${CLAUDE_PLUGINS_ROOT:-$HOME/.claude/plugins}/marketplaces/harness-aijient-team-marketplace"',
     ok:'터미널과 훅이 부르는 CLI가 PATH에 생김', fail:'이 패키지는 <b>npm 공개 저장소에 배포되지 않습니다.</b> 전역 CLI는 위처럼 <code>/plugin install</code>이 만든 로컬 마켓플레이스 클론을 링크해서 얻습니다.' },
   { t:'버전 드리프트 확인', cmd:'harness-team --version',
-    ok:'버전이 출력된다', fail:'릴리스는 슬래시 커맨드 캐시만 새 버전으로 만들고, PATH의 CLI는 마켓플레이스 클론에 묶여 옛 버전으로 남을 수 있습니다. 다음 항목의 doctor가 <code>전역 CLI 버전 불일치</code> 경고와 <code>harness version: project applied … · CLI … · plugin …</code> 줄로 이를 보여 줍니다 — 처방은 <code>/plugin marketplace update</code>(또는 마켓플레이스 클론 <code>git pull</code>) 뒤 재링크입니다.' },
+    ok:'버전이 출력된다', fail:'릴리스는 슬래시 커맨드 캐시만 새 버전으로 만들고, PATH의 CLI는 마켓플레이스 클론에 묶여 옛 버전으로 남을 수 있습니다. 다음 항목의 doctor가 <code>전역 CLI 버전 불일치</code> 경고와 <code>harness version: project applied … · CLI … · plugin …</code> 줄로 이를 보여 줍니다 — 처방은 <code>/plugin marketplace update</code>(또는 마켓플레이스 클론 <code>git pull</code>) 뒤 재링크입니다. 버전 대신 <code>mise ERROR … not provided by the active node@…</code> 같은 오류가 나오면 옛 버전이 아니라 CLI가 <b>실행되지 않는</b> 상태입니다 — Node 버전 관리자가 활성 Node를 바꿔 전역 링크가 이전 Node에 남은 것이니, 활성 Node에서 위 <code>npm i -g</code>를 다시 하세요.' },
   { t:'git 훅 설치 — clone으로는 따라오지 않는다', cmd:'cd <내-프로젝트>\nharness-team sync',
     ok:'post-commit(세션 진입점 갱신)·pre-push(<code>pr-check</code>) 훅이 <code>.git/hooks</code>에 설치된다',
     fail:'건너뛰면 Phase 3의 커밋에서 세션 진입점이 갱신되지 않고, push 전 <code>pr-check</code>도 돌지 않습니다. doctor는 pre-push 훅이 없으면 경고합니다. <code>sync</code>는 <code>.cursor/rules</code> 미러도 다시 만들므로 diff가 생기면 확인하세요.' },
