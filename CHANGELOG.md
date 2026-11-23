@@ -9,9 +9,11 @@
 
 ## [Unreleased]
 
+## [0.58.3] - 2026-11-23
+
 ### Fixed
 
-- **`doctor`가 PATH CLI의 실행 실패를 옛 CLI로 오진하던 것을 고친다** (task `path-cli-run-failure`). `global CLI version drift` 검사는 `harness-team --version`이 0 아닌 exit로 끝나면 모두 "`--version` 미지원(0.15.1 이전) — 구버전 CLI로 실행 중"이라 보고하고 clone `git pull`을 처방했다. mise·nvm·asdf shim이 Node 전환 뒤 `harness-team is not provided by the active node@…`로 실패하는 경우도 여기에 걸려 진단이 틀린 방향을 가리켰다. 이제 옛 CLI는 0.15.1 이전 전 릴리스가 내던 `Unknown command: --version` 응답으로만 판정하고, 그 밖의 0 아닌 exit(127 포함)는 "실행되지 않음"으로 출력 첫 줄을 싣고 활성 Node에서 `npm i -g "<clone>"`로 다시 설치·연결하라고 처방한다(`--json` `next_actions`도 같은 명령). plugin-dev 모드에서도 경고한다.
+- **`doctor`가 PATH CLI의 실행 실패를 옛 CLI로 오진하던 것을 고친다** (task `path-cli-run-failure`, #201). `global CLI version drift` 검사는 `harness-team --version`이 0 아닌 exit로 끝나면 모두 "`--version` 미지원(0.15.1 이전) — 구버전 CLI로 실행 중"이라 보고하고 clone `git pull`을 처방했다. mise·nvm·asdf shim이 Node 전환 뒤 `harness-team is not provided by the active node@…`로 실패하는 경우도 여기에 걸려 진단이 틀린 방향을 가리켰다. 이제 옛 CLI는 0.15.1 이전 전 릴리스가 내던 `Unknown command: --version` 응답으로만 판정하고, 그 밖의 0 아닌 exit(127 포함)는 "실행되지 않음"으로 출력 첫 줄을 싣고 활성 Node에서 `npm i -g "<clone>"`로 다시 설치·연결하라고 처방한다(`--json` `next_actions`도 같은 명령). plugin-dev 모드에서도 경고한다.
 
 ## [0.58.2] - 2026-11-23
 

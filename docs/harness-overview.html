@@ -202,7 +202,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.58.2</span>
+      <span class="tag tag-purple">v0.58.3</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -210,6 +210,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.58.3 — doctor가 실행되지 않는 전역 CLI를 옛 CLI로 오진하지 않는다:</strong>
+    <br>
+    <code>0.58.3</code> mise·nvm·asdf shim이 Node 전환 뒤 실행에 실패해도 <code>doctor</code>는 "0.15.1 이전 CLI"라 단정하고 clone <code>git pull</code>을 처방했다. 이제 옛 CLI는 <code>Unknown command: --version</code> 응답으로만 판정하고, 그 밖의 실패는 "실행되지 않음"과 출력 첫 줄, 활성 Node에서 <code>npm i -g "&lt;clone&gt;"</code> 처방을 낸다.
+    <br><br>
     <strong>🆕 0.58.2 — 모든 현행 문서가 같은 종결 흐름을 가르친다:</strong>
     <br>
     <code>0.58.2</code> task 가이드를 비롯한 현행 문서 9개가 아직 "머지 뒤 기본 브랜치에서 <code>done</code> + 종결 커밋"을 가르치고 있던 것을 고쳤다. 이제 모두 <strong>ship → "ship 완료" 체크 → <code>done</code> → 커밋 → push → 머지 = 종결</strong>이다. 옛 문구는 회귀 테스트에 등록했다. <strong>팀 온보딩 덱</strong>(<code>docs/team-harness-explainer.html</code>)도 새로 실었다. CLI·명령·템플릿 동작은 그대로다.
@@ -3020,7 +3024,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.58.2 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.58.3 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,
