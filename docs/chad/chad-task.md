@@ -3,10 +3,12 @@
 ## Open
 
 ## Completed
+- ✅ task-guide-closure-flow
 - ✅ adopt-reviews-closed
 - ✅ ledger-only-pr-check
 - ✅ pr-check-fork-main
 - ✅ sim-sc6-retired-phrases
+- ✅ team-harness-explainer-deck
 - ✅ diagram-svg
 - ✅ diagram-views
 - ✅ done-derive
