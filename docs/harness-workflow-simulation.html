@@ -1156,7 +1156,7 @@ login-bug
       </div>
       <div class="card card-accent-green">
         <h3>harness-team summary [--write|--check] <span style="font-size:0.68rem;color:var(--muted);font-weight:400">0.16.0</span></h3>
-        <p>task 디렉터리를 스캔해 원장(<code>docs/task_summary.md</code>·<code>docs/&lt;user&gt;/&lt;user&gt;-task.md</code>)을 렌더한다. 인자 없이 실행하면 stdout으로만 낸다. <code>--write</code>는 기본 브랜치에서, 또는 HEAD가 <code>origin/HEAD</code>의 기본 브랜치와 <strong>정확히 같은 커밋</strong>일 때만 허용된다(0.30.0 — 커밋 기준 경로 덕분에 기본 브랜치를 체크아웃할 수 없는 워크트리에서도 통과한다). 피처 브랜치가 ahead·behind면 fail-closed 거부 — 피처 브랜치에서 원장을 쓰면 병렬 충돌이 돌아온다. 머지 후 종결 커밋 하나에 함께 담는다(S4).</p>
+        <p>task 디렉터리를 스캔해 원장(<code>docs/task_summary.md</code>·<code>docs/&lt;user&gt;/&lt;user&gt;-task.md</code>)을 렌더한다. 인자 없이 실행하면 stdout으로만 낸다. <code>--write</code>는 기본 브랜치에서, 또는 HEAD가 <code>origin/HEAD</code>의 기본 브랜치와 <strong>정확히 같은 커밋</strong>일 때만 허용된다(0.30.0 — 커밋 기준 경로 덕분에 기본 브랜치를 체크아웃할 수 없는 워크트리에서도 통과한다). 피처 브랜치가 ahead·behind면 fail-closed 거부 — 피처 브랜치에서 원장을 쓰면 병렬 충돌이 돌아온다. 종결 절차가 아니라 머지된 task를 필요할 때 묶어 갱신하는 커밋이다(0.58.0 — 머지가 곧 종결).</p>
       </div>
       <div class="card card-accent-blue">
         <h3>harness-team stack <span style="font-size:0.68rem;color:var(--muted);font-weight:400">0.40.0</span></h3>

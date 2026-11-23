@@ -127,7 +127,7 @@
         <tr><td class="k"><code>/harness-interview</code></td><td class="d">R1 원천 검토 + 선행 채점 (validator)</td></tr>
         <tr><td class="k"><code>/harness-review [engine]</code></td><td class="d">read-only 리뷰 → <code>meta.reviews[]</code> 기록. 엔진 생략 시 codex → claude</td></tr>
         <tr><td class="k"><code>/harness-ship</code></td><td class="d"><em>준비 완료 보고에서 멈춘다</em>(<code>pr-check</code> 통과 전제) — PR·<code>done</code> 아님</td></tr>
-        <tr><td class="k"><code>/harness-task done</code></td><td class="d"><b>머지 후 기본 브랜치에서</b> 가드 통과 시 종결</td></tr>
+        <tr><td class="k"><code>/harness-task done</code></td><td class="d"><b>ship 뒤 브랜치에서, PR 전에</b> 가드만 검증(추적 파일 안 씀) — 머지가 곧 종결</td></tr>
         <tr><td class="k"><code>harness-team doctor</code></td><td class="d">막히면 제일 먼저. exit 1이면 작업을 시작하지 않는다</td></tr>
       </table>
     </div>
@@ -230,7 +230,7 @@
   </div>
 
   <footer>
-    <b>종결</b> 머지 후 기본 브랜치: 체크 → <code>done</code> → (<code>/harness-wiki</code>) → <code>summary --write</code> → <b>커밋 하나</b> ·
+    <b>종결</b> 브랜치에서 ship → "ship 완료" 체크 → <code>done</code> → 커밋 → push → PR → <b>머지 = 종결</b>(머지 뒤 커밋 없음, 다시 열기는 <code>reopen</code>) ·
     <b>학습</b>은 artifact.md에 append, 같은 교정이 3회 이상 반복되면 <code>/harness-promote</code>로 <code>.claude/rules</code> 승격(항목은 사람이 고른다) ·
     <b>더 보기</b> docs/index.html · harness-onboarding-checklist.html · harness-operations-playground.html
   </footer>

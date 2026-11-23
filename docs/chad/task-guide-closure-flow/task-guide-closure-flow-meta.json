@@ -1,0 +1,25 @@
+{
+  "user": "chad",
+  "task": "task-guide-closure-flow",
+  "created": "2026-11-23",
+  "firstActivatedAt": "2026-11-23T01:14:03.148Z",
+  "baseSha": "62aeacad051fc622f528b2e5ccc2cb24adbf00bd",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "model": null,
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "62aeacad051fc622f528b2e5ccc2cb24adbf00bd",
+      "tip": "820004ba7acf035a4c4e78653b74d3bec6af28a9",
+      "at": "2026-11-23T01:37:05.707Z",
+      "exitCode": 0,
+      "outputBytes": 3366
+    }
+  ]
+}

@@ -10,7 +10,9 @@
       "context check",
       "-context.md"
     ],
-    "history": ["0.54.0 TCC 폐지"],
+    "history": [
+      "0.54.0 TCC 폐지"
+    ],
     "replacement": "plan의 첫 미완 단계(SessionStart가 주입한다). 카드와 context 명령은 없다"
   },
   {
@@ -28,5 +30,26 @@
       "훅이 handoff 갱신"
     ],
     "replacement": "훅은 gitignore된 로컬 <user>-handoff.md만 갱신하고 커밋 직후 트리는 깨끗하다. <name>-handoff.md는 사람이 쓰는 선택 메모다"
+  },
+  {
+    "id": "done-after-merge",
+    "removed": "0.58.0에서 종결이 계산값이 됐다 — done은 ship 뒤 같은 브랜치에서 돌리고 머지가 곧 종결이라 머지 뒤 종결 커밋이 없다",
+    "phrases": [
+      "PR이 머지된 뒤 기본 브랜치에서",
+      "PR 머지 후 기본 브랜치에서",
+      "종결 커밋 하나",
+      "종결 커밋 1개",
+      "머지 후 종결 순서",
+      "PR 머지 뒤 done",
+      "머지 후 done",
+      "머지 후 · done",
+      "머지 후 · summary",
+      "머지 후 종결 직전",
+      "머지 후 기본 브랜치에서 가드",
+      "머지 후 기본 브랜치에서 plan",
+      "머지 후 기본 브랜치:",
+      "PR 머지 → done"
+    ],
+    "replacement": "ship 뒤 같은 브랜치에서 plan 마지막 단계 \"ship 완료\" 체크 → done(가드만, 추적 파일 안 씀) → 커밋 → push → PR → 머지 = 종결. 머지 뒤 종결 커밋은 없다"
   }
 ]

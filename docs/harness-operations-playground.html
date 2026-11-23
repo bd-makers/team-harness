@@ -340,7 +340,7 @@ function buildSteps(){
   push(`<code>/harness-task ${n}</code>`,
     state.taskState==='new'
       ? '생성 → <code>created:</code> · <code>.harness/active.json</code>이 이 task를 가리킨다'
-      : '열린 task면 <code>activated:</code>로 전환, done task면 <code>reopened:</code>(status open · 새 판정 창). 원장에 done인데 폴더가 지워진 이름은 거부된다');
+      : '열린 task면 <code>activated:</code>로 전환, 기본 브랜치와 작업 트리 모두에서 종결된 task면 <code>reopened:</code>(plan에 <code>- [ ] 재개: …</code> · 새 판정 창, 사유는 <code>reopen --reason</code>). 원장에 done인데 폴더가 지워진 이름은 거부된다');
 
   if(escalates()){
     push('<b>멈추고 escalation 패킷 5항목 제출</b>',
@@ -359,7 +359,7 @@ function buildSteps(){
     push('<code>/harness-observe</code>','관측 JSONL 스코어카드 + 트립와이어 2종 — 발화 시 exit 1, read-only');
     push('<code>/harness-retro</code>','정비에서 드러난 교정을 artifact.md에 append', 'opt');
     push('<code>/harness-task done</code>','열어 둔 task를 닫는다 — plan에 미완 <code>- [ ]</code>가 남으면 막힌다', 'gate');
-    push('기본 브랜치에서 <code>harness-team summary --write</code>','집계 원장 갱신 → 종결 커밋 하나');
+    push('커밋 → push → PR/MR → 머지','머지가 곧 종결 — 머지 뒤 종결 커밋은 없다. 원장은 필요할 때 기본 브랜치에서 <code>summary --write</code>로 묶어 갱신한다', 'opt');
     return S;
   }
 
@@ -398,13 +398,12 @@ function buildSteps(){
         + '<code>harness-team review</code>가 성공한 실행만 <code>meta.reviews[]</code>·artifact <code>## Reviews</code>에 기록 — 판별·조치는 직접 쓴다');
   }
 
+  push('<code>/harness-retro</code>','artifact.md에 학습·교정 append — 팀 학습의 SSOT는 artifact.md, 개인 메모리가 아니다. ship 문서와 함께 <code>done</code> 전에 커밋한다(미커밋 가드)', 'opt');
   push('<code>/harness-ship</code>','spec·plan·artifact를 코드 현실과 맞추고 8단계에서 <code>harness-team pr-check</code>(D11 유일한 강제)를 통과한 뒤 <b>준비 완료를 보고</b> — PR/MR을 만들지 않고, <code>done</code>을 대체·실행하지도 않는다. 7단계(옵트인)의 <code>--framing shipcheck</code>가 <code>-shipcheck</code> 기록을 남긴다 (verify 증거)');
-  push('push → PR/MR → 머지','사용자 지시로 별도 진행 — push 때 pre-push 훅이 <code>pr-check</code>를 다시 돌린다 (<code>git push</code>·<code>gh pr create/merge</code>는 settings의 <code>ask</code> 목록)', 'opt');
-  push('<code>/harness-retro</code>','artifact.md에 학습·교정 append — 팀 학습의 SSOT는 artifact.md, 개인 메모리가 아니다', 'opt');
-  push('<code>/harness-task done</code>','<b>머지 후 기본 브랜치에서</b> plan 마지막 단계를 체크하고 실행 — 가드가 판정 창 안의 증거를 결정론적으로 검사 → meta status <code>done</code>. 체크박스만 켠 plan 변경은 미커밋으로 세지 않는다', 'gate');
-  push('<code>/harness-wiki &lt;user&gt;/&lt;task&gt;</code>','위키 컴파일 — done 다음, summary 전에 돌려 같은 종결 커밋에 담는다', 'opt');
-  push('기본 브랜치에서 <code>harness-team summary --write</code> → 종결 커밋 하나',
-    `plan·meta·handoff·원장을 <code>chore(task): &lt;name&gt; 종결</code> 커밋 하나에. <code>task</code>/<code>done</code>은 집계 파일을 건드리지 않는다${state.isolation==='worktree'?' — 브랜치를 병렬로 둬도 충돌하지 않는 이유':''}`);
+  push('<code>/harness-task done</code>','ship 뒤 <b>같은 브랜치에서, PR 전에</b> plan 마지막 단계("ship 완료")를 체크하고 실행 — 가드가 판정 창 안의 증거를 결정론적으로 검사할 뿐 추적 파일은 쓰지 않는다. 체크박스만 켠 plan 변경은 미커밋으로 세지 않는다', 'gate');
+  push('커밋 → push → PR/MR → 머지 = 종결','사용자 지시로 별도 진행 — push 때 pre-push 훅이 <code>pr-check</code>를 다시 돌리고 plan이 전부 체크된 task면 <code>done</code> 가드도 돈다 (<code>git push</code>·<code>gh pr create/merge</code>는 settings의 <code>ask</code> 목록). 머지 뒤 종결 커밋은 없다', 'opt');
+  push('(선택) 기본 브랜치에서 <code>/harness-wiki</code> · <code>harness-team summary --write</code>',
+    `위키 컴파일과 원장 갱신은 종결 절차가 아니다 — 필요할 때 머지된 여러 task를 묶어 한 커밋에. <code>task</code>/<code>done</code>은 집계 파일을 건드리지 않는다${state.isolation==='worktree'?' — 브랜치를 병렬로 둬도 충돌하지 않는 이유':''}`, 'opt');
   push('<code>/harness-promote</code>','같은 교정이 3회 이상 반복되고 주관 없이 검사 가능할 때만. 사용자가 항목을 고른다 — LLM 자기 승격 경로는 없다', 'opt');
   return S;
 }
@@ -466,7 +465,7 @@ function buildGuard(){
   // plan checkbox
   if(state.diagram && state.taskState==='new')
     G.push(['wa','plan의 다이어그램 체크박스','열어 두면 <code>done</code>이 막힙니다 — 못 하면 지우지 말고 <code>diagram record --skipped</code>로 닫으세요']);
-  G.push(['wa','plan.md 미완 <code>- [ ]</code> · 빈 plan/artifact','하나라도 남으면 <code>done</code>이 막힙니다. 마지막 단계는 머지 후 기본 브랜치에서 켭니다']);
+  G.push(['wa','plan.md 미완 <code>- [ ]</code> · 빈 plan/artifact','하나라도 남으면 <code>done</code>이 막힙니다. 마지막 단계("ship 완료")는 ship 뒤 같은 브랜치에서, PR 전에 켭니다']);
   if(state.isolation==='worktree')
     G.push(['wa','D5 — 격리 브랜치·worktree','쓰기 대상이 겹치지 않아 허용. 단 <b>한 세션 안에서는</b> D4(단일 스레드)가 그대로 적용됩니다']);
   return G;
@@ -535,7 +534,7 @@ function updatePrompt(){
   else L.push('- 같은 워킹트리·브랜치 안에서 쓰기는 단일 스레드다(D4). 병렬 쓰기 에이전트를 두지 않는다.');
   if(state.sessions==='multi') L.push('- 세션을 넘기기 전에 plan 체크박스를 갱신한다. 다음 세션이 첫 미완 단계를 주입받는다.');
   L.push('- `/harness-ship`은 `harness-team pr-check`를 통과한 뒤 준비 완료 보고에서 멈춘다. PR/MR 생성과 push는 내 지시를 받고 한다.');
-  L.push('- done은 PR이 머지된 뒤 기본 브랜치에서 한다: 마지막 단계 체크 → `harness-team done` → (선택) `/harness-wiki` → `harness-team summary --write` → 종결 커밋 하나. `task`/`done`은 집계 파일을 건드리지 않는다.');
+  L.push('- done은 ship 뒤 같은 브랜치에서, PR 전에 한다: plan 마지막 단계("ship 완료") 체크 → `harness-team done`(가드만, 추적 파일 안 씀) → 커밋 → push → PR. 머지가 곧 종결이라 머지 뒤 커밋은 없다. 원장·위키는 기본 브랜치에서 필요할 때 묶어 갱신한다.');
   L.push('');
   L.push('진행 중 막히면 멈추고 다시 계획해. 동작을 증명하지 않고 완료 처리하지 마.');
 
