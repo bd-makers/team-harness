@@ -102,7 +102,9 @@ const ALWAYS_BAD = [
   [/<((?:[\w-]+:)?script)\b/i, '스크립트 요소'],
   [/<((?:[\w-]+:)?foreignObject)\b/i, 'foreignObject(HTML 섞기)'],
   // 태그 안의 `on<이름>=` 만 — 텍스트 노드의 "online = …" 은 태그 밖이라 맞지 않는다.
-  [new RegExp(`<[a-z][\\w:.-]*(?:${ATTR})*?\\s+(on[a-z]+)\\s*=`, 'i'), '이벤트 핸들러 속성(스크립트)'],
+  // 원문(raw)에서 찾는다: XML 은 속성 이름·따옴표 구조의 문자 참조를 풀지 않으므로, 푼 글에서 찾으면
+  // 값 안 `&#34;` 가 따옴표 구조를 바꿔 진짜 핸들러를 놓치거나 글자를 핸들러로 본다(리뷰 2차 P3-4).
+  [new RegExp(`<[a-z][\\w:.-]*(?:${ATTR})*?\\s+(on[a-z]+)\\s*=`, 'i'), '이벤트 핸들러 속성(스크립트)', 'raw'],
   [/(@import)\b/i, '외부 스타일'],
   // 내부 subset 의 엔티티는 `&x;` 뒤에 참조를 숨길 수 있다 — 다이어그램에 필요 없다.
   [/(<!ENTITY)\b/i, 'DTD 엔티티 선언'],
@@ -173,8 +175,8 @@ export function svgSelfContainmentViolations(text) {
     }
   }
   const decoded = decodeRefs(text);
-  for (const [re, label] of ALWAYS_BAD) {
-    const m = decoded.match(re);
+  for (const [re, label, source] of ALWAYS_BAD) {
+    const m = (source === 'raw' ? text : decoded).match(re);
     if (m) violations.push(`${label}: ${m[1]}`);
   }
   for (const [re, label] of REF_RULES) {

@@ -501,6 +501,9 @@ const SVG_VIOLATIONS = [
   ['> 빠진 leaf', `<svg ${NS}><rect x="1"\n  <circle r="1"/></svg>`, /^태그 구조: 태그로 읽히지 않는 '<': <rect x="1"$/],
   ['> 빠진 leaf(따옴표 없는 값)', `<svg ${NS}><rect x=1<circle r="1"/></svg>`, /^태그 구조: 태그로 읽히지 않는 '<': <rect x=1<circle/],
   ['속성 이름의 따옴표', `<svg ${NS}><rect a"b="1"/></svg>`, /^태그 구조: 태그로 읽히지 않는 '<': <rect a"b="1"\/>/],
+  // 리뷰 2차 P3-4 — 이벤트 핸들러는 원문에서 찾는다. XML 은 속성 이름·따옴표 구조의 문자 참조를 풀지 않는다.
+  ['값 안 &#34; 뒤의 이벤트 속성', `<svg ${NS}><rect aria-label="say &#34;hi&#34;" onclick="x()"/></svg>`, /^이벤트 핸들러 속성\(스크립트\): onclick$/],
+  ['이름 안 문자 참조 뒤의 이벤트 속성', `<svg ${NS}><rect a&#60;1="2" onload="x()"/></svg>`, /^이벤트 핸들러 속성\(스크립트\): onload$/],
 ];
 
 test('svgSelfContainmentViolations: 허용되는 비슷한 것들을 모은 SVG 는 통과한다', () => {
@@ -517,6 +520,8 @@ test('svgSelfContainmentViolations: 태그 구조 검사는 주석·CDATA·PI·�
     + `<g><G><rect aria-label="1 > 0"/></G><text>a &lt; b &#60;g&#62;</text></g></svg>`), []);
   // 루트 안 주석 + `</svg>` 뒤 주석 — 옛 끝 정규식은 첫 `<!--` 부터 끝까지를 한 주석으로 걷어 "닫히지 않음" 으로 잘못 거부했다(리뷰 2차 P3).
   assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><!-- c --><rect/></svg>\n<!-- end -->`), []);
+  // 값 안의 `&#34;` 는 값을 닫지 않는다 — 그 뒤의 `onclick=` 은 속성이 아니라 title 글자다(리뷰 2차 P3-4).
+  assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><rect title="&#34; onclick=&#34;x()"/></svg>`), []);
 });
 
 test('svgSelfContainmentViolations: 긴 공백·끝 주석이 있어도 선형 시간이다 (리뷰 P1 — 끝 정규식 지수 backtracking)', () => {
