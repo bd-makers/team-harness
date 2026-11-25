@@ -1,0 +1,15 @@
+node_modules/
+.DS_Store
+*.log
+.harness-backup/
+.harness/active.json
+.harness/config.json
+.claude/launch.json
+.claude/settings.local.json
+.claude/handoffs/
+.superpowers/
+tests/fixtures/**/actual/
+docs/*/*-handoff.md
+
+# claude plugin eval run output
+evals/results/

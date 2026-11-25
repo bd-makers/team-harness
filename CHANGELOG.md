@@ -15,7 +15,7 @@
 
 ### Changed
 
-- **뷰 SVG 자립성 검사가 태그 짝도 본다 — `diagram record --view`가 더 엄격해진다** (task `diagram-svg-wellformed`). `svgSelfContainmentViolations`가 요소 태그의 여닫이 짝(`<g><rect></g></rect>`), 닫히지 않은 요소, 루트 `</svg>` 뒤의 내용, 태그로 읽히지 않는 맨 `<`를 위반 하나(`태그 구조: …`)로 낸다. 같은 함수를 쓰는 세 곳이 함께 바뀐다: `diagram record --view`는 exit 1로 거부하고, `brief`는 그 뷰를 `rejected`로 빼며(깨진 그림을 `embedded`로 싣지 않음), `pr-check`는 PR 본문 링크 안내 대신 "자립형이 아님"을 알린다. 주석·CDATA·PI는 건너뛰고 이름은 대소문자를 그대로 비교한다(XML). 완전한 XML 검사는 아니다 — 속성 따옴표·중복 속성·엔티티 유효성·맨 `&`는 보지 않는다. 파서 없는 문자열 검사라 결정론이고 의존성이 없다.
+- **뷰 SVG 자립성 검사가 태그 짝도 본다 — `diagram record --view`가 더 엄격해진다** (task `diagram-svg-wellformed`). `svgSelfContainmentViolations`가 요소 태그의 여닫이 짝(`<g><rect></g></rect>`), 닫히지 않은 요소, 루트 `</svg>` 뒤의 내용, 태그로 읽히지 않는 맨 `<`를 위반 하나(`태그 구조: …`)로 낸다. 같은 함수를 쓰는 세 곳이 함께 바뀐다: `diagram record --view`는 exit 1로 거부하고, `brief`는 그 뷰를 `rejected`로 빼며(깨진 그림을 `embedded`로 싣지 않음), `pr-check`는 PR 본문 링크 안내 대신 "자립형이 아님"을 알린다. 주석·CDATA·PI는 건너뛰고 이름은 대소문자를 그대로 비교한다(XML). 완전한 XML 검사는 아니다 — 속성 따옴표·중복 속성·엔티티 유효성·맨 `&`·따옴표 속성값 안의 `<`는 보지 않는다. 파서 없는 문자열 검사라 결정론이고 의존성이 없다.
 
 ## [0.58.4] - 2026-11-23
 
