@@ -10,6 +10,7 @@
 - [x] CHANGELOG `[Unreleased]` `### Changed`
 - [x] `npm test` exit 0
 - [x] 리뷰(claude) 반영: iCloud 중복 파일 제거, 끝 정규식 지수 backtracking 수정, `ATTR`의 `<` 삼킴 수정
+- [x] 리뷰 2차(claude) P3-1~3 반영: CHANGELOG 정정, 주석 통과 표본, pad 28칸, 속성 이름 따옴표 표본
 - [ ] ship 완료
 
 ## Ontology 변경 로그

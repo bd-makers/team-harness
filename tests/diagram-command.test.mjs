@@ -500,6 +500,7 @@ const SVG_VIOLATIONS = [
   // 리뷰 P2 — `>` 를 빠뜨린 leaf 가 다음 태그를 속성으로 삼키지 않는다
   ['> 빠진 leaf', `<svg ${NS}><rect x="1"\n  <circle r="1"/></svg>`, /^태그 구조: 태그로 읽히지 않는 '<': <rect x="1"$/],
   ['> 빠진 leaf(따옴표 없는 값)', `<svg ${NS}><rect x=1<circle r="1"/></svg>`, /^태그 구조: 태그로 읽히지 않는 '<': <rect x=1<circle/],
+  ['속성 이름의 따옴표', `<svg ${NS}><rect a"b="1"/></svg>`, /^태그 구조: 태그로 읽히지 않는 '<': <rect a"b="1"\/>/],
 ];
 
 test('svgSelfContainmentViolations: 허용되는 비슷한 것들을 모은 SVG 는 통과한다', () => {
@@ -514,12 +515,14 @@ test('svgSelfContainmentViolations: 태그 구조 검사는 주석·CDATA·PI·�
   // 주석·CDATA 안의 `<`·`</g>` 는 태그가 아니다. `&#60;` 는 풀지 않고 본다(태그를 만들지 않는다).
   assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><!-- </g> --><style><![CDATA[ a < b { fill: #000 } ]]></style><?pi x?>`
     + `<g><G><rect aria-label="1 > 0"/></G><text>a &lt; b &#60;g&#62;</text></g></svg>`), []);
+  // 루트 안 주석 + `</svg>` 뒤 주석 — 옛 끝 정규식은 첫 `<!--` 부터 끝까지를 한 주석으로 걷어 "닫히지 않음" 으로 잘못 거부했다(리뷰 2차 P3).
+  assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><!-- c --><rect/></svg>\n<!-- end -->`), []);
 });
 
 test('svgSelfContainmentViolations: 긴 공백·끝 주석이 있어도 선형 시간이다 (리뷰 P1 — 끝 정규식 지수 backtracking)', () => {
-  const pad = ' '.repeat(40);
+  // 28칸: 옛 정규식으로 되돌리면 몇 초 뒤 1초 단언에서 실패한다(40칸이면 실패하지 않고 몇 시간 멈춘다 — 리뷰 2차 P3).
+  const pad = ' '.repeat(28);
   const started = Date.now();
-  // 공백 40칸이면 옛 `(?:\s+|<!--…-->)*$` 는 덩어리마다 2^40 번을 시도해 끝나지 않는다.
   assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}>\n${pad}<g>\n${pad}<rect/>${pad}</g>${pad}</svg>${pad}<!-- a -->${pad}<!-- b -->\n`), []);
   assert.match(svgSelfContainmentViolations(`<svg ${NS}><rect/>${pad}x${pad}`)[0], /^루트 <svg> 가 닫히지 않음/);
   assert.match(svgSelfContainmentViolations(`<svg ${NS}></svg>${pad}<!-- 안 닫힌 주석${pad}`)[0], /^루트 <svg> 가 닫히지 않음/);
