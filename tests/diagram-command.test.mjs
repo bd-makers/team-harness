@@ -549,6 +549,18 @@ test('svgSelfContainmentViolations: 긴 공백·끝 주석이 있어도 선형 �
   assert.ok(Date.now() - started < 1000, `${Date.now() - started}ms`);
 });
 
+test('svgSelfContainmentViolations: attributeName 뒤 긴 공백도 선형 시간이다 (svg-script-evasion codex P2-1)', () => {
+  // 32000칸: 옛 `\s*["']?\s*` 는 두 공백 덩어리를 나누며 2차로 되짚어 약 2초 걸렸다.
+  const pad = ' '.repeat(32000);
+  const started = Date.now();
+  assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><rect><animate attributeName=${pad}"opacity" values="0;1"/></rect></svg>`), []);
+  assert.ok(Date.now() - started < 500, `${Date.now() - started}ms`);
+  // 따옴표 안쪽 공백·따옴표 없는 값도 그대로 잡힌다
+  for (const value of [`"${pad}href"`, `' onclick'`, 'href']) {
+    assert.match(svgSelfContainmentViolations(`<svg ${NS}><a><set attributeName=${value} to="x"/></a></svg>`)[0], /^SMIL 로 바꾸는 이벤트·href 속성: (href|onclick)$/, value.slice(0, 8));
+  }
+});
+
 test('svgSelfContainmentViolations: 규칙마다 위반 표본이 그 규칙 하나만 건다', () => {
   for (const [name, svg, expected] of SVG_VIOLATIONS) {
     const got = svgSelfContainmentViolations(svg);
