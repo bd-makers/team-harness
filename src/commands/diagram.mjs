@@ -116,7 +116,8 @@ const ALWAYS_BAD = [
   // SMIL `<set>`·`<animate>` 의 attributeName 값. on* 은 지금 엔진에서 Animatable: no 라 돌지 않지만 쓸 일이 없고,
   // href 는 실제로 바뀌어 `values="javascript:…"` 로 이동한다 — href= 가 없어 REF_RULES 가 못 본다. 로컬 이름(마지막 접두사 뒤)을
   // 본다(`xlink:href:x` 꼼수 포함). 속성 값이라 XML 이 문자 참조를 푼다 — 푼 글에서 찾는다(`&#104;ref` = href).
-  [/\battributeName\s*=\s*["']?\s*((?:[^\s"'<>:]*:)*(?:on[a-z]|href)[^\s"'<>]*)/i, 'SMIL 로 바꾸는 이벤트·href 속성'],
+  // 따옴표 안쪽 공백은 따옴표에 붙인다 — `\s*["']?\s*` 는 두 `\s*` 가 공백 덩어리를 나누며 2차로 되짚었다(codex P2-1).
+  [/\battributeName\s*=\s*(?:["']\s*)?((?:[^\s"'<>:]*:)*(?:on[a-z]|href)[^\s"'<>]*)/i, 'SMIL 로 바꾸는 이벤트·href 속성'],
 ];
 const REF_RULES = [
   [/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi, '외부 href'],
