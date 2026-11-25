@@ -11,7 +11,7 @@
 - [x] `cli-args.mjs` summary·`harness-task.md`·`harness-diagram.md`·CHANGELOG `[Unreleased]`
 - [x] `npm test`·`docs:check`·0.58.4 전체 spec `cmp`·수동 브라우저 확인
 - [x] 리뷰 기록
-- [ ] ship 완료
+- [x] ship 완료
 
 ## Ontology 변경 로그
 - 그림 슬라이드·embedded/missing/rejected 도입
