@@ -497,6 +497,9 @@ const SVG_VIOLATIONS = [
   ['닫히지 않은 루트', `<svg ${NS}><svg></svg>`, /^태그 구조: <svg> 가 닫히지 않음$/],
   ['루트 뒤 요소', `<svg ${NS}></svg><svg ${NS}></svg>`, /^태그 구조: 루트 <\/svg> 뒤에 내용: <svg /],
   ['태그로 읽히지 않는 <', `<svg ${NS}><text>a < b</text></svg>`, /^태그 구조: 태그로 읽히지 않는 '<': < b<\/text>/],
+  // 리뷰 P2 — `>` 를 빠뜨린 leaf 가 다음 태그를 속성으로 삼키지 않는다
+  ['> 빠진 leaf', `<svg ${NS}><rect x="1"\n  <circle r="1"/></svg>`, /^태그 구조: 태그로 읽히지 않는 '<': <rect x="1"$/],
+  ['> 빠진 leaf(따옴표 없는 값)', `<svg ${NS}><rect x=1<circle r="1"/></svg>`, /^태그 구조: 태그로 읽히지 않는 '<': <rect x=1<circle/],
 ];
 
 test('svgSelfContainmentViolations: 허용되는 비슷한 것들을 모은 SVG 는 통과한다', () => {
@@ -511,6 +514,16 @@ test('svgSelfContainmentViolations: 태그 구조 검사는 주석·CDATA·PI·�
   // 주석·CDATA 안의 `<`·`</g>` 는 태그가 아니다. `&#60;` 는 풀지 않고 본다(태그를 만들지 않는다).
   assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><!-- </g> --><style><![CDATA[ a < b { fill: #000 } ]]></style><?pi x?>`
     + `<g><G><rect aria-label="1 > 0"/></G><text>a &lt; b &#60;g&#62;</text></g></svg>`), []);
+});
+
+test('svgSelfContainmentViolations: 긴 공백·끝 주석이 있어도 선형 시간이다 (리뷰 P1 — 끝 정규식 지수 backtracking)', () => {
+  const pad = ' '.repeat(40);
+  const started = Date.now();
+  // 공백 40칸이면 옛 `(?:\s+|<!--…-->)*$` 는 덩어리마다 2^40 번을 시도해 끝나지 않는다.
+  assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}>\n${pad}<g>\n${pad}<rect/>${pad}</g>${pad}</svg>${pad}<!-- a -->${pad}<!-- b -->\n`), []);
+  assert.match(svgSelfContainmentViolations(`<svg ${NS}><rect/>${pad}x${pad}`)[0], /^루트 <svg> 가 닫히지 않음/);
+  assert.match(svgSelfContainmentViolations(`<svg ${NS}></svg>${pad}<!-- 안 닫힌 주석${pad}`)[0], /^루트 <svg> 가 닫히지 않음/);
+  assert.ok(Date.now() - started < 1000, `${Date.now() - started}ms`);
 });
 
 test('svgSelfContainmentViolations: 규칙마다 위반 표본이 그 규칙 하나만 건다', () => {

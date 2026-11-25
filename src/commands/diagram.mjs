@@ -96,7 +96,8 @@ const LOCAL_REF_RE = /^(?:#|data:|$)/i;
 // XML 선언·처리 지시·주석·DOCTYPE(내부 subset 포함)·공백 — 루트 요소 앞에 올 수 있는 것.
 const PROLOG_RE = /^(?:\s+|<\?[\s\S]*?\?>|<!--[\s\S]*?-->|<!DOCTYPE(?:[^>[]|\[[\s\S]*?\])*>)*/i;
 // 속성 하나 — 따옴표 안의 `>` 를 태그 끝으로 보지 않게 값을 통째로 건너뛴다(codex 1차 P2).
-const ATTR = `\\s+[^\\s=/>]+(?:\\s*=\\s*(?:"[^"]*"|'[^']*'|[^\\s"'>]+))?`;
+// 이름·따옴표 없는 값에 `<` 를 받지 않는다 — `>` 를 빠뜨린 태그가 다음 태그를 속성으로 삼켜 짝 검사를 통과하지 않게(리뷰 P2).
+const ATTR = `\\s+[^\\s=/<>"']+(?:\\s*=\\s*(?:"[^"]*"|'[^']*'|[^\\s"'<>]+))?`;
 const ALWAYS_BAD = [
   [/<((?:[\w-]+:)?script)\b/i, '스크립트 요소'],
   [/<((?:[\w-]+:)?foreignObject)\b/i, 'foreignObject(HTML 섞기)'],
@@ -160,7 +161,9 @@ export function svgSelfContainmentViolations(text) {
       violations.push(`루트 <svg> 에 xmlns="${SVG_NS}" 없음`);
     }
     // 잘린 파일(상류 출력이 중간에 끊김)은 이미지로 그려지지 않는다 — 끝이 루트를 닫는지만 본다(codex 1차 P1).
-    const tail = body.replace(/(?:\s+|<!--[\s\S]*?-->)*$/, '');
+    // 끝의 공백·주석을 뒤에서부터 걷는다. 옛 `(?:\s+|<!--…-->)*$` 는 공백 덩어리마다 지수로 되짚었다(리뷰 P1).
+    let tail = body.trimEnd();
+    for (let at; tail.endsWith('-->') && (at = tail.lastIndexOf('<!--')) >= 0;) tail = tail.slice(0, at).trimEnd();
     if (!(root[0].endsWith('/>') && tail === root[0]) && !tail.endsWith('</svg>')) {
       violations.push('루트 <svg> 가 닫히지 않음 — 파일이 잘렸는지 확인');
     } else {

@@ -9,6 +9,7 @@
 - [x] `svgSelfContainmentViolations` 태그 중첩 검사
 - [x] CHANGELOG `[Unreleased]` `### Changed`
 - [x] `npm test` exit 0
+- [x] 리뷰(claude) 반영: iCloud 중복 파일 제거, 끝 정규식 지수 backtracking 수정, `ATTR`의 `<` 삼킴 수정
 - [ ] ship 완료
 
 ## Ontology 변경 로그
