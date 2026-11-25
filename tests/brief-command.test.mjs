@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { mkdtemp, mkdir, readFile, writeFile, rm } from 'node:fs/promises';
 import { existsSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -33,9 +34,12 @@ function newFacts(html, spec) {
 }
 
 // 외부 참조·script 판정은 텍스트가 아니라 **마크업**을 본다 — 본문이 URL 을 언급하는 것은 괜찮다. 허용 목록이다(diagram-svg 학습).
+// 그림 슬라이드(brief-diagram-svg-embed)의 `<figure><img>` 는 허용하되 `src` 는 값이 SVG data URI 일 때만 — 문서 밖 자원을 부르는
+// 유일한 통로라 값까지 본다. `alt` 는 속성이라 텍스트 노드(새 사실 판정)가 아니다.
 const ALLOWED_TAGS = new Set(['html', 'head', 'meta', 'title', 'style', 'body', 'main', 'section', 'h1', 'h2', 'h3', 'p', 'ul', 'ol', 'li',
-  'strong', 'code', 'pre', 'table', 'thead', 'tbody', 'tr', 'th', 'td']);
-const ALLOWED_ATTRS = new Set(['lang', 'charset', 'name', 'content', 'class']);
+  'strong', 'code', 'pre', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'figure', 'img']);
+const ALLOWED_ATTRS = new Set(['lang', 'charset', 'name', 'content', 'class', 'alt']);
+const SVG_DATA_SRC_RE = /^data:image\/svg\+xml;base64,[A-Za-z0-9+/]+={0,2}$/;
 
 function externalViolations(html) {
   const out = [];
@@ -44,7 +48,9 @@ function externalViolations(html) {
     if (/^<!doctype/i.test(tag)) continue;
     const name = (tag.match(/^<\/?([a-zA-Z][\w-]*)/)?.[1] ?? '').toLowerCase();
     if (!ALLOWED_TAGS.has(name)) out.push(`tag ${tag}`);
-    for (const [, attr] of tag.matchAll(/\s([^\s=>/]+)(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?/g)) {
+    for (const [, attr, dq, sq, bare] of tag.matchAll(/\s([^\s=>/]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+)))?/g)) {
+      const value = dq ?? sq ?? bare ?? '';
+      if (attr.toLowerCase() === 'src' && name === 'img' && SVG_DATA_SRC_RE.test(value)) continue;
       if (!ALLOWED_ATTRS.has(attr.toLowerCase())) out.push(`attr ${attr} in ${tag}`);
     }
   }
@@ -189,6 +195,10 @@ test('brief: 외부 참조 판정기 음성 대조 — 금지 태그·속성·st
   const { html } = renderBrief(SPEC);
   const cases = [
     html.replace('</main>', '<img src="x.png"></main>'),
+    html.replace('</main>', '<img src="http://example.com/x.svg"></main>'),
+    html.replace('</main>', '<img src="data:text/html;base64,PHNjcmlwdD4="></main>'),
+    html.replace('</main>', '<img src="data:image/svg+xml,<svg/>"></main>'),
+    html.replace('</main>', '<p src="data:image/svg+xml;base64,PHN2Zy8+">a</p></main>'),
     html.replace('</main>', '<p onclick="x()">a</p></main>'),
     html.replace('</main>', '<script>1</script></main>'),
     html.replace('<style>', '<style>@import "x.css";'),
@@ -320,14 +330,87 @@ test('stripComments: 줄머리 주석 블록만 걷고 꼬리는 남긴다 — �
   assert.deepEqual(stripComments(['글 <!-- 중간 --> 뒤']), ['글 <!-- 중간 --> 뒤']);
 });
 
+// ---- 뷰 SVG 그림 슬라이드 (brief-diagram-svg-embed) ----
+
+// 0.58.4 의 `renderBrief(SPEC).html` — 인자 하나 호출은 이 바이트를 지킨다(다운스트림 래퍼가 직접 import 한다).
+const BASELINE_0584_SHA256 = '4e4a0e4baa1bc91433f4f43aa27cf15e59669d1f128062a497187762a1dc393b';
+const sha256 = (text) => createHash('sha256').update(text).digest('hex');
+
+// 자립성 판정(svgSelfContainmentViolations)을 통과하는 SVG. 안의 글자는 spec 에 없는 문자열이라 새 나가면 새 사실 판정이 잡는다.
+const svgOf = (label) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40"><style>.t{fill:#111}</style><rect id="r" width="120" height="40" fill="#eef"/><text class="t" x="8" y="24">SVG-ONLY ${label}</text></svg>\n`;
+const DIAGRAMS = [
+  { view: 'sequence', rel: 'docs/tester/demo/demo-diagram-sequence.svg', svg: svgOf('sequence') },
+  { view: 'module', rel: 'docs/tester/demo/demo-diagram-module.svg', svg: svgOf('module') },
+];
+const figureSlides = (html) => slidesOf(html).filter(s => s.startsWith('<figure>'));
+
+test('brief: 뷰 없는 renderBrief 는 0.58.4 와 같은 바이트다 — 인자 하나·빈 옵션·빈 목록 모두', () => {
+  const one = renderBrief(SPEC).html;
+  assert.equal(sha256(one), BASELINE_0584_SHA256);
+  assert.equal(renderBrief(SPEC, {}).html, one);
+  assert.equal(renderBrief(SPEC, { diagrams: [] }).html, one);
+  assert.equal(renderBrief(SPEC).diagrams, 0);
+  assert.doesNotMatch(one, /figure/);
+});
+
+test('brief: 뷰는 설계 절의 마지막 슬라이드 뒤에 sequence → module 순서로 실린다', () => {
+  const result = renderBrief(SPEC, { diagrams: DIAGRAMS });
+  assert.deepEqual(result.titles, [
+    '목적 / 요구사항', '범위 (In / Out)', '원천 검토 (R1) › 발견', '설계 / 접근', '설계 / 접근 › 렌더러', 'diagram:sequence', 'diagram:module',
+    'Ontology', '(open)', 'Done evidence › scenarios',
+  ]);
+  assert.equal(result.slides, 10);
+  assert.equal(result.diagrams, 2);
+  const slides = slidesOf(result.html);
+  assert.ok(slides[5].startsWith('<p class="src">설계 / 접근</p><h2>렌더러</h2>'), '설계 하위 절 슬라이드를 가르지 않는다');
+  for (const [i, d] of DIAGRAMS.entries()) {
+    const b64 = Buffer.from(d.svg, 'utf8').toString('base64');
+    assert.equal(slides[6 + i], `<figure><img src="data:image/svg+xml;base64,${b64}" alt="${d.rel}"></figure>`);
+  }
+  assert.ok(slides[8].startsWith('<h2>Ontology</h2>'));
+});
+
+test('brief: 설계 절이 없으면 마지막 spec 절 슬라이드 뒤(열린 항목 앞), spec 절이 없으면 맨 앞이다', () => {
+  const noDesign = renderBrief('# x\n\n## 목적 / 요구사항\n- 하나\n\n## Ontology\n- 둘\n\n## 참고\n- (open) 미정\n', { diagrams: DIAGRAMS });
+  assert.deepEqual(noDesign.titles, ['목적 / 요구사항', 'Ontology', 'diagram:sequence', 'diagram:module', '(open)']);
+  const onlyOpen = renderBrief('# x\n\n## 참고\n- (open) 미정\n', { diagrams: DIAGRAMS.slice(1) });
+  assert.deepEqual(onlyOpen.titles, ['diagram:module', '(open)']);
+});
+
+test('brief: 그림 슬라이드도 새 사실 0·script 0·외부 자산 0 — SVG 안 글자는 텍스트 노드가 아니다', () => {
+  const { html } = renderBrief(SPEC, { diagrams: DIAGRAMS });
+  assert.deepEqual(newFacts(html, SPEC), []);
+  assert.deepEqual(externalViolations(html), []);
+  assert.ok(!textNodes(html).some(t => t.includes('SVG-ONLY')), 'SVG 글자가 문서 텍스트로 새지 않는다');
+  assert.doesNotMatch(html, /<script|src="http|url\(http/i);
+  assert.equal(figureSlides(html).length, 2);
+  assert.match(html, /<style>[\s\S]*figure img\{[^}]*\}\n<\/style>/, '그림 CSS 는 뷰가 있을 때만 붙는다');
+  // 음성 대조: 그림 슬라이드에 보이는 글자를 붙이면 판정이 잡는다.
+  assert.equal(newFacts(html.replace('</figure>', '<p>sequence diagram</p></figure>'), SPEC).length, 1);
+});
+
+test('brief: 이 저장소의 모든 task spec 에 뷰를 실어도 새 사실 0·외부 참조 0 이다', async () => {
+  for (const { user, task } of await listTaskRefs(REPO)) {
+    const spec = readFileSync(taskFilePath(REPO, user, task, 'spec.md'), 'utf8');
+    const { html } = renderBrief(spec, { diagrams: DIAGRAMS });
+    assert.deepEqual(newFacts(html, spec), [], `${user}/${task}`);
+    assert.deepEqual(externalViolations(html), [], `${user}/${task}`);
+  }
+});
+
+test('brief: 뷰를 실어도 결정론 — 같은 spec·같은 SVG 면 같은 바이트', () => {
+  assert.equal(renderBrief(SPEC, { diagrams: DIAGRAMS }).html, renderBrief(SPEC, { diagrams: DIAGRAMS.map(d => ({ ...d })) }).html);
+});
+
 // ---- CLI ----
 
-async function fixture({ spec = SPEC, active = true } = {}) {
+async function fixture({ spec = SPEC, active = true, views = {} } = {}) {
   const dir = await mkdtemp(join(tmpdir(), 'harness-brief-cmd-'));
   await mkdir(join(dir, '.harness'), { recursive: true });
   if (active) await writeFile(join(dir, '.harness/active.json'), JSON.stringify({ user: 'tester', task: 'demo', path: 'docs/tester/demo' }));
   await mkdir(join(dir, 'docs', 'tester', 'demo'), { recursive: true });
   if (spec !== null) await writeFile(join(dir, 'docs', 'tester', 'demo', 'demo-spec.md'), spec);
+  for (const [view, svg] of Object.entries(views)) await writeFile(join(dir, 'docs', 'tester', 'demo', `demo-diagram-${view}.svg`), svg);
   return dir;
 }
 
@@ -390,6 +473,69 @@ test('brief CLI: 빠진 절은 슬라이드 없이 출력에만 알린다 — �
     assert.equal(r.exitCode, undefined);
     assert.ok(r.logs.some(l => l === '  빠진 절(없거나 비어 있음): ## 범위 · ## 원천 검토 › ### 발견 · ## 설계 · ## Ontology'), r.logs.join('\n'));
     assert.equal(slidesOf(await readFile(briefPath(dir), 'utf8')).length, 2, '표지 + 목적');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('brief CLI: 자립성을 통과한 뷰 SVG 만 싣고, 없음·거부는 실패 없이 콘솔과 JSON 에 남긴다', async () => {
+  const bad = svgOf('module').replace('<rect', '<script>alert(1)</script><a href="https://example.com/x"><rect onclick="x()"').replace('</svg>', '</a></svg>');
+  const dir = await fixture({ views: { sequence: svgOf('sequence'), module: bad } });
+  try {
+    const r = await capture(() => run(dir));
+    assert.equal(r.exitCode, undefined, r.logs.join('\n'));
+    assert.match(r.logs[0], /슬라이드 9장 \(spec 절 \+ 뷰 SVG 1장 — 새 사실 0\)$/);
+    assert.ok(r.logs.some(l => /^ {2}뷰 SVG: sequence 실림 · module 거부\(.+ 외 \d+건\)$/.test(l)), r.logs.join('\n'));
+    const html = await readFile(briefPath(dir), 'utf8');
+    assert.equal(html, renderBrief(SPEC, { diagrams: [{ view: 'sequence', rel: 'docs/tester/demo/demo-diagram-sequence.svg', svg: svgOf('sequence') }] }).html);
+    assert.equal(figureSlides(html).length, 1);
+    assert.ok(!html.includes(Buffer.from(bad, 'utf8').toString('base64')), '거부된 SVG 는 슬라이드에 없다');
+    assert.doesNotMatch(html, /<script|src="http|url\(http/i);
+
+    const j = await capture(() => run(dir, { json: true }));
+    const env = JSON.parse(j.logs.join('\n'));
+    assert.equal(env.status, 'success');
+    assert.deepEqual(env.diagrams.map(d => [d.view, d.path, d.status]), [
+      ['sequence', 'docs/tester/demo/demo-diagram-sequence.svg', 'embedded'],
+      ['module', 'docs/tester/demo/demo-diagram-module.svg', 'rejected'],
+    ]);
+    assert.deepEqual(env.diagrams[0].violations, []);
+    const v = env.diagrams[1].violations.join('\n');
+    for (const re of [/스크립트 요소/, /외부 href/, /이벤트 핸들러/]) assert.match(v, re);
+    assert.ok(env.sections.includes('diagram:sequence') && !env.sections.includes('diagram:module'));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('brief CLI: 뷰 파일이 없으면 missing — 출력 HTML 은 뷰 없는 렌더와 같고 summary 도 그대로다', async () => {
+  const dir = await fixture();
+  try {
+    const r = await capture(() => run(dir, { json: true }));
+    const env = JSON.parse(r.logs.join('\n'));
+    assert.deepEqual(env.diagrams, [
+      { view: 'sequence', path: 'docs/tester/demo/demo-diagram-sequence.svg', status: 'missing', violations: [] },
+      { view: 'module', path: 'docs/tester/demo/demo-diagram-module.svg', status: 'missing', violations: [] },
+    ]);
+    assert.match(env.summary, /슬라이드 8장 \(spec 절만 — 새 사실 0\)$/);
+    assert.equal(await readFile(briefPath(dir), 'utf8'), renderBrief(SPEC).html);
+    const t = await capture(() => run(dir));
+    assert.ok(t.logs.includes('  뷰 SVG: sequence 없음 · module 없음'), t.logs.join('\n'));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('brief CLI: 레거시 <name>-diagram.html 은 싣지 않는다', async () => {
+  const dir = await fixture();
+  try {
+    await writeFile(join(dir, 'docs', 'tester', 'demo', 'demo-diagram.html'), `<!doctype html><html><body>${svgOf('legacy')}<script>1</script></body></html>`);
+    await capture(() => run(dir));
+    assert.equal(await readFile(briefPath(dir), 'utf8'), renderBrief(SPEC).html);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('brief CLI: 뷰 SVG 만 있고 렌더할 spec 절이 없으면 exit 1 이고 아무것도 쓰지 않는다', async () => {
+  const dir = await fixture({ spec: '# demo — Spec\n\n## 목적 / 요구사항\n*안내뿐*\n\n## 참고\n- 일반 항목\n', views: { sequence: svgOf('sequence'), module: svgOf('module') } });
+  try {
+    const r = await capture(() => run(dir));
+    assert.equal(r.exitCode, 1);
+    assert.match(r.logs[0], /렌더할 절이 없음/);
+    assert.equal(existsSync(briefPath(dir)), false);
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 

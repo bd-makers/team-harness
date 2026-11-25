@@ -9,11 +9,17 @@
 // 렌더하지 않는 것: 코드 펜스 밖 HTML 주석(Done evidence 의 주석 처리된 예시가 선언된 요건처럼 보인다)과 템플릿 안내 문단
 // (제목 아래 단일 `*` 기울임 문단) — 둘 다 spec 안의 글자지만 이 task 의 사실이 아니다. 마크다운은 작은 부분집합(문단·목록·굵게·
 // 인라인 코드·표·코드 펜스·제목)만 렌더하고, 링크·이미지·기울임·인용은 글자 그대로 둔다(앵커를 만들지 않는다 — 외부 참조 0).
+//
+// 뷰 SVG(`<name>-diagram-<view>.svg`, task brief-diagram-svg-embed)는 `runBrief` 가 읽어 자립성 판정을 통과한 것만 그림 슬라이드로 싣는다.
+// data URI `<img>` 라 SVG 의 글자·`<style>`·id 가 문서로 새지 않고(텍스트 노드 0 — 새 사실 판정 밖) 스크립트도 돌지 않는다.
+// 보이는 글자는 붙이지 않는다 — 경로는 `alt` 에만 둔다. 뷰를 넘기지 않은 `renderBrief(spec)` 는 0.58.4 와 같은 바이트다(다운스트림 래퍼가 직접 import 한다).
+// 레거시 `<name>-diagram.html` 은 싣지 않는다 — script 가 있을 수 있는 HTML 이다.
 import { readFile } from 'node:fs/promises';
 import { exists, writeText } from '../fsx.mjs';
 import { readActive, parseDoneEvidenceDeclaration, SCENARIO_KEYS } from './task.mjs';
 import { taskFileRel, taskFilePath } from '../task-paths.mjs';
-import { BRIEF_STAGES } from '../cli-args.mjs';
+import { BRIEF_STAGES, DIAGRAM_VIEWS } from '../cli-args.mjs';
+import { svgSelfContainmentViolations } from './diagram.mjs';
 import { buildEnvelope, buildErrorPacket, emitObservation, renderErrorPacket } from '../observation.mjs';
 
 const USAGE = `usage: harness-team brief [--stage ${BRIEF_STAGES.join('|')}]   (위치 인자 없음 — 활성 task 의 spec 을 렌더한다)`;
@@ -63,6 +69,10 @@ table{border-collapse:collapse;margin:.6em 0}
 th,td{border:1px solid var(--line);padding:.35em .65em;text-align:left;vertical-align:top}
 th{background:var(--code)}
 @media print{html{scroll-snap-type:none}.slide{min-height:auto;break-after:page}}`;
+
+// 그림 슬라이드 CSS — 뷰가 하나라도 실릴 때만 STYLE 뒤에 붙인다(뷰 없는 출력의 바이트를 지킨다). 흰 바탕은 투명 SVG 가 어두운 테마에서 묻히지 않게 한다.
+const FIGURE_STYLE = `figure{margin:0;display:flex;justify-content:center}
+figure img{max-width:100%;max-height:86vh;height:auto;background:#ffffff;border-radius:6px}`;
 
 const escapeHtml = (text) => text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -296,13 +306,22 @@ function collectOpenItems(blocks, group, out) {
   for (const block of blocks) if (block.type === 'list') walk(block);
 }
 
-// spec 텍스트 → { html, slides, missing, openItems, scenarios, scenarioIssue }. 순수 함수 — 같은 입력이면 같은 바이트.
-export function renderBrief(spec) {
+// 그림 슬라이드 — 텍스트 노드 없이 data URI 하나. 같은 SVG 문자열이면 같은 바이트다.
+function renderDiagramSlide({ rel, svg }) {
+  const uri = `data:image/svg+xml;base64,${Buffer.from(svg, 'utf8').toString('base64')}`;
+  return `<section class="slide"><figure><img src="${uri}" alt="${escapeHtml(rel)}"></figure></section>`;
+}
+
+// spec 텍스트 → { html, slides, missing, openItems, scenarios, scenarioIssue, diagrams }. 순수 함수 — 같은 입력이면 같은 바이트.
+// `diagrams` 는 호출자가 자립성 판정을 마친 뷰 목록 `[{ view, rel, svg }]` 이다(이 함수는 파일을 읽지도 판정하지도 않는다).
+// 그림 슬라이드는 `## 설계` 절이 낸 마지막 슬라이드 뒤에, 그 절이 없으면 마지막 spec 절 슬라이드 뒤(열린 항목·scenarios 앞)에 넣는다.
+export function renderBrief(spec, { diagrams = [] } = {}) {
   const doc = splitDocument(stripComments(spec.split(/\r?\n/)));
   const slides = [];
   const titles = [];
   const missing = [];
   const seen = new Set();
+  let designEnd = null;
 
   for (const section of doc.sections) {
     const def = SECTIONS.find(d => d.match(section.title));
@@ -318,9 +337,13 @@ export function renderBrief(spec) {
       const src = part.parent === null ? '' : `<p class="src">${renderInline(part.parent)}</p>`;
       slides.push(`<section class="slide">${src}<h2>${renderInline(part.title)}</h2>${blocks.map(renderBlock).join('')}</section>`);
       titles.push(part.parent === null ? part.title : `${part.parent} › ${part.title}`);
+      if (def.label === '## 설계') designEnd = slides.length;
     }
   }
   for (const def of SECTIONS) if (!seen.has(def)) missing.push(def.label);
+  const at = designEnd ?? slides.length;
+  slides.splice(at, 0, ...diagrams.map(renderDiagramSlide));
+  titles.splice(at, 0, ...diagrams.map(d => `diagram:${d.view}`));
 
   const open = [];
   if (doc.preamble.length) collectOpenItems(parseBlocks(doc.preamble), doc.h1, open);
@@ -359,7 +382,7 @@ export function renderBrief(spec) {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${doc.h1 === null ? '' : escapeHtml(doc.h1)}</title>
 <style>
-${STYLE}
+${STYLE}${diagrams.length ? `\n${FIGURE_STYLE}` : ''}
 </style>
 </head>
 <body>
@@ -369,7 +392,7 @@ ${cover}${slides.join('\n')}
 </body>
 </html>
 `;
-  return { html, slides: slides.length, titles, missing, openItems: open.length, scenarios: scenarios.length, scenarioIssue };
+  return { html, slides: slides.length, titles, missing, openItems: open.length, scenarios: scenarios.length, scenarioIssue, diagrams: diagrams.length };
 }
 
 function usage(json, message) {
@@ -433,8 +456,23 @@ export async function runBrief(ctx) {
     return;
   }
 
-  const result = renderBrief(await readFile(specPath, 'utf8'));
-  if (!result.slides) {
+  // 뷰 SVG — 없거나 자립성 위반이어도 실패가 아니다(옵트인이라 없는 task 가 정상이다). 판정 결과는 보고로만 남긴다.
+  const diagrams = [];
+  const diagramReports = [];
+  for (const view of DIAGRAM_VIEWS) {
+    const rel = taskFileRel(user, task, `diagram-${view}.svg`);
+    const path = taskFilePath(ctx.targetDir, user, task, `diagram-${view}.svg`);
+    if (!(await exists(path))) { diagramReports.push({ view, path: rel, status: 'missing', violations: [] }); continue; }
+    const svg = await readFile(path, 'utf8');
+    const violations = svgSelfContainmentViolations(svg);
+    if (violations.length) { diagramReports.push({ view, path: rel, status: 'rejected', violations }); continue; }
+    diagrams.push({ view, rel, svg });
+    diagramReports.push({ view, path: rel, status: 'embedded', violations: [] });
+  }
+
+  const result = renderBrief(await readFile(specPath, 'utf8'), { diagrams });
+  // 그림 슬라이드만으로는 brief 가 아니다 — 슬라이드의 사실은 spec 에서 온다.
+  if (!(result.slides - result.diagrams)) {
     emitError(json, `${specRel} 에 렌더할 절이 없음`, buildErrorPacket({
       cause: `${SECTIONS.map(d => d.label).join(' · ')} 가 모두 없거나 비어 있고, 열린 항목·scenarios 도 없음`,
       retry: 'spec 의 그 절들을 채운 뒤 다시 실행',
@@ -445,7 +483,9 @@ export async function runBrief(ctx) {
   }
   await writeText(taskFilePath(ctx.targetDir, user, task, 'brief.html'), result.html);
 
-  const summary = `${briefRel} 에 슬라이드 ${result.slides}장 (spec 절만 — 새 사실 0)`;
+  const summary = result.diagrams
+    ? `${briefRel} 에 슬라이드 ${result.slides}장 (spec 절 + 뷰 SVG ${result.diagrams}장 — 새 사실 0)`
+    : `${briefRel} 에 슬라이드 ${result.slides}장 (spec 절만 — 새 사실 0)`;
   if (json) {
     emitObservation(buildEnvelope({
       command: 'brief',
@@ -455,6 +495,7 @@ export async function runBrief(ctx) {
       extra: {
         stage, spec: specRel, brief: briefRel, slides: result.slides, sections: result.titles,
         missing: result.missing, openItems: result.openItems, scenarios: result.scenarios, scenarioIssue: result.scenarioIssue,
+        diagrams: diagramReports,
       },
     }));
     return;
@@ -464,5 +505,7 @@ export async function runBrief(ctx) {
   if (result.missing.length) console.log(`  빠진 절(없거나 비어 있음): ${result.missing.join(' · ')}`);
   if (result.openItems) console.log(`  열린 항목 ${result.openItems}개 — 마지막 쪽 슬라이드`);
   if (result.scenarioIssue) console.log(`  scenarios 생략: Done evidence 선언 invalid — ${result.scenarioIssue}`);
+  const STATUS_LABEL = { embedded: '실림', missing: '없음', rejected: '거부' };
+  console.log(`  뷰 SVG: ${diagramReports.map(r => `${r.view} ${STATUS_LABEL[r.status]}${r.status === 'rejected' ? `(${r.violations[0]}${r.violations.length > 1 ? ` 외 ${r.violations.length - 1}건` : ''})` : ''}`).join(' · ')}`);
   console.log('  열람: 로컬 브라우저로 연다 (Obsidian 은 .html 을 네이티브로 열지 않는다)');
 }

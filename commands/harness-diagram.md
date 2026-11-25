@@ -80,6 +80,7 @@ Raw slash-command 인수:
      뷰어가 script를 실행하는 것이 확실한 프로젝트에서만 예외가 성립하며(`commands/harness-ship.md`
      6번과 같은 예외), 그때는 **어느 뷰어에서 확인했는지와 판단 근거를 artifact에 남긴다.** 근거를
      남기지 않는 예외는 없다. 이 예외는 레거시 HTML에만 있다 — 뷰 SVG는 7번의 `record --view`가 검사하므로 예외가 없다.
+   - 뷰 SVG는 검토용 슬라이드(`harness-team brief`)에도 그림 슬라이드로 실린다 — brief가 같은 자립성 검사로 거른다.
 
    이미 파일이 있으면 새로 만들지 말고 갱신한다. plan 단계는 7번의 CLI가 닫는다. 산출물은 `<name>-meta.json`과
    마찬가지로 **SSOT 4파일이 아닌 생성물**이며, 없어도 task는 유효하다.

@@ -76,7 +76,7 @@ export const COMMANDS = [
   { name: 'diagram', args: `record [--view ${DIAGRAM_VIEWS.join('|')}] [--skipped] [note ...]`, summary: "Record the diagram outcome in the active task's artifact and close its plan step (--view: one per-view SVG, rejected unless self-contained; --skipped needs a reason)", flags: ['view', 'skipped'] },
   // Renders fixed spec sections verbatim — no agent writes the deck, so it carries no fact the spec lacks (decision A3-1).
   // The review gate in commands/harness-task.md calls it; there is no slash command of its own.
-  { name: 'brief', args: `[--stage ${BRIEF_STAGES.join('|')}]`, summary: "Render the active task's spec sections (purpose, scope, R1 findings, design, ontology, open items, scenarios) verbatim as a review slide deck <name>-brief.html (no script, no external assets)", flags: ['stage'] },
+  { name: 'brief', args: `[--stage ${BRIEF_STAGES.join('|')}]`, summary: "Render the active task's spec sections (purpose, scope, R1 findings, design, ontology, open items, scenarios) verbatim as a review slide deck <name>-brief.html, plus its self-contained view SVGs as image slides after the design section (no script, no external assets)", flags: ['stage'] },
   // Read-only. Owns the deterministic inputs of the wiki compile (/harness-wiki): provenance (PR · introducing
   // commit · author), the exact provenance marker, where the task is already compiled, and the project's rule files.
   // The compile itself (what goes where) is LLM judgment and stays in commands/harness-wiki.md.
