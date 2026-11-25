@@ -11,6 +11,7 @@
 - [x] CHANGELOG `[Unreleased]` `### Changed`, `commands/harness-diagram.md` 뷰 제약 한 줄
 - [x] `npm test` exit 0
 - [x] 리뷰(codex) P2-1 반영: SMIL 정규식 2차 backtracking 수정 — P2-2(텍스트 속 거짓 거부)는 정책 안이라 미조치
+- [x] 재리뷰(codex, 2228ffb9) P2 반영: SMIL 접두사 글자에서 `=`를 빼 이어 쓴 `attributeName=`의 2차 경로 수정 — P3 셋은 정책 안이라 미조치
 - [ ] ship 완료
 
 ## Ontology 변경 로그
