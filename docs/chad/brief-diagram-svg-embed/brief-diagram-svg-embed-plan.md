@@ -10,7 +10,7 @@
 - [x] 테스트: 바이트 동일성(sha256 고정)·삽입 순서/위치·rejected·missing·새 사실 0·외부 자산 0·결정론·뷰만 있는 spec 오류
 - [x] `cli-args.mjs` summary·`harness-task.md`·`harness-diagram.md`·CHANGELOG `[Unreleased]`
 - [x] `npm test`·`docs:check`·0.58.4 전체 spec `cmp`·수동 브라우저 확인
-- [ ] 리뷰 기록
+- [x] 리뷰 기록
 - [ ] ship 완료
 
 ## Ontology 변경 로그

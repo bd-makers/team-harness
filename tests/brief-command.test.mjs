@@ -520,6 +520,19 @@ test('brief CLI: 뷰 파일이 없으면 missing — 출력 HTML 은 뷰 없는 
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+test('brief CLI: 뷰 경로를 읽을 수 없으면(디렉터리) 그 뷰만 rejected 로 빼고 brief 는 성공한다', async () => {
+  const dir = await fixture({ views: { module: svgOf('module') } });
+  try {
+    await mkdir(join(dir, 'docs', 'tester', 'demo', 'demo-diagram-sequence.svg'));
+    const r = await capture(() => run(dir, { json: true }));
+    const env = JSON.parse(r.logs.join('\n'));
+    assert.equal(r.exitCode, undefined);
+    assert.equal(env.status, 'success');
+    assert.deepEqual(env.diagrams.map(d => [d.view, d.status]), [['sequence', 'rejected'], ['module', 'embedded']]);
+    assert.match(env.diagrams[0].violations[0], /^읽기 실패: EISDIR$/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('brief CLI: 레거시 <name>-diagram.html 은 싣지 않는다', async () => {
   const dir = await fixture();
   try {

@@ -463,7 +463,12 @@ export async function runBrief(ctx) {
     const rel = taskFileRel(user, task, `diagram-${view}.svg`);
     const path = taskFilePath(ctx.targetDir, user, task, `diagram-${view}.svg`);
     if (!(await exists(path))) { diagramReports.push({ view, path: rel, status: 'missing', violations: [] }); continue; }
-    const svg = await readFile(path, 'utf8');
+    // 존재 검사 뒤 읽기 실패(디렉터리·경합 삭제·권한)도 이 뷰만 뺀다 — 선택 입력이 brief 전체를 깨지 않는다(codex 1차 P2).
+    let svg;
+    try { svg = await readFile(path, 'utf8'); } catch (err) {
+      diagramReports.push({ view, path: rel, status: 'rejected', violations: [`읽기 실패: ${err.code ?? err.message}`] });
+      continue;
+    }
     const violations = svgSelfContainmentViolations(svg);
     if (violations.length) { diagramReports.push({ view, path: rel, status: 'rejected', violations }); continue; }
     diagrams.push({ view, rel, svg });

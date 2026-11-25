@@ -17,6 +17,28 @@
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
 *기계 판독용 마커를 함께 남긴다: `<!-- harness:review kind=codex scope=worktree tip=<sha|none> at=<ISO8601> -->`*
 
+### 2026-11-25T05:05:54.805Z — codex (harness-team review)
+
+- engine: codex · model: default · scope: diff · base: refs/remotes/origin/main · mergeBase: 88b859e76fe6f4d2ab5b9777b6f62cf802fe76d6 · tip: 2656f746d419db8faee7a636b28861257e242b7e · exit 0 · 1084 B
+
+```text
+## Findings
+
+- **P2 · [src/commands/brief.mjs:466](<src/commands/brief.mjs:466>)** — If an optional SVG is a directory or disappears after the existence check, `readFile` aborts the entire brief and `--json` emits no result.
+- **P2 · [src/commands/brief.mjs:467](<src/commands/brief.mjs:467>)** — The reused validator accepts SVG with mismatched child tags, so `brief` reports `embedded` for an image the browser cannot render.
+- **P3 · [brief-diagram-svg-embed-spec.md:26](<docs/chad/brief-diagram-svg-embed/brief-diagram-svg-embed-spec.md:26>)** — Four settled decisions still carry `(unresolved)` markers, so the generated brief repeats them on its open-items slide.
+
+**Verification** — Reviewed `git status` and `git diff` against `refs/remotes/origin/main`. All 21 read-only tests passed, and all 198 one-argument renders matched the baseline byte for byte. In-memory checks confirmed both P2 findings. The full suite and disk-writing CLI fixtures were outside this read-only run. The worktree remained clean.
+
+**Verdict — Request changes for the two P2 findings.**
+```
+
+<!-- harness:review kind=codex scope=diff tip=2656f746d419db8faee7a636b28861257e242b7e at=2026-11-25T05:05:54.805Z -->
+
+판별·조치(2026-11-25):
+- P2 읽기 실패가 brief 전체를 중단 — **진짜 결함**(`EISDIR`로 재현). `runBrief`가 읽기 오류를 그 뷰의 `rejected`(`읽기 실패: <code>`)로 보고하고 계속한다. 회귀 테스트 `뷰 경로를 읽을 수 없으면(디렉터리)…` 추가.
+- P2 자립성 검사가 잘못 짝지은 태그를 통과시킴 — **범위 밖**. `svgSelfContainmentViolations`는 `diagram record --view`와 공유하는 검사이고, 시그니처·동작을 바꾸지 않는 것이 이 task의 보존 조건이다. 이 경우 brief는 깨진 그림 한 장을 싣지만 script·외부 자산·새 사실 계약은 지켜진다. well-formedness 검사는 record·brief 공통 후속으로 남긴다.
+- P3 결정된 R1 항목의 `(unresolved)` 표기가 열린 항목 슬라이드에 남음 — **의도된 동작**. R1 규약은 `(unresolved) … → 결정: …`을 남기고 `검토 완료`로 닫으며, brief는 그 항목을 검토자가 승인하도록 다시 보인다(기존 테스트 SPEC의 `발견` 항목과 같다).
 
 ## Learnings
 - 바이트 호환 계약이 있는 렌더러에 기능을 더할 때는 공용 CSS 상수를 건드리지 말고 조건부로 덧붙인다 — 편집 전에 기준선 산출물(전체 입력)과 sha를 먼저 떠 둔다.
