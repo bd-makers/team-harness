@@ -504,6 +504,24 @@ test('brief CLI: 자립성을 통과한 뷰 SVG 만 싣고, 없음·거부는 �
   } finally { await rm(dir, { recursive: true, force: true }); }
 });
 
+test('brief CLI: 태그 짝이 어긋난 뷰 SVG 는 rejected — 깨진 그림을 embedded 로 싣지 않는다', async () => {
+  const bad = svgOf('module').replace('<rect', '<g><rect').replace('fill="#eef"/>', 'fill="#eef"></g></rect>');
+  const dir = await fixture({ views: { sequence: svgOf('sequence'), module: bad } });
+  try {
+    const r = await capture(() => run(dir, { json: true }));
+    assert.equal(r.exitCode, undefined, r.logs.join('\n'));
+    const env = JSON.parse(r.logs.join('\n'));
+    assert.equal(env.status, 'success');
+    assert.deepEqual(env.diagrams.map(d => [d.view, d.status, d.violations]), [
+      ['sequence', 'embedded', []],
+      ['module', 'rejected', ['태그 구조: </g> 가 <rect> 를 닫음']],
+    ]);
+    const html = await readFile(briefPath(dir), 'utf8');
+    assert.equal(figureSlides(html).length, 1);
+    assert.ok(!html.includes(Buffer.from(bad, 'utf8').toString('base64')), '거부된 SVG 는 슬라이드에 없다');
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('brief CLI: 뷰 파일이 없으면 missing — 출력 HTML 은 뷰 없는 렌더와 같고 summary 도 그대로다', async () => {
   const dir = await fixture();
   try {

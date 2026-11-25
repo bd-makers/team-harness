@@ -13,6 +13,10 @@
 
 - **`harness-team brief`가 diagram 뷰 SVG를 그림 슬라이드로 싣는다** (task `brief-diagram-svg-embed`, minor). 활성 task에 `<name>-diagram-<view>.svg`(sequence → module)가 있고 `diagram record --view`와 같은 자립성 검사를 통과하면, `## 설계` 절의 마지막 슬라이드 뒤에 data URI `<img>` 슬라이드로 넣는다. 보이는 글자를 붙이지 않아 "새 사실 0"·script 0·외부 자산 0·결정론 계약이 그대로다. 파일이 없거나 위반이면 실패하지 않고 콘솔 한 줄과 `--json` `diagrams`(view·path·status `embedded|missing|rejected`·violations)로 알린다. 레거시 `<name>-diagram.html`은 싣지 않는다. `renderBrief(spec)`를 인자 하나로 부르면 0.58.4와 같은 바이트다 — 뷰는 선택 두 번째 인자 `{ diagrams: [{ view, rel, svg }] }`로만 받는다(직접 import하는 다운스트림 래퍼 호환).
 
+### Changed
+
+- **뷰 SVG 자립성 검사가 태그 짝도 본다 — `diagram record --view`가 더 엄격해진다** (task `diagram-svg-wellformed`). `svgSelfContainmentViolations`가 요소 태그의 여닫이 짝(`<g><rect></g></rect>`), 닫히지 않은 요소, 루트 `</svg>` 뒤의 내용, 태그로 읽히지 않는 맨 `<`를 위반 하나(`태그 구조: …`)로 낸다. 같은 함수를 쓰는 세 곳이 함께 바뀐다: `diagram record --view`는 exit 1로 거부하고, `brief`는 그 뷰를 `rejected`로 빼며(깨진 그림을 `embedded`로 싣지 않음), `pr-check`는 PR 본문 링크 안내 대신 "자립형이 아님"을 알린다. 주석·CDATA·PI는 건너뛰고 이름은 대소문자를 그대로 비교한다(XML). 완전한 XML 검사는 아니다 — 속성 따옴표·중복 속성·엔티티 유효성·맨 `&`는 보지 않는다. 파서 없는 문자열 검사라 결정론이고 의존성이 없다.
+
 ## [0.58.4] - 2026-11-23
 
 ### Fixed

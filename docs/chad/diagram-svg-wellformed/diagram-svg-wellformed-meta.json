@@ -1,0 +1,12 @@
+{
+  "user": "chad",
+  "task": "diagram-svg-wellformed",
+  "created": "2026-11-25",
+  "firstActivatedAt": "2026-11-25T05:11:26.646Z",
+  "baseSha": "3acad2369d0fc1f64a4f566863bf04448b768aca",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": []
+}

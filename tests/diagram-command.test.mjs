@@ -490,6 +490,13 @@ const SVG_VIOLATIONS = [
   ['16진 문자 참조로 숨긴 href', `<svg ${NS}><image href="&#x68;ttps://x/y.png"/></svg>`, /^외부 href: https:\/\/x\/y\.png$/],
   ['따옴표 안 > 뒤의 이벤트 속성', `<svg ${NS}><rect aria-label="A > B" onload="x()"/></svg>`, /^이벤트 핸들러 속성\(스크립트\): onload$/],
   ['DTD 엔티티', `<!DOCTYPE svg [<!ENTITY u "x">]>\n<svg ${NS}/>`, /^DTD 엔티티 선언: <!ENTITY$/],
+  // 태그 구조(brief-diagram-svg-embed codex P2) — 짝이 어긋난 SVG 는 이미지로 그려지지 않는다
+  ['짝 안 맞는 태그', `<svg ${NS}><g><rect></g></rect></svg>`, /^태그 구조: <\/g> 가 <rect> 를 닫음$/],
+  ['닫히지 않은 자식', `<svg ${NS}><g><rect/></svg>`, /^태그 구조: <\/svg> 가 <g> 를 닫음$/],
+  ['대소문자가 다른 닫기', `<svg ${NS}><G></g></svg>`, /^태그 구조: <\/g> 가 <G> 를 닫음$/],
+  ['닫히지 않은 루트', `<svg ${NS}><svg></svg>`, /^태그 구조: <svg> 가 닫히지 않음$/],
+  ['루트 뒤 요소', `<svg ${NS}></svg><svg ${NS}></svg>`, /^태그 구조: 루트 <\/svg> 뒤에 내용: <svg /],
+  ['태그로 읽히지 않는 <', `<svg ${NS}><text>a < b</text></svg>`, /^태그 구조: 태그로 읽히지 않는 '<': < b<\/text>/],
 ];
 
 test('svgSelfContainmentViolations: 허용되는 비슷한 것들을 모은 SVG 는 통과한다', () => {
@@ -498,6 +505,12 @@ test('svgSelfContainmentViolations: 허용되는 비슷한 것들을 모은 SVG 
   // 문서 안 참조를 문자 참조로 쓴 것(`&#35;g` = `#g`), 스스로 닫는 루트, 끝의 공백·주석은 허용(codex 1차)
   assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><use href="&#35;g"/><rect aria-label="a &gt; b" fill="url(&#x23;g)"/></svg>\n<!-- end -->\n`), []);
   assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS} viewBox="0 0 1 1"/>`), []);
+});
+
+test('svgSelfContainmentViolations: 태그 구조 검사는 주석·CDATA·PI·문자 참조·대소문자 같은 짝을 통과시킨다', () => {
+  // 주석·CDATA 안의 `<`·`</g>` 는 태그가 아니다. `&#60;` 는 풀지 않고 본다(태그를 만들지 않는다).
+  assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><!-- </g> --><style><![CDATA[ a < b { fill: #000 } ]]></style><?pi x?>`
+    + `<g><G><rect aria-label="1 > 0"/></G><text>a &lt; b &#60;g&#62;</text></g></svg>`), []);
 });
 
 test('svgSelfContainmentViolations: 규칙마다 위반 표본이 그 규칙 하나만 건다', () => {

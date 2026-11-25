@@ -118,6 +118,36 @@ const decodeRefs = (text) => text
   .replace(/&#([0-9]+);/g, (m, d) => { const c = Number(d); return c <= 0x10ffff ? String.fromCodePoint(c) : m; })
   .replace(/&amp;/g, '&');
 
+// 태그 여닫이 짝만 본다(brief-diagram-svg-embed codex P2) — 짝이 어긋난 SVG 는 이미지로 그려지지 않는데 자립성 검사는 통과했다.
+// 완전한 XML 검사가 아니다: 속성 따옴표·중복 속성·엔티티·맨 `&` 는 보지 않는다. 문자 참조를 풀기 전 원문을 읽는다(`&#60;` 는 글자).
+const TAG_NAME = `[^\\s/<>!?="']+`;
+const MARKUP_RE = new RegExp(`<!--[\\s\\S]*?-->|<!\\[CDATA\\[[\\s\\S]*?\\]\\]>|<\\?[\\s\\S]*?\\?>|</(${TAG_NAME})\\s*>|<(${TAG_NAME})(?:${ATTR})*\\s*(/?)>|<`, 'g');
+function tagStructureViolation(body) {
+  const stack = [];
+  let rootClosed = false;
+  let last = 0;
+  const afterRoot = (at) => `루트 </svg> 뒤에 내용: ${excerpt(body.slice(at).trim().split('\n')[0])}`;
+  for (const m of body.matchAll(MARKUP_RE)) {
+    if (rootClosed && body.slice(last, m.index).trim()) return afterRoot(last);
+    last = m.index + m[0].length;
+    const [token, close, open, selfClosing] = m;
+    if (close) {
+      if (rootClosed) return afterRoot(m.index);
+      if (stack.at(-1) !== close) return `</${close}> 가 <${stack.at(-1)}> 를 닫음`;
+      stack.pop();
+      rootClosed = !stack.length;
+    } else if (open) {
+      if (rootClosed) return afterRoot(m.index);
+      if (selfClosing) rootClosed = !stack.length;
+      else stack.push(open);
+    } else if (token === '<') {
+      return `태그로 읽히지 않는 '<': ${excerpt(body.slice(m.index).split('\n')[0])}`;
+    }
+  }
+  if (rootClosed && body.slice(last).trim()) return afterRoot(last);
+  return stack.length ? `<${stack.at(-1)}> 가 닫히지 않음` : null;
+}
+
 // 위반 설명 목록(없으면 빈 배열). 파서가 아니라 문자열 검사다 — 결정론이고 의존성이 없다.
 export function svgSelfContainmentViolations(text) {
   const violations = [];
@@ -133,6 +163,10 @@ export function svgSelfContainmentViolations(text) {
     const tail = body.replace(/(?:\s+|<!--[\s\S]*?-->)*$/, '');
     if (!(root[0].endsWith('/>') && tail === root[0]) && !tail.endsWith('</svg>')) {
       violations.push('루트 <svg> 가 닫히지 않음 — 파일이 잘렸는지 확인');
+    } else {
+      // 잘린 파일은 위에서 한 번만 알린다 — 같은 원인을 두 번 세지 않는다.
+      const structure = tagStructureViolation(body);
+      if (structure) violations.push(`태그 구조: ${structure}`);
     }
   }
   const decoded = decodeRefs(text);
