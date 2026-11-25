@@ -30,7 +30,7 @@
 - 검토 완료: 2026-11-25
 
 ## 설계 / 접근
-- `runBrief`: `DIAGRAM_VIEWS`마다 `taskFilePath(..., 'diagram-<view>.svg')`를 읽는다. 없으면 `missing`, 읽기 실패(디렉터리·경합 삭제·권한)나 `svgSelfContainmentViolations` 위반이면 `rejected`(+violations — 읽기 실패는 `읽기 실패: <code>`), 통과하면 `embedded`로 `renderBrief`에 넘긴다.
+- `runBrief`: `DIAGRAM_VIEWS`마다 `taskFilePath(..., 'diagram-<view>.svg')`를 읽는다. `exists`가 거짓이면(파일 없음, 상위 디렉터리 권한 등 `stat` 실패 포함) `missing`, 존재 확인 뒤 읽기 실패(디렉터리·경합 삭제·파일 권한)나 `svgSelfContainmentViolations` 위반이면 `rejected`(+violations — 읽기 실패는 `읽기 실패: <code>`), 통과하면 `embedded`로 `renderBrief`에 넘긴다.
 - `renderBrief(spec, { diagrams } = {})`: 뷰마다 `<section class="slide"><figure><img src="data:image/svg+xml;base64,…" alt="<rel>"></figure></section>`.
   - `<img>` data URI라 SVG의 `<style>`·id·텍스트가 문서로 새지 않는다(텍스트 노드 0 — 새 사실 판정 대상 밖).
   - 보이는 텍스트 노드(figcaption·제목)는 넣지 않는다. 경로(뷰 이름 포함)는 `alt`에만 둔다.
