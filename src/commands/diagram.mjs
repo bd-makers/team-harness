@@ -98,16 +98,25 @@ const PROLOG_RE = /^(?:\s+|<\?[\s\S]*?\?>|<!--[\s\S]*?-->|<!DOCTYPE(?:[^>[]|\[[\
 // 속성 하나 — 따옴표 안의 `>` 를 태그 끝으로 보지 않게 값을 통째로 건너뛴다(codex 1차 P2).
 // 이름·따옴표 없는 값에 `<` 를 받지 않는다 — `>` 를 빠뜨린 태그가 다음 태그를 속성으로 삼켜 짝 검사를 통과하지 않게(리뷰 P2).
 const ATTR = `\\s+[^\\s=/<>"']+(?:\\s*=\\s*(?:"[^"]*"|'[^']*'|[^\\s"'<>]+))?`;
+// 요소 이름 — XML 이름은 `_`·ASCII 밖 글자로도 시작한다. 이벤트 규칙과 태그 구조 검사가 함께 쓴다.
+const TAG_NAME = `[^\\s/<>!?="']+`;
 const ALWAYS_BAD = [
   [/<((?:[\w-]+:)?script)\b/i, '스크립트 요소'],
   [/<((?:[\w-]+:)?foreignObject)\b/i, 'foreignObject(HTML 섞기)'],
   // 태그 안의 `on<이름>=` 만 — 텍스트 노드의 "online = …" 은 태그 밖이라 맞지 않는다.
   // 원문(raw)에서 찾는다: XML 은 속성 이름·따옴표 구조의 문자 참조를 풀지 않으므로, 푼 글에서 찾으면
   // 값 안 `&#34;` 가 따옴표 구조를 바꿔 진짜 핸들러를 놓치거나 글자를 핸들러로 본다(리뷰 2차 P3-4).
-  [new RegExp(`<[a-z][\\w:.-]*(?:${ATTR})*?\\s+(on[a-z]+)\\s*=`, 'i'), '이벤트 핸들러 속성(스크립트)', 'raw'],
+  // 이름 첫 글자를 `[a-z]` 로 묶으면 `<_x onclick=…>` 가 샌다 — 알 수 없는 요소도 SVG 이름공간이면 핸들러가 돈다.
+  [new RegExp(`<${TAG_NAME}(?:${ATTR})*?\\s+(on[a-z]+)\\s*=`, 'i'), '이벤트 핸들러 속성(스크립트)', 'raw'],
   [/(@import)\b/i, '외부 스타일'],
-  // 내부 subset 의 엔티티는 `&x;` 뒤에 참조를 숨길 수 있다 — 다이어그램에 필요 없다.
-  [/(<!ENTITY)\b/i, 'DTD 엔티티 선언'],
+  // 내부 subset 은 다이어그램에 필요 없다 — 선언 하나라도 있으면 거부한다(허용 목록). 엔티티는 `&x;` 뒤에 참조를 숨기고,
+  // `<!ATTLIST rect onclick CDATA "x()">` 의 기본값은 Blink·WebKit(libxml2)·Gecko(expat) 모두 실제 속성으로 붙여 핸들러가 돈다.
+  // 원문에서 찾는다 — 선언 키워드는 문자 참조로 쓸 수 없고, 텍스트의 `&#60;!ENTITY` 는 글자다.
+  [/(<!(?:ENTITY|ATTLIST|ELEMENT|NOTATION))\b/i, 'DTD 내부 subset 선언', 'raw'],
+  // SMIL `<set>`·`<animate>` 의 attributeName 값. on* 은 지금 엔진에서 Animatable: no 라 돌지 않지만 쓸 일이 없고,
+  // href 는 실제로 바뀌어 `values="javascript:…"` 로 이동한다 — href= 가 없어 REF_RULES 가 못 본다. 로컬 이름(마지막 접두사 뒤)을
+  // 본다(`xlink:href:x` 꼼수 포함). 속성 값이라 XML 이 문자 참조를 푼다 — 푼 글에서 찾는다(`&#104;ref` = href).
+  [/\battributeName\s*=\s*["']?\s*((?:[^\s"'<>:]*:)*(?:on[a-z]|href)[^\s"'<>]*)/i, 'SMIL 로 바꾸는 이벤트·href 속성'],
 ];
 const REF_RULES = [
   [/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi, '외부 href'],
@@ -123,7 +132,6 @@ const decodeRefs = (text) => text
 
 // 태그 여닫이 짝만 본다(brief-diagram-svg-embed codex P2) — 짝이 어긋난 SVG 는 이미지로 그려지지 않는데 자립성 검사는 통과했다.
 // 완전한 XML 검사가 아니다: 속성 따옴표·중복 속성·엔티티·맨 `&` 는 보지 않는다. 문자 참조를 풀기 전 원문을 읽는다(`&#60;` 는 글자).
-const TAG_NAME = `[^\\s/<>!?="']+`;
 const MARKUP_RE = new RegExp(`<!--[\\s\\S]*?-->|<!\\[CDATA\\[[\\s\\S]*?\\]\\]>|<\\?[\\s\\S]*?\\?>|</(${TAG_NAME})\\s*>|<(${TAG_NAME})(?:${ATTR})*\\s*(/?)>|<`, 'g');
 function tagStructureViolation(body) {
   const stack = [];

@@ -489,7 +489,7 @@ const SVG_VIOLATIONS = [
   ['문자 참조로 숨긴 url()', `<svg ${NS}><rect fill="u&#114;l(p.svg#g)"/></svg>`, /^외부 url\(\): p\.svg#g$/],
   ['16진 문자 참조로 숨긴 href', `<svg ${NS}><image href="&#x68;ttps://x/y.png"/></svg>`, /^외부 href: https:\/\/x\/y\.png$/],
   ['따옴표 안 > 뒤의 이벤트 속성', `<svg ${NS}><rect aria-label="A > B" onload="x()"/></svg>`, /^이벤트 핸들러 속성\(스크립트\): onload$/],
-  ['DTD 엔티티', `<!DOCTYPE svg [<!ENTITY u "x">]>\n<svg ${NS}/>`, /^DTD 엔티티 선언: <!ENTITY$/],
+  ['DTD 엔티티', `<!DOCTYPE svg [<!ENTITY u "x">]>\n<svg ${NS}/>`, /^DTD 내부 subset 선언: <!ENTITY$/],
   // 태그 구조(brief-diagram-svg-embed codex P2) — 짝이 어긋난 SVG 는 이미지로 그려지지 않는다
   ['짝 안 맞는 태그', `<svg ${NS}><g><rect></g></rect></svg>`, /^태그 구조: <\/g> 가 <rect> 를 닫음$/],
   ['닫히지 않은 자식', `<svg ${NS}><g><rect/></svg>`, /^태그 구조: <\/svg> 가 <g> 를 닫음$/],
@@ -504,6 +504,18 @@ const SVG_VIOLATIONS = [
   // 리뷰 2차 P3-4 — 이벤트 핸들러는 원문에서 찾는다. XML 은 속성 이름·따옴표 구조의 문자 참조를 풀지 않는다.
   ['값 안 &#34; 뒤의 이벤트 속성', `<svg ${NS}><rect aria-label="say &#34;hi&#34;" onclick="x()"/></svg>`, /^이벤트 핸들러 속성\(스크립트\): onclick$/],
   ['이름 안 문자 참조 뒤의 이벤트 속성', `<svg ${NS}><rect a&#60;1="2" onload="x()"/></svg>`, /^이벤트 핸들러 속성\(스크립트\): onload$/],
+  // svg-script-evasion — 스크립트 우회 세 갈래
+  ['_ 로 시작하는 요소의 이벤트 속성', `<svg ${NS}><_x onclick="x()"/></svg>`, /^이벤트 핸들러 속성\(스크립트\): onclick$/],
+  ['ASCII 밖 이름 요소의 이벤트 속성', `<svg ${NS}><é onclick="x()"/></svg>`, /^이벤트 핸들러 속성\(스크립트\): onclick$/],
+  // 내부 subset 의 속성 기본값은 Blink·WebKit·Gecko 모두 실제 속성으로 붙인다 — 핸들러가 돈다
+  ['DTD 속성 기본값', `<!DOCTYPE svg [<!ATTLIST rect onclick CDATA "x()">]>\n<svg ${NS}><rect/></svg>`, /^DTD 내부 subset 선언: <!ATTLIST$/],
+  ['DTD 요소 선언', `<!DOCTYPE svg [<!ELEMENT svg ANY>]>\n<svg ${NS}/>`, /^DTD 내부 subset 선언: <!ELEMENT$/],
+  // SMIL 로 on* 을 바꾸는 것은 지금 엔진에서 돌지 않지만(Animatable: no) 쓸 일이 없다. href 는 실제로 바뀐다(javascript: 로 이동).
+  ['SMIL set 의 이벤트 속성', `<svg ${NS}><rect><set attributeName="onclick" to="x()"/></rect></svg>`, /^SMIL 로 바꾸는 이벤트·href 속성: onclick$/],
+  ['SMIL animate 의 이벤트 속성', `<svg ${NS}><rect><animate attributeName='onload' values="x()"/></rect></svg>`, /^SMIL 로 바꾸는 이벤트·href 속성: onload$/],
+  ['SMIL animate 의 href', `<svg ${NS}><a><animate attributeName="href" values="javascript:x()"/></a></svg>`, /^SMIL 로 바꾸는 이벤트·href 속성: href$/],
+  ['SMIL set 의 xlink:href(이름공간 꼼수)', `<svg ${NS}><a><set attributeName="xlink:href:x" to="https://x/y"/></a></svg>`, /^SMIL 로 바꾸는 이벤트·href 속성: xlink:href:x$/],
+  ['문자 참조로 숨긴 SMIL href', `<svg ${NS}><a><set attributeName="&#104;ref" to="javascript:x()"/></a></svg>`, /^SMIL 로 바꾸는 이벤트·href 속성: href$/],
 ];
 
 test('svgSelfContainmentViolations: 허용되는 비슷한 것들을 모은 SVG 는 통과한다', () => {
@@ -512,6 +524,9 @@ test('svgSelfContainmentViolations: 허용되는 비슷한 것들을 모은 SVG 
   // 문서 안 참조를 문자 참조로 쓴 것(`&#35;g` = `#g`), 스스로 닫는 루트, 끝의 공백·주석은 허용(codex 1차)
   assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><use href="&#35;g"/><rect aria-label="a &gt; b" fill="url(&#x23;g)"/></svg>\n<!-- end -->\n`), []);
   assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS} viewBox="0 0 1 1"/>`), []);
+  // 다이어그램이 쓸 법한 SMIL(투명도·채움)과 글자 속 "<!ENTITY"(&#60;) 는 통과(svg-script-evasion)
+  assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><rect><animate attributeName="opacity" values="0;1" dur="1s"/>`
+    + `<set attributeName="fill" to="#000"/></rect><text>&#60;!ENTITY x&#62;</text></svg>`), []);
 });
 
 test('svgSelfContainmentViolations: 태그 구조 검사는 주석·CDATA·PI·문자 참조·대소문자 같은 짝을 통과시킨다', () => {
