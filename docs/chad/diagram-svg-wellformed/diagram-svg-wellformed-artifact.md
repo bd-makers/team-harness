@@ -6,8 +6,18 @@
 - `svgSelfContainmentViolations`에 `tagStructureViolation`(태그 여닫이 짝·닫히지 않음·루트 뒤 내용·맨 `<`)을 더했다. 루트가 없거나 잘린 파일이면 건너뛰어 위반이 겹치지 않는다.
 - 세 호출부(`diagram record --view`·`brief`·`pr-check`)가 함께 엄격해진다 — 호출부 코드는 그대로.
 - 테스트: `SVG_VIOLATIONS`에 태그 구조 표본 6개(record 루프가 exit 1까지 검증), 주석·CDATA·PI·`&#60;`·대소문자 짝 통과 표본, brief `rejected` 테스트.
-- 검증: `npm test` 1480 pass / 0 fail(perf 1 pass), `npm run docs:check` 최신. 20000개 요소 SVG 9ms.
+- 리뷰 반영으로 같은 함수의 기존 결함 셋도 고쳤다: 끝 공백·주석 정규식의 지수 backtracking(루프로 교체), 이벤트 핸들러 규칙을 원문에서 찾기, 위반 문구의 태그 이름 60자 자르기.
+- 검증(첫 구현 시점): `npm test` 1480 pass / 0 fail(perf 1 pass), `npm run docs:check` 최신. 20000개 요소 SVG 9ms.
 - 미검증: 실제 생성기(diagram 스킬)가 만든 SVG — 이 저장소에 커밋된 뷰 SVG가 없다.
+
+### Ship (2026-11-26, tip `5b813238`, base `origin/main`)
+- 검증: `npm test` → exit 0, `ℹ tests 1485 / ℹ pass 1484 / ℹ fail 0 / ℹ skipped 1`(perf `ℹ tests 1 / ℹ pass 1`) — `5232c42d`에서 실행, 이후 커밋은 task 문서뿐.
+- 리뷰: claude 3회·codex 2회, 모두 아래 `## Reviews`에 기록. 마지막 두 codex 리뷰는 Approve(발견 없음 / P3 하나 조치).
+- 남은 리스크:
+  - 이 브랜치는 미머지 `claude/brief-diagram-svg-embed-0f4251`(3acad236) 위에 쌓였다. `origin/main` 기준 diff에 그 브랜치 변경(brief 뷰 SVG 삽입)이 섞여 보이므로 그 브랜치를 먼저 머지하거나 PR base를 그 브랜치로 둔다.
+  - 문자열 검사라 완전한 XML well-formedness가 아니다(spec `## 범위` Out).
+  - `[사람] spec 검토 승인` 미완 — `done` 가드가 막는다.
+- 후속: 없음(텍스트·`data-attributeName` 오탐은 `svg-script-evasion`에서 미조치로 결정).
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
