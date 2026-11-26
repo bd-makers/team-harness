@@ -60,6 +60,30 @@ Reviewed the diff against `52671997`. `git diff --check` passed, all four read-o
 - **P3 `data-attributeName="href"`·텍스트 속 `attributeName="href"` 거부 — 앞 P2-2와 같은 사안.** 재현됨. 정책 안(주석·텍스트도 보수적으로 본다)이라 미조치.
 - **P3 주석·CDATA 안 `<!ELEMENT`·`<_x onclick="example"/>` 거부 — 오탐이지만 기존 정책.** 재현됨. 기존 `<script`·`<!ENTITY` 규칙도 주석·CDATA 안을 본다(`<!-- <script> -->` 거부 재확인). 미조치.
 
+### 2026-11-26T01:14:45.359Z — codex (harness-team review)
+
+- engine: codex · model: default · scope: diff · base: 52671997 · mergeBase: 52671997d545745b1293a309c9a67032ad2675a2 · tip: 1fb4267ff788eb579cb13bf09729a6369b5fd570 · exit 0 · 1440 B
+
+```text
+No P1 or P2 findings in the diff against `52671997`.
+
+- **P3** — [src/commands/diagram.mjs:122](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/upbeat-blackburn-4fede1/src/commands/diagram.mjs:122>) — The conservative SMIL scan also rejects valid SVGs that quote `attributeName="href"` in visible text or use `data-attributeName="href"` as metadata.
+- **P3** — [src/commands/diagram.mjs:191](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/upbeat-blackburn-4fede1/src/commands/diagram.mjs:191>) — The SMIL diagnostic echoes the full match without a length limit, so a long value can flood CLI output.
+- **P3** — [svg-script-evasion-spec.md:56](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/upbeat-blackburn-4fede1/docs/chad/svg-script-evasion/svg-script-evasion-spec.md:56>) — The spec still shows the earlier SMIL regex, omitting both backtracking fixes now in the implementation.
+
+`git status` showed a clean worktree, `git diff --check` passed, and all six in-memory validator tests passed. No files were modified. CLI integration and browser behavior were outside this verification.
+
+**Verdict — Approve with nits.**
+```
+
+<!-- harness:review kind=codex scope=diff tip=1fb4267ff788eb579cb13bf09729a6369b5fd570 at=2026-11-26T01:14:45.359Z -->
+
+**판별 (작성 세션, 2026-11-26)** — P1·P2 없음. 앞 리뷰의 두 P2는 다시 지적되지 않았다.
+
+- **P3 텍스트·`data-attributeName="href"` 거부 — 세 번째 같은 지적.** 앞 판별대로 정책 안이라 미조치.
+- **P3 SMIL 위반 문구가 일치 전체를 길이 제한 없이 찍는다 — 진짜지만 이 task가 만든 것이 아니다.** 재현: 값 `href`+5000자 → 문구 5028자. `ALWAYS_BAD` 고리 전체가 `m[1]`을 그대로 찍는 기존 모양이라 `<script`+5000자도 5029자다. `REF_RULES`만 `excerpt()`를 쓴다. 고친다면 고리 한 줄을 `excerpt(m[1])`로 바꾸면 모든 규칙에 맞는다. 미조치(리뷰만 요청).
+- **P3 spec `## 설계 / 접근`의 SMIL 정규식이 옛 모양 — 진짜(문서 드리프트).** spec 56행은 `\s*["']?\s*`·`[^\s"'<>:]*`를 그대로 보여 준다. 두 backtracking 수정이 코드·plan·artifact에만 있다. 미조치(리뷰만 요청).
+
 ## Learnings
 
 - XML 속성 **이름**·마크업 키워드는 문자 참조를 풀지 않고 속성 **값**은 푼다 — 규칙마다 raw/decoded를 고른다(선언 키워드·이벤트 이름 = raw, `attributeName` 값 = decoded).
