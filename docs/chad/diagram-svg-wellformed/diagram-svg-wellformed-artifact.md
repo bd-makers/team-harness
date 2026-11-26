@@ -13,6 +13,7 @@
 ### Ship (2026-11-26, tip `5b813238`, base `origin/main`)
 - 검증: `npm test` → exit 0, `ℹ tests 1485 / ℹ pass 1484 / ℹ fail 0 / ℹ skipped 1`(perf `ℹ tests 1 / ℹ pass 1`) — `5232c42d`에서 실행, 이후 커밋은 task 문서뿐.
 - 리뷰: claude 3회·codex 2회, 모두 아래 `## Reviews`에 기록. 마지막 두 codex 리뷰는 Approve(발견 없음 / P3 하나 조치).
+- 정합 검증: codex-shipcheck 1회 — S1 BLOCKER(spec 설계 문장 오류)를 문서로 고침, S2–S5 pass.
 - 남은 리스크:
   - 이 브랜치는 미머지 `claude/brief-diagram-svg-embed-0f4251`(3acad236) 위에 쌓였다. `origin/main` 기준 diff에 그 브랜치 변경(brief 뷰 SVG 삽입)이 섞여 보이므로 그 브랜치를 먼저 머지하거나 PR base를 그 브랜치로 둔다.
   - 문자열 검사라 완전한 XML well-formedness가 아니다(spec `## 범위` Out).
@@ -228,7 +229,7 @@ Verified against `680c4558` with `git status`, `git diff`, and `git diff --check
 <!-- harness:review kind=codex scope=diff tip=1a9069ea30e5a04898867bc6b7a25f1b0648d2ef at=2026-11-26T01:57:59.016Z -->
 
 판별 (작성 세션):
-- P3 태그 구조 표본 두 개가 같은 갈래(짝 어긋남)만 탄다 — **진짜(테스트 공백), 일부.** 재현: `<g…5000><rect/></g>`·`<g…5000></svg>` 둘 다 `</짧은 이름> 가 <긴 이름> 를 닫음`이다. 긴 **닫는** 이름(`<g></g…5000>`)은 표본이 없다(직접 돌리면 81자로 잘린다). `<x> 가 닫히지 않음` 갈래는 `svgSelfContainmentViolations`로는 닿지 않는다 — 루트 끝 검사가 `</svg>`로 끝나기를 요구하고, 그 `</svg>`가 남은 자식을 만나면 짝 어긋남으로 먼저 돌아간다. 그 갈래의 `excerpt`는 방어용이다. 조치(사용자 지시): 긴 닫는 이름 표본 `<g></g…5000>` 한 줄을 더했다 — 닫는 이름의 `excerpt`를 되돌리면 실패한다(변이 확인).
+- P3 태그 구조 표본 두 개가 같은 갈래(짝 어긋남)만 탄다 — **진짜(테스트 공백), 일부.** 재현: `<g…5000><rect/></g>`·`<g…5000></svg>` 둘 다 `</짧은 이름> 가 <긴 이름> 를 닫음`이다. 긴 **닫는** 이름(`<g></g…5000>`)은 표본이 없다(직접 돌리면 81자로 잘린다). ~~`<x> 가 닫히지 않음` 갈래는 닿지 않는다~~ — **틀린 판별(shipcheck S1이 바로잡음)**: 마지막 `</svg>`가 같은 이름의 안쪽 요소를 닫으면 닿는다(`<svg …><svg></svg>`, 표본 `닫히지 않은 루트`). 그 갈래의 긴 이름 자르기는 표본이 없다. 조치(사용자 지시): 긴 닫는 이름 표본 `<g></g…5000>` 한 줄을 더했다 — 닫는 이름의 `excerpt`를 되돌리면 실패한다(변이 확인).
 
 ### 2026-11-26T02:28:10.991Z — codex (harness-team review)
 
@@ -245,6 +246,32 @@ No P1, P2, or P3 findings in the diff against `031ccf33`. The new test case cove
 <!-- harness:review kind=codex scope=diff tip=5232c42df0c4f0e562a8ad23b3275b5daf2dcf76 at=2026-11-26T02:28:10.991Z -->
 
 판별 (작성 세션): 발견 없음(Approve). 조치 없음.
+
+### 2026-11-26T05:49:08.189Z — codex-shipcheck (harness-team review)
+
+- engine: codex · model: default · scope: diff · base: refs/remotes/origin/main · mergeBase: 88b859e76fe6f4d2ab5b9777b6f62cf802fe76d6 · tip: 5d9ef4d2c7b132d7fb4c965a34da9278f14ff5b8 · exit 0 · 3005 B
+
+```text
+`refs/remotes/origin/main` (`88b859e7`) 대비 `HEAD` (`5d9ef4d2`)를 검증했습니다. 작업 트리는 깨끗했고 파일을 수정하지 않았습니다.
+
+| ID | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| S1 | Spec과 구현의 정합성 | BLOCKER | **fail** | Spec은 “`<x> 가 닫히지 않음` 갈래도 있지만 이 함수로는 닿지 않는다”고 설명합니다. diff의 `닫히지 않은 루트` 표본은 `<svg …><svg></svg>`에 대해 바로 그 메시지를 기대하며, 직접 실행에서도 재현됐습니다. 또한 spec은 루트 뒤의 엉뚱한 닫는 태그를 “루트 뒤 내용”으로 분류한다고 적었으나, `<svg …></svg></g>`는 diff의 `!tail.endsWith('</svg>')` 검사에서 “파일이 잘렸는지 확인”으로 분류됩니다. |
+| S2 | Plan 완료 항목의 증거 | MAJOR | pass | “실패 테스트”, “태그 중첩 검사”, “CHANGELOG”는 `d68d286e`에 있습니다. 1차 리뷰 반영은 `0a1ee4bb`·`29e148c5`, 2차는 `2e565ff7`·`52671997`, 3차는 `babf703d`에서 확인했습니다. Plan이 열거한 merge 5건과 길이 제한 커밋 `1a9069ea`·`5232c42d`도 확인했습니다. “`npm test` exit 0”은 artifact의 Ship 검증 기록과 일치합니다. |
+| S3 | 범위 밖 변경의 사유 | MAJOR | pass | diff의 `brief` 삽입 변경은 artifact에 “`origin/main` 기준 diff에 그 브랜치 변경(brief 뷰 SVG 삽입)이 섞여 보인다”고 기록돼 있습니다. `svg-script-evasion` 변경은 spec에 “그 브랜치를 이 브랜치에 merge했다”고 명시돼 있으며, 공통 진단 길이 제한도 해당 작업의 artifact에 “`ALWAYS_BAD` 고리를 `excerpt(m[1])`로 바꾸고”라고 기록돼 있습니다. |
+| S4 | 리뷰 기록과 마커 | MAJOR | pass | Artifact의 “claude 3회·codex 2회”와 `## Reviews`의 `<!-- harness:review … -->` 마커 5개가 일치합니다. 별도로 기록된 Codex 연결 실패 2건은 리뷰 명령 규약의 “성공(exit 0)한 실행만 … 기록”에 따라 집계에서 제외했습니다. |
+| S5 | Ship 검증 결과의 출력 인용 | BLOCKER | pass | 현재 Ship 기록은 실행 커밋 `5232c42d`와 함께 “`npm test` → exit 0”, “`ℹ tests 1485 / ℹ pass 1484 / ℹ fail 0 / ℹ skipped 1`”, 성능 테스트 “`ℹ tests 1 / ℹ pass 1`”을 인용합니다. 이후 두 커밋이 task 문서와 메타데이터만 변경한 것도 확인했습니다. |
+
+독립 검증에서 `git diff --check refs/remotes/origin/main`은 exit 0, 읽기 전용 SVG 단위 테스트는 **7 pass / 0 fail**, 문서 검사 출력은 `harness overview 생성 상태가 최신입니다.`였습니다. 전체 `npm test`와 CLI 통합 테스트는 임시 파일을 쓰므로 재실행하지 않았습니다.
+
+**최종 판정: PR 준비 보류.** 실패는 **S1 (BLOCKER)** 한 건입니다. 닫히지 않은 루트 진단의 도달 가능성과 루트 뒤 닫는 태그의 분류가 spec과 구현에서 다릅니다.
+```
+
+<!-- harness:review kind=codex-shipcheck scope=diff tip=5d9ef4d2c7b132d7fb4c965a34da9278f14ff5b8 at=2026-11-26T05:49:08.189Z -->
+
+판별 (작성 세션):
+- S1 [BLOCKER] fail — **진짜(문서 오류), 코드 결함 아님.** 재현: `<svg …><svg></svg>` → `태그 구조: <svg> 가 닫히지 않음`, `<svg …></svg></g>` → `루트 <svg> 가 닫히지 않음 — 파일이 잘렸는지 확인`, `<svg …></svg></g></svg>` → `태그 구조: 루트 </svg> 뒤에 내용: </g></svg>`. 동작은 기존 표본대로이고 spec 설계 문장이 틀렸다. 조치: spec `## 설계 / 접근`을 이 세 경우로 고치고, 앞 codex 리뷰 판별의 "닿지 않는다"를 취소선으로 바로잡았다.
+- S2–S5 pass — 조치 없음.
 
 ## Learnings
 - iCloud 동기화 폴더의 워크트리에는 `<이름> 2.<ext>` 중복 파일이 생긴다. `git add -A` 대신 바꾼 경로를 지정해 스테이징한다.

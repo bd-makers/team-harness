@@ -68,6 +68,18 @@
       "at": "2026-11-26T02:28:10.991Z",
       "exitCode": 0,
       "outputBytes": 442
+    },
+    {
+      "kind": "codex-shipcheck",
+      "engine": "codex",
+      "model": null,
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "88b859e76fe6f4d2ab5b9777b6f62cf802fe76d6",
+      "tip": "5d9ef4d2c7b132d7fb4c965a34da9278f14ff5b8",
+      "at": "2026-11-26T05:49:08.189Z",
+      "exitCode": 0,
+      "outputBytes": 3005
     }
   ]
 }
