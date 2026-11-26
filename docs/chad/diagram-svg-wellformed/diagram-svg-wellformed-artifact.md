@@ -203,5 +203,22 @@
 - P3 이벤트 표본 `a&#60;1="2" onload=`는 XML Name에 `&`가 올 수 없어 well-formed가 아님 — **진짜(근거 문구)**. 되돌림은 잡는다. 조치: 테스트 주석을 행별 근거로 고침(행 유지).
 - 기존 미탐(이번 diff 무관): `<!ATTLIST rect onclick …>`, `<_x onclick=…/>`, `<set attributeName="onclick" …>` 모두 `[]` 재현. `<img>` 경로에선 실행 없음, 직접 열 때만 영향. 렌더러 실제 동작은 미확인. 조치: 범위 밖 후속 후보.
 
+### 2026-11-26T01:57:59.016Z — codex (harness-team review)
+
+- engine: codex · model: default · scope: diff · base: 680c4558 · mergeBase: 680c455820574cd83c08f9339e6a84ab21eb499a · tip: 1a9069ea30e5a04898867bc6b7a25f1b0648d2ef · exit 0 · 691 B
+
+```text
+- **P3 (nit)** Both tag fixtures hit the same mismatch branch with short closing names, leaving truncation of long closing names and the unclosed-tag diagnostic uncovered. [tests/diagram-command.test.mjs:577](</Users/chadonpro/Library/Mobile Documents/iCloud~md~obsidian/Documents/para_vault/10_Projects/Harness/harness-aijient-team-plugin/.claude/worktrees/agitated-yonath-4fc02c/tests/diagram-command.test.mjs:577>)
+
+Verified against `680c4558` with `git status`, `git diff`, and `git diff --check`. All 7 targeted SVG unit tests passed. The worktree was clean, and no files were changed. The full suite was skipped because it writes fixtures.
+
+**Verdict: Approve.** No P1 or P2 findings.
+```
+
+<!-- harness:review kind=codex scope=diff tip=1a9069ea30e5a04898867bc6b7a25f1b0648d2ef at=2026-11-26T01:57:59.016Z -->
+
+판별 (작성 세션):
+- P3 태그 구조 표본 두 개가 같은 갈래(짝 어긋남)만 탄다 — **진짜(테스트 공백), 일부.** 재현: `<g…5000><rect/></g>`·`<g…5000></svg>` 둘 다 `</짧은 이름> 가 <긴 이름> 를 닫음`이다. 긴 **닫는** 이름(`<g></g…5000>`)은 표본이 없다(직접 돌리면 81자로 잘린다). `<x> 가 닫히지 않음` 갈래는 `svgSelfContainmentViolations`로는 닿지 않는다 — 루트 끝 검사가 `</svg>`로 끝나기를 요구하고, 그 `</svg>`가 남은 자식을 만나면 짝 어긋남으로 먼저 돌아간다. 그 갈래의 `excerpt`는 방어용이다. 조치: 리뷰만 요청 — 미조치(고친다면 긴 닫는 이름 표본 한 줄).
+
 ## Learnings
 - iCloud 동기화 폴더의 워크트리에는 `<이름> 2.<ext>` 중복 파일이 생긴다. `git add -A` 대신 바꾼 경로를 지정해 스테이징한다.
