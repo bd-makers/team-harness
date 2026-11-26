@@ -562,6 +562,13 @@ test('svgSelfContainmentViolations: attributeName 뒤 긴 공백도 선형 시�
   }
 });
 
+test('svgSelfContainmentViolations: 공백 없이 이어진 attributeName= 도 선형 시간이다 (svg-script-evasion codex 재리뷰 P2)', () => {
+  // 8000번: 옛 접두사 `[^\s"'<>:]*` 는 `=` 를 받아 후보마다 덩어리 끝까지 훑고 되짚어 약 0.4초 걸렸다.
+  const started = Date.now();
+  assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><text>${'attributeName='.repeat(8000)}</text></svg>`), []);
+  assert.ok(Date.now() - started < 100, `${Date.now() - started}ms`);
+});
+
 test('svgSelfContainmentViolations: 규칙마다 위반 표본이 그 규칙 하나만 건다', () => {
   for (const [name, svg, expected] of SVG_VIOLATIONS) {
     const got = svgSelfContainmentViolations(svg);

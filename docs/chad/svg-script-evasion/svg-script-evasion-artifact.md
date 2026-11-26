@@ -52,6 +52,14 @@ Reviewed the diff against `52671997`. `git diff --check` passed, all four read-o
 
 <!-- harness:review kind=codex scope=diff tip=e6109edb0ee35d228ffa7fa1e52b3763983725f3 at=2026-11-25T10:14:17.946Z -->
 
+**판별 (작성 세션, 2026-11-25)** — 리뷰는 상위 brief-diagram 세션이 이 worktree에서 돌렸고(2228ffb9), 판별과 조치는 그 세션의 요청(전하 승인 "둘다")으로 이 세션이 남긴다.
+
+- **앞 P2-1 — 해결 확인.** `e6109edb` 뒤 `attributeName=` 다음 공백 128000칸에 1 ms.
+- **P2 SMIL 정규식의 다른 2차 경로 — 진짜 결함.** 재현: `<text>`에 `attributeName=`을 공백 없이 2000/4000/8000번 이어 쓰면 27/105/418 ms(배가마다 약 4배). 원인: 접두사 `(?:[^\s"'<>:]*:)*`의 글자 집합이 `=`를 받아, `attributeName=` 후보마다 덩어리 끝까지 `:`를 찾아 훑는다.
+  → **조치**: 접두사 글자에서 `=`를 뺐다(`[^\s"'<>:=]*`). 접두사는 XML 이름이라 `=`를 담지 않으므로 잡는 범위는 같다(`xlink:href:x` 표본 그대로 통과). 회귀 테스트 `공백 없이 이어진 attributeName= 도 선형 시간이다`가 수정 전 406 ms로 3회 모두 실패하는 것을 확인했고(100 ms 단언), 수정 후 64000번 4 ms, `a:` 64000번 1 ms, `attributeName=a:` 32000번 3 ms, 값 200000자 1 ms다. `npm test` exit 0 (1485 tests, pass 1484, fail 0, skipped 1).
+- **P3 `data-attributeName="href"`·텍스트 속 `attributeName="href"` 거부 — 앞 P2-2와 같은 사안.** 재현됨. 정책 안(주석·텍스트도 보수적으로 본다)이라 미조치.
+- **P3 주석·CDATA 안 `<!ELEMENT`·`<_x onclick="example"/>` 거부 — 오탐이지만 기존 정책.** 재현됨. 기존 `<script`·`<!ENTITY` 규칙도 주석·CDATA 안을 본다(`<!-- <script> -->` 거부 재확인). 미조치.
+
 ## Learnings
 
 - XML 속성 **이름**·마크업 키워드는 문자 참조를 풀지 않고 속성 **값**은 푼다 — 규칙마다 raw/decoded를 고른다(선언 키워드·이벤트 이름 = raw, `attributeName` 값 = decoded).
