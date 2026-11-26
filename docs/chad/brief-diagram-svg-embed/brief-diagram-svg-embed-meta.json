@@ -1,0 +1,37 @@
+{
+  "user": "chad",
+  "task": "brief-diagram-svg-embed",
+  "created": "2026-11-25",
+  "firstActivatedAt": "2026-11-25T04:42:09.384Z",
+  "baseSha": "88b859e76fe6f4d2ab5b9777b6f62cf802fe76d6",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "model": null,
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "88b859e76fe6f4d2ab5b9777b6f62cf802fe76d6",
+      "tip": "2656f746d419db8faee7a636b28861257e242b7e",
+      "at": "2026-11-25T05:05:54.805Z",
+      "exitCode": 0,
+      "outputBytes": 1084
+    },
+    {
+      "kind": "codex-shipcheck",
+      "engine": "codex",
+      "model": null,
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "88b859e76fe6f4d2ab5b9777b6f62cf802fe76d6",
+      "tip": "f3e16635235d6035295c1868d7193f4855ee84e3",
+      "at": "2026-11-25T05:17:42.066Z",
+      "exitCode": 0,
+      "outputBytes": 2999
+    }
+  ]
+}

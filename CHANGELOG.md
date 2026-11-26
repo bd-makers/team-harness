@@ -9,6 +9,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- **`harness-team brief`가 diagram 뷰 SVG를 그림 슬라이드로 싣는다** (task `brief-diagram-svg-embed`, minor). 활성 task에 `<name>-diagram-<view>.svg`(sequence → module)가 있고 `diagram record --view`와 같은 자립성 검사를 통과하면, `## 설계` 절의 마지막 슬라이드 뒤에 data URI `<img>` 슬라이드로 넣는다. 보이는 글자를 붙이지 않아 "새 사실 0"·script 0·외부 자산 0·결정론 계약이 그대로다. 파일이 없거나 위반이면 실패하지 않고 콘솔 한 줄과 `--json` `diagrams`(view·path·status `embedded|missing|rejected`·violations)로 알린다. 레거시 `<name>-diagram.html`은 싣지 않는다. `renderBrief(spec)`를 인자 하나로 부르면 0.58.4와 같은 바이트다 — 뷰는 선택 두 번째 인자 `{ diagrams: [{ view, rel, svg }] }`로만 받는다(직접 import하는 다운스트림 래퍼 호환).
+
 ## [0.58.4] - 2026-11-23
 
 ### Fixed

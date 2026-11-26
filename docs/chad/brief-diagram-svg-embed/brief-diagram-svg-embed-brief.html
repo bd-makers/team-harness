@@ -1,0 +1,42 @@
+<!doctype html>
+<!-- 생성물 — harness-team brief 가 spec 에서 렌더한다. 손으로 고치지 말고 spec 을 고친 뒤 다시 생성한다. -->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>brief-diagram-svg-embed — Spec</title>
+<style>
+:root{color-scheme:light dark;--bg:#ffffff;--fg:#1d1d1f;--muted:#6e6e73;--line:#d2d2d7;--code:#f2f2f5;--accent:#0a5bb5}
+@media (prefers-color-scheme:dark){:root{--bg:#111113;--fg:#f2f2f2;--muted:#a1a1a6;--line:#3a3a3c;--code:#1f1f22;--accent:#6aaeff}}
+html{scroll-snap-type:y mandatory}
+body{margin:0;background:var(--bg);color:var(--fg);font:18px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif}
+.slide{box-sizing:border-box;min-height:100vh;padding:7vh 8vw;scroll-snap-align:start;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.cover{display:flex;align-items:center}
+h1{font-size:2.4em;line-height:1.25;margin:0}
+h2{font-size:1.6em;line-height:1.3;margin:0 0 .8em;color:var(--accent)}
+h3{font-size:1.15em;margin:1.2em 0 .4em}
+.src{margin:0 0 .3em;color:var(--muted);font-size:.9em}
+.src+ul{margin-top:0}
+ul,ol{padding-left:1.4em}
+li{margin:.25em 0}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.88em;background:var(--code);padding:.08em .32em;border-radius:4px}
+pre{background:var(--code);padding:.9em 1.1em;border-radius:6px;overflow:auto}
+pre code{background:none;padding:0}
+table{border-collapse:collapse;margin:.6em 0}
+th,td{border:1px solid var(--line);padding:.35em .65em;text-align:left;vertical-align:top}
+th{background:var(--code)}
+@media print{html{scroll-snap-type:none}.slide{min-height:auto;break-after:page}}
+</style>
+</head>
+<body>
+<main>
+<section class="slide cover"><h1>brief-diagram-svg-embed — Spec</h1></section>
+<section class="slide"><h2>목적 / 요구사항</h2><ul><li><strong>문제</strong>: <code>harness-team brief</code>는 spec 절만 슬라이드로 옮긴다. 활성 task에 diagram 뷰(<code>&lt;name&gt;-diagram-&lt;view&gt;.svg</code>, <code>DIAGRAM_VIEWS = ['sequence','module']</code>)가 있어도 brief에 실리지 않아, 구현 전 검토자가 슬라이드와 SVG를 따로 연다.</li><li><strong>영향</strong>: 구현 전 사람 검토 게이트(<code>commands/harness-task.md</code>)의 검토자. 다운스트림 kc-task-brief 래퍼는 <code>renderBrief(spec)</code>를 직접 import하고 module 뷰를 이미 <code>&lt;img&gt;</code>로 넣는다 — 인자 하나 호출의 출력이 바뀌면 그림이 중복된다.</li><li><strong>기대 결과</strong>: <code>harness-team brief</code>가 존재하는 뷰 SVG를 <code>DIAGRAM_VIEWS</code> 순서(sequence → module)로 그림 슬라이드로 싣는다.</li><li><strong>제약</strong>:<ul><li>계약 유지 — 새 사실 0(텍스트 노드는 모두 spec 원문의 부분 문자열), script 0, 외부 자산 0, 같은 입력이면 같은 바이트.</li><li><code>renderBrief(spec)</code> 인자 하나 호출은 0.58.4와 같은 바이트다. 뷰는 선택 두 번째 인자 <code>{ diagrams: [{ view, rel, svg }] }</code>로만 받는다.</li><li><code>renderBrief</code>는 순수 함수로 남는다. 파일 읽기·자립성 판정은 <code>runBrief</code>가 한다.</li><li>레거시 <code>&lt;name&gt;-diagram.html</code>은 싣지 않는다(script가 있을 수 있는 HTML).</li><li>뷰 파일이 없거나 자립성 위반이면 실패로 끝내지 않는다 — 콘솔 한 줄과 JSON <code>diagrams</code>로 보고한다.</li><li>spec 절·열린 항목·scenarios가 모두 없으면 뷰가 있어도 &quot;렌더할 절이 없음&quot; 오류다 — 슬라이드의 사실은 spec에서 온다.</li></ul></li></ul></section>
+<section class="slide"><h2>범위 (In / Out)</h2><ul><li><strong>In</strong>: <code>src/commands/brief.mjs</code>(<code>runBrief</code> 뷰 읽기·판정·보고, <code>renderBrief</code> 선택 두 번째 인자·그림 슬라이드), <code>src/cli-args.mjs</code> brief summary, <code>commands/harness-task.md</code>·<code>commands/harness-diagram.md</code> 한 줄씩, <code>tests/brief-command.test.mjs</code>, <code>CHANGELOG.md</code> <code>[Unreleased]</code>.</li><li><strong>Out</strong>: state·class 뷰 추가, mermaid 펜스 info string 보존, kc-task-brief 래퍼 정리 — 사용자 지시로 범위 밖. 버전 범프·what-changes 문서 — 이 저장소는 별도 <code>chore(release)</code> 커밋에서 범프한다(MAINTAINING.md 릴리스 절).</li><li><strong>Out</strong>: <code>splitDocument</code>·<code>stripComments</code>·<code>parseBlocks</code>·<code>renderInline</code>·<code>svgSelfContainmentViolations</code>의 시그니처·동작, <code>--stage</code>·<code>--json</code> 동작, 오류 패킷, <code>clean</code> 보호.</li></ul></section>
+<section class="slide"><p class="src">원천 검토 (R1)</p><h2>발견</h2><ul><li>(unresolved) 명세는 <code>package.json</code> minor 범프를 요구하지만, 저장소 관례는 기능 PR이 <code>[Unreleased]</code>에만 적고 범프는 별도 release 커밋에서 4개 매니페스트·what-changes 문서와 함께 한다(<code>what-changes-latest-version.test.mjs</code>가 3방향 일치를 강제) → 결정: CHANGELOG <code>[Unreleased]</code>에 minor 기능으로 적고 범프는 release 단계로 넘긴다.</li><li>(unresolved) 기존 테스트 <code>externalViolations</code>는 태그·속성 허용 목록이라 <code>&lt;figure&gt;</code>·<code>&lt;img&gt;</code>·<code>src</code>·<code>alt</code>를 거부한다 → 결정: <code>figure</code>·<code>img</code>·<code>alt</code>를 허용하고 <code>src</code>는 값이 <code>data:image/svg+xml;base64,&lt;base64&gt;</code>일 때만 허용한다. 기존 음성 대조(<code>&lt;img src=&quot;x.png&quot;&gt;</code>)는 계속 실패해야 한다.</li><li>(unresolved) 그림용 CSS를 <code>STYLE</code>에 넣으면 인자 하나 호출의 바이트가 바뀐다 → 결정: 그림 CSS는 뷰가 하나 이상 실릴 때만 <code>&lt;style&gt;</code> 끝에 덧붙인다.</li><li>(unresolved) <code>## 설계</code> 절은 하위 절마다 슬라이드를 낸다 → 결정: &quot;설계 슬라이드 바로 뒤&quot;는 설계 절이 낸 <strong>마지막</strong> 슬라이드 뒤다. 설계 절이 없으면 마지막 spec 절 슬라이드 뒤(열린 항목·scenarios 앞), spec 절 슬라이드가 없으면 맨 앞(표지 뒤)이다.</li><li>검토 완료: 2026-11-25</li></ul></section>
+<section class="slide"><h2>설계 / 접근</h2><ul><li><code>runBrief</code>: <code>DIAGRAM_VIEWS</code>마다 <code>taskFilePath(..., 'diagram-&lt;view&gt;.svg')</code>를 읽는다. 없으면 <code>missing</code>, <code>svgSelfContainmentViolations</code>가 비어 있지 않으면 <code>rejected</code>(+violations), 통과하면 <code>embedded</code>로 <code>renderBrief</code>에 넘긴다.</li><li><code>renderBrief(spec, { diagrams } = {})</code>: 뷰마다 <code>&lt;section class=&quot;slide&quot;&gt;&lt;figure&gt;&lt;img src=&quot;data:image/svg+xml;base64,…&quot; alt=&quot;&lt;rel&gt;&quot;&gt;&lt;/figure&gt;&lt;/section&gt;</code>.<ul><li><code>&lt;img&gt;</code> data URI라 SVG의 <code>&lt;style&gt;</code>·id·텍스트가 문서로 새지 않는다(텍스트 노드 0 — 새 사실 판정 대상 밖).</li><li>보이는 텍스트 노드(figcaption·제목)는 넣지 않는다. 경로(뷰 이름 포함)는 <code>alt</code>에만 둔다.</li><li>결과에 <code>slides</code>(뷰 포함)·<code>titles</code>(<code>diagram:&lt;view&gt;</code>)·<code>diagrams</code>(실린 뷰 수)를 반영한다. &quot;렌더할 절이 없음&quot; 판정은 뷰를 뺀 수로 한다.</li></ul></li><li>보고: 콘솔 <code>  뷰 SVG: sequence 실림 · module 없음</code> 한 줄(거부면 첫 위반 사유), JSON <code>diagrams: [{ view, path, status, violations }]</code>. 뷰가 없을 때 summary 문구는 0.58.4와 같다.</li></ul></section>
+<section class="slide"><h2>Ontology</h2><ul><li><strong>뷰 SVG</strong>: <code>docs/&lt;user&gt;/&lt;name&gt;/&lt;name&gt;-diagram-&lt;view&gt;.svg</code> 단독 SVG — <code>view</code>는 <code>DIAGRAM_VIEWS</code> 중 하나.</li><li><strong>그림 슬라이드</strong>: 뷰 SVG 하나를 data URI <code>&lt;img&gt;</code>로 싣는 슬라이드. 텍스트 노드가 없다.</li><li><strong>embedded / missing / rejected</strong>: 뷰별 보고 상태 — 실림 / 파일 없음 / 자립성 위반으로 뺌.</li><li>게이트 근거: 사용자 명세가 대상 파일·보존 계약·수용 기준을 모두 정했다.</li></ul></section>
+<section class="slide"><p class="src">발견</p><ul><li>(unresolved) 명세는 <code>package.json</code> minor 범프를 요구하지만, 저장소 관례는 기능 PR이 <code>[Unreleased]</code>에만 적고 범프는 별도 release 커밋에서 4개 매니페스트·what-changes 문서와 함께 한다(<code>what-changes-latest-version.test.mjs</code>가 3방향 일치를 강제) → 결정: CHANGELOG <code>[Unreleased]</code>에 minor 기능으로 적고 범프는 release 단계로 넘긴다.</li><li>(unresolved) 기존 테스트 <code>externalViolations</code>는 태그·속성 허용 목록이라 <code>&lt;figure&gt;</code>·<code>&lt;img&gt;</code>·<code>src</code>·<code>alt</code>를 거부한다 → 결정: <code>figure</code>·<code>img</code>·<code>alt</code>를 허용하고 <code>src</code>는 값이 <code>data:image/svg+xml;base64,&lt;base64&gt;</code>일 때만 허용한다. 기존 음성 대조(<code>&lt;img src=&quot;x.png&quot;&gt;</code>)는 계속 실패해야 한다.</li><li>(unresolved) 그림용 CSS를 <code>STYLE</code>에 넣으면 인자 하나 호출의 바이트가 바뀐다 → 결정: 그림 CSS는 뷰가 하나 이상 실릴 때만 <code>&lt;style&gt;</code> 끝에 덧붙인다.</li><li>(unresolved) <code>## 설계</code> 절은 하위 절마다 슬라이드를 낸다 → 결정: &quot;설계 슬라이드 바로 뒤&quot;는 설계 절이 낸 <strong>마지막</strong> 슬라이드 뒤다. 설계 절이 없으면 마지막 spec 절 슬라이드 뒤(열린 항목·scenarios 앞), spec 절 슬라이드가 없으면 맨 앞(표지 뒤)이다.</li></ul></section>
+</main>
+</body>
+</html>
