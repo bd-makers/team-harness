@@ -576,6 +576,7 @@ test('svgSelfContainmentViolations: 위반 문구는 일치 값·태그 이름�
     `<svg ${NS}><rect on${long}="y"/></svg>`,
     `<svg ${NS}><g${long}><rect/></g></svg>`,
     `<svg ${NS}><g${long}></svg>`,
+    `<svg ${NS}><g></g${long}></svg>`,
   ]) {
     const [v] = svgSelfContainmentViolations(svg);
     assert.ok(v.length < 120, v.slice(0, 80));
