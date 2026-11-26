@@ -220,5 +220,21 @@ Verified against `680c4558` with `git status`, `git diff`, and `git diff --check
 판별 (작성 세션):
 - P3 태그 구조 표본 두 개가 같은 갈래(짝 어긋남)만 탄다 — **진짜(테스트 공백), 일부.** 재현: `<g…5000><rect/></g>`·`<g…5000></svg>` 둘 다 `</짧은 이름> 가 <긴 이름> 를 닫음`이다. 긴 **닫는** 이름(`<g></g…5000>`)은 표본이 없다(직접 돌리면 81자로 잘린다). `<x> 가 닫히지 않음` 갈래는 `svgSelfContainmentViolations`로는 닿지 않는다 — 루트 끝 검사가 `</svg>`로 끝나기를 요구하고, 그 `</svg>`가 남은 자식을 만나면 짝 어긋남으로 먼저 돌아간다. 그 갈래의 `excerpt`는 방어용이다. 조치(사용자 지시): 긴 닫는 이름 표본 `<g></g…5000>` 한 줄을 더했다 — 닫는 이름의 `excerpt`를 되돌리면 실패한다(변이 확인).
 
+### 2026-11-26T02:28:10.991Z — codex (harness-team review)
+
+- engine: codex · model: default · scope: diff · base: 031ccf33 · mergeBase: 031ccf3314db115180dbd75546ff7ebf39c9705e · tip: 5232c42df0c4f0e562a8ad23b3275b5daf2dcf76 · exit 0 · 442 B
+
+```text
+No P1, P2, or P3 findings in the diff against `031ccf33`. The new test case covers truncation of an overlong closing tag name in the mismatch diagnostic. The only other change records that coverage in the task artifact.
+
+`git status` showed a clean worktree, `git diff --check 031ccf33` passed, and all 7 targeted SVG unit tests passed. No files were modified. The full suite was skipped because it writes fixtures.
+
+**Verdict — Approve.**
+```
+
+<!-- harness:review kind=codex scope=diff tip=5232c42df0c4f0e562a8ad23b3275b5daf2dcf76 at=2026-11-26T02:28:10.991Z -->
+
+판별 (작성 세션): 발견 없음(Approve). 조치 없음.
+
 ## Learnings
 - iCloud 동기화 폴더의 워크트리에는 `<이름> 2.<ext>` 중복 파일이 생긴다. `git add -A` 대신 바꾼 경로를 지정해 스테이징한다.
