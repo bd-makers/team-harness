@@ -12,6 +12,8 @@
 - [x] `npm test` exit 0
 - [x] 리뷰(codex) P2-1 반영: SMIL 정규식 2차 backtracking 수정 — P2-2(텍스트 속 거짓 거부)는 정책 안이라 미조치
 - [x] 재리뷰(codex, 2228ffb9) P2 반영: SMIL 접두사 글자에서 `=`를 빼 이어 쓴 `attributeName=`의 2차 경로 수정 — P3 셋은 정책 안이라 미조치
+- [x] 3차 리뷰(codex, 1fb4267f) P3 둘 반영(사용자 지시): 위반 문구 일치 값·태그 이름 60자 자르기 + 변이 확인한 테스트, spec SMIL 정규식을 코드와 동기화(`1a9069ea`) — 긴 닫는 태그 이름 표본은 diagram-svg-wellformed 리뷰에서 더함(`5232c42d`), 텍스트·`data-attributeName` 오탐은 정책 안이라 미조치
+- [x] ship: spec 범위·설계, plan, artifact 검증·리스크 갱신 — 다이어그램 건너뜀(사용자 선택, plan에 단계 없음)
 - [ ] ship 완료
 
 ## Ontology 변경 로그

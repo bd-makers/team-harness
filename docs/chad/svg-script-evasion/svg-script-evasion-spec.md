@@ -19,7 +19,8 @@
 요청하지 않은 기능·관련 없는 리팩터링이 섞이지 않게 긋는 경계다.*
 
 - **In**: `src/commands/diagram.mjs` `ALWAYS_BAD` 규칙 보강, `tests/diagram-command.test.mjs` 표본, `CHANGELOG.md` `[Unreleased]` `### Changed`, `commands/harness-diagram.md` 6번 뷰 제약 한 줄.
-- **Out**: 호출부(`record`·`brief`·`pr-check`) 변경 — 함수 하나가 정본이다. CSP 등 뷰어 쪽 방어 — 이 검사 밖이다. 완전한 XML/DTD 파싱 — 제약 위반.
+  리뷰로 넓어진 것: 위반 문구 60자 자르기(codex 3차 P3, `1a9069ea`) — `ALWAYS_BAD` 고리가 `excerpt(m[1])`을 쓰고, 같은 결함이 있던 태그 구조 문구(`</x> 가 <y> 를 닫음`·`<x> 가 닫히지 않음`, task `diagram-svg-wellformed` 소유)의 태그 이름도 자른다. `CHANGELOG.md` `### Fixed` 한 줄.
+- **Out**: 호출부(`record`·`brief`·`pr-check`) 변경 — 함수 하나가 정본이다. CSP 등 뷰어 쪽 방어 — 이 검사 밖이다. 완전한 XML/DTD 파싱 — 제약 위반. 글자(text) 속 `attributeName="href"`·`data-attributeName="href"` 거짓 거부(codex 1·2·3차 P2-2/P3) — 마크업과 글자를 가르려면 파서가 필요하고, 다이어그램에서 드물어 거부 쪽이 안전하다(정책 안, 미조치).
 
 
 ## 원천 검토 (R1)
@@ -55,6 +56,7 @@
 ## 설계 / 접근
 - `ALWAYS_BAD`에 두 규칙: `/(<!(?:ENTITY|ATTLIST|ELEMENT|NOTATION))\b/i`(raw, `DTD 내부 subset 선언`)가 `<!ENTITY` 규칙을 대신하고, `/\battributeName\s*=\s*(?:["']\s*)?((?:[^\s"'<>:=]*:)*(?:on[a-z]|href)[^\s"'<>]*)/i`(decoded, `SMIL 로 바꾸는 이벤트·href 속성`)를 더한다. 따옴표 뒤 공백은 따옴표가 있을 때만 받고(codex P2-1), 접두사 글자에서 `=`를 뺀다(codex 재리뷰 P2) — 둘 다 이어 쓴 입력에서 2차로 되짚던 것을 막는다.
 - 이벤트 규칙 `<[a-z][\w:.-]*` → `<${TAG_NAME}`. `TAG_NAME` 정의를 `ALWAYS_BAD` 위로 올려 두 검사가 함께 쓴다.
+- 위반 문구는 일치 값을 `excerpt`(60자, 넘으면 57자+`...`)로 자른다 — `REF_RULES`가 이미 쓰던 함수를 `ALWAYS_BAD` 고리와 태그 구조 문구에도 쓴다.
 - 다른 규칙과 겹치지 않음: `attributeName="href"`에는 `href=`가 없어 외부 href 규칙이 안 걸리고, `values` 안 `url(…)`은 이미 외부 `url()` 규칙이 잡는다.
 
 

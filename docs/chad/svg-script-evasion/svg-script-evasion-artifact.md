@@ -8,6 +8,19 @@
 - 브라우저 확인: ATTLIST 기본값은 Blink·WebKit에서 관찰로, Gecko는 소스로 "따른다". SMIL `on*`은 셋 다 "따르지 않는다". SMIL `href`는 Blink·WebKit 관찰로 "돈다". 근거·한계는 spec `## 원천 검토`.
 - `npm test` exit 0 (1483 tests, fail 0).
 
+- 2026-11-26: 3차 리뷰 P3 둘 반영 — 위반 문구의 일치 값·태그 이름을 60자로 자른다(`1a9069ea`), spec SMIL 정규식을 코드와 맞춘다. 긴 닫는 태그 이름 표본은 `5232c42d`(task `diagram-svg-wellformed` 리뷰).
+
+### Ship (2026-11-26, base `52671997`, tip `b2045ef8` + 이 ship 커밋)
+- **검증**: `npm test` → `ℹ tests 1485` · `ℹ pass 1484` · `ℹ fail 0` · `ℹ skipped 1`(`CI에서는 jq-present 매트릭스가 반드시 실행된다 # SKIP`, 로컬 전용 건너뜀) · `exit 0`. 이 task의 테스트 줄:
+  - `✔ svgSelfContainmentViolations: 규칙마다 위반 표본이 그 규칙 하나만 건다`
+  - `✔ svgSelfContainmentViolations: 허용되는 비슷한 것들을 모은 SVG 는 통과한다`
+  - `✔ svgSelfContainmentViolations: attributeName 뒤 긴 공백도 선형 시간이다 (svg-script-evasion codex P2-1)`
+  - `✔ svgSelfContainmentViolations: 공백 없이 이어진 attributeName= 도 선형 시간이다 (svg-script-evasion codex 재리뷰 P2)`
+  - `✔ svgSelfContainmentViolations: 위반 문구는 일치 값·태그 이름을 60자로 자른다 (svg-script-evasion codex 3차 P3)`
+- **diff 범위**: `52671997...HEAD`에는 같은 브랜치의 task `diagram-svg-wellformed` 문서 커밋(`031ccf33`·`5b813238`·`5d9ef4d2`·`5ca10393`·`b2045ef8`)과 `5232c42d`가 섞여 있다 — 그 task의 기록이며 이 task의 범위 밖이다.
+- **다이어그램**: 건너뜀(사용자 선택). plan에 다이어그램 단계가 없어 `diagram record`로 닫을 단계도 없다.
+- **리뷰**: codex 3회(`979e3529`·`e6109edb`·`1fb4267f`) — 모두 `## Reviews`에 마커와 판별이 있다.
+- **남은 리스크**: 글자 속 `attributeName="href"`·`data-attributeName="href"` 거짓 거부(정책 안). Gecko는 소스로만 확인(실행 안 함). 이 브랜치는 미머지 `claude/brief-diagram-svg-embed-0f4251` 위에 있어 그 브랜치가 먼저 머지돼야 한다. `[사람] spec 검토 승인` 미체크.
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
