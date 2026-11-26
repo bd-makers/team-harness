@@ -44,6 +44,18 @@
       "at": "2026-11-26T01:14:45.359Z",
       "exitCode": 0,
       "outputBytes": 1440
+    },
+    {
+      "kind": "claude-shipcheck",
+      "engine": "claude",
+      "model": null,
+      "scope": "diff",
+      "base": "52671997",
+      "mergeBase": "52671997d545745b1293a309c9a67032ad2675a2",
+      "tip": "9aff3e656ae8270d4638d4dd222c0482804683ff",
+      "at": "2026-11-26T14:05:29.486Z",
+      "exitCode": 0,
+      "outputBytes": 4711
     }
   ]
 }

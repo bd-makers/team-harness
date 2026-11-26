@@ -17,9 +17,9 @@
   - `✔ svgSelfContainmentViolations: attributeName 뒤 긴 공백도 선형 시간이다 (svg-script-evasion codex P2-1)`
   - `✔ svgSelfContainmentViolations: 공백 없이 이어진 attributeName= 도 선형 시간이다 (svg-script-evasion codex 재리뷰 P2)`
   - `✔ svgSelfContainmentViolations: 위반 문구는 일치 값·태그 이름을 60자로 자른다 (svg-script-evasion codex 3차 P3)`
-- **diff 범위**: `52671997...HEAD`에는 같은 브랜치의 task `diagram-svg-wellformed` 문서 커밋(`031ccf33`·`5b813238`·`5d9ef4d2`·`5ca10393`·`b2045ef8`)과 `5232c42d`가 섞여 있다 — 그 task의 기록이며 이 task의 범위 밖이다.
+- **diff 범위**: `52671997...HEAD`에는 같은 브랜치의 task `diagram-svg-wellformed` 커밋이 섞여 있다 — 문서 커밋(`031ccf33`·`5b813238`·`5d9ef4d2`·`5ca10393`·`b2045ef8`), `5232c42d`(테스트 표본 한 줄), `babf703d`(그 task 리뷰 3차 P3 — `CHANGELOG.md` Fixed 줄·테스트 주석, 사유는 그 task artifact). 그 task의 기록이며 이 task의 범위 밖이다.
 - **다이어그램**: 건너뜀(사용자 선택). plan에 다이어그램 단계가 없어 `diagram record`로 닫을 단계도 없다.
-- **리뷰**: codex 3회(`979e3529`·`e6109edb`·`1fb4267f`) — 모두 `## Reviews`에 마커와 판별이 있다.
+- **리뷰**: 이 task의 `## Reviews`에 codex 3회(`979e3529`·`e6109edb`·`1fb4267f`)와 claude-shipcheck 1회가 마커·판별과 함께 있다. 이 task의 수정 `1a9069ea`를 대상으로 한 codex 리뷰(Approve, P3 하나 → `5232c42d`)는 활성 task가 `diagram-svg-wellformed`일 때 돌아 그 task의 artifact·meta에 기록됐다(마커 `kind=codex tip=1a9069ea…`).
 - **남은 리스크**: 글자 속 `attributeName="href"`·`data-attributeName="href"` 거짓 거부(정책 안). Gecko는 소스로만 확인(실행 안 함). 이 브랜치는 미머지 `claude/brief-diagram-svg-embed-0f4251` 위에 있어 그 브랜치가 먼저 머지돼야 한다. `[사람] spec 검토 승인` 미체크.
 
 ## Reviews
@@ -97,6 +97,38 @@ No P1 or P2 findings in the diff against `52671997`.
 - **P3 SMIL 위반 문구가 일치 전체를 길이 제한 없이 찍는다 — 진짜지만 이 task가 만든 것이 아니다.** 재현: 값 `href`+5000자 → 문구 5028자. `ALWAYS_BAD` 고리 전체가 `m[1]`을 그대로 찍는 기존 모양이라 `<script`+5000자도 5029자다. `REF_RULES`만 `excerpt()`를 쓴다. 고친다면 고리 한 줄을 `excerpt(m[1])`로 바꾸면 모든 규칙에 맞는다. 미조치(리뷰만 요청).
 - **P3 spec `## 설계 / 접근`의 SMIL 정규식이 옛 모양 — 진짜(문서 드리프트).** spec 56행은 `\s*["']?\s*`·`[^\s"'<>:]*`를 그대로 보여 준다. 두 backtracking 수정이 코드·plan·artifact에만 있다. 미조치(리뷰만 요청).
 - **3차 P3 두 건 조치 (2026-11-26, 사용자 지시).** 위반 문구: `ALWAYS_BAD` 고리를 `excerpt(m[1])`로 바꾸고, 같은 결함이 있던 태그 구조 문구(`</x> 가 <y> 를 닫음`·`<x> 가 닫히지 않음`)의 태그 이름도 `excerpt`로 자른다. 테스트 `위반 문구는 일치 값·태그 이름을 60자로 자른다`가 SMIL·이벤트·태그 구조 두 갈래를 덮고, 고리 수정을 되돌리면 실패한다(변이 확인). spec `## 설계 / 접근`의 SMIL 정규식을 지금 코드와 같게 고쳤다. 텍스트·`data-attributeName` 오탐은 앞 결정대로 미조치.
+
+### 2026-11-26T14:05:29.486Z — claude-shipcheck (harness-team review)
+
+- engine: claude · model: default · scope: diff · base: 52671997 · mergeBase: 52671997d545745b1293a309c9a67032ad2675a2 · tip: 9aff3e656ae8270d4638d4dd222c0482804683ff · exit 0 · 4711 B
+
+```text
+전하, **판정: 다섯 항목 모두 pass이고 fail은 없습니다.** 막는 문제는 없으며, 아래에 문서 부정확성 둘을 따로 적었습니다.
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| S1 | spec 요구사항마다 대응 구현이 있다 | BLOCKER | pass | **갈래 1**: spec 57행의 `/(<!(?:ENTITY\|ATTLIST\|ELEMENT\|NOTATION))\b/i`(raw, `DTD 내부 subset 선언`)가 diff에 그대로 있고 옛 `<!ENTITY` 규칙을 대신합니다. **갈래 2**: `<[a-z][\w:.-]*` → `<${TAG_NAME}`로 바뀌었고 `TAG_NAME` 정의가 `ALWAYS_BAD` 위로 올라갔습니다. **갈래 3과 href**: spec 57행의 SMIL 정규식과 코드가 글자 단위로 같고, source를 지정하지 않아 문자 참조를 푼 글(decoded)에서 찾습니다. **60자 자르기**: `excerpt(m[1])`, `` `</${excerpt(close)}> 가 <${excerpt(stack.at(-1))}> 를 닫음` ``. **문서 쪽**: CHANGELOG `### Changed`·`### Fixed`, `commands/harness-diagram.md` 6번 단계(62–88행)에 76행 한 줄. **Out 범위**: 호출부(`record`·`brief`·`pr-check`)는 diff에 없고, 오탐은 spec 23행에 "정책 안, 미조치"로 적혀 있습니다. |
+| S2 | plan `- [x]` 항목마다 커밋이 실재한다 | MAJOR | pass | **1차 자료·실패 테스트·규칙·CHANGELOG·doc**: `979e3529`(spec, tests, src, CHANGELOG, harness-diagram.md). **P2-1**: `e6109edb`. **재리뷰 P2**: `1fb4267f`. **3차 P3**: `1a9069ea`(src, tests, spec, CHANGELOG)와 `5232c42d`(`<g></g${long}>` 한 줄). **ship**: `9aff3e65`. 미체크 두 줄(`[사람] spec 검토 승인`, `ship 완료`)은 미완 상태 그대로입니다. 다만 "실패 테스트를 먼저 썼다"는 순서는 같은 커밋이라 git으로 확인할 수 없습니다. |
+| S3 | 이 task의 스코프 밖 변경이 diff에 없다 | MAJOR | pass | 이 task 커밋 다섯 개(`979e3529`·`e6109edb`·`1fb4267f`·`1a9069ea`·`9aff3e65`)는 모두 spec 21–22행 In 범위의 파일만 건드립니다. 태그 구조 문구 자르기는 spec 22행에 "리뷰로 넓어진 것"으로 기록돼 있습니다. merge 5개는 `git show --remerge-diff` 출력이 비어 손으로 고친 흔적이 없습니다. |
+| S4 | 실행된 리뷰가 전부 `## Reviews`에 마커와 함께 기록돼 있다 | MAJOR | pass | codex 3회(tip `979e3529`·`e6109edb`·`1fb4267f`)가 각각 `<!-- harness:review kind=codex … -->` 마커와 판별을 갖고 있고, `svg-script-evasion-meta.json`의 `reviews` 3건과 tip이 일치합니다. |
+| S5 | 검증 결과가 실제 명령·출력 인용이다 | BLOCKER | pass | artifact 14–19행은 `ℹ tests 1485`·`ℹ pass 1484`·`ℹ fail 0`·`ℹ skipped 1`·`exit 0`과 ✔ 다섯 줄을 출력 그대로 인용합니다. 제가 HEAD에서 `npm test`를 다시 돌린 결과 `exit 0`, `ℹ tests 1485`/`pass 1484`/`fail 0`/`skipped 1`, 성능 테스트 묶음(perf suite) `tests 1`/`pass 1`이 나왔습니다. 인용한 ✔ 다섯 줄과 `# SKIP` 테스트 이름도 로그에 그대로 있습니다. |
+
+**판정에는 영향이 없지만 고칠 만한 문서 부정확성 (MINOR)**
+1. **diff 범위 설명에서 `babf703d`가 빠졌습니다** (artifact 20행). 이 커밋은 다른 task(`diagram-svg-wellformed`) 소속인데 문서 폴더 밖인 `CHANGELOG.md`의 Fixed 줄과 테스트 주석도 바꿔서, `52671997` 대비 diff에 보입니다. 그 task의 artifact 314행에는 사유가 기록돼 있습니다.
+2. **"리뷰: codex 3회"가 실제보다 적습니다** (artifact 22행). 이 task의 수정 커밋 `1a9069ea`를 대상으로 한 codex 리뷰(Approve, P3 하나)가 한 번 더 있었습니다. 마커와 함께 기록됐지만 `diagram-svg-wellformed` artifact 230행에 있고, 이 task의 `## Reviews`와 meta.json에는 없습니다.
+
+**검증하지 못한 것:** Gecko 동작은 spec 자체가 소스로만 확인했다고 적고 있고, 브라우저에서 직접 실행해 보지는 않았습니다. 중간 기록의 테스트 수(1483→1484→1485)는 테스트 선언 수 변화(+0/+1/+1, 그 뒤 `1a9069ea`에서 +1)와 맞지 않아 과거 수치 하나가 1 어긋나 보입니다. 다른 worktree에서 잰 과거 값이라 다시 확인할 수 없고, 현재 Ship 수치는 재실행으로 맞음을 확인했습니다.
+
+지시대로 저장소는 아무것도 바꾸지 않았습니다. `npm test`는 임시 HOME에서 돌았고 실행 뒤 `git status`는 깨끗합니다. 테스트 로그는 `/private/tmp/claude-501/-Users-chadonpro-Library-Mobile-Documents-iCloud-md-obsidian-Documents-para-vault-10-Projects-Harness-harness-aijient-team-plugin--claude-worktrees-agitated-yonath-4fc02c/63b34f75-b5ae-466d-b9a4-744376db1fba/scratchpad/npmtest.log`에 있습니다.
+```
+
+<!-- harness:review kind=claude-shipcheck scope=diff tip=9aff3e656ae8270d4638d4dd222c0482804683ff at=2026-11-26T14:05:29.486Z -->
+
+**판별 (작성 세션, 2026-11-26)** — S1–S5 pass, BLOCKER·MAJOR fail 없음.
+
+- **MINOR 1 `babf703d` 누락 — 진짜.** `git show --stat babf703d`가 `CHANGELOG.md`·`tests/diagram-command.test.mjs`를 건드린다. Ship 절 diff 범위에 더했다.
+- **MINOR 2 리뷰 횟수 — 진짜.** `1a9069ea` 대상 codex 리뷰가 `diagram-svg-wellformed` artifact(마커 `tip=1a9069ea…`)에 있다. Ship 절 리뷰 줄에 위치와 함께 적었다. meta는 손으로 고치지 않는다.
+- 테스트 수 1483→1485 어긋남: 과거 수치라 재현 불가, 현재 수치는 검증자 재실행과 일치 — 미조치.
 
 ## Learnings
 
