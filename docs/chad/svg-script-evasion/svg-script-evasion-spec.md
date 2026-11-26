@@ -53,7 +53,7 @@
 
 
 ## 설계 / 접근
-- `ALWAYS_BAD`에 두 규칙: `/(<!(?:ENTITY|ATTLIST|ELEMENT|NOTATION))\b/i`(raw, `DTD 내부 subset 선언`)가 `<!ENTITY` 규칙을 대신하고, `/\battributeName\s*=\s*["']?\s*((?:[^\s"'<>:]*:)*(?:on[a-z]|href)[^\s"'<>]*)/i`(decoded, `SMIL 로 바꾸는 이벤트·href 속성`)를 더한다.
+- `ALWAYS_BAD`에 두 규칙: `/(<!(?:ENTITY|ATTLIST|ELEMENT|NOTATION))\b/i`(raw, `DTD 내부 subset 선언`)가 `<!ENTITY` 규칙을 대신하고, `/\battributeName\s*=\s*(?:["']\s*)?((?:[^\s"'<>:=]*:)*(?:on[a-z]|href)[^\s"'<>]*)/i`(decoded, `SMIL 로 바꾸는 이벤트·href 속성`)를 더한다. 따옴표 뒤 공백은 따옴표가 있을 때만 받고(codex P2-1), 접두사 글자에서 `=`를 뺀다(codex 재리뷰 P2) — 둘 다 이어 쓴 입력에서 2차로 되짚던 것을 막는다.
 - 이벤트 규칙 `<[a-z][\w:.-]*` → `<${TAG_NAME}`. `TAG_NAME` 정의를 `ALWAYS_BAD` 위로 올려 두 검사가 함께 쓴다.
 - 다른 규칙과 겹치지 않음: `attributeName="href"`에는 `href=`가 없어 외부 href 규칙이 안 걸리고, `values` 안 `url(…)`은 이미 외부 `url()` 규칙이 잡는다.
 

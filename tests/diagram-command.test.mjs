@@ -569,6 +569,20 @@ test('svgSelfContainmentViolations: 공백 없이 이어진 attributeName= 도 �
   assert.ok(Date.now() - started < 100, `${Date.now() - started}ms`);
 });
 
+test('svgSelfContainmentViolations: 위반 문구는 일치 값·태그 이름을 60자로 자른다 (svg-script-evasion codex 3차 P3)', () => {
+  const long = 'x'.repeat(5000);
+  for (const svg of [
+    `<svg ${NS}><a><set attributeName="href${long}" to="x"/></a></svg>`,
+    `<svg ${NS}><rect on${long}="y"/></svg>`,
+    `<svg ${NS}><g${long}><rect/></g></svg>`,
+    `<svg ${NS}><g${long}></svg>`,
+  ]) {
+    const [v] = svgSelfContainmentViolations(svg);
+    assert.ok(v.length < 120, v.slice(0, 80));
+    assert.match(v, /x\.\.\./);
+  }
+});
+
 test('svgSelfContainmentViolations: 규칙마다 위반 표본이 그 규칙 하나만 건다', () => {
   for (const [name, svg, expected] of SVG_VIOLATIONS) {
     const got = svgSelfContainmentViolations(svg);

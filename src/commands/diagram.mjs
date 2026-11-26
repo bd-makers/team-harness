@@ -147,7 +147,7 @@ function tagStructureViolation(body) {
     const [token, close, open, selfClosing] = m;
     if (close) {
       if (rootClosed) return afterRoot(m.index);
-      if (stack.at(-1) !== close) return `</${close}> 가 <${stack.at(-1)}> 를 닫음`;
+      if (stack.at(-1) !== close) return `</${excerpt(close)}> 가 <${excerpt(stack.at(-1))}> 를 닫음`;
       stack.pop();
       rootClosed = !stack.length;
     } else if (open) {
@@ -159,7 +159,7 @@ function tagStructureViolation(body) {
     }
   }
   if (rootClosed && body.slice(last).trim()) return afterRoot(last);
-  return stack.length ? `<${stack.at(-1)}> 가 닫히지 않음` : null;
+  return stack.length ? `<${excerpt(stack.at(-1))}> 가 닫히지 않음` : null;
 }
 
 // 위반 설명 목록(없으면 빈 배열). 파서가 아니라 문자열 검사다 — 결정론이고 의존성이 없다.
@@ -188,7 +188,7 @@ export function svgSelfContainmentViolations(text) {
   const decoded = decodeRefs(text);
   for (const [re, label, source] of ALWAYS_BAD) {
     const m = (source === 'raw' ? text : decoded).match(re);
-    if (m) violations.push(`${label}: ${m[1]}`);
+    if (m) violations.push(`${label}: ${excerpt(m[1])}`);
   }
   for (const [re, label] of REF_RULES) {
     for (const m of decoded.matchAll(re)) {
