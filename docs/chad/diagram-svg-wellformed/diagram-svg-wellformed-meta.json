@@ -1,0 +1,97 @@
+{
+  "user": "chad",
+  "task": "diagram-svg-wellformed",
+  "created": "2026-11-25",
+  "firstActivatedAt": "2026-11-25T05:11:26.646Z",
+  "baseSha": "3acad2369d0fc1f64a4f566863bf04448b768aca",
+  "status": "open",
+  "closedAt": null,
+  "forcedAt": null,
+  "forcedIssues": null,
+  "reviews": [
+    {
+      "kind": "claude",
+      "engine": "claude",
+      "model": null,
+      "scope": "diff",
+      "base": "3acad236",
+      "mergeBase": "3acad2369d0fc1f64a4f566863bf04448b768aca",
+      "tip": "b83ef9705c59e6b703a075c0712f0a0aa3d47461",
+      "at": "2026-11-25T05:37:10.076Z",
+      "exitCode": 0,
+      "outputBytes": 4623
+    },
+    {
+      "kind": "claude",
+      "engine": "claude",
+      "model": null,
+      "scope": "diff",
+      "base": "b83ef970",
+      "mergeBase": "b83ef9705c59e6b703a075c0712f0a0aa3d47461",
+      "tip": "29e148c52529eb756142f3ec3d38fa324adf04e1",
+      "at": "2026-11-25T06:27:57.813Z",
+      "exitCode": 0,
+      "outputBytes": 4978
+    },
+    {
+      "kind": "claude",
+      "engine": "claude",
+      "model": null,
+      "scope": "diff",
+      "base": "29e148c5",
+      "mergeBase": "29e148c52529eb756142f3ec3d38fa324adf04e1",
+      "tip": "52671997d545745b1293a309c9a67032ad2675a2",
+      "at": "2026-11-25T08:08:15.621Z",
+      "exitCode": 0,
+      "outputBytes": 4473
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "model": null,
+      "scope": "diff",
+      "base": "680c4558",
+      "mergeBase": "680c455820574cd83c08f9339e6a84ab21eb499a",
+      "tip": "1a9069ea30e5a04898867bc6b7a25f1b0648d2ef",
+      "at": "2026-11-26T01:57:59.016Z",
+      "exitCode": 0,
+      "outputBytes": 691
+    },
+    {
+      "kind": "codex",
+      "engine": "codex",
+      "model": null,
+      "scope": "diff",
+      "base": "031ccf33",
+      "mergeBase": "031ccf3314db115180dbd75546ff7ebf39c9705e",
+      "tip": "5232c42df0c4f0e562a8ad23b3275b5daf2dcf76",
+      "at": "2026-11-26T02:28:10.991Z",
+      "exitCode": 0,
+      "outputBytes": 442
+    },
+    {
+      "kind": "codex-shipcheck",
+      "engine": "codex",
+      "model": null,
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "88b859e76fe6f4d2ab5b9777b6f62cf802fe76d6",
+      "tip": "5d9ef4d2c7b132d7fb4c965a34da9278f14ff5b8",
+      "at": "2026-11-26T05:49:08.189Z",
+      "exitCode": 0,
+      "outputBytes": 3005
+    },
+    {
+      "kind": "claude-shipcheck",
+      "engine": "claude",
+      "model": null,
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "88b859e76fe6f4d2ab5b9777b6f62cf802fe76d6",
+      "tip": "5ca103934f2eaab6e7537c57130dc3d438cdeda4",
+      "at": "2026-11-26T06:34:17.715Z",
+      "exitCode": 0,
+      "outputBytes": 6051
+    }
+  ]
+}

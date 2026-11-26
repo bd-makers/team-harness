@@ -489,7 +489,34 @@ const SVG_VIOLATIONS = [
   ['문자 참조로 숨긴 url()', `<svg ${NS}><rect fill="u&#114;l(p.svg#g)"/></svg>`, /^외부 url\(\): p\.svg#g$/],
   ['16진 문자 참조로 숨긴 href', `<svg ${NS}><image href="&#x68;ttps://x/y.png"/></svg>`, /^외부 href: https:\/\/x\/y\.png$/],
   ['따옴표 안 > 뒤의 이벤트 속성', `<svg ${NS}><rect aria-label="A > B" onload="x()"/></svg>`, /^이벤트 핸들러 속성\(스크립트\): onload$/],
-  ['DTD 엔티티', `<!DOCTYPE svg [<!ENTITY u "x">]>\n<svg ${NS}/>`, /^DTD 엔티티 선언: <!ENTITY$/],
+  ['DTD 엔티티', `<!DOCTYPE svg [<!ENTITY u "x">]>\n<svg ${NS}/>`, /^DTD 내부 subset 선언: <!ENTITY$/],
+  // 태그 구조(brief-diagram-svg-embed codex P2) — 짝이 어긋난 SVG 는 이미지로 그려지지 않는다
+  ['짝 안 맞는 태그', `<svg ${NS}><g><rect></g></rect></svg>`, /^태그 구조: <\/g> 가 <rect> 를 닫음$/],
+  ['닫히지 않은 자식', `<svg ${NS}><g><rect/></svg>`, /^태그 구조: <\/svg> 가 <g> 를 닫음$/],
+  ['대소문자가 다른 닫기', `<svg ${NS}><G></g></svg>`, /^태그 구조: <\/g> 가 <G> 를 닫음$/],
+  ['닫히지 않은 루트', `<svg ${NS}><svg></svg>`, /^태그 구조: <svg> 가 닫히지 않음$/],
+  ['루트 뒤 요소', `<svg ${NS}></svg><svg ${NS}></svg>`, /^태그 구조: 루트 <\/svg> 뒤에 내용: <svg /],
+  ['태그로 읽히지 않는 <', `<svg ${NS}><text>a < b</text></svg>`, /^태그 구조: 태그로 읽히지 않는 '<': < b<\/text>/],
+  // 리뷰 P2 — `>` 를 빠뜨린 leaf 가 다음 태그를 속성으로 삼키지 않는다
+  ['> 빠진 leaf', `<svg ${NS}><rect x="1"\n  <circle r="1"/></svg>`, /^태그 구조: 태그로 읽히지 않는 '<': <rect x="1"$/],
+  ['> 빠진 leaf(따옴표 없는 값)', `<svg ${NS}><rect x=1<circle r="1"/></svg>`, /^태그 구조: 태그로 읽히지 않는 '<': <rect x=1<circle/],
+  ['속성 이름의 따옴표', `<svg ${NS}><rect a"b="1"/></svg>`, /^태그 구조: 태그로 읽히지 않는 '<': <rect a"b="1"\/>/],
+  // 리뷰 2차 P3-4 — 이벤트 핸들러는 원문에서 찾는다. 첫 행: 값 안 `&#34;` 는 값을 닫지 않는다(well-formed).
+  // 둘째 행은 XML Name 에 `&` 가 올 수 없어 그려지지 않는 입력이다 — 그래도 핸들러는 잡는다(푼 글로 되돌리면 놓친다).
+  ['값 안 &#34; 뒤의 이벤트 속성', `<svg ${NS}><rect aria-label="say &#34;hi&#34;" onclick="x()"/></svg>`, /^이벤트 핸들러 속성\(스크립트\): onclick$/],
+  ['이름 안 문자 참조 뒤의 이벤트 속성', `<svg ${NS}><rect a&#60;1="2" onload="x()"/></svg>`, /^이벤트 핸들러 속성\(스크립트\): onload$/],
+  // svg-script-evasion — 스크립트 우회 세 갈래
+  ['_ 로 시작하는 요소의 이벤트 속성', `<svg ${NS}><_x onclick="x()"/></svg>`, /^이벤트 핸들러 속성\(스크립트\): onclick$/],
+  ['ASCII 밖 이름 요소의 이벤트 속성', `<svg ${NS}><é onclick="x()"/></svg>`, /^이벤트 핸들러 속성\(스크립트\): onclick$/],
+  // 내부 subset 의 속성 기본값은 Blink·WebKit·Gecko 모두 실제 속성으로 붙인다 — 핸들러가 돈다
+  ['DTD 속성 기본값', `<!DOCTYPE svg [<!ATTLIST rect onclick CDATA "x()">]>\n<svg ${NS}><rect/></svg>`, /^DTD 내부 subset 선언: <!ATTLIST$/],
+  ['DTD 요소 선언', `<!DOCTYPE svg [<!ELEMENT svg ANY>]>\n<svg ${NS}/>`, /^DTD 내부 subset 선언: <!ELEMENT$/],
+  // SMIL 로 on* 을 바꾸는 것은 지금 엔진에서 돌지 않지만(Animatable: no) 쓸 일이 없다. href 는 실제로 바뀐다(javascript: 로 이동).
+  ['SMIL set 의 이벤트 속성', `<svg ${NS}><rect><set attributeName="onclick" to="x()"/></rect></svg>`, /^SMIL 로 바꾸는 이벤트·href 속성: onclick$/],
+  ['SMIL animate 의 이벤트 속성', `<svg ${NS}><rect><animate attributeName='onload' values="x()"/></rect></svg>`, /^SMIL 로 바꾸는 이벤트·href 속성: onload$/],
+  ['SMIL animate 의 href', `<svg ${NS}><a><animate attributeName="href" values="javascript:x()"/></a></svg>`, /^SMIL 로 바꾸는 이벤트·href 속성: href$/],
+  ['SMIL set 의 xlink:href(이름공간 꼼수)', `<svg ${NS}><a><set attributeName="xlink:href:x" to="https://x/y"/></a></svg>`, /^SMIL 로 바꾸는 이벤트·href 속성: xlink:href:x$/],
+  ['문자 참조로 숨긴 SMIL href', `<svg ${NS}><a><set attributeName="&#104;ref" to="javascript:x()"/></a></svg>`, /^SMIL 로 바꾸는 이벤트·href 속성: href$/],
 ];
 
 test('svgSelfContainmentViolations: 허용되는 비슷한 것들을 모은 SVG 는 통과한다', () => {
@@ -498,6 +525,63 @@ test('svgSelfContainmentViolations: 허용되는 비슷한 것들을 모은 SVG 
   // 문서 안 참조를 문자 참조로 쓴 것(`&#35;g` = `#g`), 스스로 닫는 루트, 끝의 공백·주석은 허용(codex 1차)
   assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><use href="&#35;g"/><rect aria-label="a &gt; b" fill="url(&#x23;g)"/></svg>\n<!-- end -->\n`), []);
   assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS} viewBox="0 0 1 1"/>`), []);
+  // 다이어그램이 쓸 법한 SMIL(투명도·채움)과 글자 속 "<!ENTITY"(&#60;) 는 통과(svg-script-evasion)
+  assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><rect><animate attributeName="opacity" values="0;1" dur="1s"/>`
+    + `<set attributeName="fill" to="#000"/></rect><text>&#60;!ENTITY x&#62;</text></svg>`), []);
+});
+
+test('svgSelfContainmentViolations: 태그 구조 검사는 주석·CDATA·PI·문자 참조·대소문자 같은 짝을 통과시킨다', () => {
+  // 주석·CDATA 안의 `<`·`</g>` 는 태그가 아니다. `&#60;` 는 풀지 않고 본다(태그를 만들지 않는다).
+  assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><!-- </g> --><style><![CDATA[ a < b { fill: #000 } ]]></style><?pi x?>`
+    + `<g><G><rect aria-label="1 > 0"/></G><text>a &lt; b &#60;g&#62;</text></g></svg>`), []);
+  // 루트 안 주석 + `</svg>` 뒤 주석 — 옛 끝 정규식은 첫 `<!--` 부터 끝까지를 한 주석으로 걷어 "닫히지 않음" 으로 잘못 거부했다(리뷰 2차 P3).
+  assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><!-- c --><rect/></svg>\n<!-- end -->`), []);
+  // 값 안의 `&#34;` 는 값을 닫지 않는다 — 그 뒤의 `onclick=` 은 속성이 아니라 title 글자다(리뷰 2차 P3-4).
+  assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><rect title="&#34; onclick=&#34;x()"/></svg>`), []);
+});
+
+test('svgSelfContainmentViolations: 긴 공백·끝 주석이 있어도 선형 시간이다 (리뷰 P1 — 끝 정규식 지수 backtracking)', () => {
+  // 28칸: 옛 정규식으로 되돌리면 몇 초 뒤 1초 단언에서 실패한다(40칸이면 실패하지 않고 몇 시간 멈춘다 — 리뷰 2차 P3).
+  const pad = ' '.repeat(28);
+  const started = Date.now();
+  assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}>\n${pad}<g>\n${pad}<rect/>${pad}</g>${pad}</svg>${pad}<!-- a -->${pad}<!-- b -->\n`), []);
+  assert.match(svgSelfContainmentViolations(`<svg ${NS}><rect/>${pad}x${pad}`)[0], /^루트 <svg> 가 닫히지 않음/);
+  assert.match(svgSelfContainmentViolations(`<svg ${NS}></svg>${pad}<!-- 안 닫힌 주석${pad}`)[0], /^루트 <svg> 가 닫히지 않음/);
+  assert.ok(Date.now() - started < 1000, `${Date.now() - started}ms`);
+});
+
+test('svgSelfContainmentViolations: attributeName 뒤 긴 공백도 선형 시간이다 (svg-script-evasion codex P2-1)', () => {
+  // 32000칸: 옛 `\s*["']?\s*` 는 두 공백 덩어리를 나누며 2차로 되짚어 약 2초 걸렸다.
+  const pad = ' '.repeat(32000);
+  const started = Date.now();
+  assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><rect><animate attributeName=${pad}"opacity" values="0;1"/></rect></svg>`), []);
+  assert.ok(Date.now() - started < 500, `${Date.now() - started}ms`);
+  // 따옴표 안쪽 공백·따옴표 없는 값도 그대로 잡힌다
+  for (const value of [`"${pad}href"`, `' onclick'`, 'href']) {
+    assert.match(svgSelfContainmentViolations(`<svg ${NS}><a><set attributeName=${value} to="x"/></a></svg>`)[0], /^SMIL 로 바꾸는 이벤트·href 속성: (href|onclick)$/, value.slice(0, 8));
+  }
+});
+
+test('svgSelfContainmentViolations: 공백 없이 이어진 attributeName= 도 선형 시간이다 (svg-script-evasion codex 재리뷰 P2)', () => {
+  // 8000번: 옛 접두사 `[^\s"'<>:]*` 는 `=` 를 받아 후보마다 덩어리 끝까지 훑고 되짚어 약 0.4초 걸렸다.
+  const started = Date.now();
+  assert.deepEqual(svgSelfContainmentViolations(`<svg ${NS}><text>${'attributeName='.repeat(8000)}</text></svg>`), []);
+  assert.ok(Date.now() - started < 100, `${Date.now() - started}ms`);
+});
+
+test('svgSelfContainmentViolations: 위반 문구는 일치 값·태그 이름을 60자로 자른다 (svg-script-evasion codex 3차 P3)', () => {
+  const long = 'x'.repeat(5000);
+  for (const svg of [
+    `<svg ${NS}><a><set attributeName="href${long}" to="x"/></a></svg>`,
+    `<svg ${NS}><rect on${long}="y"/></svg>`,
+    `<svg ${NS}><g${long}><rect/></g></svg>`,
+    `<svg ${NS}><g${long}></svg>`,
+    `<svg ${NS}><g></g${long}></svg>`,
+  ]) {
+    const [v] = svgSelfContainmentViolations(svg);
+    assert.ok(v.length < 120, v.slice(0, 80));
+    assert.match(v, /x\.\.\./);
+  }
 });
 
 test('svgSelfContainmentViolations: 규칙마다 위반 표본이 그 규칙 하나만 건다', () => {

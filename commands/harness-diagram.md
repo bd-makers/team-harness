@@ -73,6 +73,7 @@ Raw slash-command 인수:
      - 글꼴은 **system font stack**(`system-ui, -apple-system, "Segoe UI", sans-serif` 등)만 — 웹 폰트를 부르지 않는다.
      - **외부 자산 0**: `href`·`xlink:href`·CSS `url()`은 문서 안(`#id`)이나 `data:`만, `@import` 없음.
      - `<script>`·`on…=` 이벤트 속성·`<foreignObject>`(HTML 섞기) 금지.
+     - DOCTYPE 내부 subset(`[<!ENTITY …>]`·`<!ATTLIST …>`) 금지, SMIL `attributeName`으로 `on…`·`href`를 바꾸지 않는다.
      상류 스킬이 단독 SVG를 내지 못하면 5번(degrade)으로 간다. **HTML 산출물에서 `<svg>`만 떼어 내지 않는다** —
      바깥 문서의 스타일을 잃어 검사는 통과해도 그림이 깨진다.
    - 외부 자산 참조 금지(CDN 스크립트·원격 이미지·외부 폰트). 한 파일로 열려야 한다.
