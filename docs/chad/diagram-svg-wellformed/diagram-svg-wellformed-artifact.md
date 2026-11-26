@@ -3,6 +3,7 @@
 *최종 결과물과 학습 내용을 기록한다.*
 
 ## 결과
+- 검토 승인: 2026-11-27 · 슬라이드 없음 (사후 승인 — spec 요지를 따로 보여 드리지 않았고, 사용자가 "승인으로 기록"을 골랐다)
 - `svgSelfContainmentViolations`에 `tagStructureViolation`(태그 여닫이 짝·닫히지 않음·루트 뒤 내용·맨 `<`)을 더했다. 루트가 없거나 잘린 파일이면 건너뛰어 위반이 겹치지 않는다.
 - 세 호출부(`diagram record --view`·`brief`·`pr-check`)가 함께 엄격해진다 — 호출부 코드는 그대로.
 - 테스트: `SVG_VIOLATIONS`에 태그 구조 표본 6개(record 루프가 exit 1까지 검증), 주석·CDATA·PI·`&#60;`·대소문자 짝 통과 표본, brief `rejected` 테스트.
@@ -16,9 +17,9 @@
 - 정합 검증: codex-shipcheck 1회 — S1 BLOCKER(spec 설계 문장 오류)를 문서로 고침, S2–S5 pass.
 - 재검증: claude-shipcheck(`5ca10393`) — S1–S5 pass, fail 없음.
 - 남은 리스크:
-  - 이 브랜치는 미머지 `claude/brief-diagram-svg-embed-0f4251`(3acad236) 위에 쌓였다. `origin/main` 기준 diff에 그 브랜치 변경(brief 뷰 SVG 삽입)이 섞여 보이므로 그 브랜치를 먼저 머지하거나 PR base를 그 브랜치로 둔다.
+  - (해소 2026-11-27) stacked PR #204는 #203 브랜치로 머지돼 main에 빠졌고, #205(`6be6e910`)로 main에 들어갔다.
   - 문자열 검사라 완전한 XML well-formedness가 아니다(spec `## 범위` Out).
-  - `[사람] spec 검토 승인` 미완 — `done` 가드가 막는다.
+  - (해소 2026-11-27) `[사람] spec 검토 승인` — 사후 승인으로 기록(`## 결과` 첫 줄).
 - 후속: 없음(텍스트·`data-attributeName` 오탐은 `svg-script-evasion`에서 미조치로 결정).
 
 ## Reviews

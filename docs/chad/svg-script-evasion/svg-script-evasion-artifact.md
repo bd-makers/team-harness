@@ -3,6 +3,7 @@
 *최종 결과물과 학습 내용을 기록한다.*
 
 ## 결과
+- 검토 승인: 2026-11-27 · 슬라이드 없음 (사후 승인 — spec 요지를 따로 보여 드리지 않았고, 사용자가 "승인으로 기록"을 골랐다)
 
 - 2026-11-25: `svgSelfContainmentViolations`가 세 갈래를 위반 하나로 거부 — ① DTD 내부 subset 선언(`<!ENTITY` 규칙 흡수, 문구 `DTD 내부 subset 선언`), ② 이벤트 규칙 요소 이름을 `TAG_NAME`으로(`_`·ASCII 밖), ③ SMIL `attributeName`의 `on…`·`href…`(조사 중 실제로 도는 href→`javascript:` 갈래 포함).
 - 브라우저 확인: ATTLIST 기본값은 Blink·WebKit에서 관찰로, Gecko는 소스로 "따른다". SMIL `on*`은 셋 다 "따르지 않는다". SMIL `href`는 Blink·WebKit 관찰로 "돈다". 근거·한계는 spec `## 원천 검토`.
@@ -20,7 +21,7 @@
 - **diff 범위**: `52671997...HEAD`에는 같은 브랜치의 task `diagram-svg-wellformed` 커밋이 섞여 있다 — 문서 커밋(`031ccf33`·`5b813238`·`5d9ef4d2`·`5ca10393`·`b2045ef8`), `5232c42d`(테스트 표본 한 줄), `babf703d`(그 task 리뷰 3차 P3 — `CHANGELOG.md` Fixed 줄·테스트 주석, 사유는 그 task artifact). 그 task의 기록이며 이 task의 범위 밖이다.
 - **다이어그램**: 건너뜀(사용자 선택). plan에 다이어그램 단계가 없어 `diagram record`로 닫을 단계도 없다.
 - **리뷰**: 이 task의 `## Reviews`에 codex 3회(`979e3529`·`e6109edb`·`1fb4267f`)와 claude-shipcheck 1회가 마커·판별과 함께 있다. 이 task의 수정 `1a9069ea`를 대상으로 한 codex 리뷰(Approve, P3 하나 → `5232c42d`)는 활성 task가 `diagram-svg-wellformed`일 때 돌아 그 task의 artifact·meta에 기록됐다(마커 `kind=codex tip=1a9069ea…`).
-- **남은 리스크**: 글자 속 `attributeName="href"`·`data-attributeName="href"` 거짓 거부(정책 안). Gecko는 소스로만 확인(실행 안 함). 이 브랜치는 미머지 `claude/brief-diagram-svg-embed-0f4251` 위에 있어 그 브랜치가 먼저 머지돼야 한다. `[사람] spec 검토 승인` 미체크.
+- **남은 리스크**: 글자 속 `attributeName="href"`·`data-attributeName="href"` 거짓 거부(정책 안). Gecko는 소스로만 확인(실행 안 함). (해소 2026-11-27) 브랜치 순서 문제는 #205(`6be6e910`)로 main에 반영돼 끝났고, `[사람] spec 검토 승인`은 사후 승인으로 기록했다(`## 결과` 첫 줄).
 
 ## Reviews
 *Codex 등 리뷰 실행 시 결과(요약·발견·조치)를 날짜와 함께 남긴다. 남기지 않은 리뷰는 "안 한 것"으로 간주.*
