@@ -80,6 +80,18 @@
       "at": "2026-11-26T05:49:08.189Z",
       "exitCode": 0,
       "outputBytes": 3005
+    },
+    {
+      "kind": "claude-shipcheck",
+      "engine": "claude",
+      "model": null,
+      "scope": "diff",
+      "base": "refs/remotes/origin/main",
+      "mergeBase": "88b859e76fe6f4d2ab5b9777b6f62cf802fe76d6",
+      "tip": "5ca103934f2eaab6e7537c57130dc3d438cdeda4",
+      "at": "2026-11-26T06:34:17.715Z",
+      "exitCode": 0,
+      "outputBytes": 6051
     }
   ]
 }

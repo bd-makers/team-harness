@@ -14,6 +14,7 @@
 - 검증: `npm test` → exit 0, `ℹ tests 1485 / ℹ pass 1484 / ℹ fail 0 / ℹ skipped 1`(perf `ℹ tests 1 / ℹ pass 1`) — `5232c42d`에서 실행, 이후 커밋은 task 문서뿐.
 - 리뷰: claude 3회·codex 2회, 모두 아래 `## Reviews`에 기록. 마지막 두 codex 리뷰는 Approve(발견 없음 / P3 하나 조치).
 - 정합 검증: codex-shipcheck 1회 — S1 BLOCKER(spec 설계 문장 오류)를 문서로 고침, S2–S5 pass.
+- 재검증: claude-shipcheck(`5ca10393`) — S1–S5 pass, fail 없음.
 - 남은 리스크:
   - 이 브랜치는 미머지 `claude/brief-diagram-svg-embed-0f4251`(3acad236) 위에 쌓였다. `origin/main` 기준 diff에 그 브랜치 변경(brief 뷰 SVG 삽입)이 섞여 보이므로 그 브랜치를 먼저 머지하거나 PR base를 그 브랜치로 둔다.
   - 문자열 검사라 완전한 XML well-formedness가 아니다(spec `## 범위` Out).
@@ -272,6 +273,79 @@ No P1, P2, or P3 findings in the diff against `031ccf33`. The new test case cove
 판별 (작성 세션):
 - S1 [BLOCKER] fail — **진짜(문서 오류), 코드 결함 아님.** 재현: `<svg …><svg></svg>` → `태그 구조: <svg> 가 닫히지 않음`, `<svg …></svg></g>` → `루트 <svg> 가 닫히지 않음 — 파일이 잘렸는지 확인`, `<svg …></svg></g></svg>` → `태그 구조: 루트 </svg> 뒤에 내용: </g></svg>`. 동작은 기존 표본대로이고 spec 설계 문장이 틀렸다. 조치: spec `## 설계 / 접근`을 이 세 경우로 고치고, 앞 codex 리뷰 판별의 "닿지 않는다"를 취소선으로 바로잡았다.
 - S2–S5 pass — 조치 없음.
+
+### 2026-11-26T06:34:17.715Z — claude-shipcheck (harness-team review)
+
+- engine: claude · model: default · scope: diff · base: refs/remotes/origin/main · mergeBase: 88b859e76fe6f4d2ab5b9777b6f62cf802fe76d6 · tip: 5ca103934f2eaab6e7537c57130dc3d438cdeda4 · exit 0 · 6051 B
+
+```text
+**판정: PR 준비 가능합니다. fail은 없습니다.** S1–S5 모두 pass이고, 아래에 참고할 MINOR 관찰 셋을 붙였습니다.
+
+### 2026-11-26 — claude-shipcheck (read-only, D6) · base `refs/remotes/origin/main` (merge-base `88b859e7`) · tip `5ca10393`
+
+| id | 항목 | 심각도 | 판정 | 근거 |
+|---|---|---|---|---|
+| S1 | spec 요구사항마다 대응 구현이 있거나 미구현으로 기록됨 | BLOCKER | pass | 판정 근거는 요구사항 하나씩 대조한 결과입니다. 아래 다섯 가지를 확인했습니다. |
+| S2 | plan의 `- [x]` 항목마다 대응 변경·커밋이 실재함 | MAJOR | pass | `[x]` 10개를 커밋에 대응시켰습니다. 대응 관계는 아래와 같습니다. |
+| S3 | 스코프 밖 변경이 없거나 사유가 기록됨 | MAJOR | pass | task 밖 변경은 출처가 둘이고, 둘 다 문서에 사유가 있습니다. |
+| S4 | 실행된 리뷰가 전부 `## Reviews`에 마커와 함께 기록됨 | MAJOR | pass | 기록과 기계 상태가 서로 맞습니다. |
+| S5 | 검증 결과가 실제 명령·출력 인용임 | BLOCKER | pass | Ship 보고의 검증 줄은 명령과 출력 인용입니다. |
+
+**S1 근거**
+- **태그 구조 위반**: diff에 `tagStructureViolation`이 있고, `else` 갈래(잘린 파일이면 건너뜀)로 불립니다.
+- **세 호출부**
+  - `record --view`: `SVG_VIOLATIONS` 표본을 돌리는 루프(`tests/diagram-command.test.mjs:596`)가 exit 1까지 확인합니다.
+  - `brief`: 테스트가 `['module', 'rejected', ['태그 구조: </g> 가 <rect> 를 닫음']]`을 기대합니다.
+  - `pr-check`: 같은 함수를 부릅니다(`src/commands/pr-check.mjs:108`). spec의 Out 절 "호출부 변경 — 함수 하나가 정본"과 일치합니다.
+- **제약**: `package.json`은 diff에 없습니다. 함수 시그니처도 그대로입니다. "규칙마다 위반 하나" 테스트를 포함한 SVG 단위 테스트를 직접 돌린 결과는 `ℹ tests 7 / ℹ pass 7 / ℹ fail 0`입니다.
+- **설계 문장**: spec 설계 문장을 함수에 직접 넣어 재현했고, 모두 문서대로 나왔습니다.
+  - `<svg…><svg></svg>` → `태그 구조: <svg> 가 닫히지 않음`
+  - `</svg></g></svg>` → `루트 </svg> 뒤에 내용: </g></svg>`
+  - `</svg></g>` → `루트 <svg> 가 닫히지 않음 — 파일이 잘렸는지 확인`
+  - `<g></svg>` → 짝 어긋남
+  - `&#60;`, CDATA, 주석, PI → `[]`(통과)
+  - 긴 이름 → `…` 붙여 60자로 자름
+- **Out 항목**: `aria-label="a<b"`는 `[]`로 통과합니다. spec에 검사 밖으로 적힌 대로입니다.
+
+**S2 근거**
+- 실패 테스트, 중첩 검사, CHANGELOG → `d68d286e`. 이 커밋이 `CHANGELOG.md`, `diagram.mjs`, 두 테스트 파일을 바꿉니다.
+- 리뷰 1차 반영 → `0a1ee4bb`(`CLAUDE 2.md`·`.gitignore 2` 삭제), `29e148c5`
+- 리뷰 2차 반영 → `2e565ff7`, `52671997`
+- 리뷰 3차 반영 → `babf703d`
+- merge 5건 → graph에서 merge 커밋으로 확인했습니다.
+- 60자 자르기 → `1a9069ea`, `5232c42d`
+- `npm test` 항목 → artifact 14행에 출력이 인용돼 있습니다.
+
+**S3 근거**
+- **brief 삽입**: `brief.mjs`, `cli-args.mjs`, `harness-task.md`, CHANGELOG `### Added`, brief 테스트가 해당합니다. 사유는 spec R1 "(unresolved) 기준 브랜치 … 결정: fast-forward", plan 참고 절, artifact 18행에 있습니다. `3acad236`이 main의 조상이 아님도 확인했습니다(`git merge-base --is-ancestor` exit 1).
+- **svg-script-evasion**: DTD·SMIL·`TAG_NAME` 관련 변경입니다. 사유는 spec Out "task `svg-script-evasion`이 맡았고 그 브랜치를 이 브랜치에 merge했다"입니다.
+- `git diff --check`는 exit 0입니다.
+
+**S4 근거**
+- 마커 6개(72·142·210·229·246·270행)가 `meta.json`의 `reviews[]` 6건과 tip·at 값까지 같습니다.
+- 집계도 맞습니다: claude 3회, codex 2회, codex-shipcheck 1회. Ship 15·16행의 서술과 일치합니다.
+- codex exit 1 두 번은 마커가 없습니다. 이는 `harness-review.md:83` "성공(exit 0)한 실행만 … 기록을 남긴다"에 따른 것이고, 74행에 사유가 적혀 있습니다.
+
+**S5 근거**
+- artifact 14행 인용: "`npm test` → exit 0, `ℹ tests 1485 / ℹ pass 1484 / ℹ fail 0 / ℹ skipped 1`(perf `ℹ tests 1 / ℹ pass 1`) — `5232c42d`에서 실행"
+- `git diff --stat 5232c42d HEAD`로 보면 그 뒤에 바뀐 것은 task 문서 4개(artifact·meta·plan·spec)뿐입니다. 따라서 이 인용은 현재 tip에도 유효합니다.
+
+**MINOR 관찰 (fail 아님)**
+1. **plan 17행의 출처 표기**: `1a9069ea`를 "codex 리뷰 P3 반영"으로 적었습니다. 그러나 커밋 메시지는 `(svg-script-evasion codex 3차 P3)`이고, svg-script-evasion 문서를 고칩니다. 이 task의 codex 리뷰는 그 뒤(tip `1a9069ea`)에 돌았습니다. 커밋은 실재하므로 표기만 부정확합니다.
+2. **artifact 10행의 성능 수치**: "20000개 요소 SVG 9ms"에는 명령이 없습니다. 첫 구현 시점의 기록이라 Ship 보고는 아닙니다. 제가 같은 조건으로 재현하니 6ms가 나왔습니다.
+3. **기준 브랜치 이동**: `claude/brief-diagram-svg-embed-0f4251`이 지금 `e3bed7e9`에 있습니다. `3acad236` 이후 task 문서 4개만 바뀐 커밋 3개가 더 있습니다. 이 브랜치는 `3acad236` 이후 그 파일들을 건드리지 않아 충돌은 없습니다. 다만 이 브랜치를 main에 먼저 머지하면 옛 brief 문서가 실립니다. artifact 18행이 이미 "먼저 머지하거나 PR base를 그 브랜치로"로 이 위험을 다룹니다.
+
+**검증하지 못한 것**: 전체 `npm test`는 fixture를 쓰므로 read-only 범위에서 돌리지 않았습니다. 그래서 1485라는 테스트 수는 제가 다시 확인하지 못했습니다. `git fetch`도 하지 않아 `origin/main`은 로컬 ref 기준입니다.
+
+**최종 판정**: fail 없음. 이 세션은 read-only라 이 블록을 artifact `## Reviews`에 붙이는 일은 작성 세션이 해야 합니다.
+```
+
+<!-- harness:review kind=claude-shipcheck scope=diff tip=5ca103934f2eaab6e7537c57130dc3d438cdeda4 at=2026-11-26T06:34:17.715Z -->
+
+판별 (작성 세션): S1–S5 pass — 앞 codex-shipcheck S1 수정이 확인됐다. codex가 연결 실패(exit 1, 기록 없음)로 두 번 돌지 못해 claude 엔진으로 돌렸다(vendor 분리 없음).
+- MINOR 1 plan 출처 표기 — 진짜. 조치: plan 줄을 고침.
+- MINOR 2 성능 수치에 명령 없음 — 진짜지만 첫 구현 시점 기록이고 재현 6ms. 미조치.
+- MINOR 3 기준 브랜치가 `e3bed7e9`로 이동(문서만) — 진짜. Ship 리스크 항목이 이미 다룬다. 미조치.
 
 ## Learnings
 - iCloud 동기화 폴더의 워크트리에는 `<이름> 2.<ext>` 중복 파일이 생긴다. `git add -A` 대신 바꾼 경로를 지정해 스테이징한다.

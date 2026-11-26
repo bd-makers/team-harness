@@ -14,7 +14,7 @@
 - [x] 리뷰 2차 P3-4 반영: 이벤트 핸들러 규칙을 원문에서 찾기
 - [x] 리뷰 3차(claude) 문구 P3 반영: CHANGELOG 규칙별 근거, 테스트 주석
 - [x] `svg-script-evasion` 브랜치 merge(`fd919171`·`992c96a9`·`27a621ba`·`23e74430`·`680c4558`)
-- [x] codex 리뷰 P3 반영: 위반 문구의 태그 이름 60자 자르기(`1a9069ea`), 긴 닫는 이름 표본(`5232c42d`)
+- [x] 위반 문구의 태그 이름 60자 자르기(`1a9069ea`, svg-script-evasion codex 3차 P3와 함께), 이 task codex 리뷰 P3: 긴 닫는 이름 표본(`5232c42d`)
 - [ ] ship 완료
 
 ## Ontology 변경 로그
