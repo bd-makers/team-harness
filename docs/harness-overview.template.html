@@ -201,7 +201,7 @@
     <h1>Harness Aijient Team</h1>
     <p>멀티 에이전트 설정·상태 하네스 Claude Code 플러그인 — 단일 소스(AGENTS.md 오픈 표준)로 Claude, Codex, Cursor를 통합 관리</p>
     <div class="hero-tags">
-      <span class="tag tag-purple">v0.58.4</span>
+      <span class="tag tag-purple">v0.59.0</span>
       <span class="tag tag-blue">Claude Code Plugin</span>
       <span class="tag tag-green">ESM · Node ≥24</span>
       <span class="tag tag-orange">AGENTS.md SSOT</span>
@@ -209,6 +209,10 @@
   </div>
 
   <div style="max-width:900px;margin:1.2rem auto;padding:0.9rem 1.2rem;border-left:4px solid #f5a623;background:rgba(245,166,35,0.08);border-radius:6px;font-size:0.92rem;line-height:1.55;">
+    <strong>🆕 0.59.0 — 검토 슬라이드에 다이어그램이 실리고, 뷰 SVG 검사가 더 엄격해진다:</strong>
+    <br>
+    <code>0.59.0</code> <code>harness-team brief</code>가 활성 task의 뷰 SVG(<code>sequence</code> → <code>module</code>)를 자립성 검사로 거른 뒤 <code>## 설계</code> 슬라이드 뒤에 data URI <code>&lt;img&gt;</code> 그림 슬라이드로 싣는다 — 보이는 글자를 붙이지 않아 새 사실 0·script 0 계약이 그대로이고, 없거나 위반인 뷰는 빼고 <code>--json</code> <code>diagrams</code>로 알린다. 인자 하나 <code>renderBrief(spec)</code>는 0.58.4와 같은 바이트다. 자립성 검사(<code>svgSelfContainmentViolations</code>)는 <strong>태그 짝 어긋남</strong>과 <strong>스크립트 우회 세 갈래</strong>(DTD 내부 subset 선언·<code>_</code> 요소 이벤트 속성·SMIL <code>attributeName</code>의 <code>on…</code>/<code>href</code>)를 새로 거부해 <code>diagram record --view</code>·<code>brief</code>·<code>pr-check</code>가 함께 엄격해진다. 긴 공백에서 지수로 되짚던 정규식과 문자 참조 뒤 핸들러를 놓치던 규칙도 고쳤다. 소비자는 플러그인을 갱신하고, 진행 중인 task의 뷰 SVG가 거부되면 다시 만든다.
+    <br><br>
     <strong>🆕 0.58.4 — 가이드 문서가 0.51.0·0.52.0 사실과 맞는다:</strong>
     <br>
     <code>0.58.4</code> 치트시트·task 가이드·온보딩 체크리스트·운용 playground가 <code>done</code>의 <code>tests</code> 기본값을 <code>required</code>로 적던 것을 <code>optional</code>로 고쳤다. 훅 목록에 <code>block-dangerous-bash.sh</code>, task 가이드 spec 골격에 <code>## 범위 (In / Out)</code>를 넣었고 옛 문구는 회귀 테스트에 등록했다. CLI·명령·템플릿 동작은 그대로다.
@@ -1051,7 +1055,7 @@
 
 </main>
 
-<footer>harness-aijient-team-plugin v0.58.4 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
+<footer>harness-aijient-team-plugin v0.59.0 (AGENTS.md SSOT) &nbsp;·&nbsp; 소스에서 생성됨</footer>
 <script>
   mermaid.initialize({
     startOnLoad: true,

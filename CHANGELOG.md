@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [0.59.0] - 2026-11-27
+
 ### Added
 
 - **`harness-team brief`가 diagram 뷰 SVG를 그림 슬라이드로 싣는다** (task `brief-diagram-svg-embed`, minor). 활성 task에 `<name>-diagram-<view>.svg`(sequence → module)가 있고 `diagram record --view`와 같은 자립성 검사를 통과하면, `## 설계` 절의 마지막 슬라이드 뒤에 data URI `<img>` 슬라이드로 넣는다. 보이는 글자를 붙이지 않아 "새 사실 0"·script 0·외부 자산 0·결정론 계약이 그대로다. 파일이 없거나 위반이면 실패하지 않고 콘솔 한 줄과 `--json` `diagrams`(view·path·status `embedded|missing|rejected`·violations)로 알린다. 레거시 `<name>-diagram.html`은 싣지 않는다. `renderBrief(spec)`를 인자 하나로 부르면 0.58.4와 같은 바이트다 — 뷰는 선택 두 번째 인자 `{ diagrams: [{ view, rel, svg }] }`로만 받는다(직접 import하는 다운스트림 래퍼 호환).
@@ -22,7 +24,7 @@
 ### Fixed
 
 - **뷰 SVG 자립성 검사가 긴 공백에서 멈추던 것을 고친다** (task `diagram-svg-wellformed`). 루트가 닫혔는지 보려고 끝의 공백·주석을 걷던 정규식이 공백 덩어리마다 지수로 되짚어, 공백 26칸 한 덩어리에 약 0.5초, 30칸이면 수 초가 걸렸다 — 들여쓰기 깊은 정상 SVG에서 `diagram record --view`·`brief`·`pr-check`가 멈출 수 있었다. 뒤에서부터 걷는 루프로 바꿔 선형 시간이 됐다. 같은 정규식이 루트 안 주석부터 `</svg>` 뒤 주석까지를 한 주석으로 걷어, 둘 다 있는 정상 SVG(`<svg …><!-- c --><rect/></svg>` 다음 `<!-- end -->`)를 "루트 닫히지 않음"으로 거부하던 것도 함께 고쳐진다.
-- **이벤트 핸들러 속성을 문자 참조를 풀기 전 원문에서 찾는다** (task `diagram-svg-wellformed`). XML은 속성 이름과 따옴표 구조의 문자 참조를 풀지 않는데 이 규칙만 푼 글에서 찾았다. 그래서 `aria-label="say &#34;hi&#34;" onclick="x()"`처럼 값 안 `&#34;` 뒤에 있는 진짜 핸들러를 놓쳤고, `title="&#34; onclick=&#34;x()"`의 글자를 핸들러로 잘못 거부했다. 외부 참조·`@import` 규칙은 그대로 푼 글에서 찾는다(속성 값과 텍스트에서는 XML도 문자 참조를 푼다). 스크립트 요소·foreignObject·`<!ENTITY` 규칙도 푼 글을 보지만, 문자 참조는 요소를 만들지 못하므로 이쪽은 보수적으로 더 거부하는 것이다(`<text>&#60;script&#62;</text>`도 거부).
+- **이벤트 핸들러 속성을 문자 참조를 풀기 전 원문에서 찾는다** (task `diagram-svg-wellformed`). XML은 속성 이름과 따옴표 구조의 문자 참조를 풀지 않는데 이 규칙만 푼 글에서 찾았다. 그래서 `aria-label="say &#34;hi&#34;" onclick="x()"`처럼 값 안 `&#34;` 뒤에 있는 진짜 핸들러를 놓쳤고, `title="&#34; onclick=&#34;x()"`의 글자를 핸들러로 잘못 거부했다. 외부 참조·`@import` 규칙은 그대로 푼 글에서 찾는다(속성 값과 텍스트에서는 XML도 문자 참조를 푼다). 스크립트 요소·foreignObject 규칙도 푼 글을 보지만, 문자 참조는 요소를 만들지 못하므로 이쪽은 보수적으로 더 거부하는 것이다(`<text>&#60;script&#62;</text>`도 거부).
 - **뷰 SVG 위반 문구가 긴 값을 그대로 찍던 것을 자른다** (task `svg-script-evasion`). 스크립트 요소·이벤트 핸들러·SMIL 같은 고정 규칙과 태그 구조 문구가 일치 값·태그 이름을 길이 제한 없이 넣어, 5000자 값 하나에 5000자가 넘는 한 줄이 `diagram record --view`·`brief`·`pr-check` 출력에 찍혔다. 외부 참조 규칙처럼 60자로 자른다.
 
 ## [0.58.4] - 2026-11-23
